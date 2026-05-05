@@ -28,6 +28,7 @@ const initialCursor = (x: number, y: number) => ({
   visible: false,
   grabbing: false,
   reading: false,
+  justArrived: false,
 });
 
 function makeId() {
@@ -242,15 +243,42 @@ export function CinematicDemo() {
     };
 
     const run = async () => {
-      // Initial settle
+      // Initial settle — cursors arrive with their labels visible
+      // (justArrived) for ~900ms so the eye reads who's here, then
+      // the labels fade and we're at rest.
       await wait(700);
       setState((s) => ({
         ...s,
         cursors: {
           ...s.cursors,
-          chloe: { ...s.cursors.chloe, visible: true, label: "Chloe" },
-          david: { ...s.cursors.david, visible: true, label: "David" },
-          alex: { ...s.cursors.alex, visible: true, label: "Alex" },
+          chloe: {
+            ...s.cursors.chloe,
+            visible: true,
+            label: "Chloe",
+            justArrived: true,
+          },
+          david: {
+            ...s.cursors.david,
+            visible: true,
+            label: "David",
+            justArrived: true,
+          },
+          alex: {
+            ...s.cursors.alex,
+            visible: true,
+            label: "Alex",
+            justArrived: true,
+          },
+        },
+      }));
+      await wait(900);
+      setState((s) => ({
+        ...s,
+        cursors: {
+          ...s.cursors,
+          chloe: { ...s.cursors.chloe, justArrived: false },
+          david: { ...s.cursors.david, justArrived: false },
+          alex: { ...s.cursors.alex, justArrived: false },
         },
       }));
 
@@ -260,27 +288,67 @@ export function CinematicDemo() {
         // ────── Scene A: Carry & celebrate ──────
         await sceneCarry();
         if (!aliveRef.current) return;
+        await sceneSettle();
+        if (!aliveRef.current) return;
         await waitWhilePaused();
 
         // ────── Scene B: Inline comment thread ──────
         await sceneComment();
+        if (!aliveRef.current) return;
+        await sceneSettle();
         if (!aliveRef.current) return;
         await waitWhilePaused();
 
         // ────── Scene C: View morph (board → list → timeline → board) ──────
         await sceneViewMorph();
         if (!aliveRef.current) return;
+        await sceneSettle();
+        if (!aliveRef.current) return;
         await waitWhilePaused();
 
         // ────── Scene D: AI nudge ──────
         await sceneNudge();
+        if (!aliveRef.current) return;
+        await sceneSettle();
         if (!aliveRef.current) return;
         await waitWhilePaused();
 
         // ────── Scene E: Dependency reveal ──────
         await sceneDependency();
         if (!aliveRef.current) return;
+        await sceneSettle(2000);
+        if (!aliveRef.current) return;
         await waitWhilePaused();
+      }
+    };
+
+    /**
+     * The room breathes. Sets `scene: "settle"` and gently drifts each
+     * cursor toward a nearby random point so the demo reads alive
+     * rather than dead. No state mutations to tasks, overlays, or
+     * activity feed — those keep their last value visible.
+     */
+    const sceneSettle = async (durationMs = 1600) => {
+      setState((s) => ({ ...s, scene: "settle" }));
+      const startedAt = Date.now();
+      const driftEvery = 700;
+      while (Date.now() - startedAt < durationMs && aliveRef.current) {
+        // Drift each visible cursor to a small offset relative to its
+        // current position. Spring physics handle the easing.
+        setState((s) => {
+          const next = { ...s.cursors };
+          (Object.keys(next) as UserId[]).forEach((id) => {
+            const c = next[id];
+            if (!c.visible) return;
+            next[id] = {
+              ...c,
+              x: c.x + (Math.random() - 0.5) * 60,
+              y: c.y + (Math.random() - 0.5) * 32,
+            };
+          });
+          return { ...s, cursors: next };
+        });
+        await wait(Math.min(driftEvery, durationMs - (Date.now() - startedAt)));
       }
     };
 

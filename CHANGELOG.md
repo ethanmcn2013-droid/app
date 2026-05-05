@@ -3,6 +3,34 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 2 · 2026-05-05 · Restraint — pacing + cursor labels
+
+Two related defects in tone. Scene-to-scene transitions held for only
+~700ms — every second was equally loud. And cursor name pills rode
+each cursor permanently, drowning the cards with three constant
+labels. The demo read chat-app-y when the brand demands concert-hall.
+
+**Changed**
+- Scene runner now inserts a `sceneSettle()` beat (~1600ms; 2000ms
+  after the dependency reveal) between every pair of scenes. During
+  settle, cursors gently drift toward random nearby points every
+  ~700ms so the demo reads alive without firing scripted action.
+  Burndown, activity feed, and last-state visuals hold.
+- Cursor name labels are now signal, not skin. They appear only when
+  a cursor is grabbing, reading a card, or in its 900ms post-arrival
+  grace window. Otherwise the cursor is a quiet arrow.
+- Per-cursor label fade-out is staggered (chloe 0ms · david 220ms ·
+  alex 440ms) so the three labels don't pulse in unison — asynchrony
+  reads as life.
+
+**Priority shift**
+- Per user direction at end of cycle 2: subsequent cycles focus on
+  full app build (real interaction, primitives, depth in app routes)
+  rather than further demo polish. Demo work moves to "improvement
+  opportunistic" rather than the top of the heuristic.
+
+
+
 ## Cycle 1 · 2026-05-05 · View morph actually FLIPs
 
 The cinematic showcase demo's view-morph scene previously crossfaded

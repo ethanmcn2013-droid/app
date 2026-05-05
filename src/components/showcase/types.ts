@@ -13,6 +13,10 @@ export type DemoState = {
       visible: boolean;
       grabbing: boolean;
       reading: boolean;
+      /** Brief 600ms post-arrival window during which the label is
+       *  still visible — gives the eye time to read the name on a
+       *  cursor that just popped in. */
+      justArrived: boolean;
       label?: string;
     }
   >;
