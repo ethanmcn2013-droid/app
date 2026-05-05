@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "drizzle-kit push --force && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:push": "drizzle-kit push --force",
+    "db:check": "drizzle-kit check",
+    "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "geist": "^1.7.0",
     "lenis": "^1.3.23",
     "motion": "^12.38.0",
@@ -19,12 +24,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

@@ -13,7 +13,8 @@ export type TasksAction =
   | { type: "update"; id: string; patch: Partial<Omit<Task, "id">> }
   | { type: "add"; task: Task }
   | { type: "remove"; id: string }
-  | { type: "toggleComplete"; id: string };
+  | { type: "toggleComplete"; id: string }
+  | { type: "hydrate"; tasks: Task[] };
 
 export function initialTasksState(seed: Task[]): TasksState {
   return {
@@ -115,6 +116,16 @@ export function tasksReducer(
       return {
         tasks,
         previousLane: { ...state.previousLane, [action.id]: t.lane },
+      };
+    }
+
+    case "hydrate": {
+      // Server-truth replacement after a mutation round-trips. We
+      // preserve the previousLane map (it's purely client UX state
+      // for un-toggle-restores; server doesn't track it yet).
+      return {
+        tasks: action.tasks.map((t) => ({ ...t })),
+        previousLane: state.previousLane,
       };
     }
 

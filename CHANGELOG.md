@@ -3,6 +3,72 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 5 · 2026-05-05 · DB foundation — persistence appears
+
+First cycle under the new full-stack directive. Every mutation
+previously lived in memory; reload reset state. This is the
+foundation that lets every subsequent feature actually persist.
+
+**Backend changes**
+- New deps: `drizzle-orm`, `better-sqlite3`, `drizzle-kit` (dev),
+  `@types/better-sqlite3`, `tsx`.
+- `drizzle.config.ts` at repo root; SQLite dialect, schema at
+  `src/server/db/schema.ts`.
+- Schema: `tasks`, `users`, `comments` tables. JSON columns
+  (`mode: 'json'`) for `assignees`, `tags`, `blockedBy`. `text` with
+  TS `$type<>` narrowing for `lane`/`priority`. Comments table has
+  FK cascade on task delete; empty this cycle (table-only).
+- `src/server/db/index.ts` — singleton via `globalThis._sqlite` so
+  HMR doesn't spawn duplicate handles. WAL journal mode.
+  `import "server-only"` enforces server boundary.
+- `src/server/db/seed.ts` — idempotent transaction-wrapped seed
+  from `SEED_TASKS` + `USERS`. Auto-runs on first DB-touching
+  request; re-runnable via `npm run db:seed`.
+- `src/server/db/queries.ts` — `getTasks()`, `getTaskById()` with a
+  `rowToTask` mapper that NULL→undefined coerces (the client `Task`
+  type uses optional, not nullable).
+- `src/server/actions/tasks.ts` — `moveTaskAction`,
+  `toggleCompleteAction`, `updateTaskAction`, `addTaskAction`,
+  `removeTaskAction`. Each returns the full `Task[]` for one
+  round-trip reconciliation. `revalidatePath('/app', 'layout')`
+  after every mutation.
+- New scripts: `db:push`, `db:check`, `db:seed`. `dev` chains
+  `drizzle-kit push --force && next dev` for zero-touch cold-start.
+- `tasks.db*` files added to `.gitignore`.
+
+**Frontend changes**
+- `src/lib/tasks/tasks-reducer.ts` — added `hydrate` action so the
+  client can replace its task list with the server's authoritative
+  result after a mutation.
+- `src/lib/tasks/tasks-context.tsx` — dispatchers now do optimistic
+  + reconcile via `withServerSync()`: dispatch local action for
+  snappy UI, fire server action in `startTransition`, hydrate on
+  success, revert via `hydrate(prior)` on failure. Console-warn on
+  revert (toast UX arrives with the toast primitive).
+- `src/app/app/layout.tsx` — now `async`, `await getTasks()`,
+  passes server-fetched tasks to `<TasksProvider initialTasks={...}>`.
+  `export const dynamic = 'force-dynamic'` so build doesn't try to
+  prerender against an empty DB.
+- ID generation moved from a module counter to `crypto.randomUUID()`
+  per cycle 3 backlog item.
+
+**Verified end-to-end**
+- Toggle "Audit pricing" complete on `/app/list` → DB row is
+  `lane='done'` → reload `/app/board` → card renders under Done.
+
+**Backlog**
+- `toggleCompleteAction` always sends to "todo" when un-checking
+  (no server-side previousLane). Client reducer still has the map
+  so optimistic UI behaves correctly; server hydrate creates
+  micro-jitter only when un-toggling a task that wasn't originally
+  in todo. Reunify in cycle 6.
+- Two-tab staleness — server `revalidatePath` doesn't notify other
+  tabs. SSE / polling channel later.
+- Drizzle migrations workflow (currently `db:push` only).
+- Toast UI for server-action failures (currently console-warn).
+
+
+
 ## Cycle 4 · 2026-05-05 · Task detail panel
 
 Cards on every app view were read-only billboards. Click did nothing.

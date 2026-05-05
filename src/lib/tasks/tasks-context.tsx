@@ -2,9 +2,11 @@
 
 import {
   createContext,
+  startTransition,
   useContext,
   useMemo,
   useReducer,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -15,16 +17,22 @@ import {
   type UserId,
 } from "@/lib/data";
 import { tasksReducer, type TasksState } from "./tasks-reducer";
+import {
+  addTaskAction,
+  moveTaskAction,
+  removeTaskAction,
+  toggleCompleteAction,
+  updateTaskAction,
+} from "@/server/actions/tasks";
 
-/** Module-scoped counter for new task ids. Seed ids are 100-499 so
- *  500+ avoids collision. Resets per page load (no persistence yet).
- *  Note: HMR re-runs this file → the counter resets to 500 while
- *  retained state still holds higher ids. The reducer's `add` action
- *  rejects duplicate ids, so the worst case during dev is a silent
- *  dropped add. Cycle 4 swaps to crypto.randomUUID() with persistence. */
-let nextId = 500;
 function generateId(): string {
-  return `t-${nextId++}`;
+  // Persistence makes counter-collisions a real concern. Use a short
+  // crypto-derived id; format `t-<8 hex>` keeps it readable and
+  // matches the seed convention.
+  const raw =
+    globalThis.crypto?.randomUUID?.() ??
+    Math.random().toString(36).slice(2);
+  return `t-${raw.replace(/-/g, "").slice(0, 8)}`;
 }
 
 export type TasksDispatchers = {
@@ -61,15 +69,52 @@ export function TasksProvider({
     previousLane: initialPreviousLane ?? {},
   });
 
-  // Stable dispatcher object — only changes when `dispatch` identity
-  // changes, which is never. Wrapping in useMemo keeps Context value
-  // identity stable so dispatch-only consumers don't re-render.
+  // Track latest state so dispatchers can capture pre-mutation
+  // snapshots for revert without becoming stale closures or being
+  // recreated on every state change.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  /** Run an optimistic action: dispatch locally for snappy UI, then
+   *  reconcile with the server's authoritative result. Revert on
+   *  failure. */
+  function withServerSync(
+    optimistic: () => void,
+    server: () => Promise<Task[]>,
+  ) {
+    const prior = stateRef.current.tasks;
+    optimistic();
+    startTransition(async () => {
+      try {
+        const fresh = await server();
+        dispatch({ type: "hydrate", tasks: fresh });
+      } catch (err) {
+        // Revert. Console-warn for dev visibility; toast UX arrives
+        // when the toast primitive ships.
+        // eslint-disable-next-line no-console
+        console.warn("tasks: server action failed; reverting", err);
+        dispatch({ type: "hydrate", tasks: prior });
+      }
+    });
+  }
+
+  // Stable dispatcher object. None of these read render-scoped
+  // state, so the empty deps are correct.
   const dispatchers = useMemo<TasksDispatchers>(
     () => ({
-      moveTask: (id, toLane) => dispatch({ type: "move", id, toLane }),
+      moveTask: (id, toLane) =>
+        withServerSync(
+          () => dispatch({ type: "move", id, toLane }),
+          () => moveTaskAction(id, toLane),
+        ),
       reorderTask: (id, toIndex) =>
+        // No server action this cycle — local-only.
         dispatch({ type: "reorder", id, toIndex }),
-      updateTask: (id, patch) => dispatch({ type: "update", id, patch }),
+      updateTask: (id, patch) =>
+        withServerSync(
+          () => dispatch({ type: "update", id, patch }),
+          () => updateTaskAction(id, patch),
+        ),
       addTask: (input) => {
         const task: Task = {
           id: generateId(),
@@ -81,12 +126,24 @@ export function TasksProvider({
           due: input.due,
           tags: input.tags,
         };
-        dispatch({ type: "add", task });
+        withServerSync(
+          () => dispatch({ type: "add", task }),
+          () => addTaskAction({ ...input, id: task.id }),
+        );
         return task;
       },
-      removeTask: (id) => dispatch({ type: "remove", id }),
-      toggleComplete: (id) => dispatch({ type: "toggleComplete", id }),
+      removeTask: (id) =>
+        withServerSync(
+          () => dispatch({ type: "remove", id }),
+          () => removeTaskAction(id),
+        ),
+      toggleComplete: (id) =>
+        withServerSync(
+          () => dispatch({ type: "toggleComplete", id }),
+          () => toggleCompleteAction(id),
+        ),
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 
@@ -125,9 +182,4 @@ export function useTasks() {
     state: useTasksState(),
     ...useTasksDispatch(),
   };
-}
-
-// Test-only export — lets jest/playwright reset the id counter.
-export function __resetIdCounterForTests(start = 500) {
-  nextId = start;
 }

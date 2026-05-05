@@ -1,0 +1,57 @@
+import { sql } from "drizzle-orm";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import type { LaneId, Priority, Task, UserId } from "@/lib/data";
+
+export const tasks = sqliteTable("tasks", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  lane: text("lane").$type<LaneId>().notNull(),
+  priority: text("priority").$type<Priority>().notNull(),
+  assignees: text("assignees", { mode: "json" })
+    .$type<UserId[]>()
+    .notNull()
+    .default(sql`'[]'`),
+  due: text("due"),
+  estimate: integer("estimate"),
+  tags: text("tags", { mode: "json" }).$type<string[]>(),
+  comments: integer("comments"),
+  idleDays: integer("idle_days"),
+  blockedBy: text("blocked_by", { mode: "json" }).$type<string[]>(),
+  startDay: integer("start_day"),
+  durationDays: integer("duration_days"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const users = sqliteTable("users", {
+  id: text("id").$type<UserId>().primaryKey(),
+  name: text("name").notNull(),
+  color: text("color").notNull(),
+  initials: text("initials").notNull(),
+});
+
+export const comments = sqliteTable("comments", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),
+  body: text("body").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+// Compile-time contract — flags drift between schema and the
+// hand-written client `Task` type in src/lib/data.ts.
+type _SchemaCoversTask = keyof Task extends keyof typeof tasks.$inferSelect
+  ? true
+  : never;
+const _check: _SchemaCoversTask = true;
+void _check;
