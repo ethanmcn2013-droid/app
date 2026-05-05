@@ -9,9 +9,8 @@ import {
 } from "react";
 import { motion, LayoutGroup, AnimatePresence } from "motion/react";
 import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
-import { ListView } from "./list-view";
-import { TimelineView } from "./timeline-view";
 import { TaskCard } from "./task-card";
+import { DemoSurface } from "./demo-surface";
 import { CursorsLayer } from "./cursors-layer";
 import { GhostCard } from "./ghost-card";
 import { ActivityFeed } from "./activity-feed";
@@ -43,6 +42,7 @@ export function CinematicDemo() {
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
   const aliveRef = useRef(true);
+  const currentStateRef = useRef<DemoState | null>(null);
 
   const [state, setState] = useState<DemoState>(() => ({
     view: "board",
@@ -285,6 +285,10 @@ export function CinematicDemo() {
     };
 
     const sceneCarry = async () => {
+      // Guard: carry mutates board state; if we ever schedule it
+      // outside board mode, bail clean rather than tearing the morph.
+      if (currentStateRef.current && currentStateRef.current.view !== "board")
+        return;
       setState((s) => ({ ...s, scene: "carry" }));
 
       // Pick the first todo card and have David carry it to Doing
@@ -408,6 +412,9 @@ export function CinematicDemo() {
     };
 
     const sceneViewMorph = async () => {
+      // Defensive guard: never trigger a morph while a card is in-flight
+      // (ghost-card lives outside the LayoutGroup and would desync).
+      if (currentStateRef.current?.pickedTaskId) return;
       setState((s) => ({ ...s, scene: "morph" }));
 
       // Float Alex's cursor up to the view switcher tabs
@@ -526,6 +533,13 @@ export function CinematicDemo() {
     pausedRef.current = paused;
   }, [paused]);
 
+  // Mirror state into a ref so scene functions (running outside React's
+  // render path inside the run() async loop) can read fresh values
+  // without becoming stale closures.
+  useEffect(() => {
+    currentStateRef.current = state;
+  }, [state]);
+
   // Hover parallax (subtle depth shift on mouse position)
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -620,45 +634,7 @@ export function CinematicDemo() {
           className="relative h-[500px] overflow-hidden bg-gradient-to-b from-white to-bg-sunken/40"
         >
           <LayoutGroup>
-            <AnimatePresence mode="wait">
-              {state.view === "board" ? (
-                <motion.div
-                  key="board"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="absolute inset-0"
-                >
-                  <BoardSurface
-                    state={state}
-                    cardRefs={cardRefs}
-                  />
-                </motion.div>
-              ) : state.view === "list" ? (
-                <motion.div
-                  key="list"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="absolute inset-0"
-                >
-                  <ListView tasks={state.tasks} cardRefs={cardRefs} />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="timeline"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="absolute inset-0"
-                >
-                  <TimelineView tasks={state.tasks} cardRefs={cardRefs} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <DemoSurface state={state} cardRefs={cardRefs} />
           </LayoutGroup>
 
           {/* Sparkline burndown overlay */}
