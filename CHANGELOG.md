@@ -3,6 +3,65 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 6 · 2026-05-05 · Real comments — first full-stack feature
+
+The detail panel rendered a static deterministic-from-id seed thread
+that looked live but wasn't. This cycle replaces it with a real
+thread that persists, optimistically renders, and posts via a server
+action — the first full-stack feature on the new persistence
+substrate. Sets the pattern every "thing that happens on a task"
+(activity, mentions, attachments) will follow.
+
+**Backend changes**
+- New `Comment` type and `CURRENT_USER` constant in `src/lib/data.ts`.
+  `SEED_COMMENT_BODIES` lifted from the static thread file so server
+  seed and any future fixtures share one source.
+- Schema gains `_SchemaCoversComment` compile-time guard mirroring
+  the existing `_SchemaCoversTask` check.
+- `getCommentsForTask(taskId)` query in `src/server/db/queries.ts`
+  with `rowToComment` pass-through mapper.
+- Seed extends to insert ~3 comments per task using deterministic
+  hash → user/body picks; `createdAt` staggered so the order reads
+  as a real conversation. Independent count check so existing
+  comments don't get clobbered.
+- New `src/server/actions/comments.ts` —
+  `getCommentsForTaskAction`, `addCommentAction`, `removeCommentAction`.
+  Each returns the full reconciled `Comment[]` for the task.
+  `revalidatePath('/app', 'layout')` after writes.
+
+**Frontend changes**
+- New `src/lib/tasks/use-task-comments.ts` — optimistic +
+  reconcile hook with `useTransition`. Optimistic comments use
+  `temp-<uuid>` ids so removes that haven't reached the server are
+  pure local-only.
+- New `formatRelativeTime` util — `just now` / `3m` / `2h` /
+  `yesterday` / `May 2` / dated. `tabular-nums` so digits don't
+  dance.
+- `comment-thread.tsx` rewritten:
+  - Bare `<textarea>` composer (no frame, no rounded-input shape)
+    with autoresize, Enter-to-post (Shift+Enter newline),
+    `⏎` kbd hint that becomes a brand-color spinner while pending.
+  - Each row reveals a hover-only X for own comments;
+    optimistic delete with revert on failure.
+  - Empty state: pure type, two lines.
+- `task-detail-panel.tsx` fetches comments per task via a
+  client-side `useEffect` calling the server action with a
+  stale-fetch guard. Shows a 2-row static skeleton during fetch.
+
+**Verified end-to-end**
+- Posted "Verified end-to-end from the loop test" via the
+  composer; comment renders immediately (optimistic), then
+  reconciles with server-truth; row visible in DB query.
+- Existing seed shows real authors with relative timestamps.
+
+**Backlog**
+- Concurrent multi-user comment updates — current impl re-syncs
+  only on panel re-open. SSE / polling channel later cycle.
+- Toast UX for server-action failures (still console-warn).
+- Comment editing — explicit out-of-scope.
+
+
+
 ## Cycle 5 · 2026-05-05 · DB foundation — persistence appears
 
 First cycle under the new full-stack directive. Every mutation

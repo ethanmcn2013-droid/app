@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import type { LaneId, Priority, Task, UserId } from "@/lib/data";
+import type { Comment, LaneId, Priority, Task, UserId } from "@/lib/data";
 
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
@@ -53,5 +53,11 @@ export const comments = sqliteTable("comments", {
 type _SchemaCoversTask = keyof Task extends keyof typeof tasks.$inferSelect
   ? true
   : never;
-const _check: _SchemaCoversTask = true;
-void _check;
+const _checkTask: _SchemaCoversTask = true;
+void _checkTask;
+
+type _SchemaCoversComment = keyof Comment extends keyof typeof comments.$inferSelect
+  ? true
+  : never;
+const _checkComment: _SchemaCoversComment = true;
+void _checkComment;

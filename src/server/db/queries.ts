@@ -1,8 +1,8 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { tasks } from "./schema";
-import type { Task } from "@/lib/data";
+import { tasks, comments } from "./schema";
+import type { Comment, Task, UserId } from "@/lib/data";
 
 type Row = typeof tasks.$inferSelect;
 
@@ -32,4 +32,27 @@ export async function getTasks(): Promise<Task[]> {
 export async function getTaskById(id: string): Promise<Task | null> {
   const [row] = await db.select().from(tasks).where(eq(tasks.id, id));
   return row ? rowToTask(row) : null;
+}
+
+type CommentRow = typeof comments.$inferSelect;
+
+function rowToComment(row: CommentRow): Comment {
+  return {
+    id: row.id,
+    taskId: row.taskId,
+    userId: row.userId as UserId,
+    body: row.body,
+    createdAt: row.createdAt,
+  };
+}
+
+export async function getCommentsForTask(
+  taskId: string,
+): Promise<Comment[]> {
+  const rows = await db
+    .select()
+    .from(comments)
+    .where(eq(comments.taskId, taskId))
+    .orderBy(asc(comments.createdAt));
+  return rows.map(rowToComment);
 }

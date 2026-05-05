@@ -297,3 +297,33 @@ export const PRIORITY_LABEL: Record<Priority, { label: string; color: string }> 
     p2: { label: "Medium", color: "#0284c7" },
     p3: { label: "Low", color: "#64748b" },
   };
+
+// ────────────────────────────────────────────────────────────────────
+// Comments
+// ────────────────────────────────────────────────────────────────────
+
+export type Comment = {
+  id: string;
+  taskId: string;
+  userId: UserId;
+  body: string;
+  createdAt: Date;
+};
+
+/** Hard-coded "logged-in user" until auth lands. Used by the composer
+ *  avatar, ownership check for delete affordance, and the server
+ *  action that records `userId` on insert. */
+export const CURRENT_USER: UserId = "david";
+
+/** Body strings used for deterministic seed comments. Lifted from
+ *  the previous static comment thread so server seed and any future
+ *  fixtures share one source of truth. */
+export const SEED_COMMENT_BODIES: string[] = [
+  "Hero animation looks great in the latest cut 🎯",
+  "Pinged finance — they'll review by EOW.",
+  "Bumped this to P1 after the demo sync. Keep moving.",
+  "Linking the brief — let me know if anything's unclear.",
+  "Marketing has the assets. We just need the copy review.",
+  "Spec is locked, building now. ETA Tuesday.",
+  "Two design tweaks left, then ready for review.",
+];

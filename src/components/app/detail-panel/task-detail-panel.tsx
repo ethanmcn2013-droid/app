@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { getCommentsForTaskAction } from "@/server/actions/comments";
+import type { Comment } from "@/lib/data";
 import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
 import { FieldRows } from "./field-rows";
@@ -12,6 +14,34 @@ export function TaskDetailPanel() {
   const { taskId, closeTask } = useTaskPanel();
   const state = useTasksState();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) : null;
+
+  // Per-task comment thread. Re-fetches when taskId changes.
+  const [initialComments, setInitialComments] = useState<Comment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!task) return;
+    let ignore = false;
+    setCommentsLoading(true);
+    getCommentsForTaskAction(task.id)
+      .then((rows) => {
+        if (!ignore) {
+          setInitialComments(rows);
+          setCommentsLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          // eslint-disable-next-line no-console
+          console.warn("comments: fetch failed", err);
+          setInitialComments([]);
+          setCommentsLoading(false);
+        }
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [task?.id]);
 
   // Stale id (e.g. task was deleted) — clear the param after a beat
   // so a deep-link to a no-longer-existing task degrades gracefully.
@@ -31,7 +61,15 @@ export function TaskDetailPanel() {
             <FieldRows task={task} />
             <Description />
             <Section title="Comments">
-              <CommentThread taskId={task.id} />
+              {commentsLoading ? (
+                <CommentSkeleton />
+              ) : (
+                <CommentThread
+                  key={task.id}
+                  taskId={task.id}
+                  initialComments={initialComments}
+                />
+              )}
             </Section>
             <Section title="Activity">
               <ActivityPlaceholder />
@@ -42,6 +80,31 @@ export function TaskDetailPanel() {
         <EmptyState />
       ) : null}
     </PanelShell>
+  );
+}
+
+function CommentSkeleton() {
+  return (
+    <div className="space-y-4 pb-6">
+      {[
+        { name: "60%", body: "100%" },
+        { name: "32%", body: "75%" },
+      ].map((s, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          <div className="h-[22px] w-[22px] flex-shrink-0 rounded-full bg-bg-sunken" />
+          <div className="flex-1 space-y-1.5">
+            <div
+              className="h-3 rounded-full bg-bg-sunken"
+              style={{ width: s.name }}
+            />
+            <div
+              className="h-3 rounded-full bg-bg-sunken"
+              style={{ width: s.body }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
