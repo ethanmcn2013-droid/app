@@ -127,6 +127,7 @@ export function TasksProvider({
           estimate: input.estimate,
           due: input.due,
           tags: input.tags,
+          updatedAt: new Date(),
         };
         withServerSync(
           () => dispatch({ type: "add", task }),

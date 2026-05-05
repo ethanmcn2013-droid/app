@@ -3,9 +3,18 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { comments } from "@/server/db/schema";
+import { comments, tasks } from "@/server/db/schema";
 import { getCommentsForTask } from "@/server/db/queries";
 import { CURRENT_USER, type Comment } from "@/lib/data";
+
+/** Touch the parent task's updatedAt so comments count as engagement
+ *  and the panel's "edited X ago" stamp reflects activity. */
+async function touchTask(taskId: string) {
+  await db
+    .update(tasks)
+    .set({ updatedAt: new Date() })
+    .where(eq(tasks.id, taskId));
+}
 
 function newCommentId(): string {
   const raw =
@@ -34,6 +43,7 @@ export async function addCommentAction(
     body: trimmed,
     createdAt: new Date(),
   });
+  await touchTask(taskId);
   // Refresh badge counts in layout (e.g. comment counts on cards).
   revalidatePath("/app", "layout");
   return getCommentsForTask(taskId);
@@ -50,6 +60,7 @@ export async function removeCommentAction(
   if (!row) return [];
 
   await db.delete(comments).where(eq(comments.id, commentId));
+  await touchTask(row.taskId);
   revalidatePath("/app", "layout");
   return getCommentsForTask(row.taskId);
 }

@@ -34,7 +34,12 @@ export function tasksReducer(
       const t = state.tasks[idx];
       if (t.lane === action.toLane) return state; // identity-equal no-op
       const tasks = state.tasks.slice();
-      tasks[idx] = { ...t, lane: action.toLane, idleDays: undefined };
+      tasks[idx] = {
+        ...t,
+        lane: action.toLane,
+        idleDays: undefined,
+        updatedAt: new Date(),
+      };
       // Any direct move clears a stale previousLane entry — the user
       // is taking explicit control, so the toggle source is invalidated.
       const previousLane = { ...state.previousLane };
@@ -76,7 +81,12 @@ export function tasksReducer(
       const idx = state.tasks.findIndex((t) => t.id === action.id);
       if (idx < 0) return state;
       const tasks = state.tasks.slice();
-      tasks[idx] = { ...tasks[idx], ...action.patch, id: tasks[idx].id };
+      tasks[idx] = {
+        ...tasks[idx],
+        ...action.patch,
+        id: tasks[idx].id,
+        updatedAt: new Date(),
+      };
       return { ...state, tasks };
     }
 
@@ -105,14 +115,19 @@ export function tasksReducer(
       if (t.lane === "done") {
         // Un-complete: restore previous lane (default todo).
         const restoreTo = state.previousLane[action.id] ?? "todo";
-        tasks[idx] = { ...t, lane: restoreTo };
+        tasks[idx] = { ...t, lane: restoreTo, updatedAt: new Date() };
         const previousLane = { ...state.previousLane };
         delete previousLane[action.id];
         return { tasks, previousLane };
       }
 
       // Mark done: remember where it came from so un-check returns it.
-      tasks[idx] = { ...t, lane: "done", idleDays: undefined };
+      tasks[idx] = {
+        ...t,
+        lane: "done",
+        idleDays: undefined,
+        updatedAt: new Date(),
+      };
       return {
         tasks,
         previousLane: { ...state.previousLane, [action.id]: t.lane },

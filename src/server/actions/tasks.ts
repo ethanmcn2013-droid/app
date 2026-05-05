@@ -81,6 +81,7 @@ export async function addTaskAction(input: {
     estimate: input.estimate,
     due: input.due,
     tags: input.tags,
+    ...bump(),
   });
   revalidatePath("/app", "layout");
   return getTasks();

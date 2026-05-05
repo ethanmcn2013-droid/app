@@ -91,9 +91,15 @@ export type Task = {
   blockedBy?: string[];
   startDay?: number; // 0-13 for timeline
   durationDays?: number; // for timeline
+  /** Last time any field was mutated. Drives "edited Xh ago" copy. */
+  updatedAt: Date;
 };
 
-export const SEED_TASKS: Task[] = [
+// Stagger seed updatedAt timestamps so the panel renders a realistic
+// "edited Nh ago" gradient on first boot. Each subsequent task is 1h
+// older than the previous.
+const _seedNow = Date.now();
+const _seedTaskInputs: Omit<Task, "updatedAt">[] = [
   // To do
   {
     id: "t-101",
@@ -290,6 +296,11 @@ export const SEED_TASKS: Task[] = [
     durationDays: 1,
   },
 ];
+
+export const SEED_TASKS: Task[] = _seedTaskInputs.map((t, i) => ({
+  ...t,
+  updatedAt: new Date(_seedNow - i * 3_600_000),
+}));
 
 export const PRIORITY_LABEL: Record<Priority, { label: string; color: string }> =
   {

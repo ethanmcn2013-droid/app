@@ -9,6 +9,7 @@ import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
 import { FieldRows } from "./field-rows";
 import { CommentThread } from "./comment-thread";
+import { DescriptionEditor } from "./description-editor";
 
 export function TaskDetailPanel() {
   const { taskId, closeTask } = useTaskPanel();
@@ -59,7 +60,9 @@ export function TaskDetailPanel() {
           <PanelHeader task={task} onClose={closeTask} />
           <div className="thin-scroll flex-1 overflow-y-auto">
             <FieldRows task={task} />
-            <Description />
+            <Section title="Description">
+              <DescriptionEditor key={task.id} task={task} />
+            </Section>
             <Section title="Comments">
               {commentsLoading ? (
                 <CommentSkeleton />
@@ -108,21 +111,6 @@ function CommentSkeleton() {
   );
 }
 
-function Description() {
-  return (
-    <div className="border-t border-line-soft px-6 py-5">
-      <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
-        Description
-      </div>
-      <p className="text-[13.5px] leading-[1.6] text-ink-soft">
-        Plain prose lives here — links, formatted lists, and inline
-        media land in cycle 6 alongside real comments. For now this is
-        a placeholder so the panel reads as a complete document, not a
-        form.
-      </p>
-    </div>
-  );
-}
 
 function Section({
   title,

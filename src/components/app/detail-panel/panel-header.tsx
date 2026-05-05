@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { formatRelativeTime } from "@/lib/utils";
 
 export function PanelHeader({
   task,
@@ -14,7 +15,10 @@ export function PanelHeader({
   return (
     <header className="px-6 pb-3 pt-5">
       <div className="flex items-center justify-between gap-2 text-[11px] text-ink-quiet">
-        <TaskIdChip id={task.id} />
+        <div className="flex items-center gap-1.5">
+          <TaskIdChip id={task.id} />
+          <EditedStamp updatedAt={task.updatedAt} />
+        </div>
         <button
           type="button"
           aria-label="Close task panel"
@@ -37,6 +41,33 @@ export function PanelHeader({
       </div>
       <TitleEditor key={task.id} task={task} />
     </header>
+  );
+}
+
+function EditedStamp({ updatedAt }: { updatedAt: Date }) {
+  // Defer rendering until after hydration: relative time + locale-
+  // formatted tooltip both differ between server and client (server
+  // clock != client clock; locale defaults can differ). Render
+  // nothing on the server, hydrate to actual content on the client.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  // Hide if mutation just landed — avoids flashing "edited just now"
+  // on every render right after the user's own edit.
+  const ageMs = Date.now() - updatedAt.getTime();
+  if (ageMs < 5000) return null;
+
+  return (
+    <>
+      <span className="text-ink-faint">·</span>
+      <span
+        className="select-none text-[10.5px] tabular-nums text-ink-quiet"
+        title={updatedAt.toLocaleString("en-US")}
+      >
+        edited {formatRelativeTime(updatedAt)}
+      </span>
+    </>
   );
 }
 

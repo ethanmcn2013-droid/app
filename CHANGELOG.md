@@ -3,6 +3,70 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 8 · 2026-05-05 · Editable description + last-edited stamp
+
+The detail panel rendered an outdated "placeholder paragraph" in
+its Description section (referencing cycle 6 plans that already
+shipped). Cycle 7 added the column; cycle 8 makes it real, and
+audits `updatedAt` so the panel can carry an "edited X ago" stamp
+that reflects every kind of activity (lane moves, comments, field
+edits).
+
+**Backend changes**
+- `bump()` audit: `addTaskAction` now sets `updatedAt` explicitly
+  for symmetry; column default still safe-net.
+- `addCommentAction` and `removeCommentAction` now touch the parent
+  `tasks.updatedAt` via a new `touchTask(taskId)` helper. Comments
+  count as engagement.
+- `Task.updatedAt: Date` (non-nullable). `rowToTask` surfaces it.
+- `SEED_TASKS` literals refactored into `_seedTaskInputs:
+  Omit<Task, "updatedAt">[]` then mapped with staggered timestamps
+  (`Date.now() - i * 3_600_000`) so the seed renders as a realistic
+  "edited Nh ago" gradient on first boot.
+- Reducer `update`, `move`, `toggleComplete` cases now bump
+  `updatedAt` optimistically so the stamp doesn't lag the UI.
+
+**Frontend changes**
+- New `src/components/app/detail-panel/description-editor.tsx`:
+  - At-rest: `<p>` with `whitespace-pre-wrap`, 13.5px/1.6
+    `text-ink-soft`, NO outline (multi-line + outline = form
+    field carnival, against the panel's "document not form" tone).
+  - Editing: bare `<textarea>` (no frame), same size/leading as
+    at-rest so the swap is sub-pixel. Autoresize via scrollHeight.
+    Multi-line is the mode — Enter inserts newline; commit only
+    happens on blur or Esc-revert.
+  - Empty state: `"Add a description."` (sentence case + period —
+    finished sentence, not button label) in `text-ink-faint`.
+    Full-section click target. Cursor `text` (I-beam).
+  - Hover: `text-ink-soft → text-ink` over 120ms — color promotion
+    is the affordance, no glyph, no border.
+  - Caret behaviors: click → at click position, keyboard entry →
+    end of existing text (the "oh, one more thing" 80% case),
+    empty prompt → position 0.
+- `panel-header.tsx` — new `<EditedStamp>` rendered beside the
+  `T-101` chip in the meta row, separated by a middle dot.
+  `text-[10.5px] tabular-nums text-ink-quiet`. Format
+  `"edited 3h ago"` (lowercase verb prefix; "3h ago" alone is
+  ambiguous). Hidden if mutation < 5s ago. **Mounted-state pattern**
+  to avoid SSR hydration mismatch between server and client clocks.
+- Old static `<Description />` stub removed.
+
+**Looped back to BUILD once**
+- First TEST surfaced a hydration mismatch: server-rendered
+  `formatRelativeTime` and `toLocaleString` produced different
+  output than the client (clock skew + locale defaults). Fix:
+  `EditedStamp` defers all rendering until `useEffect` flips
+  `mounted = true` so server emits nothing, client hydrates to
+  the actual stamp.
+
+**Verified end-to-end**
+- Opened `?task=t-202`, clicked "Add a description.", typed
+  "Final cut review with director on Mon. Embed link.", tabbed
+  away. DB row's `description` column reflects the typed value.
+  0 console errors after the hydration fix.
+
+
+
 ## Cycle 7 · 2026-05-05 · Add-task flow + description column
 
 Every "+ Add task" / "+ New task" button literally did nothing.

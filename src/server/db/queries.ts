@@ -22,6 +22,7 @@ function rowToTask(row: Row): Task {
     blockedBy: row.blockedBy ?? undefined,
     startDay: row.startDay ?? undefined,
     durationDays: row.durationDays ?? undefined,
+    updatedAt: row.updatedAt,
   };
 }
 
