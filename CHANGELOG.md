@@ -3,6 +3,53 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 4 · 2026-05-05 · Task detail panel
+
+Cards on every app view were read-only billboards. Click did nothing.
+Until clicking a card opened *something*, every future feature
+(comments, AI nudges, dependencies) had nowhere to live. This cycle
+turns cards into hyperlinks.
+
+**Added**
+- `src/lib/tasks/use-task-panel.ts` — URL-driven open/close hook.
+  `?task=<id>` opens the panel; absence closes. Uses native History
+  API so browser-back closes for free.
+- `src/components/app/detail-panel/` — slide-in panel with field
+  editors:
+  - `panel-shell.tsx` — overlay + slide animation + ⎋ handler.
+    Spring-physics rejected per design rec; 480ms ease-out-expo
+    feels working-surface, not toy.
+  - `panel-header.tsx` — clickable monospace task ID with
+    copy-on-click ("T-101 → copied" 1.1s flash); title input
+    (blur to commit, Enter commits, Esc reverts).
+  - `field-rows.tsx` — Status (segmented row, always visible
+    because most-changed), Priority (popover), Assignees (avatar
+    stack with "+" → user picker popover), Due (text input),
+    Tags display.
+  - `popover.tsx` — primitive with click-outside + ⎋ to dismiss.
+  - `comment-thread.tsx` — deterministic seed thread per task
+    (hash of id picks user/body/time consistently across opens).
+- All four app views wire `onClick` on their card primitives.
+  Selected card gets a `var(--brand)` outline at -1 offset; no
+  desaturation of others.
+
+**Changed**
+- `/app/layout.tsx` mounts `<TaskDetailPanel>` under `<Suspense>`
+  per Next 16 `useSearchParams` SSR rules. Panel survives view
+  switches (lives in layout, not page).
+- List checkbox now `e.stopPropagation()`s so it doesn't open the
+  panel while toggling complete.
+- Calendar pills became `<button>`s with `min-h-[28px]` for
+  touch-friendly hit area.
+
+**Notes**
+- This is the last frontend-only cycle under the prior directive.
+  Subsequent cycles ship full-stack per the new directive.
+- Backlog: stale-id state currently shows briefly before auto-
+  closing — UX is acceptable but could improve in cycle 6.
+
+
+
 ## Cycle 3 · 2026-05-05 · Shared task store — make the app real
 
 Until this cycle, every app route owned its own copy of `SEED_TASKS`

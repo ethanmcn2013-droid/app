@@ -15,6 +15,7 @@ import {
   useTasksState,
 } from "@/lib/tasks/tasks-context";
 import { tasksByLane as selectTasksByLane } from "@/lib/tasks/selectors";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 
 export function BoardApp() {
   // Task DATA lives in the shared store; INTERACTION state stays
@@ -22,6 +23,7 @@ export function BoardApp() {
   // re-render every other view if hoisted.
   const state = useTasksState();
   const { moveTask } = useTasksDispatch();
+  const { taskId: openTaskId, openTask } = useTaskPanel();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverLane, setHoverLane] = useState<LaneId | null>(null);
 
@@ -100,6 +102,8 @@ export function BoardApp() {
                     key={task.id}
                     task={task}
                     isDragging={draggingId === task.id}
+                    isSelected={openTaskId === task.id}
+                    onClick={() => openTask(task.id)}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/task-id", task.id);
                       e.dataTransfer.effectAllowed = "move";
@@ -131,11 +135,15 @@ export function BoardApp() {
 function Card({
   task,
   isDragging,
+  isSelected,
+  onClick,
   onDragStart,
   onDragEnd,
 }: {
   task: Task;
   isDragging: boolean;
+  isSelected: boolean;
+  onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
@@ -164,8 +172,13 @@ function Card({
         opacity: { duration: 0.2 },
       }}
       {...nativeDragProps}
+      onClick={onClick}
       whileHover={{ y: -1 }}
-      className="group cursor-grab rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)] active:cursor-grabbing"
+      style={{
+        outline: isSelected ? "1.5px solid var(--brand)" : "none",
+        outlineOffset: -1,
+      }}
+      className="group cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline] duration-200 hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="line-clamp-2">{task.title}</span>

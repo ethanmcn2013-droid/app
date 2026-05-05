@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { LANES, type Task } from "@/lib/data";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -21,6 +22,7 @@ function dayLabel(i: number) {
 
 export function CalendarApp() {
   const state = useTasksState();
+  const { taskId: openTaskId, openTask } = useTaskPanel();
   // Map tasks to days based on startDay
   const cells: { i: number; tasks: Task[] }[] = Array.from(
     { length: MONTH_DAYS },
@@ -101,15 +103,27 @@ export function CalendarApp() {
                 <div className="mt-1 flex flex-col gap-1">
                   {cell.tasks.slice(0, 3).map((task) => {
                     const lane = LANES[task.lane];
+                    const isOpen = openTaskId === task.id;
                     return (
-                      <div
+                      <button
                         key={task.id}
-                        className="flex cursor-pointer items-center gap-1 truncate rounded border-l-[2.5px] bg-white/90 px-1.5 py-1 text-[10.5px] transition-colors hover:bg-white"
-                        style={{ borderLeftColor: lane.dot }}
+                        type="button"
+                        onClick={() => openTask(task.id)}
+                        className="flex min-h-[24px] cursor-pointer items-center gap-1 truncate rounded border-l-[2.5px] bg-white/90 px-1.5 py-1 text-left text-[10.5px] transition-colors hover:bg-white"
+                        style={{
+                          borderLeftColor: lane.dot,
+                          outline: isOpen
+                            ? "1.5px solid var(--brand)"
+                            : "none",
+                          outlineOffset: -1,
+                          background: isOpen
+                            ? "var(--brand-soft)"
+                            : undefined,
+                        }}
                       >
                         <Avatar user={task.assignees[0]} size={11} />
                         <span className="truncate">{task.title}</span>
-                      </div>
+                      </button>
                     );
                   })}
                   {cell.tasks.length > 3 ? (

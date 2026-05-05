@@ -12,10 +12,12 @@ import {
   useTasksState,
 } from "@/lib/tasks/tasks-context";
 import { groupByLane } from "@/lib/tasks/selectors";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 
 export function ListApp() {
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
+  const { taskId: openTaskId, openTask } = useTaskPanel();
   const grouped = groupByLane(state);
 
   return (
@@ -62,12 +64,26 @@ export function ListApp() {
                       delay: Math.min(i * 0.015, 0.15),
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="grid grid-cols-[1.7fr_0.7fr_0.6fr_0.6fr_0.5fr_0.4fr] items-center gap-3 border-b border-line-soft px-4 py-2 text-[12.5px] transition-colors last:border-b-0 hover:bg-bg-sunken/40"
+                    onClick={() => openTask(task.id)}
+                    style={{
+                      background:
+                        openTaskId === task.id
+                          ? "var(--brand-soft)"
+                          : undefined,
+                      boxShadow:
+                        openTaskId === task.id
+                          ? "inset 2px 0 0 var(--brand)"
+                          : undefined,
+                    }}
+                    className="grid cursor-pointer grid-cols-[1.7fr_0.7fr_0.6fr_0.6fr_0.5fr_0.4fr] items-center gap-3 border-b border-line-soft px-4 py-2 text-[12.5px] transition-colors last:border-b-0 hover:bg-bg-sunken/40"
                   >
                     <div className="flex items-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => toggleComplete(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleComplete(task.id);
+                        }}
                         aria-pressed={isDone}
                         aria-label={
                           isDone

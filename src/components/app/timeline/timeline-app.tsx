@@ -5,6 +5,7 @@ import { LANES } from "@/lib/data";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { tasksSortedByStartDay } from "@/lib/tasks/selectors";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 
 const DAYS = 14;
 const DAY_LABELS = [
@@ -27,6 +28,7 @@ const DAY_LABELS = [
 export function TimelineApp() {
   const state = useTasksState();
   const sorted = tasksSortedByStartDay(state);
+  const { taskId: openTaskId, openTask } = useTaskPanel();
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-8 py-5">
@@ -107,13 +109,21 @@ export function TimelineApp() {
                       delay: Math.min(idx * 0.025, 0.2),
                       ease: [0.16, 1, 0.3, 1],
                     }}
-                    className="absolute top-1/2 flex -translate-y-1/2 cursor-grab items-center gap-1.5 overflow-hidden rounded-md border px-2 py-1.5 text-[11px] font-medium shadow-sm hover:shadow-md"
+                    onClick={() => openTask(task.id)}
+                    className="absolute top-1/2 flex -translate-y-1/2 cursor-pointer items-center gap-1.5 overflow-hidden rounded-md border px-2 py-1.5 text-[11px] font-medium shadow-sm hover:shadow-md"
                     style={{
                       left: `calc(${left}% + 4px)`,
                       width: `calc(${width}% - 8px)`,
                       background: task.lane === "done" ? "#fff" : lane.bg,
-                      borderColor: lane.dot,
+                      borderColor:
+                        openTaskId === task.id ? "var(--brand)" : lane.dot,
+                      borderWidth: openTaskId === task.id ? 1.5 : 1,
                       color: lane.ink,
+                      outline:
+                        openTaskId === task.id
+                          ? "1.5px solid var(--brand)"
+                          : "none",
+                      outlineOffset: 1,
                     }}
                   >
                     <Avatar user={task.assignees[0]} size={14} />

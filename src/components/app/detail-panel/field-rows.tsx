@@ -1,0 +1,282 @@
+"use client";
+
+import {
+  LANES,
+  LANE_ORDER,
+  PRIORITY_LABEL,
+  USERS,
+  type Priority,
+  type Task,
+  type UserId,
+} from "@/lib/data";
+import { Avatar } from "@/components/showcase/avatar";
+import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { Popover } from "./popover";
+import { useState } from "react";
+
+const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
+const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
+
+export function FieldRows({ task }: { task: Task }) {
+  return (
+    <div className="grid grid-cols-[88px_1fr] gap-x-4 gap-y-3 px-6 pb-5 text-[12.5px]">
+      <Label>Status</Label>
+      <StatusRow task={task} />
+
+      <Label>Priority</Label>
+      <PriorityRow task={task} />
+
+      <Label>Assignees</Label>
+      <AssigneesRow task={task} />
+
+      <Label>Due</Label>
+      <DueRow task={task} />
+
+      {task.tags && task.tags.length > 0 ? (
+        <>
+          <Label>Tags</Label>
+          <div className="flex flex-wrap gap-1.5">
+            {task.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10.5px] font-medium uppercase tracking-wider text-ink-soft"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pt-1 text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+      {children}
+    </div>
+  );
+}
+
+function StatusRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  return (
+    <div className="flex flex-wrap gap-1">
+      {LANE_ORDER.map((laneId) => {
+        const lane = LANES[laneId];
+        const active = task.lane === laneId;
+        return (
+          <button
+            key={laneId}
+            type="button"
+            onClick={() => updateTask(task.id, { lane: laneId })}
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-all"
+            style={{
+              color: active ? lane.ink : "var(--ink-soft)",
+              background: active ? lane.bg : "transparent",
+              outline: active ? `1.5px solid ${lane.dot}` : "none",
+              outlineOffset: -1.5,
+            }}
+            aria-pressed={active}
+          >
+            <span
+              className="block h-1.5 w-1.5 rounded-full"
+              style={{ background: lane.dot }}
+            />
+            {lane.name}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function PriorityRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const current = PRIORITY_LABEL[task.priority];
+  return (
+    <Popover
+      width={180}
+      trigger={({ onClick, ref }) => (
+        <button
+          ref={ref}
+          type="button"
+          onClick={onClick}
+          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+        >
+          <span
+            className="block h-1.5 w-1.5 rounded-full"
+            style={{ background: current.color }}
+          />
+          {task.priority.toUpperCase()} · {current.label}
+        </button>
+      )}
+    >
+      {(close) => (
+        <ul className="text-[12.5px]">
+          {PRIORITIES.map((p, idx) => {
+            const meta = PRIORITY_LABEL[p];
+            const active = task.priority === p;
+            return (
+              <li key={p}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateTask(task.id, { priority: p });
+                    close();
+                  }}
+                  className={
+                    "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
+                    (active ? "font-medium text-ink" : "text-ink-soft")
+                  }
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <span
+                      className="block h-1.5 w-1.5 rounded-full"
+                      style={{ background: meta.color }}
+                    />
+                    {p.toUpperCase()} · {meta.label}
+                  </span>
+                  <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[9.5px] text-ink-quiet">
+                    {idx + 1}
+                  </kbd>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Popover>
+  );
+}
+
+function AssigneesRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const assigned = task.assignees;
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex items-center -space-x-1.5">
+        {assigned.map((u) => (
+          <button
+            key={u}
+            type="button"
+            title={`Remove ${USERS[u].name}`}
+            onClick={() =>
+              updateTask(task.id, {
+                assignees: assigned.filter((a) => a !== u),
+              })
+            }
+            className="group relative"
+          >
+            <Avatar user={u} size={22} ring />
+            <span className="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-white group-hover:flex">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+              >
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="6" y1="18" x2="18" y2="6" />
+              </svg>
+            </span>
+          </button>
+        ))}
+      </div>
+      <Popover
+        width={200}
+        trigger={({ onClick, ref }) => (
+          <button
+            ref={ref}
+            type="button"
+            onClick={onClick}
+            aria-label="Add assignee"
+            className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-dashed border-line text-ink-quiet transition-colors hover:border-ink-soft hover:text-ink-soft"
+          >
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        )}
+      >
+        {() => (
+          <ul className="text-[12.5px]">
+            {ALL_USERS.map((u) => {
+              const isAssigned = assigned.includes(u);
+              return (
+                <li key={u}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = isAssigned
+                        ? assigned.filter((a) => a !== u)
+                        : [...assigned, u];
+                      updateTask(task.id, { assignees: next });
+                    }}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken"
+                  >
+                    <Avatar user={u} size={18} />
+                    <span className="flex-1 text-ink-soft">
+                      {USERS[u].name}
+                    </span>
+                    {isAssigned ? (
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        className="text-ink"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Popover>
+    </div>
+  );
+}
+
+function DueRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const [draft, setDraft] = useState(task.due ?? "");
+  return (
+    <input
+      type="text"
+      value={draft}
+      placeholder="No due date"
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        if (draft !== (task.due ?? "")) {
+          updateTask(task.id, { due: draft || undefined });
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(task.due ?? "");
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+      }}
+      className="w-fit rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[12.5px] text-ink hover:border-line-soft focus:border-brand focus:outline-none"
+    />
+  );
+}
+
