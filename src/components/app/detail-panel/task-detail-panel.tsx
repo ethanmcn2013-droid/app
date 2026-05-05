@@ -4,26 +4,35 @@ import { useEffect, useState } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { getCommentsForTaskAction } from "@/server/actions/comments";
-import type { Comment } from "@/lib/data";
+import { getActivitiesForTaskAction } from "@/server/actions/activity";
+import type { Activity, Comment } from "@/lib/data";
 import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
 import { FieldRows } from "./field-rows";
 import { CommentThread } from "./comment-thread";
 import { DescriptionEditor } from "./description-editor";
+import { ActivityFeed } from "./activity-feed";
 
 export function TaskDetailPanel() {
   const { taskId, closeTask } = useTaskPanel();
   const state = useTasksState();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) : null;
 
-  // Per-task comment thread. Re-fetches when taskId changes.
+  // Per-task comment thread + activity feed. Re-fetches when taskId
+  // OR task.updatedAt changes (any mutation refreshes both).
   const [initialComments, setInitialComments] = useState<Comment[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
+  const [initialActivities, setInitialActivities] = useState<Activity[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+
+  const refreshKey = task?.updatedAt?.getTime();
 
   useEffect(() => {
     if (!task) return;
     let ignore = false;
     setCommentsLoading(true);
+    setActivitiesLoading(true);
+
     getCommentsForTaskAction(task.id)
       .then((rows) => {
         if (!ignore) {
@@ -39,10 +48,28 @@ export function TaskDetailPanel() {
           setCommentsLoading(false);
         }
       });
+
+    getActivitiesForTaskAction(task.id)
+      .then((rows) => {
+        if (!ignore) {
+          setInitialActivities(rows);
+          setActivitiesLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!ignore) {
+          // eslint-disable-next-line no-console
+          console.warn("activity: fetch failed", err);
+          setInitialActivities([]);
+          setActivitiesLoading(false);
+        }
+      });
+
     return () => {
       ignore = true;
     };
-  }, [task?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id, refreshKey]);
 
   // Stale id (e.g. task was deleted) — clear the param after a beat
   // so a deep-link to a no-longer-existing task degrades gracefully.
@@ -75,7 +102,15 @@ export function TaskDetailPanel() {
               )}
             </Section>
             <Section title="Activity">
-              <ActivityPlaceholder />
+              {activitiesLoading ? (
+                <ActivitySkeleton />
+              ) : (
+                <ActivityFeed
+                  key={task.id}
+                  taskId={task.id}
+                  initialActivities={initialActivities}
+                />
+              )}
             </Section>
           </div>
         </>
@@ -129,21 +164,21 @@ function Section({
   );
 }
 
-function ActivityPlaceholder() {
+function ActivitySkeleton() {
   return (
-    <ul className="space-y-2 text-[12px] text-ink-quiet">
-      <li>
-        <span className="font-medium text-ink-soft">David</span> moved this to
-        In progress · <span className="tabular-nums">14:22</span>
-      </li>
-      <li>
-        <span className="font-medium text-ink-soft">Chloe</span> set priority to
-        P1 · <span className="tabular-nums">11:08</span>
-      </li>
-      <li>
-        <span className="font-medium text-ink-soft">Alex</span> created this
-        task · <span className="tabular-nums">Mon</span>
-      </li>
+    <ul className="space-y-2 pb-2">
+      {[
+        { width: "70%" },
+        { width: "55%" },
+      ].map((s, i) => (
+        <li key={i} className="flex items-center gap-2">
+          <div className="h-4 w-4 flex-shrink-0 rounded-full bg-bg-sunken" />
+          <div
+            className="h-3 rounded-full bg-bg-sunken"
+            style={{ width: s.width }}
+          />
+        </li>
+      ))}
     </ul>
   );
 }

@@ -1,8 +1,15 @@
 import "server-only";
-import { asc, eq } from "drizzle-orm";
+import { asc, desc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { tasks, comments } from "./schema";
-import type { Comment, Task, UserId } from "@/lib/data";
+import { tasks, comments, activities } from "./schema";
+import type {
+  Activity,
+  ActivityKind,
+  ActivityPayload,
+  Comment,
+  Task,
+  UserId,
+} from "@/lib/data";
 
 type Row = typeof tasks.$inferSelect;
 
@@ -57,4 +64,29 @@ export async function getCommentsForTask(
     .where(eq(comments.taskId, taskId))
     .orderBy(asc(comments.createdAt));
   return rows.map(rowToComment);
+}
+
+type ActivityRow = typeof activities.$inferSelect;
+
+function rowToActivity(row: ActivityRow): Activity {
+  return {
+    id: row.id,
+    taskId: row.taskId,
+    userId: row.userId,
+    kind: row.kind as ActivityKind,
+    payload: row.payload as ActivityPayload,
+    createdAt: row.createdAt,
+  };
+}
+
+export async function getActivitiesForTask(
+  taskId: string,
+): Promise<Activity[]> {
+  const rows = await db
+    .select()
+    .from(activities)
+    .where(eq(activities.taskId, taskId))
+    .orderBy(desc(activities.createdAt))
+    .limit(50);
+  return rows.map(rowToActivity);
 }

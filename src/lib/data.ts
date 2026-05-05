@@ -327,6 +327,44 @@ export type Comment = {
  *  action that records `userId` on insert. */
 export const CURRENT_USER: UserId = "david";
 
+// ────────────────────────────────────────────────────────────────────
+// Activity log
+// ────────────────────────────────────────────────────────────────────
+
+export type ActivityKind =
+  | "taskAdd"
+  | "move"
+  | "toggleComplete"
+  | "update"
+  | "commentAdd"
+  | "commentRemove";
+
+export type UpdateField =
+  | "title"
+  | "description"
+  | "priority"
+  | "due"
+  | "assignees"
+  | "tags"
+  | "estimate";
+
+export type ActivityPayload =
+  | { kind: "taskAdd"; lane: LaneId }
+  | { kind: "move"; from: LaneId; to: LaneId }
+  | { kind: "toggleComplete"; to: "done" | "open" }
+  | { kind: "update"; field: UpdateField }
+  | { kind: "commentAdd"; commentId: string; snippet: string }
+  | { kind: "commentRemove"; commentId: string };
+
+export type Activity = {
+  id: string;
+  taskId: string;
+  userId: UserId;
+  kind: ActivityKind;
+  payload: ActivityPayload;
+  createdAt: Date;
+};
+
 /** Body strings used for deterministic seed comments. Lifted from
  *  the previous static comment thread so server seed and any future
  *  fixtures share one source of truth. */

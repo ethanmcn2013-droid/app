@@ -3,6 +3,80 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 9 · 2026-05-05 · Activity log — turn updatedAt into a story
+
+The detail panel's Activity section rendered three hardcoded
+placeholder lines. Cycle 8's "edited 3h ago" stamp was a single
+integer. This cycle turns every server-side mutation into a typed,
+persisted activity row, and the panel renders them as a real feed.
+
+**Backend changes**
+- New `activities` table — id PK, taskId FK cascade, userId FK,
+  kind text, payload JSON, createdAt timestamp. `_SchemaCoversActivity`
+  guard.
+- `Activity` type with discriminated `ActivityPayload` union over
+  `kind`: `taskAdd | move | toggleComplete | update | commentAdd
+  | commentRemove`. Each payload variant carries the data needed
+  for line rendering (e.g. `move` has `from` + `to`; `commentAdd`
+  has a 60-char `snippet` so deleted comments still surface).
+- New `recordActivity(taskId, payload)` helper at
+  `src/server/db/activity.ts` — server-only utility (NOT a
+  `"use server"` action). Catches and console.warns on failure;
+  activity is observability, not transactional.
+- `getActivitiesForTask(taskId)` query — desc by createdAt,
+  limit 50.
+- `getActivitiesForTaskAction` server-action wrapper for
+  client-driven reads.
+- Wired emissions into every mutation point:
+  - `addTaskAction` → `taskAdd` with default lane
+  - `moveTaskAction` → pre-reads prior lane, emits `move {from,to}`
+  - `toggleCompleteAction` → emits `toggleComplete {to: done|open}`
+  - `updateTaskAction` → emits ONE `update` PER tracked field
+    changed (concurrent via Promise.all). Untracked fields like
+    `idleDays` skipped.
+  - `removeTaskAction` → no activity (cascade kills them anyway)
+  - `addCommentAction` → emits `commentAdd` with snippet
+  - `removeCommentAction` → emits `commentRemove`
+
+**Frontend changes**
+- New `src/lib/tasks/use-task-activities.ts` — read-only hook
+  mirroring `useTaskComments` (no client mutation; activities
+  are byproducts).
+- New `src/components/app/detail-panel/activity-feed.tsx`:
+  - 16px avatar (smaller than 22px comments — size IS the signal
+    of "supporting content"; ~85% scale)
+  - Single-line rows: actor name (`font-medium text-ink`) +
+    sentence (`text-ink-soft`) + relative time (`tabular-nums
+    text-ink-quiet`)
+  - `formatActivityLine(payload)` switch with opinionated
+    microcopy: "moved this from To do to In progress",
+    "marked this complete", "edited the description",
+    "commented", etc.
+  - Empty state: single line "No activity yet."
+- `task-detail-panel.tsx` now fetches activities alongside
+  comments, both keyed on `[task?.id, task?.updatedAt?.getTime()]`
+  so any mutation refreshes the feed automatically.
+- Static `ActivityPlaceholder` removed; `ActivitySkeleton`
+  introduced for loading state (2 rows, 16px circle + single
+  pill bar — quieter than the 2-line comment skeleton).
+
+**Verified end-to-end**
+- Edited description on `t-202`, queried DB:
+  `update | {"kind":"update","field":"description"}` row landed
+  with current timestamp. Description value persisted to column.
+  0 console errors. Type-clean.
+
+**Backlog**
+- Activity for assignee changes / tag changes currently renders
+  as generic "updated assignees" / "updated tags" because we
+  don't diff arrays this cycle. Specific copy ("assigned Chloe",
+  "tagged design") needs payload extension (before/after) — later.
+- "Show more" pagination for tasks with >50 activities.
+- Cross-task feed (e.g. "what changed today") — useful when more
+  than one user exists.
+
+
+
 ## Cycle 8 · 2026-05-05 · Editable description + last-edited stamp
 
 The detail panel rendered an outdated "placeholder paragraph" in

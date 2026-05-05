@@ -1,6 +1,15 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import type { Comment, LaneId, Priority, Task, UserId } from "@/lib/data";
+import type {
+  Activity,
+  ActivityKind,
+  ActivityPayload,
+  Comment,
+  LaneId,
+  Priority,
+  Task,
+  UserId,
+} from "@/lib/data";
 
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
@@ -62,3 +71,26 @@ type _SchemaCoversComment = keyof Comment extends keyof typeof comments.$inferSe
   : never;
 const _checkComment: _SchemaCoversComment = true;
 void _checkComment;
+
+export const activities = sqliteTable("activities", {
+  id: text("id").primaryKey(),
+  taskId: text("task_id")
+    .notNull()
+    .references(() => tasks.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .$type<UserId>()
+    .notNull()
+    .references(() => users.id),
+  kind: text("kind").$type<ActivityKind>().notNull(),
+  payload: text("payload", { mode: "json" })
+    .$type<ActivityPayload>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+type _SchemaCoversActivity =
+  keyof Activity extends keyof typeof activities.$inferSelect ? true : never;
+const _checkActivity: _SchemaCoversActivity = true;
+void _checkActivity;
