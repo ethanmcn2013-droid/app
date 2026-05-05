@@ -10,6 +10,7 @@ function rowToTask(row: Row): Task {
   return {
     id: row.id,
     title: row.title,
+    description: row.description ?? undefined,
     lane: row.lane,
     priority: row.priority,
     assignees: row.assignees,

@@ -5,6 +5,7 @@ import type { Comment, LaneId, Priority, Task, UserId } from "@/lib/data";
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
+  description: text("description"),
   lane: text("lane").$type<LaneId>().notNull(),
   priority: text("priority").$type<Priority>().notNull(),
   assignees: text("assignees", { mode: "json" })

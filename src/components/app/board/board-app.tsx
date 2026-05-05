@@ -16,6 +16,7 @@ import {
 } from "@/lib/tasks/tasks-context";
 import { tasksByLane as selectTasksByLane } from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { InlineComposer } from "@/components/app/add-task/inline-composer";
 
 export function BoardApp() {
   // Task DATA lives in the shared store; INTERACTION state stays
@@ -26,6 +27,8 @@ export function BoardApp() {
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverLane, setHoverLane] = useState<LaneId | null>(null);
+  // At-most-one inline composer open at a time.
+  const [composerLane, setComposerLane] = useState<LaneId | null>(null);
 
   return (
     <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
@@ -117,13 +120,24 @@ export function BoardApp() {
                 ))}
               </AnimatePresence>
 
-              <button className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-quiet transition-colors hover:bg-white/60 hover:text-ink-soft">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add task
-              </button>
+              {composerLane === laneId ? (
+                <InlineComposer
+                  lane={laneId}
+                  onClose={() => setComposerLane(null)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setComposerLane(laneId)}
+                  className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-quiet transition-colors hover:bg-white/60 hover:text-ink-soft"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add task
+                </button>
+              )}
             </div>
           </motion.div>
         );

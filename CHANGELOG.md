@@ -3,6 +3,75 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 7 · 2026-05-05 · Add-task flow + description column
+
+Every "+ Add task" / "+ New task" button literally did nothing.
+Until the user can create their own tasks, the app is a fancy
+viewer of seeds. This cycle ships two complementary creation
+surfaces and lays the description column groundwork for cycle 8.
+
+**Backend changes**
+- `tasks.description: text` column (nullable). `drizzle-kit push`
+  ALTER TABLE non-destructive on existing rows.
+- `Task.description?: string` and `rowToTask` mapper coerces NULL
+  to undefined.
+- `addTaskAction` accepts and persists `description`.
+- `_SchemaCoversTask` guard catches type-vs-schema drift.
+
+**Frontend changes**
+- `src/components/primitives/dialog.tsx` — reusable dialog
+  primitive. Portal'd to body, Esc/click-outside close, focus
+  first input + restore prior focus on close, role/aria-modal/
+  labelledby. Centered, scale 0.96 → 1 + Y 6 → 0 over 260ms
+  ease-out-expo. Reduced-motion: opacity-only 120ms.
+- `src/lib/use-keyboard-shortcut.ts` — generic shortcut hook,
+  skips when target is editable, when modifiers are held, or
+  when explicitly disabled.
+- `src/components/app/add-task/`:
+  - `add-task-context.tsx` — `<AddTaskRoot>` provider exposing
+    `{open, openDialog, closeDialog}`. Mounts the dialog. Binds
+    `c` shortcut globally (preventDefault on keydown so the
+    keystroke doesn't bleed into the about-to-mount input).
+    `openDialog` first calls `closeTask()` so dialog and detail
+    panel never stack.
+  - `quick-create-dialog.tsx` — 480px centered modal. 17px input
+    "Name a task", default "To do" lane chip, `⏎ Create` kbd
+    hint. Empty Enter is silent no-op (kbd hint dims `ready` →
+    `empty`). On submit: dispatches `addTask`, clears, closes.
+  - `inline-composer.tsx` — bare input on lane background (no
+    card affordance — reserved for *real* tasks). 220ms ease-
+    out-expo height-from-zero entry. Placeholder "What's next?".
+    Enter creates and refocuses; Esc cancels; blur with empty
+    cancels.
+- `BoardApp` tracks at-most-one-open via `composerLane: LaneId | null`.
+- `AppPageHeader` "New task" button gains a `C` kbd badge and
+  fires `openDialog`.
+- `/app/layout.tsx` mounts `<AddTaskRoot>` inside `<TasksProvider>`
+  under the existing Suspense boundary.
+
+**Caught during TEST (looped back to BUILD)**
+- Initial implementation exposed an `onDraftChange` callback to
+  preserve per-lane drafts across re-opens; the unmemoized callback
+  identity caused a setState/useEffect infinite loop. Fix: dropped
+  the draft-preservation feature for this cycle (logged to
+  backlog). Quality gate held — re-tested with 0 console errors.
+
+**Verified end-to-end**
+- "+ New task" header button → dialog opens → typed "Created
+  from cycle 7 dialog" → Enter → card visible in To do lane →
+  DB row persisted (`t-8b065801`).
+- Lane "+ Add task" → input focused → typed "Created from
+  inline composer" → Enter → card visible → DB row persisted.
+- 0 TS errors, 0 console errors.
+
+**Backlog**
+- Per-lane draft preservation across re-opens (lost in the
+  infinite-loop fix; needs a stable callback pattern via ref).
+- Lane / priority pickers in the dialog beyond defaults.
+- Title auto-parser (`#tag`, `@user`, `p1`, `due:friday`).
+
+
+
 ## Cycle 6 · 2026-05-05 · Real comments — first full-stack feature
 
 The detail panel rendered a static deterministic-from-id seed thread

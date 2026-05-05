@@ -41,6 +41,7 @@ export type TasksDispatchers = {
   updateTask: (id: string, patch: Partial<Omit<Task, "id">>) => void;
   addTask: (input: {
     title: string;
+    description?: string;
     lane?: LaneId;
     priority?: Priority;
     assignees?: UserId[];
@@ -119,6 +120,7 @@ export function TasksProvider({
         const task: Task = {
           id: generateId(),
           title: input.title,
+          description: input.description,
           lane: input.lane ?? "todo",
           priority: input.priority ?? "p2",
           assignees: input.assignees ?? [],

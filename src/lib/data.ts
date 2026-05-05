@@ -79,6 +79,7 @@ export const LANE_ORDER: LaneId[] = ["todo", "doing", "review", "done"];
 export type Task = {
   id: string;
   title: string;
+  description?: string;
   lane: LaneId;
   priority: Priority;
   assignees: UserId[];

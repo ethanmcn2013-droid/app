@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAddTask } from "@/components/app/add-task/add-task-context";
 
 const TABS = [
   { href: "/app/board", label: "Board" },
@@ -13,6 +14,7 @@ const TABS = [
 export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
+  const { openDialog } = useAddTask();
   return (
     <header className="border-b border-line-soft px-8 pb-3 pt-5">
       <div className="flex items-center justify-between">
@@ -55,12 +57,15 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
             </svg>
             Search
           </button>
-          <button className="inline-flex items-center gap-1.5 rounded-md bg-ink px-2.5 py-1.5 text-[12px] font-medium text-white shadow-sm hover:bg-ink-soft">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+          <button
+            type="button"
+            onClick={openDialog}
+            className="inline-flex items-center gap-2 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-ink-soft"
+          >
             New task
+            <kbd className="inline-flex h-[16px] items-center rounded border border-white/15 bg-white/10 px-1 font-mono text-[10px] text-white/70">
+              C
+            </kbd>
           </button>
         </div>
       </div>

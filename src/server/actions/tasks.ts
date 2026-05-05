@@ -60,6 +60,7 @@ export async function updateTaskAction(
 export async function addTaskAction(input: {
   id?: string;
   title: string;
+  description?: string;
   lane?: LaneId;
   priority?: Priority;
   assignees?: UserId[];
@@ -73,6 +74,7 @@ export async function addTaskAction(input: {
   await db.insert(tasks).values({
     id,
     title: input.title,
+    description: input.description,
     lane: input.lane ?? "todo",
     priority: input.priority ?? "p2",
     assignees: input.assignees ?? [],
