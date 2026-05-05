@@ -6,34 +6,30 @@ import {
   LANES,
   LANE_ORDER,
   PRIORITY_LABEL,
-  SEED_TASKS,
-  USERS,
   type LaneId,
   type Task,
 } from "@/lib/data";
 import { AvatarStack } from "@/components/showcase/avatar";
+import {
+  useTasksDispatch,
+  useTasksState,
+} from "@/lib/tasks/tasks-context";
+import { tasksByLane as selectTasksByLane } from "@/lib/tasks/selectors";
 
 export function BoardApp() {
-  const [tasks, setTasks] = useState<Task[]>(() =>
-    SEED_TASKS.map((t) => ({ ...t })),
-  );
+  // Task DATA lives in the shared store; INTERACTION state stays
+  // local — dragging/hover fire many times per second and would
+  // re-render every other view if hoisted.
+  const state = useTasksState();
+  const { moveTask } = useTasksDispatch();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [hoverLane, setHoverLane] = useState<LaneId | null>(null);
-
-  const tasksByLane = (lane: LaneId) =>
-    tasks.filter((t) => t.lane === lane);
-
-  const moveTask = (taskId: string, lane: LaneId) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, lane } : t)),
-    );
-  };
 
   return (
     <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
       {LANE_ORDER.map((laneId, idx) => {
         const lane = LANES[laneId];
-        const laneTasks = tasksByLane(laneId);
+        const laneTasks = selectTasksByLane(state, laneId);
         const isHover = hoverLane === laneId;
         return (
           <motion.div

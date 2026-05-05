@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
-import { LANES, SEED_TASKS, type Task } from "@/lib/data";
+import { LANES } from "@/lib/data";
 import { Avatar } from "@/components/showcase/avatar";
+import { useTasksState } from "@/lib/tasks/tasks-context";
+import { tasksSortedByStartDay } from "@/lib/tasks/selectors";
 
 const DAYS = 14;
 const DAY_LABELS = [
@@ -24,11 +25,8 @@ const DAY_LABELS = [
 ];
 
 export function TimelineApp() {
-  const [tasks] = useState<Task[]>(() => SEED_TASKS.map((t) => ({ ...t })));
-
-  const sorted = [...tasks].sort(
-    (a, b) => (a.startDay ?? 0) - (b.startDay ?? 0),
-  );
+  const state = useTasksState();
+  const sorted = tasksSortedByStartDay(state);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-8 py-5">

@@ -3,6 +3,55 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 3 · 2026-05-05 · Shared task store — make the app real
+
+Until this cycle, every app route owned its own copy of `SEED_TASKS`
+and mutated locally. Drag a card on board, switch to list — still in
+its old lane. Four views, four apps. This was the foundational move
+that turns "designed views" into "an app."
+
+**Added**
+- New `src/lib/tasks/` directory with three pure-ish modules:
+  - `tasks-reducer.ts` — pure reducer + types. Actions: `move`,
+    `reorder`, `update`, `add`, `remove`, `toggleComplete`. The
+    `toggleComplete` action keeps a `previousLane` map so unchecking
+    a done task returns it to the lane it came from (Linear-style),
+    not always to "todo."
+  - `tasks-context.tsx` — client `TasksProvider` mounted in
+    `/app/layout.tsx`. Two contexts (state + dispatch) so dispatch-
+    only consumers don't re-render on state changes.
+  - `selectors.ts` — `groupByLane`, `tasksByLane`, `openTaskCount`,
+    `tasksSortedByStartDay`. Pure functions, no React.
+- Sidebar now shows an open-task count badge next to Inbox / My
+  tasks, computed from the shared store.
+
+**Changed**
+- All four app views (`board`, `list`, `timeline`, `calendar`)
+  rewired to consume the store. Local `useState<Task[]>` + direct
+  `SEED_TASKS` imports replaced.
+- Board's drag-to-lane handler now dispatches `moveTask`. Drag UI
+  state (`draggingId`, `hoverLane`) stays local — they're per-gesture
+  ephemera, not data.
+- List checkbox is now interactive: clicking dispatches
+  `toggleComplete`; the row's title gets a strikethrough and the row
+  reorders into the Done section. `aria-pressed` reflects state.
+
+**Boundary held**
+- The cinematic showcase demo on `/` keeps its own state machine
+  and is unaffected. The `TasksProvider` is mounted only at
+  `/app/layout.tsx`.
+
+**Verified end-to-end** — toggle a task on `/app/list`, navigate via
+sidebar to `/app/board` — task appears in Done lane, counts update
+across the sidebar.
+
+**Backlog merged into this cycle's followups (low-priority)**
+- Swap module-counter id generation for `crypto.randomUUID()` when
+  cycle 4 introduces persistence.
+- Memoize Card components when task count grows beyond ~50.
+
+
+
 ## Cycle 2 · 2026-05-05 · Restraint — pacing + cursor labels
 
 Two related defects in tone. Scene-to-scene transitions held for only

@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/app/sidebar";
+import { TasksProvider } from "@/lib/tasks/tasks-context";
 
 export default function AppLayout({
   children,
@@ -6,9 +7,11 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-bg">
-      <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
-    </div>
+    <TasksProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-bg">
+        <AppSidebar />
+        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      </div>
+    </TasksProvider>
   );
 }

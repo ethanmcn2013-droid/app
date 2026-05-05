@@ -1,8 +1,9 @@
 "use client";
 
 import { motion } from "motion/react";
-import { LANES, SEED_TASKS, type Task } from "@/lib/data";
+import { LANES, type Task } from "@/lib/data";
 import { Avatar } from "@/components/showcase/avatar";
+import { useTasksState } from "@/lib/tasks/tasks-context";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -19,12 +20,13 @@ function dayLabel(i: number) {
 }
 
 export function CalendarApp() {
+  const state = useTasksState();
   // Map tasks to days based on startDay
   const cells: { i: number; tasks: Task[] }[] = Array.from(
     { length: MONTH_DAYS },
     (_, i) => ({ i, tasks: [] }),
   );
-  for (const t of SEED_TASKS) {
+  for (const t of state.tasks) {
     const start = (t.startDay ?? 0) + TODAY_INDEX;
     const dur = t.durationDays ?? 1;
     for (let d = 0; d < dur; d++) {
