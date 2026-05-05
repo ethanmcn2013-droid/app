@@ -4,6 +4,7 @@ import {
   createContext,
   startTransition,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   useRef,
@@ -75,6 +76,18 @@ export function TasksProvider({
   // recreated on every state change.
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // When the server-rendered layout passes a fresh `initialTasks`
+  // (after revalidatePath fires for things like comment counts),
+  // hydrate the client store. The reference identity of the array
+  // is the change signal — same array reference means no work.
+  const lastInitialRef = useRef(initialTasks);
+  useEffect(() => {
+    if (!initialTasks) return;
+    if (initialTasks === lastInitialRef.current) return;
+    lastInitialRef.current = initialTasks;
+    dispatch({ type: "hydrate", tasks: initialTasks });
+  }, [initialTasks]);
 
   /** Run an optimistic action: dispatch locally for snappy UI, then
    *  reconcile with the server's authoritative result. Revert on

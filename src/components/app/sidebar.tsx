@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/brand/wordmark";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
+import { CURRENT_USER } from "@/lib/data";
 
 const NAV_TOP = [
   { href: "/app/inbox", label: "Inbox", icon: "inbox" },
@@ -129,13 +130,19 @@ function Group({
   // hook will throw on routes that don't mount the provider. Today
   // the sidebar is only used in the /app shell, so this is safe.
   const tasks = useTasksState();
-  const openCount = openTaskCount(tasks);
+  const inboxCount = openTaskCount(tasks);
+  const myCount = openTaskCount(tasks, { user: CURRENT_USER });
 
   return (
     <ul className="space-y-px">
       {items.map((it) => {
         const isActive = active === it.href;
-        const showCount = it.icon === "inbox" || it.icon === "user";
+        const count =
+          it.icon === "inbox"
+            ? inboxCount
+            : it.icon === "user"
+              ? myCount
+              : null;
         return (
           <li key={it.href}>
             <Link
@@ -149,9 +156,9 @@ function Group({
             >
               <NavIcon kind={it.icon} />
               <span className="flex-1">{it.label}</span>
-              {showCount ? (
+              {count !== null ? (
                 <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-quiet">
-                  {openCount}
+                  {count}
                 </span>
               ) : null}
             </Link>

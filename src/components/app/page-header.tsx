@@ -15,14 +15,21 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   const { openDialog } = useAddTask();
+
+  const isMyTasks = pathname === "/app/my-tasks";
+  const breadcrumb = isMyTasks
+    ? { lead: "Personal", trail: "Assigned to me" }
+    : { lead: "Marketing", trail: "Q3 launch · Plays in motion" };
+  const title = isMyTasks ? "My tasks" : "Q3 launch";
+
   return (
     <header className="border-b border-line-soft px-8 pb-3 pt-5">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2 text-[11.5px] text-ink-quiet">
-            <span>Marketing</span>
+            <span>{breadcrumb.lead}</span>
             <span>›</span>
-            <span>Q3 launch · Plays in motion</span>
+            <span>{breadcrumb.trail}</span>
           </div>
           <h1 className="mt-1.5 flex items-center gap-2 text-[24px] font-semibold tracking-tight">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-brand-soft text-brand">
@@ -38,7 +45,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
               </svg>
             </span>
-            Q3 launch
+            {title}
           </h1>
         </div>
         <div className="flex items-center gap-2">

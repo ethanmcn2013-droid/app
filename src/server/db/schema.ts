@@ -24,7 +24,8 @@ export const tasks = sqliteTable("tasks", {
   due: text("due"),
   estimate: integer("estimate"),
   tags: text("tags", { mode: "json" }).$type<string[]>(),
-  comments: integer("comments"),
+  // `comments` count is derived in the query layer (LEFT JOIN /
+  // subquery on the comments table) — never persisted on tasks.
   idleDays: integer("idle_days"),
   blockedBy: text("blocked_by", { mode: "json" }).$type<string[]>(),
   startDay: integer("start_day"),
@@ -59,8 +60,10 @@ export const comments = sqliteTable("comments", {
 });
 
 // Compile-time contract — flags drift between schema and the
-// hand-written client `Task` type in src/lib/data.ts.
-type _SchemaCoversTask = keyof Task extends keyof typeof tasks.$inferSelect
+// hand-written client `Task` type in src/lib/data.ts. `comments`
+// is excluded because it's a derived count populated by the query
+// layer, not a persisted column.
+type _SchemaCoversTask = keyof Omit<Task, "comments"> extends keyof typeof tasks.$inferSelect
   ? true
   : never;
 const _checkTask: _SchemaCoversTask = true;

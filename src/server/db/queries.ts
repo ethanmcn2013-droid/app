@@ -1,5 +1,12 @@
 import "server-only";
-import { asc, desc, eq } from "drizzle-orm";
+import {
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  like,
+  sql,
+} from "drizzle-orm";
 import { db } from "./index";
 import { tasks, comments, activities } from "./schema";
 import type {
@@ -11,9 +18,9 @@ import type {
   UserId,
 } from "@/lib/data";
 
-type Row = typeof tasks.$inferSelect;
+type TaskRow = typeof tasks.$inferSelect & { commentCount: number };
 
-function rowToTask(row: Row): Task {
+function rowToTask(row: TaskRow): Task {
   return {
     id: row.id,
     title: row.title,
@@ -24,7 +31,9 @@ function rowToTask(row: Row): Task {
     due: row.due ?? undefined,
     estimate: row.estimate ?? undefined,
     tags: row.tags ?? undefined,
-    comments: row.comments ?? undefined,
+    // 0 → undefined keeps existing truthy `task.comments` checks
+    // (which hide the chip on zero) working unchanged.
+    comments: row.commentCount > 0 ? row.commentCount : undefined,
     idleDays: row.idleDays ?? undefined,
     blockedBy: row.blockedBy ?? undefined,
     startDay: row.startDay ?? undefined,
@@ -33,14 +42,40 @@ function rowToTask(row: Row): Task {
   };
 }
 
+const taskColumnsWithCount = {
+  ...getTableColumns(tasks),
+  commentCount:
+    sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.taskId} = ${tasks.id})`.as(
+      "comment_count",
+    ),
+};
+
 export async function getTasks(): Promise<Task[]> {
-  const rows = await db.select().from(tasks);
+  const rows = await db.select(taskColumnsWithCount).from(tasks);
   return rows.map(rowToTask);
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
-  const [row] = await db.select().from(tasks).where(eq(tasks.id, id));
+  const [row] = await db
+    .select(taskColumnsWithCount)
+    .from(tasks)
+    .where(eq(tasks.id, id));
   return row ? rowToTask(row) : null;
+}
+
+/**
+ * Tasks where the given user is in the JSON `assignees` array.
+ * Pattern uses surrounding double-quotes (`%"david"%`) so we match
+ * exact tokens, not substrings — safe given current UserIds.
+ */
+export async function getTasksForUser(
+  userId: UserId,
+): Promise<Task[]> {
+  const rows = await db
+    .select(taskColumnsWithCount)
+    .from(tasks)
+    .where(like(tasks.assignees, `%"${userId}"%`));
+  return rows.map(rowToTask);
 }
 
 type CommentRow = typeof comments.$inferSelect;

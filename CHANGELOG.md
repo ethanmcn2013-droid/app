@@ -3,6 +3,61 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 10 · 2026-05-05 · My tasks route + real comment counts
+
+Two app-accuracy gaps closed. (a) Sidebar's "My tasks" link
+pointed to a nonexistent route; the badge counted *all* open
+tasks, not the current user's. (b) Cards displayed a `comments`
+integer, but it was a stale seed field that didn't track adds via
+the panel.
+
+**Backend changes**
+- Schema: dropped `comments` integer column from `tasks` (it was
+  never written by any mutation — pure seed fiction). drizzle-kit
+  push handled `ALTER TABLE DROP COLUMN`. Existing data preserved.
+- `_SchemaCoversTask` guard widened to `Omit<Task, "comments">`
+  since the field is now derived, not persisted.
+- `getTasks` rewritten with a correlated subquery —
+  `(SELECT COUNT(*) FROM comments WHERE comments.task_id = tasks.id)
+  as comment_count`. `rowToTask` maps `0 → undefined` so existing
+  truthy-check renderers keep hiding the chip on zero.
+- New `getTasksForUser(userId)` query — same shape with
+  `WHERE assignees LIKE '%"<userId>"%'` (JSON-as-text token match).
+- SEED_TASKS literals stripped of `comments: <n>` fields (5 occurrences).
+- New `groupTasksByLane(tasks)` selector overload accepting an
+  array; existing `groupByLane(state)` delegates.
+- `openTaskCount(state, opts?: { user })` — optional user filter.
+
+**Frontend changes**
+- New `src/app/app/my-tasks/page.tsx` — server component shell.
+- New `src/components/app/my-tasks/my-tasks-app.tsx` — list view
+  scoped to `assignees.includes(CURRENT_USER)`. Reads from the
+  shared store (preserves optimistic updates + panel integration).
+- `AppPageHeader` now derives breadcrumb + title from pathname:
+  `Personal › Assigned to me / My tasks` for `/app/my-tasks`.
+- Sidebar splits the count by icon: Inbox uses global
+  `openTaskCount`, My tasks uses the user-scoped version.
+- `TasksProvider` gains a hydrate-on-prop-change effect so when
+  `revalidatePath('/app', 'layout')` fires after a comment add,
+  the fresh server-fetched `initialTasks` (with updated counts)
+  reconciles into the client store via a `hydrate` dispatch.
+
+**Verified end-to-end**
+- Navigated `/app/my-tasks` — list renders David's 4 tasks
+  grouped by lane (TO DO 1, IN PROGRESS 2, DONE 1).
+- Sidebar shows distinct counts: Inbox 14 (all open), My tasks 3
+  (David's open, excluding the done task).
+- Done task shows green check + line-through.
+- 0 TS errors, 0 console errors.
+
+**Backlog**
+- Inbox route still placeholder (separate cycle — needs a clearer
+  notion of "inbox" than just "all open tasks").
+- Server-side filter UI (lane / priority / assignee dropdowns).
+- Real auth replaces `CURRENT_USER` constant.
+
+
+
 ## Cycle 9 · 2026-05-05 · Activity log — turn updatedAt into a story
 
 The detail panel's Activity section rendered three hardcoded

@@ -1,4 +1,4 @@
-import { LANE_ORDER, type LaneId, type Task } from "@/lib/data";
+import { LANE_ORDER, type LaneId, type Task, type UserId } from "@/lib/data";
 import type { TasksState } from "./tasks-reducer";
 
 export function tasksByLane(
@@ -8,23 +8,34 @@ export function tasksByLane(
   return state.tasks.filter((t) => t.lane === lane);
 }
 
-export function groupByLane(state: TasksState): Record<LaneId, Task[]> {
+export function groupTasksByLane(tasks: Task[]): Record<LaneId, Task[]> {
   const groups: Record<LaneId, Task[]> = {
     todo: [],
     doing: [],
     review: [],
     done: [],
   };
-  for (const t of state.tasks) groups[t.lane].push(t);
+  for (const t of tasks) groups[t.lane].push(t);
   return groups;
 }
 
-/** Tasks NOT in done. Convenience for sidebar inbox-style badges. */
-export function openTaskCount(state: TasksState): number {
-  return state.tasks.reduce(
-    (n, t) => (t.lane === "done" ? n : n + 1),
-    0,
-  );
+export function groupByLane(state: TasksState): Record<LaneId, Task[]> {
+  return groupTasksByLane(state.tasks);
+}
+
+/** Tasks NOT in done. Convenience for sidebar inbox-style badges.
+ *  Pass `{ user }` to scope to tasks where the given user is an
+ *  assignee (used by the "My tasks" badge). */
+export function openTaskCount(
+  state: TasksState,
+  opts?: { user?: UserId },
+): number {
+  const user = opts?.user;
+  return state.tasks.reduce((n, t) => {
+    if (t.lane === "done") return n;
+    if (user && !t.assignees.includes(user)) return n;
+    return n + 1;
+  }, 0);
 }
 
 export function tasksSortedByStartDay(state: TasksState): Task[] {
