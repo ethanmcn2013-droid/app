@@ -72,9 +72,22 @@ export function ForFreelancers() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[20px]"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-teal-600"
               >
-                💼
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="7" width="18" height="13" rx="2" />
+                  <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                  <path d="M3 13h18" />
+                </svg>
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
@@ -113,9 +126,22 @@ export function ForFreelancers() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[20px]"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-teal-600"
               >
-                📦
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                  <rect x="9" y="2" width="6" height="4" rx="1" />
+                  <path d="M9 14l2 2 4-4" />
+                </svg>
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
@@ -175,23 +201,26 @@ export function ForFreelancers() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          If you run five clients and want each to have their own
-          full-featured workspace, the current shape is Pro for you
-          ($4.99/mo, unlimited workspaces) plus optional Team upgrades
-          per workspace if a specific client needs the analytics dashboard
-          or real-time presence. Most freelance arrangements don&rsquo;t
-          need either. A Studio tier with unlimited self-owned workspaces
-          at a flat per-month price is on the next-cycle roadmap; for
-          now, Pro covers the structure cleanly.
+          Two shapes work for a freelance practice. Pro at $4.99/mo
+          gives one operator unlimited workspaces — fine until a client
+          wants real-time presence, share-link analytics, or guest
+          editing on their own surface. Studio at $14.95/mo is the
+          step up: every workspace you own gets the full Team feature
+          set, with the no-per-seat-tax rule still holding inside
+          each one. Five clients on Pro is $4.99. Five clients on
+          Studio is $14.95. Five clients on the Team tier (one
+          workspace each) would be 5 × $9.95 = $49.75 — Studio is the
+          right shape the moment you have more than two clients you
+          care about.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            Pro · $4.99 a month, unlimited workspaces
+            Studio · $14.95 a month, unlimited workspaces
           </div>
           <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
             The cost of forgetting one deductible lunch. One bill.
-            One inbox. Five clients.
+            One inbox. Five clients, full feature set on each.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link

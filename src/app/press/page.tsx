@@ -168,22 +168,18 @@ export default function PressPage() {
 
             <Section title="Press contact">
               <p>
-                <Link href="mailto:ethan@tasks.app">
-                  ethan@&lt;domain&gt;
-                </Link>{" "}
-                or{" "}
                 <Link href="mailto:ethanmcn2013@gmail.com">
                   ethanmcn2013@gmail.com
                 </Link>
                 . Replies within twenty-four hours, including weekends
-                if the deadline is real.
+                if the deadline is real. No publicist between us.
               </p>
             </Section>
 
             <Section title="Recent coverage">
-              <p>
-                [NEEDS-REVIEW: add coverage links after Show HN and
-                Product Hunt launches.]
+              <p className="text-ink-soft">
+                None yet — Show HN goes up June 16, Product Hunt June
+                23. We&rsquo;ll list links here as they land.
               </p>
             </Section>
 

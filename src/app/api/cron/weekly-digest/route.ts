@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import {
-  getWeeklySnapshotAction,
-  weeklyDigestNarrationAction,
-} from "@/server/actions/ai";
+  buildWeeklySnapshotFor,
+  weeklyDigestNarrationFor,
+} from "@/server/digest-narration";
 import { aiConfigured } from "@/server/ai";
 
 /**
@@ -26,7 +26,18 @@ export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const expectedCronSecret = process.env.CRON_SECRET;
-  if (expectedCronSecret) {
+  // Production hardening: when CRON_SECRET is unset on a real deploy,
+  // refuse the request rather than letting an unauthenticated GET
+  // trigger the digest pipeline. Dev runs (NODE_ENV !== "production")
+  // can still hit the route locally with no secret configured.
+  if (!expectedCronSecret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { ok: false, error: "cron-secret-not-configured" },
+        { status: 500 },
+      );
+    }
+  } else {
     const provided = req.headers
       .get("authorization")
       ?.replace(/^Bearer\s+/i, "");
@@ -39,14 +50,20 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url);
-  const overrideWorkspace = searchParams.get("workspace") ?? undefined;
+  const overrideWorkspace = searchParams.get("workspace");
+  if (!overrideWorkspace) {
+    return NextResponse.json(
+      { ok: false, error: "workspace-id-required" },
+      { status: 400 },
+    );
+  }
 
-  const snapshot = await getWeeklySnapshotAction(overrideWorkspace);
+  const snapshot = await buildWeeklySnapshotFor(overrideWorkspace);
 
   let narration: string | null = null;
   if (aiConfigured()) {
     try {
-      const stream = await weeklyDigestNarrationAction(overrideWorkspace);
+      const stream = await weeklyDigestNarrationFor(overrideWorkspace);
       const reader = stream.getReader();
       const chunks: string[] = [];
       while (true) {

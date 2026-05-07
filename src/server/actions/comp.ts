@@ -23,12 +23,7 @@ function newEntitlementId(): string {
   return `e-${raw.replace(/-/g, "").slice(0, 10)}`;
 }
 
-/**
- * Mint a fresh batch of comp codes. Admin-only in real life; for now
- * unguarded so the team can SQL-bypass / curl-bypass. Real auth will
- * gate this when it lands.
- */
-export async function mintCompCodeAction(input: {
+type MintCompCodeInput = {
   prefix?: string;
   tier: EntitlementTier;
   durationDays: number;
@@ -36,7 +31,17 @@ export async function mintCompCodeAction(input: {
   notes?: string;
   /** Days until the code itself stops accepting redemptions. */
   expiresInDays?: number;
-}): Promise<{ code: string }> {
+};
+
+/**
+ * Internal mint helper. Module-private (no `export`) and not reachable
+ * from the RSC POST channel. Trusted callers in this file invoke it
+ * directly (e.g. the .edu student-code flow); the public, guarded
+ * `mintCompCodeAction` wraps it for human/admin use.
+ */
+async function mintCompCodeInternal(
+  input: MintCompCodeInput,
+): Promise<{ code: string }> {
   const code = newCode(input.prefix ?? "GIFT");
   const expiresAt =
     input.expiresInDays != null
@@ -52,6 +57,35 @@ export async function mintCompCodeAction(input: {
     expiresAt,
   });
   return { code };
+}
+
+/**
+ * Admin allowlist for the comp-code minter. Set
+ * `ADMIN_USER_IDS` to a comma-separated list of Clerk user ids in
+ * production. When unset (dev), the action accepts the legacy seed
+ * user only — i.e. no Clerk session = no minting.
+ */
+function callerIsAdmin(userId: string): boolean {
+  const raw = process.env.ADMIN_USER_IDS ?? "";
+  if (!raw.trim()) return userId === "david";
+  const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+  return ids.includes(userId);
+}
+
+/**
+ * Public, admin-gated comp-code minter. Calls fail-closed: if the
+ * caller's user id isn't in `ADMIN_USER_IDS`, we throw before
+ * touching the database. The .edu student flow uses the internal
+ * helper directly to avoid this gate.
+ */
+export async function mintCompCodeAction(
+  input: MintCompCodeInput,
+): Promise<{ code: string }> {
+  const me = await getCurrentUser();
+  if (!callerIsAdmin(me)) {
+    throw new Error("Unauthorized: comp-code minting is admin-only");
+  }
+  return mintCompCodeInternal(input);
 }
 
 export type RedeemResult =
@@ -160,7 +194,9 @@ export async function requestStudentCodeAction(
   }
 
   // Mint a single-use, 1-year code tagged with the .edu domain.
-  const { code } = await mintCompCodeAction({
+  // Calls the internal helper directly so this trusted flow doesn't
+  // need to live behind the admin allowlist.
+  const { code } = await mintCompCodeInternal({
     prefix: "STUDENT",
     tier: "pro",
     durationDays: 365,

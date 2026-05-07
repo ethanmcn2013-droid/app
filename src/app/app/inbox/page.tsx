@@ -8,7 +8,7 @@ import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
 import { aiConfigured } from "@/server/ai";
-import { getWeeklySnapshotAction } from "@/server/actions/ai";
+import { buildWeeklySnapshotFor } from "@/server/digest-narration";
 import { getOverdueTodayCount } from "@/server/actions/roll-forward";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
@@ -29,7 +29,7 @@ export default async function InboxPage() {
       getNotificationsForUser(me, ws),
       compileDailyDigest(me, ws),
       getTasks(ws),
-      getWeeklySnapshotAction(ws),
+      buildWeeklySnapshotFor(ws),
       // Lightweight name + slug lookup for the Slack-ready summary
       // headline + the trailing `tasks.app/p/{slug}` link. One row;
       // cheap enough to live alongside the other parallel reads.

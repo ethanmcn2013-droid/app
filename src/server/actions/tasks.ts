@@ -207,6 +207,7 @@ export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
+  const ws = await getActiveWorkspace();
   // Drizzle accepts only known columns — strip undefined to avoid
   // overwriting with NULL when the caller sends a sparse patch.
   const cleaned: Record<string, unknown> = {};
@@ -216,10 +217,13 @@ export async function updateTaskAction(
   if ("cents" in cleaned) {
     cleaned.cents = sanitizeCents(cleaned.cents as number | null);
   }
+  // Workspace guard: a write only lands when the row belongs to the
+  // caller's active workspace. Without this clause an authenticated
+  // user who knows any task id could overwrite cross-tenant rows.
   await db
     .update(tasks)
     .set({ ...cleaned, ...bump() })
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
 
   // Emit one activity per tracked field (parallel; observability,
   // not transactional). Untracked fields like `idleDays` are skipped.
@@ -234,7 +238,7 @@ export async function updateTaskAction(
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(await getActiveWorkspace());
+  return getTasks(ws);
 }
 
 export async function addTaskAction(input: {
@@ -355,10 +359,13 @@ export async function reorderTaskAction(
 }
 
 export async function removeTaskAction(id: string): Promise<Task[]> {
-  // No activity recorded — task is going away; FK cascade drops
-  // any existing activities for this task with it.
-  await db.delete(tasks).where(eq(tasks.id, id));
+  const ws = await getActiveWorkspace();
+  // Workspace guard: deletes only fire when the row belongs to the
+  // caller's active workspace. FK cascade drops activities for the row.
+  await db
+    .delete(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
-  return getTasks(await getActiveWorkspace());
+  return getTasks(ws);
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users, workspaceMembers, workspaces } from "@/server/db/schema";
 import type { UserId } from "@/lib/data";
@@ -79,16 +79,17 @@ export async function getActiveWorkspace(): Promise<string> {
   const cookieValue = c.get(ACTIVE_WORKSPACE_COOKIE)?.value;
 
   if (cookieValue) {
-    const [membership] = await db
-      .select({ workspaceId: workspaceMembers.workspaceId })
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.userId, me));
-    // Same query but filtered on the cookie value:
     const [match] = await db
       .select({ workspaceId: workspaceMembers.workspaceId })
       .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, cookieValue));
-    if (match && membership) return cookieValue;
+      .where(
+        and(
+          eq(workspaceMembers.userId, me),
+          eq(workspaceMembers.workspaceId, cookieValue),
+        ),
+      )
+      .limit(1);
+    if (match) return cookieValue;
   }
 
   // Fall back to the user's first membership.

@@ -68,9 +68,21 @@ export function ForWeddings() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[20px]"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-pink-500"
               >
-                💍
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="14" r="6" />
+                  <path d="M9 5l3-3 3 3" />
+                </svg>
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
@@ -109,9 +121,21 @@ export function ForWeddings() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[20px]"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-pink-500"
               >
-                💍
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
@@ -158,8 +182,8 @@ export function ForWeddings() {
             body="The florist's email, the contract status, the deposit amount, and the day-of-arrival time all sit on the same task. No more flipping between four tabs to answer one question."
           />
           <Reason
-            title="The day-of timeline can be printed."
-            body="A binder for the day-of coordinator, the photographer, and the venue manager. The same workspace renders as a clean printable PDF for anyone who'd rather hold paper than a phone."
+            title="The day-of timeline lives on every phone."
+            body="Magic-link your photographer, your DJ, your day-of coordinator. They open the link, they see the same run-of-show you do, in real time. Updates ripple. No re-emailing the binder at 6am."
           />
           <Reason
             title="It outlives the wedding."

@@ -716,7 +716,7 @@ function WeeklyRecapSection({
     setText("");
     startTransition(async () => {
       try {
-        const stream = await weeklyDigestNarrationAction(workspaceId);
+        const stream = await weeklyDigestNarrationAction();
         const reader = stream.getReader();
         let acc = "";
         while (true) {

@@ -33,9 +33,20 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
-  // Cron secret check (skip when CRON_SECRET unset — dev path).
   const expectedCronSecret = process.env.CRON_SECRET;
-  if (expectedCronSecret) {
+  // Production hardening: missing CRON_SECRET on a real deploy fails
+  // closed — refuse the request rather than letting an unauthenticated
+  // caller trigger the daily-digest pipeline (which sends email).
+  // Dev runs (NODE_ENV !== "production") skip the check so local
+  // testing doesn't need the secret configured.
+  if (!expectedCronSecret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { ok: false, error: "cron-secret-not-configured" },
+        { status: 500 },
+      );
+    }
+  } else {
     const provided = req.headers
       .get("authorization")
       ?.replace(/^Bearer\s+/i, "");

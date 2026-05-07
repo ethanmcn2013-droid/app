@@ -1,6 +1,6 @@
 "use server";
 
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { shareLinks, users, workspaces } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
@@ -60,11 +60,14 @@ export async function createShareLinkAction(input: {
 }
 
 /** List every minted share link, newest first. Used by the manage-
- *  links popover. */
+ *  links popover. Scoped to the caller's active workspace — the
+ *  earlier global query leaked tokens across tenants. */
 export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
+  const ws = await getActiveWorkspace();
   const rows = await db
     .select()
     .from(shareLinks)
+    .where(eq(shareLinks.workspaceId, ws))
     .orderBy(desc(shareLinks.createdAt))
     .limit(20);
   return rows.map((r) => ({
@@ -80,12 +83,17 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
 }
 
 /** Soft-revoke a token. Future visitors see a 404. Visits already
- *  in flight stay open until they close their tab. */
+ *  in flight stay open until they close their tab. Scoped to the
+ *  caller's active workspace so a token owned by another tenant
+ *  can't be revoked through this surface. */
 export async function revokeShareLinkAction(token: string): Promise<void> {
+  const ws = await getActiveWorkspace();
   await db
     .update(shareLinks)
     .set({ revokedAt: new Date() })
-    .where(eq(shareLinks.token, token));
+    .where(
+      and(eq(shareLinks.token, token), eq(shareLinks.workspaceId, ws)),
+    );
   revalidatePath("/app", "layout");
 }
 
@@ -138,6 +146,7 @@ export type ShareLinkAnalyticsSummary = {
 export async function listShareLinkAnalyticsAction(): Promise<
   ShareLinkAnalyticsSummary[]
 > {
+  const ws = await getActiveWorkspace();
   const rows = await db
     .select({
       token: shareLinks.token,
@@ -145,6 +154,7 @@ export async function listShareLinkAnalyticsAction(): Promise<
       revokedAt: shareLinks.revokedAt,
     })
     .from(shareLinks)
+    .where(eq(shareLinks.workspaceId, ws))
     .orderBy(desc(shareLinks.createdAt))
     .limit(20);
   const tokens = rows.filter((r) => !r.revokedAt).map((r) => r.token);

@@ -5,16 +5,15 @@ import {
   AI_NOT_CONFIGURED_MESSAGE,
   DRAFT_REPLY_PROMPT,
   SUMMARIZE_THREAD_PROMPT,
-  WEEKLY_DIGEST_PROMPT,
   aiConfigured,
   getModel,
   type WeeklyDigestSnapshot,
 } from "@/server/ai";
+import { getTaskById, getTaskConversation } from "@/server/db/queries";
 import {
-  getTaskById,
-  getTaskConversation,
-  getTasks,
-} from "@/server/db/queries";
+  buildWeeklySnapshotFor,
+  weeklyDigestNarrationFor,
+} from "@/server/digest-narration";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { USERS } from "@/lib/data";
 import type { ConversationItem } from "@/server/db/queries";
@@ -87,12 +86,18 @@ export async function draftReplyAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, me] = await Promise.all([
+  const [task, items, me, ws] = await Promise.all([
     getTaskById(taskId),
     getTaskConversation(taskId),
     getCurrentUser(),
+    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
+  // Workspace guard — without this, an authenticated caller could
+  // narrate any task in any workspace by passing its id.
+  if (task.workspaceId !== ws) {
+    return staticStream("Task not found.");
+  }
 
   const myName = USERS[me]?.name ?? me;
   const thread = renderConversation(items);
@@ -150,11 +155,16 @@ export async function summarizeConversationAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items] = await Promise.all([
+  const [task, items, ws] = await Promise.all([
     getTaskById(taskId),
     getTaskConversation(taskId),
+    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
+  // Workspace guard mirrors draftReplyAction — same vector, same fix.
+  if (task.workspaceId !== ws) {
+    return staticStream("Task not found.");
+  }
 
   // The "≥ 6 messages" gate also lives client-side, but we re-check
   // here so a hand-crafted call doesn't generate drivel for a 2-line
@@ -203,97 +213,19 @@ export async function summarizeConversationAction(
 
 // ────────────────────────────────────────────────────────────────────
 // 3) Weekly digest narration
+//
+// Public action narrates the caller's **active workspace only**. The
+// caller-supplied `workspaceId` parameter on previous versions was an
+// unguarded read across tenants — fixed by routing all explicit-id
+// access through `@/server/digest-narration` (server-only, not RSC-
+// exposed) instead.
 // ────────────────────────────────────────────────────────────────────
 
-/**
- * Build the lightweight rules-based snapshot that feeds the weekly
- * narration. Pure read; no side-effects. Exported so the inbox can
- * also render a plain-text fallback when the LLM is off.
- */
-async function buildWeeklySnapshot(
-  workspaceId: string,
-): Promise<WeeklyDigestSnapshot> {
-  const tasks = await getTasks(workspaceId);
-  const now = Date.now();
-  const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-  const closed = tasks.filter(
-    (t) =>
-      t.lane === "done" &&
-      now - t.updatedAt.getTime() <= WEEK_MS,
-  );
-  closed.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
-
-  const open = tasks.filter((t) => t.lane !== "done");
-  const stillCircling = open
-    .filter((t) => {
-      const ageMs = now - t.updatedAt.getTime();
-      return ageMs >= 3 * 24 * 60 * 60 * 1000;
-    })
-    .sort((a, b) => a.updatedAt.getTime() - b.updatedAt.getTime())
-    .slice(0, 4);
-
-  return {
-    closedThisWeek: closed.length,
-    closedTitles: closed.slice(0, 8).map((t) => t.title),
-    stillCirclingTitles: stillCircling.map((t) => t.title),
-    openCount: open.length,
-  };
-}
-
-export async function weeklyDigestNarrationAction(
-  workspaceId?: string,
-): Promise<ReadableStream<string>> {
-  const ws = workspaceId ?? (await getActiveWorkspace());
-
-  if (!aiConfigured()) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
-  const model = getModel();
-  if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
-
-  const snap = await buildWeeklySnapshot(ws);
-
-  // If literally nothing happened, don't fabricate a story.
-  if (snap.closedThisWeek === 0 && snap.openCount === 0) {
-    return staticStream("Quiet week. Nothing to recap.");
-  }
-
-  const userMessage = [
-    `Closed this week: ${snap.closedThisWeek}`,
-    snap.closedTitles.length > 0
-      ? `Closeout titles: ${snap.closedTitles.map((t) => `"${t}"`).join(", ")}`
-      : null,
-    `Still open: ${snap.openCount}`,
-    snap.stillCirclingTitles.length > 0
-      ? `Still circling (idle ≥ 3 days): ${snap.stillCirclingTitles.map((t) => `"${t}"`).join(", ")}`
-      : null,
-    "",
-    "Output: the 4-5 sentence Sunday recap.",
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  try {
-    const result = streamText({
-      model,
-      messages: [
-        {
-          role: "system",
-          content: WEEKLY_DIGEST_PROMPT,
-          providerOptions: {
-            anthropic: { cacheControl: { type: "ephemeral" } },
-          },
-        },
-        { role: "user", content: userMessage },
-      ],
-      onError({ error }) {
-        console.error("weeklyDigestNarrationAction stream error:", error);
-      },
-    });
-    return result.textStream;
-  } catch (err) {
-    console.error("weeklyDigestNarrationAction failed:", err);
-    return staticStream(AI_NOT_CONFIGURED_MESSAGE);
-  }
+export async function weeklyDigestNarrationAction(): Promise<
+  ReadableStream<string>
+> {
+  const ws = await getActiveWorkspace();
+  return weeklyDigestNarrationFor(ws);
 }
 
 /** Read-only check exposed to client components so they can hide
@@ -303,12 +235,11 @@ export async function isAiConfiguredAction(): Promise<boolean> {
   return aiConfigured();
 }
 
-/** Compile the snapshot for the current workspace. The inbox uses
- *  this to decide whether to render the weekly recap at all. */
-export async function getWeeklySnapshotAction(
-  workspaceId?: string,
-): Promise<WeeklyDigestSnapshot> {
-  const ws = workspaceId ?? (await getActiveWorkspace());
-  // Side-effect-free; the inbox calls this from a Server Component.
-  return buildWeeklySnapshot(ws);
+/** Compile the snapshot for the caller's active workspace. The inbox
+ *  uses this to decide whether to render the weekly recap at all.
+ *  Server-side callers wanting an explicit workspace import
+ *  `buildWeeklySnapshotFor` from `@/server/digest-narration` instead. */
+export async function getWeeklySnapshotAction(): Promise<WeeklyDigestSnapshot> {
+  const ws = await getActiveWorkspace();
+  return buildWeeklySnapshotFor(ws);
 }

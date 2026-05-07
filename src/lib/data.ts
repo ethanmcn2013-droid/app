@@ -125,6 +125,11 @@ export const LANE_ORDER: LaneId[] = ["todo", "doing", "review", "done"];
 
 export type Task = {
   id: string;
+  /** Owning workspace. Set on every persisted task; absent only on
+   *  the in-file seed fixtures and on legacy rows pre-Phase-A backfill.
+   *  Server actions guard writes on this column to keep updates and
+   *  deletes inside the caller's active workspace. */
+  workspaceId?: string | null;
   title: string;
   description?: string;
   lane: LaneId;
