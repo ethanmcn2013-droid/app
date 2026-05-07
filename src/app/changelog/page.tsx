@@ -164,6 +164,19 @@ export default async function ChangelogPage() {
               </article>
             ))}
           </div>
+
+          <div className="mt-16 border-t border-line-soft/70 pt-6 text-[12.5px] text-ink-quiet">
+            The full cross-project roadmap lives at{" "}
+            <a
+              href="https://ethanmcnamara.vercel.app/roadmap"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-ink underline decoration-ink-quiet/40 underline-offset-[3px] transition-colors hover:decoration-ink"
+            >
+              ethanmcnamara.com/roadmap
+            </a>
+            .
+          </div>
         </section>
       </main>
       <SiteFooter />

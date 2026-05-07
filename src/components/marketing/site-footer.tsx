@@ -28,6 +28,7 @@ export function SiteFooter() {
             { href: "/pricing", label: "Pricing" },
             { href: "/students", label: "Free for students" },
             { href: "/changelog", label: "Changelog" },
+            { href: "https://ethanmcnamara.vercel.app/roadmap", label: "Roadmap", external: true },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
           ]}
@@ -60,7 +61,7 @@ function FooterCol({
   links,
 }: {
   heading: string;
-  links: { href: string; label: string }[];
+  links: { href: string; label: string; external?: boolean }[];
 }) {
   return (
     <div>
@@ -70,12 +71,23 @@ function FooterCol({
       <ul className="space-y-2 text-[13.5px] text-ink-soft">
         {links.map((l) => (
           <li key={l.label}>
-            <Link
-              href={l.href}
-              className="transition-colors hover:text-ink"
-            >
-              {l.label}
-            </Link>
+            {l.external ? (
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-ink"
+              >
+                {l.label}
+              </a>
+            ) : (
+              <Link
+                href={l.href}
+                className="transition-colors hover:text-ink"
+              >
+                {l.label}
+              </Link>
+            )}
           </li>
         ))}
       </ul>
