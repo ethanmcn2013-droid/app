@@ -40,7 +40,7 @@ export function ForWeddings() {
           </span>
         </h1>
 
-        <p className="mt-6 text-[18.5px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           A wedding has 73 vendors, 14 family members with opinions, and
           one couple holding it all together with a Google Sheet. We
           built the workspace where the whole thing actually lives.

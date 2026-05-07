@@ -48,7 +48,7 @@ export function TemplatesGallery({ templates }: { templates: Template[] }) {
             pre-written.
           </span>
         </h1>
-        <p className="mx-auto mt-5 max-w-[58ch] text-[16px] leading-[1.55] text-ink-soft">
+        <p className="mx-auto mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] text-ink-soft">
           Wedding countdowns, thesis sprints, freelance onboarding,
           tax-season checklists. The recurring stuff, ready to drop
           into any workspace. Applies in one click. Doesn&rsquo;t

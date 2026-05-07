@@ -54,7 +54,7 @@ export function Hero() {
           </span>
           .
         </h1>
-        <p className="mt-6 max-w-[54ch] text-[17.5px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 max-w-[54ch] text-[17px] leading-[1.55] text-ink-soft">
           Project management for the 80% who don&rsquo;t work in tech.
           Four views of the same list, real-time when it matters,
           plain-English dates — no sprints, no epics, no learning curve.

@@ -43,7 +43,7 @@ export function ForTrades() {
           </span>
         </h1>
 
-        <p className="mt-6 text-[18.5px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           A working day in the trades is a list of addresses, parts
           orders, signatures, and invoices that didn&rsquo;t go out
           last week. The clipboard works. So does the spreadsheet.

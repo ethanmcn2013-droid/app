@@ -122,7 +122,7 @@ export function TemplateDetail({
                 <h2 className="text-[24px] font-semibold tracking-[-0.02em] text-ink">
                   {s.heading}
                 </h2>
-                <p className="mt-3 text-[16px] leading-[1.65] text-ink-soft">
+                <p className="mt-3 text-[16.5px] leading-[1.65] text-ink-soft">
                   {s.body}
                 </p>
               </div>

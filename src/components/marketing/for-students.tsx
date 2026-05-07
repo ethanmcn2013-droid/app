@@ -41,7 +41,7 @@ export function ForStudents() {
           </span>
         </h1>
 
-        <p className="mt-6 text-[18.5px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           A college semester has four classes, three group projects,
           two midterms in the same week, one job application that
           should have gone out last Tuesday, and the part-time shift

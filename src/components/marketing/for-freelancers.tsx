@@ -42,7 +42,7 @@ export function ForFreelancers() {
           </span>
         </h1>
 
-        <p className="mt-6 text-[18.5px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           A freelance developer at any given moment has three clients,
           one half-finished portfolio, two invoices in flight, and
           Linear logins for four orgs they barely remember the

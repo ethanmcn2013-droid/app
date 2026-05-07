@@ -37,7 +37,7 @@ export function EmbedGuide() {
           </span>
         </h1>
 
-        <p className="mt-6 text-[18px] leading-[1.55] text-ink-soft">
+        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           Once you publish a workspace at{" "}
           <code className="rounded bg-bg-sunken/70 px-1.5 py-0.5 font-mono text-[15px]">
             tasks.app/p/{"{slug}"}

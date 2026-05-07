@@ -27,7 +27,7 @@ export function CallToAction() {
               Stop reading.{" "}
               <span className="text-white/55">Start moving.</span>
             </h2>
-            <p className="mt-5 text-[16px] leading-[1.55] text-white/70">
+            <p className="mt-5 text-[16.5px] leading-[1.55] text-white/70">
               Tasks runs entirely on your team&rsquo;s rhythm. No setup, no
               imports — just open a board and start moving cards. Everything
               else assembles around the work.
