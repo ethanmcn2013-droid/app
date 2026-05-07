@@ -3,6 +3,174 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 35 · 2026-05-07 · Templates earn the rule
+
+brand.md says "no emoji anywhere," and for cycles the templates
+surface had been quietly defying it. Twelve emoji icons across the
+template gallery, the detail pages, and the OG card generator —
+every one of them rendered to the user, every one of them a small
+brand violation we'd been politely ignoring because the alternative
+was a refactor.
+
+The alternative was a refactor. We did the refactor.
+
+`src/components/marketing/template-glyph.tsx` lives now. Eleven
+stroke-SVG glyphs, one shared map, two exports — a `TemplateGlyph`
+component for DOM rendering and a `templateGlyphForOg` function that
+hands raw JSX to the `next/og` `ImageResponse` generator (which is
+picky about React component shapes). Every template icon is now a
+slug — `ring`, `briefcase`, `document`, `book`, `receipt`, `clock`,
+`plane`, `target`, `box`, `wrench` — and the gallery, detail, and OG
+routes all consume the same registry. Adding a new glyph means
+extending one map. Adding a new template means picking from the
+existing slugs.
+
+The thirteenth template arrived in the same cycle. /for/trades had
+been sharing freelancer templates because nothing trades-native had
+been written; the PM review caught it and named the shape — a
+jobsite punchlist. So we wrote one. Ten tasks shaped around the
+end-of-job walkthrough: callbacks from the homeowner, touch-up
+paint, caulk gaps, outlet covers, door swings, final cleanup,
+inspection scheduled with the AHJ, final invoice, warranty docs.
+The voice in the long-form essay is GC's-notes, not SaaS-product —
+plainspoken about the difference between a punchlist item and a
+change order, about why the walkthrough has to happen with the
+homeowner present, about why the work isn't finished when the tools
+are in the truck.
+
+/for/trades replaces the tax-season card with the new template.
+The page now hits the two endpoints of a trades engagement — start
+clean, close clean — and reads less like a copied page and more
+like a built-for-trades page, which is what the audit asked for.
+
+## Cycle 34 · 2026-05-07 · Sell the things we already shipped
+
+The PM review caught three sleeper features the marketing surface
+was systematically under-selling. None of them required new
+product. All three became copy lifts.
+
+The ICS calendar feed has shipped for cycles. The wedding planner
+who magic-links her photographer can also have him subscribe in
+Apple Calendar; the freelancer who opens a workspace per client can
+have each client's deadlines flow into Google Calendar. None of
+that was on the marketing surface. /pricing now names it on the Pro
+tier. /for/weddings names it in the "lives on every phone" reason —
+the photographer, the DJ, the day-of coordinator each get the
+timeline in the calendar app they already check.
+
+/changelog tells its own engineering story now. One paragraph below
+the heading explains what this page actually IS — a request-time
+render of CHANGELOG.md from the repo, no CMS, no build step, the
+cycle lands in git and lands here on the next request. The HN
+audience rewards transparency about how things are made; we never
+asked them to.
+
+/principles refusal #5 (no real-time push) addresses the Inbox tab
+inside the app. Someone who screenshots the Inbox tab and asks "you
+have an inbox tab — that's push" creates a credibility gap; one
+sentence resolves it. The Inbox is a pull surface. You visit it. It
+doesn't reach for you. Same refusal, sharper edges.
+
+## Cycle 33 · 2026-05-07 · Same surface, fewer seams
+
+A cross-discipline design review caught three places where the
+surface was visibly drifting from itself. The roadmap header was a
+freestanding hand-rolled wordmark, /pricing said "Open the
+workspace" but the nav said "Open the demo," and the published
+workspace pages were renting their description copy from a
+metadata builder.
+
+The roadmap header now uses the canonical `<Wordmark>` component,
+routes back to / via Next Link, unifies its container max-width to
+1240px to match the marketing surface, and gains an eyebrow line
+above the headline — "8-week go-to-market plan, not the product
+backlog" — so a first-time visitor never misreads /roadmap as 144
+unfinished product features. The roadmap is a credibility
+multiplier when its subject is legible at a glance.
+
+The CTA copy unified on "Open the workspace" everywhere — nav,
+hero, pricing free tier. "Demo" implied not-real; "live workspace"
+was wordier than the rest of the surface. Pricing already used the
+canonical phrase; we propagated.
+
+Stripe webhook idempotency race fix landed. `grantEntitlement` is
+now idempotent on the `notes` field — if a row with the same notes
+value already exists, the call is a no-op. The webhook handler
+reorders: pre-check via SELECT, do the grant, THEN record dedup at
+the end. A crash mid-handler leaves no dedup record, so Stripe's
+retry re-runs the grant — and the grant skips silently because the
+entitlement already lives in the table. The customer-paid-but-not-
+entitled path is closed.
+
+/p/[slug] description rewrite. Was machine copy: "A published Tasks
+workspace · 144 tasks · Wedding." Now reads as a human sentence —
+the workspace name, what it is, the brand shape ("same items, four
+lenses: board, list, timeline, calendar.") A press visitor landing
+on a published workspace from a magic link gets human copy as their
+first impression instead of a metadata builder's output.
+
+## Cycle 32 · 2026-05-07 · Refusal list, but for our own copy
+
+A cross-discipline review (design, code, value) produced a 23-item
+punch list, and the most cutting finding wasn't anything visual or
+architectural. It was that two lines on /pricing named features we
+hadn't shipped. "Slack/Linear integration" on the Pro tier didn't
+exist. "Printable PDF day-of binder" and "seating-chart/RSVP
+imports" on the Wedding tier didn't exist. /for/freelancers said
+Studio was "next-cycle roadmap" when Studio had already shipped.
+
+The pitch is "we ship a refusal list." Lying about features on a
+page that says "we ship a refusal list" is the worst possible
+self-inflicted wound. Killed every false claim and replaced it with
+the things we'd actually shipped — the ICS calendar feed (Apple,
+Google, Outlook subscribe), AI nudges with the model name spelled
+out, cross-workspace search and overdue triage, the magic-link
+guest model, the wedding template pair, the public /p/[slug]
+wedding theme. Per-tier features now match what's in production.
+
+The brand-rule pass came in the same cycle. brand.md says "no
+emoji anywhere." Killed every emoji on /for/students,
+/for/freelancers, /for/weddings — eight occurrences across three
+pages — and replaced them with consistent stroke-SVG glyphs in
+brand-soft tiles, accent color matching each vertical (emerald,
+teal, pink). /press lost its literal `ethan@<domain>` placeholder
+and the `[NEEDS-REVIEW]` body text; the sole press contact is now
+the gmail address until the domain lands.
+
+The security cluster was the third half of the cycle. Seven
+exploitable gaps closed by the same audit:
+
+- `getActiveWorkspace` cookie validation. Two unrelated queries
+  collapsed to a single AND-joined membership query — a hijacked
+  cookie no longer honors a workspace the caller doesn't belong to.
+- `updateTaskAction` and `removeTaskAction` constrain the WHERE to
+  the active workspace. An auth'd user knowing any task id can no
+  longer mutate cross-tenant rows.
+- `mintCompCodeAction` split into a module-private helper (the .edu
+  student flow uses it directly) and a public, admin-allowlisted
+  action gated by `ADMIN_USER_IDS`. Self-grant of comp codes via
+  the RSC channel is closed.
+- `draftReplyAction` and `summarizeConversationAction` verify the
+  task's workspace matches the active workspace before rendering
+  the title and thread to the model. The AI channel is no longer a
+  side door for cross-tenant reads.
+- `weeklyDigestNarrationAction` and `getWeeklySnapshotAction` lose
+  their caller-supplied `workspaceId` parameter. Trusted callers
+  (cron route, inbox page) use `buildWeeklySnapshotFor` and
+  `weeklyDigestNarrationFor` in the new server-only module
+  `@/server/digest-narration`.
+- `listShareLinksAction`, `revokeShareLinkAction`, and
+  `listShareLinkAnalyticsAction` scope to active workspace. Cross-
+  tenant share-token enumeration and revocation are closed.
+- /api/cron/digest and /api/cron/weekly-digest fail closed when
+  CRON_SECRET is unset on a production deploy. Dev runs still hit
+  the routes without a secret.
+
+The HN audience picks at things. Show HN is forty days out. The
+fixes above mean an enthusiastic-and-technical HN reader can spend
+an hour probing and find nothing exploitable. The refusal list
+holds.
+
 ## Cycle 31 · 2026-05-07 · Sprint 10 — The other roadmap
 
 The internal GTM tooling joined the product. Until this cycle the
