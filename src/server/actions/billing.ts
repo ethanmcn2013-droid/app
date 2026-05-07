@@ -88,7 +88,14 @@ export async function createCheckoutSessionAction(
  *
  *  `workspaceId` accepts null for user-level entitlements (Studio).
  *  The DB column is already nullable; the type tightens the contract
- *  so the call site declares scope intent explicitly. */
+ *  so the call site declares scope intent explicitly.
+ *
+ *  Idempotent on `notes`: if a row with the same notes value already
+ *  exists, the call is a no-op. This makes the function safe to retry
+ *  from the Stripe webhook handler — the `stripe:<event-id>` notes
+ *  string serves as the natural dedup key, so a webhook retry after
+ *  a partial-handler crash re-runs the grant without creating a
+ *  duplicate entitlement. */
 export async function grantEntitlement(input: {
   userId: string;
   workspaceId: string | null;
@@ -98,6 +105,15 @@ export async function grantEntitlement(input: {
   durationDays: number | null;
   notes?: string | null;
 }): Promise<void> {
+  if (input.notes) {
+    const [existing] = await db
+      .select({ id: entitlements.id })
+      .from(entitlements)
+      .where(eq(entitlements.notes, input.notes))
+      .limit(1);
+    if (existing) return;
+  }
+
   const id = `e-${Math.random().toString(36).slice(2, 12)}`;
   const expiresAt =
     input.durationDays != null

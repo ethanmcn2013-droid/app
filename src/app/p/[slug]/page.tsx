@@ -29,9 +29,14 @@ export async function generateMetadata({
   const title = domainLabel
     ? `${ws.name} — ${domainLabel} workspace`
     : ws.name;
-  const description = `A published Tasks workspace · ${ws.tasks.length} task${
-    ws.tasks.length === 1 ? "" : "s"
-  }${domainLabel ? ` · ${domainLabel}` : ""}.`;
+  // Human description for press, social previews, and search snippets.
+  // Leads with the workspace name and what it is, ends with the brand
+  // shape — same tasks, four lenses. Falls under 160 chars in the
+  // common case.
+  const lensClause = "board, list, timeline, calendar.";
+  const description = domainLabel
+    ? `${ws.name} — a real ${domainLabel.toLowerCase()} workspace made public on Tasks. Same items, four lenses: ${lensClause}`
+    : `${ws.name} — a real workspace made public on Tasks. Same items, four lenses: ${lensClause}`;
 
   return {
     title,

@@ -14,31 +14,37 @@ export const dynamic = "force-dynamic";
 
 /**
  * Idempotency: Stripe re-delivers webhooks on transient failure
- * (every 30s, up to 3 days). Without dedup, a re-delivered
- * `checkout.session.completed` would grant a second entitlement row.
- * We INSERT the event id; on duplicate id, the INSERT is a no-op
- * (PRIMARY KEY conflict via INSERT OR IGNORE), and we return 200
- * without re-running the handler.
+ * (every 30s, up to 3 days). The dedup table prevents redundant work,
+ * but the canonical idempotency key is the `notes` field on the
+ * entitlement row (set to `stripe:<event-id>` or `stripe-sub:<sub-id>`).
+ * `grantEntitlement` skips inserts when a row with the same notes
+ * exists, so even a Stripe retry that lands while the dedup record
+ * is missing — i.e. a partial-handler crash before the dedup write —
+ * is safe: the second retry's grant is a no-op because the entitlement
+ * already lives in the table.
  *
- * Stripe stops retrying as soon as it sees 200, so the audit trail
- * matches what we actually processed.
+ * Order: do the grant FIRST, then record the dedup row. If the grant
+ * crashes, no dedup row exists, and Stripe's retry will re-run the
+ * handler. The customer always ends up entitled. The cost: a brief
+ * window where two concurrent retries could both run the grant —
+ * harmless because grantEntitlement is idempotent on notes.
  */
-async function recordOrSkip(
+async function alreadyProcessed(eventId: string): Promise<boolean> {
+  const [row] = await db.run(
+    sql`SELECT 1 AS hit FROM processed_webhooks WHERE event_id = ${eventId} LIMIT 1`,
+  ) as unknown as Array<{ hit: number }>;
+  return Boolean(row?.hit);
+}
+
+async function recordProcessed(
   eventId: string,
   eventType: string,
-): Promise<{ alreadyProcessed: boolean }> {
-  const result = await db.run(sql`
+): Promise<void> {
+  await db.run(sql`
     INSERT OR IGNORE INTO processed_webhooks (event_id, event_type)
     VALUES (${eventId}, ${eventType})
   `);
-  // better-sqlite3 exposes `changes` as the affected-row count.
-  // 0 = INSERT was IGNORE'd because eventId already exists.
-  const changes = (result as { changes?: number }).changes ?? 0;
-  if (changes === 0) {
-    void processedWebhooks; // satisfy eslint about unused import (referenced via raw sql)
-    return { alreadyProcessed: true };
-  }
-  return { alreadyProcessed: false };
+  void processedWebhooks; // referenced via raw sql; keeps the import live
 }
 
 /**
@@ -77,14 +83,13 @@ export async function POST(req: Request) {
     return new NextResponse("invalid signature", { status: 401 });
   }
 
-  // Idempotency check — short-circuit if Stripe is re-delivering an
-  // event we've already processed. The INSERT-OR-IGNORE happens BEFORE
-  // any side-effect work, so even a flaky handler that crashes mid-way
-  // gets retried (the row is only inserted if INSERT succeeded — which
-  // doesn't gate on the rest of the handler). 200 stops Stripe from
-  // retrying further.
-  const dedup = await recordOrSkip(event.id, event.type);
-  if (dedup.alreadyProcessed) {
+  // Cheap pre-check: skip the work if we've already finished this
+  // event. The real idempotency guarantee lives on the entitlement
+  // row's `notes` field — see grantEntitlement. The dedup row is
+  // recorded only AFTER the handler succeeds, so a partial-handler
+  // crash leaves the event re-runnable and the customer always ends
+  // up entitled.
+  if (await alreadyProcessed(event.id)) {
     return NextResponse.json({ ok: true, deduped: true });
   }
 
@@ -152,6 +157,11 @@ export async function POST(req: Request) {
     default:
       break;
   }
+
+  // Record the event AFTER the handler completes. A crash above this
+  // line leaves no dedup row; Stripe's retry will land safely because
+  // grantEntitlement is idempotent on the `notes` field.
+  await recordProcessed(event.id, event.type);
 
   return NextResponse.json({ ok: true });
 }

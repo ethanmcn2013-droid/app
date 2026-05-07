@@ -35,7 +35,7 @@ export function SiteNav() {
             href="/app/board"
             className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-medium text-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md"
           >
-            Open the demo
+            Open the workspace
             <svg
               width="12"
               height="12"

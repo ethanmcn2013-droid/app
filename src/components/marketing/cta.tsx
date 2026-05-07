@@ -21,7 +21,7 @@ export function CallToAction() {
           />
           <div className="relative z-10 max-w-[42ch]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">
-              Open the demo
+              Live workspace
             </div>
             <h2 className="mt-3 text-balance text-[clamp(2rem,1.5rem+2.6vw,3.75rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-white">
               Stop reading.{" "}

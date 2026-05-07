@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Wordmark } from "@/components/brand/wordmark";
 import {
   cycleRoadmapStatusAction,
   setRoadmapNoteAction,
@@ -453,17 +455,14 @@ export function RoadmapView({
           borderColor: "var(--border)",
         }}
       >
-        <div className="mx-auto max-w-[1280px] px-8 py-5 flex items-center gap-6">
-          <a
+        <div className="mx-auto max-w-[1240px] px-8 py-5 flex items-center gap-6">
+          <Link
             href="/"
-            className="flex items-center gap-2 text-[15px] font-semibold tracking-tight"
+            className="flex items-center transition-opacity hover:opacity-80"
+            aria-label="Tasks home"
           >
-            <span style={{ color: "var(--text)" }}>tasks</span>
-            <span
-              className="inline-block h-[6px] w-[6px] rounded-full"
-              style={{ background: "var(--highlight)" }}
-            />
-          </a>
+            <Wordmark size="md" />
+          </Link>
           <div
             className="text-[13px]"
             style={{ color: "var(--text-muted)" }}
@@ -488,13 +487,19 @@ export function RoadmapView({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1280px] px-8 py-10 grid grid-cols-[1fr_320px] gap-10">
+      <div className="mx-auto max-w-[1240px] px-8 py-10 grid grid-cols-[1fr_320px] gap-10">
         {/* ─── Main column ─────────────────────────────────────── */}
         <main className="min-w-0">
           {/* Headline */}
           <div className="mb-10">
+            <div
+              className="text-[11px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: "var(--text-quiet, var(--text-muted))" }}
+            >
+              8-week go-to-market plan · not the product backlog
+            </div>
             <h1
-              className="text-[40px] leading-[1.05] font-semibold tracking-tight"
+              className="mt-3 text-[40px] leading-[1.05] font-semibold tracking-tight"
               style={{ letterSpacing: "-0.02em" }}
             >
               The other roadmap.
