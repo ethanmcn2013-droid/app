@@ -75,6 +75,16 @@ export default async function ChangelogPage() {
               entry — what we built, what we cut, what surprised us.
               The voice is on purpose.
             </p>
+            <p className="mt-3 max-w-[58ch] text-[13px] leading-[1.55] text-ink-quiet">
+              This page is the source. It reads{" "}
+              <code className="rounded bg-bg-sunken px-1 py-0.5 font-mono text-[12px] text-ink">
+                CHANGELOG.md
+              </code>{" "}
+              from the repo at request time, parses it on the server,
+              and renders. There&rsquo;s no CMS, no build step, no
+              copy queue — when a cycle lands in git, it&rsquo;s
+              live here on the next request.
+            </p>
           </div>
         </section>
 

@@ -123,7 +123,7 @@ const REFUSALS: { title: string; body: string }[] = [
   {
     title: "No real-time push notifications.",
     body:
-      "The daily digest is the only scheduled outbound channel. No inbox red-dot, no desktop alert, no Slack ping, no phone buzz. If a tool&rsquo;s strategy is winning more of your attention, the tool isn&rsquo;t on your side.",
+      "The daily digest is the only scheduled outbound channel. The Inbox tab inside the app is a pull surface — you visit it when you want to; it doesn&rsquo;t reach for you. No red-dot, no desktop alert, no Slack ping, no phone buzz. If a tool&rsquo;s strategy is winning more of your attention, the tool isn&rsquo;t on your side.",
   },
   {
     title: "No story points, velocity, burndown, OKR alignment.",

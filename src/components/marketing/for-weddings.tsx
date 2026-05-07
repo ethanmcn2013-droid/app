@@ -183,7 +183,7 @@ export function ForWeddings() {
           />
           <Reason
             title="The day-of timeline lives on every phone."
-            body="Magic-link your photographer, your DJ, your day-of coordinator. They open the link, they see the same run-of-show you do, in real time. Updates ripple. No re-emailing the binder at 6am."
+            body="Magic-link your photographer, your DJ, your day-of coordinator. They open the link, they see the same run-of-show you do, in real time. Updates ripple. No re-emailing the binder at 6am. The calendar feed (Apple, Google, Outlook) lets each vendor subscribe, so the timeline shows up in the calendar app they already check."
           />
           <Reason
             title="It outlives the wedding."
