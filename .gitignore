@@ -51,3 +51,5 @@ next-env.d.ts
 
 # user-uploaded attachments (out-of-tree storage; not served from /public)
 /.data/
+
+roadmap.db
