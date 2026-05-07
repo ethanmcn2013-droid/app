@@ -3,6 +3,53 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 38 · 2026-05-07 · Roadmap pills join the design system
+
+The pre-launch design review parked one item: the /roadmap pill
+colors were ~14 raw hex strings inlined into roadmap-view.tsx.
+Press in rose, paid in amber, launch in violet, kpi in emerald,
+P0 priority in stronger red, the unresolved-blocker chip — every
+one of them a literal hex string that would silently drift if the
+brand palette ever shifted. This cycle pulled them into the
+design system.
+
+Eight new tokens in globals.css — `--roadmap-rose-*`,
+`--roadmap-amber-*`, `--roadmap-violet-*`, `--roadmap-emerald-*`,
+plus a stronger `--roadmap-red-*` family for P0-class signals
+that need more weight than the launch-beat rose. Values mirror
+Tailwind 50/700 (and 100/800 for the red-bg) so the eye-feel
+stays identical to what the surface looked like before. The
+roadmap-view.tsx KIND_META, BLOCKER_KIND_META, PRIORITY_META, the
+unresolved-blocker card, the inline launch-blocked chip, and the
+P0-stats counter all reference tokens now.
+
+The reason this matters: the roadmap is the operator surface. If
+a brand pass ever shifts the palette — and given Tasks ships in
+cycles, brand-tightening is on the table — the change cost was
+14 edits across a 2,300-line file. After this cycle it's a one-
+edit pass on globals.css.
+
+## Cycle 37 · 2026-05-07 · A favicon that earns its tab
+
+Tasks shipped with the create-next-app default favicon for too
+long. The launch-readiness action item AI-brand-favicon (P1) had
+been parked since week one. This cycle closes it.
+
+`src/app/icon.tsx` is the 32×32 browser-tab icon — compact `t` on
+a brand-soft tile with the indigo-600 dot bottom-right. Reads at
+16×16 because the mark is just a glyph and a dot, not the full
+wordmark. `src/app/apple-icon.tsx` is the 180×180 Apple touch
+icon for iOS home screens, macOS Safari pinned tabs, and so on —
+the full `tasks·` wordmark at 96pt on the same brand-soft tile,
+36px rounded corners, no transparency (Apple draws a tile under
+transparent icons that would clash with the brand-soft).
+
+Both rendered via Next's ImageResponse so the brand source-of-
+truth — indigo-600, brand-soft, the wordmark spec from
+docs/brand.md — stays in one place. The legacy favicon.ico stays
+in /src/app/ as the fallback for browsers that GET /favicon.ico
+directly; icon.tsx wins for everything else.
+
 ## Cycle 36 · 2026-05-07 · One body, one rhythm
 
 The design audit ranked it a should-fix and we treated it that way:
