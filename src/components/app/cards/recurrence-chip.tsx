@@ -1,4 +1,5 @@
-import type { Recurrence } from "@/lib/data";
+import type { RecurrenceSpec } from "@/lib/data";
+import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 
 /**
  * Tiny recurrence indicator for task cards. Sits in the card meta
@@ -6,9 +7,7 @@ import type { Recurrence } from "@/lib/data";
  * fight those signals, but glanceable so the user knows at-a-card
  * which tasks repeat.
  *
- * Label rules:
- *   freq + interval undefined|1 → "daily" / "weekly" / "monthly"
- *   freq + interval > 1         → "Nd" / "Nw" / "Nm"
+ * Label: "Repeats: every Tuesday", "Repeats: 1st of the month", etc.
  *
  * Renders nothing when `recurrence` is undefined so callers can
  * drop it unconditionally into a meta row without wrapping in
@@ -17,13 +16,12 @@ import type { Recurrence } from "@/lib/data";
 export function RecurrenceChip({
   recurrence,
 }: {
-  recurrence: Recurrence | undefined;
+  recurrence: RecurrenceSpec | undefined;
 }) {
   if (!recurrence) return null;
 
-  const interval = recurrence.interval ?? 1;
-  const label = formatLabel(recurrence.freq, interval);
-  const tooltip = formatTooltip(recurrence.freq, interval);
+  const label = formatRecurrenceLabel(recurrence);
+  const tooltip = `Repeats: ${label}`;
 
   return (
     <span
@@ -37,23 +35,4 @@ export function RecurrenceChip({
       {label}
     </span>
   );
-}
-
-function formatLabel(
-  freq: Recurrence["freq"],
-  interval: number,
-): string {
-  if (interval <= 1) return freq;
-  const suffix = freq === "daily" ? "d" : freq === "weekly" ? "w" : "m";
-  return `${interval}${suffix}`;
-}
-
-function formatTooltip(
-  freq: Recurrence["freq"],
-  interval: number,
-): string {
-  if (interval <= 1) return `Repeats ${freq}`;
-  const unit =
-    freq === "daily" ? "days" : freq === "weekly" ? "weeks" : "months";
-  return `Repeats every ${interval} ${unit}`;
 }

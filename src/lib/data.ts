@@ -176,13 +176,27 @@ export type Task = {
   updatedAt: Date;
 };
 
-export type RecurrenceFreq = "daily" | "weekly" | "monthly";
+/**
+ * Natural-language recurrence spec. Three patterns only — no RRULE,
+ * no exception editor. Parsed from quick-add input by
+ * `parseRecurrence()` in `src/lib/nlp/parse-recurrence.ts`.
+ *
+ *   weekly            — "every Tuesday"
+ *   monthly-day       — "first of the month", "15th of the month"
+ *   monthly-first-weekday — "every first Monday of the month"
+ *
+ * If the user wants something outside these three, `parseRecurrence`
+ * returns null and they make a copy. Restraint is the feature.
+ *
+ * Weekday integers follow JS Date.getDay(): 0=Sun … 6=Sat.
+ */
+export type RecurrenceSpec =
+  | { kind: "weekly"; weekday: 0 | 1 | 2 | 3 | 4 | 5 | 6 }
+  | { kind: "monthly-day"; day: number }
+  | { kind: "monthly-first-weekday"; weekday: 0 | 1 | 2 | 3 | 4 | 5 | 6 };
 
-export type Recurrence = {
-  freq: RecurrenceFreq;
-  /** N units between instances. Default 1. */
-  interval?: number;
-};
+/** Alias kept for the schema type-column reference. */
+export type Recurrence = RecurrenceSpec;
 
 // Stagger seed updatedAt timestamps so the panel renders a realistic
 // "edited Nh ago" gradient on first boot. Each subsequent task is 1h

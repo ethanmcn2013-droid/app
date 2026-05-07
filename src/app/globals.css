@@ -482,3 +482,446 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ────────────────────────────────────────────────────────────
+   Print views — /print/board · /print/list · /print/timeline
+   · /print/calendar
+   ──────────────────────────────────────────────────────────
+   Strategy: the .print-root wrapper replaces the entire app
+   chrome. Everything inside targets a clean white sheet.
+   The @media print block forces the browser's print dialog
+   to render the same view the screen shows — no special
+   print-trigger needed, just Cmd+P or File > Print.
+   ────────────────────────────────────────────────────────── */
+
+/* Screen rendering for /print/* routes */
+.print-root {
+  background: #fff;
+  color: #18181b;
+  font-family: var(--font-sans-stack);
+  min-height: 100vh;
+  padding: 2rem;
+}
+
+/* Shared doc-header: workspace name + "Board · May 7, 2026" */
+.print-doc-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #18181b;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.print-doc-workspace {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #18181b;
+}
+.print-doc-meta {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+/* Shared lane dot + prio dot */
+.print-lane-dot,
+.print-prio-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ── Board ───────────────────────────────────────────────── */
+.print-board-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.print-board-lane {
+  border: 1px solid #e4e4e7;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.print-lane-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e4e4e7;
+  background: #fafaf7;
+}
+.print-lane-name {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #3f3f46;
+}
+.print-lane-count {
+  font-size: 0.6875rem;
+  color: #71717a;
+  margin-left: 2px;
+}
+.print-lane-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.print-card {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #f4f4f5;
+}
+.print-card:last-child {
+  border-bottom: none;
+}
+.print-card-title {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #18181b;
+  margin-bottom: 0.25rem;
+}
+.print-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.6875rem;
+  color: #71717a;
+}
+.print-card-prio {
+  display: inline-flex;
+  align-items: center;
+}
+.print-card-due {
+  color: #52525b;
+}
+.print-card-p0 {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.print-lane-empty {
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  font-style: italic;
+}
+
+/* ── List ────────────────────────────────────────────────── */
+.print-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+.print-list-head th {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #52525b;
+  text-align: left;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1.5px solid #18181b;
+}
+.print-list-col-task     { width: 52%; }
+.print-list-col-status   { width: 18%; }
+.print-list-col-priority { width: 16%; }
+.print-list-col-due      { width: 14%; }
+.print-list-group-row td {
+  padding: 0.5rem 0.5rem 0.25rem;
+  background: #fafaf7;
+  border-bottom: 1px solid #e4e4e7;
+}
+.print-list-group {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #3f3f46;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.print-list-row td {
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1px solid #f4f4f5;
+  vertical-align: middle;
+}
+.print-list-title {
+  color: #18181b;
+  font-size: 0.75rem;
+}
+.print-list-status,
+.print-list-priority {
+  font-size: 0.6875rem;
+  color: #52525b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.print-list-due {
+  font-size: 0.6875rem;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+}
+.print-done {
+  text-decoration: line-through;
+  color: #a1a1aa;
+}
+.print-list-footer {
+  margin-top: 1rem;
+  font-size: 0.6875rem;
+  color: #71717a;
+  text-align: right;
+}
+
+/* ── Timeline ────────────────────────────────────────────── */
+.print-timeline-table-wrap {
+  overflow-x: auto;
+}
+.print-timeline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.6875rem;
+}
+.print-timeline-label-col {
+  width: 180px;
+  min-width: 180px;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #52525b;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1.5px solid #18181b;
+  border-right: 1px solid #e4e4e7;
+}
+.print-timeline-day-header {
+  text-align: center;
+  padding: 0.25rem 0;
+  border-bottom: 1.5px solid #18181b;
+  border-right: 1px solid #e4e4e7;
+  min-width: 28px;
+}
+.print-timeline-day-header:last-child { border-right: none; }
+.print-timeline-day-name {
+  display: block;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #52525b;
+}
+.print-timeline-day-num {
+  display: block;
+  font-size: 0.5rem;
+  color: #a1a1aa;
+}
+.print-timeline-weekend {
+  background: #fafaf7;
+  color: #a1a1aa;
+}
+.print-timeline-row td {
+  border-bottom: 1px solid #f4f4f5;
+  height: 28px;
+}
+.print-timeline-task-name {
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  border-right: 1px solid #e4e4e7;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.6875rem;
+  color: #18181b;
+}
+.print-timeline-cell {
+  border-right: 1px solid #f4f4f5;
+  height: 28px;
+  position: relative;
+}
+.print-timeline-cell:last-child { border-right: none; }
+.print-timeline-bar {
+  border-top: 1.5px solid;
+  border-bottom: 1.5px solid;
+  border-left: none;
+  border-right: none;
+  vertical-align: middle;
+}
+.print-timeline-bar-start {
+  border-left: 1.5px solid;
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+}
+.print-timeline-bar-end {
+  border-right: 1.5px solid;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+}
+.print-timeline-bar-label {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: block;
+  padding: 0 4px;
+  line-height: 26px;
+}
+
+/* ── Calendar ────────────────────────────────────────────── */
+.print-cal-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.6875rem;
+}
+.print-cal-dow {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #52525b;
+  padding: 0.375rem 0.5rem;
+  border-bottom: 1.5px solid #18181b;
+  text-align: left;
+}
+.print-cal-cell {
+  border: 1px solid #e4e4e7;
+  vertical-align: top;
+  padding: 0.25rem 0.375rem;
+  height: 90px;
+}
+.print-cal-today {
+  background: #eef2ff;
+  outline: 1.5px solid #4f46e5;
+  outline-offset: -1.5px;
+}
+.print-cal-weekend {
+  background: #fafaf7;
+}
+.print-cal-outside {
+  opacity: 0.4;
+}
+.print-cal-day-num {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: #52525b;
+  margin-bottom: 0.25rem;
+}
+.print-cal-today-badge {
+  font-size: 0.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 2px;
+  padding: 1px 4px;
+}
+.print-cal-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.print-cal-task {
+  font-size: 0.5625rem;
+  line-height: 1.3;
+  color: #18181b;
+  border-left: 2px solid #a1a1aa;
+  padding-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.print-cal-overflow {
+  font-size: 0.5rem;
+  color: #71717a;
+  padding-left: 4px;
+}
+
+/* Generic empty state */
+.print-empty {
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  font-style: italic;
+}
+
+/* ── Print media rules ───────────────────────────────────── */
+@media print {
+  /* Force white background, black ink everywhere */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Strip the app chrome — sidebar, nav, toast, modals */
+  .print-root {
+    background: #fff !important;
+    padding: 0 !important;
+  }
+
+  /* Board: 4-col grid maps to 4-across on letter */
+  .print-board-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* List: avoid page-breaking mid-row */
+  .print-list-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Timeline: landscape page for the wide table */
+  .print-landscape {
+    page: landscape;
+  }
+
+  /* Calendar: avoid splitting cells across pages */
+  .print-cal-cell {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Keep group headers with the first row of their section */
+  .print-list-group-row {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Keep lane header with its first card */
+  .print-board-lane {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* Landscape page declaration for timeline */
+@page landscape {
+  size: A4 landscape;
+  margin: 14mm 12mm;
+}
+
+@page {
+  margin: 18mm 16mm;
+}

@@ -6,11 +6,11 @@ import {
   PRIORITY_LABEL,
   USERS,
   type Priority,
-  type Recurrence,
-  type RecurrenceFreq,
+  type RecurrenceSpec,
   type Task,
   type UserId,
 } from "@/lib/data";
+import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Popover } from "./popover";
@@ -261,19 +261,26 @@ function AssigneesRow({ task }: { task: Task }) {
 
 const RECURRENCE_OPTIONS: Array<{
   label: string;
-  value: Recurrence | null;
+  value: RecurrenceSpec | null;
 }> = [
   { label: "Doesn't repeat", value: null },
-  { label: "Every day", value: { freq: "daily" } },
-  { label: "Every week", value: { freq: "weekly" } },
-  { label: "Every other week", value: { freq: "weekly", interval: 2 } },
-  { label: "Every month", value: { freq: "monthly" } },
+  { label: "Every Monday", value: { kind: "weekly", weekday: 1 } },
+  { label: "Every Tuesday", value: { kind: "weekly", weekday: 2 } },
+  { label: "Every Wednesday", value: { kind: "weekly", weekday: 3 } },
+  { label: "Every Thursday", value: { kind: "weekly", weekday: 4 } },
+  { label: "Every Friday", value: { kind: "weekly", weekday: 5 } },
+  { label: "1st of the month", value: { kind: "monthly-day", day: 1 } },
+  { label: "15th of the month", value: { kind: "monthly-day", day: 15 } },
+  {
+    label: "First Monday of the month",
+    value: { kind: "monthly-first-weekday", weekday: 1 },
+  },
 ];
 
 function RecurrenceRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.recurrence;
-  const summary = describeRecurrence(current);
+  const summary = current ? formatRecurrenceLabel(current) : "Doesn't repeat";
 
   return (
     <Popover
@@ -353,26 +360,21 @@ function RecurrenceRow({ task }: { task: Task }) {
   );
 }
 
-function describeRecurrence(r: Recurrence | undefined): string {
-  if (!r) return "Doesn't repeat";
-  const interval = r.interval ?? 1;
-  const map: Record<RecurrenceFreq, string> = {
-    daily: "day",
-    weekly: "week",
-    monthly: "month",
-  };
-  if (interval === 1) return `Every ${map[r.freq]}`;
-  if (r.freq === "weekly" && interval === 2) return "Every other week";
-  return `Every ${interval} ${map[r.freq]}s`;
-}
-
 function sameRecurrence(
-  a: Recurrence | undefined,
-  b: Recurrence | null,
+  a: RecurrenceSpec | undefined,
+  b: RecurrenceSpec | null,
 ): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
-  return a.freq === b.freq && (a.interval ?? 1) === (b.interval ?? 1);
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "monthly-day" && b.kind === "monthly-day")
+    return a.day === b.day;
+  if (
+    (a.kind === "weekly" && b.kind === "weekly") ||
+    (a.kind === "monthly-first-weekday" && b.kind === "monthly-first-weekday")
+  )
+    return a.weekday === b.weekday;
+  return false;
 }
 
 function DueRow({ task }: { task: Task }) {

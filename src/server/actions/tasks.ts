@@ -12,7 +12,7 @@ import {
   LANE_ORDER,
   type LaneId,
   type Priority,
-  type Recurrence,
+  type RecurrenceSpec,
   type Task,
   type UpdateField,
   type UserId,
@@ -133,21 +133,42 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   return getTasks(ws);
 }
 
-function advanceDate(from: Date, r: Recurrence): Date {
-  const interval = r.interval ?? 1;
+function advanceDate(from: Date, r: RecurrenceSpec): Date {
   const d = new Date(from);
-  if (r.freq === "daily") d.setDate(d.getDate() + interval);
-  else if (r.freq === "weekly") d.setDate(d.getDate() + 7 * interval);
-  else if (r.freq === "monthly") d.setMonth(d.getMonth() + interval);
-  // If `from` is in the past, bump forward until the next instance is
-  // in the future. Otherwise a long-untouched recurring task would
-  // resurface with a stale-looking date.
+
+  if (r.kind === "weekly") {
+    // Advance to the next occurrence of the target weekday.
+    const target = r.weekday;
+    d.setDate(d.getDate() + 7);
+    // Walk forward until we land on the right day.
+    while (d.getDay() !== target) d.setDate(d.getDate() + 1);
+  } else if (r.kind === "monthly-day") {
+    // Same calendar day next month.
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(r.day);
+  } else if (r.kind === "monthly-first-weekday") {
+    // First occurrence of the target weekday next month.
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(1);
+    while (d.getDay() !== r.weekday) d.setDate(d.getDate() + 1);
+  }
+
+  // If the computed date is already in the past, keep advancing by
+  // one interval until we land in the future.
   const now = Date.now();
   while (d.getTime() < now) {
-    if (r.freq === "daily") d.setDate(d.getDate() + interval);
-    else if (r.freq === "weekly") d.setDate(d.getDate() + 7 * interval);
-    else if (r.freq === "monthly") d.setMonth(d.getMonth() + interval);
+    if (r.kind === "weekly") {
+      d.setDate(d.getDate() + 7);
+    } else if (r.kind === "monthly-day") {
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(r.day);
+    } else if (r.kind === "monthly-first-weekday") {
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(1);
+      while (d.getDay() !== r.weekday) d.setDate(d.getDate() + 1);
+    }
   }
+
   return d;
 }
 
@@ -255,6 +276,8 @@ export async function addTaskAction(input: {
    *  Drizzle's `mode: "timestamp"` column accepts Date directly. */
   dueAt?: Date;
   tags?: string[];
+  /** Optional recurrence spec parsed from the NLP quick-add input. */
+  recurrence?: RecurrenceSpec;
   /** Optional outside-person contact attached at create time. Both
    *  fields independently nullable. */
   externalContactName?: string | null;
@@ -287,6 +310,7 @@ export async function addTaskAction(input: {
     position,
     dueAt: input.dueAt,
     tags: input.tags,
+    recurrence: input.recurrence,
     externalContactName: input.externalContactName ?? null,
     externalContactEmail: input.externalContactEmail ?? null,
     cents: sanitizeCents(input.cents ?? null),

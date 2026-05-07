@@ -1,7 +1,9 @@
 import * as chrono from "chrono-node";
+import type { RecurrenceSpec } from "@/lib/data";
+import { extractRecurrence } from "@/lib/nlp/parse-recurrence";
 
 export type ParsedTaskInput = {
-  /** The task's clean title — date phrases stripped. */
+  /** The task's clean title — date AND recurrence phrases stripped. */
   title: string;
   /** Structured due date if one was found in the input. */
   dueAt?: Date;
@@ -9,6 +11,8 @@ export type ParsedTaskInput = {
    *  "Mar 14, 3pm". Designed to fit in the existing `task.due` text
    *  column and the chip on cards. */
   dueLabel?: string;
+  /** Parsed recurrence spec if a supported recurrence phrase was found. */
+  recurrence?: RecurrenceSpec;
 };
 
 /** Days of the week names → for short formatting. */
@@ -95,9 +99,16 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
   const input = raw.trim();
   if (!input) return { title: "" };
 
-  const results = chrono.parse(input, new Date(), { forwardDate: true });
+  // Strip recurrence phrase first — the date parser sees a cleaner string.
+  const recurrenceResult = extractRecurrence(input);
+  const inputAfterRecurrence = recurrenceResult?.title ?? input;
+  const recurrence = recurrenceResult?.recurrence;
+
+  const results = chrono.parse(inputAfterRecurrence, new Date(), {
+    forwardDate: true,
+  });
   if (results.length === 0) {
-    return { title: input };
+    return { title: inputAfterRecurrence || input, recurrence };
   }
 
   // Use the LAST match — usually the trailing "by next Friday" form.
@@ -108,8 +119,8 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
 
   // Strip the date span itself plus a preceding "by"/"on"/"at"/"due"
   // / em-dash / hyphen lead-in if present.
-  const lead = input.slice(0, r.index);
-  const trail = input.slice(r.index + r.text.length);
+  const lead = inputAfterRecurrence.slice(0, r.index);
+  const trail = inputAfterRecurrence.slice(r.index + r.text.length);
 
   const cleanedLead = lead.replace(
     /\s*(?:by|on|at|due|due on|@|—|–|-|·)\s*$/i,
@@ -120,8 +131,8 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
   let title = (cleanedLead + " " + cleanedTrail).replace(/\s+/g, " ").trim();
   // If we end up with nothing (e.g. raw was just "next Friday"), keep
   // the original — better a date-shaped title than an empty task.
-  if (!title) title = input;
+  if (!title) title = inputAfterRecurrence || input;
 
   const dueLabel = formatDueLabel(dueAt, hasTime);
-  return { title, dueAt, dueLabel };
+  return { title, dueAt, dueLabel, recurrence };
 }

@@ -7,6 +7,10 @@ import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Dialog } from "@/components/primitives/dialog";
 import { useDomain } from "@/lib/domain-context";
 import { parseTaskInput } from "@/lib/nlp/parse-task-input";
+import {
+  looksLikeUnsupportedRecurrence,
+  formatRecurrenceLabel,
+} from "@/lib/nlp/parse-recurrence";
 
 export function QuickCreateDialog({
   open,
@@ -20,17 +24,25 @@ export function QuickCreateDialog({
   const todoLane = LANES.todo;
   const pack = useDomain();
 
-  // Parse NLP date references on every keystroke. The result drives
-  // the live preview AND the submit payload.
+  // Parse NLP date + recurrence references on every keystroke.
+  // The result drives the live preview AND the submit payload.
   const parsed = useMemo(() => parseTaskInput(title), [title]);
   const dateDetected = !!parsed.dueAt && !!parsed.dueLabel;
+  const recurrenceDetected = !!parsed.recurrence;
+  // True when input looks like a recurrence attempt but the parser couldn't handle it.
+  const recurrenceRefusal = useMemo(
+    () => !recurrenceDetected && looksLikeUnsupportedRecurrence(title),
+    [title, recurrenceDetected],
+  );
 
   function submit() {
     if (!parsed.title.trim()) return; // silent no-op
+    if (recurrenceRefusal) return; // don't create if the recurrence is unsupported
     addTask({
       title: parsed.title,
       due: parsed.dueLabel,
       dueAt: parsed.dueAt,
+      recurrence: parsed.recurrence,
     });
     setTitle("");
     onClose();
@@ -65,12 +77,12 @@ export function QuickCreateDialog({
           className="w-full bg-transparent text-[17px] font-medium leading-snug tracking-[-0.01em] text-ink placeholder:text-ink-faint focus:outline-none"
         />
 
-        {/* NLP preview — slides in when chrono detects a date phrase.
-            The cleaned title and the due chip are previewed here so the
-            user sees what the parser is going to do BEFORE pressing
-            Enter — no surprise. */}
+        {/* NLP preview — slides in when chrono detects a date phrase or
+            the recurrence parser fires. Shows the cleaned title, due chip,
+            and recurrence chip so the user sees what the parser will do
+            BEFORE pressing Enter — no surprise. */}
         <AnimatePresence initial={false}>
-          {dateDetected ? (
+          {(dateDetected || recurrenceDetected) ? (
             <motion.div
               key="nlp-preview"
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -107,14 +119,42 @@ export function QuickCreateDialog({
                 <span className="truncate font-medium text-ink">
                   {parsed.title}
                 </span>
-                <span className="ml-auto inline-flex flex-shrink-0 items-center gap-1.5 rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand">
-                  <span
-                    className="block h-1 w-1 rounded-full"
-                    style={{ background: "var(--brand)" }}
-                  />
-                  Due {parsed.dueLabel}
+                <span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+                  {dateDetected ? (
+                    <span className="inline-flex items-center gap-1.5 rounded bg-brand-soft px-1.5 py-0.5 text-[11px] font-medium text-brand">
+                      <span
+                        className="block h-1 w-1 rounded-full"
+                        style={{ background: "var(--brand)" }}
+                      />
+                      Due {parsed.dueLabel}
+                    </span>
+                  ) : null}
+                  {recurrenceDetected && parsed.recurrence ? (
+                    <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-quiet">
+                      <span aria-hidden="true">{"↻"}</span>
+                      {formatRecurrenceLabel(parsed.recurrence)}
+                    </span>
+                  ) : null}
                 </span>
               </div>
+            </motion.div>
+          ) : null}
+
+          {/* Refusal hint — fires when the input looks like a recurrence
+              attempt that the parser can't handle. Non-blocking: the user
+              can still submit but the guard at submit() returns early. */}
+          {recurrenceRefusal ? (
+            <motion.div
+              key="recurrence-refusal"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 8 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="overflow-hidden"
+            >
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-[1.4] text-amber-700">
+                Recurrence not supported — try &ldquo;every Tuesday&rdquo; or remove the timing language to skip recurrence.
+              </p>
             </motion.div>
           ) : null}
         </AnimatePresence>

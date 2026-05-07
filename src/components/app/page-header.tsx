@@ -31,6 +31,14 @@ function inferShareView(pathname: string): ShareView {
   return "board";
 }
 
+/** Map the current lens path to its /print equivalent. */
+function inferPrintPath(pathname: string): string {
+  if (pathname.startsWith("/app/list")) return "/print/list";
+  if (pathname.startsWith("/app/timeline")) return "/print/timeline";
+  if (pathname.startsWith("/app/calendar")) return "/print/calendar";
+  return "/print/board";
+}
+
 export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
@@ -55,6 +63,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const showShare = !isInbox;
 
   const shareView = inferShareView(pathname ?? "/app/board");
+  const printPath = inferPrintPath(pathname ?? "/app/board");
 
   return (
     <header className="border-b border-line-soft px-4 pb-3 pt-4 md:px-8 md:pt-5">
@@ -110,6 +119,32 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
             <span className="hidden md:inline-flex">
               <ExportMenu />
             </span>
+          ) : null}
+          {showShare ? (
+            <Link
+              href={printPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
+              aria-label="Open printable view"
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              Print
+            </Link>
           ) : null}
           {showShare ? (
             <span className="hidden md:inline-flex">

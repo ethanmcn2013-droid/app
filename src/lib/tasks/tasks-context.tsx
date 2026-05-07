@@ -14,6 +14,7 @@ import {
   SEED_TASKS,
   type LaneId,
   type Priority,
+  type RecurrenceSpec,
   type Task,
   type UserId,
 } from "@/lib/data";
@@ -88,6 +89,7 @@ export type TasksDispatchers = {
     due?: string;
     dueAt?: Date;
     tags?: string[];
+    recurrence?: RecurrenceSpec;
   }) => Task;
   removeTask: (id: string) => void;
   toggleComplete: (id: string) => void;
@@ -204,6 +206,7 @@ export function TasksProvider({
           due: input.due,
           dueAt: input.dueAt,
           tags: input.tags,
+          recurrence: input.recurrence,
           externalContactName: null,
           externalContactEmail: null,
           cents: null,
