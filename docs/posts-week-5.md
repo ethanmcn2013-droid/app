@@ -228,7 +228,7 @@ First-comment (paste right after the link posts):
 ### Wed 06-10, 1:30pm ET — Bluesky (single, "Show HN drops next Tuesday")
 - [ ] Post
 
-> Show HN goes up next Tuesday, 9am ET. Six days. The post lives in `docs/show-hn.md` — title, body, the predictable-question comment plan, all already written. Posting it is the easy part. Holding the comments thread for the first 90 minutes, in voice, without slipping into hype, is the bar.
+> Show HN drops next Tuesday, 9am ET. Six days. The pitch is one sentence — project management for the 80% who don't work in tech — and the product is already at tasks-nu-hazel.vercel.app. The refusal list at /principles is the shorter version if you want it before Tuesday.
 >
 > tasks-nu-hazel.vercel.app
 

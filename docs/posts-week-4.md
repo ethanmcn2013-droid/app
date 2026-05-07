@@ -138,7 +138,9 @@ Voice rules — dry, observational, em-dashes welcome, no emojis, no hype. Every
 
 **Description:**
 
-> The board view in Tasks. Same data as the list, the timeline, the calendar. Cursors carry weight, cards FLIP between layouts, comments stream in flat.
+> The board in Tasks — four lanes, drag-and-drop, cursors that carry weight. Same task data as the list, timeline, and calendar. The card doesn't fade when it moves: it FLIPs in place, same DOM node, new position.
+>
+> Per-workspace pricing, not per-seat. Built for the 80% who don't work in tech.
 >
 > tasks-nu-hazel.vercel.app
 

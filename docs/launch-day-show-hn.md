@@ -37,7 +37,7 @@
 
 ### 8:30pm — One last read of the Show HN body
 - Read `docs/show-hn.md` lines 17–95 once, slowly. Title is locked. Body is locked. Don't edit at 8:30pm the night before. If something feels off, mark it for the post-mortem, not the post.
-- Confirm the title is the first option: "Show HN: We rebuilt project management for the 80% who don't work in tech."
+- Confirm the title is the first option: "Show HN: Tasks – project management for the 80% who don't work in tech."
 
 ### 9:00pm — Calendar holds
 - Run `mcp__claude_ai_Google_Calendar__create_event` for: Tue 06-16 8:30am pre-flight, 9:00am POST HN, 9:30am POST X thread, 10:00am POST Bluesky, 10:30am HN second wave, 11:30am pulse check, 1:00pm lunch, 2:00pm pulse, 4:00pm pulse, 6:00pm pulse, 9:00pm close. 10-min reminders on each.
@@ -80,9 +80,9 @@
 ### 9:00am ET — POST · Hacker News
 **The post body lives at `docs/show-hn.md`. Paste verbatim. Hit submit. Note the timestamp.**
 
-- Title: "Show HN: We rebuilt project management for the 80% who don't work in tech."
+- Title: "Show HN: Tasks – project management for the 80% who don't work in tech."
 - URL field: `https://tasks-nu-hazel.vercel.app`
-- Body: paste from `docs/show-hn.md` lines 33–95 verbatim. Replace `[your handle]` with the actual HN handle.
+- Body: paste from `docs/show-hn.md` under "## Post body" — everything from the first paragraph through "— [your handle]". Replace `[your handle]` with the actual HN handle.
 - Hit submit. Do not preview-edit-second-guess. The post is locked.
 
 ### 9:01am — Open the second tab
@@ -102,10 +102,10 @@
 
 ### 9:15am — Start replying to comments
 - Reply pattern for the first hour: 5–10 min between replies. Don't reply to every comment — pick the ones that move the thread.
-- For "won't per-workspace pricing lose money on big teams?" — paste the canned answer from `docs/show-hn.md` lines 105–109 verbatim. *"Yes — and that's the point. We chose the audience that wins under per-workspace pricing (small groups, individual operators) and accepted that we'll lose 200-person companies to Linear. Linear already has them."*
+- For "won't per-workspace pricing lose money on big teams?" — paste the canned answer from `docs/show-hn.md` under "Won't the per-workspace model lose money on big teams?" verbatim. *"Yes — and that's the point. We chose the audience that wins under per-workspace pricing (small groups, individual operators) and accepted that we'll lose 200-person companies to Linear. Linear already has them."*
 - For "looks like Notion / Linear / Asana" — acknowledge it's crowded; point at `/principles`. Don't argue.
-- For "what about Gantt charts?" — paste the canned answer from `docs/show-hn.md` lines 110–114. *"Timeline view is the friendly cousin — visual sequencing without the cascading-dependencies-and-percent-complete-bars language of consultants. Gantt is enterprise theater. The audience we built for doesn't need it; the audience that needs it isn't us."*
-- For "where's the catch on free?" — paste lines 127–131. *"There isn't one. Free is one workspace, every view, three editing guests, the daily digest, magic-link sharing — no time limit, no card, no degradation."*
+- For "what about Gantt charts?" — paste the canned answer from `docs/show-hn.md` under "Why no Gantt?" *"Timeline view is the friendly cousin — visual sequencing without the cascading-dependencies-and-percent-complete-bars language of consultants. Gantt is enterprise theater. The audience we built for doesn't need it; the audience that needs it isn't us."*
+- For "where's the catch on free?" — paste the canned answer from `docs/show-hn.md` under "Where's the catch on free?" *"There isn't one. Free is one workspace, every view, three editing guests, the daily digest, magic-link sharing — no time limit, no card, no degradation."*
 
 ### 9:30am — POST · X narrative thread (8 posts)
 **The thread lives at `docs/posts-week-6.md` Tue 06-16 9:30am section.** Paste the 8 posts in order. Each post 2–3 minutes apart so the thread stays attached and X doesn't rate-limit.
