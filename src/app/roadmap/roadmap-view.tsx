@@ -54,10 +54,26 @@ const KIND_META: Record<
     pillBg: "var(--ink-100)",
     pillFg: "var(--ink-700)",
   },
-  press: { label: "Press", pillBg: "#ffe4e6", pillFg: "#9f1239" },
-  paid: { label: "Paid", pillBg: "#fef3c7", pillFg: "#92400e" },
-  launch: { label: "Launch", pillBg: "#ede9fe", pillFg: "#5b21b6" },
-  kpi: { label: "KPI", pillBg: "#d1fae5", pillFg: "#065f46" },
+  press: {
+    label: "Press",
+    pillBg: "var(--roadmap-rose-bg)",
+    pillFg: "var(--roadmap-rose-fg)",
+  },
+  paid: {
+    label: "Paid",
+    pillBg: "var(--roadmap-amber-bg)",
+    pillFg: "var(--roadmap-amber-fg)",
+  },
+  launch: {
+    label: "Launch",
+    pillBg: "var(--roadmap-violet-bg)",
+    pillFg: "var(--roadmap-violet-fg)",
+  },
+  kpi: {
+    label: "KPI",
+    pillBg: "var(--roadmap-emerald-bg)",
+    pillFg: "var(--roadmap-emerald-fg)",
+  },
   milestone: {
     label: "Milestone",
     pillBg: "var(--ink-100)",
@@ -88,22 +104,62 @@ const BLOCKER_KIND_META: Record<
   string,
   { tone: string; bg: string; fg: string }
 > = {
-  purchase: { tone: "amber", bg: "#fef3c7", fg: "#92400e" },
-  account: { tone: "indigo", bg: "var(--indigo-50)", fg: "var(--indigo-700)" },
-  recording: { tone: "violet", bg: "#ede9fe", fg: "#5b21b6" },
-  config: { tone: "stone", bg: "var(--ink-100)", fg: "var(--ink-700)" },
-  "ad-spend": { tone: "amber", bg: "#fef3c7", fg: "#92400e" },
-  "launch-beat": { tone: "rose", bg: "#ffe4e6", fg: "#9f1239" },
-  auth: { tone: "indigo", bg: "var(--indigo-50)", fg: "var(--indigo-700)" },
-  kpi: { tone: "emerald", bg: "#d1fae5", fg: "#065f46" },
+  purchase: {
+    tone: "amber",
+    bg: "var(--roadmap-amber-bg)",
+    fg: "var(--roadmap-amber-fg)",
+  },
+  account: {
+    tone: "indigo",
+    bg: "var(--indigo-50)",
+    fg: "var(--indigo-700)",
+  },
+  recording: {
+    tone: "violet",
+    bg: "var(--roadmap-violet-bg)",
+    fg: "var(--roadmap-violet-fg)",
+  },
+  config: {
+    tone: "stone",
+    bg: "var(--ink-100)",
+    fg: "var(--ink-700)",
+  },
+  "ad-spend": {
+    tone: "amber",
+    bg: "var(--roadmap-amber-bg)",
+    fg: "var(--roadmap-amber-fg)",
+  },
+  "launch-beat": {
+    tone: "rose",
+    bg: "var(--roadmap-rose-bg)",
+    fg: "var(--roadmap-rose-fg)",
+  },
+  auth: {
+    tone: "indigo",
+    bg: "var(--indigo-50)",
+    fg: "var(--indigo-700)",
+  },
+  kpi: {
+    tone: "emerald",
+    bg: "var(--roadmap-emerald-bg)",
+    fg: "var(--roadmap-emerald-fg)",
+  },
 };
 
 const PRIORITY_META: Record<
   "P0" | "P1" | "P2",
   { bg: string; fg: string; label: string }
 > = {
-  P0: { bg: "#fee2e2", fg: "#991b1b", label: "P0" },
-  P1: { bg: "#fef3c7", fg: "#92400e", label: "P1" },
+  P0: {
+    bg: "var(--roadmap-red-bg)",
+    fg: "var(--roadmap-red-fg)",
+    label: "P0",
+  },
+  P1: {
+    bg: "var(--roadmap-amber-bg)",
+    fg: "var(--roadmap-amber-fg)",
+    label: "P1",
+  },
   P2: { bg: "var(--ink-100)", fg: "var(--ink-600)", label: "P2" },
 };
 
@@ -822,7 +878,7 @@ export function RoadmapView({
                     color:
                       actionStats.p0Done === actionStats.p0
                         ? "var(--status-done)"
-                        : "#dc2626",
+                        : "var(--roadmap-red-fg)",
                   }}
                 >
                   {actionStats.p0Done}
@@ -1144,11 +1200,15 @@ function DrawerShell({
           <div
             className="rounded-lg px-3 py-2 text-[13px]"
             style={{
-              background: blocker.resolvedAt ? "var(--bg)" : "#fee2e2",
-              color: blocker.resolvedAt ? "var(--text-muted)" : "#991b1b",
+              background: blocker.resolvedAt
+                ? "var(--bg)"
+                : "var(--roadmap-red-bg)",
+              color: blocker.resolvedAt
+                ? "var(--text-muted)"
+                : "var(--roadmap-red-fg)",
               border: blocker.resolvedAt
                 ? "1px solid var(--border-soft)"
-                : "1px solid #fecaca",
+                : "1px solid var(--roadmap-red-border)",
             }}
           >
             <div className="font-medium">
@@ -1158,7 +1218,9 @@ function DrawerShell({
             <div
               className="mt-0.5 text-[12px] leading-snug"
               style={{
-                color: blocker.resolvedAt ? "var(--text-faint)" : "#7f1d1d",
+                color: blocker.resolvedAt
+                  ? "var(--text-faint)"
+                  : "var(--roadmap-red-deep)",
               }}
             >
               {blocker.description}
@@ -1699,8 +1761,8 @@ function ItemRow({
             <span
               className="ml-2 align-middle text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 rounded"
               style={{
-                background: "#fee2e2",
-                color: "#991b1b",
+                background: "var(--roadmap-red-bg)",
+                color: "var(--roadmap-red-fg)",
               }}
               title={`Blocked by: ${blocker.title}`}
             >
@@ -1852,7 +1914,9 @@ function ActionItemsSection({
           <span
             style={{
               color:
-                stats.p0Done === stats.p0 ? "var(--status-done)" : "#dc2626",
+                stats.p0Done === stats.p0
+                  ? "var(--status-done)"
+                  : "var(--roadmap-red-fg)",
             }}
           >
             P0 {stats.p0Done}/{stats.p0}
@@ -2042,8 +2106,8 @@ function ActionItemRow({
             <span
               className="ml-2 align-middle text-[10px] uppercase tracking-[0.1em] px-1.5 py-0.5 rounded"
               style={{
-                background: "#fee2e2",
-                color: "#991b1b",
+                background: "var(--roadmap-red-bg)",
+                color: "var(--roadmap-red-fg)",
               }}
               title={`Blocked by: ${blocker.title}`}
             >
@@ -2287,7 +2351,7 @@ function CountdownPill({
             ? "var(--text-faint)"
             : tone === "indigo"
               ? "var(--indigo-700)"
-              : "#5b21b6",
+              : "var(--roadmap-violet-fg)",
         }}
       >
         {past ? "shipped" : days === 0 ? "today" : `T-${days}`}

@@ -51,6 +51,26 @@
   --status-done:     #10b981;
   --status-blocked:  #ef4444;
 
+  /* ── Roadmap pill palette — categorical badges on /roadmap.
+   *   Tokenized so the surface stays in the design system; raw
+   *   hex strings in component files would drift if the palette
+   *   shifts (cycle-26 design review caught this). Values mirror
+   *   Tailwind rose/amber/violet/emerald 50/700 so the eye-feel
+   *   stays consistent with the rest of the marketing site. */
+  --roadmap-rose-bg:    #ffe4e6;
+  --roadmap-rose-fg:    #9f1239;
+  --roadmap-amber-bg:   #fef3c7;
+  --roadmap-amber-fg:   #92400e;
+  --roadmap-violet-bg:  #ede9fe;
+  --roadmap-violet-fg:  #5b21b6;
+  --roadmap-emerald-bg: #d1fae5;
+  --roadmap-emerald-fg: #065f46;
+  /* Stronger red used for P0 priority + unresolved-blocker state. */
+  --roadmap-red-bg:     #fee2e2;
+  --roadmap-red-fg:     #991b1b;
+  --roadmap-red-border: #fecaca;
+  --roadmap-red-deep:   #7f1d1d;
+
   /* ── Semantic surfaces (v0.2 names + DS additions) ────────── */
   --bg:          #fafaf7; /* warm-stone, never pure white */
   --bg-elev:     #ffffff;
