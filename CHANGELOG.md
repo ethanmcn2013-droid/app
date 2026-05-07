@@ -3,6 +3,41 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 36 · 2026-05-07 · One body, one rhythm
+
+The design audit ranked it a should-fix and we treated it that way:
+marketing body type sizes were drifting 15.5 → 18.5px across pages
+with no rhythm reason. Pages would feel almost-right next to each
+other without anyone being able to name why. The fix is one of the
+quietest refactors in the cycle — nine files, nine size changes, a
+consistent typographic system across every public route.
+
+The rhythm is now: **16.5px body anchor, 17px lead paragraphs and
+hero subtitles, 18.5px reserved exclusively for the /about and
+/principles manifesto opens.** That third tier stays load-bearing
+because the manifesto pages are doing something different — they're
+declaration documents, and the type carries the gravity.
+
+What moved off 18.5: every vertical landing page open
+(/for/weddings, /for/students, /for/trades, /for/freelancers) drops
+to 17. They're audience-specific opens, not manifestos, and the
+17 reads cleaner against the body. The hero on the home page had
+a 17.5 anomaly that was always going to bite an Awwwards judge —
+it now sits at 17, matching the verticals exactly.
+
+What moved off 16: the cta block, the templates-gallery intro, the
+template-detail body all bumped 16 → 16.5. The half-pixel sounds
+fussy until you switch tabs between /pricing (16.5) and /templates
+(was 16) — the eye picks it up and nothing reads quite right.
+
+What stayed: the 18.5 manifesto opens on /about and /principles,
+and the 18px font-medium kicker copy that lives inside the card-
+style closing boxes. Both are different roles operating at
+different scales; neither is body.
+
+The hand-of-the-designer is supposed to read consistent across
+every public route. After this cycle, it does.
+
 ## Cycle 35 · 2026-05-07 · Templates earn the rule
 
 brand.md says "no emoji anywhere," and for cycles the templates
