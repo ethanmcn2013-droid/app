@@ -112,7 +112,7 @@ export default async function StatusPage() {
               ))}
             </ul>
 
-            <h2 className="mt-12 text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-quiet">
+            <h2 className="mt-12 text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
               Integrations
             </h2>
             <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">

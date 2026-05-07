@@ -75,7 +75,7 @@ export function TemplateDetail({
             <TemplateGlyph slug={template.icon} size={26} />
           </span>
           <div>
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-brand">
               Template · {domain?.label ?? template.domain}
             </div>
             <div className="mt-0.5 text-[13.5px] font-medium text-ink-soft">
@@ -161,7 +161,7 @@ export function TemplateDetail({
         {/* Related */}
         {related.length > 0 ? (
           <div className="mt-20">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-ink-quiet">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
               Related templates
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -209,7 +209,7 @@ function TaskPreview({ template }: { template: Template }) {
   return (
     <div className="mt-12 rounded-2xl border border-line-soft bg-white p-6 md:p-8">
       <div className="flex items-center justify-between">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-quiet">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
           The list
         </div>
         <div className="text-[11px] tabular-nums text-ink-quiet">

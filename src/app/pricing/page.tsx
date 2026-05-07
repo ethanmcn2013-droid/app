@@ -337,7 +337,7 @@ function TierCard({ tier: t }: { tier: Tier }) {
         </div>
       ) : null}
 
-      <div className="text-[12px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+      <div className="text-[12px] font-semibold uppercase tracking-[0.18em] text-ink-soft">
         {t.name}
       </div>
       <div className="mt-3 flex items-baseline gap-1.5">
