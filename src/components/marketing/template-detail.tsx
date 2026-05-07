@@ -3,6 +3,7 @@ import type { Template } from "@/lib/templates";
 import type { TemplateEssay } from "@/lib/template-essays";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANES, PRIORITY_LABEL, type LaneId } from "@/lib/data";
+import { TemplateGlyph } from "./template-glyph";
 
 const LANE_ORDER: LaneId[] = ["todo", "doing", "review", "done"];
 import { ApplyTemplateButton } from "./apply-template-button";
@@ -69,9 +70,9 @@ export function TemplateDetail({
         <div className="mt-6 flex items-center gap-3">
           <span
             aria-hidden
-            className="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-[24px]"
+            className="inline-flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-brand-soft text-brand"
           >
-            {template.icon}
+            <TemplateGlyph slug={template.icon} size={26} />
           </span>
           <div>
             <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand">
@@ -172,9 +173,9 @@ export function TemplateDetail({
                 >
                   <span
                     aria-hidden
-                    className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-soft text-[16px]"
+                    className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand"
                   >
-                    {r.icon}
+                    <TemplateGlyph slug={r.icon} size={16} />
                   </span>
                   <div className="min-w-0">
                     <div className="text-[13.5px] font-medium text-ink">

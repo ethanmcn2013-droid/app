@@ -33,7 +33,10 @@ export type Template = {
   id: string;
   name: string;
   description: string;
-  /** Single unicode glyph; rendered inside a soft brand-tinted square. */
+  /** Glyph slug — points at a stroke-SVG in `template-glyph.tsx`.
+   *  Replaces the old emoji-character contract; brand.md is absolute
+   *  on "no emoji anywhere," and template cards are the most visible
+   *  surface that used to break the rule. */
   icon: string;
   /** The starter pack this template pairs best with; used for grouping
    *  in the gallery and as a hint for which seed pack a brand-new
@@ -49,7 +52,7 @@ export const TEMPLATES: Template[] = [
     name: "Job application sprint",
     description:
       "Tailor resume, send five outreach emails, practice the answers — without the panic.",
-    icon: "💼",
+    icon: "briefcase",
     domain: "student",
     tasks: [
       {
@@ -105,7 +108,7 @@ export const TEMPLATES: Template[] = [
     name: "Quarterly review prep",
     description:
       "Walk into your one-on-one with receipts, not vibes.",
-    icon: "🎯",
+    icon: "target",
     domain: "marketing",
     tasks: [
       {
@@ -155,7 +158,7 @@ export const TEMPLATES: Template[] = [
     name: "Apartment move",
     description:
       "Notice the landlord, hire movers, forward the mail. Survive the box maze.",
-    icon: "📦",
+    icon: "box",
     domain: "freelance",
     tasks: [
       {
@@ -221,7 +224,7 @@ export const TEMPLATES: Template[] = [
     name: "Trip planning",
     description:
       "Flights, hotel, itinerary, everything you forget at the gate.",
-    icon: "✈️",
+    icon: "plane",
     domain: "freelance",
     tasks: [
       {
@@ -283,7 +286,7 @@ export const TEMPLATES: Template[] = [
     name: "3-month countdown",
     description:
       "RSVPs, seating, vows, all the small fires before the big day.",
-    icon: "💍",
+    icon: "ring",
     domain: "wedding",
     tasks: [
       {
@@ -348,7 +351,7 @@ export const TEMPLATES: Template[] = [
     name: "Day-of run-of-show",
     description:
       "Vendor arrivals, ceremony, reception — minute-by-minute, nothing forgotten.",
-    icon: "💍",
+    icon: "clock",
     domain: "wedding",
     tasks: [
       {
@@ -420,7 +423,7 @@ export const TEMPLATES: Template[] = [
     name: "Final paper sprint",
     description:
       "Research, outline, draft, edit, submit — without the 4am panic.",
-    icon: "🎓",
+    icon: "document",
     domain: "student",
     tasks: [
       {
@@ -483,7 +486,7 @@ export const TEMPLATES: Template[] = [
     name: "Midterm week",
     description:
       "Review, practice problems, sleep. Pick all three.",
-    icon: "🎓",
+    icon: "book",
     domain: "student",
     tasks: [
       {
@@ -539,7 +542,7 @@ export const TEMPLATES: Template[] = [
     name: "New client onboarding",
     description:
       "Kickoff doc, contract, payment terms, first invoice. Start clean, sleep easy.",
-    icon: "💼",
+    icon: "briefcase",
     domain: "freelance",
     tasks: [
       {
@@ -594,7 +597,7 @@ export const TEMPLATES: Template[] = [
     name: "Tax season",
     description:
       "1099s, expenses, S-corp filings. Dread it less, finish it sooner.",
-    icon: "📦",
+    icon: "receipt",
     domain: "freelance",
     tasks: [
       {
@@ -649,7 +652,7 @@ export const TEMPLATES: Template[] = [
     name: "Product launch",
     description:
       "Positioning, landing, email blast, post-mortem — ship the story, not just the feature.",
-    icon: "🎯",
+    icon: "target",
     domain: "marketing",
     tasks: [
       {
@@ -711,7 +714,7 @@ export const TEMPLATES: Template[] = [
     name: "Conference booth prep",
     description:
       "Booth, swag, demo flow, lead capture. Show up looking like you meant to.",
-    icon: "🎯",
+    icon: "target",
     domain: "marketing",
     tasks: [
       {
@@ -762,6 +765,79 @@ export const TEMPLATES: Template[] = [
         lane: "todo",
         priority: "p1",
         tags: ["follow-up"],
+      },
+    ],
+  },
+
+  // ─── Trades ────────────────────────────────────────────────────────
+  {
+    id: "jobsite-punchlist",
+    name: "Jobsite punchlist",
+    description:
+      "The end-of-job walkthrough list. Every callback handled before the final check clears.",
+    icon: "wrench",
+    domain: "trades",
+    tasks: [
+      {
+        title: "Walkthrough with the homeowner — note every callback",
+        lane: "doing",
+        priority: "p0",
+        due: "Today",
+        tags: ["walkthrough"],
+      },
+      {
+        title: "Touch-up paint where the trim got dinged",
+        lane: "todo",
+        priority: "p1",
+        tags: ["finish"],
+      },
+      {
+        title: "Caulk gap behind the kitchen baseboard",
+        lane: "todo",
+        priority: "p1",
+        tags: ["finish"],
+      },
+      {
+        title: "Outlet covers — replace the two missing ones in the den",
+        lane: "todo",
+        priority: "p1",
+        tags: ["electrical"],
+      },
+      {
+        title: "Door swing on the master bedroom — shave 1/4\" off the bottom",
+        lane: "todo",
+        priority: "p2",
+        tags: ["doors"],
+      },
+      {
+        title: "Final cleanup — sweep, vacuum, haul off jobsite trash",
+        lane: "todo",
+        priority: "p1",
+        tags: ["cleanup"],
+      },
+      {
+        title: "Photograph completed work — before/after for the portfolio",
+        lane: "todo",
+        priority: "p2",
+        tags: ["photos"],
+      },
+      {
+        title: "File final inspection — schedule with the AHJ",
+        lane: "todo",
+        priority: "p0",
+        tags: ["inspection"],
+      },
+      {
+        title: "Send final invoice — itemized, payable on completion",
+        lane: "todo",
+        priority: "p0",
+        tags: ["invoicing"],
+      },
+      {
+        title: "Drop off warranty docs + manuals to the homeowner",
+        lane: "todo",
+        priority: "p2",
+        tags: ["closeout"],
       },
     ],
   },

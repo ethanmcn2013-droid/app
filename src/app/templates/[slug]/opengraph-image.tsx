@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { TEMPLATES } from "@/lib/templates";
 import { getTemplateEssay } from "@/lib/template-essays";
 import { DOMAINS, type DomainId } from "@/lib/domains";
+import { templateGlyphForOg } from "@/components/marketing/template-glyph";
 
 // nodejs runtime — keeps this OG aligned with the others
 // (`/p/[slug]/opengraph-image`, `/share-card/[workspaceId]/opengraph-image`).
@@ -112,8 +113,8 @@ export default async function TemplateOG({
               textTransform: "uppercase",
             }}
           >
-            <span style={{ display: "flex", fontSize: 24 }}>
-              {template.icon}
+            <span style={{ display: "flex", color: "#4f46e5" }}>
+              {templateGlyphForOg(template.icon)}
             </span>
             <span style={{ display: "flex" }}>
               Template · {domain?.label ?? template.domain}

@@ -6,6 +6,7 @@ import { motion } from "motion/react";
 import { applyTemplateAction } from "@/server/actions/templates";
 import type { Template } from "@/lib/templates";
 import { DOMAINS, type DomainId } from "@/lib/domains";
+import { TemplateGlyph } from "@/components/marketing/template-glyph";
 
 /**
  * `/templates` gallery. Each card carries the template name, a short
@@ -99,9 +100,9 @@ function TemplateCard({ template, index }: { template: Template; index: number }
       <div className="flex items-start gap-3">
         <span
           aria-hidden
-          className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[20px]"
+          className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"
         >
-          {template.icon}
+          <TemplateGlyph slug={template.icon} size={22} />
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">

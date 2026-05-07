@@ -11,6 +11,7 @@ import { essay as conferenceBoothPrep } from "./conference-booth-prep";
 import { essay as apartmentMove } from "./apartment-move";
 import { essay as tripPlanning } from "./trip-planning";
 import { essay as jobApplicationSprint } from "./job-application-sprint";
+import { essay as jobsitePunchlist } from "./jobsite-punchlist";
 
 /**
  * Per-template essays, keyed by template id. Templates not in this
@@ -34,6 +35,7 @@ export const TEMPLATE_ESSAYS: Record<string, TemplateEssay> = {
   [apartmentMove.templateId]: apartmentMove,
   [tripPlanning.templateId]: tripPlanning,
   [jobApplicationSprint.templateId]: jobApplicationSprint,
+  [jobsitePunchlist.templateId]: jobsitePunchlist,
 };
 
 /** Convenience lookup. Returns `undefined` for templates that don't

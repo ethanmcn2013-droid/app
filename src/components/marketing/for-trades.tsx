@@ -96,7 +96,7 @@ export function ForTrades() {
             </div>
           </Link>
           <Link
-            href="/templates/tax-season"
+            href="/templates/jobsite-punchlist"
             className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
           >
             <div className="flex items-start gap-3">
@@ -109,17 +109,17 @@ export function ForTrades() {
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Tax season
+                  Jobsite punchlist
                 </div>
                 <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  7 tasks · finish in March
+                  10 tasks · the closeout
                 </div>
               </div>
             </div>
             <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              1099s, expenses, S-corp filings, Q1 estimated. The
-              checklist that turns April from a cliff into a Tuesday
-              afternoon.
+              Walkthrough callbacks, touch-ups, final inspection,
+              warranty docs, the invoice. The end-of-job list that
+              decides whether the check clears this week or next.
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
               Open the template
