@@ -73,7 +73,7 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
 
 function TaskIdChip({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
-  // Format t-101 → T-101 (uppercase, looks like a real ticket id)
+  // Format t-101 → T-101 (uppercase, reads as a clean task id)
   const display = id.replace(/^t-/, "T-").toUpperCase();
   return (
     <button

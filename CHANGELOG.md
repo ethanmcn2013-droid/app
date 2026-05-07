@@ -3,6 +3,2876 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 31 · 2026-05-07 · Sprint 10 — The other roadmap
+
+The internal GTM tooling joined the product. Until this cycle the
+8-week distribution plan lived in a single 1,400-line markdown file
+that nobody but the founder could load without losing the thread —
+which is fine when the work is theoretical, and a problem the moment
+the work is 144 actual rows that need to be queued, drafted, dragged
+toward `in_progress`, and eventually checked off without forgetting
+which Tuesday the press email goes out.
+
+The fix was to put the roadmap inside the app, behind auth, with the
+same design bar as the published surfaces. The markdown stays
+source-of-truth — the parser re-walks it on every page load, the sync
+layer reconciles new rows in without trampling user-set status, and
+the result is a 144-row interactive checklist with a sticky launch-day
+countdown and a right-rail of "next 7 days." Alongside it: file
+attachments on tasks (the obvious gap nobody had filled yet), and the
+full Phase-1 GTM execution work — hero loop video on disk, published
+wedding workspace seeded, press-draft openers verified, posts weeks
+4–8 drafted, redirect bug closed.
+
+### What the user sees
+
+- **`/roadmap`** — the new top-level surface, gated to the workspace
+  owner. Sticky header with progress ring, T-minus countdown to Show
+  HN and Product Hunt, and the full eight-week stripe below. Each
+  week is its own section with a thin progress hairline that fills as
+  rows complete; each row has a three-state checkbox (pending →
+  in_progress → completed → pending), a date pill, a channel pill,
+  and a hover-revealed "add note" affordance for one-line annotations
+  like "got 47 likes" or "slipped to Wednesday."
+- **A right rail that earns its width** — Next 7 days as a
+  click-to-cycle list, launch beats with their actual times (3:01am
+  PT for Product Hunt, the kind of detail you don't want to look up
+  twice), and a small footer card that says: "edit the markdown,
+  refresh this page — new lines appear, status carries over." Which
+  is true.
+- **File attachments on tasks** — drag-and-drop anywhere over the
+  attachments section in the detail panel, or hit the "Attach"
+  button. 25 MB cap, multi-file picker, optimistic rows that show
+  filename and size while uploading, image previews inline, popover
+  confirm before delete. Bytes never round-trip the React tree —
+  every download links to `/api/attachments/[id]` which streams from
+  disk after re-checking the workspace.
+- **The published wedding workspace at `/p/wedding-2026-public`** —
+  the first real public-facing demo URL, seeded from the
+  `wedding-3-month-countdown` template, OG card rendering, ready to
+  be linked from the press emails when those go out next month. The
+  seed script is idempotent so repeated dev-box runs don't duplicate
+  rows.
+- **Hero loop video on the landing** — the 30-second `HeroLoop30s.tsx`
+  composition rendered to `public/hero-loop.30s.{mp4,webm}` and wired
+  into the landing block. Autoplay, muted, loop. 768 KB at the size
+  it actually plays, which is a lot less aesthetic damage than the
+  full Lighthouse hit suggested it would be.
+- **`/app/*` redirect fix** — Clerk now redirects unauthenticated
+  visits to `/sign-in` instead of bouncing to a homepage that
+  pretends nothing happened. One-line change to `auth.protect()` with
+  an explicit `unauthenticatedUrl`, but it's the kind of boundary
+  glitch that quietly tanks deploys until someone tries to share a
+  link.
+- **Press drafts cleared for sending** — six `[VERIFY OPENER]` flags
+  in `docs/press-drafts.md` resolved by re-reading the journalists'
+  recent pieces and keying each opener to a specific reference. The
+  Sherwood masthead got verified the slow way. The file now has zero
+  open flags, which means the only thing standing between "drafts" and
+  "sent" is the user's morning of 06-08.
+- **Posts weeks 4–8 drafted in full** — `docs/posts-week-4.md` through
+  `docs/posts-week-8.md`, ~95 verbatim post bodies in the same voice
+  pattern weeks 1–3 already locked in. No "[draft]" placeholders, no
+  "TODO: rewrite this," nothing the user has to second-pass before
+  pasting into X or Bluesky.
+- **`docs/phase-plan.md`** — the framing document that classifies all
+  144 roadmap rows into Auto / Stage / Blocked, with file-scope-disjoint
+  parallel-dispatch buckets. The plan that turned an 8-week sprint
+  into a few hours of code-and-content work plus a queue the founder
+  can drain by hand without rebuilding context each time.
+
+### What changed under the hood
+
+- `roadmap_items` table added to `src/server/db/schema.ts` — one row
+  per actionable line, deterministic primary key of shape
+  `${kind}-w${week}-${date}-${slug}-${ord}`, with `status` /
+  `completedAt` / `note` as the only user-mutable columns. `isLaunch`
+  is derived from `**bold**` cells in the source markdown.
+- `src/server/roadmap/parser.ts` — pipe-row walker that picks up §3
+  asset checklist, §7 8-week content calendar, §9 14-day press Gantt,
+  and the synthesized KPI Mondays. No remark dependency; the
+  cell-splitter is 18 lines and handles header dividers, bold-strip,
+  link-strip, and date normalization (`MM-DD` → `YYYY-MM-DD`) without
+  pulling in unified.
+- `src/server/roadmap/sync.ts` — idempotent reconcile against
+  `roadmapItems`. Updates the shape fields on existing rows (channel,
+  body, date), preserves `status` / `note` / `completedAt`, never
+  deletes — the user might have notes on rows that disappeared from
+  the markdown and we're not going to lose those silently.
+- `attachments` table — `taskId` cascade on delete, `workspaceId`
+  denormalized so the download route can authorize without joining
+  through `tasks`, `storedPath` is server-relative under
+  `<repo>/.data/uploads/...` (deliberately outside `public/` so the
+  Next static handler never streams attachment bytes by accident).
+- `/api/attachments/[id]` route streams bytes from disk after
+  re-verifying the request's workspace membership. Filename is set
+  via `Content-Disposition`; image rows pull through the same
+  authenticated route for previews so there's exactly one path bytes
+  can reach the client through.
+- `src/components/app/detail-panel/attachments-section.tsx` — the
+  drag-and-drop UI with optimistic pending rows, refresh-on-task-update
+  via `task.updatedAt` cache key, popover-confirmed delete, mime
+  category branching (image / pdf / doc / code / archive / other) for
+  the file glyph.
+- `src/proxy.ts` — `auth.protect({ unauthenticatedUrl: …/sign-in })`
+  on the `/app/*` matcher. Three lines. The fix was always tiny;
+  finding it required reading the Clerk middleware contract in the
+  Next 16 docs, which the proxy boundary makes a different shape than
+  pre-Next-16 middleware.
+- `src/server/db/seed-published-wedding.ts` — bypasses the
+  auth-gated `applyTemplateAction` / `publishWorkspaceAction` and
+  writes through Drizzle directly so the script runs from any server
+  context. Re-asserts `publishedAt` and `activeDomain` on every run,
+  only seeds tasks when the workspace's task list is empty.
+
+### Why it matters
+
+Shipping the GTM tooling next to the product turns "external
+execution work" into "another surface in the codebase." That means it
+gets the same review bar — voice integrity, no emojis, sentence case,
+em-dashes — and the same diff-able review pipeline as a marketing
+page or an empty state. The 144-row reconcile path is the most
+aggressive test of the architecture so far, because it has to absorb
+upstream churn (the markdown will get edited many more times before
+06-26) without leaking that churn into the user's status state.
+
+The roadmap surface itself is recognizable as a product. Markdown as
+source-of-truth, Things-3-grade hairlines on the week progress bars,
+the three-state cycle that everyone who has used Linear or Things
+already knows by muscle memory, deterministic IDs so the URL of any
+row is stable. The user already flagged it for either standalone
+spinoff or Verizon GPO reuse — a roadmap-as-checklist surface tied to
+a markdown source has obvious applications in places where the plan
+lives in one document but the work happens across a dozen people. We
+built it for the launch, but it would not be wasted to build on it
+later.
+
+### One small thing
+
+The published wedding workspace's first task is "Send save-the-dates."
+That's not the seed script picking the first row of the template
+alphabetically — the template's first task is "Send save-the-dates"
+because three months out, that's actually the first thing. The
+roadmap's first rendered week is empty — the sticky-header today-rail
+just reads "Quiet stretch. Use the lull." which is also true at the
+moment, and won't be by Monday.
+
+## Cycle 30 · 2026-05-06 · Sprint 9 — Google bridges at the boundary
+
+The Google-integration question came up early in the strategy review
+and got a clear answer: not yet, and maybe not ever in the deep-OAuth
+sense. The thesis is that Tasks is the workspace, not a satellite of
+someone else's. What the bridges do is meet people where they already
+work — paste, embed, subscribe — without negotiating a single permission
+prompt.
+
+### What the user sees
+
+Three new capabilities, all clustered around a single new affordance
+in the app header (next to Share):
+
+- **Copy as Sheet (CSV)** — one click puts an RFC 4180–shaped CSV on
+  the clipboard. Columns: Title · Lane · Priority · Due · Tags ·
+  Cents · Contact name · Contact email. Paste into Sheets, Excel,
+  Numbers, Airtable. The shape was chosen for round-trip
+  comprehension, not feature parity — anyone reading the file gets it
+  in five seconds.
+- **Copy as Markdown** — same data, lane-grouped with `[ ]` / `[x]`
+  checkboxes and italic meta in parens (priority · due · tags). Drop
+  it into Notion, Linear, GitHub issues, Slack canvas, a Google Doc,
+  a status email. The mental model: "the workspace as a memo."
+- **Subscribe in Calendar** — surfaces the `webcal://` URL that the
+  iCal feed has been quietly serving since cycle 14. One click writes
+  the URL to the clipboard and points users at the
+  Calendar.app / Google Calendar / Outlook subscribe flow.
+
+The fourth bridge is a how-to page rather than a button:
+
+- **`/embed/guide`** — written-out instructions for dropping a
+  published workspace into Google Sites, Notion, Substack, Ghost,
+  Webflow, Framer, Squarespace, and Google Docs. Two patterns: the
+  raw-iframe (universal) and the script-tag auto-discovery (for
+  repeating embeds across a site). Per-tool quirk notes — Google
+  Sites strips the `loading` attribute, Notion's `/embed` block takes
+  the URL directly, Google Docs renders as an OG smart-chip and the
+  Markdown export is the better path. Included in the sitemap.
+
+### Why this shape
+
+OAuth integrations are expensive in three directions: build cost,
+permission anxiety for users, and platform risk (the integration
+breaks every time Google reshuffles a scope). The bridges
+side-step all three. CSV and Markdown are eternal — they have no
+auth, no API quota, no breaking-changes calendar. Calendar
+subscription is solved by the iCal RFC. Embeds are solved by the
+iframe element. We meet the user where they are, then they bring
+the workspace with them.
+
+The voice constraint stayed honest: no emoji, sentence case,
+restraint. The eyebrow on `/embed/guide` reads "Drop a workspace
+into anywhere that takes HTML." The closing card reads "Publish
+your workspace. Paste the URL. The destination renders it. Done."
+That's the whole thesis in four sentences.
+
+### Implementation notes
+
+- `useActiveWorkspace()` hook joins the existing `DomainProvider`
+  context — same shape, just exposing `{ id, slug }` alongside
+  the domain pack. The app layout fetches the slug once at the
+  server boundary and hands it down; client components read it
+  with a single hook call. Returns `null` outside the app shell,
+  which lets ExportMenu render conditionally without a try/catch.
+- Pure formatters live in `lib/exports.ts` — `formatTasksAsCsv`
+  and `formatTasksAsMarkdown` take the same `Task[]` the app
+  renders and return a string. No DOM, no clipboard, no
+  workspace lookup; the menu component owns those concerns. Easy
+  to test, easy to repurpose later if we want to surface them in
+  the API.
+- The clipboard write uses `navigator.clipboard.writeText` with
+  an `execCommand("copy")` fallback for older Safari and the
+  iOS WebView.
+
+### What's next
+
+Sprint 9 was the last sprint in the Phase-8-through-14 plan that
+needed to ship before deploy. The next move is hosting — the
+plan is to push to Vercel free tier today, wire the Clerk test
+keys as env vars, and have a public URL by end of day so the
+project stops being localhost-only.
+
+## Cycle 29 · 2026-05-06 · Design system locked in — wordmark spec, trades audience, copy revamp
+
+Pulled the design-system handoff bundle (zip) from the user — README,
+`tasks-design-system.html` in full, `tokens.css`, six reference
+screenshots. README rule: *"recreate them pixel-perfectly in whatever
+technology makes sense. Match the visual output; don't copy the
+prototype's internal structure unless it happens to fit."* Followed
+that rule across three concrete deliverables this cycle.
+
+### 1 · Wordmark animation aligned to spec
+
+The DS spec calls out: 2.6s pulse cycle on `spring-glide` easing, with
+a punchy beat at 70%–80% (scale 1.0 → 1.25 → 1.0) and a single emit
+ring fading in at 68% then scaling out to 2.6×. The v0.2 wordmark
+used a slower 3.4s pulse with a softer scale-down (1.0 → 0.84) and
+two perpetually-staggered wave rings.
+
+Rewrote `.tasks-dot` in `globals.css` to match the spec timing
+exactly. Renamed the keyframes (`tasks-dot-pulse`, `tasks-dot-emit`)
+so future cycles don't accidentally collide with the v0.2
+`dot-pulse` / `dot-wave` (which other components might still
+reference). Added `letter-spacing: -0.05em` on the wordmark itself
+to match the −5% tracking spec.
+
+### 2 · Trades — fifth audience pack
+
+The original four ICPs (marketing / student / freelance / wedding)
+had a clear gap: the *manifesto's* audience said "anyone with a
+list," but the four packs all assumed knowledge-work. **Trades** —
+electricians, carpenters, plumbers, contractors, anyone whose work
+is dispatched as a list of calls and finished with a signature —
+fits the manifesto tighter than freelance does in many cases.
+
+What landed:
+
+- **`DomainId` extended** to include `"trades"`. The discriminated-
+  union approach surfaced every callsite that needed updating; tsc
+  caught one (`DOMAIN_TO_TEMPLATE` in `published-footer.tsx`),
+  pointed trades to `new-client-onboarding` (same shape — kickoff,
+  contract, payment terms, first invoice).
+- **Trades domain pack** in `lib/domains.ts` — 16 seed tasks
+  spanning service calls (replace breaker · 142 Maple), quotes
+  (Hartwell panel upgrade), materials (200A main breakers),
+  permits, invoices, crew syncs, fleet (truck inspection +
+  insurance certificate). Voice tuned for the audience: route
+  language, address-by-number specificity, "ladder back in the
+  truck."
+- **Trades published theme** — `trades-theme.tsx`. Job-ticket
+  binder aesthetic: faint cyan graph-paper background on warm
+  vellum (#fbfaf3); steel-ink (#0f172a) type; bracketed lane
+  callouts (`[QUEUED]`, `[ON SITE]`, `[FINAL WALK]`, `[CLOSED]`);
+  6px safety-orange (#f97316) left-stripe on cards in the active
+  lane; mono four-up spec-field grid; signature-line "— end of
+  ticket" footer.
+- **`/for/trades` vertical landing** — fifth ICP landing,
+  safety-orange to complete the rose-pink / teal / amber / orange
+  system. H1: *"Calls, jobs, invoices — one binder."* Anchors on
+  `new-client-onboarding` + `tax-season` (both already trades-
+  applicable). Sitemap and footer Resources column updated.
+- **Existing `DOMAIN_ORDER` consumers all flow through** without
+  modification — settings starter-pack picker, welcome picker,
+  about-page DomainGrid, empty-state seed-pack pills, domain
+  toggle on the home cinematic demo. They iterate over
+  `DOMAIN_ORDER` rather than hardcoding four packs, so trades just
+  appears as the fifth option.
+
+### 3 · Copy revamp — sharpening the manifesto voice
+
+Audited high-traffic surfaces against the design system's voice
+rules: *"Lightly knowing, never cute. Restrained, confident,
+tactile. Sentence case. Em-dashes welcome. No emoji."*
+
+Two real edits:
+
+- **Hero subhead.** Was: *"A live task workspace built for momentum.
+  Real-time presence, four synchronized views, plain-English dates
+  — all stitched together by motion that feels alive."* Now:
+  *"Project management for the 80% who don't work in tech. Four
+  views of the same list, real-time when it matters, plain-English
+  dates — no sprints, no epics, no learning curve."* The new
+  version cites the manifesto positioning directly + names what
+  the product *isn't* (sprints, epics) — drier, sharper, more
+  Tasks.
+- **List view empty state.** Was: *"Capture it once, check it off
+  later. The dopamine hit is real."* The "dopamine hit is real"
+  was a hair too cute for the *"never cute"* rule. Now: *"Write it
+  down once. Check it off when it's done. That's the whole
+  product."* Calls back to the about page's *"Write down what you
+  have to do. Look at it the way that helps. Cross it off. That's
+  the whole product."* — the pattern repeats across surfaces.
+
+The other empty states (board / calendar / timeline / my-tasks)
+read manifesto-correct already; left untouched.
+
+### Verified
+
+- `npx tsc --noEmit` clean across the merged tree.
+- 12 surfaces probed: `/`, `/about`, `/principles`, `/pricing`,
+  `/templates`, `/for/{trades, weddings, freelancers, students}`,
+  `/p/legacy`, `/app/board`, `/app/list` — all 200, 0 console
+  errors.
+- Trades published theme verified by SQL-swapping `active_domain`
+  to `trades` and snapshotting `/p/legacy` — graph-paper background
+  rendered, `[QUEUED]` lane label visible, safety-orange top rule
+  + active-lane stripe, job-ticket card layout. Restored
+  `active_domain = student` after.
+- `/for/trades` rendered with safety-orange eyebrow + the
+  *"Calls, jobs, invoices — one binder"* H1 + the highlight-band
+  underline on *"one binder."* Both template anchor cards visible.
+- Wordmark dot animation now matches spec: 2.6s cycle, sharp beat
+  at 70%, single emit ring scaling out to 2.6×.
+
+
+
+## Cycle 28 · 2026-05-06 · Design system v0.3 — tokens.css aligned
+
+Pulled the canonical design system from the design tool and reconciled
+it with the v0.2 tokens already in `src/app/globals.css`. The strategy
+was strict additive: keep every existing token (so 215 source files
+don't regress), add the full design-system surface alongside, and
+alias the v0.2 names to the new ramp positions where they line up.
+
+### What landed in `globals.css`
+
+- **Indigo ramp** — full 9 stops (`--indigo-50` through `--indigo-900`)
+  + `--highlight: #7c5cff` for the marker underline accent on display
+  headlines.
+- **Ink ramp (neutrals)** — 12 stops (`--ink-0` through `--ink-950`)
+  for the new ramp-aware code; the v0.2 names (`--ink`, `--ink-soft`,
+  `--ink-quiet`, `--ink-faint`) now alias to ramp stops so existing
+  callsites keep working.
+- **Audience accent tokens** — `--aud-marketing`, `--aud-freelance`,
+  `--aud-student`, `--aud-wedding`. The four published-workspace
+  themes from cycle 20 already shipped with bespoke palettes more
+  nuanced than these single-hex placeholders; these tokens are
+  available going forward when surfaces want a 1-color accent (e.g.,
+  category chips, ICP eyebrow pills).
+- **Status tokens** — `--status-todo`, `--status-progress`,
+  `--status-review`, `--status-done`, `--status-blocked`. Distinct
+  from the lane visual tokens (which keep their soft pastel chrome
+  for board surfaces); status tokens are for the single-color signals
+  (Done DopamineCheck, blocked badge, error states).
+- **Springs** — `--spring-snap` (overshoot, for drops + lifts),
+  `--spring-soft` (settle, for cards + panels), `--spring-glide`
+  (ride, for sweeps + fades), `--ease-out` (default). The v0.2
+  `--ease-out-expo` / `--ease-spring` / `--ease-cinema` names alias
+  to these so existing motion code is unbroken.
+- **Radii** — `--r-1: 4px` through `--r-5: 20px` + `--r-pill: 999px`.
+- **Shadow tier** — `--shadow-1` (subtle), `--shadow-2` (mid),
+  `--shadow-3` (deep), `--shadow-indigo` (brand-tinted glow). The
+  v0.2 `--shadow-sm` / `--shadow-card` / `--shadow-lift` /
+  `--shadow-float` alias to the new tier.
+- **`.marker` utility** — recreates the design system's
+  marker-underline accent on display headlines (a 78%-tall
+  highlight-color band behind the highlighted span; not a literal
+  text-decoration). Available as `<span className="marker">word</span>`
+  inside any heading.
+- **`.live-dot` utility** — the green pulsing dot used for "this is
+  live right now" status indicators (matches the design system's
+  `.hero-meta .pill::before` and `.mark-stage::after` pattern).
+- **Tailwind theme bindings** — the new tokens are exposed as
+  Tailwind utility classes via `@theme inline` so future code can
+  reach for `bg-indigo-600`, `text-ink-900`, `text-status-done`,
+  `shadow-3`, `rounded-r-pill`, etc.
+
+### Integration trap caught
+
+The design system's `tokens.css` ends with `a { color: inherit; }`,
+which works fine on the standalone design-spec HTML page. But in the
+Tasks app's Tailwind setup, that rule is **unlayered**, which puts it
+*after* `@layer utilities` in the cascade. Adding it shadowed
+`.text-white` on the dark CTA buttons — *"Open the demo,"* *"Open the
+live workspace,"* and similar — turning them into solid black
+rectangles with invisible text.
+
+Caught at integration via Playwright snapshot: button background
+rendered correctly (`bg-ink`) but `getComputedStyle().color` returned
+`rgb(24, 24, 27)` despite the `text-white` class being present. The
+generated `.text-white { color: var(--color-white); }` rule existed
+and `--color-white` resolved to `#fff`, but the unlayered `a { color:
+inherit; }` was winning the cascade.
+
+Fix: removed the `a { color: inherit }` rule. Link colors are set
+per-callsite via Tailwind utilities (the existing pattern). Added an
+in-file comment explaining the trap so future cycles don't re-add it.
+
+### Verified
+
+- `npx tsc --noEmit` clean.
+- 11 surfaces probed (all marketing + app views + published workspace
+  + template detail) — all 200, 0 console errors.
+- Home-page hero rendered with marker-underline visible on
+  *"forward."*, both CTA buttons (*"Open the demo"*, *"Open the live
+  workspace"*) showing their white text correctly, the wordmark dot
+  pulsing as expected.
+
+### What's next
+
+Cycle 29 is Sprint 9 — Google bridges (export-side: Copy as Sheet
+CSV, Copy as Markdown, surface iCal subscribe URL more prominently,
+"Embed in Google Docs/Sites" how-to page).
+
+
+
+## Cycle 26-27 · 2026-05-06 · Full review pass — website + code
+
+Two review cycles, no agents. Architect-only walks across every
+public surface and every source file. Five real bugs caught and
+fixed mid-review. Two report files written.
+
+### Cycle 26 · website review
+
+41 surfaces probed. Bugs:
+
+1. **Per-template OG URLs were malformed for all 12 templates.**
+   `generateImageMetadata` returning 12 entries on a dynamic-segment
+   route multiplied the path; every template's `og:image` ended in
+   `/opengraph-image/job-application-sprint?…` (the *last* template
+   id, the same on every page). Slack/Twitter unfurls have been
+   silently broken since cycle 18. Removed `generateImageMetadata` —
+   dynamic routes already get one OG per slug from
+   `generateStaticParams`. Fix verified; OG URLs are now correctly
+   `/templates/{slug}/opengraph-image?{hash}`.
+
+2. **Three OG routes used sync `params: { … }`.** Next.js 16's
+   strict-error fired at runtime
+   (*"params is a Promise and must be unwrapped"*). Fixed
+   `templates/[slug]/opengraph-image.tsx`,
+   `p/[slug]/opengraph-image.tsx`, and
+   `share-card/[workspaceId]/opengraph-image.tsx` to the
+   `Promise<{ … }>` + `await params` shape. The cycle-22 check that
+   verified the share-card returned 200 didn't catch the deprecated
+   sync pattern; this review did.
+
+3. **Five marketing pages had no `og:image` at all.** `/principles`,
+   `/templates` (gallery), `/for/weddings`, `/for/freelancers`,
+   `/for/students` defined `metadata.openGraph = { title, description,
+   type }` but no `images` and no colocated `opengraph-image.tsx`.
+   Next.js doesn't auto-fall-back to root OG when a page sets its own
+   `openGraph`. Added `images: ["/opengraph-image"]` to each.
+
+4. **`/about` leaked a `💅` emoji from the wedding domain pack.** The
+   wedding domain's `description` in `src/lib/domains.ts` was *"venues
+   · vendors · 💅 · run-of-show"*, and `/about` renders the four-pack
+   `DomainGrid` verbatim. Replaced `💅` with `vows`. Now consistent
+   with the other three packs (all middle-dot-separated word lists).
+
+Environmental note: edge-runtime + Turbopack-dev + ImageResponse
+intermittently fails with *"failed to pipe response"* in the dev
+environment. Conversion of the templates and root OG to nodejs
+runtime (matching cycle-22 + cycle-20 patterns) addresses the most
+common failure mode but doesn't eliminate it. Recommend prod-build
+validation before launch — the dev-server state isn't conclusive.
+
+Full review report: `docs/website-review.md`.
+
+### Cycle 27 · code review
+
+215 source files, 35,408 LOC, 0 tsc errors. One bug:
+
+5. **`💬` emoji on board card comment count.** In
+   `board-app.tsx:702`, the comment count chip rendered as
+   *`💬 {count}`*. A single character but a brand-voice violation
+   on a surface every active user sees. Replaced with an inline
+   11×11 SVG comment-bubble icon.
+
+Audits clean across the board:
+
+- **0** `any` / `as any` / `@ts-ignore` / `@ts-expect-error` /
+  `TODO` / `FIXME` in source.
+- **0** sync `params: { … }` patterns left.
+- **0** `dangerouslySetInnerHTML` in `src/`.
+- **0** raw SQL string concatenation — every query uses Drizzle's
+  parametrized template tags.
+- **12** owner-gated server actions, all verifying role server-side
+  before any side-effect work.
+- **17** server-only files import `"server-only"`; the one exception
+  (`schema.ts`) is correct.
+- **All 16** server-action files start with `"use server"`.
+- **All 12** dynamic-route handlers use `params: Promise<…>`.
+- **32** `console.log/warn/error` calls — all in catch blocks, all
+  "log and continue" patterns. Acceptable.
+- **14** `eslint-disable` directives — all justified, all paired
+  with explanatory comments.
+
+Compile-time schema-vs-client-type contracts hold across `tasks`,
+`comments`, `notifications`, `activities`, `compCodes`,
+`entitlements`. Schema drift would surface as a tsc error, not a
+runtime surprise. Excellent discipline.
+
+Full code review: `docs/code-review.md`.
+
+### Verdict
+
+Production-ready. The four post-sprint backlog items that remain
+(Postgres dialect, Sentry source-maps, SSE multi-tab, Lighthouse
+pass) all need real-world validation rather than dev-environment
+proof. Everything in the dev tree compiles, type-checks, and
+behaves the way it claims to. Run `next build && next start` once
+before flipping the public DNS — that's the only validation gate
+the dev environment can't conclusively pass on its own.
+
+
+
+## Cycle 25 · 2026-05-06 · Hardening — webhook idempotency, real invites, subtasks, recurring chip, timeline drag
+
+The hardening cycle. Five backlog items the previous sprint
+deliberately punted on (because each was reliability-or-depth work,
+not category-defining), now landed in one cycle. Three parallel
+agents (subtasks, recurring chip, timeline drag) shipped on their
+own file scopes; architect handled the two infrastructural items
+(webhook dedup, real invite flow) plus a small `escapeHtml` clash
+caught at integration.
+
+### What landed
+
+**Webhook idempotency (architect)**
+
+New `processed_webhooks` table — `event_id` PRIMARY KEY +
+`event_type` for the audit log + `processed_at` timestamp. Stripe
+re-delivers failed events every 30s for up to 3 days; without
+dedup, a re-delivered `checkout.session.completed` would grant a
+second entitlement row. The route now `INSERT OR IGNORE`s the event
+id at the top of every request — on duplicate, the handler returns
+200 + `{ deduped: true }` immediately and Stripe stops retrying.
+
+The check happens before any side-effect work. Stripe's exponential
+backoff means a flaky-but-eventually-successful handler still gets
+its retry window without re-running successful side effects.
+
+**Real Clerk-backed invite flow (architect)**
+
+`pendingInvites` table + the cycle-17 stub upgraded into the real
+flow. `inviteMemberByEmailAction` now mints a 32-char URL-safe
+token, INSERTs the pending invite, and sends an HTML email via the
+existing Resend integration. Invite reuse: if a pending invite for
+the same workspace+email already exists (and isn't expired or
+accepted), we re-send the existing token's email rather than
+minting a fresh one — the recipient never gets two competing
+links.
+
+New `acceptInviteAction(token)` — validates the token isn't
+expired or already accepted, checks the user's email matches the
+invite's email (case-insensitive), re-checks the member cap at
+accept-time (could've changed if the workspace downgraded between
+mint + accept), inserts the `workspace_members` row via `INSERT
+OR IGNORE`, marks the invite accepted (audit trail), and flips the
+`tasks_active_ws` cookie to the joined workspace.
+
+New `/invite/[token]` page — server-renders the invite context
+(workspace name, inviter name, recipient email, expiry), shows the
+right state for missing / expired / already-accepted tokens, and
+gates the accept button on Clerk auth + email match. If the user
+isn't signed in, sends them through `/sign-in?redirect_url=...`
+back to the invite page. If they're signed in with the wrong
+email, says so plainly with a sign-out hint.
+
+New invite email template in `email.ts` — terse, manifesto-voiced
+(*"One workspace, every view, the daily digest. Three editing
+guests on Free, unlimited members on Team. No card, no trial."*).
+
+**Subtasks (parallel agent)**
+
+`tasks.parent_task_id` (nullable) added to schema. Top-level views
+(board / list / timeline / calendar) filter to `parent_task_id IS
+NULL` so subtasks live exclusively under their parent in the
+detail panel. New `<SubtasksSection>` mounted between the Cents
+section and the Conversation feed: header `"SUBTASKS · N of M
+done"`, lane-checkbox toggles between `todo` and `done`, click-
+title opens the subtask in the same panel (browser back returns
+to parent), inline ghost-row composer at the bottom for new
+subtasks. Done subtasks render with strikethrough + 60% opacity.
+
+Schema migration via `drizzle-kit push --force`. v1 is intentionally
+one level of nesting — no sub-subtasks. Future cycle decides
+whether to surface a subtask-count indicator on the parent's card.
+
+**Recurring tasks card UI (parallel agent)**
+
+Tiny `<RecurrenceChip>` reusable component. Renders `↻ daily` /
+`↻ weekly` / `↻ monthly` for unit recurrences, `↻ Nd` / `↻ Nw` /
+`↻ Nm` when interval > 1. Mounted in the board card meta row + the
+list row. Tooltip on hover gives the long form (*"Repeats every 2
+weeks"*). Pure presentational — recurrence already lived in the
+data model + detail panel; this cycle just makes it visible at a
+glance.
+
+Not added to timeline / calendar / showcase in this cycle (out of
+scope per the brief; future cycle if surface-need emerges).
+
+**Timeline drag-and-drop reorder (parallel agent)**
+
+The timeline view's bars were read-only before; now they support
+two interactions:
+
+1. **Whole-bar drag** (cursor: grab/grabbing) — drags horizontally
+   to shift `startDay`. Pointer x → day-delta is rounded for
+   whole-day snap; clamps `startDay >= 0` and
+   `startDay + durationDays <= 30`.
+2. **Right-edge resize** (cursor: ew-resize) — 8px invisible handle
+   on the right. Drag to resize `durationDays`. Clamps
+   `durationDays >= 1` and the same upper bound.
+
+New `setTaskTimelineAction(taskId, { startDay?, durationDays? })`
+in a NEW `src/server/actions/timeline-drag.ts` (kept separate from
+`tasks.ts` to avoid collision with the subtasks agent who extended
+that file). Server-side clamps to `[0, 30]` / `[1, 30]` with
+integer rounding; only writes whichever fields were provided.
+
+Optimistic-UI: dispatch local update via `useTasksDispatch()`,
+then fire the server action in `startTransition`. Mobile (<768px)
+disables the drag entirely (matches the cycle-14 board-on-mobile
+policy). Translucent dashed overlay during the gesture marks the
+destination cell. CSS transitions on `left`/`width` give the
+release-snap a soft settle; transitions are disabled mid-drag for
+instant feedback.
+
+### Architect integration step
+
+Mid-cycle, the subtasks agent flagged a duplicate-`escapeHtml`
+warning in `email.ts`. The architect (when adding the invite-email
+template) appended a fresh `escapeHtml` near the top, not realizing
+one already lived at the bottom of the file. Removed the new
+duplicate; left a one-line note where it was.
+
+### Verified
+
+- `npx tsc --noEmit` clean across the merged tree.
+- `/invite/test-fake-token` returns 200 with the *"This invite
+  link doesn't exist"* state (the page renders correctly even for
+  invalid tokens — that's the whole point of server-rendering the
+  preview).
+- `/app/board`, `/app/timeline`, `/app/settings` all 200.
+- Subtasks: schema migration applied, `parent_task_id` column
+  present, top-level views correctly filter parented tasks out.
+- Webhook idempotency: `processed_webhooks` schema applied; route
+  short-circuits on duplicate `event.id`.
+
+### Operational note
+
+Three parallel agents (smaller batch than cycles 18-24) plus
+substantial architect work in parallel. The pattern works smaller
+just as well as larger — the constraint is file-scope discipline,
+not agent count. The invite flow is the most architecturally novel
+addition this cycle (new email template, new accept route, new
+Clerk-gated client island).
+
+**Sprint parallel-agent throughput so far:** **39 dispatched, 39
+complete, 0 broken builds.**
+
+### Subtractions
+
+- The cycle-17 stub `inviteMemberByEmailAction` body. Replaced
+  with the real flow (kept the cap-check at the top — that
+  behavior carries forward).
+
+### Backlog (still open after cycle 25)
+
+- **Postgres dialect adapter** — needs a real prod DB to validate.
+- **Sentry source-map upload on deploy** — deploy-time concern.
+- **Multi-tab realtime SSE collisions** — needs prod traffic.
+- **Production Lighthouse mobile pass** — needs `next build`.
+
+These four are deliberately deferred until there's a production
+deploy to validate against. The dev environment gives no signal
+on any of them.
+
+### Next: cycle 26 + 27
+
+Per the user request: cycle 26 is a full website review (every
+public surface), cycle 27 is a full code review. Both are
+architect-only — no agents.
+
+
+
+## Cycle 24 · 2026-05-06 · B-tier delight wave — eight features, sprint close
+
+Phase 7, the last cycle of the category-defining sprint that began
+with cycle 17. Eight atomic delight features in one cycle, dispatched
+as 4-then-4 parallel-agent batches. All eight shipped voice-matched
+on first attempt. One small ⌘K shortcut conflict caught at
+integration was resolved by the architect (local palette rebound to
+⌘P, the cross-app convention for "open file"; cross-workspace
+search keeps ⌘K, the cross-app convention for global quick-switch).
+
+### What landed
+
+**Batch 1 (file-scope-disjoint, dispatched first):**
+
+- **Cents column on tasks** — nullable `cents` integer column,
+  type extensions through `Task` + `rowToTask` + `addTaskAction`,
+  and a new `<CentsEditor>` in the detail panel between Contact
+  and Conversation. Display formats `$1,234.56` via
+  `Intl.NumberFormat`; input strips commas / `$` / whitespace
+  before parsing. Server-side clamp to `[0, 99_999_999]`. Empty
+  input is a no-op (mirrors the contact editor's *"a slip of the
+  keyboard shouldn't blow away a $1,200 deposit"* discipline).
+  Drizzle-pushed.
+- **Cmd-K cross-workspace search** — server action +
+  `<CrossWorkspaceSearch>` popover mounted at the app-shell level
+  alongside the cycle-22 cross-workspace overdue popover. Single
+  SQL query joining workspace memberships → workspaces → tasks
+  with `inArray` + `LIKE` on title (LIKE wildcards escaped),
+  exact-prefix-first sort, capped at 30 results. 180ms debounce,
+  sequence-numbered race guard, ⌘K to toggle (works even from
+  inside other inputs — Linear/VSCode behavior). Click a result →
+  flips the active-workspace cookie and routes to
+  `/app/board?task={id}`.
+- **iCal subscribe URL** — `/api/calendar/[workspaceId]` returns a
+  proper RFC 5545 ICS feed (`text/calendar; charset=utf-8`) with
+  CRLF line endings, line folding, escape rules. Pure-TS helper
+  in `src/lib/ical.ts`, no dependencies. All-day branch when
+  `dueAt` is at midnight UTC; timed branch with 1-hour DTEND
+  otherwise. Subscribe button + popover on the Calendar view
+  shows the `webcal://...` URL with a Copy button. Cache headers
+  set for the 15–60-minute calendar-client refresh cadence.
+- **Focus Mode** — full-screen overlay client component, mounted
+  globally. Press `f` while focused on a board task → opens with
+  that task's title and a 25-min countdown. `space` pauses,
+  `esc` closes. 0:00 doesn't ring a bell — manifesto rule (no
+  push notifications, no auto-celebrate). Reads which task is
+  focused via `data-task-id` / `data-task-focused="true"`
+  attributes added to the Card; falls back to a custom
+  `focus-mode:open` window event from the detail panel's Focus
+  button. Honors `prefers-reduced-motion`. White background, 144px
+  tabular-nums timer, no blinking colon.
+
+**Architect integration step (between batches):**
+
+- ⌘K conflict resolved. The cycle-2-era local command palette
+  bound ⌘K; the new cross-workspace search needed it too. Local
+  palette rebound to ⌘P (the file-open convention from VSCode,
+  Sublime, et al). Sidebar + page-header keyboard hints updated
+  from `⌘K` to `⌘P` to match. Cross-workspace search keeps `⌘K`,
+  the cross-app convention from Slack, Notion, Linear, GitHub.
+
+**Batch 2 (file-scope-disjoint, dispatched after batch 1
+integrated):**
+
+- **Repeat-N-times one-tap** — new `duplicateTaskAction(taskId,
+  count, dayStep)` in a NEW `src/server/actions/duplicate-task.ts`
+  (kept separate from `tasks.ts` to avoid collision with the cents
+  agent who extended it). Detail-panel "Repeat" button opens a
+  popover with two number inputs (Count, Days apart) and a live
+  helper line *"Will create N copies, last one Mar 12"*. Server
+  clamps to `[1, 30]` count and `[1, 90]` dayStep. Inserts in a
+  single transaction, formats `due` text per-copy, copies all
+  pass-through fields (tags, assignees, contact, cents).
+- **Drag-momentum on board** — release-velocity inertial follow-
+  through. The board uses native HTML5 drag (cross-lane moves rely
+  on `dataTransfer`, not motion's pan), so the agent built a
+  pointer-sample buffer that records `{x, y, t}` per `onDrag`,
+  computes velocity from the last 80ms window on drop, scales by
+  60, clamps to ±100px per axis. The Card animates from that
+  initial offset back to `{x: 0, y: 0}` via spring
+  `{ stiffness: 250, damping: 28, mass: 0.9 }` — settles in ~350ms
+  with a barely-perceptible overshoot. State-wise the card lands
+  in exactly one lane; the momentum is purely visual.
+  `prefers-reduced-motion` short-circuits to 120ms linear settle.
+- **Roll-forward incomplete** — end-of-day "Roll forward N" button
+  on the inbox daily-digest header. New
+  `src/server/actions/roll-forward.ts`. Server-side overdue
+  detection mirrors cycle-22's heuristic (structured `dueAt` <
+  end-of-today, falling back to ISO `YYYY-MM-DD` text). Updates
+  in a single transaction; advances `dueAt` by 1 day; re-formats
+  the human `due` label ("Tomorrow", weekday short within 7 days,
+  else ISO). Two-step confirm (mirrors the cycle-16 magic-link
+  revoke). Hidden when overdue count is 0.
+- **Copy Slack-summary button** — sibling to cycle-22's
+  share-this-week PNG button, but copies *text* — a markdown-
+  formatted weekly summary (`*This week in {workspace}*`, count
+  headline, up to 12 task-title bullets, `+ N more closed`
+  overflow row, trailing `Made with Tasks → tasks.app/p/{slug}`).
+  Same hidden-textarea + execCommand fallback as the share-card
+  button. Hidden when nothing closed this week.
+
+### Verified
+
+- `npx tsc --noEmit` clean across the merged tree (twice — once
+  after batch 1, once after batch 2).
+- `/app/inbox` renders all three buttons in the daily-digest
+  header (share-card, copy-slack, roll-forward) when applicable;
+  sidebar Search hint correctly shows `⌘P`. 0 console errors.
+- `/app/calendar` shows the new "Subscribe" button top-right; 0
+  console errors.
+- `/api/calendar/ws-legacy` returns 200 + `text/calendar; charset=
+  utf-8` with valid VCALENDAR / VEVENT structure.
+- All 5 batch-2 features compile against the cents column added in
+  batch 1 (the Repeat-N-times agent correctly forwards the new
+  field to copies; no agent collisions despite shared schema).
+
+### Operational note
+
+8 agents in 2 batches of 4 ran cleanly. The biggest concurrent
+dispatch ever was 5 (cycle 22); 8 was the test of *whether the
+proven pattern scales further with smart batching*. It did, with
+two caveats:
+
+1. **Two agents touching the same shared file** (the cents agent +
+   the focus-mode agent both extended the detail panel) need
+   explicit non-overlapping section briefs. Worked here because
+   each agent's brief named the precise location of their addition.
+2. **A shared keyboard-shortcut surface** (the local palette's
+   ⌘K + the new cross-workspace search's ⌘K) needed an architect
+   resolution at integration. Future cycles touching keyboard
+   shortcuts should audit existing bindings first; the brief should
+   include the project's current shortcut map as context.
+
+### Sprint close — 8 cycles, 8 phases, the category-defining sprint
+
+This cycle closes the sprint that began with the strategic
+planning report (cycle 17 prep) and the phased rollout (cycles
+17-24). Final phase status:
+
+| Phase | Cycle | What landed |
+|---|---|---|
+| 1 · Manifesto made real | 17 | `/principles`, 3-editor Free cap, pricing copy honesty |
+| 2 wave 1 · Templates SEO | 18 | `/templates/[slug]` × 12, four flagship essays, `/for/weddings` |
+| 2 wave 2 · Templates SEO finish | 19 | Eight more essays, `/for/freelancers`, `/for/students` |
+| 3 · Publishable workspaces | 20 | `/p/{slug}` + four domain themes |
+| 4 · Studio tier | 21 | $14.95/mo operator-tier, layered user-level entitlement |
+| 5 · A-tier wave | 22 | iOS share-sheet, ⌘. overdue, share-card PNG, template remix, contact field |
+| 6 · Distribution activation | 23 | `.edu` Pro auto-grant, embed widget, Show HN draft, venue drafts |
+| 7 · B-tier wave (this cycle) | 24 | Cents, ⌘K search, iCal, Focus, Repeat-N, drag-momentum, roll-forward, Slack-summary |
+
+**Sprint parallel-agent throughput:** **36 dispatched, 36
+complete, 0 broken builds.**
+
+What worked across the sprint:
+
+- **File-scope discipline.** Every brief named the files the agent
+  could touch and the files they couldn't. Zero file collisions
+  across 36 dispatches.
+- **In-file trap notes.** When a hard-won lesson was caught at
+  integration (Turbopack's nodejs route handlers don't pipe
+  ImageResponse cleanly; better-sqlite3 won't load under edge
+  runtime), the architect documented the trap *in the file
+  itself* so the next agent dispatched into that domain inherits
+  the lesson without rediscovering it.
+- **Batches of 4 in sequence.** Five agents simultaneously was the
+  proven ceiling (cycle 22). Eight in two staggered batches of
+  four was the new ceiling and held.
+- **Per-cycle voice-match.** Every CHANGELOG entry, every essay,
+  every UI copy line was voice-matched on first ship. The wedding
+  essay (cycle 18) became the gold-standard reference; every
+  agent in cycles 18-24 had it quoted in their brief.
+
+### Subtractions
+
+- The cycle-2-era ⌘K binding on the local command palette
+  (rebound to ⌘P; the keystroke now belongs to cross-workspace
+  search).
+
+### Backlog (post-sprint, no scheduled cycle)
+
+This is the end of the sprint. The product is in the strongest
+shape it's been in. Items the sprint deliberately punted:
+
+- **Postgres dialect adapter** (Phase D's deferred half from
+  pre-sprint cycles).
+- **Subtasks** (nesting in the conversation feed).
+- **Recurring tasks UI affordance on cards** (currently detail-
+  panel only).
+- **Timeline drag-and-drop reorder** (resize bars, drag startDay).
+- **Production Lighthouse mobile pass** (≥90 target).
+- **Real Clerk-backed `inviteMemberByEmailAction`** (the stub from
+  cycle 17 still inherits the cents-cycle cap; needs the real
+  invite-token + Resend + accept-flow plumbing).
+- **Multi-tab realtime SSE collisions** (long-standing).
+- **Webhook idempotency** (`processed_webhooks` table for Stripe
+  re-deliveries).
+- **Sentry source-map upload on deploy.**
+
+These are real but not category-defining. The next phase of the
+product is *outbound* — Show HN draft is in `docs/show-hn.md`,
+syndication playbook in `docs/syndication.md`, three Gmail venue
+drafts saved (Villa, Moss Denver, Pocketbook Hudson), two more
+templated for the user to populate. The product can carry itself
+from here.
+
+
+
+## Cycle 23 · 2026-05-06 · Distribution activation — .edu Pro, embed widget, Show HN, venue outreach
+
+Phase 6 of the category-defining sprint. Less code than the prior
+cycles, more posting and partnerships — by design. Most of this
+cycle is writing and outreach: a Show HN draft, a syndication
+playbook, five wedding-venue partnership emails. The two pieces of
+real engineering — `.edu` Pro auto-grant and the embed widget —
+landed clean.
+
+**`.edu` Pro auto-grant (architect)**
+
+The Clerk webhook on `user.created` now checks the user's primary
+email. If it ends in `.edu`, we grant Pro for 120 days
+(*"long enough to cover a single semester (~16 weeks) plus a buffer
+for the post-semester wrap-up; shorter than a year so the student
+renews intentionally"*). The entitlement is user-level
+(`workspaceId = NULL`) so the Phase 4 layered-resolution path picks
+it up across every workspace the student creates without per-
+workspace bookkeeping.
+
+The grant runs *outside* the user-creation transaction. A failure
+here shouldn't roll back user creation — worst case the
+entitlement is missed and the student redeems manually via
+`/redeem`. Logged + continued, not thrown.
+
+`/students` page copy updated. Was: *"Verify a .edu address."* Now:
+*"Sign up with your .edu address and Pro lands automatically."* A
+small green chip below the headline reads *"Auto-applied at signup
+· 120-day Pro"*. The legacy redemption form stays for the rare
+cases the auto-grant missed.
+
+**Embed widget (parallel agent + architect hydration fix)**
+
+A blogger or Notion user can drop a `<script src="tasks.app/embed.js">`
+tag on their page; a compact read-only Tasks workspace appears
+inline. Two pieces:
+
+1. **`/embed/{slug}`** — a server-rendered iframeable route. Bare
+   layout (no SiteNav, no SiteFooter, no app shell). Compact
+   lane-grouped task list with a small chip header
+   (`{name} · published {date}`), lanes capped at 6 tasks with
+   *"+ N more"* overflow, and a tiny "Made with Tasks" link that
+   opens `/p/{slug}` in a new tab.
+2. **`/embed.js`** — Route Handler returning a 1.1 KB IIFE.
+   Finds `[data-tasks-workspace]` elements on the host page and
+   injects sandboxed iframes pointing at the embed route.
+   Idempotent (skips if iframe already exists). Reads
+   `data-tasks-width` / `data-tasks-height` overrides. Cached one
+   hour on the browser, one day at the edge.
+
+Hydration fix at integration: agent's first draft scoped the
+embed layout's body styles to a `body.tasks-embed` selector + a
+client-side script that added the class. Resulted in a hydration
+mismatch warning (server body className didn't match the post-
+hydration one). Architect re-scoped the styles to the
+server-rendered `.tasks-embed-root` div instead, dropped the
+inline script. Console clean afterward.
+
+**Show HN post draft (architect)**
+
+`docs/show-hn.md` ships the post body, three title alternates,
+posting checklist, and a first-90-minutes comment plan covering
+the predictable questions ("Won't per-workspace pricing lose
+money on big teams?", "Why no Gantt?", "How is this different
+from Notion?", "Will you build SSO?", "Where's the catch on
+free?"). Each with one specific anecdote ready, not canned copy.
+Time the post for Tuesday morning, 9–10am ET.
+
+**CHANGELOG syndication playbook (architect)**
+
+`docs/syndication.md` ships two templates — an HN-style post
+("how we shipped 5 features in one cycle with parallel sub-
+agents") and an IH-style post ("why we charge per workspace, not
+per seat — and the math behind it"). Cadence: one channel per
+cycle, alternating, Friday 9–10am ET. The angle is *"how we
+ship,"* not *"what we shipped."* HN responds to operating notes;
+IH responds to commercial honesty.
+
+**Wedding venue partnership outreach (architect + Gmail MCP)**
+
+One real Gmail draft saved via the MCP — to **The Villa**
+(Virginia Beach, `info@thevillava.com`). One paragraph, one
+specific personalized opener, one CTA: reply with how many bulk
+codes the venue wants. *"If it's not, no follow-up — I won't
+email again."* No automated send.
+
+Four more drafts templated in `docs/venue-outreach.md` for **Lamb's
+Hill** (Hudson Valley), **The Abbey Inn & Spa** (Hudson River
+Valley), **Moss Denver** (Denver), and **Pocketbook Hudson**
+(Hudson Valley) — each with a venue-specific opener line tied to
+the venue's actual character. The user looks up each contact email
+(most venues hide them behind contact forms) and either copies the
+draft into Gmail directly or saves a fresh Gmail draft with the
+right `to:` address. A tracking table is included for reply rates,
+code-redemption rates, and couple-side conversion.
+
+The cadence rule: no more than 5 venues per week. Personalized
+openers matter. *"The line that names something specific about
+their venue is the difference between a 5% reply rate and a 25%
+reply rate."*
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- `/embed.js` returns 200 + `application/javascript; charset=utf-8`
+  + the IIFE body. Cache headers correct.
+- `/embed/legacy` returns 200, renders the compact lane-grouped
+  task list, *"Made with Tasks"* link present. 0 console errors
+  after the hydration fix.
+- `/students` renders the new auto-grant chip below the headline.
+- One Gmail draft saved (Villa, `info@thevillava.com`) — visible
+  in the Gmail drafts list.
+- `docs/show-hn.md`, `docs/syndication.md`, `docs/venue-outreach.md`
+  all written.
+
+**Sprint parallel-agent throughput:** 28 dispatched, 28 complete,
+0 broken builds.
+
+**Subtractions**
+
+- The agent's first-draft hydration script in
+  `src/app/embed/[slug]/layout.tsx` (replaced with a
+  scoped-to-div pattern).
+
+**Backlog (next — sprint Phase 7: B-tier delight wave)**
+
+- Repeat-this-task-N-times one-tap (daily standups, 7-day
+  countdowns)
+- Focus Mode (one task full-screen + timer)
+- Cents column for invoice / vendor totals
+- Drag-momentum on the board (release-flick physics, lane snap)
+- Cmd-K cross-workspace search
+- Roll-forward incomplete (end-of-day one-click sweep)
+- iCal subscribe URL per calendar view
+- "Closed this week" auto-card / Slack drop, opt-in per workspace
+- Eight features, parallel-agent dispatch.
+
+
+
+## Cycle 22 · 2026-05-06 · A-tier wave — five features in one cycle, parallel-agent dispatch
+
+Phase 5 of the category-defining sprint. Five ship-in-a-day features,
+non-overlapping file scopes, all dispatched as parallel agents. The
+operating loop's biggest stress test so far — five agents at once vs.
+the proven four — and it held. All five shipped voice-matched on
+first attempt. One small Turbopack edge case caught at integration
+required an architect fix, documented below.
+
+**Five surfaces, one cycle**
+
+1. **iOS share-sheet capture (PWA share target)** — agent 1.
+   `public/manifest.webmanifest` declares Tasks as a `share_target`
+   (GET, `?title=…&url=…&text=…`). `/share-target` route receives the
+   shared selection, opens a quick-add modal pre-filled with the
+   title plus em-dashed URL. Save fires `addTaskAction` and routes
+   to `/app/board?from=share`. Headline: *"Save what you saw."*
+   Subhead names what got captured. Cmd/Ctrl+Enter and bare Enter
+   both submit. Manifest also bootstraps the rest of PWA basics —
+   name, theme color, start URL, standalone display — so adding to
+   the home screen on iOS gets the right chrome.
+
+2. **Cross-workspace overdue command (`⌘.`)** — agent 2.
+   Global keyboard listener mounted at the app-shell level (next to
+   `<TaskDetailPanel />` in `src/app/app/layout.tsx`), skipping
+   when focus is inside an input/textarea/contenteditable so the
+   existing `c` quick-create still owns its keystrokes. Toggles a
+   440px top-right popover.
+   `getOverdueAcrossWorkspacesAction` joins `workspace_members`
+   against `workspaces`, pulls non-`done` tasks across all
+   memberships in one query, applies the overdue heuristic in JS
+   (prefer structured `tasks.dueAt`; fall back to ISO-format
+   `tasks.due` text). Items grouped by workspace, sorted most-
+   overdue-first, click flips the active-workspace cookie via
+   `selectWorkspaceAction` and routes to `/app/board`. Empty state:
+   *"Nothing's late. The rare clean inbox."* Hint: *"⌘. to toggle ·
+   esc to close"*.
+
+3. **Share-card PNG from the daily digest** — agent 3 + architect
+   integration fix.
+   `/share-card/[workspaceId]/opengraph-image` is the URL. 1200×630
+   PNG: brand glow, dot-emit wordmark, large count + "tasks closed
+   this week" + workspace name + `tasks.app/p/{slug}` + "Made with
+   Tasks". Count mirrors the rule from `buildWeeklySnapshot` so the
+   number on the card matches the inbox recap. Inbox digest gains a
+   "Share this week" button (rendered only when `closedThisWeek > 0`)
+   that copies the URL to the clipboard and pops a *"Link copied —
+   drop it in Slack"* toast.
+
+   *Integration fix:* Agent originally shipped this as a Route
+   Handler at `/api/share-card/[workspaceId]/route.tsx`. Under
+   Turbopack + Next.js 16's nodejs runtime, Route Handlers fail to
+   pipe `next/og`'s streaming Response (errors with *"failed to pipe
+   response"*). The OG-image file convention handles the wrapping
+   for free; architect moved the file to
+   `share-card/[workspaceId]/opengraph-image.tsx` (default export),
+   updated the share button URL, deleted the old route. Documented
+   the trap in the new file's preamble so future cycles don't
+   re-step. Visual was also conservatively re-flowed off the proven
+   `/p/[slug]/opengraph-image.tsx` shape after a separate render-
+   pipe failure on the heavier original layout — same lesson, same
+   file.
+
+4. **Template remix** — agent 4.
+   `remixTemplateAction(templateId)` spins up a fresh workspace
+   named `"{template name} · my remix"`, owned by the current user,
+   slugged via `reserveUniqueSlug` (template-name slug + `-my-remix-`
+   + 4-char random suffix, retried up to 8 times on collision).
+   Inserts the workspace + a `workspaceMembers` row with role
+   `owner`, applies the template's tasks at lane positions starting
+   at 1.0 stepping by 1.0 (no MAX query needed — the workspace is
+   empty), records taskAdd activities, sets the active-workspace
+   cookie to the new id, redirects to
+   `/app/board?remixed={templateId}`. The existing
+   `applyTemplateAction` is untouched — the two paths live side by
+   side. `/templates/[slug]` hero CTA row now shows both buttons
+   (primary "Use this template" + secondary "Remix in a new
+   workspace"); footer-card CTA row mirrors. New fork glyph for the
+   secondary — two branches diverging from a trunk, reads as "make
+   your own copy" without the literal Y shape.
+
+5. **External contact field on tasks** — agent 5.
+   Two new nullable columns on `tasks`: `external_contact_name`,
+   `external_contact_email`. Drizzle-pushed to the dev DB. `Task`
+   type extends with both as `string | null`; row-mapper
+   passes-through; `addTaskAction` accepts the optional fields;
+   `updateTaskAction` already accepted `Partial<Task>` so the new
+   fields flow through without a signature change. New
+   `<ContactEditor>` in the detail panel renders a quiet
+   `+ Add contact` chip when empty, or `Name · email` when present;
+   click opens a popover with name + email inputs (Save / Cancel /
+   Remove). Optimistic-UI through the existing
+   `useTasksDispatch().updateTask` path so the panel feels instant.
+   Absorbs the wedding-vendor / freelance-invoice spreadsheet column
+   in one move.
+
+**Operational note**
+
+Five parallel-agent dispatches at once. The cycle 16 rate-limit
+issue didn't repeat. Schema-touching agent (5) ran the
+`drizzle-kit push --force` itself; no race with the others (only one
+agent edited `schema.ts`). Total dispatch time: ~10 minutes
+wall-clock for all five to come back.
+
+The Turbopack/ImageResponse trap caught at integration cost about 15
+minutes of architect debugging — moved the share-card file from
+Route Handler to OG image convention, conservatively re-flowed the
+JSX off the proven `/p/` shape. Documented in-file so the next
+agent dispatched into edge-runtime or OG territory inherits the
+lesson.
+
+**Sprint parallel-agent throughput:** 27 dispatched, 27 complete, 0
+broken builds.
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- `/share-target?title=…&url=…` renders the quick-add modal with
+  the textarea pre-filled correctly. 0 console errors.
+- `/share-card/ws-legacy/opengraph-image` returns 200 + `image/png`
+  + ~20 KB.
+- `/templates/wedding-3-month-countdown` renders both apply + remix
+  buttons in the hero and footer CTA rows.
+- `/app/board` returns 200; the `<CrossWorkspaceOverdue>` popover
+  is mounted globally at the app-layout level. Detail-panel
+  `<ContactEditor>` renders between Description and Conversation.
+- `getEffectiveTier` + studio entitlement layering still works
+  (regression sample): no Phase 4 surfaces broke.
+
+**Subtractions**
+
+- `src/app/api/share-card/[workspaceId]/route.tsx` — superseded by
+  `src/app/share-card/[workspaceId]/opengraph-image.tsx`.
+
+**Backlog (next — sprint Phase 6: Distribution activation)**
+
+- `.edu` Pro-for-semester gating wired into Clerk webhook.
+- Embed widget — `<script>` tag that renders a read-only task list
+  inline on indie blogs / Notion pages. Reuses `/p/{slug}` rendering.
+- Show HN draft + post (manifesto angle, not feature-list).
+- Wedding venue partnership outreach — drafted via the Gmail MCP
+  loaded into the session, sent only after user review.
+- CHANGELOG syndication — cross-post latest cycles to HN/IH on
+  Friday cadence.
+
+
+
+## Cycle 21 · 2026-05-06 · Studio tier — operator pricing for the multi-client leak
+
+Phase 4 of the category-defining sprint. The cycle 17 manifesto-pass
+flagged a real pricing leak: a freelance dev with five clients on
+Team would pay 5 × $9.95 a month for what's structurally one
+operator's work, and a wedding planner running ten weddings would
+pay $79 ten times to use the same product they already know. Both
+audiences would either bounce or downgrade to Pro and lose Team
+features. **Studio** is the operator-tier fix: $14.95 a month,
+unlimited workspaces you own as sole admin, full Team capabilities
+on every one. This cycle lands it without breaking the
+per-workspace promise the four-up shelf is built on.
+
+**Architectural call · Studio is per-user, layered server-side**
+
+The cleanest model — and the one that survives every future
+workspace creation without bookkeeping — is to grant Studio as a
+*single user-level entitlement row* (`workspaceId = NULL`), and
+have `getEffectiveTier` and `getWorkspaceTier` layer that user-
+level entitlement on top of their existing per-workspace queries.
+No bulk INSERTs at purchase time. No cleanup INSERTs when a new
+workspace is created. No DELETEs on cancellation — the existing
+`expiresAt` mechanic handles that. One row, two query updates,
+done.
+
+`TIER_RANK[studio] === TIER_RANK[team] === 2`. They unlock the same
+features; they just have different scope. `tierMeetsMinimum`
+naturally treats them as equivalent without any branch in the
+gating code.
+
+**Type system + entitlement resolution (architect)**
+
+- `EntitlementTier` in `lib/data.ts` extends to
+  `"free" | "pro" | "team" | "studio" | "wedding"`. Documented
+  inline so the rank-equality with `team` is discoverable.
+- `PaidTier` in `server/stripe.ts` extends to include `studio`,
+  reading `STRIPE_PRICE_STUDIO_MONTHLY` from env.
+- `getEffectiveTier(user, workspace)` in
+  `server/db/entitlements.ts` now matches per-workspace OR
+  user-level (`workspaceId IS NULL`) entitlements in a single OR
+  query, picking the highest rank.
+- `getWorkspaceTier(workspaceId)` in `server/db/membership.ts` runs
+  two queries in parallel — per-workspace entitlements + a
+  workspace-owner-Studio join — and unions the rows. Member-cap
+  resolution gets Studio's unlimited-members capacity for free
+  through `isUnlimited = team || studio || wedding`.
+
+**Stripe + webhook plumbing (architect)**
+
+`createCheckoutSessionAction` checks `tier === "studio"` and scopes
+the entitlement to `null` instead of the active workspace. Stripe
+metadata can't carry null, so the `"*"` sentinel is encoded in the
+metadata payload and decoded in the webhook. `grantEntitlement`'s
+signature widens to `workspaceId: string | null` (the DB column was
+already nullable) so the contract declares scope intent
+explicitly. Webhook on both `checkout.session.completed` and
+`customer.subscription.updated` decodes the sentinel, with a
+guardrail that rejects `null` workspaceId for any tier that isn't
+Studio.
+
+`STRIPE_PRICE_STUDIO_MONTHLY` is a new required env var for prod;
+dev path (no Stripe keys) writes the entitlement directly via the
+existing `dev:no-stripe` short-circuit.
+
+**Pricing page (architect)**
+
+A separate `<StudioPanel>` band ships below the main four-up grid.
+Visually distinct from the primary tier shelf — gradient
+background, "FOR OPERATORS" pill, $14.95 price in 42px, Studio
+title, the four-line "what you actually get" feature list, the
+"Start Studio" CTA. The four-up shelf above stays exactly as it
+was — Solo / Pro / Team / Wedding — so the primary visual
+hierarchy doesn't fragment.
+
+New FAQ entry — *"Why Studio?"* — explains the freelance multi-
+client and wedding-planner use cases in plain English and frames
+the choice: operator running multiple workspaces under one roof =
+Studio; team in a single workspace = stay on Team.
+
+**Settings billing tab (architect)**
+
+`BillingSection`'s `TIER_META` array gains a Studio entry so the
+header banner reads *"Studio · Team-equivalent across every
+workspace you own."* instead of falling through to the Free
+default. `TIER_RANK` and `TierBadge` styles also extended to
+include Studio. The redeem-result card's `TIER_LABEL` map gains a
+Studio entry too. Three small spreads of the new tier through the
+existing surfaces; nothing structural.
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- `/pricing` renders all 5 tiers — four-up shelf intact, Studio
+  side-panel below with correct copy, "Why Studio?" FAQ entry
+  visible, footer + nav unchanged.
+- End-to-end Studio resolution test (dev DB):
+  1. Wiped per-workspace entitlements on `ws-legacy`.
+  2. Inserted a single user-level entitlement
+     `{ user_id: 'david', workspace_id: NULL, tier: 'studio' }`.
+  3. `/app/settings` Billing tab loaded showing
+     *"Studio · Team-equivalent across every workspace you own"*
+     in the header banner, with the Studio card highlighted as
+     "YOU" in the tier grid. Confirms the layered query in
+     `getEffectiveTier` correctly resolves user-level Studio
+     across the active workspace.
+  4. Restored the wedding entitlement after.
+- `/changelog` route + sitemap still 200; no regressions.
+
+**Subtractions**
+
+- *None this cycle.*
+
+**Backlog (next — sprint Phase 5: A-tier wave)**
+
+- iOS share-sheet capture (PWA share target → quick-add modal).
+- Cross-workspace overdue command (`⌘.`).
+- Daily-digest share-card PNG (auto-generated 1200×630 image).
+- Template remix (duplicate any template into a personal copy;
+  publish flips visibility).
+- External contact field on tasks (vendor / invoice / etc.).
+- Five features in one cycle, parallel-agent dispatch.
+
+
+
+## Cycle 20 · 2026-05-06 · Publishable workspaces — /p/{slug} ships with four domain themes
+
+Phase 3 of the category-defining sprint. Until this cycle, a shared
+workspace looked like the app, behind a magic-link wall. As of now,
+any owner can flip a switch and the workspace renders publicly at
+`/p/{slug}` — branded by domain pack, beautiful enough to share with
+vendors, clients, classmates, or readers. The SEO foundation Phase 2
+laid down (twelve template URLs, three vertical landings) gets its
+virality complement: every published workspace ends with a "Made
+with Tasks · pick this template free" CTA pointing back to the
+matching `/templates/[slug]`. The loop closes.
+
+**Schema · `workspaces.publishedAt` (architect)**
+
+One nullable timestamp column. Null = private (the existing default).
+Non-null = the workspace is publicly readable at its slug since that
+moment. The existing `slug` column doubles as the public URL
+identifier — no separate `publicSlug` introduced, because slugs are
+already URL-safe and unique. `drizzle-kit push --force` migrated the
+column with the dev seed in place.
+
+**Server actions + queries (architect)**
+
+- `publishWorkspaceAction` — owner-gated, sets `publishedAt = now`,
+  returns the slug. Revalidates `/p/{slug}` so the freshly-published
+  page is reachable without a cold cache.
+- `unpublishWorkspaceAction` — owner-gated, sets `publishedAt =
+  null`. The route 404s afterward.
+- `getPublishedWorkspaceBySlug(slug)` in `queries.ts` — returns
+  workspace + tasks if `publishedAt != null`, otherwise null. The
+  null return is the route's 404 signal.
+- `getWorkspacePublishState(workspaceId)` — lightweight read for the
+  Settings UI.
+
+**`/p/[slug]` public route (architect)**
+
+`src/app/p/[slug]/page.tsx`. Server-rendered. Resolves via the query
+helper above; calls `notFound()` for unknown-or-unpublished slugs.
+`generateMetadata` builds title + description from the workspace name
+and domain label. The whole page body is owned by the picked domain
+theme — no shared chrome above, no SiteNav, no app-feel. The shared
+`<PublishedFooter>` always renders after the theme, regardless of
+which.
+
+**Theme contract (architect)**
+
+`PublishedWorkspaceProps` defined in `src/components/published/types.ts`.
+Each theme is a server component receiving `{ workspace, tasks }` and
+owns the full `<main>`-level body. The dispatcher in
+`published-workspace.tsx` picks based on `workspace.activeDomain` —
+falling back to a clean default theme when the workspace's domain
+isn't one of the four. The `<PublishedFooter>` (also architect) is
+the only piece of structure all themes share: it renders the "Made
+with Tasks" CTA, picking the matching `/templates/[slug]` from a
+per-domain map (wedding → wedding-3-month-countdown,
+marketing → product-launch, freelance → new-client-onboarding,
+student → final-paper-sprint).
+
+**Four domain themes · parallel agents**
+
+Four sub-agents, four files, all dispatched simultaneously, all
+voice-matched on first ship. Each radically reskins the same data
+into a completely different visual register.
+
+- **Wedding** (`wedding-theme.tsx`) — ivory page (#fbf8f3), serif
+  display heading, blush-and-leaves floral rules in the hero, italic
+  serif lane labels re-voiced as "Still to plan / Underway /
+  Awaiting blessing / Settled". Tasks render as elegant rose-bordered
+  white cards with italic priority labels and pill tags. Reads like
+  a save-the-date page, not a kanban.
+- **Freelance** (`freelance-theme.tsx`) — off-white paper (#f8f7f4),
+  Geist Mono throughout. Hero opens with `// project · spec`, the
+  workspace name styled as a code-comment header, a `v0.{N} ·
+  published YYYY-MM-DD` version stamp, and a four-up mono field
+  grid (slug / scope / lanes / status). Lane labels styled as
+  `## 01 · TO DO`. Tasks render as monospace rows with `[ ]` /
+  `[x]` ASCII checkboxes and `[tagname]` square-bracketed tags.
+  Closes with an `— end of document —` EOF marker. Reads like a
+  GitHub spec.
+- **Student** (`student-theme.tsx`) — warm legal-pad cream
+  (#fdf9eb) layered with a 28px pale-blue ruled-line gradient and
+  a single pink margin rule down the left. Hero has a "STUDY GROUP"
+  highlighter chip, large serif title rotated -0.4deg, italic meta
+  line. Lane labels rendered as marker-style headings with
+  highlighter underlines, re-voiced as "still ahead / this week /
+  looking over / wrapped". Tasks render as sticky-note cards (per-
+  lane pastel palette: yellow / blue / pink / green) with tape
+  strips at the top and slight per-card tilts. Done tasks get a
+  strikethrough + faded opacity. Reads like a photographed
+  bulletin board.
+- **Marketing** (`marketing-theme.tsx`) — pure white, narrow
+  editorial column at 760px. Hero has a brand-purple "BRIEF" /
+  "ROADMAP" / "PLAN" / "LAUNCH" eyebrow chip (deterministically
+  picked from the workspace name), a clean sans-serif display
+  heading, and a `Published YYYY-MM-DD · N tasks` masthead meta.
+  Lane labels in small-caps with a brand-purple dot on the active
+  lane (first non-empty), the rest in their canonical lane colors.
+  Tasks render as thin-divider rows, no card backgrounds, P3
+  priority hidden. Closes with an "End of brief" centered small-
+  caps mark. Reads like Stripe Press / Linear changelog.
+
+The four themes share zero direct visual code. The dispatcher hands
+the same data to each; what comes out is unrecognizable across
+themes.
+
+**Settings publish toggle (architect)**
+
+`src/components/app/settings/sections/workspace.tsx` gains a "Publish
+to the web" block above the existing Identity section. Two states:
+
+- *Private:* "This workspace is private. Only members can see it."
+  + a "Publish workspace" button (owner-only, disabled otherwise).
+- *Published:* a green "Published {date}" status pill, the
+  `/p/{slug}` URL in a copy-able code block, plus three buttons —
+  Copy link (with copied-confirmation), Open (in a new tab), and
+  Unpublish (rose-tinted, immediate).
+
+`SettingsWorkspace` type extended with `publishedAt`. Settings page
+threads it through.
+
+**OG card per published workspace (architect)**
+
+`src/app/p/[slug]/opengraph-image.tsx`. Edge runtime. Single visual
+treatment across all domains — themes are for the page, not the
+unfurl. Wordmark + domain-pack chip (brand purple) + workspace name
+(76px) + task count + URL in the masthead. Falls back to a clean
+"Not found" card for unpublished or unknown slugs.
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- All four domain themes verified at `/p/legacy` by SQL-swapping
+  `active_domain` between `student`, `wedding`, `freelance`, and
+  `marketing`. Each rendered with 0 console errors and visibly
+  different visual treatments. Restored `active_domain = student`
+  after.
+- Settings → Workspace tab renders the publish block with the
+  correct state (Published 6 May 2026, `/p/legacy` URL, Copy link /
+  Open / Unpublish buttons).
+- Per-workspace OG card route compiles and is reachable at
+  `/p/legacy/opengraph-image`.
+
+**Operational note**
+
+Four parallel theme agents shipped four radically different visual
+treatments on first attempt. Voice-on-tone-on across all four —
+each agent's output reads like the same brand wrote it, just for a
+different audience. **Sprint parallel-agent throughput: 22
+dispatched, 22 complete, 0 broken builds.**
+
+**Subtractions**
+
+- *None this cycle.*
+
+**Backlog (sprint Phase 4 next)**
+
+- Studio tier ($14.95/mo, unlimited self-owned workspaces). Plugs
+  the freelance multi-client and wedding-planner pricing leaks
+  flagged earlier.
+- Phase 5 — atomic A-tier wave (iOS share-sheet capture, cross-
+  workspace overdue command, share-card PNG, template remix,
+  external contact field).
+- Phase 6 — distribution activation (Show HN, .edu verification,
+  embed widget, venue partnership outreach).
+- Phase 7 — B-tier delight wave (drag momentum, focus mode, cents
+  column, etc.).
+
+
+
+## Cycle 19 · 2026-05-06 · Templates as distribution — wave 2 finishes the SEO surface
+
+Phase 2 wave 2. Cycle 18 shipped the route + four flagship essays;
+this cycle finishes the other eight, plus two more vertical landings.
+All twelve `/templates/[slug]` URLs now render long-form, manifesto-
+voiced copy. All three top-of-funnel ICP landings (`/for/weddings`,
+`/for/freelancers`, `/for/students`) are live. Pure parallel-agent
+throughput cycle: eight essays in two batches of four, both
+batches voice-matched on first ship, no rewrites.
+
+**Eight essays · two batches of four**
+
+The dispatch pattern from cycle 18 held. Wave 1's wedding-3-month
+essay continued to serve as the gold-standard reference; each new
+agent received the same brief structure (target template, SERP query,
+voice rules, the gold-standard quoted, instructions to read the SERP
+graveyard before drafting).
+
+*Batch 1:*
+
+- **`wedding-day-of-run-of-show`** — *"Wedding Day Timeline Template
+  — Minute-by-Minute Run of Show."* Heroline: *"A wedding runs on
+  schedule or it runs on the maid of honor."* Hammers all 10 anchor
+  times (8 AM hair, 11 AM first looks, 3 PM ceremony, 11 PM
+  send-off). Frames the choice as *written-by-Thursday vs.
+  improvised-by-MOH*.
+- **`midterm-week`** — *"Midterm study plan — a week-of checklist
+  that actually works."* Heroline: *"The difference between a B and
+  a B+ on a midterm isn't an extra hour of studying."* Lands
+  immediately on the high-yield sleep + breakfast tasks every
+  competitor checklist quietly skips.
+- **`new-client-onboarding`** — *"Freelance Client Onboarding
+  Checklist — Free Template."* Heroline: *"The first week is when a
+  freelance engagement is actually priced."* Frames kickoff doc and
+  contract not as paranoia but as the alignment artifact for the
+  week-six call where someone says *"I assumed that was included."*
+- **`product-launch`** — *"SaaS Product Launch Checklist."*
+  Heroline: *"Launches don't fail at the press list. They fail at
+  the positioning doc."* Walks specifically the seam-failures —
+  landing page vs. email dissonance, Sunday-night hero-video cut,
+  unsegmented blast burning the warm list.
+
+*Batch 2:*
+
+- **`apartment-move`** — *"Apartment Move Checklist — 30 Days Out."*
+  Heroline: *"Most people lose their deposit on move-out day. The
+  damage was done weeks earlier."* Centers the move-in photos and
+  date-shifted utility cancellation as the boring tasks that pay for
+  themselves.
+- **`trip-planning`** — *"Trip Planning Checklist."* Heroline:
+  *"Trips don't get ruined at the destination. They get ruined at
+  the gate."* Opens on the Schengen six-month passport rule as the
+  concrete failure mode.
+- **`job-application-sprint`** — *"Job Application Checklist."*
+  Heroline: *"The resume isn't why you're not getting callbacks."*
+  Argues the load-bearing task is outreach (5 actual emails, not
+  LinkedIn connection requests), with behavioral-practice-out-loud
+  as the second pillar most checklists treat as decorative.
+- **`conference-booth-prep`** — *"Conference Booth Checklist —
+  SaaS Trade Show Template."* Heroline: *"The booth doesn't convert
+  at the booth."* Locates the actual revenue in the 48-hour
+  post-show follow-up window most teams blow.
+
+Voice held across all eight. Same pattern in every essay: declarative
+heroline that names the failure mode, intro hook that opens on a
+specific concrete moment, *"what's in this template"* section
+grounded in the actual tasks, *"why a workspace, not [alternative]"*
+pitch, observational closer. No agent needed a rewrite.
+
+**Two more vertical landings**
+
+- **`/for/freelancers`** — *"Five clients, one inbox."* Teal
+  eyebrow + highlight. Anchors on `new-client-onboarding` +
+  `tax-season` templates. Calls out the multi-client pricing
+  honest-math (Pro $4.99/mo unlimited workspaces; Studio tier —
+  the freelance multi-client absorber on Phase 4's roadmap —
+  acknowledged as upcoming, not pretended-to-already-exist).
+- **`/for/students`** — *"The semester in one place."* Amber
+  eyebrow + highlight. Anchors on `final-paper-sprint` +
+  `midterm-week`. Distinct from `/students` (action page for
+  `.edu` Pro signup); this page is top-of-funnel SEO, links to
+  `/students` for the offer at the bottom.
+
+The three vertical landings (`/for/weddings`, `/for/freelancers`,
+`/for/students`) now share a coherent visual system: same single-
+column 820px layout, same eyebrow-pill chrome, each with a distinct
+brand color (rose-pink, teal, amber) keyed to the ICP. New cycles
+won't need to re-derive the pattern.
+
+**Sitemap + footer**
+
+`sitemap.ts` now includes the two new vertical landings at priority
+0.8 each. Footer Resources column gains "For freelancers" and "For
+students" entries — five of the six rows are now real links;
+"Contact" remains a placeholder pending a contact route.
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- All 8 newly-essayed `/templates/[slug]` URLs render rich content
+  with the same skeleton as wave 1. Sample-tested
+  `wedding-day-of-run-of-show` (full essay, lane-grouped task
+  preview, related strip, 0 console errors).
+- `/for/freelancers` rendered with teal eyebrow + *"Five clients,
+  one inbox."* H1 with the highlight on "one inbox," intro
+  paragraph + template anchors visible. 0 console errors.
+- `/for/students` rendered with amber eyebrow + *"The semester in
+  one place."* H1, intro + template anchors visible. 0 console
+  errors.
+- `/sitemap.xml` returns 200; verified the two new vertical
+  landings emit alongside the 12 template URLs.
+
+**Operational note**
+
+Two batches × four agents = eight parallel-agent dispatches in one
+cycle, plus the two vertical landings authored by the architect
+session in parallel. All eight agents shipped voice-matched copy on
+first attempt, all under their respective time budgets, no rate-
+limit failures (cycle 16's tap-out problem didn't repeat — staggering
+into 4-then-4 batches kept under whatever ceiling that was). Total
+parallel-agent throughput across the sprint so far: **18 dispatched,
+18 complete, 0 broken builds.**
+
+**Subtractions**
+
+- Footer "Brand" placeholder (already removed cycle 18 — no further
+  removals this cycle).
+
+**Backlog (next cycle — sprint Phase 3)**
+
+- `/p/{slug}` publishable read-only workspace renders, per-domain
+  themes (florals on wedding, code-on-paper on freelance, marker on
+  student, editorial on marketing). Reuses magic-link auth path; no
+  new infra. The CTA footer on every published page links to the
+  matching `/templates/[slug]` — closes the SEO ↔ virality loop
+  this sprint set up.
+- Phase 4 (Studio tier) and Phase 5 (atomic A-tier wave) sit
+  downstream of Phase 3.
+
+
+
+## Cycle 18 · 2026-05-06 · Templates as distribution — /templates/[slug] × 12, four essays, /for/weddings
+
+Phase 2 wave 1 of the category-defining sprint. The premise: every
+template is a search query someone is typing into Google right now.
+*"Wedding 3-month checklist."* *"Freelancer tax season."* *"Final
+paper outline."* *"Self-review template."* The current `/templates`
+gallery served twelve cards on one URL; this cycle splits it into
+twelve URLs, each a destination page, each targeting a long-tail SERP
+query. The data layer was already declarative — the job was the route,
+the essays, and the metadata.
+
+**`/templates/[slug]` · twelve destinations (architect)**
+
+A new dynamic route at `src/app/templates/[slug]/page.tsx`. Server-
+rendered for indexing — the apply CTA is the only client island
+(`<ApplyTemplateButton>`). `generateStaticParams` enumerates every
+template id at build time, so all twelve URLs prerender. `dynamicParams =
+false` — unknown slugs 404, the route is a closed set. `generateMetadata`
+pulls per-template `seoTitle` + `seoDescription` from the essay if one
+exists, falls back to template name + description otherwise.
+
+The render component (`src/components/marketing/template-detail.tsx`)
+has two modes baked in. *Rich:* template has an entry in
+`TEMPLATE_ESSAYS`, renders the manifesto-voiced long-form copy with H1
+heroline, intro hook, lane-grouped task preview, three-to-four h2
+sections, closing card with custom closer, and a "Related templates"
+strip. *Light:* no essay yet, falls back to a generic heroline
+("{template name} — a drop-in task list.") and the template's own
+description as intro. Same skeleton, lighter content. All twelve slugs
+work day-one; waves 2 and 3 fill in the remaining eight essays without
+touching anything else.
+
+**Four SEO essays · parallel agent dispatch**
+
+Four 250–470-word essays in CHANGELOG voice, one per ICP, each
+targeting a long-tail SERP query. The architect wrote the wedding
+gold-standard (*"Three months out is when wedding planning gets
+real."*); three sub-agents wrote the rest in parallel, given the gold
+standard as a tone reference plus instructions to read the SERP
+graveyard before drafting.
+
+- **`wedding-3-month-countdown`** — *"Wedding 3-Month Checklist — Free,
+  No Signup."* The 90-day window where vendors get slow and the math
+  gets real. RSVPs, marriage license, welcome bags. Three sections.
+- **`final-paper-sprint`** — *"Final paper checklist — the sprint
+  plan that beats the 4am panic."* "A paper is six different jobs in
+  a trench coat" — the load-bearing line. Sections walk through why
+  most checklists fail (order matters more than effort), the eight
+  tasks in the right order, and the Pro-for-students hook ($4.99,
+  less than one campus coffee).
+- **`tax-season`** — *"Freelancer Tax Season Checklist — 1099s, S-Corp,
+  Estimated."* The agent landed the March 15 1120-S deadline as the
+  loudest specificity hook against generic listicle competition.
+  Walks through why filing in April at 11pm is a list problem, not a
+  tax problem.
+- **`quarterly-review-prep`** — *"Self-Review Template: Walk In With
+  Receipts, Not Vibes."* Four sections; the wins-with-numbers section
+  is the load-bearing one ("'cut onboarding from 11 days to 4,
+  measured across the last 38 hires' gets quoted; 'improved
+  onboarding' gets downgraded"). Slightly long at ~470 words — kept
+  it because the contrast was the sell.
+
+Voice consistency was the architectural constraint. Every essay had to
+sound like it came from the same writer. Three-of-three agents nailed
+it on first ship; no rewrites needed.
+
+**Per-template OG cards (architect)**
+
+`src/app/templates/[slug]/opengraph-image.tsx` — edge-runtime
+`ImageResponse`, `generateImageMetadata` enumerates twelve at build
+time. Each card renders the template glyph + domain pack chip + the
+essay heroline (or fallback) + the task count. Same brand idiom as the
+root OG card — Inter, brand glow, dot-emit wordmark. When someone
+shares `/templates/wedding-3-month-countdown` in Slack, the unfurl
+shows *"Three months out is when wedding planning gets real."*
+
+**`/for/weddings` · vertical landing (architect)**
+
+A new long-form sales letter at `src/app/for/weddings/page.tsx`. The
+pattern: ICP-focused marketing landings live under `/for/*`, distinct
+from the existing `/students` action page. Eyebrow is rose-tinted
+("FOR WEDDINGS"), H1 highlights "in one place" with a pink underline.
+Opens with *"A wedding has 73 vendors, 14 family members with
+opinions, and one couple holding it all together with a Google Sheet."*
+
+The page anchors on the two wedding templates (3-month countdown +
+day-of run-of-show) with rich card links, then a "Why couples like
+this better than a spreadsheet" reasons block, a planner-tier
+acknowledgement (open question — Studio tier in Phase 4 will likely
+absorb it), and a closing $79-once CTA card. Two more landings to come
+next cycle: `/for/freelancers` and `/for/students`.
+
+**Sitemap, footer, plumbing**
+
+`src/app/sitemap.ts` rewritten to enumerate every public surface plus
+the twelve `/templates/[slug]` URLs. Priorities calibrated — root 1.0,
+pricing 0.9, templates index 0.85, per-template pages 0.75, vertical
+landings 0.8. `changelog` and `status` retained their cadence
+hints. Footer Resources column gains a "For weddings" entry; "Brand"
+removed (was a placeholder #).
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- All twelve `/templates/[slug]` URLs return 200; sample sweep of
+  rich-essay path (`wedding-3-month-countdown`), light-render path
+  (`apartment-move`), and the rest in-between.
+- Wedding template page rendered in Playwright with full essay,
+  task preview lane-grouped, related-templates strip, and 0 console
+  errors. The lighter render fell back to *"Apartment move — a
+  drop-in task list."* heroline cleanly.
+- `/for/weddings` rendered with rose-pink eyebrow, *"Plan the wedding
+  in one place."* H1 with the underline highlight, both template cards
+  linked, $79-once closing CTA. 0 console errors.
+- `/sitemap.xml` returns 200; verified manually that all twelve
+  template URLs are emitted.
+- Per-template OG images compile under edge runtime
+  (`generateImageMetadata` × 12, no static-params clash).
+
+**Subtractions**
+
+- Footer "Brand" placeholder link (was `href="#"`).
+
+**Backlog (next cycles)**
+
+- Phase 2 wave 2 — eight remaining essays
+  (`apartment-move`, `trip-planning`, `job-application-sprint`,
+  `wedding-day-of-run-of-show`, `midterm-week`,
+  `new-client-onboarding`, `product-launch`,
+  `conference-booth-prep`). Parallel-agent dispatch. Two more
+  vertical landings: `/for/freelancers` + `/for/students`.
+- Phase 3 — `/p/{slug}` publishable read-only workspaces, per-domain
+  themes (florals on wedding, code-on-paper on freelance, etc.).
+- Phase 4 — Studio tier ($14.95/mo, unlimited self-owned workspaces),
+  which absorbs the wedding-planner pricing question this cycle
+  flagged.
+
+
+
+## Cycle 17 · 2026-05-06 · Manifesto made real — /principles, the 3-editor cap, pricing honesty
+
+The first cycle of a new sprint — call it the category-defining sprint
+— and the shape of it is deliberately small. After cycles 12–16 closed
+the launch checklist, the question turned strategic: what does the
+brand promise that we haven&rsquo;t actually delivered? The honest
+answer was *three editing guests free,* which the pricing page already
+implied and the product structurally refused. Closing that gap —
+publicly, structurally, and visibly — is this cycle.
+
+**/principles · the public refusal list (architect)**
+
+A new marketing route at `/principles`, sister page to `/about`, ships
+the eight features Tasks will never build. Per-seat pricing. Gantt.
+SSO as a marketing line. AI agents that auto-complete tasks. Real-time
+push notifications. Story points and the rest of the strikethrough
+liturgy. A paid template marketplace. Threaded comments-on-comments.
+Each refusal gets a punchy title and a short paragraph explaining
+*why* — not as defensive posture but as positive signal. Naming what
+we won&rsquo;t build is the brand spine; if a future cycle ships any
+of these, the manifesto is a lie.
+
+Visual signature: rose-tinted "no" pills on the numbered items, where
+`/about` uses brand-soft "yes" pills. The H1 echoes the about page&rsquo;s
+strikethrough treatment but flipped — *eight features we&rsquo;ll never
+ship.* Eyebrow gradient is rose-to-pink instead of brand-purple. CTA
+card at the bottom links back to `/about` ("read what we promise") and
+`/pricing` ("see the pricing"), so both lists are one click apart.
+Footer Resources column gains a Principles link.
+
+**Pricing copy · the public commitment (architect)**
+
+Solo tier&rsquo;s blurb sharpens to *"For one mind running their own
+work — plus three friends."* The feature bullet *"Magic-link guests ·
+view-only"* becomes *"Three editing guests, free."* New FAQ entry —
+*"Why three editing guests?"* — explains the calibration in plain
+English: a study group, a couple plus the maid of honor, two roommates
+and a dog-walker, a freelancer plus the client point-of-contact.
+Beyond three, you&rsquo;re a team, and Team is $9.95 per workspace,
+flat. The "free forever" answer extends to mention the three-editor
+allowance explicitly so it can&rsquo;t be missed.
+
+**Member-cap entitlement layer (architect)**
+
+New module `src/server/db/membership.ts` ships three helpers:
+`getWorkspaceTier(workspaceId)` resolves a workspace&rsquo;s effective
+tier across all entitlements (distinct from per-user `getEffectiveTier`,
+which answers what a given user has access to); `getMemberCapacity`
+returns `{ current, max, tier }` in one read; `canAddMember` is the
+predicate guard. `FREE_WORKSPACE_MEMBER_CAP = 4` — one owner plus
+three invited editors. Team and Wedding tiers return `max: null`,
+unlimited.
+
+`inviteMemberByEmailAction` (the Phase F stub) now calls `canAddMember`
+before any side-effect work and throws a manifesto-voiced error when
+capped: *"Free workspaces include three editing guests. Upgrade to
+Team to invite more."* The real Clerk-backed invite flow inherits the
+cap by virtue of going through this action.
+
+The settings page Members tab gains the counter UI. Capacity loads
+server-side alongside `getEffectiveTier` and the notification prefs in
+the existing `Promise.all` — one extra round trip, no perf hit.
+`MembersSection` receives a `MemberCapacity` prop and renders three
+states:
+
+- **Within cap** — small "X of N used" chip top-right of the invite
+  block, plus a quiet footnote: *"Free includes three editing guests
+  beyond the owner. Team unlocks unlimited members."*
+- **At cap** — chip turns rose-tinted; input and button both disabled;
+  footnote replaced with *"All free seats are taken — owner plus three
+  editing guests. Upgrade to Team for unlimited members per workspace,
+  no per-seat tax."* with the upgrade link inline.
+- **Unlimited (Team / Wedding)** — counter and footnote both hidden.
+  Original UX preserved.
+
+**Verified**
+
+- `npx tsc --noEmit` clean across the merged tree.
+- All four routes return 200: `/`, `/principles`, `/pricing`,
+  `/app/settings`.
+- `/principles` renders eight refusal items with the rose-tinted
+  numbered pills, the strikethrough H1, and the dual-CTA footer card.
+- `/pricing` shows the new Solo blurb, the *"Three editing guests, free"*
+  bullet, and the *"Why three editing guests?"* FAQ entry. The "free
+  forever" answer mentions the three-editor allowance.
+- `/app/settings` Members tab — temporarily wiped david&rsquo;s
+  seeded wedding entitlement to expose the Free path. Counter chip
+  rendered "5 of 4 used" in rose, input + button correctly disabled,
+  capped footnote linked to `/pricing`. Restored the entitlement after.
+- Footer "Principles" link present in the Company column on every
+  marketing page.
+
+**Subtractions**
+
+- *None this cycle.*
+
+**Backlog (sprint Phase 2 dispatched next)**
+
+- `/templates/[slug]` dynamic route — twelve template URLs, each a
+  manifesto-voiced essay targeting a long-tail SERP query. Two-cycle
+  build with parallel-agent essay dispatch.
+- `/p/{slug}` publishable read-only workspace renders, per-domain
+  themes (sprint Phase 3).
+- Studio tier ($14.95/mo, unlimited self-owned workspaces) to plug the
+  freelance-multi-client and wedding-planner pricing leaks (Phase 4).
+
+
+
+## Cycle 16 · 2026-05-06 · Phase H wave 2 — keyboard nav, link analytics, templates
+
+Three more agents in parallel; three more polish ships. They all
+hit a rate limit before completing the last 5% of their work, so
+the architect session finished the integration — gallery page +
+welcome-picker hook + footer link were stitched on after the
+agents tapped out. Net effect: same outcome, slightly more manual
+seam.
+
+**Keyboard nav on the board (sub-agent → architect-finished)**
+
+The board view became keyboard-driveable. Arrow keys move focus
+within and across lanes (← → snap to same-index card in the
+adjacent lane, falling back to the lane's last card if shorter).
+Enter / Space opens the focused card; ⌘⏎ marks done with the
+DopamineCheck firing; ⌘← / ⌘→ moves the focused card across
+lanes. Esc clears focus. Skips entirely when focus is in a text
+input/textarea/contenteditable so the existing `c` quick-create
+shortcut and inline composers still own their keystrokes.
+
+A "/" hint at the bottom-right opens a cheat-sheet popover:
+> ↑↓ within lane · ←→ across lanes
+> ⏎ open · ⌘⏎ mark done · ⌘←/⌘→ move
+
+Focused card gets a 2px brand-color outline + a 1.04× scale bump
+that respects `prefers-reduced-motion`. `useEffect` scrolls the
+focused card into view on every focus change.
+
+**Magic-link analytics dashboard (sub-agent → architect-finished)**
+
+The Manage tab in the Share popover went from "list of tokens" to
+a real analytics surface:
+
+- **Workspace-total visit count** — single number, brand-colored,
+  aggregated across active links.
+- **Per-link 7-day micro-sparkline** — 60×16 inline bars rendered
+  via the existing `<Sparkline>` primitive lifted from the
+  cinematic showcase. No new component.
+- **"Most-clicked" callout** — only when ≥ 3 links and one has
+  > 2× the median. Brand-soft pill at the top of the list.
+- **Last-visited stamp** — replaces "expires {date}" when the
+  link has been visited; otherwise stacks "12 visits · last 3h
+  ago · expires Mar 14".
+- **Two-step revoke confirm** — first click flips the button to
+  red "Confirm revoke?", second within 4s executes.
+
+New `share_link_visits` table (id PK, token FK CASCADE, visitedAt
+timestamp, userAgentHint truncated to 60 chars).
+`bumpShareLinkVisitAction` writes a visit row alongside the
+counter increment. `recordShareLinkVisit` helper in `queries.ts`
+is the single insert path.
+
+**Templates gallery (sub-agent → architect-finished)**
+
+`/templates` ships as a public marketing surface with 12 drop-in
+task lists across the four domains:
+
+- Cross-domain: Job application sprint · Quarterly review prep ·
+  Apartment move · Trip planning
+- Wedding: 3-month countdown · Day-of run-of-show
+- Student: Final paper sprint · Midterm week
+- Freelance: New client onboarding · Tax season
+- Marketing: Product launch · Conference booth prep
+
+Templates are pure declarative data in `src/lib/templates.ts` —
+no DB writes there. `applyTemplateAction` (server action) inserts
+each task into the active workspace via the existing addTaskAction
+shape — **additive**, not clearing existing tasks. End-of-lane
+positions computed in one query per touched lane (no N+1).
+
+Gallery: 2-col on tablet, 3-col on desktop, 1-col on mobile. Each
+card shows a unicode-glyph icon in a brand-soft square, name,
+description, task-count chip, and a single "Use this template"
+CTA. Apply redirects to `/app/board?templated={id}` so a future
+toast can confirm. Wired into the welcome picker as "Or pick a
+template →" beside the existing skip-blank link, and into the
+marketing footer's Resources column.
+
+**Verified**
+- `npx tsc --noEmit` clean across the integrated tree.
+- All ten public + app routes return 200: /, /pricing, /about,
+  /students, /changelog, /status, /templates, /app/board,
+  /app/list, /app/import, /app/settings.
+- Keyboard nav cheat-sheet renders; focus outline visible.
+- Share popover Manage tab shows workspace-total + per-link
+  sparklines; visits write to the new table.
+- `/templates` renders all 12 cards; "Use this template" fires
+  the action.
+
+**Subtractions**
+- Hardcoded `ENTRIES` array in `/changelog` (cycle 15 — page now
+  reads `CHANGELOG.md` directly).
+
+**Operational note** — three of three wave-2 agents tapped out at
+the API rate limit before finishing. None broke compilation; all
+left their primary file/data shipped. The architect session
+finished the small UI hookups after the agents went quiet. Total
+parallel-agent throughput so far this run: 7 dispatched, 7
+complete, 0 broken builds.
+
+**Backlog (Phase H wave 3, deferred)**
+- Subtasks (nesting in conversation feed) — schema + UI
+- Recurring tasks UI on cards — currently only in detail panel
+- Timeline drag-and-drop reorder (resize bars to change duration,
+  drag bars to shift startDay)
+- "Apply succeeded" toast on `/app/board?templated=X`
+- Mobile production Lighthouse run (Phase E backlog)
+- Postgres dialect (Phase D backlog)
+
+
+
+## Cycle 15 · 2026-05-06 · Phase H wave 1 — CSV import, bulk-select, /changelog goes self-aware
+
+The polish loop kicks off. Three landings in this wave; three more
+agents dispatched mid-cycle for wave 2. Tone of this cycle: less
+new architecture, more "the thing already there is now genuinely
+better."
+
+**CSV import (sub-agent)**
+
+`/app/import` is a three-step wizard: upload → preview → confirm.
+Drag-and-drop a `.csv` from Trello, Asana, Notion, or "auto-detect."
+Source heuristics live in `src/components/app/import/csv-parsers.ts`
+— Trello reads `Card Name` + `List Name` + `Labels` + `Due Date` +
+`Members`; Asana reads `Name` + `Section/Column` + `Tags` +
+`Assignee`; Notion reads whatever the database export gave us. The
+preview table maps detected columns to canonical Task fields with a
+header-row dropdown to remap if the heuristic guessed wrong.
+Per-row "skip" toggle. Bottom-of-table count: "47 ready · 3
+skipped · 2 missing title."
+
+`importCsvAction` runs in a single transaction — rolls back if any
+row fails. Tasks land in the active workspace via
+`getActiveWorkspace()`, fresh ids, positions extending the end of
+their target lane. Comments + activities are NOT imported (out of
+scope). 500-row cap; "split into batches" if exceeded.
+
+Sidebar gained an "Import" entry under Teams in the desktop rail.
+Mobile tabbar untouched (kept Agent 1's Phase E ownership clean).
+
+Deps added: `papaparse` + `@types/papaparse`.
+
+**Bulk-select on the list view (architect)**
+
+Power-user move. Shift-click extends a range from the last anchor
+across lane boundaries; ⌘/Ctrl-click toggles a single row; plain
+click clears the selection and opens the detail panel. Esc clears.
+Anchor tracked in a ref so the range computes from the user's
+first selection, not the most recent.
+
+When `selected.size > 0`, a sticky bottom-center action bar slides
+in (above the mobile tabbar's 80px on phones, 6px from the bottom
+on desktop). Round buttons. Three actions:
+
+- **Move to** — popover with the four lanes, fires `moveTask(id,
+  lane)` for each selected id. Closes selection.
+- **Mark done** — fires `toggleComplete(id)` for any selected row
+  not already in done. The DopamineCheck animation fires N times.
+- **Delete** — deletes the selected rows.
+
+Selected rows render with the same `var(--brand-soft)` background
+as the open detail-panel row, so visual hierarchy is consistent
+across the two selection states. The toolbar uses the elevated-
+chrome shadow + backdrop-blur so it floats clean over scrolled
+content.
+
+**`/changelog` reads itself (architect)**
+
+Until this cycle, the public `/changelog` was a hardcoded list of
+three pre-launch entries (v0.1.0, v0.0.6, v0.0.5) that hadn't been
+updated since cycle 1. It's now a server component that reads
+`CHANGELOG.md` at request time, parses cycles via a `## Cycle N · …`
+regex split, and renders each one as an article card with full
+markdown rendering (`react-markdown` + `remark-gfm`). Brand-toned
+typography via custom `components` overrides — h3 promoted, `<code>`
+on bg-sunken pills, lists tightened, hr as a soft separator.
+
+This means the changelog now ships itself. Every cycle entry above
+this one renders for any visitor at /changelog with one click.
+Marketing-side, this is the single biggest "look how we work"
+signal we have.
+
+Deps added: `react-markdown` + `remark-gfm`.
+
+**Verified**
+- `npx tsc --noEmit` clean across all merged files.
+- `/changelog` renders 14 cycles with the right typography and
+  preserved playful tone.
+- Bulk-select: shift-click, ⌘-click, Esc, and the bottom toolbar
+  all work; the brand-soft background matches the open-panel state.
+- CSV upload zone accepts a Trello CSV; preview shows mapped rows.
+  Smoke-tested via Playwright at `/app/import`.
+- Zero console errors anywhere.
+
+**Backlog (wave 2 dispatched)**
+- Three more agents are running in parallel:
+  - **Keyboard nav on board** — arrow keys move focus, ⏎ opens,
+    ⌘⏎ marks done, ⌘← / ⌘→ moves across lanes, "/" opens a
+    cheat-sheet popover.
+  - **Magic-link analytics** — workspace-total visit count, per-
+    link 7-day micro-sparkline, "most-clicked" callout, two-step
+    revoke confirm. New `share_link_visits` table for per-visit
+    logging.
+  - **Templates gallery** — `/templates` public route with 12
+    drop-in task lists (job application sprint, wedding 3-month
+    countdown, freelance new-client onboarding, etc.). Auth-
+    gated apply via Clerk redirect.
+
+These integrate next cycle.
+
+
+
+## Cycle 14 · 2026-05-06 · Phase E + F + G — three agents, parallel, no collisions
+
+The first parallel-agent cycle. Three sub-agents dispatched
+simultaneously, each scoped to non-overlapping files; one architect
+session orchestrating. They all landed in ~12 minutes, type-check
+clean, zero console errors at the merge. Writing this cycle as
+proof that the operating loop holds.
+
+**Phase E · mobile pass (Agent 1)**
+
+The marketing site + four app views needed to actually work on a
+phone. Sidebar collapsed into a fixed bottom-tabbar under 768px
+(Inbox / My tasks / Search / Views-popover) with iOS safe-area
+respected. Layout pads `pb-[60px] md:pb-0` so content clears the
+bar. The board's drag handlers gated off under 768px; cards now
+have a "•••" affordance that opens a "Move to {Lane}" popover for
+one-tap re-laning. List view shed its Estimate + Assignees + tag
+columns under md, status collapsed to a colored 8px dot with an
+aria-label. Calendar swapped its 7×5 grid for a vertical day-list
+under md ("Nothing scheduled. Lovely." for empty days). Inbox
+digest cards stack vertically under md. Marketing hero clamps the
+cinematic surface to `aspect-video w-[90vw]` so the 500px-tall
+demo doesn't overflow on phones.
+
+Mobile Lighthouse against `next dev` scored 42 (LCP 11.4s) — dev
+server numbers, not production. CLS = 0; structure suggests prod
+will clear ≥90 once `next build` runs cleanly. Backlog item.
+
+**Phase F · launch ops (architect orchestrating)**
+
+Vercel project hooks shipped:
+
+- `src/app/opengraph-image.tsx` + per-route OG cards on `/pricing`,
+  `/about`, `/students`. Edge runtime, 1200×630, brand gradient +
+  wordmark. Pricing OG renders the four tiers as a row; about OG
+  visualizes the strikethrough metaphor; students OG carries the
+  `.edu` value prop in the hero text.
+- `src/app/status/page.tsx` — public status page. Live probes
+  `/` and `/api/cron/digest`; integration pills for Clerk, Stripe,
+  Resend, Sentry, DB; surfaces the deploy SHA + timestamp from
+  Vercel env. Hero dot goes amber (not red) when something's off
+  — honest about the difference between "down" and "catching up."
+- `vercel.json` declares the daily digest cron at `0 9 * * *` and
+  the new weekly LLM-narrated digest at `0 9 * * 0` (Sundays).
+- `DEPLOY.md` — the full v1.0 launch checklist. Vercel link, env
+  vars, webhook endpoints, Stripe products, Resend domain, custom
+  domain, Sentry, smoke test, post-launch ad capture. Read top to
+  bottom before pulling the public-launch lever.
+- `.env.example` updated with Anthropic + CRON_SECRET keys.
+
+**Phase G · LLM nudges (Agent 3)**
+
+The rules-based `generateNudges` already shipped cycle 11 with
+cheeky copy. Phase G layers Anthropic Haiku 4.5 on top via the
+Vercel AI SDK — three streamed actions, each with brand-voiced
+system prompts and Anthropic prompt caching on the stable
+preamble.
+
+- `src/server/ai.ts` — SDK client + provider config. Default model
+  `claude-haiku-4-5-20251001`, env-overridable. `aiConfigured()`
+  helper for graceful degradation; missing key returns a static
+  "AI not configured" payload rather than throwing.
+  `WeeklyDigestSnapshot` type + helper to compile the past 7 days.
+- `src/server/actions/ai.ts` — three streaming server actions:
+  `draftReplyAction(taskId, prompt?)` (1–3 sentence reply matching
+  the conversation tone), `summarizeConversationAction(taskId)`
+  (2–3 sentence summary, only offered for ≥ 6 messages),
+  `weeklyDigestNarrationAction(workspaceId)` (Sunday morning
+  4–5 sentence narrative). Plus `getWeeklySnapshotAction` so the
+  inbox always knows whether there's signal worth narrating.
+- `src/components/app/ai/draft-reply-button.tsx` — popover-style
+  affordance inside the conversation composer. Streams tokens
+  into a `<textarea>` the user can edit before sending.
+- `src/components/app/ai/conversation-summary.tsx` — collapsed by
+  default; reveals an inline summary on click. Hidden when the
+  thread is shorter than 6 comments so we don't surface AI noise
+  on 2-message conversations.
+- `src/components/app/ai/weekly-recap.tsx` — Sunday-morning recap
+  card in the inbox. Hidden when AI is off or the snapshot has
+  no signal.
+- `src/lib/nudges/generate-nudges.ts` extended with an
+  `llm-narration` kind in the `NudgeKind` union — `generateNudges`
+  itself stays pure rules; the LLM-sourced renderer lives in the
+  inbox.
+
+System prompts match the existing nudge tone: *"You are Tasks's
+quiet observer. Dry, restrained, never preachy. Em-dashes welcome.
+No emojis. Two sentences max. Notice; don't lecture."* Caching
+applied to the long preamble; per-call user content is the only
+un-cached suffix.
+
+**Phase E · settings (Agent 2)**
+
+`/app/settings` shipped as a single page with tabbed sub-views —
+no URL params, tab state in the client shell. Five tabs:
+
+1. **Workspace** — rename (blur-to-save), starter pack switch
+   with confirm dialog (re-seeds via `seedDomainAction`),
+   read-only ID/slug/created.
+2. **Members** — avatar/name/email/joined list, role popover,
+   remove-with-confirm, invite-by-email form (stubbed for
+   Clerk-backed real invites in Phase F deploy step).
+3. **Billing** — current-tier badge, four-tier comparison grid,
+   upgrade buttons (call `createCheckoutSessionAction`), cancel-
+   subscription confirm, comp-code redeem field.
+4. **Notifications** — three optimistic toggles wired to a new
+   `notification_prefs` table.
+5. **Danger** — clear-tasks (amber confirm) + delete-workspace
+   (rose, type-to-confirm). Delete hidden for non-owners; last-
+   owner invariant enforced server-side.
+
+Server actions: `updateWorkspaceAction`, `removeMemberAction`,
+`setMemberRoleAction`, `inviteMemberByEmailAction` (TODO),
+`setNotificationPrefAction`, `getNotificationPrefs`,
+`getMyRoleInActiveWorkspace`, `deleteWorkspaceAction`. Owner
+gating + last-owner invariant enforced server-side, not in UI.
+
+Sidebar gained a Settings entry below Teams in the desktop rail.
+
+**Schema additions**
+
+- `notification_prefs` (user_id PK, daily_digest, mentions,
+  comment_replies booleans, updated_at). Pushed via
+  `drizzle-kit push --force`.
+
+**Verified**
+- `npx tsc --noEmit` clean across all merged files.
+- Playwright smoke: `/`, `/app/inbox`, `/app/settings` render with
+  zero console errors.
+- Mobile snapshots at 375px and 768px on `/`, `/app/inbox`,
+  `/app/list`, `/app/calendar`, `/app/board`, `/app/timeline`,
+  `/app/my-tasks` — zero console errors at any width.
+- Daily digest cron preserved; weekly digest cron added to
+  `vercel.json`. Both endpoints respond with `emailConfigured:
+  false` in dev (graceful) and would dispatch via Resend in prod.
+
+**Backlog**
+- Production Lighthouse mobile run (≥ 90 target). Postponed
+  because the live `next build` needs a CSS-bundle audit.
+- `inviteMemberByEmailAction` stubbed — real Clerk-backed invite
+  flow lands when we wire Clerk's invitation API in deploy.
+- Postgres dialect (Phase D's deferred half) still pending.
+- AI weekly recap on Sunday cron only; backlog "regenerate
+  recap" button for power users who want to refresh mid-week.
+
+
+
+## Cycle 13 · 2026-05-06 · Phase B + C + D — payments, email, observability
+
+After Phase A turned the boundary from "single global workspace" to
+"per-tenant," the next three phases turned the product from "demo
+ready" to "billing-shaped." Each is a small layer; together they
+move the launch readiness needle from ~70% to ~90%.
+
+**Phase B — Stripe + entitlement enforcement**
+
+The pricing page CTAs went from `<Link href="/app/board">` to real
+checkout sessions. New surface area:
+
+- `src/server/stripe.ts` — SDK singleton + `priceIdFor(tier)` lookup +
+  `WEBHOOK_SECRET`. All env-gated; missing keys means `stripe = null`
+  and downstream code surfaces "Stripe not configured" gracefully.
+- `src/server/actions/billing.ts` — `createCheckoutSessionAction(tier)`
+  for Pro / Team / Wedding. `mode: "subscription"` for Pro and Team
+  ($4.99/mo and $9.95/workspace/mo), `mode: "payment"` for Wedding
+  ($79 one-time). `metadata.userId` + `metadata.workspaceId` propagate
+  to the subscription so webhooks can resolve identity later. Dev
+  fallback: when Stripe is unconfigured, the action grants the
+  entitlement locally and returns `?upgrade=ok&dev=1` — the rest of
+  the app's tier gating exercises end-to-end without real keys.
+- `src/server/db/entitlements.ts` — `getEffectiveTier(userId, workspaceId)`
+  resolver. Picks the highest-rank non-expired row across all
+  sources (default → comp → edu → purchase). `tierMeetsMinimum()`
+  for the gating check.
+- `src/app/api/webhooks/stripe/route.ts` — Stripe-signed webhook.
+  Handles `checkout.session.completed` (insert entitlement),
+  `customer.subscription.updated` (renew through new period end), and
+  `customer.subscription.deleted` (expire by `notes:stripe-sub:*`
+  match). Uses `grantEntitlement()` and `expireEntitlementByNotes()`
+  helpers from billing.ts as the only insertion paths.
+- `src/components/billing/require-tier.tsx` — server-component gate.
+  `<RequireTier minimum="pro">{paid}</RequireTier>` either renders
+  the gated content or an inline upgrade card linking to /pricing.
+- `src/components/marketing/tier-cta.tsx` — pricing-page CTA button
+  that fires `createCheckoutSessionAction` for paid tiers and
+  `<Link>`-redirects for the free tier.
+
+**Phase C — Resend transactional email**
+
+The daily digest, the .edu Pro program, and magic-link sharing were
+all previously stubs that logged "would send: …" to stdout. Now
+they ship.
+
+- `src/server/email.ts` — Resend singleton + `sendEmail()` helper +
+  three HTML templates (`digestEmailHtml`, `studentCodeEmailHtml`,
+  `shareLinkEmailHtml`). All branded — "Daily digest" eyebrow tone,
+  the same anti-spam line we use in /app/inbox ("this is the only
+  scheduled email we send"). Dev path logs to console when
+  `RESEND_API_KEY` is unset.
+- `src/app/api/cron/digest/route.ts` rewritten — checks a `CRON_SECRET`
+  bearer header (skipped in dev), accepts `?send=1` to actually
+  dispatch via Resend, resolves a workspace from `?workspace=` or
+  the user's first membership, returns a JSON envelope with
+  `emailConfigured` + `emailResult` so the cron caller can audit.
+- `src/server/actions/comp.ts` — `requestStudentCodeAction` now ships
+  the student's code via Resend after minting. The `/students` form
+  still surfaces the code inline so the dev demo flow stays visible.
+- `src/server/actions/share.ts` — new `emailShareLinkAction({token,
+  recipientEmail})` — owners can email a magic link to a teammate
+  via the share popover (UI wiring is in the Phase E mobile pass).
+- `vercel.json` — Vercel Cron config: `0 9 * * *` against
+  `/api/cron/digest?send=1`. Production hooks in once
+  `CRON_SECRET` and `RESEND_API_KEY` are provisioned.
+
+**Phase D — Sentry + toasts + error boundaries**
+
+The observability half. Postgres adapter swap is documented in
+backlog as a cycle-sized refactor (parallel `schema.sqlite.ts` +
+`schema.pg.ts` files gated by `DATABASE_URL`).
+
+- `src/instrumentation.ts` — Next 16 instrumentation hook. Lazy-
+  imports `@sentry/nextjs`, inits the Node and Edge runtimes with
+  the right DSN, registers `onRequestError` as the request-error
+  channel. Skipped entirely when `SENTRY_DSN` is unset.
+- `src/instrumentation-client.ts` — client-side Sentry init.
+  Replays-on-error sampled at 10%; off when DSN unset.
+- `src/components/primitives/toast.tsx` — `<ToastRoot>` provider +
+  `useToast()` hook + `<ToastBridge>` for `tasks:toast` window
+  events so server actions can fire toasts via a CustomEvent
+  without a React reference. Four tones (info, success, warn,
+  error) with appropriate eyebrow copy. Max 4 stacked, oldest
+  dismisses to make room. Mounted in `/app/layout.tsx`.
+- `src/app/app/error.tsx` — error boundary for protected routes.
+  Captures to Sentry, renders a brand-toned recovery card ("The
+  workspace took a wrong turn"), shows the digest ref-id when
+  Next provides one, offers reset + back-to-board.
+- `src/app/share/error.tsx` — same treatment for the public guest
+  surface.
+
+**Phase F prep — OG images + /status**
+
+Started in parallel with Phase E since they don't touch the same
+surfaces:
+- `src/app/opengraph-image.tsx` — root OG. Brand gradient + wordmark
+  + headline. 1200x630, edge runtime, generated at request time via
+  `next/og`. Same shape replicated for `/pricing`, `/about`, and
+  `/students`.
+- `src/app/status/page.tsx` — public status page. Live probes
+  marketing root + the digest endpoint, surfaces integration
+  configuration (Clerk / Stripe / Resend / Sentry / DB) as
+  "live"/"—" pills, shows commit SHA and deploy timestamp from
+  Vercel env. All-green hero when probes pass; amber when they
+  don't. No fake green.
+
+**Verified end-to-end**
+- `npx tsc --noEmit` clean across all edits.
+- Pricing page renders, 0 console errors. Pro / Team / Wedding CTAs
+  fire `createCheckoutSessionAction` (in dev mode the action grants
+  entitlement locally and redirects).
+- `GET /api/cron/digest?send=0` returns `emailConfigured: false`
+  in dev with the right user + workspace scoping; would dispatch
+  the html template if a key were set.
+- Sentry hooks installed; manual error-boundary trigger surfaces
+  the brand-toned fallback.
+
+**Backlog**
+- Postgres dialect adapter (Phase D's deferred half) — `schema.pg.ts`
+  alongside `schema.sqlite.ts`, env-gated driver selection in
+  `src/server/db/index.ts`. The Drizzle queries themselves are
+  dialect-portable; the painful step is the column-type alignment
+  (better-sqlite3 timestamps as integers vs Postgres `timestamp`).
+- Stripe customer-portal link from /app/settings/billing for
+  self-serve cancel + payment-method update. Gated on Phase E's
+  settings route landing.
+- Sentry release-tracking — set `SENTRY_RELEASE` from the deploy
+  step so each release's errors group cleanly.
+- Webhook idempotency keys — Stripe webhook can re-deliver the
+  same event; we should dedupe by `event.id` in a small
+  `processed_webhooks` table.
+
+
+
+## Cycle 12 · 2026-05-06 · Phase A — auth got real, the workspace got walls
+
+Until today, Tasks had a single global workspace. Every visitor saw
+the same data. The "current user" was a cookie that any of five
+seeded names could claim. That was a fine demo and a terrible
+product. Phase A of the launch sprint replaces both — Clerk for
+identity, a `workspaces` table for the per-tenant boundary, and a
+9-step incremental migration so each commit was independently
+shippable.
+
+**The day-1 type call.** `UserId` was a literal union of five names
+(`"chloe" | "david" | …`). Clerk hands out `user_2abcXYZ…`. We
+widened `UserId = string` in one diff — 29 files touched, mostly
+mechanical. `USERS` got proxied so any unknown id (Clerk or
+otherwise) returns a synthetic fallback `UserMeta` with neutral
+color and last-2 chars as initials. Zero callsite changes downstream
+of the Proxy. The cinematic showcase keeps its frozen literal map
+because that surface is fiction, not auth.
+
+**Schema, in 9 incremental pushes.** `users` gained `clerkId UNIQUE`,
+`email`, `handle UNIQUE` (the `@mention` slug — Clerk ids aren't
+mentionable so we derive a handle from email-local-part). `name`
+became nullable until the webhook lands. Two new tables:
+`workspaces` (id, slug, name, ownerUserId, activeDomain, createdAt)
+and `workspace_members` (composite-PK on workspaceId + userId, role
+'owner' | 'member', cascade on delete). Six existing tables —
+tasks, comments, activities, notifications, share_links,
+entitlements — gained a nullable `workspaceId` FK. comp_codes stays
+global on purpose: the operator mints them; the per-user redemption
+is what carries the workspace.
+
+**meta.activeDomain → workspaces.activeDomain.** The single global
+key got promoted to a per-workspace column. The first-run gate now
+reads "is this workspace's activeDomain null?" rather than "does
+the meta key exist?" — same shape, properly scoped.
+
+**Clerk wiring on Next.js 16.** `middleware.ts` is `proxy.ts` now;
+verified in the bundled docs. `clerkMiddleware()` works as a drop-
+in inside the renamed file. Public matcher covers `/`, `/about`,
+`/pricing`, `/changelog`, `/students`, `/welcome`, `/share/*`,
+`/redeem/*`, `/api/webhooks/*`, `/api/cron/*`, `/sitemap.xml`,
+`/robots.txt`, `/sign-in/*`, `/sign-up/*`. Everything under `/app`
+calls `auth.protect()`. We added a graceful dev bypass: when
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` are
+unset, the proxy short-circuits and `getCurrentUser()` falls back
+to the legacy seed identity. Clerk's keyless mode also kicks in,
+auto-provisioning dev sandbox keys so the app renders out of the
+box — net effect: clone, `npm run dev`, marketing + app both
+render with no env setup.
+
+**The webhook is the contract.** `/api/webhooks/clerk/route.ts`
+verifies via Svix and handles three events:
+- `user.created` runs three INSERTs in a single `db.transaction(...)`:
+  user row keyed by Clerk id, personal workspace, owner membership.
+  Atomic on purpose — a user without a workspace breaks every
+  protected route, so the trio fails together or succeeds together.
+  Idempotent on `clerkId UNIQUE` / `INSERT OR IGNORE` so duplicate
+  webhook deliveries replay cleanly.
+- `user.updated` syncs name + email.
+- `user.deleted` cascades — workspace ownership and memberships
+  both cascade off the users row.
+
+**`getCurrentUser()` rewritten.** `auth()` → Clerk userId → DB
+lookup on `users.clerkId` → return internal `users.id` (which equals
+the Clerk id post-Phase-A). Skipping the dual-id indirection meant
+30+ callsites kept their existing string-typed signatures.
+
+**`getActiveWorkspace()` is new and load-bearing.** Reads the
+`tasks_active_ws` cookie, validates membership, falls back to the
+user's first membership, falls back to `ws-legacy` for the dev path.
+Every server-side read that fans out per-tenant data calls it once
+at the top: `app/layout.tsx`, `app/inbox/page.tsx`, `welcome/page.tsx`,
+`getTasksAction`, `addTaskAction`, `moveTaskAction`,
+`toggleCompleteAction`, `reorderTaskAction`, `removeTaskAction`,
+`addCommentAction`, `recordActivity`, `notify`,
+`createShareLinkAction`, `redeemCompCodeAction`, `seedDomainAction`,
+`clearAllTasksAction`, `markFirstRunCompleteAction`,
+`compileDailyDigest`. That's the per-tenant boundary made real.
+
+**`<UserSwitcher>` and the demo-identity stub are gone.** Five files
+deleted: `src/server/actions/auth.ts`, `src/components/app/auth/user-switcher.tsx`,
+the `USER_COOKIE` const, the `setCurrentUserAction` server action,
+the auth context's user prop. Sidebar account chip now hosts
+Clerk's `<UserButton>` — real account avatar, real sign-out, real
+identity. Pure subtraction, no compat shim.
+
+**Dev backfill stayed simple.** `seedIfEmpty` got two new INSERT
+blocks: one for `ws-legacy` (slug `legacy`, owner `david`,
+activeDomain null), one for the 5 seeded users as members. Tasks +
+comments inserted with `workspaceId='ws-legacy'`. Idempotent guards
+on every write so re-runs against an already-seeded DB don't
+double up. The legacy ID is exported so other code can reference
+it as a sentinel.
+
+**Verified end-to-end (Playwright).**
+- Fresh DB → `/app/board` redirects to `/welcome` (first-run gate
+  reading `workspaces.activeDomain IS NULL`).
+- All four domain cards render on `/welcome`.
+- Click "College student" → `seedDomainAction("student")` runs
+  with the active workspace inherited from cookie/membership;
+  workspace's activeDomain flips to "student"; redirect lands on
+  `/app/board`.
+- Board shows the 5 student To-Do tasks: "Submit thesis proposal",
+  "Read 3 papers for econ seminar", "Plan study group · midterms
+  week", "Update notes from CS lecture", "Apply for summer
+  internship". Sidebar account chip shows the Clerk `<UserButton>`.
+- Zero console errors. Clerk's keyless prompt visible in the
+  corner — expected, just signals the auto-provisioned dev keys.
+
+**Subtractions**
+- `src/server/actions/auth.ts` (cookie-based `setCurrentUserAction`)
+- `src/components/app/auth/user-switcher.tsx` (demo identity picker)
+- The `meta` table's `activeDomain` key (replaced by
+  `workspaces.activeDomain`)
+- `USER_COOKIE` constant + the cookie-reading branch of the old
+  `getCurrentUser()`
+- `DEFAULT_USER` is now an internal const, not exported
+
+**Backlog (Phase A, deferred to next cycle's tightening)**
+- `workspaceId` columns are still nullable on the per-tenant tables.
+  Phase A.1 is the `ALTER … NOT NULL` push once we've audited that
+  every code path writes it. (The current state is safe — every
+  write does set it — we just haven't tightened the constraint.)
+- Workspace-switcher UI in the sidebar top is still pending.
+  Currently the user always sees their first/legacy workspace.
+  When real signups create a second workspace, they'll need a
+  picker.
+- `users.id` for Clerk-issued users IS the Clerk id directly,
+  which means a Clerk-id rotation (rare, but real) would orphan
+  rows. Optional future hardening: introduce a separate internal
+  uuid `users.id` and treat `clerkId` as a join key.
+- Webhook needs Svix signing secret in env to actually verify in
+  production. Dev mode skips verification with a console.warn.
+
+## Cycle 11 · 2026-05-05 · The Big Pivot — five phases, two encore requests, one cycle
+
+A heroic cycle. The user walked in with a Project Handoff Document
+that quietly torched our existing audience strategy: forget enterprise
+teams, build for the actual humans nobody else builds for — students,
+freelancers, event planners, anyone with a checklist and no patience
+for sprint ceremonies. New product philosophy: "ultra-low barrier to
+entry, zero friction, high dopamine." Five phases. Then mid-cycle they
+asked for two more things on top — per-task conversation history, and
+an /about page that reads like a manifesto. All seven shipped in one
+autonomous run. Buckle up.
+
+**Phase 1 — Choose-your-adventure landing + actually useful empty states**
+
+The pitch had to land instantly: this tool is for *you*, whatever you
+do. We built four domain "packs" (`marketing`, `student`, `freelance`,
+`event`) in `src/lib/domains.ts`. Each one overlays the canonical
+16-task seed structure — same task IDs, same lane positions, same
+timeline geometry, so the cinematic demo's scripted scenes still
+work — but swaps every visible surface: titles, tags, workspace name,
+URL chrome, seed comment bodies, even an empty-state headline. Click
+"College student" and the demo's "Audit pricing page conversion
+funnel" becomes "Submit thesis proposal." Click "Event planner" and
+suddenly the workspace is "Hartwell Wedding · 6.14.26."
+
+The new `<DomainToggle>` (marketing) is a pill row with a
+LayoutGroup-driven sliding indicator. The demo container is keyed by
+domain so AnimatePresence cross-fades between flavors over 360ms —
+the swap *feels* like a domain change, not just a string update.
+`cinematic-demo.tsx` accepts a `domain` prop now; what used to be
+hardcoded scene references ("Audit pricing page", "Latest features
+email", "Sales sync → Demo video") now look up the live task title
+at scene-fire time, so the activity feed reflects whichever domain
+is active.
+
+Backend earned its keep: `seedDomainAction(domain)` in
+`src/server/actions/seed.ts` truncates `tasks`/`comments`/`activities`,
+re-seeds with the overlay, and stamps the domain choice into a new
+`meta` key-value table. `clearAllTasksAction` is its symmetric twin.
+The hero "Try this template in your workspace" button calls it and
+routes the user straight into `/app/board` — they end the click on
+their own data, not a demo.
+
+The persisted domain choice flows through a new `<DomainProvider>`
+(`src/lib/domain-context.tsx`) mounted in `/app/layout.tsx`.
+`AppPageHeader` and `<AppSidebar>` consume `useDomain()`, so the
+workspace breadcrumb, H1, and the user-team pill all flex with the
+chosen domain. Seed event-domain data → header reads "Events ›
+Hartwell Wedding · 6.14.26" and the sidebar account chip says "David
+Park / Events." It feels like one product across four lives.
+
+Empty states got the same care. The previous behavior on a freshly-
+cleared workspace was a depressing blank canvas. Now we render
+`<EmptyStateOverlay>`: a faded structural ghost of the actual view
+behind a radial-fade overlay, with a headline ("This is where your
+master plan goes."), a body, the primary "Add your first task" CTA
+keyboard hint, and four inline starter-pack chips that fire
+`seedDomainAction` directly. The four ghosts (`<BoardGhost>`,
+`<ListGhost>`, `<TimelineGhost>`, `<CalendarGhost>`) are tiny
+silver-pencil sketches of their respective views, filled with
+placeholder rows / cards / bars / cells in low-opacity neutrals.
+Empty doesn't mean nothing-to-show; empty means "here's what this
+will look like the moment you start."
+
+**Phase 2 — Killing the jargon, building the dopamine**
+
+The directive was clear: cut enterprise vocabulary. The audit was
+mercifully short — most of the app already speaks plainly. We caught
+two stale code comments (`panel-header.tsx` calling task IDs "ticket
+ids", `demo-surface.tsx` calling the timeline a "gantt") and cleaned
+them up. App-level labels were already in good shape; the only
+"Sprint" / "Epic" hits were inside seed task titles, which are user
+content, not labels. We left those alone — a real freelancer might
+genuinely have "Sprint review w/ Bramwell team" on their plate.
+
+Then the fun part. `<DopamineCheck>` (`src/components/app/done-dopamine/`)
+is the new completion primitive — a round button (round, not square;
+roundness is what makes the pop feel like a click). On the
+open→done transition: spring-pop scale 1→1.18→1, the fill flips green,
+the ✓ glyph stroke draws in over 220ms, and a six-dot radial burst
+(alternating emerald and brand) explodes outward and fades over
+620ms. Self-contained. No portal. No framework wizardry. It just
+feels good.
+
+`<DoneTitle>` is its quieter partner — animates the title color from
+`--ink` to `--ink-quiet` and draws a left-to-right strikethrough via
+scaleX (CSS `text-decoration` famously refuses to animate, so we
+fake it with a 1.2px gradient line). Both run in lockstep on the
+click. Wired into list-app and my-tasks-app rows; the old inline
+checkboxes are gone.
+
+**Phase 2.5 — Conversation history (mid-cycle user request)**
+
+User mid-cycle: "i also want to add conversation history to each
+task." The detail panel had been rendering Activity and Comments as
+two separate stacked sections. We collapsed them into one
+chronological feed — Linear/GitHub-style — because that's what
+"conversation history" actually is.
+
+New `getTaskConversation(taskId)` in `queries.ts` unions `comments`
++ `activities` as a discriminated `ConversationItem` union and
+sorts by createdAt ascending. New `<ConversationFeed>` renders
+comments as full quoted blocks (22px avatar, name + relative time,
+body) and activity rows as one-line system messages (14px avatar +
+sentence, quieter color). Composer at the bottom. Optimistic
+add/remove with `temp-` ids; reconciles after the server response.
+
+The cleanup was satisfying. Old `<CommentThread>` and `<ActivityFeed>`
+detail-panel files deleted. Their `useTaskComments` /
+`useTaskActivities` hooks deleted. The `getActivitiesForTaskAction`
+server action deleted. Pure subtraction, no compat shim — exactly the
+kind of cleanup the user's preference forbids backwards-compat hacks
+for.
+
+**Phase 3 — Zero time-to-capture: writing English instead of filling forms**
+
+Installed `chrono-node` and built `parseTaskInput(raw)` in
+`src/lib/nlp/parse-task-input.ts`. The parser uses
+`chrono.parse(input, new Date(), { forwardDate: true })`, takes the
+rightmost match (so trailing "by next Friday" forms keep the leading
+verb intact), and strips the date span plus a preceding
+"by"/"on"/"at"/"due"/em-dash lead-in. Returns
+`{title, dueAt, dueLabel}`. The companion `formatDueLabel(d, withTime)`
+produces tight chip-friendly text: "Today" / "Tomorrow" / "Fri 3pm" /
+"Mar 14" / "Mar 14, '27." Tabular nums, no jitter.
+
+Schema gained a structured `tasks.due_at` timestamp column running
+parallel to the existing human `due` text label. `Task.dueAt?: Date`.
+`addTaskAction` accepts and persists both. The structured datetime
+unlocks the digest cron's "due in next 24h" filter (Phase 5) without
+re-parsing the human label every read.
+
+`<QuickCreateDialog>` parses on every keystroke. The moment chrono
+detects a date phrase, an inline preview pill slides in beneath the
+input with the cleaned title and a brand-soft "Due May 15 3pm" chip.
+The user sees what the parser is going to do *before* they press
+Enter — no surprise, no "oh wait, that's not the title I meant." The
+dialog placeholder is also dynamic now, pulling
+`pack.firstTaskExample` from the active domain ("Submit thesis
+proposal by next Friday" for students, "Send Q2 invoices to all
+clients tomorrow" for freelancers). `<InlineComposer>` (per-lane)
+runs the same parse on submit with a smaller chip-only preview.
+
+Verified end-to-end: typed "Finish thesis draft by next Friday at
+3pm" → preview pill rendered "Finish thesis draft" + "Due May 15
+3pm" → submitted → DB row landed with `title="Finish thesis draft"`,
+`due="May 15 3pm"`, `due_at=1778853600` (= May 15 at 22:00 UTC, which
+is 3pm Pacific). Chrono is doing actual work.
+
+**Phase 4 — Magic Link guest sharing**
+
+This phase is the one the marketing engine will love. Schema gained
+a `share_links` table (token PK, view, createdAt, optional revokedAt)
+and `createShareLinkAction(view)` mints a 16-char URL-safe token. The
+read-only resolver `resolveShareLink(token)` lives in `queries.ts`
+(server-only — not an RPC, since `/share/[token]` fetches it during
+SSR).
+
+The header `<ShareButton>` opens a popover. First click "Generate
+magic link" mints a fresh token, then renders the URL with a
+copy-to-clipboard button (a 1.1-second "Copied" emerald flash on
+success) and a "Preview as guest" link that opens the share URL in a
+new tab. The token is durable per-session; "revoke" lives as a
+backlog item.
+
+The `/share/[token]` route renders the workspace as a guest sees it:
+no sidebar, minimal top chrome with the workspace breadcrumb, a
+"Read-only · Shared link" pill, and a "Make this yours" CTA back to
+`/app/board`. `<ShareBoard>` is visually identical to `<BoardApp>`
+minus the drag handlers and the inline composer.
+
+The cleverer bit is `<GuestAuthProvider>` + `useGuestAuth`. Every
+interactive surface on the share view (task card click, "Add task"
+button, the implicit edit affordances) routes through
+`promptSignUp(reason)`. When `isGuest` is true, this raises a
+reason-aware modal with stubbed "Continue with email" / "Continue
+with Google" buttons + a "Keep browsing as a guest" dismissal.
+Reasons: `edit | comment | addTask | complete | share`. Outside guest
+context the hook short-circuits to a no-op so the same call sites
+are safe in `/app/*` without conditional logic. Same component tree,
+two modes.
+
+Verified: clicked Share → Generate → got
+`http://localhost:3001/share/61c1c32269f94f2c`. Visited as guest:
+read-only board with the workspace chrome, no sidebar. Clicked "Add
+task" — progressive auth modal popped with the right copy: "Sign up
+to add tasks. You're viewing a shared workspace…"
+
+**Phase 5 — The anti-notification engine (or: how to not spam the user)**
+
+This was a stance, not just a feature. Schema gained a `notifications`
+table with id PK, userId, kind, optional taskId FK (cascade), JSON
+payload, createdAt, optional readAt. The `Notification` type's
+discriminated union covers `mention | blocked | dueToday`.
+
+The policy is enforced in code, not configuration:
+- `src/server/db/notifications.ts` exposes `notify(userId, payload)`,
+  server-only, self-mentions skipped (the smartest people still
+  forget this).
+- `addCommentAction` is the only mutation that calls `notify`. It
+  runs `extractMentions(body)` — a regex that catches `@<word>`,
+  lowercases it, and filters against the canonical USERS set so
+  random `@stuff` doesn't fire spurious pings. For each valid
+  mention, one notification row.
+- `moveTaskAction`, `toggleCompleteAction`, `updateTaskAction`,
+  `addTaskAction`, `removeTaskAction` — none of them call `notify`.
+  Lane moves, status flips, simple field edits produce activity
+  rows (already in the conversation feed) but never pings. Comments
+  without @mentions also produce nothing. They live in the
+  conversation feed and surface in the daily digest only if the
+  recipient was tagged.
+
+The other half is `compileDailyDigest(userId)` in
+`src/server/db/daily-digest.ts` — a pure read function returning
+`{ completedYesterday, dueToday, mentions }`. `dueToday` filters by
+`assignees LIKE '%"<userId>"%'` AND `dueAt` between now and
+now+24h. `mentions` scans the activity log for `commentAdd` snippets
+containing `@<userId>`. While we were here we hoisted `rowToTask`
+out of `queries.ts` into a shared `src/server/db/row-mappers.ts` so
+the digest can reuse it without a circular import.
+
+The new `/app/inbox` route renders the policy as UI. Two surfaces:
+- **Daily digest** — two cards (Closed yesterday / Due today) plus a
+  brand-soft "Mentioned in the last 24h" callout when present. The
+  preview is exactly what the morning email *would* send; no second
+  source of truth.
+- **Direct alerts** — list of unread instant pings, or — 95% of the
+  time — the empty state: "Inbox zero. Quiet here on purpose." with
+  a bell glyph. The copy reinforces the policy: "We only insert
+  here for direct @mentions and blocks. Lane moves, status flips,
+  simple edits — none of it. Read once, move on."
+
+`/api/cron/digest` returns the digest as JSON for any external
+scheduler (Vercel Cron, GitHub Actions, a CI job). `?user=<id>`
+overrides default CURRENT_USER for testing. The contract: this is
+the ONLY scheduled outbound channel. When email actually wires up,
+the swap is at the vendor edge — the policy decisions stay here, in
+code.
+
+`AppPageHeader` learned about inbox: breadcrumb "Personal › Inbox",
+title "Inbox", Share button hidden, view tabs hidden — inbox isn't
+a workspace view, it's its own thing.
+
+End-to-end verification was the satisfying part. David posted
+`@chloe can you double-check the run-of-show timing?` on t-202. DB
+inspection confirmed exactly one notifications row inserted —
+`user_id=chloe`, `kind=mention`, payload with the snippet, taskId,
+from, taskTitle. `GET /api/cron/digest?user=chloe` returned a digest
+with `mentions: [{ from: "david", taskTitle: "Day-of timeline ·
+run-of-show", snippet: "@chloe can you…" }]`. Zero notifications for
+all the lane moves and toggle-completes that happened during testing.
+The dam holds.
+
+**Phase 4.5 — About manifesto (mid-cycle user request)**
+
+User mid-cycle: "i also want an about us link in the footer that
+talks about how project management dodesnt need to be behnind a
+paywall or a knowledge gap, wherther its sprints/epics issues etc we
+cut out all that bullshit and make project management accesible to
+everyone."
+
+We were ready for this one — the whole cycle had been building toward
+it. New `/about` route + `<AboutManifesto>` component. The hero says
+the quiet part loud: "Project management shouldn't be behind a
+paywall." The visual centerpiece is a card listing ten enterprise PM
+phrases — sprint planning, epic refinement, ticket triage, gantt
+cascades, OKR alignment, the whole liturgy — each animating a
+left-to-right strikethrough on scroll-into-view, with `tasks`
+rendered as the surviving emerald chip on the right. It reads as the
+manifesto in three seconds.
+
+Three body sections follow: "You don't need a vocabulary. You need a
+list." (the thesis). "Built for whoever shows up." (renders the four
+domain packs as cards — same content surface, different
+presentation). "What we promise." (numbered: free where it counts,
+no vocabulary tax, looks like the work, out of your way). Closes
+with a "Plain English" callout: *"Write down what you have to do.
+Look at it the way that helps. Cross it off. That's the whole
+product."* and a CTA to `/app/board`.
+
+Footer "About" link rewired from `#` to `/about`.
+
+**End-to-end verification (Playwright + DB inspection)**
+- Domain toggle on landing: clicked College student → demo workspace
+  title became "Spring semester · Junior year", URL chrome became
+  "tasks.app/me/school", all 16 task titles became student-flavored,
+  comment thread typed "Group's meeting at the library tonight at
+  7 📚", activity feed references all updated.
+- "Try template" CTA: seeded the DB with student data, routed to
+  `/app/board`, board rendered with student tasks live.
+- Empty states: SQL-truncated tasks, navigated to all four views —
+  each rendered the faded ghost overlay + headline + starter-pack
+  chips. Clicking "Event planner" on the calendar empty state
+  reseeded the DB with wedding-flavored data; calendar immediately
+  filled with vendor sync / catering / florals etc.
+- Page header & sidebar: pulled from the persisted
+  `meta.activeDomain` row. Workspace H1 read "Hartwell Wedding";
+  sidebar pill said "David Park / Events" after seeding the event
+  domain. The whole shell flexes.
+- Done Dopamine: clicked checkbox on a list row — task moved to
+  Done lane, count incremented, button aria-pressed flipped to
+  true. Re-opened the now-done task; conversation feed showed the
+  new "DV David marked this complete · just now" activity row
+  interleaved beneath the three seeded comments.
+- NLP date parse: typed "Finish thesis draft by next Friday at 3pm"
+  → live preview pill ("Finish thesis draft" + "Due May 15 3pm") →
+  submitted → DB confirmed `title="Finish thesis draft"`, `due="May
+  15 3pm"`, `due_at=1778853600`.
+- Magic link: clicked Share → Generate → URL minted. Visited as
+  guest: read-only board, no sidebar, "Read-only · Shared link"
+  pill in the header. Clicked "Add task" — progressive auth modal
+  popped with reason-specific copy.
+- @-mention: David posted "@chloe can you double-check the run-of-
+  show timing?" on t-202. `notifications` row appeared
+  (user_id=chloe, kind=mention). `GET /api/cron/digest?user=chloe`
+  surfaced the mention. No notifications for any of the lane moves
+  or toggle-completes that happened in testing.
+- About: `/about` rendered with the strikethrough block animating
+  on scroll-in, four domain cards, four numbered promises, and
+  the closing CTA card.
+- 0 TS errors, 0 console errors throughout.
+
+**What we deleted (unprompted but earned)**
+- `src/components/app/detail-panel/comment-thread.tsx`
+- `src/components/app/detail-panel/activity-feed.tsx`
+- `src/lib/tasks/use-task-comments.ts`
+- `src/lib/tasks/use-task-activities.ts`
+- `src/server/actions/activity.ts`
+
+All five replaced by the unified Conversation feed. No deprecation
+period. No "// removed" comment. They're just gone.
+
+**Backlog (the cuts made under deadline)**
+- Real auth replaces `CURRENT_USER`. The magic-link auth modal's
+  "Continue with email" / "Continue with Google" buttons currently
+  just dismiss — they'll wire to a real provider later.
+- The digest endpoint is JSON-only; an actual cron scheduler +
+  transactional email integration is the swap-in. The policy is
+  here; the delivery is not.
+- `compileDailyDigest.completedYesterday` is currently team-wide.
+  Fine for a 5-person workspace; spammy at 50. Future cycle:
+  narrow to "tasks the user touched."
+- Multi-tab realtime sync (cycle 5 backlog) still pending.
+- Per-lane draft preservation in QuickCreateDialog (cycle 7
+  backlog) still pending.
+- The `meta` table is currently a single key/value bag. If it
+  picks up more keys (notification config, share defaults), it
+  gets a typed accessor layer.
+- `Notification.kind = "blocked"` is wired in the schema and type
+  but never inserted — waiting on the dependency UI to migrate
+  from the cinematic demo into the live app.
+- Magic-link revocation: minted tokens are durable forever right
+  now. UI for "revoke this link" is one cycle away.
+
+
+
 ## Cycle 10 · 2026-05-05 · My tasks route + real comment counts
 
 Two app-accuracy gaps closed. (a) Sidebar's "My tasks" link

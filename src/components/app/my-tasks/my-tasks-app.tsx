@@ -2,12 +2,12 @@
 
 import { motion } from "motion/react";
 import {
-  CURRENT_USER,
   LANES,
   LANE_ORDER,
   PRIORITY_LABEL,
   USERS,
 } from "@/lib/data";
+import { useCurrentUser } from "@/lib/auth-context";
 import { AvatarStack } from "@/components/showcase/avatar";
 import {
   useTasksDispatch,
@@ -15,30 +15,30 @@ import {
 } from "@/lib/tasks/tasks-context";
 import { groupTasksByLane } from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
+import { ListGhost } from "@/components/app/empty-state/ghost-views";
+import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
+import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 
 export function MyTasksApp() {
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
 
+  const meId = useCurrentUser();
   const myTasks = state.tasks.filter((t) =>
-    t.assignees.includes(CURRENT_USER),
+    t.assignees.includes(meId),
   );
   const grouped = groupTasksByLane(myTasks);
-  const me = USERS[CURRENT_USER];
+  const me = USERS[meId];
 
   if (myTasks.length === 0) {
     return (
-      <div className="thin-scroll flex-1 overflow-auto px-8 py-5">
-        <div className="rounded-xl border border-line-soft bg-white p-12 text-center">
-          <div className="text-[14.5px] font-medium text-ink">
-            Nothing assigned to {me.name} right now.
-          </div>
-          <div className="mx-auto mt-1 max-w-[36ch] text-[12.5px] text-ink-soft">
-            When work comes your way, it'll show up here.
-          </div>
-        </div>
-      </div>
+      <EmptyStateOverlay
+        ghost={<ListGhost />}
+        headline={`Nothing on ${me.name}'s plate yet.`}
+        body="Assign yourself a task — or add a new one and it'll land here automatically."
+      />
     );
   }
 
@@ -102,46 +102,14 @@ export function MyTasksApp() {
                     className="grid cursor-pointer grid-cols-[1.7fr_0.7fr_0.6fr_0.6fr_0.5fr_0.4fr] items-center gap-3 border-b border-line-soft px-4 py-2 text-[12.5px] transition-colors last:border-b-0 hover:bg-bg-sunken/40"
                   >
                     <div className="flex items-center gap-2.5">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleComplete(task.id);
-                        }}
-                        aria-pressed={isDone}
-                        aria-label={
-                          isDone
-                            ? `Mark "${task.title}" not done`
-                            : `Mark "${task.title}" done`
-                        }
-                        className={
-                          "flex h-4 w-4 items-center justify-center rounded border transition-colors " +
-                          (isDone
-                            ? "border-emerald-500 bg-emerald-500 text-white"
-                            : "border-line-soft text-transparent hover:border-ink-soft hover:text-ink-soft")
-                        }
-                      >
-                        <svg
-                          width="9"
-                          height="9"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      </button>
-                      <span
-                        className={
-                          "line-clamp-1 flex-1 " +
-                          (isDone
-                            ? "text-ink-quiet line-through decoration-ink-faint"
-                            : "")
-                        }
-                      >
+                      <DopamineCheck
+                        checked={isDone}
+                        onToggle={() => toggleComplete(task.id)}
+                        title={task.title}
+                      />
+                      <DoneTitle done={isDone} className="line-clamp-1 flex-1">
                         {task.title}
-                      </span>
+                      </DoneTitle>
                       {task.tags?.[0] ? (
                         <span className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10px] font-medium text-ink-quiet">
                           {task.tags[0]}

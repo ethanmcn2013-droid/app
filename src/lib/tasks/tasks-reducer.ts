@@ -10,6 +10,13 @@ export type TasksState = {
 export type TasksAction =
   | { type: "move"; id: string; toLane: LaneId }
   | { type: "reorder"; id: string; toIndex: number }
+  | {
+      type: "place";
+      id: string;
+      toLane: LaneId;
+      toIndex: number;
+      position: number;
+    }
   | { type: "update"; id: string; patch: Partial<Omit<Task, "id">> }
   | { type: "add"; task: Task }
   | { type: "remove"; id: string }
@@ -75,6 +82,55 @@ export function tasksReducer(
         }
       }
       return { ...state, tasks };
+    }
+
+    case "place": {
+      // Cross-lane-aware placement: removes the task from wherever it
+      // currently sits and inserts it at `toIndex` within `toLane`,
+      // stamping the new lane + float position. This is the optimistic
+      // counterpart to `reorderTaskAction` — the array order matches
+      // what a fresh server hydrate (sorted by position) would produce.
+      const fromIdx = state.tasks.findIndex((t) => t.id === action.id);
+      if (fromIdx < 0) return state;
+      const current = state.tasks[fromIdx];
+
+      // Build the moved task with its new lane + position. Clearing
+      // idleDays mirrors `move` — manual placement counts as activity.
+      const moved: Task & { position?: number } = {
+        ...current,
+        lane: action.toLane,
+        idleDays: undefined,
+        updatedAt: new Date(),
+        // position lives on the Task type once the backend lands; the
+        // optional cast keeps this safe in the interim.
+        position: action.position,
+      } as Task & { position?: number };
+
+      // Drop self out, then walk the remaining list and splice the
+      // moved task into the toIndex-th slot of `toLane`.
+      const without = state.tasks.filter((t) => t.id !== action.id);
+      const laneSlots: number[] = [];
+      without.forEach((t, i) => {
+        if (t.lane === action.toLane) laneSlots.push(i);
+      });
+      const clamped = Math.max(
+        0,
+        Math.min(action.toIndex, laneSlots.length),
+      );
+      const insertAt =
+        clamped < laneSlots.length
+          ? laneSlots[clamped]
+          : laneSlots.length > 0
+            ? laneSlots[laneSlots.length - 1] + 1
+            : without.length;
+      const tasks = without.slice();
+      tasks.splice(insertAt, 0, moved);
+
+      // Manual placement is explicit user intent — invalidate any
+      // toggleComplete restore-target memorized for this id.
+      const previousLane = { ...state.previousLane };
+      delete previousLane[action.id];
+      return { tasks, previousLane };
     }
 
     case "update": {

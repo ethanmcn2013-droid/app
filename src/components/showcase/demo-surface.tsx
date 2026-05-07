@@ -23,7 +23,7 @@ const LIST_GRID_COLS = "[1.6fr_0.7fr_0.6fr_0.6fr_0.5fr]";
  * how the parent layouts its children; motion FLIPs each card from its
  * previous geometry to its new geometry over MORPH_DURATION_S.
  *
- * Wrapper chrome (column backgrounds, list table header, gantt grid)
+ * Wrapper chrome (column backgrounds, list table header, timeline grid)
  * lives in `<ViewWrappers/>`, which cross-fades on the trail of the
  * card geometry tween.
  */
@@ -433,7 +433,7 @@ function MorphCard({
   const showThread = state.openCommentTaskId === task.id;
 
   // Timeline-specific positioning: convert startDay / durationDays into
-  // an absolute placement inside the gantt body.
+  // an absolute placement inside the timeline body.
   const timelineStyle: React.CSSProperties =
     view === "timeline"
       ? (() => {

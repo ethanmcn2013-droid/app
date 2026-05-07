@@ -6,7 +6,10 @@ import { db } from "@/server/db";
 import { comments, tasks } from "@/server/db/schema";
 import { getCommentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
-import { CURRENT_USER, type Comment } from "@/lib/data";
+import { notify } from "@/server/db/notifications";
+import { emitTasksChanged } from "@/server/events";
+import { getCurrentUser } from "@/server/auth";
+import { USERS, type Comment, type UserId } from "@/lib/data";
 
 function snippetOf(body: string): string {
   const trimmed = body.trim();
@@ -30,6 +33,20 @@ function newCommentId(): string {
   return `c-${raw.replace(/-/g, "").slice(0, 10)}`;
 }
 
+const VALID_USER_IDS = new Set<UserId>(Object.keys(USERS) as UserId[]);
+
+/** Parse @<userId> tokens out of a comment body. Case-insensitive on
+ *  the user id but only matches against the canonical UserId set so
+ *  random "@stuff" doesn't fire spurious notifications. */
+function extractMentions(body: string): UserId[] {
+  const found = new Set<UserId>();
+  for (const match of body.matchAll(/@([a-z]+)/gi)) {
+    const candidate = match[1].toLowerCase() as UserId;
+    if (VALID_USER_IDS.has(candidate)) found.add(candidate);
+  }
+  return Array.from(found);
+}
+
 export async function getCommentsForTaskAction(
   taskId: string,
 ): Promise<Comment[]> {
@@ -43,11 +60,22 @@ export async function addCommentAction(
   const trimmed = body.trim();
   if (!trimmed) return getCommentsForTask(taskId);
 
+  const me = await getCurrentUser();
+  // Inherit workspace from the parent task — comments don't carry an
+  // independent boundary; they're scoped to whichever workspace owns
+  // the task.
+  const [parent] = await db
+    .select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId));
+  if (!parent) return getCommentsForTask(taskId);
+
   const commentId = newCommentId();
   await db.insert(comments).values({
     id: commentId,
+    workspaceId: parent.workspaceId,
     taskId,
-    userId: CURRENT_USER,
+    userId: me,
     body: trimmed,
     createdAt: new Date(),
   });
@@ -57,8 +85,35 @@ export async function addCommentAction(
     commentId,
     snippet: snippetOf(trimmed),
   });
+
+  // Anti-notification policy: ONLY direct @mentions create instant
+  // inbox items. Plain comments produce no notification — they live
+  // in the conversation feed and surface in the daily digest only if
+  // the recipient was tagged.
+  const mentions = extractMentions(trimmed);
+  if (mentions.length > 0) {
+    const [taskRow] = await db
+      .select({ title: tasks.title })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+    const taskTitle = taskRow?.title ?? "(deleted task)";
+    await Promise.all(
+      mentions.map((u) =>
+        notify(u, {
+          kind: "mention",
+          commentId,
+          taskId,
+          snippet: snippetOf(trimmed),
+          from: me,
+          taskTitle,
+        }),
+      ),
+    );
+  }
+
   // Refresh badge counts in layout (e.g. comment counts on cards).
   revalidatePath("/app", "layout");
+  emitTasksChanged({ kind: "comments" });
   return getCommentsForTask(taskId);
 }
 
@@ -79,5 +134,6 @@ export async function removeCommentAction(
     commentId,
   });
   revalidatePath("/app", "layout");
+  emitTasksChanged({ kind: "comments" });
   return getCommentsForTask(row.taskId);
 }

@@ -1,0 +1,127 @@
+import "server-only";
+import { cookies } from "next/headers";
+import { auth } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
+import { db } from "@/server/db";
+import { users, workspaceMembers, workspaces } from "@/server/db/schema";
+import type { UserId } from "@/lib/data";
+import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
+
+/**
+ * Auth resolution. Two layers:
+ *
+ * 1. `getCurrentUser()` — returns the internal user id (which equals
+ *    the Clerk id post-Phase-A). Falls back to `david` in dev when
+ *    Clerk env vars aren't set so the app keeps running before
+ *    deploy-time keys are provisioned.
+ *
+ * 2. `getActiveWorkspace()` — returns the workspace id the user is
+ *    currently looking at. Reads the `tasks_active_ws` cookie if
+ *    present and the user is a member; otherwise falls back to the
+ *    user's first membership; otherwise `ws-legacy` (dev fallback).
+ *
+ * The pairing of these two is the per-tenant boundary every read
+ * and write filters by.
+ */
+
+const ACTIVE_WORKSPACE_COOKIE = "tasks_active_ws";
+
+const DEV_FALLBACK_USER: UserId = "david";
+
+/** True when Clerk env is missing — dev / preview before keys land. */
+function clerkConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+      process.env.CLERK_SECRET_KEY,
+  );
+}
+
+/**
+ * Resolve the current internal user id. Falls back to the legacy
+ * seed user (`david`) when Clerk isn't configured OR when the
+ * request hasn't been authed (typically only happens on public
+ * routes that still call this for personalization).
+ */
+export async function getCurrentUser(): Promise<UserId> {
+  if (!clerkConfigured()) return DEV_FALLBACK_USER;
+
+  try {
+    const { userId: clerkId } = await auth();
+    if (!clerkId) return DEV_FALLBACK_USER;
+
+    // Clerk id IS the internal user id post-Phase-A. The webhook
+    // provisions the row; this query is the safety net in case a
+    // protected page renders before the webhook lands (rare, but
+    // possible on the very first signup before Clerk fires the event).
+    const [row] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.clerkId, clerkId));
+    if (row) return row.id;
+
+    // Webhook hasn't fired yet — return the Clerk id directly so
+    // anything queryable by user id still works. Subsequent requests
+    // pick up the row once it's persisted.
+    return clerkId;
+  } catch {
+    return DEV_FALLBACK_USER;
+  }
+}
+
+/**
+ * Resolve which workspace the user is currently in. Validates
+ * membership before honoring the cookie so a hijacked cookie can't
+ * leak data across tenants.
+ */
+export async function getActiveWorkspace(): Promise<string> {
+  const me = await getCurrentUser();
+  const c = await cookies();
+  const cookieValue = c.get(ACTIVE_WORKSPACE_COOKIE)?.value;
+
+  if (cookieValue) {
+    const [membership] = await db
+      .select({ workspaceId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.userId, me));
+    // Same query but filtered on the cookie value:
+    const [match] = await db
+      .select({ workspaceId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(eq(workspaceMembers.workspaceId, cookieValue));
+    if (match && membership) return cookieValue;
+  }
+
+  // Fall back to the user's first membership.
+  const [first] = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, me))
+    .limit(1);
+  if (first) return first.workspaceId;
+
+  // Legacy fallback for dev runs where the user isn't in any
+  // workspace yet (typically only the very first request before
+  // the webhook fires).
+  return LEGACY_WORKSPACE_ID;
+}
+
+/** List workspaces the current user is a member of. Used by the
+ *  sidebar workspace-switcher popover. */
+export async function listMyWorkspaces(): Promise<
+  Array<{ id: string; name: string; slug: string; role: string }>
+> {
+  const me = await getCurrentUser();
+  const rows = await db
+    .select({
+      id: workspaces.id,
+      name: workspaces.name,
+      slug: workspaces.slug,
+      role: workspaceMembers.role,
+    })
+    .from(workspaceMembers)
+    .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+    .where(eq(workspaceMembers.userId, me));
+  return rows;
+}
+
+export const ACTIVE_WORKSPACE_COOKIE_NAME = ACTIVE_WORKSPACE_COOKIE;

@@ -1,0 +1,396 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useToast } from "@/components/primitives/toast";
+import { Dialog } from "@/components/primitives/dialog";
+import {
+  createCheckoutSessionAction,
+  expireEntitlementByNotes,
+} from "@/server/actions/billing";
+import { redeemCompCodeAction } from "@/server/actions/comp";
+import type { EntitlementTier } from "@/lib/data";
+import type { PaidTier } from "@/server/stripe";
+import { SectionHeader } from "../settings-app";
+
+type TierMeta = {
+  id: EntitlementTier;
+  label: string;
+  price: string;
+  blurb: string;
+  features: string[];
+  paidTier?: PaidTier;
+};
+
+const TIER_META: TierMeta[] = [
+  {
+    id: "free",
+    label: "Free",
+    price: "$0",
+    blurb: "The shape of things. Forever.",
+    features: [
+      "Up to 3 workspaces",
+      "Board, list, calendar views",
+      "Daily digest, no other notifications",
+      "Single-seat",
+    ],
+  },
+  {
+    id: "pro",
+    label: "Pro",
+    price: "$9 / mo",
+    blurb: "Everything for one focused human.",
+    paidTier: "pro",
+    features: [
+      "Unlimited workspaces",
+      "Timeline view + Gantt",
+      "Share links + guest comments",
+      "Recurring tasks, blockers, NLP dates",
+    ],
+  },
+  {
+    id: "team",
+    label: "Team",
+    price: "$14 / seat / mo",
+    blurb: "Pro, but with company.",
+    paidTier: "team",
+    features: [
+      "Everything in Pro",
+      "Unlimited members",
+      "Role controls + audit log",
+      "Priority support that's actually fast",
+    ],
+  },
+  {
+    id: "studio",
+    label: "Studio",
+    price: "$14.95 / mo",
+    blurb: "Team-equivalent across every workspace you own.",
+    paidTier: "studio",
+    features: [
+      "Unlimited workspaces — one per client, one per project",
+      "Team features on every workspace you own",
+      "No per-seat tax inside any of them",
+      "One bill, not one per workspace",
+    ],
+  },
+  {
+    id: "wedding",
+    label: "Wedding",
+    price: "$49 once",
+    blurb: "One workspace. One year. One day.",
+    paidTier: "wedding",
+    features: [
+      "12 months of Pro for the planner",
+      "Up to 6 collaborators (partner, planner, MOH)",
+      "Wedding-flavored starter pack",
+      "Read-only links for in-laws",
+    ],
+  },
+];
+
+const TIER_RANK: Record<EntitlementTier, number> = {
+  free: 0,
+  pro: 1,
+  team: 2,
+  studio: 2,
+  wedding: 3,
+};
+
+export function BillingSection({ tier }: { tier: EntitlementTier }) {
+  const { toast } = useToast();
+  const [pending, startTransition] = useTransition();
+  const [code, setCode] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const isPaid = tier !== "free";
+  const current = TIER_META.find((t) => t.id === tier) ?? TIER_META[0];
+
+  function startCheckout(target: PaidTier) {
+    startTransition(async () => {
+      try {
+        const { url } = await createCheckoutSessionAction(target);
+        window.location.href = url;
+      } catch (e) {
+        toast("Couldn't start checkout", {
+          tone: "error",
+          body: (e as Error).message,
+        });
+      }
+    });
+  }
+
+  function cancelSubscription() {
+    setCancelOpen(false);
+    startTransition(async () => {
+      try {
+        // Match by tier-prefixed notes pattern. The Stripe webhook
+        // writes notes like `stripe-sub:sub_…`; the dev path writes
+        // `dev:no-stripe`. Both expire on cancel.
+        await expireEntitlementByNotes("dev:no-stripe");
+        toast("Subscription canceled", {
+          tone: "success",
+          body: "You'll keep paid features until the period ends.",
+        });
+      } catch (e) {
+        toast("Cancel failed", {
+          tone: "error",
+          body: (e as Error).message,
+        });
+      }
+    });
+  }
+
+  function redeem(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!code.trim()) return;
+    startTransition(async () => {
+      try {
+        const result = await redeemCompCodeAction(code);
+        if (result.ok) {
+          toast(`Redeemed: ${result.tier.toUpperCase()}`, {
+            tone: "success",
+            body: result.expiresAt
+              ? `Expires ${new Date(result.expiresAt).toLocaleDateString()}`
+              : "No expiry.",
+          });
+          setCode("");
+        } else {
+          toast("Code didn't take", {
+            tone: "warn",
+            body:
+              result.reason === "not-found"
+                ? "We don't recognize that code."
+                : result.reason === "exhausted"
+                  ? "All seats on that code are claimed."
+                  : result.reason === "expired"
+                    ? "That code has expired."
+                    : "You've already redeemed this one.",
+          });
+        }
+      } catch (err) {
+        toast("Couldn't redeem", {
+          tone: "error",
+          body: (err as Error).message,
+        });
+      }
+    });
+  }
+
+  return (
+    <div>
+      <SectionHeader
+        eyebrow="Billing"
+        title="What you're on, and what's next"
+        description="Plans aren't gates — they're shapes. Pick the one that fits, change your mind whenever."
+      />
+
+      {/* Current tier strip */}
+      <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+              Current plan
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="text-[20px] font-semibold tracking-tight text-ink">
+                {current.label}
+              </span>
+              <TierBadge tier={tier} />
+            </div>
+            <p className="mt-1 text-[12.5px] text-ink-soft">{current.blurb}</p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            {isPaid ? (
+              <button
+                type="button"
+                onClick={() => setCancelOpen(true)}
+                disabled={pending}
+                className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+              >
+                Cancel subscription
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Tier comparison */}
+      <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
+        <div className="grid grid-cols-1 divide-y divide-line-soft md:grid-cols-4 md:divide-x md:divide-y-0">
+          {TIER_META.map((t) => {
+            const isCurrent = t.id === tier;
+            const canUpgrade = TIER_RANK[t.id] > TIER_RANK[tier];
+            return (
+              <div
+                key={t.id}
+                className={
+                  "flex flex-col p-5 " +
+                  (isCurrent ? "bg-brand-soft/40" : "")
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[14px] font-semibold text-ink">
+                    {t.label}
+                  </span>
+                  {isCurrent ? (
+                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-brand">
+                      You
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-1 text-[18px] font-semibold tabular-nums tracking-tight text-ink">
+                  {t.price}
+                </div>
+                <p className="mt-1 text-[11.5px] leading-[1.5] text-ink-quiet">
+                  {t.blurb}
+                </p>
+                <ul className="mt-3 flex-1 space-y-1.5">
+                  {t.features.map((f) => (
+                    <li
+                      key={f}
+                      className="flex gap-2 text-[12px] leading-[1.5] text-ink-soft"
+                    >
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        className="mt-1 flex-shrink-0 text-brand"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4">
+                  {isCurrent ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full rounded-full border border-line bg-bg-sunken/40 px-3 py-1.5 text-[12px] font-medium text-ink-quiet"
+                    >
+                      Current
+                    </button>
+                  ) : t.paidTier && canUpgrade ? (
+                    <button
+                      type="button"
+                      onClick={() => t.paidTier && startCheckout(t.paidTier)}
+                      disabled={pending}
+                      className="w-full rounded-full bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-60"
+                    >
+                      Upgrade
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full rounded-full border border-line bg-white px-3 py-1.5 text-[12px] font-medium text-ink-quiet"
+                    >
+                      —
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Comp code */}
+      <form
+        onSubmit={redeem}
+        className="mt-4 rounded-xl border border-line-soft bg-bg-elevated p-5"
+      >
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+          Got a code?
+        </div>
+        <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
+          Student .edu codes, comped seats, the occasional gift. Drop it in.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder="GIFT-A4B2X9"
+            disabled={pending}
+            className="flex-1 rounded-md border border-line bg-white px-3 py-1.5 font-mono text-[13px] tracking-wider text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={pending || !code.trim()}
+            className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+          >
+            {pending ? "Working…" : "Redeem"}
+          </button>
+        </div>
+      </form>
+
+      <Dialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        labelledBy="cancel-sub-title"
+        width={440}
+      >
+        <div className="px-5 py-5">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-rose-700">
+            Confirm
+          </div>
+          <h3
+            id="cancel-sub-title"
+            className="mt-1 text-[17px] font-semibold tracking-tight"
+          >
+            Cancel your subscription?
+          </h3>
+          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
+            You&apos;ll keep paid features through the end of the current
+            billing period, then drop back to Free. Your tasks stay where
+            they are.
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setCancelOpen(false)}
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
+            >
+              Keep it
+            </button>
+            <button
+              type="button"
+              onClick={cancelSubscription}
+              disabled={pending}
+              className="rounded-full bg-rose-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-rose-700 disabled:opacity-60"
+            >
+              {pending ? "Canceling…" : "Yes, cancel"}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    </div>
+  );
+}
+
+function TierBadge({ tier }: { tier: EntitlementTier }) {
+  const styles: Record<EntitlementTier, { bg: string; ink: string }> = {
+    free: { bg: "bg-bg-sunken", ink: "text-ink-quiet" },
+    pro: { bg: "bg-brand-soft", ink: "text-brand" },
+    team: { bg: "bg-emerald-50", ink: "text-emerald-700" },
+    studio: { bg: "bg-ink/5", ink: "text-ink" },
+    wedding: { bg: "bg-rose-50", ink: "text-rose-700" },
+  };
+  const s = styles[tier];
+  return (
+    <span
+      className={
+        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] " +
+        s.bg +
+        " " +
+        s.ink
+      }
+    >
+      {tier}
+    </span>
+  );
+}

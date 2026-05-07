@@ -1,12 +1,10 @@
 import "server-only";
 
+import { eq } from "drizzle-orm";
 import { db } from "./index";
-import { activities } from "./schema";
-import {
-  CURRENT_USER,
-  type ActivityPayload,
-  type UserId,
-} from "@/lib/data";
+import { activities, tasks } from "./schema";
+import { getCurrentUser } from "@/server/auth";
+import { type ActivityPayload, type UserId } from "@/lib/data";
 
 function newActivityId(): string {
   const raw =
@@ -28,10 +26,19 @@ export async function recordActivity(
   opts?: { userId?: UserId },
 ): Promise<void> {
   try {
+    // Inherit workspace from the parent task. If the task has been
+    // deleted in a race, fall through silently — activity logging
+    // is observability, not transactional.
+    const [parent] = await db
+      .select({ workspaceId: tasks.workspaceId })
+      .from(tasks)
+      .where(eq(tasks.id, taskId));
+    if (!parent) return;
     await db.insert(activities).values({
       id: newActivityId(),
+      workspaceId: parent.workspaceId,
       taskId,
-      userId: opts?.userId ?? CURRENT_USER,
+      userId: opts?.userId ?? (await getCurrentUser()),
       kind: payload.kind,
       payload,
       createdAt: new Date(),

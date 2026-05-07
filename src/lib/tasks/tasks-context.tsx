@@ -22,9 +22,43 @@ import {
   addTaskAction,
   moveTaskAction,
   removeTaskAction,
+  reorderTaskAction,
   toggleCompleteAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
+import { useRealtimeSync } from "./use-realtime-sync";
+
+/** Gap-numbered float position so inserts never need to renumber the
+ *  whole lane. Conventions:
+ *    - empty lane               → 1000
+ *    - top of lane              → first.position - 1000
+ *    - bottom of lane           → last.position + 1000
+ *    - between A (above) and B  → (A.position + B.position) / 2
+ *
+ *  Tasks that lack a position (legacy seed rows) get backfilled with
+ *  their array index times 1000 for the purposes of this calculation
+ *  — the server is the source of truth and will normalise on its
+ *  next hydrate. */
+function computeDropPosition(
+  tasks: Task[],
+  movingId: string,
+  toLane: LaneId,
+  toIndex: number,
+): number {
+  const STEP = 1000;
+  const siblings = tasks
+    .filter((t) => t.lane === toLane && t.id !== movingId)
+    .map((t, i) => {
+      const p = (t as Task & { position?: number | null }).position;
+      return typeof p === "number" ? p : (i + 1) * STEP;
+    });
+
+  if (siblings.length === 0) return STEP;
+  const clamped = Math.max(0, Math.min(toIndex, siblings.length));
+  if (clamped === 0) return siblings[0] - STEP;
+  if (clamped >= siblings.length) return siblings[siblings.length - 1] + STEP;
+  return (siblings[clamped - 1] + siblings[clamped]) / 2;
+}
 
 function generateId(): string {
   // Persistence makes counter-collisions a real concern. Use a short
@@ -38,7 +72,11 @@ function generateId(): string {
 
 export type TasksDispatchers = {
   moveTask: (id: string, toLane: LaneId) => void;
-  reorderTask: (id: string, toIndex: number) => void;
+  /** Place a task into a lane at a target index. Cross-lane and
+   *  same-lane drops both flow through here. The dispatcher computes
+   *  a gap-numbered float `position` from the current siblings before
+   *  calling the server. */
+  reorderTask: (id: string, toLane: LaneId, toIndex: number) => void;
   updateTask: (id: string, patch: Partial<Omit<Task, "id">>) => void;
   addTask: (input: {
     title: string;
@@ -48,6 +86,7 @@ export type TasksDispatchers = {
     assignees?: UserId[];
     estimate?: number;
     due?: string;
+    dueAt?: Date;
     tags?: string[];
   }) => Task;
   removeTask: (id: string) => void;
@@ -76,6 +115,14 @@ export function TasksProvider({
   // recreated on every state change.
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Realtime cross-tab sync: subscribe to SSE peer-mutation events
+  // and replace local state with the server's authoritative result.
+  // The provider's own optimistic + reconcile path already handles
+  // this tab's mutations; this hook only reacts to peer events.
+  useRealtimeSync({
+    onChange: (fresh) => dispatch({ type: "hydrate", tasks: fresh }),
+  });
 
   // When the server-rendered layout passes a fresh `initialTasks`
   // (after revalidatePath fires for things like comment counts),
@@ -121,9 +168,25 @@ export function TasksProvider({
           () => dispatch({ type: "move", id, toLane }),
           () => moveTaskAction(id, toLane),
         ),
-      reorderTask: (id, toIndex) =>
-        // No server action this cycle — local-only.
-        dispatch({ type: "reorder", id, toIndex }),
+      reorderTask: (id, toLane, toIndex) => {
+        const position = computeDropPosition(
+          stateRef.current.tasks,
+          id,
+          toLane,
+          toIndex,
+        );
+        withServerSync(
+          () =>
+            dispatch({
+              type: "place",
+              id,
+              toLane,
+              toIndex,
+              position,
+            }),
+          () => reorderTaskAction(id, toLane, position),
+        );
+      },
       updateTask: (id, patch) =>
         withServerSync(
           () => dispatch({ type: "update", id, patch }),
@@ -139,7 +202,12 @@ export function TasksProvider({
           assignees: input.assignees ?? [],
           estimate: input.estimate,
           due: input.due,
+          dueAt: input.dueAt,
           tags: input.tags,
+          externalContactName: null,
+          externalContactEmail: null,
+          cents: null,
+          parentTaskId: null,
           updatedAt: new Date(),
         };
         withServerSync(

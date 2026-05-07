@@ -15,6 +15,7 @@ export function Popover({
   align = "start",
   width = 220,
   className,
+  "aria-label": ariaLabel = "Field editor",
 }: {
   trigger: (props: {
     onClick: () => void;
@@ -25,6 +26,10 @@ export function Popover({
   align?: "start" | "end";
   width?: number;
   className?: string;
+  /** Accessible label for the dialog. Callers SHOULD provide a specific
+   *  label describing the field being edited (e.g. "Edit assignee").
+   *  Defaults to "Field editor" when omitted. */
+  "aria-label"?: string;
 }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -73,6 +78,7 @@ export function Popover({
             )}
             style={{ width }}
             role="dialog"
+            aria-label={ariaLabel}
           >
             {children(() => setOpen(false))}
           </motion.div>

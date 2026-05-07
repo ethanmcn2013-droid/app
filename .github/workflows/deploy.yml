@@ -1,0 +1,27 @@
+name: deploy
+
+# [NEEDS-REVIEW: wire to Vercel deploy hook once domain lands]
+#
+# Stub workflow. Today, Vercel's GitHub integration handles all
+# preview + production deploys automatically — we don't need to
+# trigger anything from Actions. This file is a placeholder for
+# the day we want to:
+#   - kick off a preview deploy on PR open via deploy-hook
+#   - run the e2e smoke test against the preview URL
+#   - promote to production on a tag or main-merge
+#
+# Until then this workflow is intentionally a no-op.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    name: placeholder
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notice
+        run: |
+          echo "deploy.yml is a stub."
+          echo "Vercel's GitHub app handles previews + prod today."
+          echo "Wire to a Vercel deploy hook when the domain lands."

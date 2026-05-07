@@ -1,0 +1,49 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same ref so a fresh push supersedes
+# the previous one — saves CI minutes on rapid pushes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: lint · typecheck · parser test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        # package-lock.json is committed, so `npm ci` is the right
+        # call — deterministic, fast, fails on drift.
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Parser unit test
+        run: npm run test:parser
+
+      # The /e2e marketing-golden-path smoke test is intentionally
+      # skipped here — it requires `npm run dev` (drizzle push +
+      # next dev) to be running on http://localhost:3000. Run it
+      # locally before launches, or wire it into a Vercel preview
+      # deploy hook (see deploy.yml).

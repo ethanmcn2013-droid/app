@@ -3,65 +3,50 @@
 import { useEffect, useState } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { getCommentsForTaskAction } from "@/server/actions/comments";
-import { getActivitiesForTaskAction } from "@/server/actions/activity";
-import type { Activity, Comment } from "@/lib/data";
+import { getTaskConversationAction } from "@/server/actions/conversation";
+import type { ConversationItem } from "@/server/db/queries";
 import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
 import { FieldRows } from "./field-rows";
-import { CommentThread } from "./comment-thread";
+import { ConversationFeed } from "./conversation-feed";
+import { ContactEditor } from "./contact-editor";
+import { CentsEditor } from "./cents-editor";
 import { DescriptionEditor } from "./description-editor";
-import { ActivityFeed } from "./activity-feed";
+import { RepeatButton } from "./repeat-button";
+import { SubtasksSection } from "./subtasks-section";
+import { AttachmentsSection } from "./attachments-section";
+import type { Task } from "@/lib/data";
 
 export function TaskDetailPanel() {
   const { taskId, closeTask } = useTaskPanel();
   const state = useTasksState();
   const task = taskId ? state.tasks.find((t) => t.id === taskId) : null;
 
-  // Per-task comment thread + activity feed. Re-fetches when taskId
-  // OR task.updatedAt changes (any mutation refreshes both).
-  const [initialComments, setInitialComments] = useState<Comment[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [initialActivities, setInitialActivities] = useState<Activity[]>([]);
-  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  // Per-task unified conversation history (comments + activity merged).
+  // Re-fetches when taskId OR task.updatedAt changes.
+  const [items, setItems] = useState<ConversationItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const refreshKey = task?.updatedAt?.getTime();
 
   useEffect(() => {
     if (!task) return;
     let ignore = false;
-    setCommentsLoading(true);
-    setActivitiesLoading(true);
+    setLoading(true);
 
-    getCommentsForTaskAction(task.id)
+    getTaskConversationAction(task.id)
       .then((rows) => {
         if (!ignore) {
-          setInitialComments(rows);
-          setCommentsLoading(false);
+          setItems(rows);
+          setLoading(false);
         }
       })
       .catch((err) => {
         if (!ignore) {
           // eslint-disable-next-line no-console
-          console.warn("comments: fetch failed", err);
-          setInitialComments([]);
-          setCommentsLoading(false);
-        }
-      });
-
-    getActivitiesForTaskAction(task.id)
-      .then((rows) => {
-        if (!ignore) {
-          setInitialActivities(rows);
-          setActivitiesLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          // eslint-disable-next-line no-console
-          console.warn("activity: fetch failed", err);
-          setInitialActivities([]);
-          setActivitiesLoading(false);
+          console.warn("conversation: fetch failed", err);
+          setItems([]);
+          setLoading(false);
         }
       });
 
@@ -90,29 +75,27 @@ export function TaskDetailPanel() {
             <Section title="Description">
               <DescriptionEditor key={task.id} task={task} />
             </Section>
-            <Section title="Comments">
-              {commentsLoading ? (
-                <CommentSkeleton />
-              ) : (
-                <CommentThread
-                  key={task.id}
-                  taskId={task.id}
-                  initialComments={initialComments}
-                />
-              )}
+            <Section title="Contact">
+              <ContactEditor key={task.id} task={task} />
             </Section>
-            <Section title="Activity">
-              {activitiesLoading ? (
-                <ActivitySkeleton />
+            <Section title="Amount">
+              <CentsEditor key={task.id} task={task} />
+            </Section>
+            <SubtasksSection key={`subtasks-${task.id}`} task={task} />
+            <AttachmentsSection key={`attachments-${task.id}`} task={task} />
+            <Section title="Conversation">
+              {loading ? (
+                <ConversationSkeleton />
               ) : (
-                <ActivityFeed
+                <ConversationFeed
                   key={task.id}
                   taskId={task.id}
-                  initialActivities={initialActivities}
+                  initialItems={items}
                 />
               )}
             </Section>
           </div>
+          <PanelFooter task={task} />
         </>
       ) : taskId ? (
         <EmptyState />
@@ -121,27 +104,29 @@ export function TaskDetailPanel() {
   );
 }
 
-function CommentSkeleton() {
+function ConversationSkeleton() {
+  // Mix one comment-shaped row with one activity-shaped row so the
+  // skeleton hints at the unified feed shape.
   return (
-    <div className="space-y-4 pb-6">
-      {[
-        { name: "60%", body: "100%" },
-        { name: "32%", body: "75%" },
-      ].map((s, i) => (
-        <div key={i} className="flex items-start gap-2.5">
-          <div className="h-[22px] w-[22px] flex-shrink-0 rounded-full bg-bg-sunken" />
-          <div className="flex-1 space-y-1.5">
-            <div
-              className="h-3 rounded-full bg-bg-sunken"
-              style={{ width: s.name }}
-            />
-            <div
-              className="h-3 rounded-full bg-bg-sunken"
-              style={{ width: s.body }}
-            />
-          </div>
+    <div className="space-y-3 pb-6">
+      <div className="flex items-start gap-2.5 px-1 py-1">
+        <div className="h-[22px] w-[22px] flex-shrink-0 rounded-full bg-bg-sunken" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-1/3 rounded-full bg-bg-sunken" />
+          <div className="h-3 w-3/4 rounded-full bg-bg-sunken" />
         </div>
-      ))}
+      </div>
+      <div className="flex items-center gap-2 px-1">
+        <div className="h-3.5 w-3.5 flex-shrink-0 rounded-full bg-bg-sunken" />
+        <div className="h-2.5 w-2/5 rounded-full bg-bg-sunken" />
+      </div>
+      <div className="flex items-start gap-2.5 px-1 py-1">
+        <div className="h-[22px] w-[22px] flex-shrink-0 rounded-full bg-bg-sunken" />
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-1/4 rounded-full bg-bg-sunken" />
+          <div className="h-3 w-2/3 rounded-full bg-bg-sunken" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -164,22 +149,45 @@ function Section({
   );
 }
 
-function ActivitySkeleton() {
+/**
+ * Bottom row of the panel. Quiet by design — sibling buttons only.
+ * "Repeat" opens the chain-duplicate popover; "Focus" dispatches
+ * `focus-mode:open` so the global FocusMode overlay picks it up.
+ * Sits below Contact + Cents so it never collides with those sections.
+ */
+function PanelFooter({ task }: { task: Task }) {
   return (
-    <ul className="space-y-2 pb-2">
-      {[
-        { width: "70%" },
-        { width: "55%" },
-      ].map((s, i) => (
-        <li key={i} className="flex items-center gap-2">
-          <div className="h-4 w-4 flex-shrink-0 rounded-full bg-bg-sunken" />
-          <div
-            className="h-3 rounded-full bg-bg-sunken"
-            style={{ width: s.width }}
-          />
-        </li>
-      ))}
-    </ul>
+    <div className="flex items-center justify-end gap-1 border-t border-line-soft px-6 py-3">
+      <RepeatButton task={task} />
+      <button
+        type="button"
+        onClick={() => {
+          window.dispatchEvent(
+            new CustomEvent("focus-mode:open", {
+              detail: { id: task.id, title: task.title },
+            }),
+          );
+        }}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+        aria-label="Open focus mode for this task"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <circle cx="12" cy="12" r="9" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        Focus
+      </button>
+    </div>
   );
 }
 

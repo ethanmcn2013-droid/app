@@ -1,0 +1,9 @@
+# Mirrors .gitignore for sensitive bits but keeps tasks.db in the
+# upload — the seeded DB is the source of truth on Vercel until we
+# wire a persistent libsql/Turso URL.
+node_modules
+.next
+.env*.local
+.DS_Store
+*.log
+.vercel

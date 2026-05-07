@@ -1,10 +1,14 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { LANES, type Task } from "@/lib/data";
-import { Avatar } from "@/components/showcase/avatar";
+import { Avatar, AvatarStack } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
+import { CalendarGhost } from "@/components/app/empty-state/ghost-views";
+import { useToast } from "@/components/primitives/toast";
 
 const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -20,9 +24,20 @@ function dayLabel(i: number) {
   return num.toString();
 }
 
-export function CalendarApp() {
+export function CalendarApp({ workspaceId }: { workspaceId: string }) {
   const state = useTasksState();
   const { taskId: openTaskId, openTask } = useTaskPanel();
+
+  if (state.tasks.length === 0) {
+    return (
+      <EmptyStateOverlay
+        ghost={<CalendarGhost />}
+        headline="Your week takes shape as soon as you add a date."
+        body="Schedule a task. The grid fills with what's coming. No more 'wait, when was that?'"
+      />
+    );
+  }
+
   // Map tasks to days based on startDay
   const cells: { i: number; tasks: Task[] }[] = Array.from(
     { length: MONTH_DAYS },
@@ -40,8 +55,18 @@ export function CalendarApp() {
   }
 
   return (
-    <div className="thin-scroll flex-1 overflow-auto px-8 py-5">
-      <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
+    <div className="thin-scroll flex-1 overflow-auto px-4 py-4 md:px-8 md:py-5">
+      <div className="mb-3 flex items-center justify-end">
+        <SubscribeButton workspaceId={workspaceId} />
+      </div>
+
+      {/* <md: 1-col day-list (today + next 6) */}
+      <div className="md:hidden">
+        <DayList cells={cells} openTaskId={openTaskId} openTask={openTask} />
+      </div>
+
+      {/* ≥md: full 7-col month grid */}
+      <div className="hidden overflow-hidden rounded-xl border border-line-soft bg-white md:block">
         <div className="grid grid-cols-7 border-b border-line-soft bg-bg-sunken/40 text-[11px] font-semibold uppercase tracking-wider text-ink-quiet">
           {DAYS_OF_WEEK.map((d) => (
             <div
@@ -137,6 +162,250 @@ export function CalendarApp() {
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Mobile day-list: today + next 6, vertically scrollable. Each day card
+ * shows label + tasks (or a quiet "Nothing scheduled."). Today gets the
+ * brand accent; days with zero tasks dim down so the grid still has rhythm.
+ */
+function DayList({
+  cells,
+  openTaskId,
+  openTask,
+}: {
+  cells: { i: number; tasks: Task[] }[];
+  openTaskId: string | null;
+  openTask: (id: string) => void;
+}) {
+  // Today is at TODAY_INDEX (=9). Show today + next 6.
+  const window = cells.slice(TODAY_INDEX, TODAY_INDEX + 7);
+  const dayShortNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return (
+    <ul className="space-y-2">
+      {window.map((cell, idx) => {
+        const isToday = idx === 0;
+        const dow = dayShortNames[cell.i % 7];
+        return (
+          <motion.li
+            key={cell.i}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{
+              duration: 0.32,
+              delay: idx * 0.03,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className={
+              "overflow-hidden rounded-xl border bg-white " +
+              (isToday ? "border-brand/40" : "border-line-soft")
+            }
+            style={
+              isToday ? { background: "var(--brand-soft)" } : undefined
+            }
+          >
+            <div className="flex items-center justify-between border-b border-line-soft/60 px-3 py-2">
+              <div className="flex items-baseline gap-2">
+                <span
+                  className={
+                    "text-[12.5px] font-semibold uppercase tracking-wider " +
+                    (isToday ? "text-brand" : "text-ink-soft")
+                  }
+                >
+                  {isToday ? "Today" : dow}
+                </span>
+                <span className="text-[12px] text-ink-quiet">
+                  {dayLabel(cell.i)}
+                </span>
+              </div>
+              <span className="text-[11px] tabular-nums text-ink-quiet">
+                {cell.tasks.length === 0
+                  ? "Empty"
+                  : `${cell.tasks.length} ${cell.tasks.length === 1 ? "task" : "tasks"}`}
+              </span>
+            </div>
+            {cell.tasks.length === 0 ? (
+              <div className="px-3 py-2.5 text-[12px] italic text-ink-faint">
+                Nothing scheduled. Lovely.
+              </div>
+            ) : (
+              <ul className="divide-y divide-line-soft/60">
+                {cell.tasks.map((task) => {
+                  const lane = LANES[task.lane];
+                  const isOpen = openTaskId === task.id;
+                  return (
+                    <li key={task.id}>
+                      <button
+                        type="button"
+                        onClick={() => openTask(task.id)}
+                        className="flex w-full items-center gap-2 border-l-[3px] bg-white/85 px-3 py-2 text-left text-[13px] transition-colors hover:bg-white"
+                        style={{
+                          borderLeftColor: lane.dot,
+                          background: isOpen
+                            ? "var(--brand-soft)"
+                            : undefined,
+                        }}
+                      >
+                        <span className="line-clamp-1 flex-1 text-ink">
+                          {task.title}
+                        </span>
+                        <AvatarStack users={task.assignees} size={16} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </motion.li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * Calendar subscribe affordance. Surfaces a `webcal://` URL the user
+ * pastes into Apple Calendar, Google Calendar, or Outlook's "Add
+ * subscription" dialog. The feed itself is read-only and refreshed
+ * by the client on its own cadence.
+ *
+ * The URL is built lazily once the popover opens — `window.location`
+ * isn't available during SSR, so we defer until the click.
+ */
+function SubscribeButton({ workspaceId }: { workspaceId: string }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [url, setUrl] = useState<string>("");
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const onToggle = useCallback(() => {
+    if (typeof window !== "undefined" && !url) {
+      setUrl(`webcal://${window.location.host}/api/calendar/${workspaceId}`);
+    }
+    setOpen((v) => !v);
+  }, [url, workspaceId]);
+
+  const onCopy = useCallback(() => {
+    if (!url) return;
+    const finish = () => {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1400);
+      toast("Link copied", {
+        tone: "success",
+        body: "Paste into Calendar's ‘Add subscription’ dialog.",
+      });
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(finish, () => {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          finish();
+        } catch {
+          toast("Couldn't copy the link", { tone: "warn" });
+        }
+      });
+    } else {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        finish();
+      } catch {
+        toast("Couldn't copy the link", { tone: "warn" });
+      }
+    }
+  }, [url, toast]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 rounded-md border border-line-soft bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M4 11a9 9 0 0 1 9 9" />
+          <path d="M4 4a16 16 0 0 1 16 16" />
+          <circle cx="5" cy="19" r="1" />
+        </svg>
+        Subscribe
+      </button>
+      {open ? (
+        <div
+          role="dialog"
+          aria-label="Calendar subscription URL"
+          className="absolute right-0 top-full z-30 mt-1.5 w-[340px] overflow-hidden rounded-lg border border-line-soft bg-white p-3 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
+        >
+          <div className="text-[12.5px] font-semibold text-ink">
+            Subscribe in your calendar
+          </div>
+          <div className="mt-0.5 text-[11.5px] text-ink-quiet">
+            A live, read-only feed of every task with a due date.
+          </div>
+          <div className="mt-2.5 flex items-stretch gap-1.5">
+            <code className="flex-1 truncate rounded border border-line-soft bg-bg-sunken/60 px-2 py-1.5 font-mono text-[11px] text-ink-soft">
+              {url}
+            </code>
+            <button
+              type="button"
+              onClick={onCopy}
+              className="inline-flex items-center gap-1 rounded border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+            >
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="mt-2 text-[11px] text-ink-quiet">
+            Apple Calendar, Google Calendar, Outlook all support
+            webcal:// subscriptions.
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

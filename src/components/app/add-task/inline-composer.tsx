@@ -1,9 +1,10 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion, AnimatePresence } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { LaneId } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { parseTaskInput } from "@/lib/nlp/parse-task-input";
 
 export function InlineComposer({
   lane,
@@ -17,17 +18,24 @@ export function InlineComposer({
   const [title, setTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const parsed = useMemo(() => parseTaskInput(title), [title]);
+  const dateDetected = !!parsed.dueAt && !!parsed.dueLabel;
+
   useEffect(() => {
     inputRef.current?.focus({ preventScroll: true });
   }, []);
 
   function submit() {
-    const trimmed = title.trim();
-    if (!trimmed) {
+    if (!parsed.title.trim()) {
       onClose();
       return;
     }
-    addTask({ title: trimmed, lane });
+    addTask({
+      title: parsed.title,
+      lane,
+      due: parsed.dueLabel,
+      dueAt: parsed.dueAt,
+    });
     setTitle("");
     // Composer stays open for rapid follow-ups.
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -70,11 +78,31 @@ export function InlineComposer({
         onBlur={() => {
           if (!title.trim()) onClose();
         }}
-        placeholder="What's next?"
+        placeholder={`What's next? Try "by Friday at 3pm"`}
         autoComplete="off"
         spellCheck={false}
         className="block w-full bg-transparent px-2 py-2 text-[13px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
       />
+      <AnimatePresence initial={false}>
+        {dateDetected ? (
+          <motion.div
+            key="composer-nlp"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="overflow-hidden px-2 pb-1.5"
+          >
+            <span className="inline-flex items-center gap-1 rounded bg-brand-soft px-1.5 py-0.5 text-[10.5px] font-medium text-brand">
+              <span
+                className="block h-1 w-1 rounded-full"
+                style={{ background: "var(--brand)" }}
+              />
+              Due {parsed.dueLabel}
+            </span>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 }

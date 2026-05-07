@@ -6,6 +6,8 @@ import {
   PRIORITY_LABEL,
   USERS,
   type Priority,
+  type Recurrence,
+  type RecurrenceFreq,
   type Task,
   type UserId,
 } from "@/lib/data";
@@ -31,6 +33,9 @@ export function FieldRows({ task }: { task: Task }) {
 
       <Label>Due</Label>
       <DueRow task={task} />
+
+      <Label>Repeats</Label>
+      <RecurrenceRow task={task} />
 
       {task.tags && task.tags.length > 0 ? (
         <>
@@ -252,6 +257,122 @@ function AssigneesRow({ task }: { task: Task }) {
       </Popover>
     </div>
   );
+}
+
+const RECURRENCE_OPTIONS: Array<{
+  label: string;
+  value: Recurrence | null;
+}> = [
+  { label: "Doesn't repeat", value: null },
+  { label: "Every day", value: { freq: "daily" } },
+  { label: "Every week", value: { freq: "weekly" } },
+  { label: "Every other week", value: { freq: "weekly", interval: 2 } },
+  { label: "Every month", value: { freq: "monthly" } },
+];
+
+function RecurrenceRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const current = task.recurrence;
+  const summary = describeRecurrence(current);
+
+  return (
+    <Popover
+      width={220}
+      trigger={({ onClick, ref }) => (
+        <button
+          ref={ref}
+          type="button"
+          onClick={onClick}
+          className={
+            "inline-flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-[11.5px] font-medium transition-colors " +
+            (current
+              ? "border-brand/30 bg-brand-soft/40 text-brand hover:bg-brand-soft/60"
+              : "border-line-soft bg-white text-ink-soft hover:border-ink-soft/30 hover:text-ink")
+          }
+        >
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+          {summary}
+        </button>
+      )}
+    >
+      {(close) => (
+        <ul className="text-[12.5px]">
+          {RECURRENCE_OPTIONS.map((opt) => {
+            const active = sameRecurrence(current, opt.value);
+            return (
+              <li key={opt.label}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateTask(task.id, {
+                      recurrence: opt.value ?? undefined,
+                    });
+                    close();
+                  }}
+                  className={
+                    "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
+                    (active ? "font-medium text-ink" : "text-ink-soft")
+                  }
+                >
+                  <span>{opt.label}</span>
+                  {active ? (
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.6"
+                      className="text-emerald-600"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+          <li className="mt-1 border-t border-line-soft px-2 pb-1 pt-2 text-[10.5px] leading-[1.4] text-ink-faint">
+            When you complete a recurring task, it bounces back to To
+            do with the next due date.
+          </li>
+        </ul>
+      )}
+    </Popover>
+  );
+}
+
+function describeRecurrence(r: Recurrence | undefined): string {
+  if (!r) return "Doesn't repeat";
+  const interval = r.interval ?? 1;
+  const map: Record<RecurrenceFreq, string> = {
+    daily: "day",
+    weekly: "week",
+    monthly: "month",
+  };
+  if (interval === 1) return `Every ${map[r.freq]}`;
+  if (r.freq === "weekly" && interval === 2) return "Every other week";
+  return `Every ${interval} ${map[r.freq]}s`;
+}
+
+function sameRecurrence(
+  a: Recurrence | undefined,
+  b: Recurrence | null,
+): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return a.freq === b.freq && (a.interval ?? 1) === (b.interval ?? 1);
 }
 
 function DueRow({ task }: { task: Task }) {

@@ -21,10 +21,13 @@ export function Wordmark({
       href={href}
       aria-label="Tasks"
       className={cn(
-        "wordmark-hover relative inline-flex select-none items-baseline font-semibold tracking-tight",
+        // Tracking matches the design system spec: -0.05em (-5%).
+        // Geist 600 baseline-aligned with the dot at the baseline.
+        "wordmark-hover relative inline-flex select-none items-baseline font-semibold",
         sizeClass,
         className,
       )}
+      style={{ letterSpacing: "-0.05em" }}
     >
       <span className="wordmark" style={{ fontWeight: 600 }}>
         tasks

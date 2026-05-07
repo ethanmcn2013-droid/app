@@ -1,100 +1,269 @@
 @import "tailwindcss";
 
 /* ────────────────────────────────────────────────────────────
-   Design tokens
-   ──────────────────────────────────────────────────────────── */
+   Design tokens (v0.3 — aligned to tasks-design-system.html)
+   ────────────────────────────────────────────────────────────
+   Strategy: the v0.2 tokens (--brand, --ink, --line, --lane-*)
+   stay so existing components don't regress. The full design
+   system is added alongside — indigo / ink ramps, audience
+   accents, status tokens, springs, radii, shadow tiers,
+   highlight. New code reaches for the ramp tokens; legacy code
+   keeps working through the v0.2 names which now alias to ramp
+   stops. */
 :root {
-  --bg: #fafaf7;
-  --bg-elevated: #ffffff;
-  --bg-sunken: #f4f4ef;
-  --ink: #14151a;
-  --ink-soft: #4a4d57;
-  --ink-quiet: #8b8e98;
-  --ink-faint: #c8cad1;
-  --line: #ebebe5;
-  --line-soft: #f0f0ea;
+  /* ── Indigo ramp ──────────────────────────────────────────── */
+  --indigo-50:  #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-200: #c7d2fe;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5; /* PRIMARY */
+  --indigo-700: #4338ca;
+  --indigo-800: #3730a3;
+  --indigo-900: #312e81;
+  --highlight:  #7c5cff; /* marker underline accent on display headlines */
 
-  --brand: #4f46e5;
-  --brand-deep: #3730a3;
-  --brand-soft: #eef2ff;
-  --brand-glow: rgba(79, 70, 229, 0.42);
+  /* ── Ink ramp (neutrals) ──────────────────────────────────── */
+  --ink-0:   #ffffff;
+  --ink-50:  #fafafa;
+  --ink-100: #f4f4f5;
+  --ink-200: #e4e4e7;
+  --ink-300: #d4d4d8;
+  --ink-400: #a1a1aa;
+  --ink-500: #71717a;
+  --ink-600: #52525b;
+  --ink-700: #3f3f46;
+  --ink-800: #27272a;
+  --ink-900: #18181b;
+  --ink-950: #09090b;
 
-  --lane-todo: #f6f4fb;
-  --lane-todo-ink: #6d4ea3;
-  --lane-todo-dot: #c9b4f0;
+  /* ── Audience accents ─────────────────────────────────────── */
+  --aud-marketing: #4f46e5;
+  --aud-freelance: #16a34a;
+  --aud-student:   #eab308;
+  --aud-wedding:   #be185d;
 
-  --lane-doing: #fbf6ee;
+  /* ── Status tokens ────────────────────────────────────────── */
+  --status-todo:     #6366f1;
+  --status-progress: #f59e0b;
+  --status-review:   #06b6d4;
+  --status-done:     #10b981;
+  --status-blocked:  #ef4444;
+
+  /* ── Semantic surfaces (v0.2 names + DS additions) ────────── */
+  --bg:          #fafaf7; /* warm-stone, never pure white */
+  --bg-elev:     #ffffff;
+  --bg-elevated: var(--bg-elev); /* alias for v0.2 callsites */
+  --bg-deep:     #f4f4f0;
+  --bg-sunken:   var(--bg-deep); /* alias */
+
+  --border:      #e4e4e7;
+  --border-soft: #ececec;
+  --line:        var(--border);      /* alias */
+  --line-soft:   var(--border-soft); /* alias */
+
+  --text:        var(--ink-900);
+  --text-muted:  var(--ink-500);
+  --text-faint:  var(--ink-400);
+  --ink:         var(--ink-900); /* v0.2 alias */
+  --ink-soft:    var(--ink-700); /* v0.2 alias — was #4a4d57; ramp -700 is #3f3f46, close enough */
+  --ink-quiet:   var(--ink-500); /* v0.2 alias */
+
+  /* ── Brand semantics (v0.2 names, refreshed values) ───────── */
+  --brand:       var(--indigo-600);
+  --brand-deep:  var(--indigo-800);
+  --brand-soft:  var(--indigo-50);
+  --brand-glow:  rgba(79, 70, 229, 0.42);
+
+  /* ── Lane palette (v0.2 — refined to align with status tokens
+   *   while keeping the soft pastel chrome the board has had
+   *   since cycle 2. Lane backgrounds stay desaturated so the
+   *   priority dots and status colors do the talking, not the
+   *   surfaces themselves) ──────────────────────────────────── */
+  --lane-todo:      #f6f4fb;
+  --lane-todo-ink:  #6d4ea3;
+  --lane-todo-dot:  #c9b4f0;
+
+  --lane-doing:     #fbf6ee;
   --lane-doing-ink: #b35a16;
   --lane-doing-dot: #f3b878;
 
-  --lane-review: #eff6fc;
+  --lane-review:     #eff6fc;
   --lane-review-ink: #1d6fa3;
   --lane-review-dot: #91c8ec;
 
-  --lane-done: #eef7f1;
-  --lane-done-ink: #1f7a45;
-  --lane-done-dot: #8fd5a8;
+  --lane-done:      #eef7f1;
+  --lane-done-ink:  #1f7a45;
+  --lane-done-dot:  #8fd5a8;
 
+  /* ── User presence (cinematic demo + real users) ──────────── */
   --user-chloe: #e4356d;
   --user-david: #00a3b8;
-  --user-alex: #7c5cff;
+  --user-alex:  #7c5cff;
 
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-cinema: cubic-bezier(0.25, 1, 0.5, 1);
+  /* ── Motion · springs ─────────────────────────────────────── */
+  --spring-snap:  cubic-bezier(.2, .9, .2, 1.2);   /* overshoot — drops, lifts */
+  --spring-soft:  cubic-bezier(.32, .72, 0, 1);    /* settle — cards, panels */
+  --spring-glide: cubic-bezier(.16, 1, .3, 1);     /* ride — sweeps, fades */
+  --ease-out:     cubic-bezier(.22, .61, .36, 1);  /* default ease-out */
 
+  /* v0.2 aliases (existing callsites) */
+  --ease-out-expo: var(--spring-glide);
+  --ease-spring:   var(--spring-snap);
+  --ease-cinema:   cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* ── Type ─────────────────────────────────────────────────── */
+  --font-sans-stack: var(--font-geist-sans), 'Geist', -apple-system,
+    system-ui, sans-serif;
+  --font-mono-stack: var(--font-geist-mono), 'Geist Mono', ui-monospace,
+    'SF Mono', monospace;
+
+  /* Display scale (v0.2 — fluid clamps) */
   --fs-display: clamp(2.75rem, 1.8rem + 4.2vw, 5.5rem);
-  --fs-title: clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+  --fs-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
   --fs-section: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
 
-  --shadow-sm: 0 1px 2px rgba(20, 21, 26, 0.04);
-  --shadow-card: 0 1px 2px rgba(20, 21, 26, 0.05),
-    0 0 0 1px rgba(20, 21, 26, 0.04);
-  --shadow-lift: 0 14px 32px -12px rgba(20, 21, 26, 0.18),
-    0 4px 8px -2px rgba(20, 21, 26, 0.06);
-  --shadow-float: 0 28px 60px -20px rgba(20, 21, 26, 0.28),
-    0 10px 20px -8px rgba(20, 21, 26, 0.10);
+  /* ── Radii ────────────────────────────────────────────────── */
+  --r-1:    4px;
+  --r-2:    6px;
+  --r-3:    10px;
+  --r-4:    14px;
+  --r-5:    20px;
+  --r-pill: 999px;
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --shadow-1: 0 1px 2px rgba(24, 24, 27, .04),
+              0 1px 1px rgba(24, 24, 27, .03);
+  --shadow-2: 0 4px 12px rgba(24, 24, 27, .06),
+              0 1px 3px rgba(24, 24, 27, .04);
+  --shadow-3: 0 24px 60px -20px rgba(24, 24, 27, .18),
+              0 8px 24px -8px rgba(24, 24, 27, .08);
+  --shadow-indigo: 0 12px 32px -12px rgba(79, 70, 229, .45);
+
+  /* v0.2 aliases */
+  --shadow-sm:    var(--shadow-1);
+  --shadow-card:  var(--shadow-1);
+  --shadow-lift:  var(--shadow-2);
+  --shadow-float: var(--shadow-3);
 }
 
+/* ────────────────────────────────────────────────────────────
+   Tailwind theme bindings — exposes the tokens as Tailwind
+   utility classes (e.g. `bg-indigo-600`, `text-ink-900`,
+   `text-status-done`, `shadow-3`).
+   ──────────────────────────────────────────────────────────── */
 @theme inline {
-  --color-bg: var(--bg);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-bg-sunken: var(--bg-sunken);
-  --color-ink: var(--ink);
-  --color-ink-soft: var(--ink-soft);
-  --color-ink-quiet: var(--ink-quiet);
-  --color-ink-faint: var(--ink-faint);
-  --color-line: var(--line);
-  --color-line-soft: var(--line-soft);
-  --color-brand: var(--brand);
+  /* Brand semantic + indigo ramp */
+  --color-brand:      var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-brand-soft: var(--brand-soft);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-highlight:  var(--highlight);
+  --color-indigo-50:  var(--indigo-50);
+  --color-indigo-100: var(--indigo-100);
+  --color-indigo-200: var(--indigo-200);
+  --color-indigo-300: var(--indigo-300);
+  --color-indigo-400: var(--indigo-400);
+  --color-indigo-500: var(--indigo-500);
+  --color-indigo-600: var(--indigo-600);
+  --color-indigo-700: var(--indigo-700);
+  --color-indigo-800: var(--indigo-800);
+  --color-indigo-900: var(--indigo-900);
+
+  /* Ink ramp (semantic + 12 stops) */
+  --color-ink:       var(--ink);
+  --color-ink-soft:  var(--ink-soft);
+  --color-ink-quiet: var(--ink-quiet);
+  --color-ink-faint: var(--ink-faint);
+  --color-ink-0:    var(--ink-0);
+  --color-ink-50:   var(--ink-50);
+  --color-ink-100:  var(--ink-100);
+  --color-ink-200:  var(--ink-200);
+  --color-ink-300:  var(--ink-300);
+  --color-ink-400:  var(--ink-400);
+  --color-ink-500:  var(--ink-500);
+  --color-ink-600:  var(--ink-600);
+  --color-ink-700:  var(--ink-700);
+  --color-ink-800:  var(--ink-800);
+  --color-ink-900:  var(--ink-900);
+  --color-ink-950:  var(--ink-950);
+
+  /* Audience accents */
+  --color-aud-marketing: var(--aud-marketing);
+  --color-aud-freelance: var(--aud-freelance);
+  --color-aud-student:   var(--aud-student);
+  --color-aud-wedding:   var(--aud-wedding);
+
+  /* Status tokens */
+  --color-status-todo:     var(--status-todo);
+  --color-status-progress: var(--status-progress);
+  --color-status-review:   var(--status-review);
+  --color-status-done:     var(--status-done);
+  --color-status-blocked:  var(--status-blocked);
+
+  /* Semantic surfaces */
+  --color-bg:          var(--bg);
+  --color-bg-elev:     var(--bg-elev);
+  --color-bg-elevated: var(--bg-elev);
+  --color-bg-deep:     var(--bg-deep);
+  --color-bg-sunken:   var(--bg-deep);
+  --color-line:        var(--line);
+  --color-line-soft:   var(--line-soft);
+  --color-border:      var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-text:        var(--text);
+  --color-text-muted:  var(--text-muted);
+  --color-text-faint:  var(--text-faint);
+
+  /* Type families */
+  --font-sans:    var(--font-geist-sans);
+  --font-mono:    var(--font-geist-mono);
   --font-display: var(--font-geist-sans);
+
+  /* Radii */
+  --radius-1:    var(--r-1);
+  --radius-2:    var(--r-2);
+  --radius-3:    var(--r-3);
+  --radius-4:    var(--r-4);
+  --radius-5:    var(--r-5);
+  --radius-pill: var(--r-pill);
+
+  /* Shadows */
+  --shadow-1:      var(--shadow-1);
+  --shadow-2:      var(--shadow-2);
+  --shadow-3:      var(--shadow-3);
+  --shadow-indigo: var(--shadow-indigo);
 }
 
+/* ────────────────────────────────────────────────────────────
+   Base
+   ──────────────────────────────────────────────────────────── */
 html,
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans-stack);
   font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--brand);
-  color: white;
+  background: var(--indigo-200);
+  color: var(--ink-900);
 }
 
-.tight {
-  letter-spacing: -0.035em;
-}
-.tighter {
-  letter-spacing: -0.05em;
-}
+/* No global `a { color: inherit }` — that would shadow Tailwind's
+ * `text-white`, `text-ink`, etc. utilities since unlayered CSS comes
+ * after `@layer utilities`. The design system's tokens.css uses that
+ * rule because it's a standalone HTML page; inside the Tasks Tailwind
+ * setup, link colors are set per-callsite via utility classes. */
+
+/* ────────────────────────────────────────────────────────────
+   Display + utility
+   ──────────────────────────────────────────────────────────── */
+.tight   { letter-spacing: -0.035em; }
+.tighter { letter-spacing: -0.05em; }
 
 .font-display {
   font-family: var(--font-display);
@@ -121,6 +290,31 @@ body {
   font-weight: 600;
 }
 
+/* Marker-underline accent for display headlines (matches the DS
+ * `.hero h1 .accent` treatment — a 78%-tall gradient bar behind
+ * the highlighted span, not a literal text-decoration). Use as
+ * `<span className="marker">word</span>` inside a heading. */
+.marker {
+  background: linear-gradient(
+    120deg,
+    transparent 0 6%,
+    color-mix(in srgb, var(--highlight) 32%, transparent) 6% 94%,
+    transparent 94%
+  );
+  background-size: 100% 0.78em;
+  background-position: 0 82%;
+  background-repeat: no-repeat;
+  padding: 0 0.05em;
+}
+
+/* ────────────────────────────────────────────────────────────
+   Wordmark dot · the brand's signature animation
+   Per design system spec (tasks-design-system.html, sec 01):
+   - 2.6s cycle, spring-glide easing
+   - Pulse: rest at 1.0, brief beat to 1.25 at 70%, settle 1.0 at 80%
+   - Emit ring: invisible 0–60%, fades in/out scaling 0.8 → 2.6 → fade
+   "It pulses, it emits, it says something is happening."
+   ──────────────────────────────────────────────────────────── */
 .tasks-dot {
   display: inline-block;
   position: relative;
@@ -131,56 +325,31 @@ body {
   margin-left: 0.12em;
   transform: translateY(-0.38em);
   box-shadow: 0 0 14px var(--brand-glow);
-  animation: dot-pulse 3.4s ease-in-out infinite;
-}
-.tasks-dot::before,
-.tasks-dot::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--brand);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0;
+  animation: tasks-dot-pulse 2.6s var(--spring-glide) infinite;
 }
 .tasks-dot::before {
-  animation: dot-wave 4.6s var(--ease-out-expo) infinite;
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1.5px solid var(--brand);
+  border-radius: 50%;
+  opacity: 0;
+  animation: tasks-dot-emit 2.6s var(--spring-glide) infinite;
 }
-.tasks-dot::after {
-  animation: dot-wave 4.6s var(--ease-out-expo) 0.6s infinite;
+@keyframes tasks-dot-pulse {
+  0%, 60%, 100% { transform: translateY(-0.38em) scale(1); }
+  70%           { transform: translateY(-0.38em) scale(1.25); }
+  80%           { transform: translateY(-0.38em) scale(1); }
 }
-@keyframes dot-pulse {
-  0%,
-  100% {
-    transform: translateY(-0.38em) scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(-0.38em) scale(0.84);
-    opacity: 0.78;
-  }
-}
-@keyframes dot-wave {
-  0% {
-    width: 100%;
-    height: 100%;
-    opacity: 0.65;
-  }
-  18% {
-    width: 540%;
-    height: 540%;
-    opacity: 0;
-  }
-  100% {
-    width: 540%;
-    height: 540%;
-    opacity: 0;
-  }
+@keyframes tasks-dot-emit {
+  0%, 60% { opacity: 0; transform: scale(0.8); }
+  68%     { opacity: 1; transform: scale(1); }
+  100%    { opacity: 0; transform: scale(2.6); }
 }
 
+/* ────────────────────────────────────────────────────────────
+   Texture + utilities
+   ──────────────────────────────────────────────────────────── */
 .grain::after {
   content: "";
   position: absolute;
@@ -220,50 +389,45 @@ body {
 }
 
 .lift {
-  transition: transform 0.4s var(--ease-out-expo),
-    box-shadow 0.4s var(--ease-out-expo);
+  transition:
+    transform 0.4s var(--spring-glide),
+    box-shadow 0.4s var(--spring-glide);
 }
 .lift:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lift);
+  box-shadow: var(--shadow-2);
 }
 
+/* ────────────────────────────────────────────────────────────
+   Animations
+   ──────────────────────────────────────────────────────────── */
 @keyframes ticker-scroll {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 .ticker {
   animation: ticker-scroll 40s linear infinite;
 }
 
 @keyframes rise {
-  0% {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 .rise {
-  animation: rise 0.85s var(--ease-out-expo) both;
+  animation: rise 0.85s var(--spring-glide) both;
 }
 
 @keyframes shine {
-  0% {
-    background-position: 200% center;
-  }
-  100% {
-    background-position: -100% center;
-  }
+  0%   { background-position: 200% center; }
+  100% { background-position: -100% center; }
 }
 .wordmark {
-  background: linear-gradient(110deg, #14151a 30%, #5e616b 50%, #14151a 70%);
+  background: linear-gradient(
+    110deg,
+    var(--ink-900) 30%,
+    var(--ink-600) 50%,
+    var(--ink-900) 70%
+  );
   background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -271,6 +435,22 @@ body {
 }
 .wordmark-hover:hover .wordmark {
   animation: shine 3s linear infinite;
+}
+
+/* Live-pulse green dot — used by status indicators that need to
+ * say "this is live right now" without shouting. Matches the DS
+ * `.hero-meta .pill::before` and `.mark-stage::after` rule. */
+@keyframes live-pulse {
+  50% { box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }
+}
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25);
+  animation: live-pulse 1.6s ease-in-out infinite;
+  display: inline-block;
 }
 
 @media (prefers-reduced-motion: reduce) {

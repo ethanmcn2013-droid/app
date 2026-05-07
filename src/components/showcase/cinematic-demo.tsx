@@ -9,6 +9,12 @@ import {
 } from "react";
 import { motion, LayoutGroup, AnimatePresence } from "motion/react";
 import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
+import {
+  DOMAINS,
+  buildDomainSeed,
+  shorten,
+  type DomainId,
+} from "@/lib/domains";
 import { TaskCard } from "./task-card";
 import { DemoSurface } from "./demo-surface";
 import { CursorsLayer } from "./cursors-layer";
@@ -35,7 +41,12 @@ function makeId() {
   return Math.random().toString(36).slice(2, 8);
 }
 
-export function CinematicDemo() {
+export function CinematicDemo({
+  domain = "marketing",
+}: {
+  domain?: DomainId;
+} = {}) {
+  const pack = DOMAINS[domain];
   const containerRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
@@ -47,7 +58,7 @@ export function CinematicDemo() {
 
   const [state, setState] = useState<DemoState>(() => ({
     view: "board",
-    tasks: SEED_TASKS.map((t) => ({ ...t })),
+    tasks: buildDomainSeed(domain, SEED_TASKS),
     cursors: {
       chloe: initialCursor(140, 60),
       david: initialCursor(360, 60),
@@ -385,7 +396,10 @@ export function CinematicDemo() {
       }
 
       drop("david", dest);
-      pushActivity("david", "moved to In progress", "Audit pricing page");
+      {
+        const t = currentStateRef.current?.tasks.find((x) => x.id === "t-101");
+        pushActivity("david", "moved to In progress", shorten(t?.title ?? "this task"));
+      }
       await wait(900);
 
       // Move another (alex pushes a review item to done with celebration)
@@ -411,7 +425,10 @@ export function CinematicDemo() {
           const hr = headerEl.getBoundingClientRect();
           triggerCelebration(hr.left - sr.left + 60, hr.top - sr.top + 18);
         }
-        pushActivity("alex", "completed", "Latest features email");
+        {
+          const t = currentStateRef.current?.tasks.find((x) => x.id === "t-303");
+          pushActivity("alex", "completed", shorten(t?.title ?? "this task"));
+        }
         // Tick burndown
         setState((s) => ({
           ...s,
@@ -449,7 +466,7 @@ export function CinematicDemo() {
         postedComment: null,
       }));
 
-      const text = "Hero animation looks great — shipping today 🚀";
+      const text = pack.demoCommentText;
       for (let i = 1; i <= text.length; i += 2) {
         await wait(40);
         setState((s) => ({
@@ -468,7 +485,10 @@ export function CinematicDemo() {
           chloe: { ...s.cursors.chloe, reading: false },
         },
       }));
-      pushActivity("chloe", "commented on", "Launch demo video");
+      {
+        const t = currentStateRef.current?.tasks.find((x) => x.id === "t-202");
+        pushActivity("chloe", "commented on", shorten(t?.title ?? "this task"));
+      }
       await wait(1500);
 
       setState((s) => ({
@@ -524,11 +544,12 @@ export function CinematicDemo() {
     };
 
     const sceneNudge = async () => {
+      const t202 = currentStateRef.current?.tasks.find((x) => x.id === "t-202");
       setState((s) => ({
         ...s,
         scene: "nudge",
         nudgeOpen: true,
-        nudgeTask: "Launch demo video",
+        nudgeTask: shorten(t202?.title ?? "this task", 28),
         nudgeStage: "open",
       }));
       await wait(2200);
@@ -550,7 +571,11 @@ export function CinematicDemo() {
       await wait(900);
       setState((s) => ({ ...s, nudgeStage: "sent" }));
       setCursorState("chloe", { grabbing: false });
-      pushActivity("chloe", "nudged", "David on Launch demo video");
+      pushActivity(
+        "chloe",
+        "nudged",
+        `David on ${shorten(t202?.title ?? "this task")}`,
+      );
       await wait(1100);
       setState((s) => ({
         ...s,
@@ -575,7 +600,15 @@ export function CinematicDemo() {
       await wait(900);
 
       setState((s) => ({ ...s, dependencyHighlight: null }));
-      pushActivity("david", "linked dependency", "Sales sync → Demo video");
+      {
+        const t201 = currentStateRef.current?.tasks.find((x) => x.id === "t-201");
+        const t202 = currentStateRef.current?.tasks.find((x) => x.id === "t-202");
+        pushActivity(
+          "david",
+          "linked dependency",
+          `${shorten(t201?.title ?? "task", 14)} → ${shorten(t202?.title ?? "task", 14)}`,
+        );
+      }
       await wait(700);
     };
 
@@ -670,7 +703,7 @@ export function CinematicDemo() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              tasks.app/team/marketing
+              {pack.workspaceUrl}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -685,13 +718,26 @@ export function CinematicDemo() {
         <div className="flex items-end justify-between border-b border-line-soft px-5 pb-2 pt-3">
           <div>
             <div className="flex items-center gap-2 text-[11px] text-ink-quiet">
-              <span>Team</span>
+              <span>Workspace</span>
               <span>›</span>
-              <span>Marketing</span>
+              <motion.span
+                key={pack.workspaceCrumb}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {pack.workspaceCrumb}
+              </motion.span>
             </div>
-            <h3 className="mt-1 text-[19px] font-semibold tracking-tight">
-              Q3 Launch · Plays in motion
-            </h3>
+            <motion.h3
+              key={pack.workspaceTitle}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-1 text-[19px] font-semibold tracking-tight"
+            >
+              {pack.workspaceTitle}
+            </motion.h3>
           </div>
           <ViewTabs view={state.view} />
         </div>

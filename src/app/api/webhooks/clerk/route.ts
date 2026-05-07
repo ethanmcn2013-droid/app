@@ -1,0 +1,227 @@
+import { NextResponse } from "next/server";
+import { Webhook } from "svix";
+import { headers } from "next/headers";
+import { eq, sql } from "drizzle-orm";
+import { db } from "@/server/db";
+import { users, workspaces, workspaceMembers } from "@/server/db/schema";
+import { grantEntitlement } from "@/server/actions/billing";
+import type { WebhookEvent } from "@clerk/nextjs/server";
+
+/**
+ * .edu Pro grant — when the user's primary email ends in `.edu`,
+ * we auto-grant Pro for one academic semester (~120 days). The
+ * entitlement is user-level (workspaceId = NULL) so the Phase 4
+ * layered-resolution path picks it up across every workspace the
+ * student creates without per-workspace bookkeeping.
+ *
+ * Why 120 days: long enough to cover a single semester (~16 weeks)
+ * plus a buffer for the post-semester wrap-up. Shorter than a year
+ * so the student renews intentionally — and bumps into the manifesto
+ * pricing rather than the silent auto-charge.
+ */
+const EDU_PRO_DAYS = 120;
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+/**
+ * Clerk → DB sync via Svix-verified webhook.
+ *
+ * On `user.created` we provision the trio in a single transaction:
+ *   1. `users` row keyed by Clerk id
+ *   2. `workspaces` row (the user's personal workspace)
+ *   3. `workspace_members` row giving them owner role
+ *
+ * If Clerk sends a duplicate webhook (re-delivery, retry), all three
+ * INSERTs are idempotent on UNIQUE constraints so the transaction
+ * is safe to replay. Get this wrong and a user lands without a
+ * workspace, which means every protected route 500s — so we lean on
+ * the transaction to fail-atomic.
+ */
+export async function POST(req: Request) {
+  const secret = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
+  if (!secret) {
+    // Dev-only graceful fallback so a missing env doesn't crash the
+    // app; in production this is a hard error.
+    if (process.env.NODE_ENV === "production") {
+      return new NextResponse("missing CLERK_WEBHOOK_SIGNING_SECRET", {
+        status: 500,
+      });
+    }
+    console.warn("[clerk webhook] CLERK_WEBHOOK_SIGNING_SECRET unset; skipping");
+    return NextResponse.json({ ok: true, skipped: true });
+  }
+
+  const h = await headers();
+  const id = h.get("svix-id");
+  const timestamp = h.get("svix-timestamp");
+  const signature = h.get("svix-signature");
+  if (!id || !timestamp || !signature) {
+    return new NextResponse("missing svix headers", { status: 400 });
+  }
+
+  const payload = await req.text();
+  let event: WebhookEvent;
+  try {
+    event = new Webhook(secret).verify(payload, {
+      "svix-id": id,
+      "svix-timestamp": timestamp,
+      "svix-signature": signature,
+    }) as WebhookEvent;
+  } catch (err) {
+    console.warn("[clerk webhook] verification failed", err);
+    return new NextResponse("invalid signature", { status: 401 });
+  }
+
+  switch (event.type) {
+    case "user.created":
+      await handleUserCreated(event.data as ClerkUser);
+      break;
+    case "user.updated":
+      await handleUserUpdated(event.data as ClerkUser);
+      break;
+    case "user.deleted":
+      // Deletion payload may have a missing id during a hard-delete
+      // race; bail safely if so.
+      if (event.data.id) {
+        await handleUserDeleted({ id: event.data.id });
+      }
+      break;
+    default:
+      // Other event types (session.*, organization.*) are ignored —
+      // we don't lean on Clerk Organizations; workspaces are ours.
+      break;
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+type ClerkUser = {
+  id: string;
+  email_addresses?: Array<{ email_address: string }>;
+  first_name?: string | null;
+  last_name?: string | null;
+  username?: string | null;
+};
+
+function deriveHandle(u: ClerkUser): string {
+  if (u.username) return u.username.toLowerCase();
+  const email = u.email_addresses?.[0]?.email_address;
+  if (email) return email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "");
+  return u.id.replace(/^user_/, "").slice(0, 8).toLowerCase();
+}
+
+function deriveName(u: ClerkUser): string | null {
+  const f = u.first_name?.trim();
+  const l = u.last_name?.trim();
+  if (f && l) return `${f} ${l}`;
+  if (f) return f;
+  if (l) return l;
+  return null;
+}
+
+function deriveInitials(u: ClerkUser): string {
+  const f = u.first_name?.[0] ?? "";
+  const l = u.last_name?.[0] ?? "";
+  if (f || l) return (f + l).toUpperCase() || "??";
+  const handle = deriveHandle(u);
+  return handle.slice(0, 2).toUpperCase() || "??";
+}
+
+const PALETTE = [
+  "#4f46e5", // brand
+  "#7c5cff", // brand-hi
+  "#10b981", // emerald
+  "#f59e0b", // amber
+  "#ec4899", // pink
+  "#0ea5e9", // sky
+  "#84cc16", // lime
+  "#f43f5e", // rose
+];
+
+function deriveColor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h << 5) - h + id.charCodeAt(i);
+  return PALETTE[Math.abs(h) % PALETTE.length];
+}
+
+async function handleUserCreated(u: ClerkUser): Promise<void> {
+  const handle = deriveHandle(u);
+  const email = u.email_addresses?.[0]?.email_address ?? null;
+  const name = deriveName(u);
+  const color = deriveColor(u.id);
+  const initials = deriveInitials(u);
+
+  // Internal user id = Clerk id. Skipping the dual-id indirection
+  // simplifies every callsite that holds a "user id" — there's only
+  // one. Clerk ids are URL-safe and DB-safe.
+  const userId = u.id;
+
+  // Build a slug that won't collide. Tail of the Clerk id is unique
+  // by construction.
+  const slug = `personal-${u.id.replace(/^user_/, "").slice(0, 8).toLowerCase()}`;
+  const workspaceId = `ws-${u.id.replace(/^user_/, "").slice(0, 12).toLowerCase()}`;
+
+  // All three writes inside one BEGIN…COMMIT so a crash mid-flight
+  // can't leave a user without a workspace.
+  await db.transaction(async (tx) => {
+    await tx.run(sql`
+      INSERT INTO users (id, clerk_id, email, handle, name, color, initials)
+      VALUES (${userId}, ${u.id}, ${email}, ${handle}, ${name}, ${color}, ${initials})
+      ON CONFLICT(id) DO UPDATE SET
+        email = excluded.email,
+        handle = excluded.handle,
+        name = excluded.name
+    `);
+    await tx.run(sql`
+      INSERT OR IGNORE INTO workspaces (id, slug, name, owner_user_id, active_domain)
+      VALUES (${workspaceId}, ${slug}, ${name ?? "Personal"}, ${userId}, NULL)
+    `);
+    await tx.run(sql`
+      INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
+      VALUES (${workspaceId}, ${userId}, 'owner')
+    `);
+  });
+
+  // .edu Pro grant. Runs OUTSIDE the transaction — the workspace
+  // exists by this point, and a failure here shouldn't roll back
+  // the user creation. Worst case: the entitlement is missed, the
+  // student lands on Free, and they redeem manually later.
+  if (email && isEduEmail(email)) {
+    try {
+      await grantEntitlement({
+        userId,
+        workspaceId: null,
+        tier: "pro",
+        source: "edu",
+        durationDays: EDU_PRO_DAYS,
+        notes: `edu:${email.toLowerCase()}`,
+      });
+    } catch (err) {
+      // Log + continue. The user is already created; the entitlement
+      // is recoverable via /redeem with a manual support touch.
+      console.warn("[clerk webhook] .edu grant failed", err);
+    }
+  }
+}
+
+/** True when the email's TLD-equivalent suffix is `.edu`. Strips
+ *  trailing dots / whitespace and lowercases first. */
+function isEduEmail(email: string): boolean {
+  const trimmed = email.trim().toLowerCase().replace(/\.$/, "");
+  return /\.edu$/.test(trimmed);
+}
+
+async function handleUserUpdated(u: ClerkUser): Promise<void> {
+  const email = u.email_addresses?.[0]?.email_address ?? null;
+  const name = deriveName(u);
+  await db
+    .update(users)
+    .set({ email, name })
+    .where(eq(users.clerkId, u.id));
+}
+
+async function handleUserDeleted(u: ClerkUser): Promise<void> {
+  // Cascading FKs delete the user's workspaces (owner) and memberships.
+  await db.delete(users).where(eq(users.clerkId, u.id));
+}
