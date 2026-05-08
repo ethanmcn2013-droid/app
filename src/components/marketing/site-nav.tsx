@@ -18,25 +18,25 @@ export function SiteNav() {
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
         {/* Brand lockup: studio. chip + divider + Tasks wordmark */}
         <div className="flex items-center gap-0">
-          {/* studio. parent-brand chip — hidden below sm to avoid crowding */}
+          {/* studio. parent-brand chip — visible at all widths, smaller on mobile */}
           <a
             href={STUDIO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden items-center sm:flex"
+            className="flex items-center"
             aria-label="studio. — parent brand"
           >
             <span
-              className="text-[11px] font-medium tracking-[-0.05em] transition-colors hover:text-ink-soft"
+              className="text-[10px] font-medium tracking-[-0.05em] transition-colors hover:text-ink-soft sm:text-[11px]"
               style={{ color: "var(--ink-quiet)" }}
             >
               studio.
             </span>
           </a>
-          {/* Hairline vertical divider — hidden below sm with the chip */}
+          {/* Hairline vertical divider */}
           <span
             aria-hidden
-            className="mx-2.5 hidden h-3.5 w-px sm:block"
+            className="mx-1.5 block h-3.5 w-px sm:mx-2.5"
             style={{ background: "color-mix(in srgb, var(--ink-quiet) 35%, transparent)" }}
           />
           <Wordmark size="md" />
