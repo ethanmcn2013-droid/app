@@ -48,8 +48,8 @@ export default function AboutPage() {
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
                 studio.
-              </a>
-              . The other is{" "}
+              </a>{" "}
+              We also make{" "}
               <a
                 href={ROADMAP_URL}
                 target="_blank"
@@ -57,9 +57,9 @@ export default function AboutPage() {
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
                 Roadmap
-              </a>
-              , a public-roadmap product for teams that don&rsquo;t ship
-              from sprint boards.
+              </a>{" "}
+              &mdash; a public-facing changelog for the people your engineers
+              aren&rsquo;t talking to.
             </p>
           </div>
         </section>

@@ -140,7 +140,7 @@ function Eyebrow() {
       >
         New
       </span>{" "}
-      Realtime sync &amp; magic links
+      Real-time sync &amp; magic links
       <svg
         width="11"
         height="11"
