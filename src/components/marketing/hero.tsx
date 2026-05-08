@@ -86,11 +86,11 @@ export function Hero() {
           >
             See what's inside
           </a>
-          <span className="ml-2 inline-flex items-center gap-2 text-[12.5px] text-ink-quiet">
-            <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Demo above is fully autonomous · interact at any time
-          </span>
         </div>
+        <p className="mt-3 inline-flex items-center gap-2 text-[12.5px] text-ink-faint">
+          <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          Demo above is fully autonomous · interact at any time
+        </p>
 
         {/* Domain toggle — proves the tool fits whatever you do */}
         <div className="mt-12 md:mt-14">
@@ -138,9 +138,9 @@ function Eyebrow() {
           boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
-        v0.2
-      </span>
-      Domain packs · realtime sync · magic links
+        New
+      </span>{" "}
+      Realtime sync &amp; magic links
       <svg
         width="11"
         height="11"

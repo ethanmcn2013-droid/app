@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 
+const STUDIO_URL =
+  process.env.NEXT_PUBLIC_STUDIO_URL ?? "https://studio-sigma-pied-75.vercel.app";
+
 export function SiteFooter() {
   return (
     <footer className="mt-32 border-t border-line-soft/70 pb-10 pt-16">
@@ -10,6 +13,17 @@ export function SiteFooter() {
           <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
             A live task workspace built for momentum. Real-time, multi-view, AI
             aware.
+          </p>
+          <p className="mt-4 text-[12px] text-ink-quiet">
+            Made by{" "}
+            <a
+              href={STUDIO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-ink-soft transition-colors hover:text-ink"
+            >
+              studio.
+            </a>
           </p>
         </div>
         <FooterCol
@@ -26,9 +40,13 @@ export function SiteFooter() {
           heading="Company"
           links={[
             { href: "/pricing", label: "Pricing" },
-            { href: "/students", label: "Free for students" },
+            { href: "/for/students", label: "Free for students" },
             { href: "/changelog", label: "Changelog" },
-            { href: "https://ethanmcnamara.vercel.app/roadmap", label: "Roadmap", external: true },
+            {
+              href: "https://roadmap-ebon-eight.vercel.app",
+              label: "Roadmap",
+              external: true,
+            },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
           ]}
@@ -42,15 +60,13 @@ export function SiteFooter() {
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
             { href: "/status", label: "Status" },
-            { href: "#", label: "Contact" },
+            { href: "mailto:ethanmcn2013@gmail.com", label: "Contact" },
           ]}
         />
       </div>
       <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-line-soft/70 px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
         <span>© {new Date().getFullYear()} Tasks. Designed in motion.</span>
-        <span>
-          v0.2 · Built with Next.js 16 · React 19 · Motion
-        </span>
+        <span>Built with Next.js 16 · React 19 · Motion</span>
       </div>
     </footer>
   );

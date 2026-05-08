@@ -40,6 +40,7 @@ const isPublicRoute = createRouteMatcher([
   "/opengraph-image/(.*)",
   "/social/(.*)",
   "/manifest.webmanifest",
+  "/roadmap",
   "/api/webhooks/(.*)",
   "/api/cron/(.*)",
   "/sitemap.xml",
@@ -67,9 +68,15 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
+  // Scope Clerk to routes that actually need auth. Unknown paths fall
+  // through to Next.js so branded 404 renders instead of a sign-in redirect.
   matcher: [
-    // Skip Next internals + static assets.
-    "/((?!_next|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2?|ttf|eot|ico|css|js)$).*)",
-    "/(api|trpc)(.*)",
+    "/app/:path*",
+    "/api/:path*",
+    "/sign-in/:path*",
+    "/sign-up/:path*",
+    "/welcome/:path*",
+    "/redeem/:path*",
+    "/invite/:path*",
   ],
 };

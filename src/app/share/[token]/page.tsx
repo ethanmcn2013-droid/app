@@ -4,7 +4,7 @@ import { ShareBoard } from "@/components/app/share/share-board";
 import { GuestAuthProvider } from "@/components/app/guest/guest-auth-context";
 import { Wordmark } from "@/components/brand/wordmark";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function SharePage({
   params,
@@ -12,7 +12,12 @@ export default async function SharePage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const data = await resolveShareLink(token);
+  let data;
+  try {
+    data = await resolveShareLink(token);
+  } catch {
+    notFound();
+  }
   if (!data) notFound();
 
   return (

@@ -27,7 +27,7 @@ export function SiteNav() {
             aria-label="studio. — parent brand"
           >
             <span
-              className="text-[11px] font-medium tracking-[-0.01em] transition-colors hover:text-ink-soft"
+              className="text-[11px] font-medium tracking-[-0.05em] transition-colors hover:text-ink-soft"
               style={{ color: "var(--ink-quiet)" }}
             >
               studio.
