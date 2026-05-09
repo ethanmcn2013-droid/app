@@ -4,26 +4,33 @@ import { Wordmark } from "@/components/brand/wordmark";
 const STUDIO_URL =
   process.env.NEXT_PUBLIC_STUDIO_URL ?? "https://studio-sigma-pied-75.vercel.app";
 
+const ROADMAP_URL =
+  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "https://roadmap-ebon-eight.vercel.app";
+
+const ANALYTICS_URL =
+  process.env.NEXT_PUBLIC_ANALYTICS_URL ?? "https://analytics-phi-ten.vercel.app";
+
 export function SiteFooter() {
   return (
     <footer className="mt-32 border-t border-line-soft/70 pb-10 pt-16">
-      <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-6 md:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div>
           <Wordmark size="lg" />
           <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-            A live task workspace built for momentum. Real-time, multi-view, AI
-            aware.
+            A live task workspace. Four views, real-time when it matters,
+            plain-English dates.
           </p>
           <p className="mt-4 text-[12px] text-ink-quiet">
-            Made by{" "}
+            A{" "}
             <a
               href={STUDIO_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="font-medium text-ink-soft transition-colors hover:text-ink"
             >
-              studio.
-            </a>
+              Signal Studio
+            </a>{" "}
+            product.
           </p>
         </div>
         <FooterCol
@@ -42,11 +49,6 @@ export function SiteFooter() {
             { href: "/pricing", label: "Pricing" },
             { href: "/for/students", label: "Free for students" },
             { href: "/changelog", label: "Changelog" },
-            {
-              href: "https://roadmap-ebon-eight.vercel.app",
-              label: "Roadmap",
-              external: true,
-            },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
           ]}
@@ -63,10 +65,17 @@ export function SiteFooter() {
             { href: "mailto:ethanmcn2013@gmail.com", label: "Contact" },
           ]}
         />
+        <FooterCol
+          heading="Suite"
+          links={[
+            { href: STUDIO_URL,    label: "Signal Studio",    external: true },
+            { href: ROADMAP_URL,   label: "Signal Roadmap",   external: true },
+            { href: ANALYTICS_URL, label: "Signal Analytics", external: true },
+          ]}
+        />
       </div>
       <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-line-soft/70 px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
-        <span>© {new Date().getFullYear()} Tasks. Designed in motion.</span>
-        <span>Built with Next.js 16 · React 19 · Motion</span>
+        <span>© {new Date().getFullYear()} Signal Tasks. Designed in motion.</span>
       </div>
     </footer>
   );

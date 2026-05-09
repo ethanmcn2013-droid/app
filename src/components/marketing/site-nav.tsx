@@ -12,33 +12,61 @@ const STUDIO_URL =
   process.env.NEXT_PUBLIC_STUDIO_URL ??
   "https://studio-sigma-pied-75.vercel.app";
 
+const ROADMAP_URL =
+  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "https://roadmap-ebon-eight.vercel.app";
+
+const ANALYTICS_URL =
+  process.env.NEXT_PUBLIC_ANALYTICS_URL ?? "https://analytics-phi-ten.vercel.app";
+
 export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-line-soft/60 bg-bg/72 backdrop-blur-md backdrop-saturate-150">
-      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
-        {/* Brand lockup: studio. chip + divider + Tasks wordmark */}
-        <div className="flex items-center gap-0">
-          {/* studio. parent-brand chip — visible at all widths, smaller on mobile */}
+      {/* ── Suite chrome — cross-product strip ──────────────────── */}
+      <div
+        className="border-b border-border-soft"
+        style={{ background: "color-mix(in srgb, var(--bg-deep) 55%, transparent)" }}
+      >
+        <div
+          className="mx-auto flex h-7 w-full max-w-[1240px] items-center px-6"
+          style={{ gap: 16 }}
+        >
           <a
             href={STUDIO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center"
-            aria-label="studio. — parent brand"
+            className="suite-link"
+            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
           >
-            <span
-              className="text-[10px] font-medium tracking-[-0.05em] transition-colors hover:text-ink-soft sm:text-[11px]"
-              style={{ color: "var(--ink-quiet)" }}
-            >
-              studio.
-            </span>
+            signal studio<span style={{ color: "var(--accent, #c9a96a)" }}>.</span>
           </a>
-          {/* Hairline vertical divider */}
-          <span
-            aria-hidden
-            className="mx-1.5 block h-3.5 w-px sm:mx-2.5"
-            style={{ background: "color-mix(in srgb, var(--ink-quiet) 35%, transparent)" }}
-          />
+          <span aria-hidden style={{ color: "var(--ink-faint)", fontSize: 10 }}>·</span>
+          <span style={{ fontSize: 11, color: "var(--ink)", fontWeight: 600, letterSpacing: "-0.01em" }}>
+            tasks
+          </span>
+          <a
+            href={ROADMAP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="suite-link"
+            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
+          >
+            roadmap
+          </a>
+          <a
+            href={ANALYTICS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="suite-link"
+            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
+          >
+            analytics
+          </a>
+        </div>
+      </div>
+
+      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
+        {/* Brand lockup: Tasks wordmark */}
+        <div className="flex items-center gap-0">
           <Wordmark size="md" />
         </div>
         <nav className="hidden items-center gap-7 text-[13px] text-ink-soft md:flex">
