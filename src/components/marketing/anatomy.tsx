@@ -113,7 +113,7 @@ const ANN = [
   },
   {
     label: "Idle indicator",
-    note: "Appears at 2 days. Drives the AI nudge surface.",
+    note: "Appears at 2 days. Drives the stuck-work prompt.",
   },
   {
     label: "Comment count",

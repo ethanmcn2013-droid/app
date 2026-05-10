@@ -317,7 +317,7 @@ export function CinematicDemo({
         if (!aliveRef.current) return;
         await waitWhilePaused();
 
-        // ────── Scene D: AI nudge ──────
+        // ────── Scene D: stuck-work prompt ──────
         await sceneNudge();
         if (!aliveRef.current) return;
         await sceneSettle();
