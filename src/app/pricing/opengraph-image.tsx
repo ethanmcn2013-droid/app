@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
 export const alt = "Tasks — priced honestly";
@@ -128,7 +129,7 @@ export default async function PricingOG() {
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>tasks.app/pricing</div>
+          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/pricing</div>
           <div style={{ display: "flex" }}>per workspace, never per seat</div>
         </div>
       </div>

@@ -22,7 +22,11 @@ import { seedIfEmpty } from "./seed";
  * var, which is useful for post-migration smoke tests.
  */
 
-if (process.env.VERCEL === "1" && !process.env.TASKS_DATABASE_URL) {
+if (
+  process.env.VERCEL === "1" &&
+  process.env.VERCEL_ENV === "production" &&
+  !process.env.TASKS_DATABASE_URL
+) {
   throw new Error(
     "TASKS_DATABASE_URL is required in Vercel environments. " +
       "Set it (and TASKS_AUTH_TOKEN) in the Vercel project settings.",
@@ -42,13 +46,20 @@ export const db = drizzle(client, { schema });
 // exits immediately.
 const globalForDb = globalThis as unknown as { _seeded?: boolean };
 
-if (!globalForDb._seeded) {
+if (process.env.NODE_ENV === "development" && !globalForDb._seeded) {
   globalForDb._seeded = true;
   // Fire-and-forget: seed errors are logged but don't crash the
   // module load. The DB is usable even if seed fails (e.g. already
   // seeded, or a transient network hiccup on first cold start).
-  seedIfEmpty(db).catch((err) => {
+  try {
+    void Promise.resolve(
+      seedIfEmpty(db as unknown as Parameters<typeof seedIfEmpty>[0]),
+    ).catch((err) => {
+      globalForDb._seeded = false;
+      console.error("[db] seedIfEmpty failed:", err);
+    });
+  } catch (err) {
     globalForDb._seeded = false;
     console.error("[db] seedIfEmpty failed:", err);
-  });
+  }
 }

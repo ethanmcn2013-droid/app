@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
+import { ANALYTICS_URL, NOTES_URL, ROADMAP_URL, STUDIO_URL } from "@/lib/product-urls";
 
 const NAV = [
   { href: "/#features", label: "Features" },
@@ -7,16 +8,6 @@ const NAV = [
   { href: "/pricing", label: "Pricing" },
   { href: "/changelog", label: "Changelog" },
 ];
-
-const STUDIO_URL =
-  process.env.NEXT_PUBLIC_STUDIO_URL ??
-  "https://studio-sigma-pied-75.vercel.app";
-
-const ROADMAP_URL =
-  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "https://roadmap-ebon-eight.vercel.app";
-
-const ANALYTICS_URL =
-  process.env.NEXT_PUBLIC_ANALYTICS_URL ?? "https://analytics-phi-ten.vercel.app";
 
 export function SiteNav() {
   return (
@@ -60,6 +51,15 @@ export function SiteNav() {
             style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
           >
             analytics
+          </a>
+          <a
+            href={NOTES_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="suite-link"
+            style={{ fontSize: 11, color: "var(--ink-faint)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
+          >
+            notes
           </a>
         </div>
       </div>

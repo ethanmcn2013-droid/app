@@ -1,5 +1,6 @@
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
   title: "Privacy — Tasks",
@@ -135,7 +136,7 @@ export default function PrivacyPage() {
                 the whole workspace from settings, and we mean delete —
                 see the retention paragraph above. If any of that
                 doesn&rsquo;t work or you want a human to do it for
-                you, email <Link href="mailto:hello@tasks.app">hello@&lt;domain&gt;</Link>{" "}
+                you, email <Link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</Link>{" "}
                 and we&rsquo;ll handle it within five business days.
               </p>
               <p>
@@ -182,8 +183,8 @@ export default function PrivacyPage() {
               <p>
                 Privacy questions, deletion requests, data exports,
                 anything in this notice you want explained:{" "}
-                <Link href="mailto:hello@tasks.app">
-                  hello@&lt;domain&gt;
+                <Link href={`mailto:${CONTACT_EMAIL}`}>
+                  {CONTACT_EMAIL}
                 </Link>
                 . Mailing address: [NEEDS-REVIEW: add postal address
                 once entity is formed].

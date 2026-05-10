@@ -47,7 +47,7 @@ export function AiNudge({
             </div>
             <div className="flex-1">
               <div className="text-[10.5px] font-semibold uppercase tracking-wider text-brand">
-                Tasks AI
+                Signal nudge
               </div>
               <div className="mt-1 text-[12.5px] leading-snug text-ink">
                 <span className="font-semibold">{taskTitle}</span> has been idle

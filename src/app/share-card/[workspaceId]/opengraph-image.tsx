@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { tasks, workspaces } from "@/server/db/schema";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 // nodejs runtime — reads the dev SQLite DB via better-sqlite3.
 //
@@ -207,8 +208,8 @@ export default async function ShareCardOG({
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>tasks.app/p/{ws.slug}</div>
-          <div style={{ display: "flex" }}>Made with Tasks</div>
+          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/p/{ws.slug}</div>
+          <div style={{ display: "flex" }}>Made with Signal Tasks</div>
         </div>
       </div>
     ),

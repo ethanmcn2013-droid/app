@@ -62,7 +62,7 @@ const TIERS: Tier[] = [
       "Unlimited workspaces",
       "Recurring tasks — weekly psets, monthly invoices",
       "Calendar feed — Apple, Google, Outlook subscribe to your tasks",
-      "Tasks AI nudges — Haiku 4.5 surfaces stuck cards, never closes them",
+      "Stuck-work nudges — surfaces quiet cards, never closes them",
       "Cross-workspace search and overdue triage",
     ],
     cta: "Start free trial",

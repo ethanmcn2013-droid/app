@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
-export const alt = "Project management shouldn't be behind a paywall.";
+export const alt = "Signal Tasks — execution clarity";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -105,7 +106,7 @@ export default async function AboutOG() {
             marginTop: 32,
           }}
         >
-          <div style={{ display: "flex" }}>tasks.app/about</div>
+          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/about</div>
           <div style={{ display: "flex" }}>jargon out · tool in</div>
         </div>
       </div>

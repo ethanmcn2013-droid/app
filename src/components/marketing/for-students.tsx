@@ -200,7 +200,7 @@ export function ForStudents() {
           Pro is free for the semester. Unlimited workspaces — one per
           class, one for the job search, one for the part-time shift,
           one for the trip you&rsquo;re planning over spring break.
-          Recurring tasks for weekly problem sets. AI nudges for the
+          Recurring tasks for weekly problem sets. Stuck-work nudges for the
           stuff that&rsquo;s slipping. Apply once, get the code, run
           the rest of the semester on it.
         </p>

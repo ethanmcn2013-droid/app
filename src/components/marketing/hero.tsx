@@ -30,12 +30,12 @@ export function Hero() {
       <div className="mx-auto w-full max-w-[1240px] px-5 md:px-6">
         <Eyebrow />
         <h1 className="mt-5 max-w-[14ch] text-balance text-[clamp(2.6rem,1.8rem+4.6vw,5.5rem)] font-semibold leading-[0.96] tracking-[-0.045em] text-ink">
-          Project management for the 80%.
+          Execution clarity for live work.
         </h1>
         <p className="mt-6 max-w-[54ch] text-[17px] leading-[1.55] text-ink-soft">
-          For people who don&rsquo;t work in tech. Four views of the same list,
-          real-time when it matters, plain-English dates — no sprints, no epics,
-          no learning curve.
+          Four views of the same list, real-time when it matters,
+          plain-English dates, and no vocabulary tax. The work stays
+          readable while it moves.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -62,7 +62,7 @@ export function Hero() {
             href="#features"
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-5 py-2.5 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
           >
-            See what's inside
+            See what&rsquo;s inside
           </a>
         </div>
         <p className="mt-3 inline-flex items-center gap-2 text-[12.5px] text-ink-faint">

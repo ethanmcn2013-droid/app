@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
 export const alt = "Tasks Pro, free for students.";
@@ -71,7 +72,7 @@ export default async function StudentsOG() {
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>tasks.app/students</div>
+          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/students</div>
           <div style={{ display: "flex" }}>·</div>
           <div style={{ display: "flex" }}>$0 · 365 days · re-verify yearly</div>
         </div>

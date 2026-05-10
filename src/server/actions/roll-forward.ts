@@ -93,12 +93,11 @@ export async function rollForwardIncompleteAction(): Promise<{
     return { ok: true, rolled: 0 };
   }
 
-  // Single transaction so the inbox flips atomically. better-sqlite3
-  // exposes a synchronous transaction; matches the import path.
+  // Single transaction so the inbox flips atomically.
   const updatedAt = new Date();
-  db.transaction((tx) => {
+  await db.transaction(async (tx) => {
     for (const q of queued) {
-      tx.update(tasks)
+      await tx.update(tasks)
         .set({
           dueAt: q.nextDueAt,
           // Only overwrite the human label when the row already had

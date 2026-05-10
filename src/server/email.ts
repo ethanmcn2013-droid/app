@@ -1,9 +1,10 @@
 import "server-only";
 import { Resend } from "resend";
 import type { DailyDigest } from "@/server/db/daily-digest";
+import { CONTACT_EMAIL, TASKS_DOMAIN, TASKS_URL } from "@/lib/product-urls";
 
 const KEY = process.env.RESEND_API_KEY;
-const FROM = process.env.RESEND_FROM ?? "Tasks <hello@tasks.app>";
+const FROM = process.env.RESEND_FROM ?? `Signal Tasks <${CONTACT_EMAIL}>`;
 const BCC_DEV = process.env.RESEND_BCC_DEV;
 
 export const resend: Resend | null = KEY ? new Resend(KEY) : null;
@@ -85,7 +86,7 @@ export function inviteEmailHtml(input: {
           </p>
         </td></tr>
       </table>
-      <p style="font-size:11.5px;color:#94a3b8;margin:24px 0 0;letter-spacing:0.04em;">tasks.app · Made for the 80% who don&rsquo;t work in tech</p>
+      <p style="font-size:11.5px;color:#94a3b8;margin:24px 0 0;letter-spacing:0.04em;">${TASKS_DOMAIN} · Made for the 80% who don&rsquo;t work in tech</p>
     </td></tr>
   </table>
 </body></html>
@@ -132,8 +133,8 @@ export function digestEmailHtml(digest: DailyDigest, recipientName: string): str
     <hr style="margin:28px 0;border:0;border-top:1px solid #e5e7eb">
     <p style="margin:0;font-size:11.5px;color:#94a3b8;line-height:1.55">
       Tasks. Anti-spam by design — this is the only scheduled email we send.
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://tasks.app"}/app/inbox" style="color:#4f46e5;text-decoration:none">Open inbox</a> ·
-      <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "https://tasks.app"}/app/settings" style="color:#94a3b8;text-decoration:none">Notification settings</a>
+      <a href="${TASKS_URL}/app/inbox" style="color:#4f46e5;text-decoration:none">Open inbox</a> ·
+      <a href="${TASKS_URL}/app/settings" style="color:#94a3b8;text-decoration:none">Notification settings</a>
     </p>
   </div>
 </body></html>`;

@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { ROADMAP_URL } from "@/lib/product-urls";
 import { SectionHeading } from "@/components/marketing/features";
 
 export const dynamic = "force-dynamic";
@@ -168,12 +169,12 @@ export default async function ChangelogPage() {
           <div className="mt-16 border-t border-line-soft/70 pt-6 text-[12.5px] text-ink-quiet">
             The full cross-project roadmap lives at{" "}
             <a
-              href="https://ethanmcnamara.vercel.app/roadmap"
+              href={ROADMAP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-ink underline decoration-ink-quiet/40 underline-offset-[3px] transition-colors hover:decoration-ink"
             >
-              ethanmcnamara.com/roadmap
+              Signal Roadmap
             </a>
             .
           </div>

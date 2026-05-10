@@ -1,5 +1,6 @@
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
   title: "Terms — Tasks",
@@ -58,8 +59,8 @@ export default function TermsPage() {
                 for keeping your password (or OAuth provider) secure;
                 if something happens because someone else got into your
                 account, that&rsquo;s on you. Tell us at{" "}
-                <Link href="mailto:hello@tasks.app">
-                  hello@&lt;domain&gt;
+                <Link href={`mailto:${CONTACT_EMAIL}`}>
+                  {CONTACT_EMAIL}
                 </Link>{" "}
                 if you suspect a breach and we&rsquo;ll help shut it
                 down.
@@ -193,8 +194,8 @@ export default function TermsPage() {
             <Section title="Contact">
               <p>
                 Questions about these terms or anything in them:{" "}
-                <Link href="mailto:hello@tasks.app">
-                  hello@&lt;domain&gt;
+                <Link href={`mailto:${CONTACT_EMAIL}`}>
+                  {CONTACT_EMAIL}
                 </Link>
                 .
               </p>

@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { TEMPLATES } from "@/lib/templates";
+import { TASKS_URL } from "@/lib/product-urls";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tasks.app";
+const BASE_URL = TASKS_URL;
 
 /**
  * Sitemap. Every public marketing surface is enumerated here so

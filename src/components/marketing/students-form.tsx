@@ -193,7 +193,7 @@ function FineGrain() {
       {[
         {
           h: "1 year of Pro",
-          b: "Unlimited workspaces, recurring tasks, integrations, AI nudges. Same Pro everyone else pays for.",
+          b: "Unlimited workspaces, recurring tasks, integrations, stuck-work nudges. Same Pro everyone else pays for.",
         },
         {
           h: ".edu only",

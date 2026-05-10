@@ -1,4 +1,5 @@
 import type { LaneId, Priority, Task, UserId } from "@/lib/data";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export type DomainId =
   | "marketing"
@@ -23,7 +24,7 @@ export type DomainPack = {
   workspaceTitle: string;
   /** Replaces "Team › Marketing" crumb in demo subheader. */
   workspaceCrumb: string;
-  /** Replaces tasks.app/team/marketing in demo browser-chrome. */
+  /** Replaces tasks.signalstudio.ie/team/marketing in demo browser-chrome. */
   workspaceUrl: string;
   /** Single comment posted by the autonomous demo's typing scene. */
   demoCommentText: string;
@@ -54,7 +55,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "launch plays · campaigns · analytics",
     workspaceTitle: "Q3 Launch · Plays in motion",
     workspaceCrumb: "Marketing",
-    workspaceUrl: "tasks.app/team/marketing",
+    workspaceUrl: `${TASKS_DOMAIN}/team/marketing`,
     demoCommentText: "Hero animation looks great — shipping today 🚀",
     emptyStateHeadline: "This is where your launch plan goes.",
     emptyStateBody:
@@ -116,7 +117,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "papers · midterms · group projects",
     workspaceTitle: "Spring semester · Junior year",
     workspaceCrumb: "School",
-    workspaceUrl: "tasks.app/me/school",
+    workspaceUrl: `${TASKS_DOMAIN}/me/school`,
     demoCommentText: "Group's meeting at the library tonight at 7 📚",
     emptyStateHeadline: "This is where your semester comes together.",
     emptyStateBody:
@@ -175,7 +176,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "ship · invoice · ignore Slack · ship more",
     workspaceTitle: "Q2 client work · Solo studio",
     workspaceCrumb: "Studio",
-    workspaceUrl: "tasks.app/me/studio",
+    workspaceUrl: `${TASKS_DOMAIN}/me/studio`,
     demoCommentText:
       "Pushed v2.4.1 — Aurora staging green, prod deploy at 5pm ✓",
     emptyStateHeadline: "This is where the client work actually ships.",
@@ -280,7 +281,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "calls · jobs · invoices · ladder back in the truck",
     workspaceTitle: "Wired Right · January route",
     workspaceCrumb: "Trades",
-    workspaceUrl: "tasks.app/me/trades",
+    workspaceUrl: `${TASKS_DOMAIN}/me/trades`,
     demoCommentText:
       "Panel upgrade priced — quote out to the Hartwells tonight.",
     emptyStateHeadline: "This is where the day's calls live.",
@@ -368,7 +369,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "venues · vendors · vows · run-of-show",
     workspaceTitle: "Hartwell Wedding · 6.14.26",
     workspaceCrumb: "Weddings",
-    workspaceUrl: "tasks.app/weddings/hartwell",
+    workspaceUrl: `${TASKS_DOMAIN}/weddings/hartwell`,
     demoCommentText: "Florals confirmed — peonies & garden roses 🌿",
     emptyStateHeadline: "This is where the day comes together.",
     emptyStateBody:
