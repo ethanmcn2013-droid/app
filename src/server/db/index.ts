@@ -22,7 +22,11 @@ import { seedIfEmpty } from "./seed";
  * var, which is useful for post-migration smoke tests.
  */
 
-if (process.env.VERCEL === "1" && !process.env.TASKS_DATABASE_URL) {
+if (
+  process.env.VERCEL === "1" &&
+  process.env.VERCEL_ENV === "production" &&
+  !process.env.TASKS_DATABASE_URL
+) {
   throw new Error(
     "TASKS_DATABASE_URL is required in Vercel environments. " +
       "Set it (and TASKS_AUTH_TOKEN) in the Vercel project settings.",
