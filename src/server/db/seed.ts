@@ -12,8 +12,6 @@ import {
   comments,
   tasks,
   users,
-  workspaces,
-  workspaceMembers,
 } from "./schema";
 
 type DbType = ReturnType<typeof drizzle<typeof import("./schema")>>;
@@ -126,8 +124,7 @@ export function seedIfEmpty(db: DbType): void {
 if (require.main === module) {
   // Imported lazily to avoid circular boot.
   import("./index").then(({ db }) => {
-    seedIfEmpty(db);
-    // eslint-disable-next-line no-console
+    seedIfEmpty(db as unknown as DbType);
     console.log("seed: done");
   });
 }

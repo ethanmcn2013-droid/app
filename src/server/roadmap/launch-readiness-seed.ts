@@ -38,7 +38,7 @@ const SEED_BLOCKERS: SeedBlocker[] = [
     kind: "purchase",
     targetDate: "2026-05-08",
     description:
-      "Purchase tasks.app or alternative; transfer to Vercel; set DNS A/AAAA + CNAME + MX. Unblocks every URL swap across drafts and the email-from-domain story.",
+      "Use tasks.signalstudio.ie as the canonical Tasks domain; set DNS A/AAAA + CNAME + MX. Unblocks every URL swap across drafts and the email-from-domain story.",
   },
   {
     id: "B-elevenlabs",
@@ -137,7 +137,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-dns-mx", category: "Domain & DNS", title: "Set MX records for email forwarding", description: "Forward hello@ and ethan@ to ethanmcn2013@gmail.com via Vercel Email Forwarding or registrar's forwarding.", blockerId: "B-domain", priority: "P1" },
   { id: "AI-dns-spf-dkim-dmarc", category: "Domain & DNS", title: "SPF + DKIM + DMARC for Resend sending", description: "Required so press emails / digest emails don't land in spam. Resend dashboard provides the exact records.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-dns-tls", category: "Domain & DNS", title: "TLS cert auto-issued + verified", description: "Vercel handles via Let's Encrypt; verify the cert resolves on apex + www + any preview branch.", blockerId: "B-domain", priority: "P0" },
-  { id: "AI-url-swap-cascade", category: "Domain & DNS", title: "Sed-swap tasks-nu-hazel.vercel.app → new domain across docs/", description: "Once domain is live, run `find docs -name '*.md' -exec sed -i '' 's|tasks-nu-hazel.vercel.app|<new-domain>|g' {} +`.", blockerId: "B-domain", priority: "P0" },
+  { id: "AI-url-swap-cascade", category: "Domain & DNS", title: "Sed-swap old Vercel preview URLs → canonical domain across docs/", description: "Once domain is live, replace the legacy preview hostname across docs with tasks.signalstudio.ie.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-update-env-site-url", category: "Domain & DNS", title: "Update NEXT_PUBLIC_SITE_URL on Vercel", description: "Sitemaps, OG URLs, absolute share-link URLs all read from this var. Redeploy after change.", blockerId: "B-domain", priority: "P0" },
 
   // ─── Hosting & deployment ─────────────────────────────────────────
@@ -376,7 +376,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   // ─── Background jobs & queues ────────────────────────────────────
   { id: "AI-jobs-platform", category: "Background jobs", title: "Pick: Vercel Cron only at launch", description: "Inngest and Trigger.dev are great, but Vercel Cron handles the digest cron with zero added complexity. Move to Inngest when you need fan-out or retries.", blockerId: null, priority: "P1" },
   { id: "AI-jobs-digest-cron", category: "Background jobs", title: "Digest cron implemented as Vercel Cron", description: "Already wired via vercel.json. Verified daily at 9am ET (AI-vercel-cron-digest). Migrate to Inngest only if cron contention or fan-out emerges.", blockerId: null, priority: "P1" },
-  { id: "AI-jobs-ai-nudges", category: "Background jobs", title: "AI nudge generation: Inngest when shipping", description: "AI nudges need retries and idempotency that Vercel Cron doesn't gracefully provide. When the feature ships, route through Inngest.", blockerId: null, priority: "P2" },
+  { id: "AI-jobs-ai-nudges", category: "Background jobs", title: "Nudge generation: Inngest when shipping", description: "Stuck-work nudges need retries and idempotency that Vercel Cron doesn't gracefully provide. When the feature ships, route through Inngest.", blockerId: null, priority: "P2" },
   { id: "AI-jobs-retry-logic", category: "Background jobs", title: "Retry logic for webhook handlers", description: "Stripe and Clerk both retry on 5xx, but our handlers should be idempotent regardless. Document retry semantics per route in a comment header.", blockerId: null, priority: "P1" },
   { id: "AI-jobs-dlq", category: "Background jobs", title: "Dead-letter queue for failed jobs", description: "Once Inngest is in: failed-after-retries jobs land in DLQ + Slack alert. Pre-Inngest, Sentry catches the throw and that's the DLQ proxy.", blockerId: null, priority: "P2" },
   { id: "AI-jobs-observability", category: "Background jobs", title: "Cron observability via Vercel Logs + Sentry", description: "Verify every cron run emits a log line with duration + result; Sentry catches throws. Without this, silent failures rot for weeks.", blockerId: null, priority: "P1" },

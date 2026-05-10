@@ -118,7 +118,7 @@ const REFUSALS: { title: string; body: string }[] = [
   {
     title: "No AI agent that runs your tasks for you.",
     body:
-      "The dopamine of crossing it off is not outsourceable. An agent that auto-completes the list trains you to dread the app — every visit becomes confirmation that the work happened without you. Tasks AI surfaces what&rsquo;s stuck; it never closes the loop on your behalf.",
+      "The dopamine of crossing it off is not outsourceable. An agent that auto-completes the list trains you to dread the app — every visit becomes confirmation that the work happened without you. Signal Tasks surfaces what&rsquo;s stuck; it never closes the loop on your behalf.",
   },
   {
     title: "No real-time push notifications.",

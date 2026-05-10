@@ -31,7 +31,7 @@ export default async function InboxPage() {
       getTasks(ws),
       buildWeeklySnapshotFor(ws),
       // Lightweight name + slug lookup for the Slack-ready summary
-      // headline + the trailing `tasks.app/p/{slug}` link. One row;
+      // headline + the trailing `tasks.signalstudio.ie/p/{slug}` link. One row;
       // cheap enough to live alongside the other parallel reads.
       db
         .select({ name: workspaces.name, slug: workspaces.slug })

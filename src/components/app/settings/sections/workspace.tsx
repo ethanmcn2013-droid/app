@@ -9,6 +9,7 @@ import {
   updateWorkspaceAction,
 } from "@/server/actions/settings";
 import { DOMAINS, DOMAIN_ORDER, type DomainId } from "@/lib/domains";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 import { SectionHeader } from "../settings-app";
 import type { SettingsWorkspace } from "../settings-app";
 
@@ -294,7 +295,7 @@ function PublishBlock({
       <Label>Publish to the web</Label>
       <Caption>
         Publishing makes a read-only version of this workspace visible
-        at <code className="rounded bg-bg-sunken/80 px-1 py-0.5 text-[11.5px]">tasks.app/p/{workspace.slug}</code>.
+        at <code className="rounded bg-bg-sunken/80 px-1 py-0.5 text-[11.5px]">{TASKS_DOMAIN}/p/{workspace.slug}</code>.
         Anyone with the link can see your tasks and lanes — no signup,
         no account. Looks like a real website, not the app.
       </Caption>

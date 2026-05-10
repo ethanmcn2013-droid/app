@@ -1,5 +1,6 @@
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
   title: "Security — Tasks",
@@ -129,10 +130,10 @@ export default function SecurityPage() {
             <Section title="Reporting a vulnerability">
               <p>
                 If you find something, email{" "}
-                <Link href="mailto:security@tasks.app">
-                  security@&lt;domain&gt;
+                <Link href={`mailto:${CONTACT_EMAIL}`}>
+                  {CONTACT_EMAIL}
                 </Link>
-                . PGP key fingerprint: [NEEDS-REVIEW: publish PGP key
+                {" "}with Security in the subject. PGP key fingerprint: [NEEDS-REVIEW: publish PGP key
                 fingerprint once generated]. We respond within
                 seventy-two hours, usually faster. We don&rsquo;t run
                 a paid bug bounty yet, but we credit researchers who

@@ -1,5 +1,6 @@
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { taskUrl } from "@/lib/product-urls";
 
 export const metadata = {
   title: "Press — Tasks",
@@ -140,22 +141,22 @@ export default function PressPage() {
               </p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5">
                 <li>
-                  <Link href="https://tasks-nu-hazel.vercel.app/opengraph-image">
+                  <Link href={taskUrl("/opengraph-image")}>
                     Primary OG card (1200×630, PNG)
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://tasks-nu-hazel.vercel.app/social/x-pinned/opengraph-image">
+                  <Link href={taskUrl("/social/x-pinned/opengraph-image")}>
                     X/Twitter pinned card
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://tasks-nu-hazel.vercel.app/social/bluesky-pinned/opengraph-image">
+                  <Link href={taskUrl("/social/bluesky-pinned/opengraph-image")}>
                     Bluesky pinned card
                   </Link>
                 </li>
                 <li>
-                  <Link href="https://tasks-nu-hazel.vercel.app/app/board">
+                  <Link href={taskUrl("/app/board")}>
                     Live demo (open in your browser, screenshot freely)
                   </Link>
                 </li>

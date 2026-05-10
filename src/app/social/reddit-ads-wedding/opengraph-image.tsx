@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 // nodejs runtime — see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
@@ -273,7 +274,7 @@ export default async function RedditAdsWeddingOG() {
               letterSpacing: "-0.005em",
             }}
           >
-            Per-workspace pricing. tasks-nu-hazel.vercel.app/for/weddings
+            Per-workspace pricing. {TASKS_DOMAIN}/for/weddings
           </div>
         </div>
       </div>

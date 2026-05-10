@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
-
-const STUDIO_URL =
-  process.env.NEXT_PUBLIC_STUDIO_URL ?? "https://studio-sigma-pied-75.vercel.app";
-
-const ROADMAP_URL =
-  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "https://roadmap-ebon-eight.vercel.app";
-
-const ANALYTICS_URL =
-  process.env.NEXT_PUBLIC_ANALYTICS_URL ?? "https://analytics-phi-ten.vercel.app";
+import {
+  ANALYTICS_URL,
+  CONTACT_EMAIL,
+  NOTES_URL,
+  ROADMAP_URL,
+  STUDIO_URL,
+} from "@/lib/product-urls";
 
 export function SiteFooter() {
   return (
@@ -17,8 +15,8 @@ export function SiteFooter() {
         <div>
           <Wordmark size="lg" />
           <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-            A live task workspace. Four views, real-time when it matters,
-            plain-English dates.
+            Execution clarity for live work. Four views, real-time
+            when it matters, plain-English dates.
           </p>
           <p className="mt-4 text-[12px] text-ink-quiet">
             A{" "}
@@ -62,7 +60,7 @@ export function SiteFooter() {
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
             { href: "/status", label: "Status" },
-            { href: "mailto:ethanmcn2013@gmail.com", label: "Contact" },
+            { href: `mailto:${CONTACT_EMAIL}`, label: "Contact" },
           ]}
         />
         <FooterCol
@@ -71,6 +69,7 @@ export function SiteFooter() {
             { href: STUDIO_URL,    label: "Signal Studio",    external: true },
             { href: ROADMAP_URL,   label: "Signal Roadmap",   external: true },
             { href: ANALYTICS_URL, label: "Signal Analytics", external: true },
+            { href: NOTES_URL,     label: "Signal Notes",     external: true },
           ]}
         />
       </div>

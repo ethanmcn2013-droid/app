@@ -110,9 +110,8 @@ export async function importCsvAction(
 
   const newIds: string[] = [];
 
-  // better-sqlite3 + Drizzle expose a synchronous transaction; everything
-  // inside runs atomically and any throw rolls back.
-  db.transaction((tx) => {
+  // Drizzle/libSQL runs the batch in one transaction; any throw rolls back.
+  await db.transaction(async (tx) => {
     for (const raw of inputs) {
       const title = (raw.title ?? "").trim();
       if (!title) {
@@ -125,7 +124,7 @@ export async function importCsvAction(
       positions[lane] = (positions[lane] ?? 0) + 1;
       const id = freshId();
       const dueAt = coerceDate(raw.dueAt);
-      tx.insert(tasks)
+      await tx.insert(tasks)
         .values({
           id,
           workspaceId: ws,

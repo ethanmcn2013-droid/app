@@ -1,6 +1,6 @@
 /**
  * `/embed.js` — the one-step embed bootstrapper. A blogger drops a
- * single `<script src="https://tasks.app/embed.js" async>` onto their
+ * single `<script src="https://tasks.signalstudio.ie/embed.js" async>` onto their
  * page; this script finds every `[data-tasks-workspace="{slug}"]`
  * element and injects a sandboxed iframe pointing at `/embed/{slug}`
  * on the same origin the script was served from.

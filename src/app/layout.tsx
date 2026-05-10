@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { TASKS_URL } from "@/lib/product-urls";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,15 +15,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tasks — work that moves itself forward",
+  title: "Signal Tasks — execution clarity",
   description:
-    "A live task workspace built for momentum. Real-time collaboration, multi-view planning, AI nudges, and motion that feels alive.",
-  metadataBase: new URL("https://tasks.app"),
+    "Execution clarity for live work: four views of the same list, plain-English dates, and enough motion to show what changed.",
+  metadataBase: new URL(TASKS_URL),
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "Tasks — work that moves itself forward",
+    title: "Signal Tasks — execution clarity",
     description:
-      "A live task workspace built for momentum. Multi-view, real-time, AI-aware.",
+      "A live task workspace for the work people actually do.",
     type: "website",
   },
 };

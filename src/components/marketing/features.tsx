@@ -14,8 +14,8 @@ const FEATURES = [
     glyph: "presence",
   },
   {
-    eyebrow: "Tasks AI",
-    title: "Nudges that ship the work",
+    eyebrow: "Nudges",
+    title: "Stuck work surfaces itself",
     body: "Every idle card, every blocked dependency, every quiet review — surfaced as a one-tap nudge. Built on your team's actual rhythm, not generic reminders.",
     glyph: "ai",
   },
@@ -55,8 +55,8 @@ export function Features() {
           }
         />
         <div className="mt-12 grid gap-px overflow-hidden rounded-2xl bg-line-soft md:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <FeatureCell key={f.eyebrow} feature={f} index={i} />
+          {FEATURES.map((f) => (
+            <FeatureCell key={f.eyebrow} feature={f} />
           ))}
         </div>
       </div>
@@ -66,10 +66,8 @@ export function Features() {
 
 function FeatureCell({
   feature,
-  index,
 }: {
   feature: (typeof FEATURES)[number];
-  index: number;
 }) {
   return (
     <div className="group relative overflow-hidden bg-bg-elevated p-7">

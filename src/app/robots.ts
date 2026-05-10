@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { TASKS_URL } from "@/lib/product-urls";
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tasks.app";
+const BASE_URL = TASKS_URL;
 
 export default function robots(): MetadataRoute.Robots {
   return {

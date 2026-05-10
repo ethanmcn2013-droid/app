@@ -149,11 +149,10 @@ export async function duplicateTaskAction(
     };
   });
 
-  // 5. Atomic batch insert. better-sqlite3 + Drizzle expose a sync
-  //    transaction; any throw inside rolls back.
-  db.transaction((tx) => {
+  // 5. Atomic batch insert. Any throw inside rolls back.
+  await db.transaction(async (tx) => {
     for (const r of rows) {
-      tx.insert(tasks).values(r).run();
+      await tx.insert(tasks).values(r).run();
     }
   });
 

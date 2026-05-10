@@ -65,7 +65,7 @@ export function InboxApp({
    *  predate the copy-slack-summary button still type-check. */
   workspaceName?: string;
   /** URL slug of the active workspace — used to build the
-   *  `tasks.app/p/{slug}` link in the Slack-ready summary. */
+   *  `tasks.signalstudio.ie/p/{slug}` link in the Slack-ready summary. */
   workspaceSlug?: string;
   /** Server-computed count of tasks overdue today. Drives whether
    *  the roll-forward button renders at all (zero → hidden). */
