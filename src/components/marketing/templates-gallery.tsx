@@ -49,10 +49,10 @@ export function TemplatesGallery({ templates }: { templates: Template[] }) {
           </span>
         </h1>
         <p className="mx-auto mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] text-ink-soft">
-          Wedding countdowns, thesis sprints, freelance onboarding,
-          tax-season checklists. The recurring stuff, ready to drop
-          into any workspace. Applies in one click. Doesn&rsquo;t
-          touch your existing tasks.
+          Wedding planning workspaces, thesis sprints, freelance
+          onboarding, tax-season checklists. The recurring stuff,
+          ready to drop into any workspace. Applies in one click.
+          Doesn&rsquo;t touch your existing tasks.
         </p>
 
         <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

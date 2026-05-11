@@ -13,7 +13,7 @@ import { getTemplateEssay } from "@/lib/template-essays";
  *     voiced long-form copy targeting a long-tail SERP query.
  *   - Light (no essay yet): same skeleton, falls back to the
  *     template's `description` and a generic heroline. Still a
- *     working URL with the apply CTA so all 12 slugs work day-one.
+ *     working URL with the apply CTA so every template slug works.
  *
  * `generateStaticParams` enumerates every template at build time so
  * the routes prerender — important for indexing.

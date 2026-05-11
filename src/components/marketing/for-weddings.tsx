@@ -5,10 +5,10 @@ import Link from "next/link";
  * planners. Sister to the eventual `/for/students` and
  * `/for/freelancers`. Voice: manifesto, dry, observational.
  *
- * The two strongest CTAs on this page are the wedding-3-month
- * countdown template and the day-of run-of-show template — both
- * already shipped. The pricing line ($79 once, for the workspace
- * that matters most) is the load-bearing commercial argument.
+ * The strongest CTA is now the full wedding planning workspace
+ * template, with the countdown and run-of-show as supporting
+ * checklists. The pricing line ($79 once, for the workspace that
+ * matters most) is the load-bearing commercial argument.
  */
 export function ForWeddings() {
   return (
@@ -58,9 +58,64 @@ export function ForWeddings() {
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The two templates that do most of the work.
+          Start with the workspace, then add the checklists.
         </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/templates/wedding-planning-workspace"
+            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)] sm:col-span-2"
+          >
+            <div className="flex items-start gap-3">
+              <span
+                aria-hidden
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-pink-500"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="8" />
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+                </svg>
+              </span>
+              <div className="min-w-0">
+                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
+                  Wedding planning workspace
+                </div>
+                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
+                  18 tasks · venue, suppliers, guests, decisions
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
+              The calm starting point: what is decided, what is waiting,
+              who owns the next step, and what needs attention before the
+              final week gets noisy.
+            </p>
+            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
+              Open the workspace template
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform group-hover:translate-x-0.5"
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
           <Link
             href="/templates/wedding-3-month-countdown"
             className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
@@ -232,10 +287,10 @@ export function ForWeddings() {
               </svg>
             </Link>
             <Link
-              href="/templates/wedding-3-month-countdown"
+              href="/templates/wedding-planning-workspace"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
-              Open a template free
+              Open the template free
             </Link>
           </div>
         </div>

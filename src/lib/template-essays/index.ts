@@ -1,4 +1,5 @@
 import type { TemplateEssay } from "./types";
+import { essay as weddingPlanningWorkspace } from "./wedding-planning-workspace";
 import { essay as weddingThreeMonth } from "./wedding-3-month-countdown";
 import { essay as weddingDayOfRunOfShow } from "./wedding-day-of-run-of-show";
 import { essay as finalPaperSprint } from "./final-paper-sprint";
@@ -19,10 +20,11 @@ import { essay as jobsitePunchlist } from "./jobsite-punchlist";
  * waves 2 and 3 land, more essays show up here without changes
  * elsewhere.
  *
- * Wave 2 of cycle 19 fills out the remaining eight essays so all
- * twelve templates ship with manifesto-voiced long-form copy.
+ * New template cycles can add long-form copy here without changing
+ * the route layer.
  */
 export const TEMPLATE_ESSAYS: Record<string, TemplateEssay> = {
+  [weddingPlanningWorkspace.templateId]: weddingPlanningWorkspace,
   [weddingThreeMonth.templateId]: weddingThreeMonth,
   [weddingDayOfRunOfShow.templateId]: weddingDayOfRunOfShow,
   [finalPaperSprint.templateId]: finalPaperSprint,

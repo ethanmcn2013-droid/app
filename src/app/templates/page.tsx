@@ -6,11 +6,11 @@ import { TEMPLATES } from "@/lib/templates";
 export const metadata = {
   title: "Templates — Tasks",
   description:
-    "Drop-in task lists. Wedding countdowns, thesis sprints, freelance onboarding — the work, pre-written. Apply with one click.",
+    "Drop-in task lists and starter workspaces. Wedding planning, thesis sprints, freelance onboarding - the work, pre-written. Apply with one click.",
   openGraph: {
     title: "Tasks templates — drop-in task lists",
     description:
-      "12 pre-written task lists for the moments that recur. Apply to any workspace. Free on every tier.",
+      "Pre-written task lists and starter workspaces for the moments that recur. Apply to any workspace. Free on every tier.",
     type: "website",
     images: ["/opengraph-image"],
   },
