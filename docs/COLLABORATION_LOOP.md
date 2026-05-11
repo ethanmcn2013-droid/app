@@ -65,3 +65,26 @@ For the wedding/events wedge, a couple or supplier should open a shared workspac
 - what is waiting
 - what happens next
 
+## Cycle 2: Invite And First View
+
+Tasks owns the "My work" section of the invited collaborator's first view.
+
+Role defaults for Tasks:
+
+- Creator can create, assign, edit, complete, and share task-based outputs.
+- Collaborator can see shared workspace context and update assigned/shared tasks.
+- Guest can only see selected task outputs, such as a checklist or follow-up.
+- Client / supplier can see the tasks and questions relevant to them.
+- Viewer can read a shared checklist or status update.
+
+Cycle 2 implementation targets:
+
+- assigned-task card for invited collaborators
+- plain-language waiting states
+- safe task visibility for guests
+- task update events for the shared activity model
+- checklist/status output that can be shared without exposing the whole workspace
+
+Acceptance test:
+
+A couple invited by a venue can see the follow-ups they own, what the venue owns, and what is waiting on a supplier without seeing private venue notes.
