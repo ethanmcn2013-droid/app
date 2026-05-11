@@ -88,3 +88,21 @@ Cycle 2 implementation targets:
 Acceptance test:
 
 A couple invited by a venue can see the follow-ups they own, what the venue owns, and what is waiting on a supplier without seeing private venue notes.
+
+## Cycle 6: Wedding Workspace Template
+
+Tasks now carries the first repeatable wedding/events proof asset:
+
+- `wedding-planning-workspace`
+- 18 plain-language tasks across venue, suppliers, guests, decisions, and final-week work
+- a long-form template page for search, outreach, and demo links
+- a stronger `/for/weddings` path that treats the full workspace as the primary starting point
+
+This is the first concrete answer to "a workspace creator should not start from a blank project-management shell."
+
+Next implementation targets:
+
+- connect template use to source/campaign tracking
+- add first-run guidance for venue coordinators, planners, and couples
+- connect the template to the Roadmap wedding shared update
+- add Notes meeting follow-up and Analytics Today Signal examples against the same wedding scene

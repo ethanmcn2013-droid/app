@@ -16,8 +16,8 @@ import { ApplyTemplateButton } from "./apply-template-button";
  *     manifesto-voiced long-form copy plus the task preview.
  *   - Light (no essay yet): renders the same skeleton with just the
  *     template's `description` as intro and no body sections. Still
- *     a working URL with the apply CTA so the route works for all 12
- *     slugs from day one.
+ *     a working URL with the apply CTA so the route works for every
+ *     template slug.
  */
 export function TemplateDetail({
   template,

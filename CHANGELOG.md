@@ -3,6 +3,25 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 39 · 2026-05-11 · Wedding workspace becomes a template
+
+The wedding/events wedge now has a real Tasks starting point:
+`wedding-planning-workspace`. It carries 18 tasks across venue
+decisions, supplier timings, guest numbers, catering notes, final-week
+walkthrough work, open decisions, and the one-page update that can feed
+the Roadmap share path.
+
+The template has its own long-form SEO/landing essay, and the
+`/for/weddings` page now treats the full workspace as the primary CTA
+instead of asking couples or planners to begin with only the 3-month
+countdown or day-of checklist. Those checklists remain useful, but the
+workspace is now the wedge asset.
+
+This closes the first blank-workspace gap in the collaboration growth
+loop: a venue, planner, or couple can start with a useful planning
+workspace before heavier Notes, Roadmap, Analytics, invite, or source
+tracking infrastructure is finished.
+
 ## Cycle 38 · 2026-05-07 · Roadmap pills join the design system
 
 The pre-launch design review parked one item: the /roadmap pill
