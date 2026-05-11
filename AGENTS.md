@@ -10,6 +10,8 @@ This repo is part of the Signal Studio suite. Signal HQ lives in the Studio repo
 
 When a change in Tasks affects product state, roadmap, launch readiness, GTM, messaging, campaigns, demos, templates, outreach, pilots, metrics, decisions, risks, or strategic learning, update Signal HQ before the task is complete.
 
+Before invite, sharing, guest access, template, public-output, or collaborator-facing work, read `docs/COLLABORATION_LOOP.md`. Tasks owns the execution-clarity moment in the collaboration loop.
+
 In practice, open or update a Studio PR that changes:
 
 - `src/lib/hq/data.ts`
