@@ -268,11 +268,13 @@ export function ForWeddings() {
             One fee. One wedding. Forever a memory you can hand someone.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/pricing"
+            <a
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
             >
-              Buy the wedding tier
+              See the event tier
               <svg
                 width="14"
                 height="14"
@@ -285,7 +287,7 @@ export function ForWeddings() {
               >
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
-            </Link>
+            </a>
             <Link
               href="/templates/wedding-planning-workspace"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
