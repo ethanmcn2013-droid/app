@@ -76,6 +76,15 @@ export function SiteFooter() {
         <span>© {new Date().getFullYear()} Signal Tasks. A Signal Studio product.</span>
         <span>Clarity, not configuration.</span>
       </div>
+      <div className="mx-auto mt-4 flex w-full max-w-[1240px] flex-wrap gap-x-4 gap-y-2 px-6 font-mono text-[11px] uppercase tracking-[0.08em] text-ink-quiet">
+        <a href="https://signalstudio.ie/privacy" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">Privacy</a>
+        <span aria-hidden>·</span>
+        <a href="https://signalstudio.ie/terms" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">Terms</a>
+        <span aria-hidden>·</span>
+        <a href="https://signalstudio.ie/security" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">Security</a>
+        <span aria-hidden>·</span>
+        <a href="https://signalstudio.ie/accessibility" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-ink">Accessibility</a>
+      </div>
     </footer>
   );
 }

@@ -67,7 +67,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
         tags: ["growth"],
       },
       "t-102": { title: "Review beta feedback themes", tags: ["research"] },
-      "t-103": { title: "Sprint planning · Q3 themes", tags: ["planning"] },
+      "t-103": { title: "Plan the next quarter · pick three priorities", tags: ["planning"] },
       "t-104": {
         title: "Refresh component color tokens",
         tags: ["design-system"],
