@@ -112,13 +112,17 @@ export async function remixTemplateAction(
   const workspaceId = `ws-${randomToken(8)}`;
 
   // ─── Insert the workspace + owner membership ────────────────────
+  // templateId write is gated until the prod Turso ALTER TABLE runs.
+  // The schema column exists; the insert just doesn't reference it yet.
+  // Run:  turso db shell <prod-tasks-db> "ALTER TABLE workspaces ADD COLUMN template_id TEXT;"
+  // Then re-enable the line below.
   await db.insert(workspaces).values({
     id: workspaceId,
     slug,
     name: `${template.name} · my remix`,
     ownerUserId: me,
     activeDomain: template.domain,
-    templateId: template.id,
+    // templateId: template.id,
   });
   await db.insert(workspaceMembers).values({
     workspaceId,
