@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import {
   ANALYTICS_URL,
-  CONTACT_EMAIL,
   NOTES_URL,
   ROADMAP_URL,
   STUDIO_URL,
@@ -46,7 +45,7 @@ export function SiteFooter() {
           links={[
             { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
             { href: "/for/students", label: "Free for students" },
-            { href: "/changelog", label: "Changelog" },
+            { href: "https://signalstudio.ie/changelog", label: "Changelog", external: true },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
           ]}
@@ -60,7 +59,7 @@ export function SiteFooter() {
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
             { href: "/status", label: "Status" },
-            { href: `mailto:${CONTACT_EMAIL}`, label: "Contact" },
+            { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
           ]}
         />
         <FooterCol
@@ -74,7 +73,8 @@ export function SiteFooter() {
         />
       </div>
       <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-line-soft/70 px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
-        <span>© {new Date().getFullYear()} Signal Tasks. Designed in motion.</span>
+        <span>© {new Date().getFullYear()} Signal Tasks. A Signal Studio product.</span>
+        <span>Clarity, not configuration.</span>
       </div>
     </footer>
   );
