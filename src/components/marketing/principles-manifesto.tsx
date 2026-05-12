@@ -87,7 +87,9 @@ export function PrinciplesManifesto() {
               </svg>
             </a>
             <a
-              href="/pricing"
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
               See the pricing

@@ -52,12 +52,14 @@ export function CallToAction() {
                   <path d="M5 12h14M13 5l7 7-7 7" />
                 </svg>
               </Link>
-              <Link
-                href="/pricing"
+              <a
+                href="https://signalstudio.ie/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-5 py-2.5 text-[14px] font-medium text-white/80 transition-colors hover:bg-white/5 hover:text-white"
               >
                 See pricing
-              </Link>
+              </a>
             </div>
           </div>
         </div>

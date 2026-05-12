@@ -178,10 +178,12 @@ export function MembersSection({
           <p className="mt-3 text-[11.5px] leading-[1.55] text-ink-soft">
             All free seats are taken — owner plus three editing guests.{" "}
             <a
-              href="/pricing"
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="font-medium text-brand underline-offset-2 hover:underline"
             >
-              Upgrade to Team
+              Upgrade to Workspace
             </a>{" "}
             for unlimited members per workspace, no per-seat tax.
           </p>
@@ -189,10 +191,12 @@ export function MembersSection({
           <p className="mt-3 text-[11.5px] leading-[1.55] text-ink-quiet">
             Free includes three editing guests beyond the owner.{" "}
             <a
-              href="/pricing"
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-ink-soft underline-offset-2 hover:text-ink hover:underline"
             >
-              Team
+              Workspace
             </a>{" "}
             unlocks unlimited members.
           </p>

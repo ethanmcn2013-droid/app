@@ -44,7 +44,7 @@ export function SiteFooter() {
         <FooterCol
           heading="Company"
           links={[
-            { href: "/pricing", label: "Pricing" },
+            { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
             { href: "/for/students", label: "Free for students" },
             { href: "/changelog", label: "Changelog" },
             { href: "/about", label: "About" },

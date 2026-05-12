@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import { ANALYTICS_URL, NOTES_URL, ROADMAP_URL, STUDIO_URL } from "@/lib/product-urls";
 
-const NAV = [
+const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
+
+const NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/#features", label: "Features" },
   { href: "/app/board", label: "App" },
-  { href: "/pricing", label: "Pricing" },
+  { href: UMBRELLA_PRICING, label: "Pricing", external: true },
   { href: "/changelog", label: "Changelog" },
 ];
 
@@ -70,15 +72,27 @@ export function SiteNav() {
           <Wordmark size="md" />
         </div>
         <nav className="hidden items-center gap-7 text-[13px] text-ink-soft md:flex">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="transition-colors hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {NAV.map((item) =>
+            item.external ? (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-ink"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="transition-colors hover:text-ink"
+              >
+                {item.label}
+              </Link>
+            )
+          )}
         </nav>
         <div className="flex items-center gap-2">
           <Link

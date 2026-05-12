@@ -56,12 +56,14 @@ export default function NotFound() {
             >
               Open the workspace
             </Link>
-            <Link
-              href="/pricing"
+            <a
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
             >
               Pricing
-            </Link>
+            </a>
           </div>
 
           <div className="mt-12 inline-flex items-center gap-2 rounded-full border border-line-soft bg-bg-elevated/60 px-3 py-1 text-[11.5px] text-ink-quiet">
