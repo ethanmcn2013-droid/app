@@ -118,6 +118,7 @@ export async function remixTemplateAction(
     name: `${template.name} · my remix`,
     ownerUserId: me,
     activeDomain: template.domain,
+    templateId: template.id,
   });
   await db.insert(workspaceMembers).values({
     workspaceId,

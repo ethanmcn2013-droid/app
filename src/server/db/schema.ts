@@ -124,6 +124,12 @@ export const workspaces = sqliteTable("workspaces", {
   ownerUserId: text("owner_user_id").references(() => users.id),
   /** Replaces meta.activeDomain. Marketing / Student / Freelance / Wedding. */
   activeDomain: text("active_domain"),
+  /** Canonical workspace template id this workspace was remixed from
+   *  (e.g. "wedding-planning-workspace"). Null = workspace was created
+   *  blank or before T-1. Notes/Roadmap/Analytics use this to lazily
+   *  seed their per-layer slices on first visit. Strategy:
+   *  studio/docs/TEMPLATES_STRATEGY.md. */
+  templateId: text("template_id"),
   /** Phase 3 publishable workspaces. Null = private. Non-null = public
    *  read-only render available at `/p/{slug}` since the timestamp.
    *  The owner toggles via `publishWorkspaceAction`. */

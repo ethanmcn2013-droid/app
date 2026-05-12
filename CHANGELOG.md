@@ -3,6 +3,25 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 41 · 2026-05-12 · Workspace remembers its template
+
+Templates Cycle T-2.0. Workspaces now carry a `templateId` text column on
+the `workspaces` table, populated by `remixTemplateAction` when a user
+remixes a template into a fresh workspace. Existing workspaces and any
+workspace seeded via the additive `applyTemplateAction` get null — apply
+is intentionally a mixing operation, not a sticky claim about a single
+template's identity.
+
+Why: the four-layer lazy expression mechanism (T-2.1 Roadmap, T-2.2
+Notes, T-2.3 Analytics) needs a single source of truth for "which
+template did this workspace come from." That single source is now this
+column. Each consuming product reads it on first visit and seeds its
+slice from the canonical template files in the studio repo.
+
+T-2.0 is the bookkeeping step. The visible cycles ship next: Roadmap
+first because it has the clearest workspace model and the most
+shareable artefact.
+
 ## Cycle 40 · 2026-05-12 · Wedding template lifts to canonical four-layer source
 
 The wedding-planning-workspace template moved out of `tasks/src/lib/templates.ts`
