@@ -90,6 +90,20 @@ export async function getCurrentUser(): Promise<UserId> {
 }
 
 /**
+ * Same as getCurrentUser, but returns null instead of throwing for
+ * unauthenticated production requests. Use this in public routes
+ * (invite previews, .ics feeds, etc.) where unauth visitors are
+ * expected and need to be rendered different UI rather than crashing.
+ */
+export async function getCurrentUserOrNull(): Promise<UserId | null> {
+  try {
+    return await getCurrentUser();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolve which workspace the user is currently in. Validates
  * membership before honoring the cookie so a hijacked cookie can't
  * leak data across tenants.

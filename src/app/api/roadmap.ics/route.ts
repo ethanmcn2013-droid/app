@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/server/auth";
+import { getCurrentUserOrNull } from "@/server/auth";
 import { exportRoadmapIcs } from "@/server/roadmap/ics-export";
 
 // better-sqlite3 needs Node, and the feed updates whenever roadmap_items does.
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
  * if the proxy ever misroutes.
  */
 export async function GET(): Promise<Response> {
-  const me = await getCurrentUser();
+  const me = await getCurrentUserOrNull();
   if (!me) {
     return new Response("Not found", { status: 404 });
   }

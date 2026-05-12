@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { pendingInvites, workspaces, users } from "@/server/db/schema";
-import { getCurrentUser } from "@/server/auth";
+import { getCurrentUserOrNull } from "@/server/auth";
 import { SiteNav } from "@/components/marketing/site-nav";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AcceptInviteButton } from "./accept-button";
@@ -81,11 +81,13 @@ export default async function InviteAcceptPage({
     redirect("/app/board?invite=already-accepted");
   }
 
-  const me = await getCurrentUser();
-  const [user] = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.id, me));
+  const me = await getCurrentUserOrNull();
+  const [user] = me
+    ? await db
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, me))
+    : [];
   const myEmail = user?.email ?? null;
 
   return (
