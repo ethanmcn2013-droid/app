@@ -38,16 +38,35 @@ function clerkConfigured(): boolean {
 
 /**
  * Resolve the current internal user id. Falls back to the legacy
- * seed user (`david`) when Clerk isn't configured OR when the
- * request hasn't been authed (typically only happens on public
- * routes that still call this for personalization).
+ * seed user (`david`) in development when Clerk isn't configured OR
+ * when the request hasn't been authed.
+ *
+ * Production safety: in NODE_ENV==="production" the fallback paths
+ * throw instead of silently running as "david" (a real Turso DB user).
+ * This means every unauthenticated production request fails loudly
+ * rather than leaking real data through the dev fallback identity.
+ * Callers in production must be behind a Clerk-protected route.
  */
 export async function getCurrentUser(): Promise<UserId> {
-  if (!clerkConfigured()) return DEV_FALLBACK_USER;
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (!clerkConfigured()) {
+    if (isProd) {
+      throw new Error(
+        "Clerk is not configured. NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and CLERK_SECRET_KEY must be set in production.",
+      );
+    }
+    return DEV_FALLBACK_USER;
+  }
 
   try {
     const { userId: clerkId } = await auth();
-    if (!clerkId) return DEV_FALLBACK_USER;
+    if (!clerkId) {
+      if (isProd) {
+        throw new Error("Unauthenticated request reached getCurrentUser in production.");
+      }
+      return DEV_FALLBACK_USER;
+    }
 
     // Clerk id IS the internal user id post-Phase-A. The webhook
     // provisions the row; this query is the safety net in case a
@@ -63,7 +82,9 @@ export async function getCurrentUser(): Promise<UserId> {
     // anything queryable by user id still works. Subsequent requests
     // pick up the row once it's persisted.
     return clerkId;
-  } catch {
+  } catch (err) {
+    // Re-throw in production so we never silently run as "david".
+    if (isProd) throw err;
     return DEV_FALLBACK_USER;
   }
 }

@@ -330,13 +330,19 @@ export async function inviteMemberByEmailAction(
   return { ok: true, email: trimmed, sent: true };
 }
 
-/** URL-safe random token for invite links. 32 chars of base36 = ~165
- *  bits of entropy, more than enough to be unguessable while still
- *  fitting comfortably in an email link. */
+/** URL-safe random token for invite links. 32 bytes from
+ *  `crypto.getRandomValues` base64url-encoded = 256 bits of entropy,
+ *  cryptographically secure and unguessable. Replaces the previous
+ *  Math.random()-based approach which was PRNG-backed and predictable. */
 function mintInviteToken(): string {
-  let s = "";
-  for (let i = 0; i < 4; i++) s += Math.random().toString(36).slice(2, 10);
-  return s.slice(0, 32);
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  // base64url: replace +/= with url-safe chars, strip padding
+  return Buffer.from(bytes)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=/g, "");
 }
 
 /** Accept-invite action — called from `/invite/[token]/page.tsx`

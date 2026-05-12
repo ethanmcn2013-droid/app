@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { compileDailyDigest } from "@/server/db/daily-digest";
@@ -34,11 +35,17 @@ export const runtime = "nodejs";
 
 export async function GET(req: Request) {
   const expectedCronSecret = process.env.CRON_SECRET;
-  // Production hardening: missing CRON_SECRET on a real deploy fails
-  // closed — refuse the request rather than letting an unauthenticated
-  // caller trigger the daily-digest pipeline (which sends email).
-  // Dev runs (NODE_ENV !== "production") skip the check so local
-  // testing doesn't need the secret configured.
+
+  // Auth hardening: if CRON_SECRET is unset, reject any request that
+  // uses query overrides (?user= / ?workspace=) in ALL environments.
+  // Without a secret there is no safe way to validate the caller's
+  // identity, so override access is closed entirely. Unauthenticated
+  // plain GET (no overrides) is still allowed in dev for local preview.
+  const { searchParams } = new URL(req.url);
+  const rawOverrideUser = searchParams.get("user");
+  const rawOverrideWorkspace = searchParams.get("workspace");
+  const hasOverride = rawOverrideUser !== null || rawOverrideWorkspace !== null;
+
   if (!expectedCronSecret) {
     if (process.env.NODE_ENV === "production") {
       return NextResponse.json(
@@ -46,11 +53,31 @@ export async function GET(req: Request) {
         { status: 500 },
       );
     }
+    // Dev without a secret: block override params to prevent accidental
+    // cross-user data reads during local testing.
+    if (hasOverride) {
+      return NextResponse.json(
+        { ok: false, error: "query-overrides-require-cron-secret" },
+        { status: 401 },
+      );
+    }
   } else {
+    // Timing-safe comparison — prevents timing oracle on the secret.
     const provided = req.headers
       .get("authorization")
-      ?.replace(/^Bearer\s+/i, "");
-    if (provided !== expectedCronSecret) {
+      ?.replace(/^Bearer\s+/i, "") ?? "";
+    const enc = new TextEncoder();
+    const a = enc.encode(provided.padEnd(expectedCronSecret.length, "\0"));
+    const b = enc.encode(expectedCronSecret.padEnd(provided.length, "\0"));
+    // Both buffers must be the same length for timingSafeEqual.
+    const maxLen = Math.max(a.length, b.length);
+    const pa = new Uint8Array(maxLen);
+    const pb = new Uint8Array(maxLen);
+    pa.set(a);
+    pb.set(b);
+    const match =
+      timingSafeEqual(pa, pb) && provided.length === expectedCronSecret.length;
+    if (!match) {
       return NextResponse.json(
         { ok: false, error: "unauthorized" },
         { status: 401 },
@@ -58,9 +85,8 @@ export async function GET(req: Request) {
     }
   }
 
-  const { searchParams } = new URL(req.url);
-  const overrideUser = searchParams.get("user") as UserId | null;
-  const overrideWorkspace = searchParams.get("workspace");
+  const overrideUser = rawOverrideUser as UserId | null;
+  const overrideWorkspace = rawOverrideWorkspace;
   const send = searchParams.get("send") === "1";
 
   const userParam = overrideUser ?? (await getCurrentUser());

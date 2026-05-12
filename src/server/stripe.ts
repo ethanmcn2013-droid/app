@@ -42,4 +42,11 @@ export function priceIdFor(tier: PaidTier): string | null {
   return id || null;
 }
 
-export const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+/**
+ * `undefined` when the env var is not set. Callers must null-guard
+ * before passing to `stripe.webhooks.constructEvent` — an empty string
+ * default would hide the missing-secret bug from TypeScript and produce
+ * a runtime signature-verification failure instead of a clear error.
+ */
+export const WEBHOOK_SECRET: string | undefined =
+  process.env.STRIPE_WEBHOOK_SECRET || undefined;

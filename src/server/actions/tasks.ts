@@ -32,10 +32,20 @@ export async function getTasksAction(): Promise<Task[]> {
  * Server-action wrapper around `getSubtasks` so the detail panel's
  * SubtasksSection can fetch a parent's children client-side without
  * importing server-only code. Returned rows are ordered oldest-first.
+ *
+ * Workspace guard: verify the parent task belongs to the caller's
+ * active workspace before returning its subtasks. A caller who knows a
+ * foreign parentTaskId gets an empty array, not a data leak.
  */
 export async function getSubtasksAction(
   parentTaskId: string,
 ): Promise<Task[]> {
+  const ws = await getActiveWorkspace();
+  const [parent] = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, parentTaskId), eq(tasks.workspaceId, ws)));
+  if (!parent) return [];
   return getSubtasks(parentTaskId);
 }
 
@@ -70,12 +80,15 @@ export async function moveTaskAction(
   id: string,
   toLane: LaneId,
 ): Promise<Task[]> {
+  if (!id || !LANE_ORDER.includes(toLane)) return [];
   const ws = await getActiveWorkspace();
-  // Pre-read prior lane so we can record a meaningful "from → to".
+  // Pre-read prior lane — workspace guard on the read so a caller who
+  // knows a foreign task id gets a silent no-op instead of leaking the
+  // lane value (or worse, re-parking the task).
   const [row] = await db
     .select({ lane: tasks.lane })
     .from(tasks)
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row || row.lane === toLane) return getTasks(ws);
   // Park the moved task at the end of its new lane so cross-lane drops
   // get a stable, predictable order without renumbering siblings.
@@ -83,7 +96,7 @@ export async function moveTaskAction(
   await db
     .update(tasks)
     .set({ lane: toLane, idleDays: null, position, ...bump() })
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   await recordActivity(id, {
     kind: "move",
     from: row.lane,
@@ -96,7 +109,12 @@ export async function moveTaskAction(
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   const ws = await getActiveWorkspace();
-  const [row] = await db.select().from(tasks).where(eq(tasks.id, id));
+  // Workspace guard on the read: scope to the caller's workspace so a
+  // foreign task id is a silent no-op rather than a cross-tenant toggle.
+  const [row] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return getTasks(ws);
 
   // Recurring tasks that are being completed don't go to "done" — they
@@ -112,7 +130,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
         due: formatDueLabelForStorage(nextDueAt),
         ...bump(),
       })
-      .where(eq(tasks.id, id));
+      .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
     await recordActivity(id, { kind: "toggleComplete", to: "done" });
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
@@ -123,7 +141,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   await db
     .update(tasks)
     .set({ lane: target, idleDays: null, ...bump() })
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   await recordActivity(id, {
     kind: "toggleComplete",
     to: target === "done" ? "done" : "open",
@@ -352,10 +370,12 @@ export async function reorderTaskAction(
   }
 
   const ws = await getActiveWorkspace();
+  // Workspace guard on the read so a caller with a foreign task id
+  // gets a no-op rather than accidentally moving a cross-tenant row.
   const [row] = await db
     .select({ lane: tasks.lane })
     .from(tasks)
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return getTasks(ws);
 
   const laneChanged = row.lane !== lane;
@@ -367,7 +387,7 @@ export async function reorderTaskAction(
       ...(laneChanged ? { idleDays: null } : {}),
       ...bump(),
     })
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
 
   if (laneChanged) {
     await recordActivity(id, {

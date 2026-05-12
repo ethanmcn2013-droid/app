@@ -155,9 +155,19 @@ export async function getTaskById(id: string): Promise<Task | null> {
 }
 
 /**
+ * Escape SQL LIKE wildcards in a string so a literal `%` or `_`
+ * matches itself rather than acting as a wildcard. Drizzle doesn't
+ * auto-escape — caller responsibility.
+ */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (m) => `\\${m}`);
+}
+
+/**
  * Tasks where the given user is in the JSON `assignees` array.
  * Pattern uses surrounding double-quotes (`%"david"%`) so we match
- * exact tokens, not substrings — safe given current UserIds.
+ * exact tokens, not substrings. The userId is escaped via `escapeLike`
+ * so a userId containing `%` or `_` can't be used to widen the match.
  */
 export async function getTasksForUser(
   userId: UserId,
@@ -165,6 +175,7 @@ export async function getTasksForUser(
 ): Promise<Task[]> {
   // Mirror `getTasks` — only top-level rows. Subtasks are scoped to
   // their parent's detail panel, not surfaced in per-user lists.
+  const escapedId = escapeLike(userId);
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
@@ -172,7 +183,7 @@ export async function getTasksForUser(
       and(
         eq(tasks.workspaceId, workspaceId),
         isNull(tasks.parentTaskId),
-        like(tasks.assignees, `%"${userId}"%`),
+        like(tasks.assignees, `%"${escapedId}"%`),
       ),
     )
     .orderBy(laneOrderSql, positionOrderSql);

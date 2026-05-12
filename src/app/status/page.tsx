@@ -36,7 +36,10 @@ export default async function StatusPage() {
     detail: `${home.ms}ms`,
   });
 
-  const digest = await probe(`${baseUrl}/api/cron/digest`);
+  // Probe the dedicated health endpoint — not the cron trigger — so
+  // the check doesn't require CRON_SECRET and never produces a false
+  // negative when the secret is correctly configured.
+  const digest = await probe(`${baseUrl}/api/health/digest`);
   checks.push({
     name: "Daily digest pipeline",
     ok: digest.ok,

@@ -25,11 +25,18 @@ export type ShareLinkSummary = {
   visits: number;
 };
 
+/**
+ * Mint a 128-bit (16-byte) cryptographically random share token,
+ * hex-encoded to 32 chars. Replaces the previous 16-hex-char (~64-bit)
+ * token which was too narrow for a public-facing guessability surface.
+ * 128 bits matches OWASP recommendation for session tokens.
+ */
 function newToken(): string {
-  const raw =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2);
-  return raw.replace(/-/g, "").slice(0, 16);
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 /**
