@@ -3,6 +3,31 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 40 · 2026-05-12 · Wedding template lifts to canonical four-layer source
+
+The wedding-planning-workspace template moved out of `tasks/src/lib/templates.ts`
+and into the studio repo as the first canonical workspace template at
+`studio/src/lib/templates/wedding-planning-workspace/`. It is now a five-file
+artefact — meta, tasks, notes, roadmap, analytics — and the four-layer
+expression of one workspace lives in one place instead of being scattered
+across hand-built demo mocks in four repos.
+
+A new `pnpm sync:templates` script reads the studio canonical source
+(sibling directory) and writes `src/lib/templates.generated.ts`, which the
+existing `TEMPLATES` array splices in at the start of the wedding section.
+Order in the gallery is preserved. The eighteen-task wedding workspace
+that ships at `/templates/wedding-planning-workspace` is byte-equivalent
+to the inline version that preceded it.
+
+The other twelve templates remain inline in Tasks as specialty templates.
+Per the strategy doc (`studio/docs/TEMPLATES_STRATEGY.md` locked 2026-05-12),
+only the five anchor templates ripple to four layers; the specialty ones
+stay Tasks-only.
+
+This is Cycle T-1 of the templates strategy. T-2 wires the lazy-expression
+mechanism in Notes/Roadmap/Analytics so the wedding template's notes,
+roadmap, and analytics slices stop being hand-built demo pages.
+
 ## Cycle 39 · 2026-05-11 · Wedding workspace becomes a template
 
 The wedding/events wedge now has a real Tasks starting point:

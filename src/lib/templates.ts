@@ -1,5 +1,6 @@
 import type { LaneId, Priority } from "@/lib/data";
 import type { DomainId } from "@/lib/domains";
+import { SYNCED_TEMPLATES } from "./templates.generated";
 
 /**
  * Drop-in task lists users can apply to an existing workspace.
@@ -45,7 +46,7 @@ export type Template = {
   tasks: TemplateTaskInput[];
 };
 
-export const TEMPLATES: Template[] = [
+const TEMPLATES_INLINE: Template[] = [
   // ─── Cross-domain ──────────────────────────────────────────────────
   {
     id: "job-application-sprint",
@@ -281,128 +282,11 @@ export const TEMPLATES: Template[] = [
   },
 
   // ─── Wedding ───────────────────────────────────────────────────────
-  {
-    id: "wedding-planning-workspace",
-    name: "Wedding planning workspace",
-    description:
-      "The venue, supplier, guest, decision, and final-week work in one calm list.",
-    icon: "target",
-    domain: "wedding",
-    tasks: [
-      {
-        title: "Venue contract and deposit schedule recorded",
-        lane: "done",
-        priority: "p1",
-        tags: ["venue", "decision"],
-      },
-      {
-        title: "Ceremony room layout agreed with venue",
-        lane: "done",
-        priority: "p1",
-        tags: ["venue", "ceremony"],
-      },
-      {
-        title: "Confirm final guest numbers",
-        lane: "doing",
-        priority: "p0",
-        due: "Today",
-        tags: ["guests"],
-      },
-      {
-        title: "Confirm supplier arrival times",
-        lane: "doing",
-        priority: "p0",
-        due: "Tomorrow",
-        tags: ["suppliers", "blocked"],
-      },
-      {
-        title: "Send menu decisions to catering",
-        lane: "doing",
-        priority: "p1",
-        due: "Fri",
-        tags: ["catering"],
-      },
-      {
-        title: "Book final-week venue walkthrough",
-        lane: "doing",
-        priority: "p1",
-        due: "Fri",
-        tags: ["venue", "final-week"],
-      },
-      {
-        title: "Review seating chart with venue",
-        lane: "review",
-        priority: "p1",
-        tags: ["guests", "venue"],
-      },
-      {
-        title: "Review ceremony order with officiant",
-        lane: "review",
-        priority: "p1",
-        tags: ["ceremony", "decision"],
-      },
-      {
-        title: "Confirm weather backup plan",
-        lane: "review",
-        priority: "p1",
-        tags: ["risk", "venue"],
-      },
-      {
-        title: "Build supplier contact sheet",
-        lane: "todo",
-        priority: "p1",
-        tags: ["suppliers"],
-      },
-      {
-        title: "Collect final dietary notes",
-        lane: "todo",
-        priority: "p1",
-        tags: ["catering", "guests"],
-      },
-      {
-        title: "Confirm family photo list owner",
-        lane: "todo",
-        priority: "p2",
-        tags: ["photo", "owner"],
-      },
-      {
-        title: "Share draft day-of timeline with suppliers",
-        lane: "todo",
-        priority: "p1",
-        tags: ["suppliers", "timeline"],
-      },
-      {
-        title: "List final supplier payments",
-        lane: "todo",
-        priority: "p1",
-        tags: ["payments"],
-      },
-      {
-        title: "Prepare wedding morning kit list",
-        lane: "todo",
-        priority: "p2",
-        tags: ["final-week"],
-      },
-      {
-        title: "Write one-page update for couple and suppliers",
-        lane: "todo",
-        priority: "p2",
-        tags: ["update"],
-      },
-      {
-        title: "Capture decisions still open",
-        lane: "todo",
-        priority: "p2",
-        tags: ["decision"],
-      },
-      {
-        title: "Create post-wedding collection list",
-        lane: "todo",
-        priority: "p3",
-        tags: ["after"],
-      },
-    ],
-  },
+  //
+  // wedding-planning-workspace is now a canonical workspace template
+  // owned by the studio repo and synced via `pnpm sync:templates`.
+  // It is spliced into TEMPLATES below from SYNCED_TEMPLATES.
+  // Strategy: studio/docs/TEMPLATES_STRATEGY.md (locked 2026-05-12).
   {
     id: "wedding-3-month-countdown",
     name: "3-month countdown",
@@ -963,6 +847,27 @@ export const TEMPLATES: Template[] = [
       },
     ],
   },
+];
+
+/**
+ * Final TEMPLATES = inline specialty templates + canonical workspace templates
+ * synced from the studio repo. Synced templates are spliced in at the start
+ * of the wedding section so gallery order is preserved.
+ *
+ * The wedding-planning-workspace entry now lives in
+ * studio/src/lib/templates/wedding-planning-workspace/ as the canonical source.
+ * Edit there, then run `pnpm sync:templates` and commit the regenerated file.
+ */
+const _weddingSectionStart = TEMPLATES_INLINE.findIndex(
+  (t) => t.domain === "wedding",
+);
+const _splicePoint =
+  _weddingSectionStart === -1 ? TEMPLATES_INLINE.length : _weddingSectionStart;
+
+export const TEMPLATES: Template[] = [
+  ...TEMPLATES_INLINE.slice(0, _splicePoint),
+  ...SYNCED_TEMPLATES,
+  ...TEMPLATES_INLINE.slice(_splicePoint),
 ];
 
 /** O(1) lookup. Throws if the id is unknown — server action validates

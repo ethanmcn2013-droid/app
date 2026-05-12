@@ -1,1 +1,1 @@
-Pre-GTM Week 0 — domain + deploy hardening before plan window opens 2026-05-11
+Pre-GTM Week 0 — Templates Cycle T-1 closed 2026-05-12 (wedding lifted to canonical four-layer source at studio/src/lib/templates/). T-2 (lazy expression in Notes/Roadmap/Analytics) is the next available templates cycle.

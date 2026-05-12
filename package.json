@@ -10,6 +10,7 @@
     "db:push": "drizzle-kit push --force",
     "db:check": "drizzle-kit check",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
+    "sync:templates": "tsx --tsconfig ./tsconfig.json scripts/sync-templates.ts",
     "test:parser": "tsx --conditions=react-server src/server/roadmap/parser.test.ts",
     "test:smoke": "tsx e2e/marketing-golden-path.smoke.ts"
   },
