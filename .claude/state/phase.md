@@ -1,1 +1,1 @@
-Pre-GTM Week 0 — Templates Cycles T-1 + T-2.0 closed 2026-05-12 (wedding lifted to canonical four-layer source; workspaces.template_id field shipped). T-2.1 (Roadmap lazy expression) is the next available templates cycle.
+Pre-GTM Week 0 — Templates Cycles T-1 + T-2.0 + T-2.1c closed 2026-05-12 (wedding lifted to canonical four-layer source; workspaces.template_id field shipped; Tasks remix toast now invites a Roadmap for canonical templates). T-2.2 (Notes lazy expression) is the next templates cycle.

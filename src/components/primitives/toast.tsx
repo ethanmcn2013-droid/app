@@ -10,6 +10,13 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
+type ToastAction = {
+  href: string;
+  label: string;
+  /** Open in a new tab — required for cross-product links to roadmap/notes/etc. */
+  external?: boolean;
+};
+
 type Toast = {
   id: string;
   title: string;
@@ -17,12 +24,19 @@ type Toast = {
   tone: "info" | "success" | "warn" | "error";
   /** ms; 0 = sticky. */
   duration: number;
+  /** Optional action link rendered below the body. */
+  action?: ToastAction;
 };
 
 type Ctx = {
   toast: (
     title: string,
-    opts?: { body?: string; tone?: Toast["tone"]; duration?: number },
+    opts?: {
+      body?: string;
+      tone?: Toast["tone"];
+      duration?: number;
+      action?: ToastAction;
+    },
   ) => void;
 };
 
@@ -73,6 +87,7 @@ export function ToastRoot({ children }: { children: ReactNode }) {
       body: opts?.body,
       tone: opts?.tone ?? "info",
       duration: opts?.duration ?? 4000,
+      action: opts?.action,
     };
     setToasts((q) => [...q.slice(-3), next]);
     if (next.duration > 0) {
@@ -143,6 +158,29 @@ function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
         <div className="mt-0.5 text-[12.5px] leading-[1.5] text-ink-soft">
           {t.body}
         </div>
+      ) : null}
+      {t.action ? (
+        <a
+          href={t.action.href}
+          target={t.action.external ? "_blank" : undefined}
+          rel={t.action.external ? "noopener noreferrer" : undefined}
+          className="mt-2 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink underline decoration-ink-quiet/40 underline-offset-[3px] hover:decoration-ink"
+        >
+          {t.action.label}
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M5 12h14M13 5l7 7-7 7" />
+          </svg>
+        </a>
       ) : null}
       <button
         type="button"

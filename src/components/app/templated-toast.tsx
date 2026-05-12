@@ -4,11 +4,19 @@ import { useEffect, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/components/primitives/toast";
 import { TEMPLATES } from "@/lib/templates";
+import { SYNCED_TEMPLATE_IDS } from "@/lib/templates.generated";
+import { ROADMAP_URL } from "@/lib/product-urls";
 
 /**
- * Reads `?templated={id}` from the URL on `/app/board` and surfaces a
- * single brand-toned toast: "{Template name} applied · N tasks." Then
- * strips the query so refreshing doesn't refire the toast.
+ * Reads `?templated={id}` or `?remixed={id}` from the URL on `/app/board`
+ * and surfaces a single brand-toned toast. Strips the query so
+ * refreshing doesn't refire.
+ *
+ * `?templated` (apply path): "{Template name} applied · N tasks."
+ * `?remixed` (remix path): same headline, but for canonical workspace
+ *   templates the toast carries a "Create a Roadmap for this" action
+ *   that opens the synced from-template route on roadmap. Specialty
+ *   Tasks-only templates skip the action.
  *
  * Mounted as a leaf inside the board's page chrome — pure side-effect
  * component, renders nothing.
@@ -22,20 +30,37 @@ export function TemplatedToast() {
 
   useEffect(() => {
     if (fired.current) return;
-    const templateId = params.get("templated");
+    const appliedId = params.get("templated");
+    const remixedId = params.get("remixed");
+    const templateId = appliedId ?? remixedId;
     if (!templateId) return;
     const template = TEMPLATES.find((t) => t.id === templateId);
     fired.current = true;
 
+    const isRemix = Boolean(remixedId);
+    const isCanonical = SYNCED_TEMPLATE_IDS.has(templateId);
+
     if (template) {
       toast(`${template.name} applied`, {
-        body: `${template.tasks.length} tasks landed in your board. Go give one a kick.`,
+        body: isRemix
+          ? `Fresh workspace seeded with ${template.tasks.length} tasks. Yours to edit.`
+          : `${template.tasks.length} tasks landed in your board. Go give one a kick.`,
         tone: "success",
-        duration: 5200,
+        duration: isRemix && isCanonical ? 9000 : 5200,
+        action:
+          isRemix && isCanonical
+            ? {
+                href: `${ROADMAP_URL}/onboarding/from-template/${encodeURIComponent(templateId)}`,
+                label: "Create a Roadmap for this",
+                external: true,
+              }
+            : undefined,
       });
     } else {
-      toast("Template applied", {
-        body: "Your board just got a fresh batch of tasks.",
+      toast(isRemix ? "Workspace seeded" : "Template applied", {
+        body: isRemix
+          ? "Your fresh workspace is ready."
+          : "Your board just got a fresh batch of tasks.",
         tone: "success",
       });
     }
@@ -44,6 +69,7 @@ export function TemplatedToast() {
     // shareable without the templated stamp.
     const next = new URLSearchParams(params.toString());
     next.delete("templated");
+    next.delete("remixed");
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [params, router, pathname, toast]);

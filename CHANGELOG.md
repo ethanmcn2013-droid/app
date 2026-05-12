@@ -3,6 +3,22 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 42 · 2026-05-12 · Remix toast invites a Roadmap
+
+The toast primitive gained an optional action link rendered below the
+body with a brand arrow glyph. `TemplatedToast` now handles
+`?remixed=<id>` in addition to `?templated=<id>` — for canonical
+workspace templates (currently just `wedding-planning-workspace`), the
+remix-success toast carries a "Create a Roadmap for this" link to
+`roadmap.signalstudio.ie/onboarding/from-template/<id>`, opening in a
+new tab. Specialty Tasks-only templates skip the action.
+
+This closes Templates Cycle T-2.1c — the discoverability gap that
+left T-2.1b technically working but invisible from inside Tasks. The
+wedge demo loop is now four-layer walkable: remix wedding in Tasks →
+toast suggests Roadmap → seeded roadmap workspace appears with one
+planning project and eight items.
+
 ## Cycle 41 · 2026-05-12 · Workspace remembers its template
 
 Templates Cycle T-2.0. Workspaces now carry a `templateId` text column on
