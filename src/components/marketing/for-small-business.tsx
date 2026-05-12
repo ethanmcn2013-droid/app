@@ -59,12 +59,12 @@ export function ForSmallBusiness() {
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The two cadences that keep a business honest.
+          The cadence that keeps a business honest.
         </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="mt-5">
           <Link
             href="/templates/local-business-monthly-rhythm"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
+            className="group block rounded-2xl border border-line-soft bg-white p-6 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
           >
             <div className="flex items-start gap-3">
               <span
@@ -75,51 +75,21 @@ export function ForSmallBusiness() {
                 01
               </span>
               <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Monthly rhythm
+                <div className="text-[16px] font-semibold tracking-[-0.005em] text-ink">
+                  Monthly business rhythm
                 </div>
                 <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  9 tasks · the month-end pattern
+                  18 tasks · across one full operating month
                 </div>
               </div>
             </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Month-end close, supplier pay, payroll run, the marketing
-              note that goes out, the staff one-to-one you keep skipping.
-              The cadence that turns reactive months into ones that hold.
+            <p className="mt-3 text-[14px] leading-[1.6] text-ink-soft">
+              Month-end close, payroll, supplier invoices, marketing post,
+              renewal review, staff one-to-ones, accountant summary. The
+              full pattern that turns reactive months into ones that hold —
+              ready to remix into your own operation.
             </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
-              Open the template
-              <ArrowIcon />
-            </div>
-          </Link>
-          <Link
-            href="/templates/weekly-operations-pulse"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
-          >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-mono text-[18px]"
-                style={{ background: "rgba(14,116,144,0.10)", color: "#155e75" }}
-              >
-                02
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Weekly operations pulse
-                </div>
-                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  7 tasks · the rota week
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Monday rota, Tuesday inventory, Wednesday supplier orders,
-              Thursday social, Friday close. The repeating skeleton that
-              stops the week from being seven separate days.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
+            <div className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
               Open the template
               <ArrowIcon />
             </div>

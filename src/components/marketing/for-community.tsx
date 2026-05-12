@@ -60,71 +60,24 @@ export function ForCommunity() {
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          Two templates for the two patterns this work falls into.
+          A coordinator template is in the works.
         </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <p className="mt-4 text-[15.5px] leading-[1.6] text-ink-soft">
+          The anchor template for this archetype — term planner for
+          teachers, season setup for coaches, the rhythm a parish or
+          community group runs on — is being written. We refuse to ship
+          template cards that link to nothing, so until the canonical
+          coordinator template lands, you can start with a blank
+          workspace and tag the work the way your group already names
+          it.
+        </p>
+        <div className="mt-6">
           <Link
-            href="/templates/term-planner"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
+            href="/app/board"
+            className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
           >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-mono text-[18px]"
-                style={{ background: "rgba(124,58,237,0.10)", color: "#6d28d9" }}
-              >
-                01
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Term planner
-                </div>
-                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  8 tasks · across one term
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Lesson plans, parent communications, exam scheduling, the
-              field trip permissions, the year-group meeting that keeps
-              moving. The shape of a term as a coordinator actually
-              experiences it.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
-              Open the template
-              <ArrowIcon />
-            </div>
-          </Link>
-          <Link
-            href="/templates/season-setup"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
-          >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-mono text-[18px]"
-                style={{ background: "rgba(124,58,237,0.10)", color: "#6d28d9" }}
-              >
-                02
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Season setup
-                </div>
-                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  10 tasks · the pre-season run
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Fixtures, kits, transport, parent comms, the volunteer
-              rota, the first-aid certificates that need renewing.
-              Anything that decides whether the first match runs at all.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
-              Open the template
-              <ArrowIcon />
-            </div>
+            Start with a blank workspace
+            <ArrowIcon />
           </Link>
         </div>
 
@@ -184,10 +137,10 @@ export function ForCommunity() {
               <ArrowIcon />
             </Link>
             <Link
-              href="/templates/term-planner"
+              href="/templates"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
-              Start with a template
+              Browse all templates
             </Link>
           </div>
         </div>
