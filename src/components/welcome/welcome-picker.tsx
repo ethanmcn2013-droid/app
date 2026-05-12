@@ -10,14 +10,25 @@ import {
   seedDomainAction,
 } from "@/server/actions/seed";
 
+type PendingTemplate = { id: string; name: string };
+
 /**
  * The first-run welcome screen. A focused, full-page domain picker.
  * Renders once — until either a starter pack is chosen or the user
  * clicks "skip and start blank," after which the
  * `firstRunCompletedAt` meta row is set and /welcome redirects back
  * to /app/board for all future visits.
+ *
+ * T1.2 — if a template was applied to this workspace before first
+ * run (via the Tasks templates flow), `pendingTemplate` is set and
+ * the picker leads with "Open with X" instead of asking the user
+ * to re-pick a domain on top of a template they already chose.
  */
-export function WelcomePicker() {
+export function WelcomePicker({
+  pendingTemplate = null,
+}: {
+  pendingTemplate?: PendingTemplate | null;
+}) {
   const router = useRouter();
   const [active, setActive] = useState<DomainId | null>(null);
   const [pending, startTransition] = useTransition();
@@ -29,6 +40,19 @@ export function WelcomePicker() {
         await seedDomainAction(id);
       } catch (e) {
         console.warn("welcome: seed failed", e);
+      }
+      router.push("/app/board");
+    });
+  };
+
+  const openWithTemplate = () => {
+    startTransition(async () => {
+      // Template tasks were already seeded by applyTemplateAction.
+      // Just complete the first-run handshake and head into the board.
+      try {
+        await markFirstRunCompleteAction();
+      } catch (e) {
+        console.warn("welcome: mark-first-run failed", e);
       }
       router.push("/app/board");
     });
@@ -63,17 +87,72 @@ export function WelcomePicker() {
               Welcome
             </div>
             <h1 className="mt-2 text-balance text-[clamp(2.2rem,1.4rem+3vw,3.6rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
-              Pick a starter so you have{" "}
-              <span className="text-ink-soft/65">
-                something to play with.
-              </span>
+              {pendingTemplate ? (
+                <>
+                  Your{" "}
+                  <span className="text-ink-soft/65">
+                    {pendingTemplate.name.toLowerCase()} is loaded.
+                  </span>
+                </>
+              ) : (
+                <>
+                  Pick a starter so you have{" "}
+                  <span className="text-ink-soft/65">
+                    something to play with.
+                  </span>
+                </>
+              )}
             </h1>
             <p className="mt-4 max-w-[58ch] text-[16px] leading-[1.55] text-ink-soft">
-              You can change anything later — rename tasks, swap views,
-              clear everything. This just makes the first 30 seconds
-              feel like the tool already knows what you do.
+              {pendingTemplate
+                ? "You picked a template before signing in. Open the workspace, or swap to a different starter below."
+                : "You can change anything later — rename tasks, swap views, clear everything. This just makes the first 30 seconds feel like the tool already knows what you do."}
             </p>
           </motion.div>
+
+          {pendingTemplate ? (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.42, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-8"
+            >
+              <button
+                type="button"
+                onClick={openWithTemplate}
+                disabled={pending}
+                className="group flex w-full items-center justify-between gap-4 rounded-xl border border-brand bg-brand-soft/30 p-5 text-left transition-all hover:bg-brand-soft/50 disabled:opacity-60"
+              >
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+                    Loaded · ready to open
+                  </div>
+                  <div className="mt-1.5 text-[16px] font-semibold tracking-[-0.005em] text-ink">
+                    Open the {pendingTemplate.name.toLowerCase()}
+                  </div>
+                </div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="flex-shrink-0 text-brand transition-transform group-hover:translate-x-0.5"
+                >
+                  <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+              </button>
+            </motion.div>
+          ) : null}
+
+          {pendingTemplate ? (
+            <p className="mt-10 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+              Or swap to a starter
+            </p>
+          ) : null}
 
           <motion.div
             initial="hidden"

@@ -172,106 +172,106 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
 
   freelance: {
     id: "freelance",
-    label: "Freelance dev",
-    description: "ship · invoice · ignore Slack · ship more",
+    label: "Freelance",
+    description: "brief · edit · deliver · invoice",
     workspaceTitle: "Q2 client work · Solo studio",
     workspaceCrumb: "Studio",
     workspaceUrl: `${TASKS_DOMAIN}/me/studio`,
     demoCommentText:
-      "Pushed v2.4.1 — Aurora staging green, prod deploy at 5pm ✓",
+      "Final delivery sent · Coombe wedding gallery — invoice closed Friday ✓",
     emptyStateHeadline: "This is where the client work actually ships.",
     emptyStateBody:
-      "Specs, repos, branches, invoices. Three clients, one inbox, no context-switching.",
-    firstTaskExample: "Ship Stripe webhook fix by Friday at 3pm",
+      "Briefs, edit rounds, deliveries, invoices. Three clients, one inbox, no notebook scattered around the desk.",
+    firstTaskExample: "Send Bregman wedding gallery by Friday at 3pm",
     tasks: {
       "t-101": {
-        title: "Set up PostHog + funnel events · Hartwell",
-        tags: ["analytics"],
+        title: "Edit round 2 · Bregman wedding gallery",
+        tags: ["review"],
       },
       "t-102": {
-        title: "Scope auth rebuild · Aurora v2",
-        tags: ["scope"],
+        title: "Brief review · Foley + Strand autumn campaign",
+        tags: ["brief"],
       },
       "t-103": {
         title: "Q2 invoices · Stripe + Mercury reconcile",
         tags: ["billing"],
       },
       "t-104": {
-        title: "Ship portfolio v3 · Astro + MDX",
-        tags: ["portfolio"],
+        title: "Final delivery · Coombe wedding via Pixieset",
+        tags: ["delivery"],
       },
       "t-105": {
-        title: "Mossfield kickoff · spec doc + Linear",
-        tags: ["onboarding"],
+        title: "Mossfield rebrand kickoff · voice and tone doc",
+        tags: ["kickoff"],
       },
       "t-201": {
-        title: "Discovery call · Bramwell.io stack audit",
+        title: "Discovery call · Bregman Studios brand work",
         tags: ["call"],
       },
       "t-202": {
-        title: "Auth rebuild · Clerk → custom JWT (Aurora)",
+        title: "Mood board v1 · Bregman editorial shoot",
         tags: ["client"],
       },
       "t-203": {
-        title: "PG → Supabase migration · Hartwell prod",
-        tags: ["infra"],
+        title: "Image cull · Coombe wedding · 487 frames",
+        tags: ["process"],
       },
       "t-204": {
-        title: "Code review · Bramwell PR #47 (rate limiter)",
+        title: "Edit notes · Foley round 1 review",
         tags: ["review"],
       },
       "t-301": {
-        title: "Stripe webhook 5xx fix · Aurora idempotency keys",
-        tags: ["client"],
+        title: "Stock licensing · refresh expiring Adobe images",
+        tags: ["admin"],
       },
       "t-302": {
-        title: "ClearSky landing · Tailwind v4 migration",
+        title: "Rewrite NorthLight Studio landing copy",
         tags: ["client"],
       },
       "t-303": {
-        title: "Mossfield SOW · Stripe payment links",
+        title: "Send MSA · Mossfield rebrand",
         tags: ["proposal"],
       },
-      "t-401": { title: "1099s + S-corp tax prep", tags: ["admin"] },
+      "t-401": { title: "1099s + sole-trader tax prep", tags: ["admin"] },
       "t-402": {
-        title: "Renew Vercel + Cloudflare DNS",
+        title: "Renew Cloudinary + Pixieset annual",
         tags: ["admin"],
       },
       "t-403": {
-        title: "Coffee w/ Figma plugin co-author",
+        title: "Coffee with Niamh · Bregman Studios",
         tags: ["network"],
       },
       "t-404": {
-        title: "MSA template · stack3 lawyer review",
+        title: "MSA template · Foley solicitor review",
         tags: ["legal"],
       },
     },
     /**
-     * The dev domain's signature: a real dependency graph. Three
+     * The freelance domain's signature: a real dependency graph. Three
      * chains visible on the board:
-     *   - t-201 (Discovery) → t-202 (Auth rebuild) → t-301 (Stripe fix)
-     *     "you can't fix the webhook until the auth ships"
-     *   - t-203 (PG migration) → t-101 (PostHog setup)
-     *     "no point wiring analytics on a schema we're abandoning"
-     *   - t-303 (Mossfield SOW) → t-105 (Mossfield kickoff)
+     *   - t-201 (Discovery) → t-202 (Mood board) → t-101 (Edit round)
+     *     "no mood board until they tell you what they want"
+     *   - t-203 (Image cull) → t-104 (Final delivery)
+     *     "can't deliver a gallery you haven't culled yet"
+     *   - t-303 (MSA sent) → t-105 (Mossfield kickoff)
      *     "kickoff blocked on contract signature"
      */
     blockedBy: {
       "t-202": ["t-201"],
-      "t-301": ["t-202"],
-      "t-101": ["t-203"],
+      "t-101": ["t-202"],
+      "t-104": ["t-203"],
       "t-105": ["t-303"],
     },
     commentBodies: [
-      "Pushed v2.4.1 — staging green, deploying at 5pm.",
-      "Found the bug — race condition in the webhook handler. Adding idempotency keys.",
-      "PR up, tests green. CI build #1247.",
-      "Stuck on a CORS preflight 405. Posting to the gist.",
-      "Refactor is faster than expected — ahead of schedule.",
-      "Context-switching from Aurora, need 24h before I can dig in.",
-      "Shipped. Closing this out.",
-      "Mercury reconciled · Q2 invoiced · numbers match.",
-      "Spec is locked. Building Monday.",
+      "Loved the moody set — can we get one more with the bridesmaids?",
+      "Copy reads great. One change: 'studio' appears twice in para 2 — pick the stronger one.",
+      "Final delivery sent · gallery passworded · receipt attached.",
+      "Aoife's RSVP came in, full guest list updated.",
+      "Light was perfect after 5pm — moving the second cull session to tonight.",
+      "Niamh's brief locked. Mood board v2 going across Thursday.",
+      "Mercury reconciled · Q2 invoices closed · numbers match.",
+      "Pinned the new MSA — Foley's solicitor signed off.",
+      "Brief attached. Flexible on the colour palette but the typeface is locked.",
     ],
   },
 
