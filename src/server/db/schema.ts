@@ -78,6 +78,14 @@ export const tasks = sqliteTable("tasks", {
    *  or Sheet. Stored as integer cents to dodge float drift. Nullable
    *  when no amount is set. Server clamps to [0, 99_999_999]. */
   cents: integer("cents"),
+  /** Optional pointer back to the Signal Notes note that spawned this
+   *  task via the cross-repo extract write (Cycle 9.4b second half,
+   *  2026-05-12). Format: `{ownerUserId}:{noteId}` — keeps the
+   *  idempotency check user-scoped without needing a separate join.
+   *  Null on every task created in Tasks directly. The Notes raw body
+   *  never lands here — only the creator-authored extract_body becomes
+   *  the task title. */
+  sourceNoteId: text("source_note_id"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

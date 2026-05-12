@@ -3,6 +3,38 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 43 · 2026-05-12 · Cross-repo Notes -> Tasks write surface
+
+Tasks gained a single new route handler: `POST /api/notes-extract`.
+Signal Notes calls it from its server action when a user presses
+Send to Tasks on a drafted extract. The body is the creator-authored
+action wording — never the raw note body. The route writes a new
+task into the user's first workspace, returns the taskId, workspace
+name, and a deep-link back to the board.
+
+Auth: shared bearer secret `NOTES_TO_TASKS_SECRET` + the user's
+Clerk userId in the body. First-party service-to-service pattern.
+The endpoint refuses without the secret env var configured (500),
+or with a mismatched bearer (401).
+
+Idempotency: new `source_note_id` column on the tasks table, keyed
+as `{userId}:{noteId}` so a repeat call returns the existing task
+instead of duplicating. Notes retries are safe.
+
+Workspace selection: the user's first workspace_members row wins.
+A user with no workspaces gets a 404 with a surfaced reason ("create
+a workspace in Tasks before sending extracts") so Notes can tell
+them what to do.
+
+Task shape on create: title = the extract body, description =
+"Drafted from a private note in Signal Notes.", lane = todo,
+priority = p2, assignees = []. The user re-shapes from the board.
+
+What's needed to deploy:
+- ALTER TABLE tasks ADD COLUMN source_note_id TEXT
+- NOTES_TO_TASKS_SECRET env var on Tasks (Vercel)
+- Same secret on Notes (matching value)
+
 ## Cycle 42 · 2026-05-12 · Remix toast invites a Roadmap
 
 The toast primitive gained an optional action link rendered below the
