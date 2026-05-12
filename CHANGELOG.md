@@ -3,6 +3,49 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 45 · 2026-05-12 · Plain-English activity log (Sprint 2 cycle 10.4)
+
+The settings → Members tab gained a Recent section below the member
+list. Last 10 workspace changes, in human prose, visible to all
+members (not owner-gated). Brand-mission read: gesture #4 of Sprint
+2's five — "Ethan added two tasks. 12m ago" / "Aoife finished
+'Send invoices'. 1h ago" / "Owen moved a task between lanes. 2d ago".
+Not "user_2k3 created entity task_abc on workspace xyz".
+
+Grouping: walks the activity table newest-to-oldest and collapses
+consecutive same-(user, kind) events within a 10-minute window into
+one line. Three taskAdds by Ethan at 10:00 / 10:02 / 10:08 →
+"Ethan added three tasks. 12m ago". A taskAdd and a move in the
+same window stay separate (different kinds).
+
+Mapper has prose for every ActivityKind in the existing payload
+shape: taskAdd, toggleComplete (done + reopen split), move (single
+shows from→to lanes with the task title), update (per-field
+phrasing), commentAdd, commentRemove, attach, detach. Falls back to
+"{user} updated the workspace." for anything unrecognised. Display
+name resolution: name -> handle -> email-local -> "Someone". No raw
+user-ids ever surface.
+
+The Sprint 2 plan-doc said "new tasks table + formatActivity
+mapper". No new table was needed — the existing `activities` table
+already records every event from the per-task conversation feed.
+The cycle is the prose mapper + the workspace-scoped query +
+grouping + the surface in settings.
+
+No new schema migration. `listWorkspaceActivityAction` is the new
+server action; the existing per-task `formatActivityLine` in the
+detail-panel stays unchanged.
+
+## 2026-05-12 (later still) · Suite chrome — one bar, breadcrumb prefix
+
+The thin cross-product strip on top of every Tasks marketing page is
+gone. The Tasks wordmark now sits next to a small "signal studio. /"
+back-link, all on one row. About 28px of vertical chrome reclaimed
+above the hero stat — Tasks finally introduces itself before
+introducing the suite. Same call rolled out across all four products
+plus the umbrella; see the umbrella changelog for the dissent
+captured inside the decision.
+
 ## Cycle 44 · 2026-05-12 · Invite flow honest — Sprint 2 cycle 10.1
 
 The "Real invites land in Phase F. For now we logged it." toast is

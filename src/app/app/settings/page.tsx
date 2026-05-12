@@ -8,6 +8,7 @@ import {
   getMyRoleInActiveWorkspace,
   getNotificationPrefs,
   listPendingInvitesAction,
+  listWorkspaceActivityAction,
 } from "@/server/actions/settings";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
@@ -51,12 +52,14 @@ export default async function SettingsPage() {
     .leftJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, ws));
 
-  const [tier, prefs, memberCapacity, pendingInvites] = await Promise.all([
-    getEffectiveTier(me, ws),
-    getNotificationPrefs(),
-    getMemberCapacity(ws),
-    listPendingInvitesAction(),
-  ]);
+  const [tier, prefs, memberCapacity, pendingInvites, recentActivity] =
+    await Promise.all([
+      getEffectiveTier(me, ws),
+      getNotificationPrefs(),
+      getMemberCapacity(ws),
+      listPendingInvitesAction(),
+      listWorkspaceActivityAction(),
+    ]);
 
   return (
     <>
@@ -95,6 +98,7 @@ export default async function SettingsPage() {
         memberCapacity={memberCapacity}
         notificationPrefs={prefs}
         pendingInvites={pendingInvites}
+        recentActivity={recentActivity}
       />
     </>
   );

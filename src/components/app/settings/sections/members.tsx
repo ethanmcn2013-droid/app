@@ -41,6 +41,13 @@ type PendingInvite = {
   invitedByUserId: string;
 };
 
+type ActivityLine = {
+  id: string;
+  sentence: string;
+  relative: string;
+  createdAt: string;
+};
+
 function fmtAgo(iso: string): string {
   const d = new Date(iso);
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
@@ -64,12 +71,14 @@ export function MembersSection({
   currentUserId,
   memberCapacity,
   pendingInvites,
+  recentActivity,
 }: {
   members: SettingsMember[];
   myRole: "owner" | "member" | "none";
   currentUserId: string;
   memberCapacity: MemberCapacity;
   pendingInvites: PendingInvite[];
+  recentActivity: ActivityLine[];
 }) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -472,6 +481,38 @@ export function MembersSection({
           })}
         </ul>
       </div>
+
+      {/* Recent activity — Sprint 2 cycle 10.4, plain-English prose */}
+      {recentActivity.length > 0 && (
+        <div className="mt-6 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
+          <div className="flex items-center justify-between border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
+              Recent
+            </div>
+            <div className="text-[11px] text-ink-quiet">
+              Last 10 changes in plain English
+            </div>
+          </div>
+          <ul>
+            {recentActivity.map((line) => (
+              <li
+                key={line.id}
+                className="flex items-baseline justify-between gap-4 border-b border-line-soft/60 px-5 py-2.5 last:border-b-0"
+              >
+                <p className="min-w-0 text-[13px] leading-[1.45] text-ink">
+                  {line.sentence}
+                </p>
+                <span
+                  className="flex-shrink-0 text-[11px] tabular-nums text-ink-quiet"
+                  title={new Date(line.createdAt).toLocaleString()}
+                >
+                  {line.relative}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Remove confirmation */}
       <Dialog
