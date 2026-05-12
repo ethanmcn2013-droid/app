@@ -3,6 +3,35 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-12 (even later) · The Anatomy card learned how to breathe
+
+The "Every detail earns its place" section on the features page is no
+longer a still life. The demo card now lives a 14-second loop in
+front of you: a comment count ticks up, the violet lock outline draws
+itself around the card as someone joins, a second avatar (EM) springs
+in beside DV with a hair of overshoot — DV gets a tiny squash in
+return because that's what motion graphics 101 says happens when
+another body enters the frame. The amber "Idle 4d" pill morphs into
+a green "Live" chip with a real layout transition (not a crossfade
+hack). A typewriter caption types "Someone is in the card." in 22ms
+per glyph. Comment counts and due-hour countdowns are slot-machine
+rolls with spring physics, not number swaps. The whole thing pauses
+when off-screen and respects `prefers-reduced-motion`.
+
+The section also became a two-way teaching tool. Hover any chip on
+the card OR any row in the numbered index — both light up, the rest
+dim to 40%, and the card itself lifts on a soft spring (scale 1.04 +
+deeper shadow). You can stop reading and start reading-by-pointing.
+
+Implementation: rebuilt on `motion` v12 (already in the tree, formerly
+Framer Motion). Real spring physics replaced the cubic-bezier
+scaffolding; `AnimatePresence` + `layout` prop handles the pill morph;
+`pathLength` animates the SVG lock outline; `MotionConfig
+reducedMotion="user"` covers accessibility in one line; `useInView`
+pauses the loop when the section isn't on screen. Six distinct easing
+curves — deliberate vocabulary, one per gesture type — keep the
+motion grammar legible rather than uniform.
+
 ## Cycle 45 · 2026-05-12 · Plain-English activity log (Sprint 2 cycle 10.4)
 
 The settings → Members tab gained a Recent section below the member
