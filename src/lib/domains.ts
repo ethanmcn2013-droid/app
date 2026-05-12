@@ -434,11 +434,11 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
 };
 
 export const DOMAIN_ORDER: DomainId[] = [
-  "marketing",
-  "student",
-  "freelance",
   "wedding",
   "trades",
+  "freelance",
+  "student",
+  "marketing",
 ];
 
 /** Apply a domain pack overlay to the canonical seed task list.
