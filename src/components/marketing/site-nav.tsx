@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
-import { ANALYTICS_URL, NOTES_URL, ROADMAP_URL, STUDIO_URL } from "@/lib/product-urls";
+import { STUDIO_URL } from "@/lib/product-urls";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 
@@ -14,61 +14,26 @@ const NAV: { href: string; label: string; external?: boolean }[] = [
 export function SiteNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-line-soft/60 bg-bg/72 backdrop-blur-md backdrop-saturate-150">
-      {/* ── Suite chrome — cross-product strip ──────────────────── */}
-      <div
-        className="border-b border-border-soft"
-        style={{ background: "color-mix(in srgb, var(--bg-deep) 55%, transparent)" }}
-      >
-        <div
-          className="mx-auto flex h-7 w-full max-w-[1240px] items-center px-6"
-          style={{ gap: 16 }}
-        >
+      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
+        <div className="flex items-center gap-3">
           <a
             href={STUDIO_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="suite-link"
-            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
+            aria-label="Signal Studio — home"
+            style={{
+              fontSize: 12,
+              color: "var(--ink-quiet)",
+              fontWeight: 400,
+              textDecoration: "none",
+              letterSpacing: "-0.01em",
+              transition: "color 200ms",
+            }}
+            className="hidden hover:text-ink sm:inline-flex"
           >
             signal studio<span style={{ color: "#4f46e5" }}>.</span>
           </a>
-          <span aria-hidden style={{ color: "var(--ink-faint)", fontSize: 10 }}>·</span>
-          <span style={{ fontSize: 11, color: "var(--ink)", fontWeight: 600, letterSpacing: "-0.01em" }}>
-            tasks
-          </span>
-          <a
-            href={ROADMAP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="suite-link"
-            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
-          >
-            roadmap
-          </a>
-          <a
-            href={ANALYTICS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="suite-link"
-            style={{ fontSize: 11, color: "var(--ink-quiet)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
-          >
-            analytics
-          </a>
-          <a
-            href={NOTES_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="suite-link"
-            style={{ fontSize: 11, color: "var(--ink-faint)", fontWeight: 400, textDecoration: "none", letterSpacing: "-0.01em" }}
-          >
-            notes
-          </a>
-        </div>
-      </div>
-
-      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
-        {/* Brand lockup: Tasks wordmark */}
-        <div className="flex items-center gap-0">
+          <span aria-hidden className="hidden sm:inline" style={{ color: "var(--ink-faint)", fontSize: 12 }}>/</span>
           <Wordmark size="md" />
         </div>
         <nav className="hidden items-center gap-7 text-[13px] text-ink-soft md:flex">
