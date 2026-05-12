@@ -432,6 +432,71 @@ export async function acceptInviteAction(token: string): Promise<{
   };
 }
 
+/**
+ * Server action: list pending invites for the active workspace. Used
+ * by the settings members panel so the owner can see who's been
+ * invited and hasn't accepted yet — and resend or revoke.
+ * Scopes to invites that are unaccepted AND unexpired.
+ */
+export type PendingInviteRead = {
+  token: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+  invitedByUserId: string;
+};
+
+export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
+  const ws = await getActiveWorkspace();
+  const now = new Date();
+  const rows = await db
+    .select({
+      token: pendingInvites.token,
+      email: pendingInvites.email,
+      createdAt: pendingInvites.createdAt,
+      expiresAt: pendingInvites.expiresAt,
+      invitedByUserId: pendingInvites.invitedByUserId,
+      acceptedAt: pendingInvites.acceptedAt,
+    })
+    .from(pendingInvites)
+    .where(eq(pendingInvites.workspaceId, ws));
+  return rows
+    .filter((r) => !r.acceptedAt && r.expiresAt > now)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .map((r) => ({
+      token: r.token,
+      email: r.email,
+      createdAt: r.createdAt.toISOString(),
+      expiresAt: r.expiresAt.toISOString(),
+      invitedByUserId: r.invitedByUserId,
+    }));
+}
+
+/**
+ * Server action: revoke a pending invite. Owner-only. Sets expiresAt
+ * to now so the row stays as an audit trail rather than vanishing —
+ * accepters who click a revoked link see the expired-state copy.
+ */
+export async function revokePendingInviteAction(
+  token: string,
+): Promise<{ ok: true; token: string }> {
+  const ws = await getActiveWorkspace();
+  const myRole = await getMyRoleInActiveWorkspace();
+  if (myRole !== "owner") {
+    throw new Error("Only the workspace owner can revoke invites.");
+  }
+  const result = await db
+    .update(pendingInvites)
+    .set({ expiresAt: new Date() })
+    .where(and(eq(pendingInvites.token, token), eq(pendingInvites.workspaceId, ws)))
+    .returning({ token: pendingInvites.token });
+  if (result.length === 0) {
+    throw new Error("That invite was already accepted or has been revoked.");
+  }
+  revalidatePath("/app/settings");
+  return { ok: true, token };
+}
+
 /** Cap check by workspace id (not active workspace). Used by accept
  *  flow which needs to validate against the workspace the invite
  *  points at, not the current user's active workspace. */

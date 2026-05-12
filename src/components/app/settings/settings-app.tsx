@@ -67,6 +67,7 @@ export function SettingsApp({
   tier,
   memberCapacity,
   notificationPrefs,
+  pendingInvites,
 }: {
   currentUserId: string;
   myRole: "owner" | "member" | "none";
@@ -79,6 +80,13 @@ export function SettingsApp({
     mentions: boolean;
     commentReplies: boolean;
   };
+  pendingInvites: Array<{
+    token: string;
+    email: string;
+    createdAt: string;
+    expiresAt: string;
+    invitedByUserId: string;
+  }>;
 }) {
   const [tab, setTab] = useState<Tab>("workspace");
 
@@ -176,6 +184,7 @@ export function SettingsApp({
               myRole={myRole}
               currentUserId={currentUserId}
               memberCapacity={memberCapacity}
+              pendingInvites={pendingInvites}
             />
           ) : null}
           {tab === "billing" ? (

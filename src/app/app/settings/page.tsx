@@ -7,6 +7,7 @@ import { getMemberCapacity } from "@/server/db/membership";
 import {
   getMyRoleInActiveWorkspace,
   getNotificationPrefs,
+  listPendingInvitesAction,
 } from "@/server/actions/settings";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
@@ -50,10 +51,11 @@ export default async function SettingsPage() {
     .leftJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, ws));
 
-  const [tier, prefs, memberCapacity] = await Promise.all([
+  const [tier, prefs, memberCapacity, pendingInvites] = await Promise.all([
     getEffectiveTier(me, ws),
     getNotificationPrefs(),
     getMemberCapacity(ws),
+    listPendingInvitesAction(),
   ]);
 
   return (
@@ -92,6 +94,7 @@ export default async function SettingsPage() {
         tier={tier}
         memberCapacity={memberCapacity}
         notificationPrefs={prefs}
+        pendingInvites={pendingInvites}
       />
     </>
   );

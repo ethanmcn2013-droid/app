@@ -3,6 +3,33 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## Cycle 44 · 2026-05-12 · Invite flow honest — Sprint 2 cycle 10.1
+
+The "Real invites land in Phase F. For now we logged it." toast is
+gone. The invite flow has been real for cycles — `inviteMemberByEmailAction`
+creates a pending_invites row, mints a 32-char token, sends an actual
+Resend email (with graceful no-key fallback), and the `/invite/[token]`
+page handles signed-in-with-right-email / wrong-email / not-signed-in
+states. Cycle 10.1's real work was closing the demo-vs-reality gap on
+the settings UI: the invite form copy now describes what actually
+happens, the toast on success says "Invite sent to <email>", and a
+new Pending invites panel sits between the form and the member list.
+
+Pending invites panel shows email, "Sent X days ago", "expires in Y
+days", with two gestures: Resend (re-uses idempotent action — same
+token, fresh email) and Revoke (expires the row server-side, leaves
+audit trail). Owner-only; non-owners see the panel but no buttons.
+
+Two new server actions: `listPendingInvitesAction` (active workspace,
+filters to unaccepted + unexpired, sorted newest first),
+`revokePendingInviteAction` (owner-only, sets expiresAt to now so
+revoked links land on the existing /invite expired-state copy).
+
+The brand line being held: gesture #1 of Sprint 2's five — one-click
+invite. No permission matrix, no role configurator, just an email
+input and a Send invite button. Three editing guests on Free,
+unlimited on Workspace. Cap-counter remains in the panel header.
+
 ## Cycle 43 · 2026-05-12 · Cross-repo Notes -> Tasks write surface
 
 Tasks gained a single new route handler: `POST /api/notes-extract`.

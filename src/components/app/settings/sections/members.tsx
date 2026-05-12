@@ -7,6 +7,7 @@ import { Popover } from "@/components/app/detail-panel/popover";
 import {
   inviteMemberByEmailAction,
   removeMemberAction,
+  revokePendingInviteAction,
   setMemberRoleAction,
 } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
@@ -32,16 +33,43 @@ function displayName(m: SettingsMember): string {
   return m.name ?? m.handle ?? m.email ?? m.userId.slice(0, 10);
 }
 
+type PendingInvite = {
+  token: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+  invitedByUserId: string;
+};
+
+function fmtAgo(iso: string): string {
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+  if (days < 1) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function fmtUntil(iso: string): string {
+  const d = new Date(iso);
+  const days = Math.ceil((d.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (days <= 0) return "expired";
+  if (days === 1) return "expires tomorrow";
+  return `expires in ${days} days`;
+}
+
 export function MembersSection({
   members,
   myRole,
   currentUserId,
   memberCapacity,
+  pendingInvites,
 }: {
   members: SettingsMember[];
   myRole: "owner" | "member" | "none";
   currentUserId: string;
   memberCapacity: MemberCapacity;
+  pendingInvites: PendingInvite[];
 }) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -101,13 +129,44 @@ export function MembersSection({
     startTransition(async () => {
       try {
         await inviteMemberByEmailAction(email);
-        toast("Invite logged", {
-          tone: "info",
-          body: "Real invites land in Phase F. For now we logged it.",
+        toast(`Invite sent to ${email}`, {
+          tone: "success",
+          body: "Good for 7 days. They click the link, sign in with this address, and they're in.",
         });
         setInviteEmail("");
       } catch (err) {
         toast("Couldn't invite", {
+          tone: "error",
+          body: (err as Error).message,
+        });
+      }
+    });
+  }
+
+  function handleRevoke(invite: PendingInvite) {
+    startTransition(async () => {
+      try {
+        await revokePendingInviteAction(invite.token);
+        toast(`Invite to ${invite.email} revoked`, { tone: "success" });
+      } catch (err) {
+        toast("Couldn't revoke", {
+          tone: "error",
+          body: (err as Error).message,
+        });
+      }
+    });
+  }
+
+  function handleResend(invite: PendingInvite) {
+    startTransition(async () => {
+      try {
+        await inviteMemberByEmailAction(invite.email);
+        toast(`Resent to ${invite.email}`, {
+          tone: "success",
+          body: "Same link, same expiry. Worth a follow-up if it's been days.",
+        });
+      } catch (err) {
+        toast("Couldn't resend", {
           tone: "error",
           body: (err as Error).message,
         });
@@ -134,9 +193,9 @@ export function MembersSection({
               Invite by email
             </div>
             <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-              Drop an email and we&apos;ll{" "}
-              <span className="text-ink">log it to the console</span>{" "}
-              for now — real invite emails wire up in the next phase.
+              Drop an email and we send them a link. They click it, sign
+              in with that address, and they&apos;re in — no setup, no
+              tool tour. Invites are good for seven days.
             </p>
           </div>
           {showCounter ? (
@@ -202,6 +261,75 @@ export function MembersSection({
           </p>
         ) : null}
       </form>
+
+      {/* Pending invites */}
+      {pendingInvites.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
+          <div className="flex items-center justify-between border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-quiet">
+              Pending invites
+            </div>
+            <div className="text-[11px] text-ink-quiet tabular-nums">
+              {pendingInvites.length}{" "}
+              {pendingInvites.length === 1 ? "out" : "out"}
+            </div>
+          </div>
+          <ul>
+            {pendingInvites.map((invite) => (
+              <li
+                key={invite.token}
+                className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <div className="truncate text-[13px] font-medium text-ink">
+                    {invite.email}
+                  </div>
+                  <div className="text-[11.5px] text-ink-quiet">
+                    Sent {fmtAgo(invite.createdAt)} &middot;{" "}
+                    {fmtUntil(invite.expiresAt)}
+                  </div>
+                </div>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => handleResend(invite)}
+                    disabled={pending}
+                    className="rounded-full border border-line bg-white px-2.5 py-0.5 text-[11.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
+                  >
+                    Resend
+                  </button>
+                ) : (
+                  <span />
+                )}
+                {canEdit ? (
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(invite)}
+                    disabled={pending}
+                    className="rounded-md p-1.5 text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-600 disabled:opacity-60"
+                    aria-label={`Revoke invite for ${invite.email}`}
+                    title="Revoke invite"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    </svg>
+                  </button>
+                ) : (
+                  <span />
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Member list */}
       <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
