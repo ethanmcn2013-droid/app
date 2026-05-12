@@ -1,9 +1,9 @@
 /**
- * log-cycle — append a cycle row to the roadmap DB.
+ * log-cycle — append a cycle row to the shared roadmap Turso DB.
  *
  * Usage:
  *   tsx scripts/log-cycle.ts \
- *     --project portfolio \
+ *     --project tasks \
  *     --cycle 22 \
  *     --title "Live cycle metadata + log-cycle workflow" \
  *     --date 2026-05-07 \
@@ -11,29 +11,30 @@
  *     [--description "..."]
  *
  * Notes:
- * - status defaults to "shipped" (you only log cycles on ship)
- * - kind defaults to "cycle"
+ * - status defaults to "shipped" (log cycles on ship)
+ * - kind is "cycle"
  * - cycleLabel is computed as "Cycle <n>"
  * - id is generated as "<slug>-c<n>"; if it collides, the script
  *   appends -2, -3 etc. so re-runs are safe-ish but not idempotent
  *   for the same cycle number with a different title
+ *
+ * Speaks raw SQL to libsql via TURSO_DATABASE_URL + TURSO_AUTH_TOKEN.
+ * Bypasses the per-product drizzle schema entirely so this script
+ * stays alive across schema reshuffles.
  */
 
-// Load env BEFORE the db module evaluates. The db module reads
-// process.env at module-evaluation time, so any static import of
-// it would lock in whatever env was present at script start —
-// usually nothing. We dynamic-import inside main() instead, after
-// dotenv has populated process.env.
 import { config } from "dotenv";
 config({ path: ".env.local" });
 config({ path: ".env" });
+
+import { createClient } from "@libsql/client";
 
 type Args = {
   project: string;
   cycle: number;
   title: string;
   date: string;
-  status?: "shipped" | "in-flight" | "next" | "blocked" | "refused";
+  status: "shipped" | "in-flight" | "next" | "blocked" | "refused";
   description?: string;
 };
 
@@ -69,81 +70,92 @@ function parseArgs(argv: string[]): Args {
   };
 }
 
-/**
- * All portfolio data (Tasks, Luminary Studio, portfolio project rows)
- * lives under this workspace slug. Matches the backfill value applied
- * to legacy null-workspace rows during the Cycle 51 migration.
- */
 const PORTFOLIO_WORKSPACE_SLUG = "portfolio";
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const { db } = await import("../src/server/roadmap-db/index");
-  const { tasks, activity, workspaces } = await import("../src/server/roadmap-db/schema");
-  const { eq, sql } = await import("drizzle-orm");
 
-  // Ensure the portfolio workspace row exists before any inserts.
-  // Uses raw SQL INSERT OR IGNORE so this is idempotent and never
-  // collides with the real workspace if it was already created.
+  const url = process.env.TURSO_DATABASE_URL;
+  const authToken = process.env.TURSO_AUTH_TOKEN;
+  if (!url) {
+    throw new Error("TURSO_DATABASE_URL not set — check .env.local");
+  }
+
+  const db = createClient({ url, authToken });
+
+  // Idempotent workspace row.
   const portfolioOwnerId =
     process.env.PORTFOLIO_OWNER_USER_ID ?? "portfolio";
-  await db.run(sql`
-    INSERT OR IGNORE INTO workspaces (slug, name, owner_user_id, plan, created_at, updated_at)
-    VALUES (
-      ${PORTFOLIO_WORKSPACE_SLUG},
-      'Portfolio',
-      ${portfolioOwnerId},
-      'free',
-      (unixepoch()),
-      (unixepoch())
-    )
-  `);
-  void workspaces; // keep import live
+  await db.execute({
+    sql: `
+      INSERT OR IGNORE INTO workspaces
+        (slug, name, owner_user_id, plan, created_at, updated_at)
+      VALUES (?, 'Portfolio', ?, 'free', unixepoch(), unixepoch())
+    `,
+    args: [PORTFOLIO_WORKSPACE_SLUG, portfolioOwnerId],
+  });
 
+  // Find a non-colliding id.
   const baseId = `${args.project}-c${args.cycle}`;
   let id = baseId;
   let suffix = 2;
   while (true) {
-    const [existing] = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(eq(tasks.id, id))
-      .limit(1);
-    if (!existing) break;
+    const existing = await db.execute({
+      sql: `SELECT id FROM tasks WHERE id = ? LIMIT 1`,
+      args: [id],
+    });
+    if (existing.rows.length === 0) break;
     id = `${baseId}-${suffix}`;
     suffix++;
   }
 
   const cycleLabel = `Cycle ${args.cycle}`;
-  const now = new Date();
-  const completedAt = args.status === "shipped" ? now : null;
+  const nowMs = Date.now();
+  const completedAt = args.status === "shipped" ? nowMs : null;
 
-  await db.insert(tasks).values({
-    id,
-    projectSlug: args.project,
-    workspaceSlug: PORTFOLIO_WORKSPACE_SLUG,
-    title: `${cycleLabel} — ${args.title}`,
-    description: args.description ?? args.title,
-    status: args.status ?? "shipped",
-    kind: "cycle",
-    cycleLabel,
-    targetDate: args.date,
-    sortOrder: args.cycle * 10,
-    assignee: "claude-code",
-    isLaunch: false,
-    createdAt: now,
-    updatedAt: now,
-    completedAt,
+  await db.execute({
+    sql: `
+      INSERT INTO tasks (
+        id, project_slug, workspace_slug, title, description, status,
+        kind, cycle_label, target_date, sort_order, assignee, is_launch,
+        created_at, updated_at, completed_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, 'cycle', ?, ?, ?, 'claude-code', 0, ?, ?, ?)
+    `,
+    args: [
+      id,
+      args.project,
+      PORTFOLIO_WORKSPACE_SLUG,
+      `${cycleLabel} — ${args.title}`,
+      args.description ?? args.title,
+      args.status,
+      cycleLabel,
+      args.date,
+      args.cycle * 10,
+      nowMs,
+      nowMs,
+      completedAt,
+    ],
   });
 
-  await db.insert(activity).values({
-    id: `act-${id}-${Date.now()}`,
-    workspaceSlug: PORTFOLIO_WORKSPACE_SLUG,
-    entityKind: "task",
-    entityId: id,
-    action: "cycle-logged",
-    payload: JSON.stringify({ cycleLabel, status: args.status, date: args.date }),
-    createdAt: now,
+  await db.execute({
+    sql: `
+      INSERT INTO activity (
+        id, workspace_slug, entity_kind, entity_id, action, payload, created_at
+      )
+      VALUES (?, ?, 'task', ?, 'cycle-logged', ?, ?)
+    `,
+    args: [
+      `act-${id}-${nowMs}`,
+      PORTFOLIO_WORKSPACE_SLUG,
+      id,
+      JSON.stringify({
+        cycleLabel,
+        status: args.status,
+        date: args.date,
+      }),
+      nowMs,
+    ],
   });
 
   console.log(
@@ -153,7 +165,8 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch((err) => {
-    console.error(err.message ?? err);
+  .catch((err: unknown) => {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(msg);
     process.exit(1);
   });
