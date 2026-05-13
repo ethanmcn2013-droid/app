@@ -350,6 +350,32 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
 });
 
 /**
+ * User-level preferences for cross-product email cadence. Owned by
+ * the new /settings/notifications surface — separate from
+ * `notification_prefs` (which is in-app workspace-internal noise
+ * policy). One row per user; settings page upserts. Plan-change /
+ * expiry notices are always-on and not stored here.
+ */
+export const userPreferences = sqliteTable("user_preferences", {
+  userId: text("user_id").primaryKey(),
+  /** Signal Analytics daily briefing email cadence. */
+  dailySignalCadence: text("daily_signal_cadence")
+    .$type<"off" | "weekdays" | "daily">()
+    .notNull()
+    .default("off"),
+  /** Weekly summary email. */
+  weeklySummary: text("weekly_summary")
+    .$type<"off" | "mondays">()
+    .notNull()
+    .default("off"),
+  /** IANA tz string. Optional — falls back to UTC when null. */
+  timeZone: text("time_zone"),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * Read-only "magic link" share tokens. A guest with the URL
  * `/share/<token>` can view the workspace at the chosen view
  * (board/list/timeline/calendar) without signing in. Any edit or

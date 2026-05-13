@@ -79,5 +79,6 @@ export const config = {
     "/welcome/:path*",
     "/redeem/:path*",
     "/invite/:path*",
+    "/settings/:path*",
   ],
 };

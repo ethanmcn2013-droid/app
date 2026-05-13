@@ -3,6 +3,53 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (later still) · A settings screen that sounds like us
+
+Bespoke Settings at `/settings/profile`, `/settings/notifications`,
+`/settings/plan`. The borrowed Clerk surface is gone — every label,
+every error string, every empty state is ours now. The plan called
+it Cycle 9.1a + 9.1b; they landed together.
+
+Three tabs by what they ask of you, not by what they store. Profile
+holds name, avatar, email change (two-step with verification code),
+password (with current-password reveal toggle and "sign out other
+devices" on save), two-factor sign-in (full QR + manual key fallback
++ ten recovery codes you have to acknowledge before continuing),
+active sessions (current device labelled, sign out others with one
+click), connected accounts (Google, Apple, GitHub), and a danger
+zone that runs as a mailto for the first ~50 users — slow on
+purpose; we'd rather be slow than wrong about who pressed delete.
+
+"What we send you" replaces "Notification settings". Three rows:
+Daily Signal cadence (off / weekdays / every day), Weekly summary
+(off / Mondays), Time zone (IANA, auto-detected via Intl). Plus
+one always-on row for plan-change + expiry notices: *"the difference
+between a refund window and a surprise."* New `user_preferences`
+table (drizzle/0002) — distinct from the existing
+`notification_prefs` which carries in-app workspace-internal toggles.
+Different concern, different lifecycle.
+
+"Your plan" is Lamb's-Hill-aware. Wedding comp redemptions read the
+sponsor name + redemption code straight off the entitlement → comp
+code join and render: *"A year of Signal Studio, on Lamb's Hill. When
+the year is up, the workspace stays."* Paid tiers open Stripe
+Customer Portal via email lookup (we don't store stripe_customer_id
+yet — Plan 9.2 problem if it ever bites). Free tier links to
+signalstudio.ie/pricing.
+
+The Clerk `UserButton` "Manage account" item now sits next to a new
+"Settings" entry pointing at `/settings/profile`. Both still work;
+ours is first.
+
+What didn't ship this cycle (deliberate non-builds): cascade
+account-delete, workspaces management tab, data export, email
+open-tracking, cross-product preferences unification, settings on
+Roadmap/Notes/Analytics. All scoped out of v1. Tasks first, the
+others inherit the chassis later.
+
+Operator action: apply `drizzle/0002_user_preferences.sql` to prod
+Turso before the notifications tab can persist anything.
+
 ## 2026-05-13 (the same evening) · The "did the next person finish?" signal
 
 One column. One boolean. The minimum-viable monitoring for a venue
