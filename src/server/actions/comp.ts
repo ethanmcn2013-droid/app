@@ -8,6 +8,11 @@ import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { sendEmail, studentCodeEmailHtml } from "@/server/email";
 import type { EntitlementTier } from "@/lib/data";
+import { TEMPLATES } from "@/lib/templates";
+import { applyTemplateAction } from "@/server/actions/templates";
+import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+
+const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
 function newCode(prefix: string): string {
   // STUDENT26-A4B2X9 — readable + 7 random chars.
@@ -91,7 +96,16 @@ export async function mintCompCodeAction(
 }
 
 export type RedeemResult =
-  | { ok: true; tier: EntitlementTier; expiresAt: string; notes: string | null }
+  | {
+      ok: true;
+      tier: EntitlementTier;
+      expiresAt: string;
+      notes: string | null;
+      /** Set when the redeemed code is a venue-edition wedding comp.
+       *  Result card uses it to deep-link straight to
+       *  /app/board?welcome=venue&v=<slug>, skipping /welcome. */
+      sponsorSlug?: string;
+    }
   | {
       ok: false;
       reason:
@@ -147,6 +161,10 @@ export async function redeemCompCodeAction(
       sql`${entitlements.userId} = ${userId} AND ${entitlements.notes} = ${"comp:" + code}`,
     );
   if (existing) {
+    // Re-hit (refresh, browser back). Template was already applied on
+    // the first redemption — do NOT re-apply. Surface sponsorSlug so
+    // the card can still deep-link to the welcomed board.
+    const sponsor = await lookupSponsorByCode(code);
     return {
       ok: true,
       tier: existing.tier,
@@ -154,6 +172,7 @@ export async function redeemCompCodeAction(
         ? existing.expiresAt.toISOString()
         : "",
       notes: existing.notes,
+      sponsorSlug: sponsor?.sponsorSlug,
     };
   }
 
@@ -192,11 +211,33 @@ export async function redeemCompCodeAction(
     UPDATE comp_codes SET redeemed = redeemed + 1 WHERE code = ${code}
   `);
 
+  // Venue Editions short-circuit: if this is a wedding comp with
+  // sponsor JSON, apply the wedding template and flag the workspace
+  // inline. Lets the result card deep-link straight to the board
+  // with the sponsor banner — no /welcome hop. Used to live in
+  // /welcome's page handler; moved here so we don't burn the
+  // emotional high of the success card with a triple-redirect.
+  let sponsorSlug: string | undefined;
+  if (row.tier === "wedding") {
+    const sponsor = await lookupSponsorByCode(code);
+    if (sponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
+      await applyTemplateAction(VENUE_TEMPLATE_ID);
+      await db.run(sql`
+        UPDATE workspaces
+        SET template_id = ${VENUE_TEMPLATE_ID},
+            active_domain = 'wedding'
+        WHERE id = ${ws}
+      `);
+      sponsorSlug = sponsor.sponsorSlug;
+    }
+  }
+
   return {
     ok: true,
     tier: row.tier,
     expiresAt: expiresAt.toISOString(),
     notes: row.notes,
+    sponsorSlug,
   };
 }
 

@@ -3,6 +3,76 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (the morning after) · Redemption polish — four small choices, one deploy slot
+
+A four-agent panel (creative-director, ux-director, ux-tester, strategy)
+sat with the venue-edition flow we shipped last night and converged on
+four things worth doing before Sinéad gets the CSV. Three are surgical;
+one is pure copy. Two hours of work. One deploy.
+
+**The brand-thread breakage at the Clerk seam.** Couples were leaving
+`signalstudio.ie/redeem` with Lamb's Hill firmly in mind and arriving
+at a generic Clerk sign-up that mentioned neither the venue nor the
+code nor the gift. ux-tester called 40% bounce. We added a small
+context strip above the Clerk component:
+
+> [SPONSOR NAME]
+> Almost there. Lamb's Hill is covering your year.
+> Code · LAMBSHIL-MP93X
+
+Eleven-pixel mono eyebrow, fourteen-pixel ink-soft sentence, fainter
+mono code line. No buttons. No flourish. The thread is the visual
+repetition, not new prose. (See `src/app/sign-up/[[...sign-up]]/page.tsx`
+and the new `lookupSponsorByCode` in `src/server/db/venue-welcome.ts`
+— resolves sponsor identity from `comp_codes.notes` JSON without
+needing an authenticated session.)
+
+**The triple-redirect that elided the success moment.** Click "Open
+the workspace" → /welcome → server short-circuit → /app/board. Three
+server hops for what should feel like one decisive landing. We moved
+the wedding-template apply and the `active_domain = 'wedding'` flag
+into `redeemCompCodeAction` itself; the result card now deep-links
+straight to `/app/board?welcome=venue&v=<sponsorSlug>`. /welcome
+still serves non-venue first-time sign-ups + acts as a defensive
+fallback if someone navigates there with a venue entitlement.
+
+**The wrong palette on the success card.** Emerald reads "system
+status: shipped." That is exactly the wrong register for "your wedding
+workspace just activated." Swapped to `--aud-wedding` rose — the
+audience accent BRAND.md §7 reserves for weddings. Same construction
+(border tint, faint wash, eyebrow, tier label, icon background). Check
+icon stays — at a moment of high anxiety, the visual "yes this worked"
+is precisely what a tired adult thanks us for.
+
+**The email that didn't exist yet.** The note Sinéad sends each couple
+is the *actual* first touch with the brand. We wrote it for her in
+studio's docs (`docs/VENUE_EDITION_EMAIL_TEMPLATE.md`) — plain text,
+no exclamation marks, "the work of getting married" + "yours alone,
+activates once" + her sign-off. Ships before the first CSV does.
+
+Idempotency edge: re-hitting `/redeem/<CODE>` after a successful
+redemption no longer applies the template a second time (would have
+appended a duplicate set of wedding tasks). The early-return now
+surfaces `sponsorSlug` so the card can still deep-link, but the
+template apply is gated on first-redemption only.
+
+What we are NOT doing in this bundle (deferred to a "Cycle 8.5.5 —
+polish v2" post-retro): IncludedStack-box → ruled-list cosmetic,
+"sponsoring" softer phrasing on the studio landing, "Claim your seat"
+CTA tone, the "every view is the same items, all in plain English"
+microcopy in VenueWelcomeCard, sponsor-named tasks in the seeded
+wedding template, and `already_used`-error self-vs-other routing.
+
+Files touched:
+
+ • `src/app/sign-up/[[...sign-up]]/page.tsx` — sign-up context bridge
+ • `src/server/db/venue-welcome.ts` — `lookupSponsorByCode` helper
+ • `src/server/actions/comp.ts` — template apply + sponsorSlug return
+ • `src/components/redeem/redeem-result-card.tsx` — href + rose palette
+
+Closes Cycle 8.4.5. Clears the runway for 8.5 (Lamb's Hill provision
++ soft launch).
+
 ## 2026-05-13 (even later, the third one) · The bridge had a second hole, deeper, and it was already orphaning users
 
 The first live walk through the bridge surfaced two more problems

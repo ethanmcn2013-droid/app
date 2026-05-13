@@ -84,3 +84,48 @@ export async function detectVenueWelcome(
     sponsorSlug: parsed.sponsor_slug,
   };
 }
+
+export type SponsorInfo = {
+  sponsorName: string;
+  sponsorSlug: string;
+};
+
+/**
+ * Look up the sponsor identity for a given comp code without needing
+ * a redeemed entitlement. Used by the sign-up bridge — the visitor is
+ * not authenticated yet, so we cannot go via the user's entitlements
+ * row. We resolve sponsor identity straight from `comp_codes.notes`
+ * JSON (same shape studio's `issue-codes.ts` writes).
+ *
+ * Returns null for unknown codes, codes with no sponsor JSON, or
+ * non-venue comps.
+ */
+export async function lookupSponsorByCode(
+  rawCode: string,
+): Promise<SponsorInfo | null> {
+  const code = rawCode.trim().toUpperCase();
+  if (!code) return null;
+  const [compRow] = await db
+    .select({ notes: compCodes.notes })
+    .from(compCodes)
+    .where(eq(compCodes.code, code))
+    .limit(1);
+  if (!compRow?.notes) return null;
+  let parsed: CompNotes;
+  try {
+    parsed = JSON.parse(compRow.notes) as CompNotes;
+  } catch {
+    return null;
+  }
+  if (
+    !parsed.sponsor_slug ||
+    !parsed.sponsor_name ||
+    parsed.source_type !== "venue_edition"
+  ) {
+    return null;
+  }
+  return {
+    sponsorName: parsed.sponsor_name,
+    sponsorSlug: parsed.sponsor_slug,
+  };
+}

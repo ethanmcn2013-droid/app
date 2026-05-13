@@ -53,14 +53,21 @@ export function RedeemResultCard({
           day: "numeric",
         })
       : "for life";
+    // Venue-edition success: deep-link past /welcome direct to the
+    // board with the sponsor banner. The template + workspace flag
+    // are already applied server-side in redeemCompCodeAction.
+    // Non-venue success falls back to /welcome (picker flow).
+    const href = result.sponsorSlug
+      ? `/app/board?welcome=venue&v=${encodeURIComponent(result.sponsorSlug)}`
+      : "/welcome";
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-[480px] rounded-2xl border border-emerald-200 bg-emerald-50/30 p-7 text-center shadow-[0_24px_60px_-30px_rgba(16,185,129,0.32)]"
+        className="w-full max-w-[480px] rounded-2xl border border-aud-wedding/20 bg-aud-wedding/5 p-7 text-center shadow-[0_24px_60px_-30px_rgba(190,24,93,0.28)]"
       >
-        <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.5)]">
+        <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-aud-wedding text-white shadow-[0_8px_20px_-8px_rgba(190,24,93,0.5)]">
           <svg
             width="22"
             height="22"
@@ -74,12 +81,12 @@ export function RedeemResultCard({
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
-        <div className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+        <div className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-aud-wedding">
           Redeemed
         </div>
         <h1 className="mt-1.5 text-balance text-[24px] font-semibold leading-snug tracking-[-0.01em] text-ink">
           You&rsquo;re on{" "}
-          <span className="text-emerald-700">
+          <span className="text-aud-wedding">
             {TIER_LABEL[result.tier]}
           </span>{" "}
           until {expiresLabel}.
@@ -92,11 +99,8 @@ export function RedeemResultCard({
         <div className="mt-2 font-mono text-[10.5px] tabular-nums text-ink-quiet">
           {code}
         </div>
-        {/* Route through /welcome so the venue short-circuit can apply
-            the wedding template + bounce on to /app/board?welcome=venue.
-            Going straight to /app/board skips the template apply. */}
         <Link
-          href="/welcome"
+          href={href}
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
         >
           Open the workspace
