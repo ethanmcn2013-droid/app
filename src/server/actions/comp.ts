@@ -1,6 +1,7 @@
 "use server";
 
 import { eq, sql } from "drizzle-orm";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { compCodes, entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
@@ -139,7 +140,17 @@ export async function redeemCompCodeAction(
 ): Promise<RedeemResult> {
   const code = rawCode.trim().toUpperCase();
   if (!code) return { ok: false, reason: "not-found" };
+  try {
+    return await redeemCompCodeImpl(code);
+  } catch (err) {
+    Sentry.captureException(err, {
+      tags: { action: "redeem-comp-code", code: code.slice(0, 32) },
+    });
+    throw err;
+  }
+}
 
+async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   const [row] = await db
     .select()
     .from(compCodes)

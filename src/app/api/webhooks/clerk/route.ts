@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { eq, sql } from "drizzle-orm";
+import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users, workspaces, workspaceMembers } from "@/server/db/schema";
 import { grantEntitlement } from "@/server/actions/billing";
@@ -44,6 +45,10 @@ export async function POST(req: Request) {
     // Dev-only graceful fallback so a missing env doesn't crash the
     // app; in production this is a hard error.
     if (process.env.NODE_ENV === "production") {
+      Sentry.captureMessage(
+        "[clerk webhook] CLERK_WEBHOOK_SIGNING_SECRET unset in production",
+        "error",
+      );
       return new NextResponse("missing CLERK_WEBHOOK_SIGNING_SECRET", {
         status: 500,
       });
@@ -73,24 +78,36 @@ export async function POST(req: Request) {
     return new NextResponse("invalid signature", { status: 401 });
   }
 
-  switch (event.type) {
-    case "user.created":
-      await handleUserCreated(event.data as ClerkUser);
-      break;
-    case "user.updated":
-      await handleUserUpdated(event.data as ClerkUser);
-      break;
-    case "user.deleted":
-      // Deletion payload may have a missing id during a hard-delete
-      // race; bail safely if so.
-      if (event.data.id) {
-        await handleUserDeleted({ id: event.data.id });
-      }
-      break;
-    default:
-      // Other event types (session.*, organization.*) are ignored —
-      // we don't lean on Clerk Organizations; workspaces are ours.
-      break;
+  try {
+    switch (event.type) {
+      case "user.created":
+        await handleUserCreated(event.data as ClerkUser);
+        break;
+      case "user.updated":
+        await handleUserUpdated(event.data as ClerkUser);
+        break;
+      case "user.deleted":
+        // Deletion payload may have a missing id during a hard-delete
+        // race; bail safely if so.
+        if (event.data.id) {
+          await handleUserDeleted({ id: event.data.id });
+        }
+        break;
+      default:
+        // Other event types (session.*, organization.*) are ignored —
+        // we don't lean on Clerk Organizations; workspaces are ours.
+        break;
+    }
+  } catch (err) {
+    // Tag-and-rethrow. Rethrow → Next returns 500 → Clerk retries.
+    // Tagging is the whole point: lets us filter dashboard by
+    // webhook + eventType when something silently breaks (see the
+    // 2026-05-13 ws-legacy orphan saga).
+    Sentry.captureException(err, {
+      tags: { webhook: "clerk", eventType: event.type },
+      extra: { svixId: id, eventDataId: event.data.id ?? null },
+    });
+    throw err;
   }
 
   return NextResponse.json({ ok: true });

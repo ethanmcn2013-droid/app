@@ -3,6 +3,30 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (immediately after the polish bundle) · Sentry on the silent paths
+
+The 2026-05-13-third saga (the orphaned-redemption one) cost us hours
+because the Clerk webhook returned 500 quietly. No dashboard. No
+breadcrumb. We found it by archaeology, working backward from a
+corrupted-data symptom. Cheap insurance against the next one of those:
+
+- `src/app/api/webhooks/clerk/route.ts` — missing-secret in production
+  fires `Sentry.captureMessage` at error level (was just a plain 500).
+  The event-handler switch is now wrapped in try/catch with
+  `Sentry.captureException` tagged `webhook=clerk` + `eventType` +
+  `svixId` + `eventDataId`, then re-thrown so Clerk still retries.
+  The tag set is the whole point: when the next silent failure comes,
+  the dashboard tells us *which* event type broke and *which* user it
+  was about.
+- `src/server/actions/comp.ts` — `redeemCompCodeAction` wraps its
+  implementation in try/catch with `Sentry.captureException` tagged
+  `action=redeem-comp-code` + truncated `code`. Expected `ok: false`
+  returns (not-found, exhausted, expired, already-redeemed,
+  still-provisioning) are NOT captured — those are flow outcomes, not
+  errors.
+
+No-op when `SENTRY_DSN` is unset (dev/preview). Closes Cycle 8.4.6.
+
 ## 2026-05-13 (the morning after) · Redemption polish — four small choices, one deploy slot
 
 A four-agent panel (creative-director, ux-director, ux-tester, strategy)
