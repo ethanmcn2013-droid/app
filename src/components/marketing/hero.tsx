@@ -9,7 +9,10 @@ import { DOMAINS, type DomainId } from "@/lib/domains";
 import { seedDomainAction } from "@/server/actions/seed";
 
 export function Hero() {
-  const [domain, setDomain] = useState<DomainId>("marketing");
+  // Default audience: wedding. Matches the GTM wedge (Founding Venue Programme)
+  // and is the highest-empathy opener for first-time visitors. Was "marketing"
+  // pre-2026-05-13 — flagged by the post-rollout UX review.
+  const [domain, setDomain] = useState<DomainId>("wedding");
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const pack = DOMAINS[domain];
@@ -26,7 +29,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative isolate overflow-hidden pt-12 md:pt-20">
+    <section className="relative isolate overflow-hidden pt-8 md:pt-14">
       <div className="mx-auto w-full max-w-[1240px] px-5 md:px-6">
         <Eyebrow />
         <h1 className="mt-5 max-w-[14ch] text-balance text-[clamp(2.6rem,1.8rem+4.6vw,5.5rem)] font-semibold leading-[0.96] tracking-[-0.045em] text-ink">
@@ -70,8 +73,9 @@ export function Hero() {
           Demo is live · interact at any time
         </p>
 
-        {/* Domain toggle — proves the tool fits whatever you do */}
-        <div className="mt-12 md:mt-14">
+        {/* Domain toggle — proves the tool fits whatever you do.
+            id="demo" anchors deep-links from the suite landing page. */}
+        <div id="demo" className="mt-8 scroll-mt-20 md:mt-10">
           <DomainToggle
             domain={domain}
             onChange={setDomain}

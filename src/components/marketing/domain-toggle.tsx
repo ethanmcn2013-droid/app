@@ -57,8 +57,10 @@ export function DomainToggle({
                     layoutId="domain-toggle-pill"
                     className="absolute inset-0 rounded-full"
                     style={{
+                      // One indigo, no second brand color. Gradient stays
+                      // inside the indigo ramp (BRAND.md §5).
                       background:
-                        "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+                        "linear-gradient(135deg, var(--brand) 0%, var(--brand-deep) 100%)",
                       boxShadow:
                         "0 6px 16px -6px rgba(79,70,229,0.45), inset 0 1px 0 rgba(255,255,255,0.18)",
                     }}
