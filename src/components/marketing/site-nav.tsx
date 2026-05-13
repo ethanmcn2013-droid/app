@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
-import { STUDIO_URL } from "@/lib/product-urls";
+import { SuiteLauncher } from "@/components/app/suite-launcher";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 
@@ -16,23 +16,9 @@ export function SiteNav() {
     <header className="sticky top-0 z-50 border-b border-line-soft/60 bg-bg/72 backdrop-blur-md backdrop-saturate-150">
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
         <div className="flex items-center gap-3">
-          <a
-            href={STUDIO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Signal Studio — home"
-            style={{
-              fontSize: 12,
-              color: "var(--ink-quiet)",
-              fontWeight: 400,
-              textDecoration: "none",
-              letterSpacing: "-0.01em",
-              transition: "color 200ms",
-            }}
-            className="hidden hover:text-ink sm:inline-flex"
-          >
-            signal studio<span style={{ color: "#4f46e5" }}>.</span>
-          </a>
+          <div className="hidden sm:inline-flex">
+            <SuiteLauncher current="tasks" />
+          </div>
           <span aria-hidden className="hidden sm:inline" style={{ color: "var(--ink-faint)", fontSize: 12 }}>/</span>
           <Wordmark size="md" />
         </div>
