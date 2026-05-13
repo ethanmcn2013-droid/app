@@ -71,30 +71,48 @@
   --roadmap-red-border: #fecaca;
   --roadmap-red-deep:   #7f1d1d;
 
-  /* ── Semantic surfaces (v0.2 names + DS additions) ────────── */
-  --bg:          #fafaf7; /* warm-stone, never pure white */
-  --bg-elev:     #ffffff;
-  --bg-elevated: var(--bg-elev); /* alias for v0.2 callsites */
-  --bg-deep:     #f4f4f0;
-  --bg-sunken:   var(--bg-deep); /* alias */
+  /* ── Semantic surfaces · design-system v1 (2026-05-13) ────── */
+  /* Paper is white. The warm-stone era ended when the suite
+     design system locked. Hairlines do the work shadows would. */
+  --paper:       #ffffff;
+  --paper-elev:  #ffffff;
+  --paper-soft:  #fafafa;
+  --paper-deep:  #f4f4f5;
 
-  --border:      #e4e4e7;
-  --border-soft: #ececec;
+  --bg:          var(--paper);
+  --bg-elev:     var(--paper-elev);
+  --bg-elevated: var(--paper-elev); /* alias for v0.2 callsites */
+  --bg-deep:     var(--paper-deep);
+  --bg-sunken:   var(--paper-deep); /* alias */
+
+  /* Hairlines — stronger than the cream era; white needs definition. */
+  --hairline:    rgba(17, 17, 17, 0.10);
+  --hairline-2:  rgba(17, 17, 17, 0.06);
+
+  --border:      var(--hairline);
+  --border-soft: var(--hairline-2);
   --line:        var(--border);      /* alias */
   --line-soft:   var(--border-soft); /* alias */
 
-  --text:        var(--ink-900);
-  --text-muted:  var(--ink-500);
-  --text-faint:  var(--ink-400);
-  --ink:         var(--ink-900); /* v0.2 alias */
-  --ink-soft:    var(--ink-700); /* v0.2 alias — was #4a4d57; ramp -700 is #3f3f46, close enough */
-  --ink-quiet:   var(--ink-500); /* v0.2 alias */
+  /* Ink — off-black, matches the system spec exactly. */
+  --ink:         #111111;
+  --ink-soft:    #3f3f46;
+  --ink-faint:   #71717a;
+  --ink-ghost:   #d4d4d8;
+  --ink-quiet:   var(--ink-faint);
+  --text:        var(--ink);
+  --text-muted:  var(--ink-faint);
+  --text-faint:  var(--ink-ghost);
 
   /* ── Brand semantics (v0.2 names, refreshed values) ───────── */
   --brand:       var(--indigo-600);
   --brand-deep:  var(--indigo-800);
   --brand-soft:  var(--indigo-50);
   --brand-glow:  rgba(79, 70, 229, 0.42);
+
+  /* Indigo aliases per the design-system spec. */
+  --indigo:      var(--indigo-600);
+  --indigo-soft: rgba(79, 70, 229, 0.12);
 
   /* ── Lane palette (v0.2 — refined to align with status tokens
    *   while keeping the soft pastel chrome the board has had
@@ -328,12 +346,12 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Wordmark dot · the brand's signature animation
-   Per design system spec (tasks-design-system.html, sec 01):
-   - 2.6s cycle, spring-glide easing
-   - Pulse: rest at 1.0, brief beat to 1.25 at 70%, settle 1.0 at 80%
-   - Emit ring: invisible 0–60%, fades in/out scaling 0.8 → 2.6 → fade
-   "It pulses, it emits, it says something is happening."
+   Wordmark dot · tasks heartbeat
+   Per suite design-system v1 (2026-05-13): tasks is a verb, the
+   gesture is M·02 heartbeat — paired beats every 1.6s. Tap-tap,
+   rest. Work has a pulse; this is the rhythm of getting things
+   done. The emit ring retired — heartbeat doesn't broadcast,
+   it pulses.
    ──────────────────────────────────────────────────────────── */
 .tasks-dot {
   display: inline-block;
@@ -344,27 +362,14 @@ body {
   border-radius: 50%;
   margin-left: 0.12em;
   transform: translateY(-0.38em);
-  box-shadow: 0 0 14px var(--brand-glow);
-  animation: tasks-dot-pulse 2.6s var(--spring-glide) infinite;
+  animation: tasks-dot-beat 1.6s var(--spring-glide) infinite;
 }
-.tasks-dot::before {
-  content: "";
-  position: absolute;
-  inset: -1px;
-  border: 1.5px solid var(--brand);
-  border-radius: 50%;
-  opacity: 0;
-  animation: tasks-dot-emit 2.6s var(--spring-glide) infinite;
-}
-@keyframes tasks-dot-pulse {
-  0%, 60%, 100% { transform: translateY(-0.38em) scale(1); }
-  70%           { transform: translateY(-0.38em) scale(1.25); }
-  80%           { transform: translateY(-0.38em) scale(1); }
-}
-@keyframes tasks-dot-emit {
-  0%, 60% { opacity: 0; transform: scale(0.8); }
-  68%     { opacity: 1; transform: scale(1); }
-  100%    { opacity: 0; transform: scale(2.6); }
+@keyframes tasks-dot-beat {
+  0%, 30%, 100% { transform: translateY(-0.38em) scale(1); }
+  10%           { transform: translateY(-0.38em) scale(1.22); }
+  20%           { transform: translateY(-0.38em) scale(1); }
+  40%           { transform: translateY(-0.38em) scale(1.12); }
+  50%           { transform: translateY(-0.38em) scale(1); }
 }
 
 /* ────────────────────────────────────────────────────────────

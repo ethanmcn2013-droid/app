@@ -3,6 +3,113 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (suite design-system v1) · Paper turns white, the dot learns to heartbeat
+
+The umbrella's new design system landed and Tasks is the first product
+to follow Studio across the line.
+
+**Paper white, ink at #111.** `--bg` reset from warm-stone `#fafaf7`
+to pure `#ffffff`. Ink moved from the ramp's `#18181b` to the spec's
+`#111111`. The semantic-token layer (`--paper`, `--paper-soft`,
+`--paper-deep`, `--ink`, `--ink-soft`, `--ink-faint`, `--ink-ghost`,
+`--hairline`, `--hairline-2`, `--indigo`, `--indigo-soft`) is in
+`globals.css` alongside the existing ramp + alias system, so legacy
+callsites keep working while the rest of the rollout proceeds. Print
+views keep `#fafaf7` paper colour because print has its own rules.
+
+**`.tasks-dot` learns to heartbeat.** The dot's motion swapped from
+the 2.6s broadcast-style pulse-and-emit (which belongs to *signal
+studio.*) to **M·02 heartbeat — paired beats every 1.6s.** Tap-tap,
+rest. Work has a pulse; this is the rhythm of getting things done.
+The emit ring retired — heartbeat doesn't broadcast, it pulses. The
+indigo glow box-shadow retired too; the design system is restrained.
+
+**What didn't change.** The Wordmark component API is unchanged
+(`<Link>` wrapper, sm/md/lg sizes, href). The dot's eye-correct
+proportions (0.32em / -0.38em) stay — the suite spec's 0.16em is
+calibrated for display sizes and disappears at nav-size. Print
+views, primitives, the kanban board chrome, lane colours — all
+intact. Page-level retouches will land as pages get walked through.
+
+**Carries forward.** Phase 3 is Roadmap — same token set, wordmark
+motion to advance (2.6s drift-right-and-reset).
+
+## 2026-05-13 (suite review pass) · Two cross-tenant holes, one Sentry that lied, and an index migration that should have been there from day one
+
+Five-agent parallel review of all five repos. Tasks took the longest
+punch list because Tasks has the most surface.
+
+**The two cross-tenant holes.** `/api/calendar/[workspaceId]` would
+serve a workspace's dated task titles to any signed-in user who could
+guess the id. Now joins `workspace_members` first; mismatched id
+returns 404. The docstring used to claim "public per workspace id by
+design, like /p/{slug}" — half-true; the proxy required auth anyway,
+so the route was both unsafe AND unable to do the thing the docstring
+promised. Rewrote it to say what it actually is.
+
+`removeCommentAction` deleted any comment by id with no scope. Any
+signed-in user could nuke another tenant's comments. Now scoped on
+`(active workspace via task join, author === caller)`. The pattern
+that everything-else-in-`tasks.ts` already uses, just applied here
+finally.
+
+**Sixteen indexes that should have been in the first migration.**
+`tasks.workspace_id`, `comments.task_id`, `activities` keyed on
+`(task_id, created_at DESC)` and `(workspace_id, created_at DESC)`,
+`notifications(user_id, created_at DESC)`, `entitlements(user_id,
+workspace_id)`, the `workspace_members` reverse-lookup, and a few
+others. Applied to prod Turso via the CLI; the SQL lives in
+`drizzle/0003_hot_indexes.sql` with idempotent `IF NOT EXISTS` so
+re-running is safe. Every page load was a full table scan before
+this — fine at seed-row counts, not fine the moment a workspace
+gets a few hundred tasks.
+
+**Sentry that lied, replaced with one that does the thing.**
+`beforeSend(event) { return event; }` was the entire scrubber. The
+comment above it claimed "anti-noise: don't sample drizzle/sqlite
+errors more than once" — completely fictional. Killed it. New
+`src/lib/sentry-scrub.ts` reduces `user` to id only, drops
+`cookies` / `data` / `query_string`, redacts cookie/authorization/
+x-clerk-*/svix-*/stripe-signature headers, filters out breadcrumbs
+to clerk/stripe/svix/webhooks endpoints. `sendDefaultPii: false`
+on every init point — server nodejs, server edge, client. Defaults
+were sending IP and Clerk session tokens to Sentry.
+
+**Suite-wide security headers.** Plan 4.1 was supposed to put HSTS,
+X-Frame-Options, Referrer-Policy, Permissions-Policy, and a
+Report-Only CSP on every product. Tasks was on the missing-list.
+Fixed now — Roadmap-pattern headers with Clerk + Stripe + Sentry
+hosts in the CSP allowlist. Still Report-Only across the suite;
+promotion to enforce remains a browser-verification job.
+
+**Dead `better-sqlite3` swept out.** Tasks moved to libSQL/Turso a
+while back, but the dependency stayed, `serverExternalPackages:
+["better-sqlite3"]` stayed, `outputFileTracingIncludes: { "/**":
+["./tasks.db"] }` stayed, and `seed.ts` was still importing
+`better-sqlite3` types and casting `db.$client` as a `Database` —
+which only worked at all because the early-return-if-not-empty
+gate meant the broken code path almost never ran. Seed rewritten
+to use libSQL drizzle natively (async, real `db.transaction`). The
+180KB `tasks.db` file no longer ships in every Vercel function
+bundle. Stale comments stripped from five route files.
+
+**One-off contract: cross-product partner stats over HTTP.**
+Studio's `/hq/partners` page used to open its own libSQL client
+and read Tasks's `comp_codes` + `entitlements` tables directly.
+Tasks now owns the read: `GET /api/internal/partner-stats?sponsor=
+<slug>` with `PARTNER_STATS_SECRET` bearer auth. Studio fetches
+it. Same data; different responsibility line. The proxy
+allowlist gained `/api/internal/(.*)` because the caller has no
+Clerk session.
+
+**Tidying.** Duplicate `package-lock.json` deleted (pnpm-only).
+Old comments referencing "better-sqlite3 needs Node" in five
+route files updated to reflect what's actually true now.
+
+Operator action owed: set `PARTNER_STATS_SECRET` on the Tasks
+Vercel project (same value as on Studio); the calendar route's
+public-by-token replacement is still a future cycle.
+
 ## 2026-05-13 (later still) · A settings screen that sounds like us
 
 Bespoke Settings at `/settings/profile`, `/settings/notifications`,
