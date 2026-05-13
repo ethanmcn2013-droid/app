@@ -5,9 +5,12 @@ import { workspaces } from "@/server/db/schema";
 import { isFirstRun } from "@/server/db/queries";
 import { detectVenueWelcome } from "@/server/db/venue-welcome";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { ensureUserProvisioned } from "@/server/db/ensure-user";
+import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
 import { applyTemplateAction } from "@/server/actions/templates";
 import { WelcomePicker } from "@/components/welcome/welcome-picker";
+import { StillProvisioning } from "@/components/welcome/still-provisioning";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +22,17 @@ const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
 export default async function WelcomePage() {
   const me = await getCurrentUser();
+  // Guarantee the user has a real workspace before any state-mutating
+  // code runs. Webhook race / missing-webhook protection — see
+  // ensure-user.ts for context.
+  await ensureUserProvisioned(me);
   const ws = await getActiveWorkspace();
+  if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
+    // We just provisioned the user; getting ws-legacy back means
+    // something deeper is wrong. Don't mutate the shared fallback
+    // workspace — show a still-setting-up state instead.
+    return <StillProvisioning />;
+  }
   // Returning users skip the welcome (they came here from the URL bar
   // or an old bookmark). Push them straight back into the workspace.
   if (!(await isFirstRun(ws))) {

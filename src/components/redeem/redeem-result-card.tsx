@@ -24,6 +24,10 @@ const FAILURE_COPY: Record<
     headline: "You've already redeemed this one.",
     body: "Your access is still active — head into the workspace.",
   },
+  "still-provisioning": {
+    headline: "We're still setting up your account.",
+    body: "This usually takes a second or two. Refresh the page and we'll try again.",
+  },
 };
 
 const TIER_LABEL = {
@@ -88,8 +92,11 @@ export function RedeemResultCard({
         <div className="mt-2 font-mono text-[10.5px] tabular-nums text-ink-quiet">
           {code}
         </div>
+        {/* Route through /welcome so the venue short-circuit can apply
+            the wedding template + bounce on to /app/board?welcome=venue.
+            Going straight to /app/board skips the template apply. */}
         <Link
-          href="/app/board"
+          href="/welcome"
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
         >
           Open the workspace

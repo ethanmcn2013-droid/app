@@ -4,6 +4,8 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { compCodes, entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { ensureUserProvisioned } from "@/server/db/ensure-user";
+import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { sendEmail, studentCodeEmailHtml } from "@/server/email";
 import type { EntitlementTier } from "@/lib/data";
 
@@ -96,13 +98,27 @@ export type RedeemResult =
         | "not-found"
         | "exhausted"
         | "expired"
-        | "already-redeemed";
+        | "already-redeemed"
+        | "still-provisioning";
     };
 
 /**
  * Redeem a comp code for the current user. Idempotent per-user — if
- * the same user tries to redeem the same code twice, we return the
- * existing entitlement instead of decrementing again.
+ * the same user tries to redeem the same code twice (e.g. refresh
+ * after success, browser back button), we return the existing
+ * entitlement rather than treating the second hit as a failure.
+ *
+ * Order of checks is load-bearing:
+ *   1. Code exists.
+ *   2. Code not expired.
+ *   3. THIS user already redeemed it → return ok with cached entitlement.
+ *      (Must come before the exhausted check or refresh-after-success
+ *      shows "all redemptions used up" to the very user who used it.)
+ *   4. Code is not exhausted (someone else used the last one).
+ *   5. The user actually has a real workspace to bind the entitlement
+ *      to. If the Clerk webhook hasn't provisioned them yet, fall back
+ *      to direct provisioning so we never write entitlements against
+ *      the legacy fallback workspace.
  */
 export async function redeemCompCodeAction(
   rawCode: string,
@@ -119,14 +135,11 @@ export async function redeemCompCodeAction(
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
     return { ok: false, reason: "expired" };
   }
-  if (row.redeemed >= row.quantity) {
-    return { ok: false, reason: "exhausted" };
-  }
 
   const userId = await getCurrentUser();
-  const ws = await getActiveWorkspace();
 
-  // Idempotency: did this user already redeem this code?
+  // Idempotency: did this user already redeem this code? Comes BEFORE
+  // the exhausted check — see header doc for why.
   const [existing] = await db
     .select()
     .from(entitlements)
@@ -142,6 +155,23 @@ export async function redeemCompCodeAction(
         : "",
       notes: existing.notes,
     };
+  }
+
+  if (row.redeemed >= row.quantity) {
+    return { ok: false, reason: "exhausted" };
+  }
+
+  // Webhook-race / missing-webhook guard. Provision the user record
+  // ourselves if the Clerk webhook hasn't (or won't) hydrate it. This
+  // is idempotent — the webhook can still fire afterwards and update
+  // the row with email / name we don't have here.
+  await ensureUserProvisioned(userId);
+  const ws = await getActiveWorkspace();
+  if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
+    // Defensive: ensureUserProvisioned should have given us a real ws.
+    // If it didn't, something deeper is wrong — surface honestly rather
+    // than write an orphan entitlement to ws-legacy.
+    return { ok: false, reason: "still-provisioning" };
   }
 
   const expiresAt = new Date(

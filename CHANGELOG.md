@@ -3,6 +3,76 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (even later, the third one) · The bridge had a second hole, deeper, and it was already orphaning users
+
+The first live walk through the bridge surfaced two more problems
+beneath the one we already fixed.
+
+**Problem one.** The Clerk webhook signing secret is missing from
+Tasks's Vercel production. `CLERK_WEBHOOK_SIGNING_SECRET` simply
+isn't there — was either never set or got rotated out. Without
+it, the `user.created` webhook handler returns 500 to Clerk before
+it can write the users + workspaces + workspace_members triple.
+Result: new sign-ups land with a Clerk session, no internal user
+row, no personal workspace. `getCurrentUser()` returns the Clerk
+id; `getActiveWorkspace()` falls back to `ws-legacy` — the dev
+seed workspace shared by ada, alex, chloe, david, marcus.
+
+**Problem two, downstream of one.** `redeemCompCodeAction` had
+no guard against `ws-legacy`. So the first real venue walk wrote
+a wedding entitlement against the shared dev workspace, and the
+welcome page would have happily mutated that same workspace's
+template + active_domain on the next request. Couples would
+have collided with each other into a single shared fallback
+workspace if more than one had redeemed.
+
+**Problem three, separate.** The action's check order had
+idempotency AFTER the exhausted check. So the user who just
+successfully redeemed, refreshing /redeem, got the cheerful
+"All redemptions on this code are used up" headline instead of
+"You're already on Wedding suite." A small clarity bug with a
+high mortification cost in a pilot.
+
+Fixes shipped together:
+
+ • `src/server/db/ensure-user.ts` — new `ensureUserProvisioned`
+   helper. Idempotent. Synthesizes a minimal users +
+   workspaces + workspace_members triple from just the Clerk
+   id, using the same id/slug/color derivation as the webhook
+   handler so when (or if) the webhook does eventually fire,
+   the ON CONFLICT updates land cleanly on top.
+ • `src/server/actions/comp.ts` — three changes. Idempotency
+   check now runs before the exhausted check. After the per-
+   user lookup, the action calls ensureUserProvisioned so we
+   never resolve a workspace that's `ws-legacy` for a real
+   Clerk user. A defensive `still-provisioning` reason is
+   added in case the provisioning ever fails to give us a
+   real ws.
+ • `src/app/welcome/page.tsx` — same `ensureUserProvisioned`
+   call at the top, plus a `ws-legacy` guard that renders an
+   auto-refreshing "Setting up your account" interstitial
+   instead of mutating the shared workspace.
+ • `src/components/welcome/still-provisioning.tsx` — small
+   client component for the interstitial. Auto-reloads after
+   1.5 seconds.
+ • `src/components/redeem/redeem-result-card.tsx` — success
+   CTA now points at `/welcome` instead of `/app/board`, so
+   the venue short-circuit can run and the wedding template
+   actually gets applied. Previously the success card was
+   sending users straight into an empty workspace.
+
+Cleanup: the orphaned LAMBSHIL-MP93X entitlement that landed
+in `ws-legacy` during the test walk was rolled back, and the
+comp_code redeem counter reset to 0 so the code is claimable
+again.
+
+Outstanding: the webhook secret itself still needs to be set on
+Vercel before Tasks's normal sign-up flow can hydrate email,
+name, and handle on the users row. The fallback provisioning
+is enough for the venue pilot — entitlements bind correctly,
+workspaces resolve, and the wedding template applies — but
+real Tasks accounts deserve their real names.
+
 ## 2026-05-13 (later that day) · The bridge had a hole in it. Couples found out before Lamb's Hill did.
 
 Yesterday's "lands in a wedding workspace, no questions asked" was
