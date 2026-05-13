@@ -17,6 +17,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",
     "@clerk/nextjs": "^7.3.1",
+    "@clerk/shared": "^4.10.1",
     "@libsql/client": "^0.17.3",
     "@sentry/nextjs": "^10.51.0",
     "@types/papaparse": "^5.5.2",
