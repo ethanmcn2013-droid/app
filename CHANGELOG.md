@@ -3,6 +3,40 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (the same evening) · The "did the next person finish?" signal
+
+One column. One boolean. The minimum-viable monitoring for a venue
+pilot at N=10 — answers the question that actually keeps you up after
+sending Sinéad ten codes: *did the most recent couple get into their
+workspace, or did they get stuck somewhere?*
+
+Schema gains `entitlements.reached_board_at` (nullable integer
+timestamp). `markVenueEntitlementReached` stamps it on the first
+`/app/board?welcome=venue` render — idempotent on
+`reached_board_at IS NULL`, so subsequent visits leave the original
+timestamp in place. The UPDATE is wrapped in try/catch: a
+measurement-helper failure can never break the board render. Worst
+case the timestamp is missed for that visit; the product still works.
+
+Studio reads the new column in `getPartnerStats` with a try/fallback
+pattern — the column-aware SELECT runs first; if the prod Turso
+ALTER hasn't landed, we fall back to the original shape and report
+`reachedBoard: 0`. /hq/partners gains a "Reached board" column showing
+`<count> (<%>)` where the percent is reached/redeemed (not
+reached/issued — the funnel only meaningfully starts at redemption).
+
+Conscious non-build: per-event funnel table, email open tracking,
+`tasks_created_after_redemption` engagement column. The brand
+position is restraint, the scale is ten codes, and the operator
+question that matters is binary. We earn the event tables at venue
+#3, not before.
+
+Migration: `drizzle/0001_add_reached_board_at.sql` — apply to prod
+Turso before the next /hq/partners visit (graceful fallback otherwise,
+but the column reads zero until then).
+
+Closes Cycle 8.4.7.
+
 ## 2026-05-13 (immediately after the polish bundle) · Sentry on the silent paths
 
 The 2026-05-13-third saga (the orphaned-redemption one) cost us hours

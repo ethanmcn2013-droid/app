@@ -594,6 +594,12 @@ export type Entitlement = {
   expiresAt: Date | null;
   /** Free-form note — e.g. the comp code id, the .edu domain. */
   notes: string | null;
+  /** First time the user reached /app/board after this entitlement
+   *  activated. Null until they actually land. Powers the Venue
+   *  Editions "did the next person finish?" signal on /hq/partners
+   *  without a separate event-log table. Set idempotently from the
+   *  board page render — see markVenueEntitlementReached. */
+  reachedBoardAt: Date | null;
 };
 
 export type CompCode = {

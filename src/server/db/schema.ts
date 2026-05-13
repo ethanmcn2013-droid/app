@@ -311,6 +311,7 @@ export const entitlements = sqliteTable("entitlements", {
     .default(sql`(unixepoch())`),
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   notes: text("notes"),
+  reachedBoardAt: integer("reached_board_at", { mode: "timestamp" }),
 });
 
 type _SchemaCoversEntitlement =

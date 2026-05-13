@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gt, isNull, like, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, like, or, sql } from "drizzle-orm";
 import { db } from "./index";
 import { compCodes, entitlements } from "./schema";
 
@@ -83,6 +83,38 @@ export async function detectVenueWelcome(
     sponsorName: parsed.sponsor_name,
     sponsorSlug: parsed.sponsor_slug,
   };
+}
+
+/**
+ * Idempotently stamp the user's wedding-comp entitlement with the
+ * first-board-reach timestamp. Powers the /hq/partners "Reached
+ * board" column without an event-log table — one boolean per
+ * entitlement, written on the board's first venue-welcome render.
+ *
+ * Idempotent on `reached_board_at IS NULL` — subsequent visits leave
+ * the original timestamp in place. Swallows errors (e.g. missing
+ * column in pre-migration prod) so a measurement helper can never
+ * break the board render. Worst case: the measurement is missed for
+ * that visit; product-functional impact is zero.
+ */
+export async function markVenueEntitlementReached(
+  userId: string,
+): Promise<void> {
+  try {
+    await db.run(sql`
+      UPDATE entitlements
+      SET reached_board_at = unixepoch()
+      WHERE user_id = ${userId}
+        AND tier = 'wedding'
+        AND source = 'comp'
+        AND reached_board_at IS NULL
+    `);
+  } catch (err) {
+    // Don't crash the board on a measurement-helper failure. Most
+    // likely cause: drizzle/0001_add_reached_board_at.sql hasn't
+    // been applied to prod Turso yet.
+    console.warn("[venue-welcome] markVenueEntitlementReached failed", err);
+  }
 }
 
 export type SponsorInfo = {
