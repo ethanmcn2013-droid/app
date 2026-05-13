@@ -58,7 +58,7 @@ export default async function AppLayout({
                 <PaletteRoot>
                   <div className="flex h-screen w-full overflow-hidden bg-bg">
                     <AppSidebar />
-                    <div className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">{children}</div>
+                    <div className="flex min-w-0 flex-1 flex-col pt-9 pb-[60px] md:pt-0 md:pb-0">{children}</div>
                   </div>
                   <TaskDetailPanel />
                   <CrossWorkspaceOverdue />

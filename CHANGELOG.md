@@ -3,6 +3,164 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-13 (later that day) · The bridge had a hole in it. Couples found out before Lamb's Hill did.
+
+Yesterday's "lands in a wedding workspace, no questions asked" was
+true on paper. It was less true the first time the live URL got
+poked. `tasks.signalstudio.ie/redeem/LAMBSHIL-MP93X` returned HTTP
+500 to anyone who wasn't already signed in — which is, of course,
+the entire audience for that URL.
+
+The page called `redeemCompCodeAction` unconditionally; the action
+called `getCurrentUser()`; and `getCurrentUser()` in production
+throws on an unauthenticated request rather than silently running
+as the dev seed user. Uncaught throw, Next default error page, the
+couple bouncing to "Something went wrong." The local typecheck and
+build never noticed because TypeScript can't see runtime auth state,
+and the end-to-end test had been deferred to "when we deploy."
+
+The fix is six lines. The page now calls `getCurrentUserOrNull()`
+first; if there's no session it redirects to
+`/sign-up?redirect_url=/redeem/CODE`. Clerk's sign-up component
+honors `redirect_url` natively (env is already wired), so the
+couple signs up, lands back on `/redeem/CODE` with a session, and
+the original flow takes over from there.
+
+The cost of skipping the live walk has been logged. Saved feedback
+`feedback_launch_claim_rule` exists exactly to prevent this; the
+deploy went out before the walk this time. Won't again. Lesson is
+now two cycles old.
+
+## 2026-05-13 · A couple shows up with a code, lands in a wedding workspace, no questions asked
+
+Venue Editions has a Tasks side now. A couple who books their wedding
+at a participating venue gets a code from their venue, types it in,
+signs up, and lands on /app/board with a populated wedding workspace
+and a quiet card that reads *"Compliments of [their venue]."* The
+welcome picker that asked them to "pick a starter so you have something
+to play with" doesn't fire — we already know what they're here for.
+
+Three things shipped together. First, a new `detectVenueWelcome` helper
+on the server side that joins the user's wedding/comp entitlement to
+the originating comp_code row and parses the sponsor identity JSON
+that was tucked into `comp_codes.notes` by the studio repo's issue-codes
+script. Same query path the welcome page and the board page both use.
+
+Second, the `/welcome` page learned to short-circuit. If the user has
+an active wedding entitlement linked to a sponsor, it auto-applies the
+canonical `wedding-planning-workspace` template, flips the workspace's
+`active_domain` to `'wedding'`, and bounces straight to
+`/app/board?welcome=venue`. No picker. No "play with." No friction.
+
+Third, a new `VenueWelcomeCard` client component shows a dismissible
+card on /app/board naming the sponsor — "Compliments of Lamb's Hill.
+Your wedding workspace is ready. Plan without the noise — every view
+is the same items, all in plain English." Dismissed in localStorage,
+keyed by sponsor slug so the next venue's couples get their own card.
+
+The welcome picker also got two copy fixes for everyone (not just
+venue users): the headline gloss "something to play with" became
+"a real example to edit," and "Loaded · ready to open" became "Your
+starter is in." Both of the old strings were on the BRAND.md §3
+banned-vibe list — techy register on a page that's the user's first
+sentence with the product.
+
+This closes Cycle 8.3 of Plan 8 (Venue Editions). The studio side of
+the reconciliation lives in studio/docs/CYCLE_8_3_RECONCILIATION.md
+— including the part where we accidentally built parallel infra in
+Cycles 8.1/8.2 and had to roll a chunk back when grep on `tasks/`
+turned up the existing redemption system. Lesson logged.
+
+## 2026-05-12 (still even later) · The avatar dropdown learned about siblings, and mobile got a top bar
+
+Two things shipped together this turn. First, the Clerk UserButton in
+the bottom-left of the sidebar now opens a dropdown with three new
+rows above Manage account / Sign out: "Open Roadmap", "Open Notes",
+"Open Analytics" — each with a small arrow-out icon, each opening in
+a new tab. Tasks doesn't list itself; you're already here. The
+underlying `<UserButtonWithSuite/>` is a tiny client wrapper around
+Clerk's official `<UserButton.MenuItems>` + `<UserButton.Link>` API,
+so the chrome stays Clerk-native (same hover, same shadow, same kbd
+focus) — we just added the suite jumps inside it.
+
+Second, mobile users finally have a top header. Until now Tasks's
+mobile chrome was bottom-tabs only; the desktop sidebar's `signal
+studio. /` breadcrumb didn't exist on phones. New `<MobileSuiteBar/>`
+is a fixed h-9 bar at the top, md:hidden, carrying the same launcher
+trigger and a small `tasks·` wordmark beside it. The layout's
+children container gained `pt-9 md:pt-0` to push content below it.
+
+Both gestures point at the same thing: a Tasks user who needs
+Roadmap or Notes can get there in one click, on every viewport,
+without ever typing a URL.
+
+## 2026-05-12 (one more even later) · The breadcrumb learned to open
+
+Yesterday's `signal studio.` text in the sidebar was a hard link to
+the umbrella site — click it, you leave. Today it's a button. Click
+it, a small popover blooms below: "Signal Studio · Four products,
+one studio." Then four rows — tasks, roadmap, notes, analytics —
+each with a one-word tagline (Execution clarity, Direction clarity,
+Capture clarity, Attention clarity). Tasks is yours so it's de-
+emphasised with a small uppercase HERE tag. The other three open in
+a new tab so you keep your workspace. Footer row: "Visit
+signalstudio.ie →" because the umbrella is still one click away.
+
+The popover is keyboard-aware (Escape closes), click-outside-aware
+(any document click outside the wrapper closes), and noise-free
+(no caret on the trigger; discovery is hover + click). It uses
+`bg-white` and the same shadow grammar the command palette wears
+(`0_24px_60px_-24px_rgba(...)/0.22`), so it reads as part of the
+same chrome family.
+
+The command palette also learned about its siblings. Open ⌘P with
+nothing typed and the empty state now carries a "Jump to" section
+beneath the search hint: roadmap, notes, analytics, each with their
+tagline. Type `ro` and only Roadmap surfaces. Type something that
+matches no task AND no product, and the palette stays clean.
+Roadmap and Notes don't have palettes yet, so this is a Tasks-only
+gesture for now — the launcher popover is the universal fallback.
+
+What this turn explicitly did NOT ship: mobile-Tasks header with
+the breadcrumb (the bottom-tab surface has no top chrome and adding
+one is its own design call); Clerk UserButton custom dropdown items
+(Clerk's typed `userProfileProps` API needs spelunking — own cycle).
+Both queued.
+
+Implementation: new file
+`src/components/app/suite-launcher.tsx` (~150 lines, "use client",
+self-contained popover with click-outside + Escape handlers).
+Wired into `src/components/app/sidebar.tsx`. Palette gained
+imports from `product-urls` and a `SuiteJumps` subcomponent.
+
+## 2026-05-12 (later than even later) · The workspace remembers its address
+
+The sidebar's top-left used to just say `tasks·`, as if Tasks lived
+nowhere in particular. Now it reads `signal studio. / tasks·` — a
+quiet 12px breadcrumb prefix in front of the wordmark, indigo dot and
+all. The marketing site has been wearing this prefix since yesterday;
+today it walks into the workspace too.
+
+The studio link is a hard `<a>` to signalstudio.ie, not a Next.js
+Link — same-window navigation because clicking the breadcrumb means
+"take me out of this workspace, into the umbrella," not "open a
+second tab I'll forget about." Hover state lifts the prefix from
+ink-quiet to ink, in the same 200ms transition the marketing nav
+uses, so the gesture feels like one fabric across the suite.
+
+Roadmap got the same treatment in the same turn. Notes already had
+it. Analytics has no app shell yet, so its turn comes when that
+shell arrives. Mobile bottom-tab Tasks is unchanged — that surface
+has no wordmark to prefix, and the cross-product story for mobile is
+the next cycle's job (suite launcher popover, palette "Jump to").
+
+Implementation: two-file edit. `src/components/app/sidebar.tsx`
+imports `STUDIO_URL` from `@/lib/product-urls` and renders the
+`signal studio. /` prefix to the left of `<Wordmark size="md" />` in
+the desktop sidebar header. Layout stays at h-12 with `min-w-0` and
+`flex-shrink-0` on the prefix and separator so the wordmark gets all
+remaining width.
+
 ## 2026-05-12 (even later) · The Anatomy card learned how to breathe
 
 The "Every detail earns its place" section on the features page is no

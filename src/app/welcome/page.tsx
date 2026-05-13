@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
 import { isFirstRun } from "@/server/db/queries";
-import { getActiveWorkspace } from "@/server/auth";
+import { detectVenueWelcome } from "@/server/db/venue-welcome";
+import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
+import { applyTemplateAction } from "@/server/actions/templates";
 import { WelcomePicker } from "@/components/welcome/welcome-picker";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +15,36 @@ export const metadata = {
   title: "Welcome — Tasks",
 };
 
+const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
+
 export default async function WelcomePage() {
+  const me = await getCurrentUser();
   const ws = await getActiveWorkspace();
   // Returning users skip the welcome (they came here from the URL bar
   // or an old bookmark). Push them straight back into the workspace.
   if (!(await isFirstRun(ws))) {
     redirect("/app/board");
+  }
+
+  // Venue Editions bridge: if the signed-in user holds an active
+  // wedding comp entitlement linked to a sponsor (i.e. they arrived
+  // via signalstudio.ie/redeem/[code]), skip the picker entirely.
+  // Auto-apply the wedding workspace template and bounce them onto
+  // the board with a query param so the welcome card can name the
+  // sponsor.
+  const venueWelcome = await detectVenueWelcome(me);
+  if (venueWelcome && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
+    await applyTemplateAction(VENUE_TEMPLATE_ID);
+    await db.run(sql`
+      UPDATE workspaces
+      SET template_id = ${VENUE_TEMPLATE_ID},
+          active_domain = 'wedding'
+      WHERE id = ${ws}
+    `);
+    const target = `/app/board?welcome=venue&v=${encodeURIComponent(
+      venueWelcome.sponsorSlug,
+    )}`;
+    redirect(target);
   }
 
   // T1.2 — if the workspace was created via the templates flow

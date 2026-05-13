@@ -96,9 +96,9 @@ export function WelcomePicker({
                 </>
               ) : (
                 <>
-                  Pick a starter so you have{" "}
+                  Pick a starter.{" "}
                   <span className="text-ink-soft/65">
-                    something to play with.
+                    Your workspace fills with a real example to edit.
                   </span>
                 </>
               )}
@@ -106,7 +106,7 @@ export function WelcomePicker({
             <p className="mt-4 max-w-[58ch] text-[16px] leading-[1.55] text-ink-soft">
               {pendingTemplate
                 ? "You picked a template before signing in. Open the workspace, or swap to a different starter below."
-                : "You can change anything later — rename tasks, swap views, clear everything. This just makes the first 30 seconds feel like the tool already knows what you do."}
+                : "Rename, swap, or clear anything later. The starter just spares you an empty board on day one."}
             </p>
           </motion.div>
 
@@ -125,7 +125,7 @@ export function WelcomePicker({
               >
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
-                    Loaded · ready to open
+                    Your starter is in
                   </div>
                   <div className="mt-1.5 text-[16px] font-semibold tracking-[-0.005em] text-ink">
                     Open the {pendingTemplate.name.toLowerCase()}

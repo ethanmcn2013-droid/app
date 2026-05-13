@@ -15,6 +15,11 @@ import { LANES, type Task } from "@/lib/data";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
+import {
+  ANALYTICS_URL,
+  NOTES_URL,
+  ROADMAP_URL,
+} from "@/lib/product-urls";
 
 type Ctx = { open: boolean; openPalette: () => void; closePalette: () => void };
 const PaletteContext = createContext<Ctx | null>(null);
@@ -236,15 +241,91 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
 }
 
 function Empty({ query }: { query: string }) {
+  const q = query.trim();
+  if (!q) {
+    return (
+      <div className="py-1.5">
+        <div className="px-4 pt-2 pb-1 text-[13px] font-medium text-ink-soft">
+          Type to search.
+        </div>
+        <div className="px-4 text-[11.5px] leading-[1.5] text-ink-faint">
+          Searches title, tags, and description across every task in the
+          workspace.
+        </div>
+        <SuiteJumps />
+      </div>
+    );
+  }
+  const matches = SUITE_JUMPS.filter((j) =>
+    j.word.toLowerCase().startsWith(q.toLowerCase()),
+  );
   return (
     <div className="px-4 py-10 text-center">
       <div className="text-[13.5px] font-medium text-ink-soft">
-        {query.trim() ? "No tasks match." : "Type to search."}
+        No tasks match.
       </div>
       <div className="mx-auto mt-1 max-w-[36ch] text-[12px] leading-[1.5] text-ink-faint">
         Searches title, tags, and description across every task in the
         workspace.
       </div>
+      {matches.length > 0 ? (
+        <div className="mx-auto mt-4 max-w-[300px] text-left">
+          <SuiteJumps only={matches} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+const SUITE_JUMPS: { word: string; tagline: string; url: string }[] = [
+  { word: "roadmap", tagline: "Direction clarity", url: ROADMAP_URL },
+  { word: "notes", tagline: "Capture clarity", url: NOTES_URL },
+  { word: "analytics", tagline: "Attention clarity", url: ANALYTICS_URL },
+];
+
+function SuiteJumps({ only }: { only?: typeof SUITE_JUMPS }) {
+  const items = only ?? SUITE_JUMPS;
+  return (
+    <div className="mt-4 border-t border-line-soft/70 pt-2">
+      <div className="px-4 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+        Jump to
+      </div>
+      <ul role="list" className="px-1">
+        {items.map((j) => (
+          <li key={j.word}>
+            <a
+              href={j.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-between gap-3 rounded-md px-3 py-2 no-underline transition-colors hover:bg-bg-sunken/50"
+            >
+              <div>
+                <div className="text-[13px] font-semibold tracking-[-0.01em] text-ink">
+                  {j.word}
+                  <span style={{ color: "#4f46e5" }}>·</span>
+                </div>
+                <div className="text-[11px] font-normal text-ink-quiet">
+                  {j.tagline}
+                </div>
+              </div>
+              <span className="text-ink-faint">
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M7 17L17 7M17 7H8M17 7v9" />
+                </svg>
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

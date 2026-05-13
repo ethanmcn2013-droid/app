@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/brand/wordmark";
+import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { useCurrentUser } from "@/lib/auth-context";
-import { UserButton } from "@clerk/nextjs";
+import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { usePalette } from "@/components/app/palette/command-palette";
 
 const NAV_TOP = [
@@ -41,9 +42,26 @@ export function AppSidebar({ active: activeProp }: { active?: string }) {
   const active = activeProp ?? pathname ?? "";
   return (
     <>
+      <MobileSuiteBar />
       <MobileTabBar active={active} />
       <DesktopSidebar active={active} />
     </>
+  );
+}
+
+/**
+ * Mobile-only top suite bar. Mirrors the desktop sidebar header's
+ * breadcrumb (`signal studio. / tasks·`) so mobile users have the same
+ * cross-product launcher entry point. Hidden at md+ where the desktop
+ * sidebar already carries it.
+ */
+function MobileSuiteBar() {
+  return (
+    <header className="fixed inset-x-0 top-0 z-30 flex h-9 items-center gap-2 border-b border-line-soft bg-white/95 px-3 backdrop-blur md:hidden">
+      <SuiteLauncher current="tasks" />
+      <span aria-hidden className="text-[12px] text-ink-faint">/</span>
+      <Wordmark size="sm" />
+    </header>
   );
 }
 
@@ -51,7 +69,11 @@ function DesktopSidebar({ active }: { active: string }) {
   return (
     <aside className="hidden h-full w-[252px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
       <div className="flex h-12 items-center justify-between border-b border-line-soft/70 px-4">
-        <Wordmark size="md" />
+        <div className="flex min-w-0 items-center gap-2">
+          <SuiteLauncher current="tasks" />
+          <span aria-hidden className="flex-shrink-0 text-[12px] text-ink-faint">/</span>
+          <Wordmark size="md" />
+        </div>
         <button className="rounded p-1 text-ink-quiet hover:bg-line-soft hover:text-ink-soft">
           <svg
             width="14"
@@ -112,15 +134,7 @@ function DesktopSidebar({ active }: { active: string }) {
       </div>
 
       <div className="flex items-center gap-2 border-t border-line-soft/70 p-3">
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "h-8 w-8 rounded-full",
-              userButtonPopoverCard:
-                "shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]",
-            },
-          }}
-        />
+        <UserButtonWithSuite current="tasks" />
         <span className="text-[12px] text-ink-quiet">Account</span>
       </div>
     </aside>
