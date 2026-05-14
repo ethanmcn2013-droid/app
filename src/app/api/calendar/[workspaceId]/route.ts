@@ -1,31 +1,48 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
-import { workspaces } from "@/server/db/schema";
+import { workspaceMembers, workspaces } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
+import { getCurrentUserOrNull } from "@/server/auth";
 import { LANES } from "@/lib/data";
 import { buildIcsCalendar, type ICalEvent } from "@/lib/ical";
 
-// better-sqlite3 needs Node — and the route is dynamic per workspace.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Read-only ICS feed for a workspace.
+ * Read-only ICS feed for a workspace. Requires Clerk session AND
+ * membership of the requested workspace — the proxy enforces auth on
+ * `/api/:path*`, and the membership check below prevents a signed-in
+ * user from reading another tenant's calendar by guessing a workspace id.
  *
- * Public per workspace id by design, mirroring the `/p/{slug}` model:
- * the owner shares the URL knowing it's public; calendar clients
- * (Apple Calendar, Google Calendar, Outlook) hit it without OAuth
- * and refresh on their own cadence (typically every 15-60 minutes).
- *
- * Future hardening: swap the `[workspaceId]` segment for a
- * per-subscriber token (`/api/calendar/[token]`) so revocation and
- * true privacy become possible without breaking subscribers' URLs.
+ * Apple Calendar / Google Calendar / Outlook can't carry a Clerk
+ * session, so external calendar-client subscription is not supported
+ * by this URL shape. The future per-subscriber-token route
+ * (`/api/calendar/[token]`) is the path to unauthed-but-private feeds.
  */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ workspaceId: string }> },
 ) {
   const { workspaceId } = await params;
+
+  const me = await getCurrentUserOrNull();
+  if (!me) return new Response("Unauthorized", { status: 401 });
+
+  const [membership] = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, me),
+        eq(workspaceMembers.workspaceId, workspaceId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) {
+    return new Response("Workspace not found", { status: 404 });
+  }
 
   const [ws] = await db
     .select({ id: workspaces.id, name: workspaces.name })

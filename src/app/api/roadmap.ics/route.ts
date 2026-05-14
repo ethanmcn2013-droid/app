@@ -1,7 +1,7 @@
 import { getCurrentUserOrNull } from "@/server/auth";
 import { exportRoadmapIcs } from "@/server/roadmap/ics-export";
 
-// better-sqlite3 needs Node, and the feed updates whenever roadmap_items does.
+// libSQL client + ics-export are node-only, and the feed updates whenever roadmap_items does.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

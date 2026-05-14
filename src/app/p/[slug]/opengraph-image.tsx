@@ -4,9 +4,8 @@ import { DOMAINS, type DomainId } from "@/lib/domains";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 // nodejs runtime (not edge) — this OG image reads the workspace via
-// `getPublishedWorkspaceBySlug`, which transitively imports
-// better-sqlite3. The edge runtime can't load Node's `fs`.
-// The existing per-template OG at `/templates/[slug]/opengraph-image`
+// `getPublishedWorkspaceBySlug`, which transitively imports the libSQL
+// client. The existing per-template OG at `/templates/[slug]/opengraph-image`
 // stays edge because it reads only the in-memory TEMPLATES array.
 export const runtime = "nodejs";
 export const alt = "Tasks workspace";

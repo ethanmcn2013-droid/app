@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import { getAttachmentById } from "@/server/db/queries";
 import { getActiveWorkspace } from "@/server/auth";
 
-// better-sqlite3 + node:fs aren't edge-friendly.
+// node:fs isn't edge-friendly.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

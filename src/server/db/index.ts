@@ -50,15 +50,8 @@ if (process.env.NODE_ENV === "development" && !globalForDb._seeded) {
   // Fire-and-forget: seed errors are logged but don't crash the
   // module load. The DB is usable even if seed fails (e.g. already
   // seeded, or a transient network hiccup on first cold start).
-  try {
-    void Promise.resolve(
-      seedIfEmpty(db as unknown as Parameters<typeof seedIfEmpty>[0]),
-    ).catch((err) => {
-      globalForDb._seeded = false;
-      console.error("[db] seedIfEmpty failed:", err);
-    });
-  } catch (err) {
+  void seedIfEmpty(db).catch((err) => {
     globalForDb._seeded = false;
     console.error("[db] seedIfEmpty failed:", err);
-  }
+  });
 }

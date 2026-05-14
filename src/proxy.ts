@@ -44,6 +44,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/(.*)",
   "/api/cron/(.*)",
   "/api/health/(.*)",
+  // Internal cross-product reads (bearer-auth via PARTNER_STATS_SECRET).
+  // Not Clerk-protected because the calling service has no Clerk session.
+  "/api/internal/(.*)",
   "/sitemap.xml",
   "/robots.txt",
   "/sign-in(.*)",

@@ -1,8 +1,8 @@
 import { tasksEvents, type TasksChangedPayload } from "@/server/events";
 
 export const dynamic = "force-dynamic";
-// Node runtime — better-sqlite3 + EventEmitter aren't edge-friendly,
-// and we already lean on Node modules elsewhere in /api.
+// Node runtime — EventEmitter isn't edge-friendly, and we already
+// lean on Node modules elsewhere in /api.
 export const runtime = "nodejs";
 
 /**

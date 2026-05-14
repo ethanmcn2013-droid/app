@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { comments, tasks } from "@/server/db/schema";
@@ -8,7 +8,7 @@ import { getCommentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { notify } from "@/server/db/notifications";
 import { emitTasksChanged } from "@/server/events";
-import { getCurrentUser } from "@/server/auth";
+import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { USERS, type Comment, type UserId } from "@/lib/data";
 
 function snippetOf(body: string): string {
@@ -120,14 +120,28 @@ export async function addCommentAction(
 export async function removeCommentAction(
   commentId: string,
 ): Promise<Comment[]> {
-  // Look up taskId before delete so we can return the updated thread.
+  // Scope the delete to (active workspace, author === caller). The
+  // workspace join via the parent task closes the cross-tenant hole
+  // (you can't delete comments on tasks outside your workspace); the
+  // userId match keeps members from deleting each other's comments.
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+
   const [row] = await db
     .select({ taskId: comments.taskId })
     .from(comments)
-    .where(eq(comments.id, commentId));
+    .innerJoin(tasks, eq(tasks.id, comments.taskId))
+    .where(
+      and(
+        eq(comments.id, commentId),
+        eq(comments.userId, me),
+        eq(tasks.workspaceId, ws),
+      ),
+    );
   if (!row) return [];
 
-  await db.delete(comments).where(eq(comments.id, commentId));
+  await db
+    .delete(comments)
+    .where(and(eq(comments.id, commentId), eq(comments.userId, me)));
   await touchTask(row.taskId);
   await recordActivity(row.taskId, {
     kind: "commentRemove",

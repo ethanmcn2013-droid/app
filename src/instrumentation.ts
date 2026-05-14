@@ -8,16 +8,15 @@
  */
 export async function register() {
   if (!process.env.SENTRY_DSN) return;
+  const { scrubEvent } = await import("@/lib/sentry-scrub");
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const Sentry = await import("@sentry/nextjs");
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       environment: process.env.SENTRY_ENVIRONMENT ?? "development",
       tracesSampleRate: 0.1,
-      // Anti-noise: don't sample drizzle/sqlite errors more than once.
-      beforeSend(event) {
-        return event;
-      },
+      sendDefaultPii: false,
+      beforeSend: scrubEvent,
     });
   }
   if (process.env.NEXT_RUNTIME === "edge") {
@@ -26,6 +25,8 @@ export async function register() {
       dsn: process.env.SENTRY_DSN,
       environment: process.env.SENTRY_ENVIRONMENT ?? "development",
       tracesSampleRate: 0.1,
+      sendDefaultPii: false,
+      beforeSend: scrubEvent,
     });
   }
 }
