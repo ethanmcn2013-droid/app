@@ -45,7 +45,7 @@ export function SiteFooter() {
           links={[
             { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
             { href: "/for/students", label: "Free for students" },
-            { href: "https://signalstudio.ie/changelog", label: "Changelog", external: true },
+            { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
           ]}
