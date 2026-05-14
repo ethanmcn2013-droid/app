@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Wrapper around the canonical log-cycle.ts that lives in the
- * portfolio repo. Posts a "Cycle N shipped" row into the shared
- * Turso roadmap DB so /roadmap (on ethanmcnamara.com) stays
- * truthful across all three products.
+ * Wrapper around the canonical log-cycle.ts that lives in this
+ * repo at scripts/log-cycle.ts. Posts a "Cycle N shipped" row
+ * into the shared Turso roadmap DB so /roadmap (on
+ * ethanmcnamara.com) stays truthful across all three products.
  *
  * Forward args verbatim:
  *   node scripts/log-cycle.mjs \
@@ -17,16 +17,17 @@
 
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 
-const PORTFOLIO_PATH =
-  "/Users/ethanmcnamara/Projects/personal/ethanmcnamara";
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SCRIPT_PATH = resolve(REPO_ROOT, "scripts/log-cycle.ts");
 const PROJECT = "tasks";
 
-if (!existsSync(PORTFOLIO_PATH)) {
+if (!existsSync(SCRIPT_PATH)) {
   console.error(
-    `log-cycle: portfolio repo not found at ${PORTFOLIO_PATH}. ` +
-      `Either clone ethanmcnamara repo there, or update PORTFOLIO_PATH ` +
-      `in this wrapper.`,
+    `log-cycle: canonical script not found at ${SCRIPT_PATH}. ` +
+      `This wrapper expects scripts/log-cycle.ts to live alongside it.`,
   );
   process.exit(1);
 }
@@ -42,6 +43,6 @@ if (passed.includes("--project")) {
 const result = spawnSync(
   "npx",
   ["tsx", "scripts/log-cycle.ts", "--project", PROJECT, ...passed],
-  { cwd: PORTFOLIO_PATH, stdio: "inherit" },
+  { cwd: REPO_ROOT, stdio: "inherit" },
 );
 process.exit(result.status ?? 1);

@@ -33,6 +33,6 @@ node scripts/log-cycle.mjs \
   --description "<one-paragraph what-and-why>"
 ```
 
-This pushes a row into the shared Roadmap Turso DB so `ethanmcnamara.com/roadmap` stays accurate across all three products. The wrapper delegates to the canonical `log-cycle.ts` in `~/Projects/personal/ethanmcnamara`.
+This pushes a row into the shared Roadmap Turso DB so `ethanmcnamara.com/roadmap` stays accurate across all three products. The wrapper delegates to the canonical `log-cycle.ts` that lives alongside it in this repo's `scripts/` directory.
 
 Don't pass `--project` — it's forced to `tasks` in the wrapper.
