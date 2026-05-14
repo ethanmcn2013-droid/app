@@ -338,10 +338,12 @@ body {
    the font on phones. Loosen below 640px so wrapped headlines breathe
    without losing the typographic register. Mirrors studio S·26. */
 @media (max-width: 640px) {
-  .h-display { line-height: 1.04; }
-  .h-title   { line-height: 1.1;  }
-  .h-section { line-height: 1.18; }
-  h1         { line-height: 1.08; }
+  /* !important required — hero h1 elements carry inline
+     style={{ lineHeight: '0.96' }} that beats external rules. */
+  .h-display { line-height: 1.04 !important; }
+  .h-title   { line-height: 1.1  !important; }
+  .h-section { line-height: 1.18 !important; }
+  h1         { line-height: 1.08 !important; }
 }
 
 /* Marker-underline accent for display headlines (matches the DS
