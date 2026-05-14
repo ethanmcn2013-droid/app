@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createCheckoutSessionAction } from "@/server/actions/billing";
-import type { PaidTier } from "@/server/stripe";
+import { stripeConfigured, type PaidTier } from "@/server/stripe";
 
 /**
  * Cross-product checkout entry point (E-7, 2026-05-14).
@@ -43,6 +43,19 @@ export async function GET(req: Request) {
     );
   }
   const tier = tierParam as PaidTier;
+
+  // SAFETY: in production, if Stripe isn't configured,
+  // createCheckoutSessionAction silently grants the tier locally via
+  // the dev-fallback path. That would let any clicker walk away with
+  // a paid tier without paying. Fail loudly instead — redirect to
+  // /pricing with a state marker the umbrella can render as
+  // "Checkout temporarily offline". Dev environments keep the
+  // fallback path so local testing is unblocked.
+  if (process.env.NODE_ENV === "production" && !stripeConfigured) {
+    return NextResponse.redirect(
+      new URL("/pricing?status=checkout-offline", req.url),
+    );
+  }
 
   const { userId } = await auth();
   if (!userId) {
