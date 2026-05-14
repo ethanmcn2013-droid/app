@@ -8,6 +8,8 @@ import {
   grantEntitlement,
 } from "@/server/actions/billing";
 import type { EntitlementTier } from "@/lib/data";
+import { entitlementsDb } from "@/lib/entitlements-shared/client";
+import { processedWebhooks as sharedProcessedWebhooks } from "@/lib/entitlements-shared/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -162,6 +164,21 @@ export async function POST(req: Request) {
   // line leaves no dedup row; Stripe's retry will land safely because
   // grantEntitlement is idempotent on the `notes` field.
   await recordProcessed(event.id, event.type);
+
+  // Mirror the dedup row to the shared signal-entitlements DB so any
+  // future cross-product writer (Studio admin grants, third-party
+  // billing providers) can short-circuit on the same event id.
+  // Fire-and-forget — the canonical dedup is already in the local
+  // table above.
+  try {
+    const eb = entitlementsDb();
+    const id = `pw-${event.id}`;
+    await eb.insert(sharedProcessedWebhooks)
+      .values({ id, source: "stripe", eventId: event.id })
+      .onConflictDoNothing();
+  } catch (err) {
+    console.warn("[stripe webhook] shared dedup mirror failed:", err);
+  }
 
   return NextResponse.json({ ok: true });
 }
