@@ -6,6 +6,33 @@ import { entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { priceIdFor, stripe, type PaidTier } from "@/server/stripe";
 import type { EntitlementTier } from "@/lib/data";
+import {
+  expireSharedEntitlement,
+  writeSharedEntitlement,
+} from "@/lib/entitlements-shared/writes";
+import type { EntitlementSource as SharedSource } from "@/lib/entitlements-shared/schema";
+
+/** Translate Tasks's local source vocab to canonical shared vocab.
+ *  Tier-aware: a "purchase" of a one-time tier (wedding/event) maps
+ *  to event_pass; a "purchase" of a recurring tier maps to
+ *  workspace_subscription. */
+function toSharedSource(
+  source: "purchase" | "comp" | "edu" | "default",
+  tier: EntitlementTier,
+): SharedSource | null {
+  switch (source) {
+    case "purchase":
+      return tier === "wedding" || tier === "event"
+        ? "event_pass"
+        : "workspace_subscription";
+    case "comp":
+      return "compliments";
+    case "edu":
+      return "student_edu";
+    case "default":
+      return null; // free defaults don't need a shared row
+  }
+}
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -129,6 +156,30 @@ export async function grantEntitlement(input: {
     expiresAt,
     notes: input.notes ?? null,
   });
+
+  // E-3.2 · Mirror the grant into the shared signal-entitlements DB
+  // so Roadmap / Analytics / Notes / Studio can read the same tier.
+  // Fire-and-forget: if shared write fails, the local grant still
+  // succeeds, and a future reconcile sweep can backfill. Entitlement
+  // mirroring MUST NOT break a paid checkout.
+  const sharedSource = toSharedSource(input.source, input.tier);
+  if (sharedSource) {
+    try {
+      await writeSharedEntitlement({
+        userClerkId: input.userId,
+        tier: input.tier,
+        source: sharedSource,
+        sourceRef: input.notes ?? null,
+        expiresAtMs: expiresAt ? expiresAt.getTime() : null,
+        metadata: {
+          workspaceId: input.workspaceId,
+          origin: "tasks-grantEntitlement",
+        },
+      });
+    } catch (err) {
+      console.warn("[grantEntitlement] shared mirror failed", err);
+    }
+  }
 }
 
 /** Cancel an active entitlement — called from Stripe's
@@ -141,4 +192,12 @@ export async function expireEntitlementByNotes(
     .update(entitlements)
     .set({ expiresAt: new Date() })
     .where(eq(entitlements.notes, notesMatch));
+
+  // Mirror the expiry into the shared DB. Match by sourceRef since
+  // notes-string maps 1:1 to source_ref in writeSharedEntitlement.
+  try {
+    await expireSharedEntitlement({ sourceRef: notesMatch });
+  } catch (err) {
+    console.warn("[expireEntitlementByNotes] shared mirror failed", err);
+  }
 }
