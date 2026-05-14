@@ -25,13 +25,13 @@ const TIER_META: TierMeta[] = [
   {
     id: "free",
     label: "Free",
-    price: "$0",
-    blurb: "The shape of things. Forever.",
+    price: "€0",
+    blurb: "One workspace. All four products. Three editing guests.",
     features: [
-      "Up to 3 workspaces",
-      "Board, list, calendar views",
-      "Daily digest, no other notifications",
-      "Single-seat",
+      "One workspace",
+      "Board, list, calendar, and timeline views",
+      "Daily digest",
+      "Three editing guests",
     ],
   },
   {
@@ -42,7 +42,7 @@ const TIER_META: TierMeta[] = [
     paidTier: "workspace",
     features: [
       "Unlimited workspaces",
-      "Unlimited guests + collaborators",
+      "Unlimited guests and collaborators",
       "All four products — Tasks, Roadmap, Analytics, Notes",
       "Recurring tasks, blockers, NLP dates",
     ],
@@ -63,12 +63,12 @@ const TIER_META: TierMeta[] = [
   {
     id: "studio",
     label: "Studio",
-    price: "$14.95 / mo",
-    blurb: "Team-equivalent across every workspace you own.",
+    price: "€14.95 / mo",
+    blurb: "One subscription. Every workspace you own.",
     paidTier: "studio",
     features: [
       "Unlimited workspaces — one per client, one per project",
-      "Team features on every workspace you own",
+      "Workspace features on every workspace you own",
       "No per-seat tax inside any of them",
       "One bill, not one per workspace",
     ],
@@ -76,13 +76,13 @@ const TIER_META: TierMeta[] = [
   {
     id: "wedding",
     label: "Wedding",
-    price: "$49 once",
-    blurb: "One workspace. One year. One day.",
+    price: "€79 once",
+    blurb: "One workspace. One wedding. Twelve months. Reads forever.",
     paidTier: "wedding",
     features: [
-      "12 months of Pro for the planner",
-      "Up to 6 collaborators (partner, planner, MOH)",
-      "Wedding-flavored starter pack",
+      "Wedding-shaped starter pack from day one",
+      "Up to 6 collaborators — partner, planner, MOH",
+      "12 months of editing for the planner",
       "Read-only links for in-laws",
     ],
   },
