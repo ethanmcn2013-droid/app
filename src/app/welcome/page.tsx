@@ -8,7 +8,7 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
-import { applyTemplateAction } from "@/server/actions/templates";
+import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { WelcomePicker } from "@/components/welcome/welcome-picker";
 import { StillProvisioning } from "@/components/welcome/still-provisioning";
 
@@ -47,7 +47,10 @@ export default async function WelcomePage() {
   // sponsor.
   const venueWelcome = await detectVenueWelcome(me);
   if (venueWelcome && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
-    await applyTemplateAction(VENUE_TEMPLATE_ID);
+    // Pure DB helper instead of `applyTemplateAction` — same reason as
+    // `redeemCompCodeAction`: the action calls `revalidatePath` which
+    // is illegal during route render.
+    await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
     await db.run(sql`
       UPDATE workspaces
       SET template_id = ${VENUE_TEMPLATE_ID},

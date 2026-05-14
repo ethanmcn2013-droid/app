@@ -4,6 +4,29 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·49 · ships · venue redemption survives a fresh-user render
+
+**The wedding comp-code redemption no longer 500s on a fresh user.**
+Two bugs were stacked on the same path. First: `applyTemplateAction`
+calls `revalidatePath`, which is illegal during a Server Component
+render — and `redeemCompCodeImpl` runs synchronously inside the
+redemption page render. Second: the schema gained a `source_note_id`
+column for the Notes → Tasks extract back in cycle 9.4b, but no
+migration ever shipped to Turso prod, so every `INSERT` into `tasks`
+errored with "no column named source_note_id".
+
+Fix: extracted a pure DB helper `applyTemplateToWorkspace` in
+`src/server/db/apply-template.ts` — no `revalidatePath`, no event
+emit, just the lane-position math and the inserts. `comp.ts` and
+`/welcome/page.tsx` route through the helper now; `applyTemplateAction`
+delegates to the helper plus the cache invalidation, so client-side
+template apply still works the same way. Migration
+`drizzle/0004_add_source_note_id.sql` adds the missing column.
+
+Operator note: the migration must be applied to Turso prod before
+the deploy is functional for fresh users —
+`turso db shell ethanmcnamara-tasks "ALTER TABLE tasks ADD COLUMN source_note_id TEXT;"`.
+
 ## 2026-05-14 · T·48 · ships · atlas drift-trigger wires into tasks commits
 
 **Tasks commits now flag the umbrella's atlas when a referenced

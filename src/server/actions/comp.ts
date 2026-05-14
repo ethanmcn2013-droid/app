@@ -10,7 +10,7 @@ import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { sendEmail, studentCodeEmailHtml } from "@/server/email";
 import type { EntitlementTier } from "@/lib/data";
 import { TEMPLATES } from "@/lib/templates";
-import { applyTemplateAction } from "@/server/actions/templates";
+import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
@@ -225,14 +225,17 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   // Venue Editions short-circuit: if this is a wedding comp with
   // sponsor JSON, apply the wedding template and flag the workspace
   // inline. Lets the result card deep-link straight to the board
-  // with the sponsor banner — no /welcome hop. Used to live in
-  // /welcome's page handler; moved here so we don't burn the
-  // emotional high of the success card with a triple-redirect.
+  // with the sponsor banner — no /welcome hop.
+  //
+  // Uses `applyTemplateToWorkspace` (pure DB) instead of the public
+  // action — the action calls `revalidatePath`, which is illegal
+  // during the Server Component render this action runs inside.
+  // That was the cycle-8.5 fresh-user 500.
   let sponsorSlug: string | undefined;
   if (row.tier === "wedding") {
     const sponsor = await lookupSponsorByCode(code);
     if (sponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
-      await applyTemplateAction(VENUE_TEMPLATE_ID);
+      await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
       await db.run(sql`
         UPDATE workspaces
         SET template_id = ${VENUE_TEMPLATE_ID},

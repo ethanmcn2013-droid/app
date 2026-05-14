@@ -1,12 +1,13 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
 import { tasks, workspaceMembers, workspaces } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
+import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
@@ -33,49 +34,8 @@ import { getTemplate, TEMPLATES } from "@/lib/templates";
 export async function applyTemplateAction(
   templateId: string,
 ): Promise<Task[]> {
-  // Validate up-front so we fail loudly at the server boundary
-  // instead of mid-batch.
-  if (!TEMPLATES.some((t) => t.id === templateId)) {
-    throw new Error(`Unknown template id: ${templateId}`);
-  }
-  const template = getTemplate(templateId);
   const ws = await getActiveWorkspace();
-
-  // Compute the next end-of-lane position for every lane the template
-  // touches in one query, then increment locally as we insert. Avoids
-  // N round-trips when a template lands tasks in three lanes.
-  const lanes = Array.from(new Set(template.tasks.map((t) => t.lane)));
-  const lanePositions = new Map<LaneId, number>();
-  for (const lane of lanes) {
-    const [row] = await db
-      .select({ max: sql<number | null>`MAX(${tasks.position})` })
-      .from(tasks)
-      .where(
-        and(eq(tasks.lane, lane), eq(tasks.workspaceId, ws)),
-      );
-    lanePositions.set(lane, (row?.max ?? 0) + 1.0);
-  }
-
-  const now = new Date(Math.floor(Date.now() / 1000) * 1000);
-  for (const t of template.tasks) {
-    const id = `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
-    const position = lanePositions.get(t.lane)!;
-    lanePositions.set(t.lane, position + 1.0);
-    await db.insert(tasks).values({
-      id,
-      workspaceId: ws,
-      title: t.title,
-      lane: t.lane,
-      priority: t.priority,
-      assignees: [],
-      due: t.due,
-      tags: t.tags,
-      position,
-      updatedAt: now,
-    });
-    await recordActivity(id, { kind: "taskAdd", lane: t.lane });
-  }
-
+  await applyTemplateToWorkspace(templateId, ws);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
