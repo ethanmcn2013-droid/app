@@ -44,19 +44,35 @@ export async function writeSharedEntitlement(input: {
   }
 
   const id = `e-${Math.random().toString(36).slice(2, 12)}`;
-  await db.insert(entitlements).values({
-    id,
-    userClerkId: input.userClerkId,
-    tier: input.tier,
-    source: input.source,
-    sourceRef: input.sourceRef ?? null,
-    expiresAt: input.expiresAtMs ?? null,
-    status: "active",
-    stripeCustomerId: input.stripeCustomerId ?? null,
-    stripeSubscriptionId: input.stripeSubscriptionId ?? null,
-    metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-  });
-  return { id, created: true };
+
+  // Retry on transient errors — Turso reads at the edge can briefly
+  // reject writes during failover. Three attempts with short
+  // exponential backoff narrows the divergence window from
+  // "indefinite" to a sub-second blip. The daily reconcile sweep
+  // (Tasks /api/cron/digest) is the safety net beyond that.
+  const BACKOFFS_MS = [0, 100, 300];
+  let lastErr: unknown;
+  for (const wait of BACKOFFS_MS) {
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    try {
+      await db.insert(entitlements).values({
+        id,
+        userClerkId: input.userClerkId,
+        tier: input.tier,
+        source: input.source,
+        sourceRef: input.sourceRef ?? null,
+        expiresAt: input.expiresAtMs ?? null,
+        status: "active",
+        stripeCustomerId: input.stripeCustomerId ?? null,
+        stripeSubscriptionId: input.stripeSubscriptionId ?? null,
+        metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+      });
+      return { id, created: true };
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
 /**

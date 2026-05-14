@@ -11,6 +11,10 @@ import {
   sendEmail,
 } from "@/server/email";
 import { type UserId } from "@/lib/data";
+import {
+  reconcileEntitlements,
+  type ReconcileResult,
+} from "@/server/db/reconcile-entitlements";
 
 /**
  * Daily digest cron endpoint.
@@ -128,12 +132,26 @@ export async function GET(req: Request) {
     }
   }
 
+  // E-3.3 (2026-05-14): every daily cron run also reconciles the
+  // local Tasks entitlements against the shared signal-entitlements
+  // DB. Idempotent — only the rare crash-between-writes case actually
+  // inserts anything. Wrapped in try/catch so a reconcile failure
+  // cannot break the digest email it's piggybacked on.
+  let reconcile: ReconcileResult | { error: string } | null = null;
+  try {
+    reconcile = await reconcileEntitlements();
+  } catch (err) {
+    reconcile = { error: err instanceof Error ? err.message : "unknown" };
+    console.warn("[cron/digest] reconcile sweep failed:", err);
+  }
+
   return NextResponse.json({
     ok: true,
     deliveredAt: new Date().toISOString(),
     emailConfigured,
     sent: send,
     emailResult,
+    reconcile,
     digest,
   });
 }
