@@ -3,6 +3,100 @@
 All notable changes to the Tasks product are recorded here. Each entry
 corresponds to one autonomous PM/Architect cycle.
 
+## 2026-05-14 · Entitlements sprint · One tier, every product
+
+Tasks stops being a tier-island. The local entitlements table that
+used to be the single source of truth now mirror-writes to a new
+shared `signal-entitlements` Turso DB, and reads check the shared DB
+first with a local fallback. Every other product in the suite —
+Roadmap, Analytics, Notes, Studio — reads the same store, so a
+Wedding comp grant minted in Tasks now actually unlocks the right
+things in the briefing email + roadmap workspace counter without
+each product owning its own copy of the truth.
+
+Vocab was unified along the way. `pro` and `team` collapsed into
+`workspace` to match what the umbrella pricing page actually sells;
+`event` was added. The internal `EntitlementTier` union and every
+string literal that compared against it (`billing.tsx`, `comp.ts`,
+`plan-view.tsx`, the Clerk webhook .edu grant) were renamed in one
+sweep. No data migration was needed — Tasks had exactly one paid
+entitlement in the wild (a `wedding` comp), which already used
+canonical vocab.
+
+A new public seam landed for cross-product checkout: `GET
+/api/checkout?tier=workspace|event` redirects an authed Clerk user
+into a Stripe checkout session for the right tier, with a fail-loud
+guard that bounces to `signalstudio.ie/pricing?status=checkout-offline`
+if Stripe envs aren't configured (a stranger can no longer click an
+umbrella CTA and walk away with a paid grant before payment lands).
+Studio's pricing CTAs deep-link here.
+
+Hardening: the Stripe webhook handler now mirrors its dedup row into
+shared `processed_webhooks`, and `writeSharedEntitlement` retries
+transient errors with backoff. The daily digest cron got a reconcile
+sweep piggybacked on it — walks all active local entitlements and
+asks the shared DB to mirror anything missing, idempotently. A
+companion `POST /api/internal/reconcile-entitlements` bearer-authed
+endpoint lets the operator trigger the same sweep between daily runs.
+
+Settings/billing UI was tightened: Studio and Wedding cards no longer
+render as buyable (they're operator-granted / venue-comp only); the
+upgrade grid now filters to self-serve tiers + the user's current
+one. Currency standardised to € everywhere.
+
+Operator docs: `docs/STRIPE_SETUP.md` (with exactly the two products
+that map to public pricing — Workspace + Event).
+
+## 2026-05-14 (voice hygiene) · The last few sprints, swept
+
+A cross-suite copy review surfaced what the prior jargon purges had
+missed. Most of the drift was here in Tasks — Roadmap, Analytics,
+Notes and Studio came back clean.
+
+**The cinematic demo loses a Burndown.** The corner-mounted sparkline
+on the homepage demo was labelled `Burndown` — the chart name we
+specifically refuse on the about page. It now reads `Open work`,
+which is what the line actually is. The underlying state shape kept
+its variable name; the ban is on copy, not on identifiers.
+
+**A pulse on every plan.** The `Live signals` feature card was titled
+*Burndown without dashboards* — promoting the banned word as if it
+were a feature. Re-titled *A pulse on every plan*; body shifted
+*Burn rate* → *Pace*. Same meaning, different register.
+
+**Sprint becomes push, in two templates.** `final-paper-sprint` and
+`job-application-sprint` were running-sprint English, but the
+ambiguity with the PM term costs us every time. Slugs renamed to
+`final-paper-push` and `job-application-push`. Permanent 308
+redirects added in `next.config.ts` so existing inbound links keep
+landing. Template display names, essay seoTitle, and the
+`student → final-paper-*` map in `published-footer.tsx` all moved
+in lockstep. Future-facing post drafts under `docs/` were updated;
+historical changelog entries kept their original slugs intact —
+rewriting history is the worse drift.
+
+**Smaller polish.** `data.ts` seed task *Sprint planning · Q3 themes*
+→ *Quarterly themes · Q3*. `for-freelancers.tsx` "wants to see the
+gantt and you want to see the kanban" → "the timeline and you want
+to see the board". `roadmap-view.tsx` headline lost the "· not the
+product backlog" tail (the page already does the anti-callout work
+without that phrase). `embed-guide.tsx` Google Docs note: "smart
+chip with the page's OG card" → "card with the page preview".
+`launch-readiness-seed.ts` retired *seamless* and *in backlog*.
+Roadmap repo got one comment fix: a share-gesture comment that
+described itself as *intelligent* now describes itself as something
+that *lands*.
+
+**What stayed.** Every anti-feature callout — the manifesto's
+*"no story points, velocity, burndown, OKR alignment"*, the
+trades page's *"no sprint vocabulary"*, the small-business page's
+*"nothing here calls you a stakeholder"*, the analytics method
+page's *"no agent, no copilot"* — kept verbatim. Refusing a word
+by naming it is exactly the §6 pattern; that's the brand doing
+its job, not drift. The `Sprint 2` / `Sprint 9` references in
+internal code comments also stayed for now — a separate hygiene
+pass when the appetite is there.
+
 ## 2026-05-13 (suite design-system v1) · Paper turns white, the dot learns to heartbeat
 
 The umbrella's new design system landed and Tasks is the first product
