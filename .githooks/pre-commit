@@ -1,23 +1,25 @@
 #!/usr/bin/env bash
 # Atlas drift-check pre-commit hook.
 # Runs scripts/atlas-drift-check.ts against the staged files. Records
-# drift in content/atlas/_drift.json and stages it as part of the commit.
-# NEVER blocks the commit — drift is a signal, not a gate.
+# drift in studio's canonical sidecar (~/Projects/personal/studio/
+# content/atlas/_drift.json). NEVER blocks the commit — drift is a
+# signal, not a gate.
 #
-# Activation (one-time):
+# Same hook ships in all five Signal product repos. Activation in each:
 #   git config core.hooksPath .githooks
 #
-# See docs/ATLAS_DRIFT_TRIGGER.md for the full spec.
+# See docs/ATLAS_DRIFT_TRIGGER.md for the full spec (Cycle A.11).
 
 set -e
 
-# Skip if no atlas content exists in this repo.
-if [ ! -d "content/atlas" ]; then
+# Skip if studio's atlas content isn't present on this machine
+# (CI clone, fresh dev box, etc.) — the hook is a signal, not a gate.
+if [ ! -d "$HOME/Projects/personal/studio/content/atlas" ]; then
   exit 0
 fi
 
-# tsx is a dev dependency in this repo. If it's missing, skip silently
-# rather than blocking — the hook is a signal, not a gate.
+# tsx is a dev dependency in most repos; if it's missing here, skip
+# silently rather than blocking.
 if ! npx --no-install tsx --version >/dev/null 2>&1; then
   exit 0
 fi

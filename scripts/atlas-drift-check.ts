@@ -1,29 +1,27 @@
 #!/usr/bin/env tsx
 /**
- * Atlas drift-check — runs against the current repo's staged files.
+ * Atlas drift-check — runs against the current repo's staged files
+ * and writes drift into studio's canonical sidecar.
  *
- * For every atlas entry, normalize its references[] to repo-relative
- * paths that could exist here. For every staged file, see if it matches
- * any entry's normalized references. If so, mark the entry as drifted
- * in content/atlas/_drift.json.
+ * Architecture (Cycle A.11, 2026-05-14): shared write. All five
+ * product repos (studio + tasks + roadmap + analytics + notes) ship
+ * this same script. Atlas content always lives in studio, so the
+ * sidecar lives next to it at:
  *
- * Two clear paths run unconditionally on every invocation:
- *   1. If an entry's own .md file is staged with a bumped lastVerified,
- *      remove its slug from the sidecar (the operator confirmed it).
- *   2. If an entry's own .md file is staged AND its body changed, the
- *      entry is implicitly re-verified — clear the slug.
+ *   ~/Projects/personal/studio/content/atlas/_drift.json
  *
- * Hook contract: NEVER blocks the commit. Records drift, stages the
- * sidecar so it travels with the same commit, prints a one-line summary.
+ * Per-repo behavior:
+ *   - In studio:   auto-stages the sidecar, runs the clear path (when
+ *                  an entry's own .md is staged, slug is cleared).
+ *   - In sibling:  writes the sidecar in studio's working tree but
+ *                  skips auto-stage (foreign repo). Clear path is
+ *                  inert because entry .md files only live in studio.
  *
- * Invocation:
- *   tsx scripts/atlas-drift-check.ts
+ * Hook contract: NEVER blocks the commit. Records drift, prints a
+ * one-line summary. Silent no-op if studio's atlas dir is missing
+ * (e.g. CI clone, fresh machine).
  *
- * Activation (one-time):
- *   git config core.hooksPath .githooks
- *
- * See docs/ATLAS_DRIFT_TRIGGER.md for the full spec and the multi-repo
- * fan-out plan.
+ * See docs/ATLAS_DRIFT_TRIGGER.md for the full spec.
  */
 
 import { execSync } from "node:child_process";
@@ -37,22 +35,12 @@ type SidecarEntry = {
 };
 type Sidecar = Record<string, SidecarEntry>;
 
-const REPO_ROOT = execSync("git rev-parse --show-toplevel").toString().trim();
 const HOME = process.env.HOME ?? "";
-// The atlas lives in the studio repo. Each product repo's drift-check
-// reads entries from there and writes findings back into the same
-// sidecar. ATLAS_REPO_ROOT env override allows ad-hoc relocation.
-const ATLAS_REPO_ROOT =
-  process.env.ATLAS_REPO_ROOT ??
-  path.join(HOME, "Projects", "personal", "studio");
-const ATLAS_DIR = path.join(ATLAS_REPO_ROOT, "content", "atlas");
+const REPO_ROOT = execSync("git rev-parse --show-toplevel").toString().trim();
+const STUDIO_ROOT = path.join(HOME, "Projects", "personal", "studio");
+const ATLAS_DIR = path.join(STUDIO_ROOT, "content", "atlas");
 const SIDECAR_PATH = path.join(ATLAS_DIR, "_drift.json");
-
-// The studio repo lives at this absolute path; references[] often use a
-// "~/Projects/personal/<repo>/<rest>" prefix that needs to resolve to
-// either THIS repo or a sibling. We only flag drift for the repo we're
-// running in.
-const REPO_HOME_PREFIX = HOME ? REPO_ROOT.replace(HOME, "~") : REPO_ROOT;
+const IS_STUDIO = REPO_ROOT === STUDIO_ROOT;
 
 function readStagedFiles(): string[] {
   try {
@@ -108,23 +96,18 @@ function parseInlineArray(value: string): string[] {
  */
 function normalizeReference(ref: string): string | null {
   if (!ref) return null;
-  // Strip leading "~/" prefix and resolve against HOME
   const expanded = ref.startsWith("~/") && HOME
     ? path.join(HOME, ref.slice(2))
     : ref;
 
-  // Reference is an absolute path under this repo?
   if (expanded.startsWith(REPO_ROOT)) {
     return path.relative(REPO_ROOT, expanded);
   }
 
-  // Reference uses the ~/Projects/personal/<repo>/ shorthand but resolves
-  // outside this repo's tree — skip.
   if (expanded.startsWith(HOME) && expanded.includes(path.sep)) {
     return null;
   }
 
-  // No leading slash, no leading tilde — treat as a repo-relative path.
   if (!path.isAbsolute(ref) && !ref.startsWith("~") && !/^https?:|^[A-Z_]+$/.test(ref)) {
     return ref;
   }
@@ -133,9 +116,7 @@ function normalizeReference(ref: string): string | null {
 }
 
 function referenceMatches(stagedPath: string, normalizedRef: string): boolean {
-  // Exact file match.
   if (stagedPath === normalizedRef) return true;
-  // Directory reference — match any file under it.
   const dirRef = normalizedRef.endsWith("/")
     ? normalizedRef
     : `${normalizedRef}/`;
@@ -170,10 +151,18 @@ function currentCommitShort(): string | undefined {
   }
 }
 
+function repoLabel(): string {
+  return path.basename(REPO_ROOT);
+}
+
 function main(): void {
+  if (!fs.existsSync(ATLAS_DIR)) {
+    return;
+  }
+
   const staged = readStagedFiles();
   if (staged.length === 0) {
-    return; // nothing to check
+    return;
   }
 
   const entries = listAtlasEntries();
@@ -191,13 +180,15 @@ function main(): void {
     const fm = parseFrontmatter(entry.raw);
     const slug = fm.slug ?? entry.slug;
 
-    // Clear path: if this entry's own .md is staged, treat it as
-    // operator-acknowledged. Remove from sidecar.
-    const entryPath = path.relative(REPO_ROOT, path.join(ATLAS_DIR, entry.file));
-    if (staged.includes(entryPath) && sidecar[slug]) {
-      delete sidecar[slug];
-      cleared.push(slug);
-      continue;
+    // Clear path: only meaningful when running inside studio, since
+    // sibling commits cannot stage atlas .md files (they live in studio).
+    if (IS_STUDIO) {
+      const entryPath = path.relative(REPO_ROOT, path.join(ATLAS_DIR, entry.file));
+      if (staged.includes(entryPath) && sidecar[slug]) {
+        delete sidecar[slug];
+        cleared.push(slug);
+        continue;
+      }
     }
 
     // Drift path: match staged files against this entry's normalized references.
@@ -222,12 +213,10 @@ function main(): void {
 
   writeSidecar(sidecar);
 
-  // Stage the sidecar so it travels with the same commit — only when
-  // the atlas is in THIS repo. Cross-repo runs (e.g. from tasks repo
-  // writing into studio's sidecar) leave the studio sidecar
-  // uncommitted; the studio operator picks it up next time.
-  const sidecarInThisRepo = REPO_ROOT === ATLAS_REPO_ROOT;
-  if (sidecarInThisRepo) {
+  // Auto-stage only inside the studio repo. Sibling repos write the
+  // sidecar in studio's working tree without staging — the studio
+  // operator picks it up on the next studio commit.
+  if (IS_STUDIO) {
     if (fs.existsSync(SIDECAR_PATH)) {
       try {
         execSync(`git add ${JSON.stringify(SIDECAR_PATH)}`, { stdio: "ignore" });
@@ -235,7 +224,6 @@ function main(): void {
         // best effort
       }
     } else {
-      // Sidecar was deleted (all entries cleared) — stage the deletion.
       try {
         execSync(`git add -A ${JSON.stringify(SIDECAR_PATH)}`, { stdio: "ignore" });
       } catch {
@@ -244,16 +232,16 @@ function main(): void {
     }
   }
 
-  // One-line summary for the operator. Never blocks.
+  const repoTag = IS_STUDIO ? "" : ` [${repoLabel()}]`;
   const parts: string[] = [];
   if (flagged.length > 0) {
     parts.push(
-      `atlas: drift flagged on ${flagged.length} ${flagged.length === 1 ? "entry" : "entries"} (${flagged.map((f) => f.slug).join(", ")})`,
+      `atlas${repoTag}: drift flagged on ${flagged.length} ${flagged.length === 1 ? "entry" : "entries"} (${flagged.map((f) => f.slug).join(", ")})`,
     );
   }
   if (cleared.length > 0) {
     parts.push(
-      `atlas: drift cleared on ${cleared.length} ${cleared.length === 1 ? "entry" : "entries"} (${cleared.join(", ")})`,
+      `atlas${repoTag}: drift cleared on ${cleared.length} ${cleared.length === 1 ? "entry" : "entries"} (${cleared.join(", ")})`,
     );
   }
   if (parts.length > 0) {
