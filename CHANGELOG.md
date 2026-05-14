@@ -4,7 +4,52 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-05-14 · T·46 · cuts · cta panel falls in line with the system
+## 2026-05-14 · T·47 · tightens · the venue sign-up reads on a phone
+
+**The venue redemption flow now hits a mobile-correct sign-up. Clerk
+buttons and inputs jump from 30px to 48px, the sponsor code legibility
+matches the umbrella treatment, H1 leading no longer clips its own
+descenders, and the page can't scroll sideways. Mirrors the umbrella
+S·26 pass, scoped to the conversion seam every venue-pilot couple
+lands on.**
+
+The audit flow: signalstudio.ie/redeem/[code] → /api/redeem → 308 →
+tasks.signalstudio.ie/redeem/[code] → 307 → /sign-up?redirect_url=...
+The last hop is where couples meet Clerk for the first time. On a
+phone, the buttons were 30px tall (well under the 44px WCAG floor),
+inputs were 30px at body font size, the H1 was the same size as body
+copy, and the sponsor code beneath the venue strip rendered at 11px
+gray — readable on a screen, not so much against the printed card
+the code came from.
+
+The Clerk styling lives in `src/app/layout.tsx` `<ClerkProvider
+appearance>`. Extended `elements` with `!min-h-[48px] !text-[16px]`
+on `formFieldInput`, `!min-h-[48px]` + `!text-[15px]` on
+`formButtonPrimary` and `socialButtonsBlockButton`. The 16px input
+font-size is the iOS Safari rule — anything smaller and the page
+auto-zooms when you focus an input. The `!` prefixes override
+Clerk's internal styles in the Tailwind cascade.
+
+The sponsor strip on `/sign-up/[[...sign-up]]/page.tsx` got the
+S·26 treatment: code separates into its own `Code` eyebrow + 14px
+tabular-nums on the line below. Same pattern the umbrella ships at
+`/redeem/[code]` — easier to read, easier to type when a couple is
+working off a printed card.
+
+Foundation work matches the umbrella too: `html, body { overflow-x:
+clip }` in `globals.css` (was `visible`, latent risk), a `@media
+(max-width: 640px)` block loosens `.h-display` / `.h-title` /
+`.h-section` / `h1` leading from 0.96–1.10 to 1.04–1.18 (descender
+clipping fixed on the home page hero among others), `viewportFit:
+"cover"` in the root layout for notch-safe iOS, footer legal links
+bumped from 11px / 17px tall to 12px / 32px tall with proper
+`inline-flex` hit areas and `safe-area-inset-bottom` padding.
+
+Voice and product surface unchanged. The pass is mechanical mobile
+hygiene against the same disciplines the umbrella followed on S·26.
+Typecheck clean. Build clean.
+
+
 
 **The dark navy gradient that closed tasks.signalstudio.ie is gone — the homepage now reads in one register from top to bottom.**
 

@@ -36,8 +36,11 @@ export default async function SignUpPage({
             <p className="mt-2 text-[14.5px] leading-[1.5] text-ink-soft">
               Almost there. {sponsor.name} is covering your year.
             </p>
-            <div className="mt-1.5 font-mono text-[11px] tabular-nums text-ink-faint">
-              Code · {sponsor.code}
+            <div className="mt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              Code
+            </div>
+            <div className="mt-1 font-mono text-[14px] uppercase tracking-[0.08em] tabular-nums text-ink-quiet">
+              {sponsor.code}
             </div>
           </div>
         ) : null}
