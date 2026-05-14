@@ -11,18 +11,23 @@ you want once the umbrella pricing page is broadcast.
 
 ## 1 · Stripe dashboard
 
-In <https://dashboard.stripe.com> (Live mode), create products + prices:
+The public pricing page (signalstudio.ie/pricing) sells two tiers
+self-serve: Workspace (monthly subscription) and Event (one-time).
+Free and Student take no payment. Studio (operator tier) and Wedding
+(venue-comp tier) are not on the public surface — both are granted
+manually via `/api/internal/entitlements/grant` (Studio) or the comp-
+code flow (Wedding), so neither needs a Stripe price.
+
+In <https://dashboard.stripe.com>, create products + prices:
 
 | Product       | Type           | Recurring | Currency | Amount   | Env var                            |
 |---------------|----------------|-----------|----------|----------|------------------------------------|
 | Workspace     | Subscription   | Monthly   | EUR      | €12.00   | `STRIPE_PRICE_WORKSPACE_MONTHLY`   |
-| Studio        | Subscription   | Monthly   | EUR      | €14.95   | `STRIPE_PRICE_STUDIO_MONTHLY`      |
 | Event         | One-time       | —         | EUR      | €79.00   | `STRIPE_PRICE_EVENT_ONETIME`       |
-| Wedding       | One-time       | —         | EUR      | €79.00   | `STRIPE_PRICE_WEDDING_ONETIME`     |
 
-(Workspace + Wedding tier still uses `STRIPE_PRICE_PRO_MONTHLY` as a
-fallback in code per E-3.1 — set the new name and keep the legacy in
-place until you've watched a few real purchases land.)
+(`STRIPE_PRICE_PRO_MONTHLY` is a legacy alias in code for
+`STRIPE_PRICE_WORKSPACE_MONTHLY` — set the new name; the alias only
+fires if the new one is unset.)
 
 ## 2 · Webhook
 
@@ -45,12 +50,10 @@ Copy the signing secret — you'll need it in step 3.
 Set on the **tasks** Vercel project, Production:
 
 ```
-STRIPE_SECRET_KEY=sk_live_...
+STRIPE_SECRET_KEY=sk_live_...                    # or sk_test_* in sandbox
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_WORKSPACE_MONTHLY=price_...
-STRIPE_PRICE_STUDIO_MONTHLY=price_...
 STRIPE_PRICE_EVENT_ONETIME=price_...
-STRIPE_PRICE_WEDDING_ONETIME=price_...
 ```
 
 Preview environments can use Stripe test-mode keys (`sk_test_*` +

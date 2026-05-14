@@ -18,7 +18,16 @@ type TierMeta = {
   price: string;
   blurb: string;
   features: string[];
+  /** Self-serve tiers carry a paidTier so the UI shows a checkout
+   *  button. Tiers without paidTier exist (Studio, Wedding) but are
+   *  granted by arrangement only — UI shows a "by arrangement" note
+   *  + a mailto, not a checkout button. */
   paidTier?: PaidTier;
+  /** Hide from the upgrade-options grid. Currently used for tiers
+   *  that are operator-granted only and would confuse a self-serve
+   *  buyer (Studio, Wedding). They still render as the user's CURRENT
+   *  tier when they hold one. */
+  selfServe?: boolean;
 };
 
 const TIER_META: TierMeta[] = [
@@ -33,6 +42,7 @@ const TIER_META: TierMeta[] = [
       "Daily digest",
       "Three editing guests",
     ],
+    selfServe: true,
   },
   {
     id: "workspace",
@@ -46,6 +56,7 @@ const TIER_META: TierMeta[] = [
       "All four products — Tasks, Roadmap, Analytics, Notes",
       "Recurring tasks, blockers, NLP dates",
     ],
+    selfServe: true,
   },
   {
     id: "event",
@@ -59,32 +70,34 @@ const TIER_META: TierMeta[] = [
       "Read-only forever after the event",
       "No subscription, no auto-renew",
     ],
+    selfServe: true,
   },
   {
     id: "studio",
     label: "Studio",
-    price: "€14.95 / mo",
+    price: "By arrangement",
     blurb: "One subscription. Every workspace you own.",
-    paidTier: "studio",
     features: [
       "Unlimited workspaces — one per client, one per project",
       "Workspace features on every workspace you own",
       "No per-seat tax inside any of them",
       "One bill, not one per workspace",
     ],
+    // No paidTier, no selfServe — only shown when the user already
+    // holds it (granted via Studio /api/internal/entitlements/grant).
   },
   {
     id: "wedding",
     label: "Wedding",
-    price: "€79 once",
+    price: "Via venue partner",
     blurb: "One workspace. One wedding. Twelve months. Reads forever.",
-    paidTier: "wedding",
     features: [
       "Wedding-shaped starter pack from day one",
       "Up to 6 collaborators — partner, planner, MOH",
       "12 months of editing for the planner",
       "Read-only links for in-laws",
     ],
+    // Granted via comp-code (LAMBSHIL flow). Not self-serve.
   },
 ];
 
@@ -213,10 +226,19 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         </div>
       </div>
 
-      {/* Tier comparison */}
+      {/* Tier comparison — self-serve tiers (Free / Workspace / Event)
+       *  + the user's CURRENT tier when it isn't already in that set
+       *  (Studio + Wedding only render when the user holds them). */}
+      {(() => {
+        const visibleTiers = TIER_META.filter(
+          (t) => t.selfServe || t.id === tier,
+        );
+        const cols =
+          visibleTiers.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3";
+        return (
       <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
-        <div className="grid grid-cols-1 divide-y divide-line-soft md:grid-cols-4 md:divide-x md:divide-y-0">
-          {TIER_META.map((t) => {
+        <div className={`grid grid-cols-1 divide-y divide-line-soft ${cols} md:divide-x md:divide-y-0`}>
+          {visibleTiers.map((t) => {
             const isCurrent = t.id === tier;
             const canUpgrade = TIER_RANK[t.id] > TIER_RANK[tier];
             return (
@@ -297,6 +319,8 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           })}
         </div>
       </div>
+        );
+      })()}
 
       {/* Comp code */}
       <form
