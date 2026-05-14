@@ -1,7 +1,33 @@
-# Changelog
+# Signal Tasks · the dispatch
 
-All notable changes to the Tasks product are recorded here. Each entry
-corresponds to one autonomous PM/Architect cycle.
+The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
+2026-05-14 keep their original shape; the new shape starts at the
+next cycle.
+
+## 2026-05-14 · T·46 · cuts · cta panel falls in line with the system
+
+**The dark navy gradient that closed tasks.signalstudio.ie is gone — the homepage now reads in one register from top to bottom.**
+
+The closing CTA was the last surface on the Tasks marketing site
+still rendering off the v1 design system that landed across the
+suite on 2026-05-13. A rounded-3xl panel, radial-gradient navy
+fill, white-on-dark typography, white-pill primary button — none
+of which matched the paper-white-on-ink-#111 hairline register the
+other four products committed to. Suite coherence is the moat;
+one panel breaking it is one panel too many.
+
+The rewrite strips the panel entirely. Section opens with a top
+hairline (`border-t border-line-soft`) — the same gesture that
+separates the rest of the homepage. Eyebrow flips to indigo-600
+mono (the one accent the system permits). The "Stop reading. /
+Start moving." gray-fade trick is preserved but re-rendered in
+`text-ink-ghost` instead of `text-white/55`, so the second clause
+softens without changing surface. Primary CTA now uses the
+identical `bg-ink text-white` pill as the Hero — same button
+language across both calls-to-action.
+
+No copy was harmed in the making of this fix. The voice was
+already on-brand; only the surface had drifted.
 
 ## 2026-05-14 · Entitlements sprint · One tier, every product
 
