@@ -166,7 +166,7 @@ Capture board view via ScreenStudio at 1440×900, single-take, 60 seconds. Three
 
 **Post 1/5:**
 
-> It's finals week somewhere. The student in front of a 14-week paper at 4am doesn't need a Gantt chart. She needs a list, a deadline, and four buckets her brain can still navigate. The final-paper-sprint template is built for that exact moment.
+> It's finals week somewhere. The student in front of a 14-week paper at 4am doesn't need a Gantt chart. She needs a list, a deadline, and four buckets her brain can still navigate. The final-paper-push template is built for that exact moment.
 
 **Post 2/5:**
 
@@ -174,7 +174,7 @@ Capture board view via ScreenStudio at 1440×900, single-take, 60 seconds. Three
 
 **Post 3/5:**
 
-> Open the template at tasks-nu-hazel.vercel.app/templates/final-paper-sprint, hit *Remix in a new workspace*, you get a fresh workspace named *"Final paper sprint · my remix,"* owned by you, slugged uniquely, all tasks pre-applied. Three minutes to the first card moved.
+> Open the template at tasks-nu-hazel.vercel.app/templates/final-paper-push, hit *Remix in a new workspace*, you get a fresh workspace named *"Final paper push · my remix,"* owned by you, slugged uniquely, all tasks pre-applied. Three minutes to the first card moved.
 
 **Post 4/5:**
 
@@ -267,7 +267,7 @@ Title: *Eight features we'll never ship — a productivity app's published refus
 | Mon 06-01 | X 5-thread (templates); Reddit Ads launch (paid brief) |
 | Tue 06-02 | X 6-thread (cycle 15 CSV import); r/SaaS pricing post; Bluesky Studio single |
 | Wed 06-03 | YouTube Short (60s board view); Bluesky scope-discipline single |
-| Thu 06-04 | X 5-thread (final-paper-sprint); Bluesky calendar single |
+| Thu 06-04 | X 5-thread (final-paper-push); Bluesky calendar single |
 | Fri 06-05 | IH cycle 20 cross-post; Sidebar.io/Refind resubmit; Bluesky Reddit-Ads close |
 | Sat 06-06 | REST |
 | Sun 06-07 | Bluesky pull-quote (LIGHT) |

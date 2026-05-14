@@ -49,8 +49,8 @@ export type Template = {
 const TEMPLATES_INLINE: Template[] = [
   // ─── Cross-domain ──────────────────────────────────────────────────
   {
-    id: "job-application-sprint",
-    name: "Job application sprint",
+    id: "job-application-push",
+    name: "Job application push",
     description:
       "Tailor resume, send five outreach emails, practice the answers — without the panic.",
     icon: "briefcase",
@@ -425,8 +425,8 @@ const TEMPLATES_INLINE: Template[] = [
 
   // ─── Student ───────────────────────────────────────────────────────
   {
-    id: "final-paper-sprint",
-    name: "Final paper sprint",
+    id: "final-paper-push",
+    name: "Final paper push",
     description:
       "Research, outline, draft, edit, submit — without the 4am panic.",
     icon: "document",

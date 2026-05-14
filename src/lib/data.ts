@@ -236,7 +236,7 @@ const _seedTaskInputs: Omit<
   },
   {
     id: "t-103",
-    title: "Sprint planning · Q3 themes",
+    title: "Quarterly themes · Q3",
     lane: "todo",
     priority: "p1",
     assignees: ["david", "chloe"],

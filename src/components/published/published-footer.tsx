@@ -15,7 +15,7 @@ const DOMAIN_TO_TEMPLATE: Record<DomainId, string> = {
   wedding: "wedding-3-month-countdown",
   marketing: "product-launch",
   freelance: "new-client-onboarding",
-  student: "final-paper-sprint",
+  student: "final-paper-push",
   // Trades couples cleanly to the new-client-onboarding template —
   // the pattern is identical (kickoff doc, contract, payment terms,
   // first invoice) just with different tooling between trades and

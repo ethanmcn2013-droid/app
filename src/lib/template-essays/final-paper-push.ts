@@ -1,8 +1,8 @@
 import type { TemplateEssay } from "./types";
 
 export const essay: TemplateEssay = {
-  templateId: "final-paper-sprint",
-  seoTitle: "Final paper checklist — the sprint plan that beats the 4am panic",
+  templateId: "final-paper-push",
+  seoTitle: "Final paper checklist — the plan that beats the 4am panic",
   seoDescription:
     "A research-paper outline and submission checklist built for college finals week. Eight tasks, one workspace, no 4am panic.",
   heroline: "A final paper isn’t hard — finishing one in the last 36 hours is.",

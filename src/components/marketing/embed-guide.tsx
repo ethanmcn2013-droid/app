@@ -132,7 +132,7 @@ export function EmbedGuide() {
         />
         <ToolBlock
           name="Google Docs"
-          notes="Docs doesn't render iframes. Paste the published URL as a plain link — Docs auto-creates a smart chip with the page's OG card. You can also export your workspace tasks as Markdown from the in-app Export menu and paste that into Docs directly."
+          notes="Docs doesn't render iframes. Paste the published URL as a plain link — Docs adds a card with the page preview. You can also export your workspace tasks as Markdown from the in-app Export menu and paste that into Docs directly."
         />
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">

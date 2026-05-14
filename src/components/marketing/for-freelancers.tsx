@@ -193,7 +193,7 @@ export function ForFreelancers() {
           />
           <Reason
             title="It looks like the work."
-            body="Board for momentum, list for triage, timeline for sequencing, calendar for delivery commitments. Same tasks, four lenses. No re-entering anything when the client wants to see the gantt and you want to see the kanban."
+            body="Board for momentum, list for triage, timeline for sequencing, calendar for delivery commitments. Same tasks, four lenses. No re-entering anything when the client wants to see the timeline and you want to see the board."
           />
         </ul>
 

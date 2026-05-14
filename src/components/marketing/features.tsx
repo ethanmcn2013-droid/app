@@ -27,8 +27,8 @@ const FEATURES = [
   },
   {
     eyebrow: "Live signals",
-    title: "Burndown without dashboards",
-    body: "A sparkline corner-mounted to every plan. Burn rate, idle ratio, review-to-done lag — surfaced as motion, not as a separate analytics tab.",
+    title: "A pulse on every plan",
+    body: "A sparkline corner-mounted to every plan. Pace, idle ratio, review-to-done lag — surfaced as motion, not as a separate analytics tab.",
     glyph: "spark",
   },
   {

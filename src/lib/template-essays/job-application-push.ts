@@ -1,7 +1,7 @@
 import type { TemplateEssay } from "./types";
 
 export const essay: TemplateEssay = {
-  templateId: "job-application-sprint",
+  templateId: "job-application-push",
   seoTitle: "Job Application Checklist — Free Workflow Template",
   seoDescription:
     "The job application checklist that actually moves the needle — outreach, behavioral prep, team research, follow-up. Drop it into a free workspace.",
@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "What’s in this template",
       body:
-        "Seven tasks, sequenced for a one-week sprint per role. Tailor the resume today (P1). Draft the cover letter tomorrow. Send five outreach emails by Friday — this is the one to not skip. Practice three behavioral answers out loud, on a timer, not in your head. Research the hiring manager plus two ICs on the team so you can ask a real question in the interview instead of “what’s the culture like.” Submit Monday (P1, the deadline that anchors the rest). And a tail task: thank-you note within 24 hours of any interview, because the candidates who send them stand out from the candidates who don’t, and that asymmetry is free.",
+        "Seven tasks, sequenced for a one-week push per role. Tailor the resume today (P1). Draft the cover letter tomorrow. Send five outreach emails by Friday — this is the one to not skip. Practice three behavioral answers out loud, on a timer, not in your head. Research the hiring manager plus two ICs on the team so you can ask a real question in the interview instead of “what’s the culture like.” Submit Monday (P1, the deadline that anchors the rest). And a tail task: thank-you note within 24 hours of any interview, because the candidates who send them stand out from the candidates who don’t, and that asymmetry is free.",
     },
     {
       heading: "One workspace per role you’re chasing",

@@ -9,7 +9,7 @@ import Link from "next/link";
  * page is the top-of-funnel SEO landing that links to `/students`
  * for the .edu offer at the bottom of the page.
  *
- * Anchors on final-paper-sprint + midterm-week templates.
+ * Anchors on final-paper-push + midterm-week templates.
  */
 export function ForStudents() {
   return (
@@ -63,7 +63,7 @@ export function ForStudents() {
         </h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <Link
-            href="/templates/final-paper-sprint"
+            href="/templates/final-paper-push"
             className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
           >
             <div className="flex items-start gap-3">
@@ -88,7 +88,7 @@ export function ForStudents() {
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Final paper sprint
+                  Final paper push
                 </div>
                 <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
                   8 tasks · thesis to submit
@@ -233,7 +233,7 @@ export function ForStudents() {
               </svg>
             </Link>
             <Link
-              href="/templates/final-paper-sprint"
+              href="/templates/final-paper-push"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
               Start with a template

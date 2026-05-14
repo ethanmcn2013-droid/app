@@ -158,7 +158,7 @@ Attach a screen-capture GIF of the view morph (board → list → timeline → c
 
 **Post 3/5:**
 
-> Templates ship pre-built. *Final paper sprint* breaks the work into research, outline, draft, edits, submit. Open the template, remix it, the workspace is yours. tasks-nu-hazel.vercel.app/templates/final-paper-sprint.
+> Templates ship pre-built. *Final paper push* breaks the work into research, outline, draft, edits, submit. Open the template, remix it, the workspace is yours. tasks-nu-hazel.vercel.app/templates/final-paper-push.
 
 **Post 4/5:**
 

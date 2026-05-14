@@ -751,10 +751,10 @@ export function CinematicDemo({
             <DemoSurface state={state} cardRefs={cardRefs} />
           </LayoutGroup>
 
-          {/* Sparkline burndown overlay */}
+          {/* Sparkline open-work overlay */}
           <div className="pointer-events-none absolute right-5 top-3 z-[40] flex items-center gap-2 rounded-lg border border-line-soft bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur">
             <div className="text-[10px] font-medium uppercase tracking-wider text-ink-quiet">
-              Burndown
+              Open work
             </div>
             <Sparkline values={state.burndown} />
           </div>

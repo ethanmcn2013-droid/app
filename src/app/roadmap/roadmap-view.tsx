@@ -552,7 +552,7 @@ export function RoadmapView({
               className="text-[11px] font-semibold uppercase tracking-[0.18em]"
               style={{ color: "var(--text-quiet, var(--text-muted))" }}
             >
-              8-week go-to-market plan · not the product backlog
+              8-week go-to-market plan
             </div>
             <h1
               className="mt-3 text-[40px] leading-[1.05] font-semibold tracking-tight"

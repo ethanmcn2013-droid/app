@@ -2,7 +2,7 @@ import type { TemplateEssay } from "./types";
 import { essay as weddingPlanningWorkspace } from "./wedding-planning-workspace";
 import { essay as weddingThreeMonth } from "./wedding-3-month-countdown";
 import { essay as weddingDayOfRunOfShow } from "./wedding-day-of-run-of-show";
-import { essay as finalPaperSprint } from "./final-paper-sprint";
+import { essay as finalPaperPush } from "./final-paper-push";
 import { essay as midtermWeek } from "./midterm-week";
 import { essay as taxSeason } from "./tax-season";
 import { essay as newClientOnboarding } from "./new-client-onboarding";
@@ -11,7 +11,7 @@ import { essay as productLaunch } from "./product-launch";
 import { essay as conferenceBoothPrep } from "./conference-booth-prep";
 import { essay as apartmentMove } from "./apartment-move";
 import { essay as tripPlanning } from "./trip-planning";
-import { essay as jobApplicationSprint } from "./job-application-sprint";
+import { essay as jobApplicationPush } from "./job-application-push";
 import { essay as jobsitePunchlist } from "./jobsite-punchlist";
 
 /**
@@ -27,7 +27,7 @@ export const TEMPLATE_ESSAYS: Record<string, TemplateEssay> = {
   [weddingPlanningWorkspace.templateId]: weddingPlanningWorkspace,
   [weddingThreeMonth.templateId]: weddingThreeMonth,
   [weddingDayOfRunOfShow.templateId]: weddingDayOfRunOfShow,
-  [finalPaperSprint.templateId]: finalPaperSprint,
+  [finalPaperPush.templateId]: finalPaperPush,
   [midtermWeek.templateId]: midtermWeek,
   [taxSeason.templateId]: taxSeason,
   [newClientOnboarding.templateId]: newClientOnboarding,
@@ -36,7 +36,7 @@ export const TEMPLATE_ESSAYS: Record<string, TemplateEssay> = {
   [conferenceBoothPrep.templateId]: conferenceBoothPrep,
   [apartmentMove.templateId]: apartmentMove,
   [tripPlanning.templateId]: tripPlanning,
-  [jobApplicationSprint.templateId]: jobApplicationSprint,
+  [jobApplicationPush.templateId]: jobApplicationPush,
   [jobsitePunchlist.templateId]: jobsitePunchlist,
 };
 

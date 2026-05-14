@@ -195,7 +195,7 @@ The video pipeline is ScreenStudio → Descript → Remotion → ElevenLabs (PVC
 
 **Bluesky:**
 1. "Sprint planning. Epic refinement. Ticket triage. Story points. Burndown reviews. None of that is true. /about."
-2. "Final paper sprint — research, outline, draft, edit, submit, without the 4am panic. /templates/final-paper-sprint."
+2. "Final paper push — research, outline, draft, edit, submit, without the 4am panic. /templates/final-paper-push."
 3. "Cycle 24 shipped a B-tier delight wave — eight features, sprint close. 36 dispatches, 0 broken builds. /changelog."
 4. "No paid template marketplace. Templates are oxygen — the moment they cost money they become scarce. /templates is free, all twelve."
 5. "For the trades: jobsite punchlist, day-of run-of-show, tax season. Same four views. /for/trades."
@@ -267,7 +267,7 @@ Posting times in ET. Saturdays REST; Sundays LIGHT or REST.
 | 06-02 | Tue | Bluesky | "Studio tier — operator pricing" — single | cycle 21 | /pricing | 10am |
 | 06-03 | Wed | YouTube | Short — board view in 60 sec | cycle 9 | /app | 3pm |
 | 06-03 | Wed | Bluesky | Single — "what 22 cycles taught us about scope" | cycle 22 | /changelog | 1:30pm |
-| 06-04 | Thu | X | Thread (5) — student template, finals week | /templates/final-paper-sprint | /templates | 9am |
+| 06-04 | Thu | X | Thread (5) — student template, finals week | /templates/final-paper-push | /templates | 9am |
 | 06-04 | Thu | Bluesky | Calendar view single | cycle 18 | /app | 9:20am |
 | 06-05 | Fri | IH | Cross-post cycle 20 (publishable workspaces) | cycle 20 | /templates | 9am |
 | 06-05 | Fri | Sidebar.io / Refind | Re-submit /principles essay | /principles | /principles | 10am |
