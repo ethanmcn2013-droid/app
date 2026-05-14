@@ -12,14 +12,21 @@ When a change in Tasks affects product state, roadmap, launch readiness, GTM, me
 
 Before invite, sharing, guest access, template, public-output, or collaborator-facing work, read `docs/COLLABORATION_LOOP.md`. Tasks owns the execution-clarity moment in the collaboration loop.
 
-In practice, open or update a Studio PR that changes:
+In practice, open or update a Studio PR that changes the right source file for the change you made:
 
-- `src/lib/hq/data.ts`
-- `src/lib/hq/signals.ts` if derived signal logic changes
-- relevant files under `signal-growth/`
-- `CHANGELOG.md` for meaningful operator-visible changes — write entries in the dispatch shape (Studio BRAND.md §6.5): `## YYYY-MM-DD · T·NN · verb · headline`, then a bold impact-lead sentence, then prose. Verbs are `ships / tightens / cuts / holds / reads`.
+| Change you made in Tasks                                          | Source file in studio                                            |
+|-------------------------------------------------------------------|------------------------------------------------------------------|
+| feature scope, status, or impact                                  | `content/hq/features/<id>.md`                                    |
+| risk surfaced or mitigation changed                               | `content/hq/risks/<id>.md`                                       |
+| a decision that affects pricing, brand, GTM, product             | `content/hq/decisions/<id>.md`                                   |
+| campaign goal, blocker, or progress                               | `content/hq/campaigns/<id>.md`                                   |
+| cross-product flow / data shape / cron schedule                   | `content/atlas/<slug>.md` — and bump `lastVerified`              |
+| messaging, hooks, pitches                                         | `content/hq/messaging.md`                                        |
+| shipped operator-visible change                                   | `CHANGELOG.md` — dispatch shape per Studio BRAND.md §6.5: `## YYYY-MM-DD · T·NN · verb · headline`, bold impact-lead sentence, then prose. Verbs: `ships / tightens / cuts / holds / reads`. |
 
-Also bump `seedHqData.updatedAt` so `/hq` can detect newer repo-backed data.
+The old rule (update `src/lib/hq/data.ts`) is superseded — that seed was emptied on 2026-05-14 (Studio dispatch `S·24`). The dashboard now reads from the markdown files above. Don't write to `data.ts` for migrated sections; the markdown is canonical.
+
+Tasks-repo files referenced by atlas entries (e.g. `tasks/drizzle/`, `tasks/src/app/api/checkout/`, `tasks/docs/STRIPE_SETUP.md`) flag drift on the atlas via the pre-commit hook at `.githooks/pre-commit` (Studio dispatch `S·22`). Activate with `git config core.hooksPath .githooks` if you haven't. The hook never blocks commits — drift is a signal.
 
 # End-of-cycle ritual
 
