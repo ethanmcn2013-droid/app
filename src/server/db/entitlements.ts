@@ -3,30 +3,45 @@ import { and, eq, gt, isNull, or, desc } from "drizzle-orm";
 import { db } from "./index";
 import { entitlements } from "./schema";
 import type { EntitlementTier } from "@/lib/data";
+import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
 
 const TIER_RANK: Record<EntitlementTier, number> = {
   free: 0,
-  pro: 1,
-  // Studio ranks equal to Team — same feature set, different scope.
-  // The tier-meets-minimum check unlocks the same gates for either.
-  team: 2,
-  studio: 2,
-  wedding: 3,
+  event: 1,
+  wedding: 2,
+  workspace: 3,
+  studio: 4,
 };
 
 /**
- * Resolve the highest-tier non-expired entitlement a user holds in a
- * workspace. Stacks across sources — a `purchase` Pro overrides a
- * `comp` Pro, but a `comp` Team beats them both.
+ * Resolve the highest active tier a user holds. As of E-3.1
+ * (2026-05-14) reads come from the shared signal-entitlements DB
+ * first, with a fallback to the local Tasks-only entitlements table
+ * to keep things working during the cutover.
  *
- * Layered Studio resolution: Studio entitlements are user-level
- * (workspaceId IS NULL), so the query unions per-workspace and
- * user-level rows. If the user holds Studio AND owns the workspace,
- * the rank check picks Studio over a free-tier fall-through.
+ * Stripe webhook writes still land in the local table; E-3.2 swaps
+ * the writer to the shared DB and decommissions this fallback.
  *
- * Returns `"free"` when no row matches.
+ * `workspaceId` is accepted for signature compatibility with all
+ * existing callers, but the shared resolver is user-level — the
+ * argument is only used by the local-fallback path.
+ *
+ * Returns "free" on any DB error. Tier reads MUST NOT crash a page.
  */
 export async function getEffectiveTier(
+  userId: string,
+  workspaceId: string,
+): Promise<EntitlementTier> {
+  try {
+    const shared = await resolveEntitlement(userId);
+    if (shared.tier !== "free") return shared.tier;
+  } catch {
+    // fall through to local
+  }
+  return getEffectiveTierLocal(userId, workspaceId);
+}
+
+async function getEffectiveTierLocal(
   userId: string,
   workspaceId: string,
 ): Promise<EntitlementTier> {
@@ -37,8 +52,6 @@ export async function getEffectiveTier(
     .where(
       and(
         eq(entitlements.userId, userId),
-        // Per-workspace entitlements (the existing Pro/Team/Wedding
-        // case) OR user-level Studio (workspaceId IS NULL).
         or(
           eq(entitlements.workspaceId, workspaceId),
           isNull(entitlements.workspaceId),
@@ -59,8 +72,8 @@ export async function getEffectiveTier(
   return best;
 }
 
-/** Tier-rank comparator for `<RequireTier>`. Returns true when
- *  `actual` is at least `minimum` (transitive Pro → Team works). */
+/** Tier-rank comparator for `<RequireTier>`. True when `actual` is
+ *  at least `minimum`. */
 export function tierMeetsMinimum(
   actual: EntitlementTier,
   minimum: EntitlementTier,

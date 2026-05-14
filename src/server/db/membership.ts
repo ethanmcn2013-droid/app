@@ -6,11 +6,10 @@ import type { EntitlementTier } from "@/lib/data";
 
 const TIER_RANK: Record<EntitlementTier, number> = {
   free: 0,
-  pro: 1,
-  // Studio ranks equal to Team — see entitlements.ts for the rationale.
-  team: 2,
-  studio: 2,
-  wedding: 3,
+  event: 1,
+  wedding: 2,
+  workspace: 3,
+  studio: 4,
 };
 
 /**
@@ -108,7 +107,7 @@ export async function getMemberCapacity(
       .where(eq(workspaceMembers.workspaceId, workspaceId)),
   ]);
   const isUnlimited =
-    tier === "team" || tier === "studio" || tier === "wedding";
+    tier === "workspace" || tier === "studio" || tier === "wedding";
   return {
     current: rows.length,
     max: isUnlimited ? null : FREE_WORKSPACE_MEMBER_CAP,

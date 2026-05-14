@@ -570,12 +570,19 @@ export type Notification = {
  * the same feature set, just with different scope (per-user vs
  * per-workspace).
  */
+/**
+ * Tier vocabulary. Canonical names track the marketing pricing
+ * surface (signalstudio.ie/pricing). Renamed 2026-05-14 in E-3.1 of
+ * the entitlements sprint: `pro` and `team` collapsed into
+ * `workspace`; `event` added for the one-workspace-one-event tier.
+ * No data migration needed — Tasks had no pro/team rows in the wild.
+ */
 export type EntitlementTier =
   | "free"
-  | "pro"
-  | "team"
-  | "studio"
-  | "wedding";
+  | "event"
+  | "wedding"
+  | "workspace"
+  | "studio";
 
 export type EntitlementSource =
   | "default" // baseline free tier

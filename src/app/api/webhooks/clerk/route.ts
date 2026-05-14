@@ -209,7 +209,7 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
       await grantEntitlement({
         userId,
         workspaceId: null,
-        tier: "pro",
+        tier: "workspace",
         source: "edu",
         durationDays: EDU_PRO_DAYS,
         notes: `edu:${email.toLowerCase()}`,

@@ -35,29 +35,29 @@ const TIER_META: TierMeta[] = [
     ],
   },
   {
-    id: "pro",
-    label: "Pro",
-    price: "$9 / mo",
-    blurb: "Everything for one focused human.",
-    paidTier: "pro",
+    id: "workspace",
+    label: "Workspace",
+    price: "€12 / mo",
+    blurb: "Unlimited workspaces. Unlimited guests. All four products.",
+    paidTier: "workspace",
     features: [
       "Unlimited workspaces",
-      "Timeline view + Gantt",
-      "Share links + guest comments",
+      "Unlimited guests + collaborators",
+      "All four products — Tasks, Roadmap, Analytics, Notes",
       "Recurring tasks, blockers, NLP dates",
     ],
   },
   {
-    id: "team",
-    label: "Team",
-    price: "$14 / seat / mo",
-    blurb: "Pro, but with company.",
-    paidTier: "team",
+    id: "event",
+    label: "Event",
+    price: "€79 once",
+    blurb: "One workspace for one event. 12 months active, reads forever.",
+    paidTier: "event",
     features: [
-      "Everything in Pro",
-      "Unlimited members",
-      "Role controls + audit log",
-      "Priority support that's actually fast",
+      "One workspace, 12 months of editing",
+      "Unlimited guests",
+      "Read-only forever after the event",
+      "No subscription, no auto-renew",
     ],
   },
   {
@@ -90,10 +90,10 @@ const TIER_META: TierMeta[] = [
 
 const TIER_RANK: Record<EntitlementTier, number> = {
   free: 0,
-  pro: 1,
-  team: 2,
-  studio: 2,
-  wedding: 3,
+  event: 1,
+  wedding: 2,
+  workspace: 3,
+  studio: 4,
 };
 
 export function BillingSection({ tier }: { tier: EntitlementTier }) {
@@ -375,10 +375,10 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
 function TierBadge({ tier }: { tier: EntitlementTier }) {
   const styles: Record<EntitlementTier, { bg: string; ink: string }> = {
     free: { bg: "bg-bg-sunken", ink: "text-ink-quiet" },
-    pro: { bg: "bg-brand-soft", ink: "text-brand" },
-    team: { bg: "bg-emerald-50", ink: "text-emerald-700" },
-    studio: { bg: "bg-ink/5", ink: "text-ink" },
+    event: { bg: "bg-amber-50", ink: "text-amber-700" },
     wedding: { bg: "bg-rose-50", ink: "text-rose-700" },
+    workspace: { bg: "bg-brand-soft", ink: "text-brand" },
+    studio: { bg: "bg-ink/5", ink: "text-ink" },
   };
   const s = styles[tier];
   return (

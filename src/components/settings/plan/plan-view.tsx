@@ -149,16 +149,16 @@ function Pair({ label, value }: { label: string; value: string }) {
 }
 
 function labelForTier(t: PlanSummary["tier"]): string {
-  if (t === "pro") return "Pro";
-  if (t === "team") return "Workspace";
+  if (t === "workspace") return "Workspace";
+  if (t === "event") return "Event";
   if (t === "studio") return "Studio";
   if (t === "wedding") return "Wedding suite";
   return "Free";
 }
 
 function priceForTier(t: PlanSummary["tier"]): string {
-  if (t === "pro") return "€9 per month";
-  if (t === "team") return "€12 per month";
+  if (t === "workspace") return "€12 per month";
+  if (t === "event") return "€79 · one-time";
   if (t === "studio") return "€14.95 per month";
   if (t === "wedding") return "€79 · one-time";
   return "€0";

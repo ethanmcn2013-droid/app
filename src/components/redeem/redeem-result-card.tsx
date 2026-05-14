@@ -32,10 +32,10 @@ const FAILURE_COPY: Record<
 
 const TIER_LABEL = {
   free: "Free",
-  pro: "Pro",
-  team: "Team",
-  studio: "Studio",
+  event: "Event",
   wedding: "Wedding suite",
+  workspace: "Workspace",
+  studio: "Studio",
 } as const;
 
 export function RedeemResultCard({

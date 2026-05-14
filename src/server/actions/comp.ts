@@ -280,7 +280,7 @@ export async function requestStudentCodeAction(
   // need to live behind the admin allowlist.
   const { code } = await mintCompCodeInternal({
     prefix: "STUDENT",
-    tier: "pro",
+    tier: "workspace",
     durationDays: 365,
     quantity: 1,
     notes: `student:${domain}`,
@@ -298,5 +298,5 @@ export async function requestStudentCodeAction(
     html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
   });
 
-  return { ok: true, code, tier: "pro", durationDays: 365 };
+  return { ok: true, code, tier: "workspace", durationDays: 365 };
 }
