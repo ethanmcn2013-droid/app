@@ -92,9 +92,11 @@ export type MemberCapacity = {
 };
 
 /**
- * Resolve the workspace's member capacity. Free + Pro share the
- * 4-member cap; Team + Wedding are unlimited. Returns the current
- * count and the cap so the caller can render "X of N" UI in one read.
+ * Resolve the workspace's member capacity. Free is the only tier with
+ * the 4-member cap; Event, Wedding, Workspace, Studio are all
+ * unlimited (matches signalstudio.ie/pricing — Event sells "Unlimited
+ * guests" for one event). Returns the current count and the cap so
+ * the caller can render "X of N" UI in one read.
  */
 export async function getMemberCapacity(
   workspaceId: string,
@@ -107,7 +109,10 @@ export async function getMemberCapacity(
       .where(eq(workspaceMembers.workspaceId, workspaceId)),
   ]);
   const isUnlimited =
-    tier === "workspace" || tier === "studio" || tier === "wedding";
+    tier === "workspace" ||
+    tier === "studio" ||
+    tier === "wedding" ||
+    tier === "event";
   return {
     current: rows.length,
     max: isUnlimited ? null : FREE_WORKSPACE_MEMBER_CAP,
