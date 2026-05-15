@@ -47,7 +47,7 @@ export async function ensureUserProvisioned(
 // Matches the webhook handler's PALETTE + hash for visual stability.
 const PALETTE = [
   "#4f46e5",
-  "#7c5cff",
+  "#7c3aed",
   "#10b981",
   "#f59e0b",
   "#ec4899",

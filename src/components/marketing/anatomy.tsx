@@ -215,8 +215,8 @@ function spotlightAnim(slot: Slot, active: Slot | null) {
   const off = !!active && active !== slot;
   return {
     boxShadow: on
-      ? "0 0 0 2px rgba(124,92,255,0.22), 0 8px 20px -8px rgba(124,92,255,0.45)"
-      : "0 0 0 0px rgba(124,92,255,0), 0 0px 0px 0px rgba(124,92,255,0)",
+      ? "0 0 0 2px rgba(79,70,229,0.22), 0 8px 20px -8px rgba(79,70,229,0.45)"
+      : "0 0 0 0px rgba(79,70,229,0), 0 0px 0px 0px rgba(79,70,229,0)",
     opacity: off ? 0.4 : 1,
     y: on ? -1 : 0,
   };
@@ -274,7 +274,7 @@ function DemoCard({
         className="absolute inset-0 -z-10 rounded-3xl"
         style={{
           background:
-            "radial-gradient(ellipse at top, rgba(124,92,255,0.10), transparent 60%)",
+            "radial-gradient(ellipse at top, rgba(79,70,229,0.10), transparent 60%)",
         }}
         animate={{ opacity: active || stage.lock ? 1 : 0.55 }}
         transition={{ duration: 0.7, ease: EASE.inOut }}
@@ -308,7 +308,7 @@ function DemoCard({
             rx="11"
             ry="11"
             fill="none"
-            stroke="rgb(124, 92, 255)"
+            stroke="rgb(79,70,229)"
             strokeWidth="1.5"
             initial={{ pathLength: 0, opacity: 0 }}
             animate={{
@@ -336,13 +336,13 @@ function DemoCard({
               key={`bloom-${stage.lockBloom}`}
               aria-hidden
               className="pointer-events-none absolute inset-0 rounded-[12px]"
-              initial={{ opacity: 0, boxShadow: "inset 0 0 0px rgba(124,92,255,0)" }}
+              initial={{ opacity: 0, boxShadow: "inset 0 0 0px rgba(79,70,229,0)" }}
               animate={{
                 opacity: [0, 0.9, 0],
                 boxShadow: [
-                  "inset 0 0 0px rgba(124,92,255,0)",
-                  "inset 0 0 22px rgba(124,92,255,0.32)",
-                  "inset 0 0 0px rgba(124,92,255,0)",
+                  "inset 0 0 0px rgba(79,70,229,0)",
+                  "inset 0 0 22px rgba(79,70,229,0.32)",
+                  "inset 0 0 0px rgba(79,70,229,0)",
                 ],
               }}
               transition={{ duration: 1.2, ease: EASE.outExpo, delay: 0.85 }}
@@ -425,7 +425,7 @@ function DemoCard({
                   width: 26,
                   borderRadius: 9999,
                   background:
-                    "radial-gradient(closest-side, rgba(124,92,255,0.55), rgba(124,92,255,0) 70%)",
+                    "radial-gradient(closest-side, rgba(79,70,229,0.55), rgba(79,70,229,0) 70%)",
                 }}
                 animate={{
                   opacity: stage.presence ? [0.5, 1, 0.5] : 0,
@@ -445,7 +445,7 @@ function DemoCard({
                     aria-hidden
                     className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 rounded-full border"
                     style={{
-                      borderColor: "rgba(124,92,255,0.45)",
+                      borderColor: "rgba(79,70,229,0.45)",
                       width: 20,
                       height: 20,
                       marginRight: -2,
@@ -479,7 +479,7 @@ function DemoCard({
                     <motion.span
                       key="em"
                       className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-white ring-2 ring-white"
-                      style={{ background: "rgb(124, 92, 255)", zIndex: 1 }}
+                      style={{ background: "rgb(79,70,229)", zIndex: 1 }}
                       initial={{ opacity: 0, scale: 0.5, x: -10 }}
                       animate={{ opacity: 1, scale: 1, x: 0 }}
                       exit={{ opacity: 0, scale: 0.7, x: -4 }}
@@ -709,8 +709,8 @@ function Annotations({
               onBlur={() => setActive(null)}
               animate={{
                 background: isOn
-                  ? "rgba(124,92,255,0.05)"
-                  : "rgba(124,92,255,0)",
+                  ? "rgba(79,70,229,0.05)"
+                  : "rgba(79,70,229,0)",
                 opacity: isOff ? 0.5 : 1,
               }}
               transition={{ duration: 0.2, ease: EASE.inOut }}
@@ -720,9 +720,9 @@ function Annotations({
                 className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold"
                 animate={{
                   borderColor: isOn
-                    ? "rgba(124,92,255,0.6)"
+                    ? "rgba(79,70,229,0.6)"
                     : "rgba(20,21,26,0.12)",
-                  backgroundColor: isOn ? "rgba(124,92,255,0.95)" : "#fff",
+                  backgroundColor: isOn ? "rgba(79,70,229,0.95)" : "#fff",
                   color: isOn ? "#fff" : "#535560",
                   scale: isOn ? 1.06 : 1,
                 }}

@@ -18,7 +18,7 @@ export function EmbedGuide() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(124,92,255,0.16), rgba(79,70,229,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -33,7 +33,7 @@ export function EmbedGuide() {
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(124,92,255,0.30), rgba(79,70,229,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.30), rgba(79,70,229,0.16))",
               }}
             />
             anywhere.
@@ -214,7 +214,7 @@ function Eyebrow() {
       <span
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
-          background: "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+          background: "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
           boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >

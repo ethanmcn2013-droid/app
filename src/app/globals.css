@@ -22,7 +22,7 @@
   --indigo-700: #4338ca;
   --indigo-800: #3730a3;
   --indigo-900: #312e81;
-  --highlight:  #7c5cff; /* marker underline accent on display headlines */
+  --highlight:  #4f46e5; /* marker underline accent on display headlines — brand indigo. BRAND §5: one indigo; the old #7c5cff purple is banned, do not reintroduce. */
 
   /* ── Ink ramp (neutrals) ──────────────────────────────────── */
   --ink-0:   #ffffff;
@@ -138,7 +138,7 @@
   /* ── User presence (cinematic demo + real users) ──────────── */
   --user-chloe: #e4356d;
   --user-david: #00a3b8;
-  --user-alex:  #7c5cff;
+  --user-alex:  #7c3aed;
 
   /* ── Motion · springs ─────────────────────────────────────── */
   --spring-snap:  cubic-bezier(.2, .9, .2, 1.2);   /* overshoot — drops, lifts */

@@ -4,7 +4,37 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-05-15 · T·56 · cuts · the wrong prices off every page the 80% read before they decide
+## 2026-05-15 · T·57 · cuts · the banned purple out of the whole product
+
+**BRAND §5 names one colour as forbidden by name — `#7c5cff`, the
+historical purple-leaning Tasks accent — and says, in those words,
+"don't reintroduce." It was still in 20 files and 51 places: the
+brand-accent gradient on the AI buttons and marketing eyebrows, the
+decorative blooms behind the manifesto and templates pages, the
+glow on the social share cards, even the marker-highlight design
+token that underlines every display headline in the app. The brand
+says one indigo; the product was quietly still purple.**
+
+It is one indigo now. The root was a single token — `--highlight:
+#7c5cff` — so fixing that one line corrected every display-headline
+marker across the entire app at once; it is `#4f46e5` (the primary
+indigo) and the §5 rule is written into the comment so it does not
+silently come back. The brand-accent gradients went indigo →
+deeper-indigo (`var(--brand) 0%, #4338ca 100%`), the decorative
+blooms and share-card glows went to indigo `rgba(79,70,229,…)`.
+
+The judgement call, made deliberately and not by reflex: the
+categorical *identity* swatches — the demo user "Alex", the "Design"
+tag dot, the celebration confetti, the avatar palette — were not
+flattened to indigo. §5 bans purple as *the accent*; it does not ban
+one hue from a labelled set, and the suite itself sanctions violet
+for `--aud-community` (BRAND §7). Those swatches moved to that
+sanctioned `#7c3aed`, which removes the literal banned value while
+keeping people visually distinct from the brand. Blindly indigo-ing
+an identity palette would have collided every avatar with the UI.
+Typecheck + build clean; zero `#7c5cff` / `rgba(124,92,255)` left in
+`src/`. This closes the §5 debt named in T·56 — nothing about the
+purple is deferred now.
 
 **Every audience landing, every template essay, and the SEO snippets
 behind them were quoting a price that does not exist. "Pro at

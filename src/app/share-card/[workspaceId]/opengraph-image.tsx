@@ -105,7 +105,7 @@ export default async function ShareCardOG({
             height: 800,
             borderRadius: "50%",
             background:
-              "radial-gradient(closest-side, rgba(124,92,255,0.32), rgba(79,70,229,0.12), transparent 70%)",
+              "radial-gradient(closest-side, rgba(79,70,229,0.32), rgba(79,70,229,0.12), transparent 70%)",
             filter: "blur(60px)",
             display: "flex",
           }}
@@ -131,7 +131,7 @@ export default async function ShareCardOG({
               height: 11,
               borderRadius: "50%",
               background: "#4f46e5",
-              boxShadow: "0 0 24px rgba(124,92,255,0.6)",
+              boxShadow: "0 0 24px rgba(79,70,229,0.6)",
             }}
           />
         </div>

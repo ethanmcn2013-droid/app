@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 
 const PARTICLE_COLORS = [
   "#4f46e5",
-  "#7c5cff",
+  "#7c3aed",
   "#10b981",
   "#f59e0b",
   "#ec4899",

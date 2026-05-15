@@ -28,7 +28,7 @@ export function AiNudge({
               className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
               style={{
                 background:
-                  "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+                  "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
                 boxShadow: "0 6px 14px rgba(79, 70, 229, 0.35)",
               }}
             >

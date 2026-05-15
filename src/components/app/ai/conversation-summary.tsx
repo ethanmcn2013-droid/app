@@ -75,7 +75,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                   className="block h-1.5 w-1.5 rounded-full transition-transform duration-300"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+                      "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
                   }}
                 />
                 <span className="text-[12.5px] font-medium text-ink-soft group-hover:text-ink">
@@ -102,7 +102,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                   className="block h-1.5 w-1.5 rounded-full"
                   style={{
                     background:
-                      "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+                      "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
                   }}
                   animate={
                     isStreaming

@@ -147,7 +147,7 @@ function deriveInitials(u: ClerkUser): string {
 
 const PALETTE = [
   "#4f46e5", // brand
-  "#7c5cff", // brand-hi
+  "#7c3aed", // brand-hi
   "#10b981", // emerald
   "#f59e0b", // amber
   "#ec4899", // pink

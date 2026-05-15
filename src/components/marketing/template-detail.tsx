@@ -41,7 +41,7 @@ export function TemplateDetail({
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(124, 92, 255, 0.18), rgba(79, 70, 229, 0.06), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229, 0.18), rgba(79, 70, 229, 0.06), transparent 70%)",
         }}
       />
 

@@ -771,7 +771,7 @@ function WeeklyRecapSection({
         className="relative mt-4 overflow-hidden rounded-xl border border-line-soft bg-white p-5"
         style={{
           background:
-            "linear-gradient(180deg, rgba(124,92,255,0.04) 0%, rgba(255,255,255,1) 60%)",
+            "linear-gradient(180deg, rgba(79,70,229,0.04) 0%, rgba(255,255,255,1) 60%)",
         }}
       >
         <div className="flex items-center gap-2 pb-3">
@@ -780,7 +780,7 @@ function WeeklyRecapSection({
             className="block h-1.5 w-1.5 rounded-full"
             style={{
               background:
-                "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+                "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
             }}
           />
           <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink-soft">

@@ -42,7 +42,7 @@ export function PublishedFooter({
             tasks
             <span
               className="ml-1.5 inline-block h-2 w-2 rounded-full bg-brand"
-              style={{ boxShadow: "0 0 8px rgba(124,92,255,0.6)" }}
+              style={{ boxShadow: "0 0 8px rgba(79,70,229,0.6)" }}
               aria-hidden
             />
           </div>

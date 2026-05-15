@@ -27,7 +27,7 @@ const VIEWS = [
 const TEAMS = [
   { name: "Marketing", color: "#e4356d" },
   { name: "Engineering", color: "#00a3b8" },
-  { name: "Design", color: "#7c5cff" },
+  { name: "Design", color: "#7c3aed" },
   { name: "Customer Success", color: "#10b981" },
   { name: "Operations", color: "#f59e0b" },
 ];
