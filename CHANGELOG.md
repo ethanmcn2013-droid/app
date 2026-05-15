@@ -4,6 +4,31 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·52 · ships · the demo's teammate note becomes the planner's own world
+
+**T·51 left one named gap: the cinematic demo's static "Alex · 2h ago"
+comment was still one hardcoded line for every audience. A wedding
+planner watching the wedding demo read a generic note, not their own
+work. That gap is closed.**
+
+The static comment now reads from the active domain pack. The wedding
+planner sees "RSVPs at 89%, on pace." The tradesperson sees "Materials
+list updated. Pickup on the way in tomorrow." The freelancer, the
+student — each reads a line a person in that work would actually
+write. It threads through a new `DemoState.staticComment` so both live
+card renderers — the cinematic board and the morphing surface that
+FLIPs between board, list and timeline — resolve the same domain-true
+value with no drift between them. It draws `commentBodies[1]`, not
+`[0]`, so the earlier note never duplicates the line the scripted
+scene types in live a moment later.
+
+This is the last place the hero demo spoke in a generic voice instead
+of the visitor's own. Honest scope note: typecheck, build, and the
+production client bundle are verified to carry the new content, but
+the comment renders mid-scene behind the demo's scripted loop — a
+pixel pass on the live loop at desktop and phone width is owed and not
+yet done.
+
 ## 2026-05-15 · T·51 · cuts · the tech-team dogfood out of what the 80% see
 
 **The homepage demo toggle and the /about grid presented a
