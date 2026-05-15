@@ -12,7 +12,7 @@ The `/about` page is the voice ground truth. The `/principles` refusal list is t
 
 ## Wordmark
 
-`tasks·` — lowercase Geist semibold, tight tracking (-0.01em), trailing dot in `--highlight: #7c5cff` that animates on the marketing surfaces. Source: `src/components/brand/wordmark.tsx`.
+`tasks·` — lowercase Geist semibold, tight tracking (-0.01em), trailing dot in the brand indigo (`--highlight: #4f46e5`) that animates on the marketing surfaces. The old `#7c5cff` purple is BRAND §5-banned; do not reintroduce. Source: `src/components/brand/wordmark.tsx`.
 
 The dot is load-bearing. Don't replace it with a swoosh, a checkmark, or a square.
 
