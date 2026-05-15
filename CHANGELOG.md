@@ -23,11 +23,13 @@ value with no drift between them. It draws `commentBodies[1]`, not
 scene types in live a moment later.
 
 This is the last place the hero demo spoke in a generic voice instead
-of the visitor's own. Honest scope note: typecheck, build, and the
-production client bundle are verified to carry the new content, but
-the comment renders mid-scene behind the demo's scripted loop — a
-pixel pass on the live loop at desktop and phone width is owed and not
-yet done.
+of the visitor's own. Verified live on production at both 1440px and
+390px: the demo's scripted scene renders "RSVPs at 89%, on pace." for
+the wedding planner, the toggle carries only the four real audiences,
+the old dogfood line is gone from the user-visible surface, and the
+page holds zero horizontal overflow on a phone. The verification ran
+through an isolated headless Chromium against the live URL — the
+demo-loop pixel pass T·51 left owed is now closed, not deferred.
 
 ## 2026-05-15 · T·51 · cuts · the tech-team dogfood out of what the 80% see
 
