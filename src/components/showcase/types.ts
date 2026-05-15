@@ -24,6 +24,11 @@ export type DemoState = {
   pickedBy: UserId | null;
   ghostX: number;
   ghostY: number;
+  /** The teammate's earlier note shown above the live-typed comment in
+   *  the inline thread. Domain-true (drawn from the active pack), so a
+   *  wedding planner watching the demo reads "RSVPs at 89%, on pace."
+   *  — their own world — not a generic placeholder. */
+  staticComment: string;
   openCommentTaskId: string | null;
   typingFromUser: UserId | null;
   typingProgress: number;

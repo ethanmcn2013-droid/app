@@ -512,6 +512,7 @@ function MorphCard({
         task={task}
         view={view}
         showThread={showThread}
+        staticComment={state.staticComment}
         typingUser={showThread ? state.typingFromUser : null}
         postedComment={showThread ? state.postedComment : null}
         pickedColor={pickedColor}
@@ -546,6 +547,7 @@ function CardBody({
   task,
   view,
   showThread,
+  staticComment,
   typingUser,
   postedComment,
   pickedColor,
@@ -554,6 +556,7 @@ function CardBody({
   task: Task;
   view: ViewMode;
   showThread: boolean;
+  staticComment: string;
   typingUser: string | null;
   postedComment: { user: string; text: string } | null;
   pickedColor: string | null;
@@ -602,6 +605,7 @@ function CardBody({
       {view === "board" && showThread ? (
         <CommentThread
           task={task}
+          staticComment={staticComment}
           typingUser={typingUser}
           postedComment={postedComment}
         />
@@ -716,10 +720,12 @@ function ListCells({ task }: { task: Task }) {
 
 function CommentThread({
   task,
+  staticComment,
   typingUser,
   postedComment,
 }: {
   task: Task;
+  staticComment: string;
   typingUser: string | null;
   postedComment: { user: string; text: string } | null;
 }) {
@@ -735,7 +741,7 @@ function CommentThread({
         <Avatar user="alex" size={20} />
         <div className="text-[11.5px] leading-relaxed text-ink-soft">
           <span className="font-medium text-ink">Alex</span> · 2h ago
-          <p>Looks good. Moving this forward today.</p>
+          <p>{staticComment}</p>
         </div>
       </div>
 

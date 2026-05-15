@@ -14,6 +14,7 @@ export function TaskCard({
   flash,
   showComments,
   showInlineThread,
+  staticComment,
   typingUser,
   typingProgress,
   postedComment,
@@ -29,6 +30,7 @@ export function TaskCard({
   flash?: boolean;
   showComments?: boolean;
   showInlineThread?: boolean;
+  staticComment?: string;
   typingUser?: string | null;
   typingProgress?: number;
   postedComment?: { user: string; text: string } | null;
@@ -160,7 +162,7 @@ export function TaskCard({
             </div>
             <div className="text-[11.5px] leading-relaxed text-ink-soft">
               <span className="font-medium text-ink">Alex</span> · 2h ago
-              <p>Looks good. Moving this forward today.</p>
+              <p>{staticComment ?? "Looks good. Moving this forward today."}</p>
             </div>
           </div>
 

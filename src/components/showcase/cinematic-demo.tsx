@@ -59,6 +59,10 @@ export function CinematicDemo({
   const [state, setState] = useState<DemoState>(() => ({
     view: "board",
     tasks: buildDomainSeed(domain, SEED_TASKS),
+    // commentBodies[1] (not [0]) so the static teammate note differs
+    // from the line the scripted scene types live (demoCommentText),
+    // and falls back to [0] for any pack with a single body.
+    staticComment: pack.commentBodies[1] ?? pack.commentBodies[0],
     cursors: {
       chloe: initialCursor(140, 60),
       david: initialCursor(360, 60),
@@ -1009,6 +1013,7 @@ function BoardCardWrapper({
       pickedBy={pickedColor}
       highlightDependency={isDep}
       showInlineThread={showThread}
+      staticComment={state.staticComment}
       typingUser={showThread ? state.typingFromUser : null}
       typingProgress={showThread ? state.typingProgress : 0}
       postedComment={showThread ? state.postedComment : null}
