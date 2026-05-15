@@ -122,13 +122,15 @@ export function ForSmallBusiness() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          Solo operator: Free tier covers a single business workspace and
-          three editing guests — enough for you, the bookkeeper, and a
-          right hand. Two locations or two operating modes: Pro at
-          $4.99/mo for unlimited workspaces. Bigger team, multiple
-          departments coordinating: Team at $9.95/workspace flat — invite
-          the staff, the suppliers, the accountant, no per-seat surcharge.
-          Studio at $14.95/mo if you want every workspace under one bill.
+          Solo operator: the Free tier covers a single business
+          workspace and three editing guests — enough for you, the
+          bookkeeper, and a right hand, no card. Two locations, two
+          operating modes, or a team across departments: Workspace is
+          €12 a month for unlimited workspaces, and inviting the
+          staff, the suppliers, and the accountant never moves the
+          price — there is no per-seat surcharge at any size. A
+          one-off — a launch, a fit-out, a move: Event is €79 once
+          and that workspace keeps reading for twelve months after.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">

@@ -37,7 +37,7 @@ export function StudentsForm() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(124, 92, 255, 0.18), rgba(79, 70, 229, 0.06), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79, 70, 229, 0.16), rgba(79, 70, 229, 0.05), transparent 70%)",
         }}
       />
 
@@ -60,10 +60,11 @@ export function StudentsForm() {
         </h1>
 
         <p className="mx-auto mt-5 max-w-[52ch] text-[17px] leading-[1.55] text-ink-soft">
-          Tasks Pro, on us, for the semester. Sign up with your .edu
-          address and Pro lands automatically — no card, no trial, no
-          catch. The form below is for the rare cases the auto-grant
-          missed; otherwise just open the workspace and start.
+          The full Workspace tier, on us, while you study. Sign up
+          with your .edu address and it lands automatically — no card,
+          no trial, no catch. The form below is for the rare cases the
+          auto-grant missed; otherwise just open the workspace and
+          start.
         </p>
 
         <div className="mx-auto mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/40 px-4 py-1.5 text-[12.5px] font-medium text-emerald-800">
@@ -71,7 +72,7 @@ export function StudentsForm() {
             className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"
             aria-hidden
           />
-          Auto-applied at signup · 120-day Pro
+          Auto-applied at signup · two-year window
         </div>
 
         <AnimatePresence mode="wait">
@@ -104,7 +105,7 @@ export function StudentsForm() {
                   disabled={pending || !email.trim()}
                   className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
                 >
-                  {pending ? "Verifying…" : "Get free Pro"}
+                  {pending ? "Verifying…" : "Get free access"}
                 </button>
               </div>
 
@@ -154,7 +155,7 @@ function SuccessCard({ code }: { code: string }) {
         Code minted
       </div>
       <h2 className="mt-1.5 text-[20px] font-semibold tracking-[-0.005em] text-ink">
-        Your free Pro code is ready.
+        Your free student code is ready.
       </h2>
       <p className="mx-auto mt-3 max-w-[40ch] text-[13.5px] leading-[1.55] text-ink-soft">
         In production we&rsquo;d email this to you. For the demo,
@@ -192,16 +193,16 @@ function FineGrain() {
     <ul className="mx-auto mt-10 grid max-w-[560px] grid-cols-1 gap-3 text-left sm:grid-cols-3">
       {[
         {
-          h: "1 year of Pro",
-          b: "Unlimited workspaces, recurring tasks, integrations, stuck-work nudges. Same Pro everyone else pays for.",
+          h: "Two years, free",
+          b: "The full Workspace tier — unlimited workspaces, unlimited guests, recurring tasks, stuck-work nudges. The same tier everyone else pays for.",
         },
         {
           h: ".edu only",
           b: "We just check your email domain. No transcript, no ID upload, no awkward verification calls.",
         },
         {
-          h: "Re-verify yearly",
-          b: "When the year's up, prove you're still a student and we'll re-up. Graduate? Pro stays at $4.99 if you want it.",
+          h: "Re-verify after two years",
+          b: "When the window's up, prove you're still a student and we'll re-up. Graduated? The Workspace tier is €12 a month if you want to keep it.",
         },
       ].map((item) => (
         <li
@@ -225,13 +226,13 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, var(--brand) 0%, #7c5cff 100%)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
           boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         Students
       </span>
-      Pro, free, .edu only
+      Workspace tier, free, .edu only
     </div>
   );
 }

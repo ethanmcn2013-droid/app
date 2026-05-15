@@ -5,10 +5,10 @@ import Link from "next/link";
  * designers, and consultants. Sister to `/for/weddings`.
  *
  * The strong commercial hook here is the multi-client structure:
- * a freelancer with five clients hits 5 × $9.95 immediately on Team,
- * which is the leak the Studio tier (Phase 4) will eventually plug.
- * In the meantime, the page leans on Pro ($4.99/mo unlimited
- * workspaces) as the right shape for the audience.
+ * the Workspace tier (€12/mo, canonical — see studio /pricing) is
+ * unlimited workspaces with no per-seat tax, so five clients cost
+ * the same as one. The old Pro/Team/Studio model this page used to
+ * reference is retired; pricing here must track studio /pricing.
  *
  * Anchors on tax-season + new-client-onboarding templates.
  */
@@ -180,8 +180,8 @@ export function ForFreelancers() {
         </h2>
         <ul className="mt-5 space-y-4">
           <Reason
-            title="Pro is one bill for unlimited workspaces."
-            body="Five clients, five workspaces, $4.99 a month total. Compare against Linear's per-seat math (which charges your client to invite you) or Notion's plan tiers (which gate things you actually need). Tasks charges the freelancer once and stops there."
+            title="One bill for unlimited workspaces."
+            body="Five clients, five workspaces, €12 a month total. Compare against Linear's per-seat math (which charges your client to invite you) or Notion's plan tiers (which gate things you actually need). Tasks charges the freelancer once and stops there."
           />
           <Reason
             title="The client can come in as a guest."
@@ -201,22 +201,20 @@ export function ForFreelancers() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          Two shapes work for a freelance practice. Pro at $4.99/mo
-          gives one operator unlimited workspaces — fine until a client
-          wants real-time presence, share-link analytics, or guest
-          editing on their own surface. Studio at $14.95/mo is the
-          step up: every workspace you own gets the full Team feature
-          set, with the no-per-seat-tax rule still holding inside
-          each one. Five clients on Pro is $4.99. Five clients on
-          Studio is $14.95. Five clients on the Team tier (one
-          workspace each) would be 5 × $9.95 = $49.75 — Studio is the
-          right shape the moment you have more than two clients you
-          care about.
+          There is one shape, and it does not get more expensive as
+          you grow. The Workspace tier is €12 a month for unlimited
+          workspaces — one per client, the full feature set on every
+          one, and inviting the client (or their VP, or your
+          subcontractor) never moves the price. Five clients is €12.
+          Twelve clients is €12. The bill stops being something you
+          model and starts being a single line you forget about. The
+          Free tier still runs one workspace for nothing if you only
+          have the one engagement that matters this quarter.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            Studio · $14.95 a month, unlimited workspaces
+            Workspace · €12 a month, unlimited workspaces
           </div>
           <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
             The cost of forgetting one deductible lunch. One bill.

@@ -146,7 +146,7 @@ export function ForTrades() {
           />
           <Reason
             title="No per-seat tax."
-            body="Add the apprentice, the bookkeeper, your dispatcher, your wife who handles QuickBooks. Same price. Inviting people is free, on every tier."
+            body="Add the apprentice, the bookkeeper, your dispatcher, the partner who handles QuickBooks. Same price. Inviting people is free, on every tier."
           />
         </ul>
 
@@ -154,14 +154,16 @@ export function ForTrades() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          One-truck operation: Free tier covers the route, three
-          editing guests fit a small crew. Two-truck up: Pro at
-          $4.99/mo for unlimited workspaces (one per truck if you
-          dispatch separately). Multiple crews on one job: Team at
-          $9.95/workspace flat — invite the whole site, the GC, the
-          inspector, no per-seat surcharge. Studio at $14.95/mo if
-          you run the office and want every workspace under one
-          bill.
+          One-truck operation: the Free tier covers the route — one
+          workspace, all four products, three editing guests for a
+          small crew, no card. Running more than one truck: Workspace
+          is €12 a month for unlimited workspaces, one per truck if
+          you dispatch them separately — and inviting people never
+          moves the price, so the whole site, the GC and the
+          inspector cost the same as just you. A single big job that
+          runs for months — a full fit-out, a site that lasts a
+          season: Event is €79 once, and the workspace keeps reading
+          for twelve months after it&rsquo;s done.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">

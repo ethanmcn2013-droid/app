@@ -85,15 +85,11 @@ function TemplateCard({ template, index }: { template: Template; index: number }
   const domain = DOMAINS[template.domain as DomainId];
 
   return (
+    /* No scroll-reveal: each card is a real template the 80% browse,
+       and a whileInView opacity:0 left the gallery invisible to no-JS
+       and crawlers (proven, T·54). whileHover stays — JS-only, hides
+       nothing. */
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{
-        duration: 0.42,
-        delay: Math.min(index * 0.04, 0.4),
-        ease: [0.16, 1, 0.3, 1],
-      }}
       whileHover={{ y: -2 }}
       className="group flex flex-col rounded-2xl border border-line-soft bg-bg-elevated p-5 transition-shadow hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
     >

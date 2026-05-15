@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
-
 /**
  * /principles — the public refusal list. Sister page to /about.
  * Where /about says what Tasks is, /principles says what it never
@@ -154,17 +152,12 @@ function Refusal({
   body: string;
 }) {
   return (
-    <motion.li
-      initial={{ opacity: 0, y: 6 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{
-        duration: 0.36,
-        delay: num * 0.04,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="grid grid-cols-[44px_1fr] gap-4"
-    >
+    /* Static, not a scroll-reveal: these refusals are the brand spine
+       and primary crawlable content. A whileInView opacity:0 here left
+       them invisible to no-JS and crawlers (proven, T·54). BRAND.md §5
+       keeps motion to the Tasks homepage demo; manifesto prose is
+       restrained by rule, not faded in. */
+    <li className="grid grid-cols-[44px_1fr] gap-4">
       <span className="mt-px inline-flex h-8 w-8 items-center justify-center rounded-full bg-rose-50 text-[12px] font-semibold tabular-nums text-rose-600 ring-1 ring-inset ring-rose-100">
         {num.toString().padStart(2, "0")}
       </span>
@@ -176,7 +169,7 @@ function Refusal({
           {body}
         </p>
       </div>
-    </motion.li>
+    </li>
   );
 }
 

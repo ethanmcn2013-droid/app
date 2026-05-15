@@ -7,8 +7,8 @@ import Link from "next/link";
  *
  * The strongest CTA is now the full wedding planning workspace
  * template, with the countdown and run-of-show as supporting
- * checklists. The pricing line ($79 once, for the workspace that
- * matters most) is the load-bearing commercial argument.
+ * checklists. The pricing line (€79 once — the Event tier, for the
+ * workspace that matters most) is the load-bearing commercial argument.
  */
 export function ForWeddings() {
   return (
@@ -50,11 +50,11 @@ export function ForWeddings() {
         </p>
 
         <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
-          You can pay $79 once and have it forever — bridal-shower-night
-          to honeymoon and beyond. Not a subscription that you cancel
-          the week after the wedding. Not a per-seat fee that makes
-          inviting your parents a budget decision. One workspace, one
-          fee, one wedding.
+          You can pay €79 once and have it for the whole run —
+          bridal-shower-night to honeymoon and beyond. Not a
+          subscription you cancel the week after the wedding. Not a
+          per-seat fee that makes inviting your parents a budget
+          decision. One workspace, one fee, one wedding.
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
@@ -250,19 +250,18 @@ export function ForWeddings() {
           For wedding planners.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          If you run multiple weddings a year, the math is different.
-          Every wedding is its own workspace; every couple is its own
-          three guests; every binder is its own printable run-of-show.
-          We&rsquo;re working on a planner-tier price that fits a 10-or-
-          20-weddings-a-year studio without forcing $79 × 20. In the
-          meantime, you can run them on Team workspaces ($9.95/mo
-          flat per workspace, no per-seat tax) and the cost is a single
-          line on a wedding invoice.
+          If you run multiple weddings a year, the math is simpler,
+          not harder. Every wedding is its own workspace; every couple
+          is its own guests; every binder is its own printable
+          run-of-show. The Workspace tier is €12 a month for
+          unlimited workspaces — a new one per wedding, invite every
+          couple and supplier, and the price never moves. One line on
+          the studio&rsquo;s books, not €79 times twenty.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            $79, once, for the workspace that matters most
+            €79, once, for the workspace that matters most
           </div>
           <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
             One fee. One wedding. Forever a memory you can hand someone.

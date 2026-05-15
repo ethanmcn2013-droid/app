@@ -107,14 +107,15 @@ export function ForCommunity() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          Solo coordinator: Free tier covers one workspace and three
-          editing guests — enough for you and two colleagues or one
-          deputy. Larger group, multiple sub-teams: Pro at $4.99/mo for
-          unlimited workspaces. School, club, or parish coordinating
-          many strands at once: Team at $9.95/workspace flat — invite
-          the whole staff, the parents&rsquo; rep, the volunteers, no
-          per-seat surcharge. Studio at $14.95/mo if you run several
-          workspaces under one operation.
+          Solo coordinator: the Free tier covers one workspace and
+          three editing guests — enough for you and two colleagues or
+          one deputy, no card. A school, club, or parish coordinating
+          many strands across sub-teams: Workspace is €12 a month for
+          unlimited workspaces, and inviting the whole staff, the
+          parents&rsquo; rep, and every volunteer never moves the
+          price — there is no per-seat surcharge at any size. A
+          one-off — a fundraiser, a show, a season: Event is €79 once
+          and the workspace keeps reading for twelve months after.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">

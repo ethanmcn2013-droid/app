@@ -53,9 +53,10 @@ export function ForStudents() {
         </p>
 
         <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
-          Free for the whole semester. Three editing guests included,
-          which is exactly the size of a study group. If you have a
-          .edu address, Pro is free for the semester too.
+          The Free tier runs forever — one workspace, three editing
+          guests, which is exactly the size of a study group. With a
+          .edu address you get the full Workspace tier free for two
+          years instead: unlimited workspaces, unlimited guests.
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
@@ -197,17 +198,18 @@ export function ForStudents() {
           Got a .edu address?
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          Pro is free for the semester. Unlimited workspaces — one per
-          class, one for the job search, one for the part-time shift,
-          one for the trip you&rsquo;re planning over spring break.
-          Recurring tasks for weekly problem sets. Stuck-work nudges for the
-          stuff that&rsquo;s slipping. Apply once, get the code, run
-          the rest of the semester on it.
+          The full Workspace tier is free for two years with a .edu
+          address. Unlimited workspaces — one per class, one for the
+          job search, one for the part-time shift, one for the trip
+          you&rsquo;re planning over spring break. Recurring tasks for
+          weekly problem sets. Stuck-work nudges for the stuff
+          that&rsquo;s slipping. Apply once, get the code, run the
+          rest of your degree on it.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            Free forever, .edu Pro free for the semester
+            Free forever, or the full tier free for two years with .edu
           </div>
           <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
             Open a workspace today. Bring a friend. Bring two more

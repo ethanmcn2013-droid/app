@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { DOMAINS, DOMAIN_ORDER } from "@/lib/domains";
 
 /**
@@ -152,44 +151,23 @@ function Strikethroughs() {
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] font-medium text-ink-quiet">
         {STRIKES.map((s, i) => (
-          <motion.span
-            key={s}
-            initial={{ opacity: 0, y: 4 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{
-              duration: 0.32,
-              delay: i * 0.05,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="relative inline-block"
-          >
+          // Static, not a scroll-reveal. The struck words are content
+          // and the strike line is semantically load-bearing — it is
+          // what marks the jargon as rejected. A whileInView opacity:0
+          // / scaleX:0 left no-JS and crawlers reading the banned words
+          // with no strike, inverting the meaning (proven, T·54).
+          <span key={s} className="relative inline-block">
             <span>{s}</span>
-            <motion.span
+            <span
               aria-hidden
-              initial={{ scaleX: 0 }}
-              whileInView={{ scaleX: 1 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{
-                duration: 0.46,
-                delay: i * 0.05 + 0.18,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-              style={{ transformOrigin: "left center" }}
               className="absolute left-0 right-0 top-1/2 h-[1.6px] -translate-y-1/2 rounded-full bg-gradient-to-r from-rose-300 via-rose-400 to-rose-300/0"
             />
-          </motion.span>
+          </span>
         ))}
-        <motion.span
-          initial={{ opacity: 0, x: 6 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.6, duration: 0.32 }}
-          className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12.5px] font-semibold text-emerald-700"
-        >
+        <span className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[12.5px] font-semibold text-emerald-700">
           <span className="block h-1.5 w-1.5 rounded-full bg-emerald-500" />
           tasks
-        </motion.span>
+        </span>
       </div>
     </div>
   );
