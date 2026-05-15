@@ -519,16 +519,21 @@ body {
    Pure CSS: SSR-safe, no-JS-safe, no measurement, no flash, and
    an ancestor scale() never touches the scripted scene's own
    coordinate space (zero regression to cursors/scenes).
-   1180 = demo design width · 612 ≈ chrome+subheader+500 surface. */
+   1180 = demo design width · 690 ≈ measured natural height. */
 @media (max-width: 767px) {
+  /* Scale factor must be a unitless <number>: divide a length by a
+     length (1180px, not 1180) so min() compares like with like.
+     Mixing a number with a length voids the whole declaration. */
   .demo-fit {
     overflow: hidden;
-    height: calc(612px * min(1, (100vw - 2.5rem) / 1180));
+    /* 690px ≈ measured natural height of the demo at the 1180px
+       design width (chrome + subheader + 500 surface + borders). */
+    height: calc(690px * min(1, (100vw - 2.5rem) / 1180px));
   }
   .demo-fit > .demo-fit-inner {
     width: 1180px;
     transform-origin: top left;
-    transform: scale(min(1, (100vw - 2.5rem) / 1180));
+    transform: scale(min(1, (100vw - 2.5rem) / 1180px));
   }
 }
 
