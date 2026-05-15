@@ -4,6 +4,42 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·51 · cuts · the tech-team dogfood out of what the 80% see
+
+**The homepage demo toggle and the /about grid presented a
+tech-company marketing board — pricing-funnel audits, engineering
+headcount, all-hands — as a target audience, right next to the
+wedding planner and the tradesperson. A non-tech visitor toggling
+through landed on the exact vocabulary alienation this product
+exists to refuse.**
+
+`DOMAIN_ORDER` now lists only the four real Signal Tasks audiences:
+the wedding planner, the tradesperson, the freelancer, the student —
+BRAND.md §3's own canonical example set, verbatim. The `marketing`
+pack stays in the source as the inert canonical seed-structure
+fallback (its 16-task geometry is what every domain overlays), but it
+is never again shown to a user. The cinematic demo's own default and
+the out-of-shell domain-context fallback now resolve to the wedding
+planner instead of the dogfood board, so there is no path left where
+a real visitor sees "Headcount planning · engineering".
+
+Emoji came out of every surface a real user or visitor touches. The
+hero demo, the empty states, and — the one that mattered most —
+`SEED_COMMENT_BODIES`, which seeds the conversation thread on a fresh
+user's first tasks. That set led with "Hero animation looks great in
+the latest cut 🎯" and ran through "Pinged finance", "Bumped this to
+P1", "Spec is locked, building now". A wedding planner's first
+workspace now reads in plain English that is true whether you plan
+weddings, wire houses, shoot galleries, or sit exams. The static
+showcase teammate comment — hardcoded to that same hero-animation
+line regardless of which audience you picked — is now a neutral
+on-voice line. Threading it per-audience is the named follow-up.
+
+BRAND.md §3 is unambiguous on emoji and jargon; §2.3 names voice
+drift as the moat itself. This was drift, in the highest-traffic
+surface the product has. Typecheck, build, and the live production
+toggle + /about grid all verified clean.
+
 ## 2026-05-15 · T·50 · tightens · the code-review hardening pass
 
 **A three-agent code review found two unguarded comment paths, a
