@@ -4,6 +4,33 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·53 · cuts · the soft PM vocabulary out of the app the 80% live in
+
+**T·51 and T·52 made the front door speak plain English. The room
+behind it still didn't. The app a wedding planner uses every day
+carried an "Assignees" column on every list, an "Assignees" field on
+every task, and a repeat tool that said it was "Useful for standups".
+A planner does not have an assignee or a standup. They have someone
+doing the thing.**
+
+"Assignees" is now "Who" — on the list view, my-tasks, the
+empty-state ghost table a brand-new user meets first, and the task
+detail panel, whose field sequence now reads Status · Priority · Who
+· Due · Repeats, five plain words a person would actually say. The
+add-person control's screen-reader name went from "Add assignee" to
+"Add someone". The repeat popover dropped "standups" and its "Make N
+copies, spaced D days apart" placeholder-variable phrasing for "Make
+a few copies, spaced a set number of days apart. Useful for
+countdowns, reminders, anything that repeats."
+
+Held back on purpose: the CSV-import column mapping still reads
+"Assignees" — it documents the source tool's own format, not Tasks'
+voice, and renaming it would make the mapping ambiguous. Honest scope:
+typecheck, build, and the production bundle carry the new strings, but
+`/app` is auth-gated, so the in-app live pixel pass at desktop and
+phone is owed, not done. The strings are pure presentational with no
+logic keyed on them.
+
 ## 2026-05-15 · T·52 · ships · the demo's teammate note becomes the planner's own world
 
 **T·51 left one named gap: the cinematic demo's static "Alex · 2h ago"
