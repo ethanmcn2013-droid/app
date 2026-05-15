@@ -39,9 +39,11 @@ export function DomainProvider({
 export function useDomain(): DomainPack {
   const v = useContext(DomainContext);
   if (!v) {
-    // Fall back to marketing rather than throwing — callers may render
+    // Fall back to wedding rather than throwing — callers may render
     // outside the app shell (e.g. marketing pages embed components).
-    return DOMAINS.marketing;
+    // Wedding (not marketing) so an out-of-shell render still shows a
+    // real 80% audience, never the tech-company dogfood board.
+    return DOMAINS.wedding;
   }
   return v.pack;
 }

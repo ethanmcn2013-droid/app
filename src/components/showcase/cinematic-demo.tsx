@@ -42,7 +42,7 @@ function makeId() {
 }
 
 export function CinematicDemo({
-  domain = "marketing",
+  domain = "wedding",
 }: {
   domain?: DomainId;
 } = {}) {

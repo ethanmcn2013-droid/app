@@ -735,7 +735,7 @@ function CommentThread({
         <Avatar user="alex" size={20} />
         <div className="text-[11.5px] leading-relaxed text-ink-soft">
           <span className="font-medium text-ink">Alex</span> · 2h ago
-          <p>Hero animation looks great in the latest cut 🎯</p>
+          <p>Looks good. Moving this forward today.</p>
         </div>
       </div>
 

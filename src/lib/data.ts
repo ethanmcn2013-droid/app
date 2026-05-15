@@ -626,15 +626,19 @@ export type CompCode = {
   expiresAt: Date | null;
 };
 
-/** Body strings used for deterministic seed comments. Lifted from
- *  the previous static comment thread so server seed and any future
- *  fixtures share one source of truth. */
+/** Body strings used for deterministic seed comments. These seed real
+ *  fresh-user conversation threads, so they stay audience-neutral and
+ *  in voice (BRAND.md §3): declarative, plain, no jargon, no emoji,
+ *  true whether you plan weddings, wire houses, shoot galleries, or
+ *  sit exams. The old set was tech-team dogfood ("Pinged finance",
+ *  "Bumped this to P1") — the §2.2 vocabulary alienation this product
+ *  refuses to ship into a first run. */
 export const SEED_COMMENT_BODIES: string[] = [
-  "Hero animation looks great in the latest cut 🎯",
-  "Pinged finance — they'll review by EOW.",
-  "Bumped this to P1 after the demo sync. Keep moving.",
-  "Linking the brief — let me know if anything's unclear.",
-  "Marketing has the assets. We just need the copy review.",
-  "Spec is locked, building now. ETA Tuesday.",
-  "Two design tweaks left, then ready for review.",
+  "Looks good. Moving this forward today.",
+  "Asked them — they'll have an answer by end of week.",
+  "Bumped this up. It needs doing first.",
+  "Linked the details. Say if anything's unclear.",
+  "Everything's in. It just needs a final look.",
+  "Locked in. Underway now.",
+  "Two small things left, then it's done.",
 ];
