@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace, not a Notion doc",
       body:
-        "Launches have a PMM, a designer, a founder writing copy at midnight, sometimes a contractor on the video, sometimes a PR freelancer. That’s five to seven people who all need to see the same list and update their piece without waiting on someone to share-permission them in. Tasks is $9.95 per workspace, flat — not per seat — so adding the freelancer for two weeks doesn’t cost extra, and the marketing team’s next launch lives in the same workspace. Solo or indie launch fits the free tier. Either way, the eight tasks land in your active workspace in 30 seconds, with priorities and due dates already set.",
+        "Launches have a PMM, a designer, a founder writing copy at midnight, sometimes a contractor on the video, sometimes a PR freelancer. That’s five to seven people who all need to see the same list and update their piece without waiting on someone to share-permission them in. The Workspace tier is €12 a month, flat — not per seat — so adding the freelancer for two weeks doesn’t cost extra, and the next launch lives in the same workspace. Solo or indie launch fits the free tier. Either way, the eight tasks land in your active workspace in 30 seconds, with priorities and due dates already set.",
     },
   ],
   closer:

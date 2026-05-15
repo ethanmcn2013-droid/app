@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace beats a Notes app",
       body:
-        "Two people plan most trips, sometimes three. One books flights, the other handles the hotel, the friend joining for the back half wants visibility without bothering anyone. A Notes doc shared over iMessage gets stale the moment one person edits it on a plane. In Tasks, the list is live — you reassign, reprioritize, and the airport transfer task moves with the flight time. Free covers one workspace and three editing guests, which is exactly a couple plus a friend. If you take more than one trip a year and want a workspace per trip without them tangling together, Pro is $4.99 a month for unlimited workspaces.",
+        "Two people plan most trips, sometimes three. One books flights, the other handles the hotel, the friend joining for the back half wants visibility without bothering anyone. A Notes doc shared over iMessage gets stale the moment one person edits it on a plane. In Tasks, the list is live — you reassign, reprioritize, and the airport transfer task moves with the flight time. Free covers one workspace and three editing guests, which is exactly a couple plus a friend. If you take more than one trip a year and want a workspace per trip without them tangling together, the Workspace tier is €12 a month for unlimited workspaces.",
     },
   ],
   closer:

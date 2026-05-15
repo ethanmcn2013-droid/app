@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace, not a Notion page someone forgets to share",
       body:
-        "Onboarding repeats. The next client gets the same seven tasks with new names — duplicate the workspace, change the dates, you’re running. Three editing guests are free, so the client and one of their stakeholders can sit inside the same board without a per-seat invoice. If you’re juggling more than one engagement at a time — most freelancers, eventually — Pro is $4.99/mo for unlimited workspaces, one per client, no cross-contamination. Team is $9.95/workspace flat if a sub or a partner joins.",
+        "Onboarding repeats. The next client gets the same seven tasks with new names — duplicate the workspace, change the dates, you’re running. Three editing guests are free, so the client and one of their team can sit inside the same board without a per-seat invoice. If you’re juggling more than one engagement at a time — most freelancers, eventually — the Workspace tier is €12 a month for unlimited workspaces, one per client, no cross-contamination, and inviting a sub or a partner never changes the price.",
     },
   ],
   closer:

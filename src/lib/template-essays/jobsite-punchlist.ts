@@ -24,7 +24,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace, not a notebook",
       body:
-        "The punchlist isn't yours alone. The painter coming back for touch-ups needs to see what you flagged. The HVAC sub coming back for warranty work needs the manual you handed the homeowner. The homeowner wants to know what's still pending. Drop them a magic-link share — they see the same list you see, in real time, without an account. Three editing guests are free. If you run more than one open job at a time, Pro at $4.99/month gives you unlimited workspaces — one per address, one per project — without the per-seat tax other PM tools charge to invite a sub.",
+        "The punchlist isn't yours alone. The painter coming back for touch-ups needs to see what you flagged. The HVAC sub coming back for warranty work needs the manual you handed the homeowner. The homeowner wants to know what's still pending. Drop them a magic-link share — they see the same list you see, in real time, without an account. Three editing guests are free. If you run more than one open job at a time, the Workspace tier is €12 a month for unlimited workspaces — one per address, one per project — without the per-seat tax other tools charge to invite a sub.",
     },
   ],
   closer:

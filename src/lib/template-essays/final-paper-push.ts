@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why this and not a Google Doc with bullets",
       body:
-        "A Google Doc doesn’t tell you what’s late. A Notion template asks you to set up Notion. Tasks opens, the eight tasks are already there, and the lane your draft is sitting in is the only status update you need. Free covers a single paper — one workspace, three guests if you want a friend or a TA looking in. A Pro semester is $4.99 a month, less than one campus coffee, and gives you unlimited workspaces for every class you’re juggling. No sprints, no epics, no jargon — just the list, in the order you need it.",
+        "A Google Doc doesn’t tell you what’s late. A Notion template asks you to set up Notion. Tasks opens, the eight tasks are already there, and the lane your draft is sitting in is the only status update you need. Free covers a single paper — one workspace, three guests if you want a friend or a TA looking in. With a .edu address the full Workspace tier is free for two years — unlimited workspaces for every class you’re juggling, no card. No sprints, no epics, no jargon — just the list, in the order you need it.",
     },
   ],
   closer:
