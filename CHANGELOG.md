@@ -4,7 +4,50 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-05-15 · T·55 · holds · every motion respects reduce-motion, not just the guarded ones
+## 2026-05-15 · T·56 · cuts · the wrong prices off every page the 80% read before they decide
+
+**Every audience landing, every template essay, and the SEO snippets
+behind them were quoting a price that does not exist. "Pro at
+$4.99/mo", "Team at $9.95/workspace", "Studio at $14.95/mo" — US
+dollars, three tier names that were retired when the suite moved to
+the single canonical model (Free €0 · Workspace €12/mo · Event €79
+once · Student .edu-free). A tradesperson, a freelancer, a student,
+a planner read the wrong currency and a dead tier on the exact page
+they were on when they decided whether to trust us. That is the
+demo-vs-reality gap the brand exists to refuse, and it was live in
+production across the whole audience layer.**
+
+It is gone. Six audience landings (trades, freelancers, students,
+weddings, small-business, community), twelve template essays, and
+the OpenGraph/Twitter metadata for the trades, weddings, freelancers
+and students pages now state the real prices in euros, in each
+page's own voice — not a find-and-replace. The freelancer math got
+simpler, not patched: the old "Pro vs Team vs Studio, five clients =
+5 × $9.95" arithmetic existed only to navigate a leaky tier
+structure that no longer exists; the new copy is "€12, unlimited
+workspaces, the bill stops being something you model." The student
+window was also wrong — "120-day" / "1 year of Pro" became the
+canonical two-year .edu window. Three brand-integrity bugs found in
+the same files were fixed in the same pass rather than left for
+later: "your wife who handles QuickBooks" → "the partner" (a §3 fix
+memory recorded as shipped in Plan 5.2 that had regressed), the
+banned "stakeholders" in the onboarding essay, and the explicitly
+banned `#7c5cff` purple in the students eyebrow + glow (BRAND §5).
+
+Honest scope, named not buried. The same retired prices still live
+in three server files (`stripe.ts`, `membership.ts`, the
+launch-readiness seed) — that is the entitlements sprint's backend
+reconciliation, deliberately not touched here per "backend can
+wait." The banned purple survives in ~13 more files (about-manifesto,
+templates-gallery, anatomy, embed-guide, template-detail) — a real
+§5 violation, deferred to its own cycle rather than slammed into a
+pricing deploy where a visual regression could hide. Typecheck +
+build clean; verified live on tasks.signalstudio.ie across the
+trades, freelancers and students surfaces. Note: a parallel session
+was committing T·51–T·55 on the same "speak to the 80%" mission
+concurrently; this work was absorbed into that commit stream and
+pushed as part of `1f6068f..96fb136` — T·56 may need operator
+reconciliation if the parallel session also claimed the number.
 
 **A person who asks their operating system to reduce motion should
 get a calm product. The global CSS rule only quietened CSS-driven
