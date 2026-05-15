@@ -6,6 +6,24 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
+ * Realtime feature flag. The in-process EventEmitter only fans out to
+ * subscribers in the SAME Node process — on Vercel that means one
+ * lambda instance, so a mutation in lambda A is invisible to a
+ * subscriber in lambda B. Until a real substrate lands (Upstash
+ * pub/sub, Pusher, Liveblocks), the SSE stream stays off in
+ * production so we don't ship a realtime UX that silently no-ops.
+ *
+ * Set `REALTIME_ENABLED=true` in env to opt back in once the
+ * substrate is wired. Dev defaults to enabled so localhost testing
+ * keeps working.
+ */
+function realtimeEnabled(): boolean {
+  if (process.env.REALTIME_ENABLED === "true") return true;
+  if (process.env.REALTIME_ENABLED === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+/**
  * Server-Sent Events stream. Clients open one connection per tab
  * via `new EventSource("/api/events")` and receive:
  *
@@ -18,6 +36,15 @@ export const runtime = "nodejs";
  * preventing pointless re-fetches and self-echo loops.
  */
 export async function GET(req: Request) {
+  if (!realtimeEnabled()) {
+    // Disabled: respond with a 204 so the client EventSource sees an
+    // immediate, intentional close instead of retrying against a
+    // misleading 200 stream that never fires events.
+    return new Response(null, {
+      status: 204,
+      headers: { "X-Realtime-Disabled": "single-process-substrate" },
+    });
+  }
   const url = new URL(req.url);
   const cid = url.searchParams.get("cid") ?? "";
   const encoder = new TextEncoder();

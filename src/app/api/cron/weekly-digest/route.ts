@@ -6,9 +6,17 @@ import {
 import { aiConfigured } from "@/server/ai";
 
 /**
- * Weekly LLM-narrated digest cron.
+ * Weekly LLM-narrated digest endpoint.
  *
- * Schedule: Sunday 9am (configured in `vercel.json`).
+ * NOT auto-scheduled. This route requires an explicit
+ * `?workspace=<id>` and makes a per-call LLM narration request, so
+ * fanning it out across every workspace on a cron would be an
+ * uncapped Anthropic-cost footgun. The previous `vercel.json` cron
+ * entry passed no workspace and returned a 400 every Sunday — it was
+ * removed (2026-05-15). Invoke this manually / from an operator
+ * surface with the cron secret + explicit workspace when a weekly
+ * narration is actually wanted.
+ *
  * Mode: GET. Returns JSON with the snapshot + the narrated text.
  * The cron secret guard mirrors the daily digest endpoint.
  *

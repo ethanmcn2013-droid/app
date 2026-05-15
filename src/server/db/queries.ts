@@ -70,7 +70,14 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
         isNull(tasks.parentTaskId),
       ),
     )
-    .orderBy(laneOrderSql, positionOrderSql);
+    .orderBy(laneOrderSql, positionOrderSql)
+    // Hard safety cap. The board/list/timeline never need more than
+    // this, and the public `/p/{slug}` share path resolves through
+    // here too — without a bound a runaway workspace would scan the
+    // whole table on every public page hit. 2000 is well past any
+    // real workspace; if a workspace legitimately exceeds it, the
+    // overflow is the long tail of oldest in-lane rows.
+    .limit(2000);
   return rows.map(rowToTask);
 }
 

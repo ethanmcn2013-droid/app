@@ -151,15 +151,24 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   return getTasks(ws);
 }
 
+/** Walk `d` forward to the next day matching `weekday` (0-6). Capped
+ *  at 7 iterations: a valid weekday is always reachable within a
+ *  week, so a corrupt value (e.g. 8 from a bad migration row) can no
+ *  longer spin the server action forever — it just stops after a
+ *  full week and returns whatever day it's on. */
+function walkToWeekday(d: Date, weekday: number): void {
+  for (let i = 0; i < 7 && d.getDay() !== weekday; i++) {
+    d.setDate(d.getDate() + 1);
+  }
+}
+
 function advanceDate(from: Date, r: RecurrenceSpec): Date {
   const d = new Date(from);
 
   if (r.kind === "weekly") {
     // Advance to the next occurrence of the target weekday.
-    const target = r.weekday;
     d.setDate(d.getDate() + 7);
-    // Walk forward until we land on the right day.
-    while (d.getDay() !== target) d.setDate(d.getDate() + 1);
+    walkToWeekday(d, r.weekday);
   } else if (r.kind === "monthly-day") {
     // Same calendar day next month.
     d.setMonth(d.getMonth() + 1);
@@ -168,13 +177,16 @@ function advanceDate(from: Date, r: RecurrenceSpec): Date {
     // First occurrence of the target weekday next month.
     d.setMonth(d.getMonth() + 1);
     d.setDate(1);
-    while (d.getDay() !== r.weekday) d.setDate(d.getDate() + 1);
+    walkToWeekday(d, r.weekday);
   }
 
   // If the computed date is already in the past, keep advancing by
-  // one interval until we land in the future.
+  // one interval until we land in the future. Hard-capped at 600
+  // iterations (~50 years of monthly steps) so a malformed spec or
+  // a clock skew can't hang the request — well past any real
+  // recurrence horizon.
   const now = Date.now();
-  while (d.getTime() < now) {
+  for (let guard = 0; d.getTime() < now && guard < 600; guard++) {
     if (r.kind === "weekly") {
       d.setDate(d.getDate() + 7);
     } else if (r.kind === "monthly-day") {
@@ -183,7 +195,9 @@ function advanceDate(from: Date, r: RecurrenceSpec): Date {
     } else if (r.kind === "monthly-first-weekday") {
       d.setMonth(d.getMonth() + 1);
       d.setDate(1);
-      while (d.getDay() !== r.weekday) d.setDate(d.getDate() + 1);
+      walkToWeekday(d, r.weekday);
+    } else {
+      break;
     }
   }
 

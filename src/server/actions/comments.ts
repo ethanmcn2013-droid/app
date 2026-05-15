@@ -47,9 +47,32 @@ function extractMentions(body: string): UserId[] {
   return Array.from(found);
 }
 
+/** Confirm the calling user is a member of the workspace that owns
+ *  this task. Returns the workspace id when allowed, null when the
+ *  task doesn't exist OR lives in a workspace the caller isn't in.
+ *  Both comment read and write paths route through here — comments
+ *  inherit the task's workspace boundary; callers outside that
+ *  boundary must not see or write the thread. */
+async function resolveCallerTaskWorkspace(
+  taskId: string,
+): Promise<string | null> {
+  const ws = await getActiveWorkspace();
+  const [parent] = await db
+    .select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, ws)));
+  return parent?.workspaceId ?? null;
+}
+
 export async function getCommentsForTaskAction(
   taskId: string,
 ): Promise<Comment[]> {
+  // Cross-tenant read guard: only return the thread if the caller's
+  // active workspace owns the parent task. Strangers asking for a
+  // foreign task id get an empty list, indistinguishable from a task
+  // that has no comments yet.
+  const ws = await resolveCallerTaskWorkspace(taskId);
+  if (!ws) return [];
   return getCommentsForTask(taskId);
 }
 
@@ -58,22 +81,20 @@ export async function addCommentAction(
   body: string,
 ): Promise<Comment[]> {
   const trimmed = body.trim();
-  if (!trimmed) return getCommentsForTask(taskId);
+  if (!trimmed) return [];
 
   const me = await getCurrentUser();
-  // Inherit workspace from the parent task — comments don't carry an
-  // independent boundary; they're scoped to whichever workspace owns
-  // the task.
-  const [parent] = await db
-    .select({ workspaceId: tasks.workspaceId })
-    .from(tasks)
-    .where(eq(tasks.id, taskId));
-  if (!parent) return getCommentsForTask(taskId);
+  // Workspace-membership guard: the parent task must belong to the
+  // caller's active workspace. Without this, any authed user who
+  // knows a foreign task id could insert comments into other
+  // tenants' threads.
+  const workspaceId = await resolveCallerTaskWorkspace(taskId);
+  if (!workspaceId) return [];
 
   const commentId = newCommentId();
   await db.insert(comments).values({
     id: commentId,
-    workspaceId: parent.workspaceId,
+    workspaceId,
     taskId,
     userId: me,
     body: trimmed,

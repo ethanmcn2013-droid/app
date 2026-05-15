@@ -4,27 +4,27 @@ import { db } from "./index";
 import { entitlements } from "./schema";
 import type { EntitlementTier } from "@/lib/data";
 import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
-
-const TIER_RANK: Record<EntitlementTier, number> = {
-  free: 0,
-  event: 1,
-  wedding: 2,
-  workspace: 3,
-  studio: 4,
-};
+import { TIER_RANK, tierAtLeast } from "@/lib/entitlements-shared/tiers";
 
 /**
  * Resolve the highest active tier a user holds. As of E-3.1
- * (2026-05-14) reads come from the shared signal-entitlements DB
- * first, with a fallback to the local Tasks-only entitlements table
- * to keep things working during the cutover.
+ * (2026-05-14) reads consult the shared signal-entitlements DB AND
+ * the local Tasks-only entitlements table, and return whichever
+ * grants MORE access.
  *
- * Stripe webhook writes still land in the local table; E-3.2 swaps
- * the writer to the shared DB and decommissions this fallback.
+ * Why max-of-both, not shared-first: Stripe webhook writes still
+ * land in the LOCAL table until E-3.2 swaps the writer. A
+ * shared-first short-circuit (`if shared.tier !== "free" return it`)
+ * would silently DOWNGRADE a customer whose paid entitlement lives
+ * only in the local table the moment the shared DB returned any
+ * lesser non-free tier. Taking the rank-max is downgrade-proof
+ * regardless of which store a given entitlement currently lives in;
+ * it collapses back to a plain shared read for free once E-3.2
+ * makes the local table empty.
  *
  * `workspaceId` is accepted for signature compatibility with all
- * existing callers, but the shared resolver is user-level — the
- * argument is only used by the local-fallback path.
+ * existing callers; the shared resolver is user-level — the
+ * argument only scopes the local-fallback path.
  *
  * Returns "free" on any DB error. Tier reads MUST NOT crash a page.
  */
@@ -32,13 +32,21 @@ export async function getEffectiveTier(
   userId: string,
   workspaceId: string,
 ): Promise<EntitlementTier> {
+  let shared: EntitlementTier = "free";
   try {
-    const shared = await resolveEntitlement(userId);
-    if (shared.tier !== "free") return shared.tier;
+    shared = (await resolveEntitlement(userId)).tier;
   } catch {
-    // fall through to local
+    // Shared DB unreachable — local read below still stands.
   }
-  return getEffectiveTierLocal(userId, workspaceId);
+
+  let local: EntitlementTier = "free";
+  try {
+    local = await getEffectiveTierLocal(userId, workspaceId);
+  } catch {
+    // Local read failed — fall back to whatever shared resolved to.
+  }
+
+  return TIER_RANK[shared] >= TIER_RANK[local] ? shared : local;
 }
 
 async function getEffectiveTierLocal(
@@ -78,5 +86,5 @@ export function tierMeetsMinimum(
   actual: EntitlementTier,
   minimum: EntitlementTier,
 ): boolean {
-  return TIER_RANK[actual] >= TIER_RANK[minimum];
+  return tierAtLeast(actual, minimum);
 }

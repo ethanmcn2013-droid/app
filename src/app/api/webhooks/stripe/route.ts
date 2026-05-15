@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { processedWebhooks } from "@/server/db/schema";
 import { stripe, WEBHOOK_SECRET } from "@/server/stripe";
@@ -32,10 +32,16 @@ export const dynamic = "force-dynamic";
  * harmless because grantEntitlement is idempotent on notes.
  */
 async function alreadyProcessed(eventId: string): Promise<boolean> {
-  const [row] = await db.run(
-    sql`SELECT 1 AS hit FROM processed_webhooks WHERE event_id = ${eventId} LIMIT 1`,
-  ) as unknown as Array<{ hit: number }>;
-  return Boolean(row?.hit);
+  // db.run() returns a ResultSet, not a row array — the previous
+  // `as unknown as Array<{hit:number}>` cast meant `row` was always
+  // undefined and the dedup guard never fired. Use the typed select
+  // path so a real `1`-or-empty result drives the boolean.
+  const [row] = await db
+    .select({ id: processedWebhooks.eventId })
+    .from(processedWebhooks)
+    .where(eq(processedWebhooks.eventId, eventId))
+    .limit(1);
+  return Boolean(row);
 }
 
 async function recordProcessed(
@@ -46,7 +52,6 @@ async function recordProcessed(
     INSERT OR IGNORE INTO processed_webhooks (event_id, event_type)
     VALUES (${eventId}, ${eventType})
   `);
-  void processedWebhooks; // referenced via raw sql; keeps the import live
 }
 
 /**

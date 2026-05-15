@@ -3,14 +3,7 @@ import { and, eq, gt, isNull, or } from "drizzle-orm";
 import { db } from "./index";
 import { entitlements, workspaceMembers, workspaces } from "./schema";
 import type { EntitlementTier } from "@/lib/data";
-
-const TIER_RANK: Record<EntitlementTier, number> = {
-  free: 0,
-  event: 1,
-  wedding: 2,
-  workspace: 3,
-  studio: 4,
-};
+import { TIER_RANK } from "@/lib/entitlements-shared/tiers";
 
 /**
  * The Free / Pro member cap. The shape: 1 owner + 3 invited editors

@@ -4,6 +4,62 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·50 · tightens · the code-review hardening pass
+
+**A three-agent code review found two unguarded comment paths, a
+Stripe dedup table that never fired, and a realtime stream that
+silently no-ops in production — all closed in one pass.**
+
+The big one: comments leaked across tenants. `getCommentsForTaskAction`
+returned a full thread to anyone who knew a task id, and
+`addCommentAction` would write a comment onto a task in a workspace
+the caller wasn't a member of — it only checked the task *existed*,
+never that the caller could *see* it. Both now route through a single
+`resolveCallerTaskWorkspace` guard that confirms the parent task lives
+in the caller's active workspace; strangers get an empty list,
+indistinguishable from a task with no comments.
+
+The quiet one: the Stripe webhook dedup guard was dead. `alreadyProcessed`
+cast `db.run()`'s result to a row array — but libSQL `db.run()` returns
+a ResultSet, so the row was always undefined and the check always
+returned false. Idempotency was leaning entirely on the `notes`-field
+compensator. Rewired to a typed `db.select()` against
+`processed_webhooks`, so the dedup table actually dedups now.
+
+The honest one: `/api/events` is a single-process EventEmitter. On
+Vercel that fans out to one lambda instance and effectively never
+reaches other tabs — a realtime UX that looks fine on localhost and
+silently fails in prod. The route now returns a 204 (the canonical
+EventSource "stop reconnecting" signal) unless `REALTIME_ENABLED=true`,
+and stays on in dev. Opt back in when a real substrate (Upstash /
+Pusher / Liveblocks) lands.
+
+Also: `advanceDate`'s weekday-walk loops are capped at 7 iterations
+(a corrupt recurrence weekday can no longer hang the server action);
+`getTasks` gained a 2000-row safety cap (the public `/p/{slug}` share
+path resolves through it unbounded); the dead weekly-digest cron entry
+was removed (it 400'd every Sunday — the route is now an explicit
+operator endpoint); `getEffectiveTier` takes the rank-max of the
+shared and local entitlement stores instead of shared-first, so a
+Stripe-written paid tier in the local table can't be silently
+downgraded during the E-3.2 cutover; the two duplicate `TIER_RANK`
+constants collapsed onto the canonical `tier-shared/tiers.ts`; and the
+import-activity write surfaces failures to the log instead of swallowing
+them (Analytics' just-shipped trigger reads those rows).
+
+Sibling fix in Analytics: `tasks-db-source` was missing the
+`parent_task_id IS NULL` filter Tasks' own `getTasks` applies, so
+subtasks were leaking into the briefing engine as top-level signals.
+
+Migration owed (operator, not auto-applied): `drizzle/0005_workspace_id_backfill.sql`
+backfills NULL `workspace_id` rows to the legacy workspace across seven
+tables — the safe half of the schema-review finding. The NOT NULL + FK
+constraint rebuild is documented in that file as a separate
+operator-with-a-backup follow-up.
+
+Typecheck (Tasks + Analytics), build, and parser tests clean. Changed
+files lint clean.
+
 ## 2026-05-15 · T·49 · ships · venue redemption survives a fresh-user render
 
 **The wedding comp-code redemption no longer 500s on a fresh user.**

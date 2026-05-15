@@ -148,7 +148,14 @@ export async function importCsvAction(
   // the user's import.
   await Promise.all(
     newIds.map((id) =>
-      recordActivity(id, { kind: "taskAdd", lane: "todo" }).catch(() => {}),
+      recordActivity(id, { kind: "taskAdd", lane: "todo" }).catch((err) => {
+        // recordActivity already swallows its own DB errors with a
+        // warn; this outer catch only fires on something unexpected
+        // escaping it. Surface rather than silently drop so a
+        // systematic import-activity gap is visible in Vercel logs
+        // (Analytics' just-shipped trigger reads these rows).
+        console.warn("import: activity record failed for", id, err);
+      }),
     ),
   );
 
