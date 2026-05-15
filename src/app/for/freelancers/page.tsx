@@ -5,18 +5,18 @@ import { ForFreelancers } from "@/components/marketing/for-freelancers";
 export const metadata = {
   title: "Tasks for Freelancers — Five Clients, One Inbox",
   description:
-    "One workspace per client, $4.99/mo for unlimited workspaces, no per-seat tax. Templates for tax season and new client onboarding.",
+    "One workspace per client, €12/mo for unlimited workspaces, no per-seat tax. Templates for tax season and new client onboarding.",
   openGraph: {
     title: "Five clients, one inbox.",
     description:
-      "One workspace per client. $4.99/mo Pro. No per-seat tax. Three editing guests free.",
+      "One workspace per client. €12/mo, unlimited workspaces. No per-seat tax.",
     type: "article",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Five clients, one inbox.",
-    description: "$4.99/mo Pro, unlimited workspaces, no per-seat tax.",
+    description: "€12/mo, unlimited workspaces, no per-seat tax.",
   },
 };
 

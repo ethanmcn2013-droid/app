@@ -4,6 +4,31 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·54 · cuts · the scroll-fade that hid the manifesto from crawlers
+
+**Loaded with JavaScript disabled — what a crawler or a no-JS visitor
+actually gets — the /principles page hid its own refusal list. The
+numbered items that are the brand spine rendered at opacity:0 and
+never appeared. /about was worse: the struck-jargon line showed the
+banned words with no strike-through, telling a no-JS reader the
+opposite of what it means.**
+
+The cause was a decorative scroll-reveal — `whileInView` paired with
+`initial: opacity 0` — which Framer renders hidden on the server.
+BRAND.md §5 keeps motion to the Tasks homepage demo and holds the
+rest restrained; a manifesto that fades in is both unearned motion
+and a direct breach of the rule that motion never hides content from
+no-JS, crawlers, or scroll position. Removed across
+principles-manifesto, about-manifesto (the strike line was
+semantically load-bearing, so it is now always drawn), and
+templates-gallery (cards static; the hover-lift stays — JS-only,
+hides nothing). Two dead motion imports went with it.
+
+Verified by the method that found it: a JS-disabled headless load
+against production, before and after. /principles went from 7 of 12
+sampled blocks visible to 12 of 12; /about to 12 of 12. Typecheck and
+build clean.
+
 ## 2026-05-15 · T·53 · cuts · the soft PM vocabulary out of the app the 80% live in
 
 **T·51 and T·52 made the front door speak plain English. The room
