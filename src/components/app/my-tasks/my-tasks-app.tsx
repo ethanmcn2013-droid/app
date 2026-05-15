@@ -51,7 +51,7 @@ export function MyTasksApp() {
           <span>Priority</span>
           <span>Due</span>
           <span>Estimate</span>
-          <span className="text-right">Assignees</span>
+          <span className="text-right">Who</span>
         </div>
         {LANE_ORDER.map((laneId) => {
           const lane = LANES[laneId];

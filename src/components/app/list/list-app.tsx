@@ -139,7 +139,7 @@ export function ListApp() {
           <span>Priority</span>
           <span>Due</span>
           <span className="hidden md:inline">Estimate</span>
-          <span className="hidden text-right md:inline">Assignees</span>
+          <span className="hidden text-right md:inline">Who</span>
         </div>
         {LANE_ORDER.map((laneId) => {
           const lane = LANES[laneId];

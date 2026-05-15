@@ -173,8 +173,8 @@ function RepeatForm({
           Repeat this task
         </span>
         <p className="text-[11.5px] leading-[1.45] text-ink-soft">
-          Make N copies, spaced D days apart. Useful for standups, countdowns,
-          monthly recurring work.
+          Make a few copies, spaced a set number of days apart. Useful for
+          countdowns, reminders, anything that repeats.
         </p>
       </div>
       <div className="flex items-end gap-2">

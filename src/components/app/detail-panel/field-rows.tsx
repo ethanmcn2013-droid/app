@@ -28,7 +28,7 @@ export function FieldRows({ task }: { task: Task }) {
       <Label>Priority</Label>
       <PriorityRow task={task} />
 
-      <Label>Assignees</Label>
+      <Label>Who</Label>
       <AssigneesRow task={task} />
 
       <Label>Due</Label>
@@ -198,7 +198,7 @@ function AssigneesRow({ task }: { task: Task }) {
             ref={ref}
             type="button"
             onClick={onClick}
-            aria-label="Add assignee"
+            aria-label="Add someone"
             className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-dashed border-line text-ink-quiet transition-colors hover:border-ink-soft hover:text-ink-soft"
           >
             <svg
