@@ -5,7 +5,7 @@ import Link from "next/link";
  * Sister to `/for/weddings` and `/for/freelancers`.
  *
  * Distinct from the existing `/students` page, which is the action
- * surface (.edu verification + free-Pro-for-semester signup). This
+ * surface (.edu verification + free Workspace-tier-for-two-years signup). This
  * page is the top-of-funnel SEO landing that links to `/students`
  * for the .edu offer at the bottom of the page.
  *

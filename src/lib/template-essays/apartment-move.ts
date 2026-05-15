@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace, not a notes app",
       body:
-        "Moving is the rare project where two people have to execute it and exactly one person remembers the details. A shared list keeps the partner or roommate honest about the mover quotes, the utility dates, the address-change list nobody enjoys. The free tier gives you one workspace and three editing guests — enough for a couple plus a roommate, or a couple plus a parent helping pack the kitchen. If you’re also juggling a wedding, a job search, and a tax return, Pro is $4.99 a month for unlimited workspaces. Most movers only need the free one.",
+        "Moving is the rare project where two people have to execute it and exactly one person remembers the details. A shared list keeps the partner or roommate honest about the mover quotes, the utility dates, the address-change list nobody enjoys. The free tier gives you one workspace and three editing guests — enough for a couple plus a roommate, or a couple plus a parent helping pack the kitchen. If you’re also juggling a wedding, a job search, and a tax return, the Workspace tier is €12 a month for unlimited workspaces. Most movers only need the free one.",
     },
   ],
   closer:

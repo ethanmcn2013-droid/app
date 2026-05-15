@@ -4,6 +4,28 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-15 · T·55 · holds · every motion respects reduce-motion, not just the guarded ones
+
+**A person who asks their operating system to reduce motion should
+get a calm product. The global CSS rule only quietened CSS-driven
+motion; fifteen of the twenty-five app components animate through
+`motion/react` transforms with no reduced-motion guard, so that
+person still got the full set.**
+
+A single root `<MotionConfig reducedMotion="user">` makes every
+`motion/react` component honour the preference automatically —
+transforms and layout animations drop, opacity stays. It changes
+nothing for users with no preference: the cinematic demo and every
+flourish are exactly as they were. It is a context provider, so
+children still server-render and nothing is hidden from no-JS or
+crawlers.
+
+Verified the way it should be: a headless load with the OS
+reduce-motion preference emulated against production. The preference
+registered, and the demo still ran its scripted scene to completion
+and surfaced the wedding planner's own line — reduced motion, full
+content, no regression. Typecheck and build clean.
+
 ## 2026-05-15 · T·54 · cuts · the scroll-fade that hid the manifesto from crawlers
 
 **Loaded with JavaScript disabled — what a crawler or a no-JS visitor

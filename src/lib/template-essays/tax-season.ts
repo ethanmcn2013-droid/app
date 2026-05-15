@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why drop it into Tasks instead of a spreadsheet",
       body:
-        "Most freelancers run this in a Google Sheet that has eight tabs and one truth, and the truth is in someone’s head. A workspace gives you priorities, due dates, and tags that survive the year — “income,” “expenses,” “filing,” “future-me” — instead of a tab graveyard. If you run five clients, you already know one workspace isn’t enough; the Pro tier is $4.99 a month for unlimited workspaces, which is roughly the cost of forgetting one deductible lunch. Your CPA can come in as a guest. Three guests are free.",
+        "Most freelancers run this in a Google Sheet that has eight tabs and one truth, and the truth is in someone’s head. A workspace gives you priorities, due dates, and tags that survive the year — “income,” “expenses,” “filing,” “future-me” — instead of a tab graveyard. If you run five clients, you already know one workspace isn’t enough; the Workspace tier is €12 a month for unlimited workspaces, which is roughly the cost of forgetting one deductible lunch. Your accountant can come in as a guest. Three guests are free.",
     },
   ],
   closer:

@@ -27,7 +27,7 @@ export const essay: TemplateEssay = {
     {
       heading: "One workspace per role you’re chasing",
       body:
-        "If you’re applying to one job, the free tier is enough — one workspace, three editing guests, which is room for a peer reviewer and a mentor to mark up your resume bullets. If you’re running a real search across five or ten roles, each one wants its own workspace: different company research, different outreach list, different team to memorize. Pro is $4.99 a month for unlimited workspaces, which is roughly the cost of one bad coffee and noticeably less than the opportunity cost of conflating two pipelines.",
+        "If you’re applying to one job, the free tier is enough — one workspace, three editing guests, which is room for a peer reviewer and a mentor to mark up your resume bullets. If you’re running a real search across five or ten roles, each one wants its own workspace: different company research, different outreach list, different team to memorize. A .edu address gets the full Workspace tier free for two years — unlimited workspaces, one per pipeline, no card; without it the Workspace tier is €12 a month, noticeably less than the opportunity cost of conflating two searches.",
     },
   ],
   closer:

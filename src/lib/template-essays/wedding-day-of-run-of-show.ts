@@ -19,7 +19,7 @@ export const essay: TemplateEssay = {
     },
     {
       heading: "Who this is for",
-      body: "Couples planning their own day who are tired of the Pinterest screenshot of someone else’s wedding. Day-of coordinators who need to hand a vendor a link, not a PDF. Planners running three weddings in October who want one workspace per couple instead of one Google Doc per couple per vendor. The free tier holds one workspace and three editing guests — usually enough for the couple plus a coordinator. The wedding tier is $79 once, and the workspace stays yours forever, which matters because you’ll want the timeline back when your sister gets engaged.",
+      body: "Couples planning their own day who are tired of the Pinterest screenshot of someone else’s wedding. Day-of coordinators who need to hand a vendor a link, not a PDF. Planners running three weddings in October who want one workspace per couple instead of one Google Doc per couple per vendor. The free tier holds one workspace and three editing guests — usually enough for the couple plus a coordinator. The Event tier is €79 once, and the workspace keeps reading long after the day, which matters because you’ll want the timeline back when your sister gets engaged.",
     },
     {
       heading: "Why a list, not a spreadsheet",

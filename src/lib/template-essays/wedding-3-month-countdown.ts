@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why drop it into Tasks, not a Pinterest PDF",
       body:
-        "Two reasons. One: every couple’s wedding is different, and a static PDF can’t move with you — the moment a vendor gets pushed back, the rest of the list ripples. In a workspace, you reorder, reassign, and the whole timeline updates. Two: the bride, groom, planner, both moms, and the maid of honor can all see the list without anyone paying for a per-seat upgrade. We charge per workspace, never per person. Three editing guests are free. Beyond that the wedding tier covers the whole 12 months for $79, once.",
+        "Two reasons. One: every couple’s wedding is different, and a static PDF can’t move with you — the moment a vendor gets pushed back, the rest of the list ripples. In a workspace, you reorder, reassign, and the whole timeline updates. Two: the bride, groom, planner, both moms, and the maid of honor can all see the list without anyone paying for a per-seat upgrade. We charge per workspace, never per person. Three editing guests are free. Beyond that the Event tier covers the whole 12 months for €79, once.",
     },
   ],
   closer:

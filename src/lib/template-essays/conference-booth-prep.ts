@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why a workspace, not a shared doc",
       body:
-        "A booth is run by a PMM, a designer doing signage, a founder doing the demo, a sales rep working leads, sometimes an events contractor, sometimes a DevRel hire flying in from another city. Five to seven people who all need the same list and need to update their piece in the airport, on the floor, and on the flight back. Tasks is $9.95 per workspace, flat — not per seat — so the contractor for the show and the rep who only joins for the follow-up don’t cost extra, and next quarter’s SaaStr lives in the same workspace as this one. Solo founder or indie booth fits the free tier. Either way the eight tasks land in your active workspace in 30 seconds, with priorities and tags already set.",
+        "A booth is run by a PMM, a designer doing signage, a founder doing the demo, a sales rep working leads, sometimes an events contractor, sometimes a DevRel hire flying in from another city. Five to seven people who all need the same list and need to update their piece in the airport, on the floor, and on the flight back. The Workspace tier is €12 a month, flat — not per seat — so the contractor for the show and the rep who only joins for the follow-up don’t cost extra, and next quarter’s show lives in the same workspace as this one. Solo founder or indie booth fits the free tier. Either way the eight tasks land in your active workspace in 30 seconds, with priorities and tags already set.",
     },
   ],
   closer:

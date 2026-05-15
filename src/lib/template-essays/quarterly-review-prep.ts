@@ -27,7 +27,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why this lives in Tasks and not a Google doc",
       body:
-        "Because a self-review one-pager is a project, not a note. It has a deadline, dependencies, and a couple of asks waiting on other humans. A Google doc can’t tell you the peer-feedback ask has been sitting unanswered for three days. A board can. The free tier gives you one workspace and three editing guests, which is enough to loop in a peer or a mentor without anyone reaching for a credit card. Pro is $4.99 a month if you want to run this template across every quarter, every cycle, without thinking about it again.",
+        "Because a self-review one-pager is a project, not a note. It has a deadline, dependencies, and a couple of asks waiting on other humans. A Google doc can’t tell you the peer-feedback ask has been sitting unanswered for three days. A board can. The free tier gives you one workspace and three editing guests, which is enough to loop in a peer or a mentor without anyone reaching for a credit card. The Workspace tier is €12 a month if you want to run this template across every quarter, every cycle, without thinking about it again.",
     },
   ],
   closer:

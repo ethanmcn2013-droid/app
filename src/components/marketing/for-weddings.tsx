@@ -230,7 +230,7 @@ export function ForWeddings() {
         <ul className="mt-5 space-y-4">
           <Reason
             title="Both moms can edit. So can the maid of honor."
-            body="Three editing guests are free on the workspace, including the wedding tier. Inviting people doesn't cost money. Inviting them also doesn't cost a calendar invite to learn the tool — drop them a magic link, they just open it."
+            body="Inviting people doesn't cost money — three editing guests on the free workspace, unlimited on the €79 Event tier. Inviting them also doesn't cost a calendar invite to learn the tool — drop them a magic link, they just open it."
           />
           <Reason
             title="The vendor list lives next to the timeline."
