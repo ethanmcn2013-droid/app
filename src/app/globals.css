@@ -507,6 +507,32 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────
+   Cinematic demo — phone-first scale-to-fit
+   ────────────────────────────────────────────────────────────
+   The homepage demo is a fixed-geometry ~1180px desktop canvas
+   (4 lanes, live cursors, h-[500px] surface). It must NOT be
+   clipped on phones — the 80% are phone-first and this is the
+   most-seen product surface. Desktop renders untouched (natural
+   fluid width, perspective + shadow intact). Below md the whole
+   proven demo is uniformly scaled down so the entire board is
+   visible — the Linear/Arc desktop-app-on-mobile treatment.
+   Pure CSS: SSR-safe, no-JS-safe, no measurement, no flash, and
+   an ancestor scale() never touches the scripted scene's own
+   coordinate space (zero regression to cursors/scenes).
+   1180 = demo design width · 612 ≈ chrome+subheader+500 surface. */
+@media (max-width: 767px) {
+  .demo-fit {
+    overflow: hidden;
+    height: calc(612px * min(1, (100vw - 2.5rem) / 1180));
+  }
+  .demo-fit > .demo-fit-inner {
+    width: 1180px;
+    transform-origin: top left;
+    transform: scale(min(1, (100vw - 2.5rem) / 1180));
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
    Print views — /print/board · /print/list · /print/timeline
    · /print/calendar
    ──────────────────────────────────────────────────────────

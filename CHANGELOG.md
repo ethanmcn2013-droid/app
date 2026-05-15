@@ -4,7 +4,40 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-05-15 · T·57 · cuts · the banned purple out of the whole product
+## 2026-05-15 · T·58 · ships · the homepage demo stops breaking on the phone the 80% hold
+
+**The most-seen product surface in the suite — the live cinematic
+board on the Tasks homepage — was broken on phones, and had been.
+On desktop it is a beautiful four-lane wedding board, alive with
+cursors. On a 390px phone the wrapper clamped it to a 16:9 box and
+`overflow-hidden` simply *clipped* a fixed ~1180px desktop canvas:
+the visitor saw the browser chrome, "Hartwell Wedding · 6.14.26",
+the view tabs — then the entire board cut off, presence avatars
+bleeding off the right edge, and a tall dead void below. The 80%
+are phone-first. The flagship "Demo is live" moment was a headless
+sliver for most of them.**
+
+It now scales instead of clips. Below `md`, the whole proven canvas
+is uniformly shrunk to fit the viewport — the Linear/Arc
+desktop-app-on-mobile treatment: the entire board, all four lanes,
+the live motion, faithfully smaller. Pure CSS (`min()`/`calc` on
+viewport width in globals.css): SSR-safe, no-JS-safe, no flash, no
+measurement to drift. Desktop is byte-for-byte unchanged — the
+perspective tilt and the deep float shadow are untouched because the
+scale rule is `max-width: 767px` only. An ancestor `scale()` never
+enters the scripted scene's own coordinate space, so cursors and
+the carry/handoff scenes have zero regression surface.
+
+How it was found and the honest correction it forces: the prior
+world-class pass recorded "front door + public surfaces world-class
+& proven." That was true for voice, no-JS and reduced-motion — and
+wrong for mobile *layout* of the demo, because "proven" never
+included an actual phone-width pixel look at the cinematic surface.
+It does now (captured on production via the on-disk-Chromium recipe,
+reduced-motion context). Lesson logged: "voice-verified" and
+"correctness-verified" are not "pixel-verified"; the phone is not an
+afterthought viewport for a phone-first audience. Typecheck + build
+clean; verified on tasks.signalstudio.ie at 390 and 1440.
 
 **BRAND §5 names one colour as forbidden by name — `#7c5cff`, the
 historical purple-leaning Tasks accent — and says, in those words,

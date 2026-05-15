@@ -85,8 +85,11 @@ export function Hero() {
         </div>
 
         {/* Demo — keyed by domain so swap = clean state reset.
-         *  Under md: clamp width to 90vw + lock aspect-video so the
-         *  500px-tall surface inside doesn't overflow on phones. */}
+         *  Desktop renders at natural fluid width (perspective +
+         *  shadow intact). Below md, `.demo-fit` scales the whole
+         *  proven canvas down to fit the phone instead of clipping it
+         *  to a headless sliver — the 80% are phone-first and this is
+         *  the most-seen product surface. Scale rules: globals.css. */}
         <div className="mt-6 md:mt-8">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -95,9 +98,11 @@ export function Hero() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
-              className="mx-auto aspect-video w-[90vw] overflow-hidden md:aspect-auto md:w-auto"
+              className="demo-fit mx-auto"
             >
-              <CinematicDemo domain={pack.id} />
+              <div className="demo-fit-inner">
+                <CinematicDemo domain={pack.id} />
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
