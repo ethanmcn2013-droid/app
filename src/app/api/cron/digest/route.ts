@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { compileDailyDigest } from "@/server/db/daily-digest";
 import { db } from "@/server/db";
 import { users, workspaceMembers } from "@/server/db/schema";
-import { getCurrentUser } from "@/server/auth";
+import { getCurrentUserOrNull } from "@/server/auth";
 import {
   digestEmailHtml,
   emailConfigured,
@@ -94,7 +94,24 @@ export async function GET(req: Request) {
   const overrideWorkspace = rawOverrideWorkspace;
   const send = searchParams.get("send") === "1";
 
-  const userParam = overrideUser ?? (await getCurrentUser());
+  const userParam = overrideUser ?? (await getCurrentUserOrNull());
+
+  // Impersonal scheduled cron: Vercel's cron invocation has no session,
+  // so without a ?user= override there is no resolvable user. That is
+  // the normal scheduled-run shape, not an error — `getCurrentUser()`
+  // used to throw here and 500 the route (it never actually ran in
+  // prod because CRON_SECRET was unset and the guard above 500'd
+  // first). Record the cross-repo heartbeat so Signal HQ sees the job
+  // ran, then exit cleanly. No user ⇒ no user-scoped digest and no
+  // email; a scheduled per-user digest needs an explicit ?user=
+  // override or a deliberate multi-user design.
+  if (!userParam) {
+    await pingStudio({ source: "tasks_digest", ranAt: Date.now(), ok: true });
+    return NextResponse.json({
+      ok: true,
+      skipped: "no-user-in-impersonal-cron",
+    });
+  }
 
   // Resolve workspace: explicit override OR the user's first
   // workspace membership (cron is impersonal — no cookie context).
