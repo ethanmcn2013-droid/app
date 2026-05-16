@@ -4,6 +4,22 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-16 · T·61 · tightens · the tasks dot now pulses like the rest of the suite
+
+**The tasks· wordmark dot — live in the nav, footer, and every route's
+loading state — was still beating the retired 1.6s "heartbeat", not the
+canonical pulse the suite advertises everywhere else.** Suite design-system
+v1 (DESIGN.md §5) defines Tasks as `pulse, 2.6s ease-in-out` — the same
+gesture Studio's brand-mark and the /brand and /pricing reveals have shown
+for the tasks variant since the conformance pass. Tasks' own homepage was
+the one place that never migrated: it ran `tasks-dot-beat 1.6s` with a
+paired-bounce keyframe and "M·02 heartbeat" docstrings. The dot now runs
+`tasks-dot-pulse 2.6s ease-in-out` with the canon keyframe shape. No
+behaviour beyond the wordmark; reduced-motion still holds it still via the
+global block. The earlier suite-wide "old vocab fully retired" claim was a
+name-grep that missed this live class — corrected by reading the rendered
+declaration, not the keyframe-name presence.
+
 ## 2026-05-16 · T·59 · ships · the workspace can be paid by the year
 
 **The pricing page started offering a yearly workspace — a hundred and

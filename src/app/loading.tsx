@@ -1,6 +1,6 @@
 /**
- * Route loading state — the tasks· wordmark holding its heartbeat
- * (M·02, paired beats every 1.6s) on white while a route resolves.
+ * Route loading state — the tasks· wordmark holding its pulse
+ * (M·02, 2.6s ease-in-out) on white while a route resolves.
  *
  * Replaces Next's blank default. No spinner: a spinner is the
  * productivity-suite default this brand refuses (BRAND.md refusal

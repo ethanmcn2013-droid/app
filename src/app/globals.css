@@ -364,12 +364,15 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Wordmark dot · tasks heartbeat
-   Per suite design-system v1 (2026-05-13): tasks is a verb, the
-   gesture is M·02 heartbeat — paired beats every 1.6s. Tap-tap,
-   rest. Work has a pulse; this is the rhythm of getting things
-   done. The emit ring retired — heartbeat doesn't broadcast,
-   it pulses.
+   Wordmark dot · tasks pulse  (suite design-system v1 · M·02)
+   Canon — DESIGN.md §5: Tasks = pulse, 2.6s ease-in-out. The dot
+   breathes at rest, quickens with load. This is the exact gesture
+   the suite advertises at /brand and /pricing and that Studio's
+   brand-mark renders for the tasks variant (brand-tasks-pulse /
+   reveal-tasks-pulse — same keyframe shape, 2.6s ease-in-out).
+   The old 1.6s "heartbeat / paired beats" vocab was retired suite-
+   wide (2026-05-16); this file missed the migration until now.
+   Do not reintroduce.
    ──────────────────────────────────────────────────────────── */
 .tasks-dot {
   display: inline-block;
@@ -380,9 +383,9 @@ body {
   border-radius: 50%;
   margin-left: 0.12em;
   transform: translateY(-0.38em);
-  animation: tasks-dot-beat 1.6s var(--spring-glide) infinite;
+  animation: tasks-dot-pulse 2.6s ease-in-out infinite;
 }
-@keyframes tasks-dot-beat {
+@keyframes tasks-dot-pulse {
   0%, 30%, 100% { transform: translateY(-0.38em) scale(1); }
   10%           { transform: translateY(-0.38em) scale(1.22); }
   20%           { transform: translateY(-0.38em) scale(1); }
