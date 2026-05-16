@@ -2,7 +2,11 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createCheckoutSessionAction } from "@/server/actions/billing";
-import { stripeConfigured, type PaidTier } from "@/server/stripe";
+import {
+  stripeConfigured,
+  type BillingInterval,
+  type PaidTier,
+} from "@/server/stripe";
 
 /**
  * Cross-product checkout entry point (E-7, 2026-05-14).
@@ -12,7 +16,11 @@ import { stripeConfigured, type PaidTier } from "@/server/stripe";
  * without needing its own Stripe wiring. Tasks owns the Stripe
  * integration; this route is the public seam.
  *
- *   GET /api/checkout?tier=workspace[&return=https://signalstudio.ie/post-checkout]
+ *   GET /api/checkout?tier=workspace[&interval=annual][&return=https://signalstudio.ie/post-checkout]
+ *
+ * `interval=annual` selects the yearly price where one exists
+ * (Workspace €120/yr today). It degrades to monthly if the annual
+ * Stripe price isn't provisioned yet — never a dead button.
  *
  * Flow:
  *   1. Validate the tier query param.
@@ -43,6 +51,9 @@ export async function GET(req: Request) {
     );
   }
   const tier = tierParam as PaidTier;
+  const interval: BillingInterval =
+    url.searchParams.get("interval") === "annual" ? "annual" : "monthly";
+  const intervalQS = interval === "annual" ? "&interval=annual" : "";
 
   // SAFETY: in production, if Stripe isn't configured,
   // createCheckoutSessionAction silently grants the tier locally via
@@ -60,12 +71,17 @@ export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     // Bounce through sign-in. Clerk will return them right back here.
-    const back = encodeURIComponent(`/api/checkout?tier=${tier}`);
+    const back = encodeURIComponent(
+      `/api/checkout?tier=${tier}${intervalQS}`,
+    );
     return NextResponse.redirect(new URL(`/sign-in?redirect_url=${back}`, req.url));
   }
 
   try {
-    const { url: stripeUrl } = await createCheckoutSessionAction(tier);
+    const { url: stripeUrl } = await createCheckoutSessionAction(
+      tier,
+      interval,
+    );
     return NextResponse.redirect(stripeUrl);
   } catch (err) {
     // The most likely cause is "no active workspace" — first-run
@@ -74,7 +90,10 @@ export async function GET(req: Request) {
     const msg = err instanceof Error ? err.message : "unknown";
     console.warn("[api/checkout] handing off to /welcome:", msg);
     return NextResponse.redirect(
-      new URL(`/welcome?next=${encodeURIComponent(`/api/checkout?tier=${tier}`)}`, req.url),
+      new URL(
+        `/welcome?next=${encodeURIComponent(`/api/checkout?tier=${tier}${intervalQS}`)}`,
+        req.url,
+      ),
     );
   }
 }

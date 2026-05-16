@@ -4,6 +4,24 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-16 · T·59 · ships · the workspace can be paid by the year
+
+**The pricing page started offering a yearly workspace — a hundred and
+twenty euro, paid once — but the checkout it points at only knew how to
+sell by the month. It now understands the year. Ask for the annual
+plan and you get the annual plan; ask before the yearly price exists
+and you quietly get the monthly one instead, never a dead button. The
+register stays plain: one price, stated once, no countdown and no
+"save" theatre.**
+
+The shared checkout seam other Signal Studio surfaces deep-link into
+now carries the billing interval through sign-in and first-run without
+losing it, so a couple who has to make an account mid-purchase still
+lands on the plan they chose. One human step remains before the yearly
+plan can actually be bought: the yearly price has to be created in the
+payment account and named to the app. Until then the honest fallback
+holds.
+
 ## 2026-05-15 · T·58 · ships · the homepage demo stops breaking on the phone the 80% hold
 
 **The most-seen product surface in the suite — the live cinematic
