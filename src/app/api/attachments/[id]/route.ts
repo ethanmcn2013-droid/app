@@ -53,7 +53,12 @@ export async function GET(
     headers: {
       "Content-Type": att.mimeType || "application/octet-stream",
       "Content-Length": String(size),
+      // Force the browser to download rather than render. Prevents
+      // stored-XSS via an uploaded .html/.svg served with its MIME
+      // type — even if Content-Type is text/html, attachment
+      // disposition + nosniff together block script execution.
       "Content-Disposition": dispositionHeader(att.filename),
+      "X-Content-Type-Options": "nosniff",
       // User content — never CDN-cache it. The `id` is opaque enough
       // that browser memory cache is fine; intermediaries shouldn't
       // hold copies because authorization is per-request.
@@ -70,14 +75,14 @@ function notFound(): Response {
 }
 
 /**
- * Build a `Content-Disposition` value that respects RFC 6266: send a
- * sanitized ASCII fallback alongside a UTF-8 `filename*` parameter so
- * non-Latin filenames survive the round-trip. We use `inline` so
- * images / PDFs preview in the browser; the UI side renders an
- * explicit anchor with `download` attr when the user picks Download.
+ * Build a `Content-Disposition: attachment` value per RFC 6266.
+ * We send `attachment` (not `inline`) so browsers always download
+ * rather than render, neutralising stored-XSS through uploaded
+ * HTML/SVG regardless of what MIME type we send alongside it.
+ * Non-Latin filenames survive via the RFC 5987 `filename*` parameter.
  */
 function dispositionHeader(filename: string): string {
   const ascii = filename.replace(/[^\x20-\x7E]/g, "_");
   const encoded = encodeURIComponent(filename);
-  return `inline; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }

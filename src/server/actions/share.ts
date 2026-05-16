@@ -6,6 +6,7 @@ import { shareLinks, users, workspaces } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { sendEmail, shareLinkEmailHtml } from "@/server/email";
+import { emailSendLimiter } from "@/server/rate-limit";
 import {
   getShareLinkVisitAnalytics,
   recordShareLinkVisit,
@@ -189,18 +190,29 @@ export async function emailShareLinkAction(input: {
     return { ok: false, error: "invalid-email" };
   }
 
-  const [link] = await db
-    .select()
-    .from(shareLinks)
-    .where(eq(shareLinks.token, input.token));
-  if (!link || link.revokedAt) {
-    return { ok: false, error: "link-not-found" };
-  }
-
+  // Resolve the caller's identity first so the token lookup can be
+  // scoped to their workspace. Without the workspaceId guard, any
+  // authenticated user who knows a foreign token can trigger an email
+  // send in the name of another tenant's workspace (IDOR).
   const [me, ws] = await Promise.all([
     getCurrentUser(),
     getActiveWorkspace(),
   ]);
+  // Rate limit: 5 share-link emails per user per minute.
+  const rateCheck = emailSendLimiter.check(me);
+  if (!rateCheck.allowed) {
+    return { ok: false, error: "rate-limited" };
+  }
+
+  const [link] = await db
+    .select()
+    .from(shareLinks)
+    .where(
+      and(eq(shareLinks.token, input.token), eq(shareLinks.workspaceId, ws)),
+    );
+  if (!link || link.revokedAt) {
+    return { ok: false, error: "link-not-found" };
+  }
 
   const [meRow] = await db
     .select({ name: users.name })

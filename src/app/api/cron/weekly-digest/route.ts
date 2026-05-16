@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   buildWeeklySnapshotFor,
@@ -46,10 +47,23 @@ export async function GET(req: Request) {
       );
     }
   } else {
-    const provided = req.headers
-      .get("authorization")
-      ?.replace(/^Bearer\s+/i, "");
-    if (provided !== expectedCronSecret) {
+    // Timing-safe comparison — prevents timing oracle on the secret.
+    // Mirrors the same pattern used in /api/cron/digest.
+    const provided =
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+    const enc = new TextEncoder();
+    const a = enc.encode(provided.padEnd(expectedCronSecret.length, "\0"));
+    const b = enc.encode(
+      expectedCronSecret.padEnd(provided.length, "\0"),
+    );
+    const maxLen = Math.max(a.length, b.length);
+    const pa = new Uint8Array(maxLen);
+    const pb = new Uint8Array(maxLen);
+    pa.set(a);
+    pb.set(b);
+    const match =
+      timingSafeEqual(pa, pb) && provided.length === expectedCronSecret.length;
+    if (!match) {
       return NextResponse.json(
         { ok: false, error: "unauthorized" },
         { status: 401 },

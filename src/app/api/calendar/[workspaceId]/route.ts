@@ -79,10 +79,11 @@ export async function GET(
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": "inline; filename=workspace.ics",
-      // Calendar clients refresh on their own cadence; a generous
-      // cache window cuts redundant load without making changes
-      // feel any slower than the spec's own poll interval.
-      "Cache-Control": "public, max-age=900, s-maxage=1800",
+      // This feed is auth-gated (Clerk session + membership check).
+      // Must be private so CDN/edge caches never serve one user's
+      // workspace data to another. Calendar clients refresh on their
+      // own schedule; browser-level cache (private) is fine.
+      "Cache-Control": "private, no-store",
     },
   });
 }

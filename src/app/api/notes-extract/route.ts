@@ -1,5 +1,7 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
+import { notesExtractLimiter } from "@/server/rate-limit";
 
 import { db } from "@/server/db";
 import { tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
@@ -54,8 +56,32 @@ export async function POST(req: Request) {
 
   const authHeader = req.headers.get("authorization") ?? "";
   const match = /^Bearer\s+(.+)$/i.exec(authHeader);
-  if (!match || match[1] !== expected) {
+  // Constant-time comparison — prevents timing oracle on the secret.
+  // Both buffers padded to the same length before the comparison so
+  // timingSafeEqual's identical-length requirement is always met.
+  const provided = match ? match[1] : "";
+  const enc = new TextEncoder();
+  const aBuf = enc.encode(provided);
+  const bBuf = enc.encode(expected);
+  const maxLen = Math.max(aBuf.length, bBuf.length);
+  const a = new Uint8Array(maxLen);
+  const b = new Uint8Array(maxLen);
+  a.set(aBuf);
+  b.set(bBuf);
+  const secretsMatch =
+    aBuf.length === bBuf.length &&
+    timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  if (!secretsMatch) {
     return bad("Unauthorized", 401);
+  }
+
+  // Rate limit: 30 requests per bearer key per minute. Key on the
+  // first 16 chars of the provided token — enough to discriminate
+  // callers without holding the full secret in Map keys.
+  const rlKey = provided.slice(0, 16) || "anon";
+  const rlResult = notesExtractLimiter.check(rlKey);
+  if (!rlResult.allowed) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
   let payload: Partial<ExtractPayload>;

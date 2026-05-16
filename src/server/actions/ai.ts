@@ -86,18 +86,12 @@ export async function draftReplyAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, me, ws] = await Promise.all([
-    getTaskById(taskId),
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const [task, items] = await Promise.all([
+    getTaskById(taskId, ws),
     getTaskConversation(taskId),
-    getCurrentUser(),
-    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard — without this, an authenticated caller could
-  // narrate any task in any workspace by passing its id.
-  if (task.workspaceId !== ws) {
-    return staticStream("Task not found.");
-  }
 
   const myName = USERS[me]?.name ?? me;
   const thread = renderConversation(items);
@@ -155,16 +149,12 @@ export async function summarizeConversationAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, ws] = await Promise.all([
-    getTaskById(taskId),
+  const ws = await getActiveWorkspace();
+  const [task, items] = await Promise.all([
+    getTaskById(taskId, ws),
     getTaskConversation(taskId),
-    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard mirrors draftReplyAction — same vector, same fix.
-  if (task.workspaceId !== ws) {
-    return staticStream("Task not found.");
-  }
 
   // The "≥ 6 messages" gate also lives client-side, but we re-check
   // here so a hand-crafted call doesn't generate drivel for a 2-line

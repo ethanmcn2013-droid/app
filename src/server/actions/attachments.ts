@@ -235,6 +235,6 @@ export async function listAttachmentsForTaskAction(
     .from(tasks)
     .where(eq(tasks.id, taskId));
   if (!parent || parent.workspaceId !== ws) return [];
-  return getAttachmentsForTask(taskId);
+  return getAttachmentsForTask(taskId, ws);
 }
 

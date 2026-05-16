@@ -76,11 +76,14 @@ export async function getCommentsForTaskAction(
   return getCommentsForTask(taskId);
 }
 
+/** Server-side comment body cap. Matches the description cap in tasks. */
+const COMMENT_BODY_MAX = 10_000;
+
 export async function addCommentAction(
   taskId: string,
   body: string,
 ): Promise<Comment[]> {
-  const trimmed = body.trim();
+  const trimmed = body.trim().slice(0, COMMENT_BODY_MAX);
   if (!trimmed) return [];
 
   const me = await getCurrentUser();

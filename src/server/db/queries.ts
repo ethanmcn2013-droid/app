@@ -87,12 +87,25 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
  * the order the user added items. Lives outside `getTasks` so the
  * top-level views never accidentally surface subtasks alongside their
  * parents.
+ *
+ * `workspaceId` is a defense-in-depth predicate: even though the
+ * action layer already verifies the parent belongs to the caller's
+ * workspace before calling here, binding it in the query ensures a
+ * future call-site mistake can't return cross-tenant rows.
  */
-export async function getSubtasks(parentTaskId: string): Promise<Task[]> {
+export async function getSubtasks(
+  parentTaskId: string,
+  workspaceId: string,
+): Promise<Task[]> {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(eq(tasks.parentTaskId, parentTaskId))
+    .where(
+      and(
+        eq(tasks.parentTaskId, parentTaskId),
+        eq(tasks.workspaceId, workspaceId),
+      ),
+    )
     .orderBy(asc(tasks.createdAt));
   return rows.map(rowToTask);
 }
@@ -153,11 +166,20 @@ export async function getWorkspacePublishState(
   return { slug: row.slug, publishedAt: row.publishedAt };
 }
 
-export async function getTaskById(id: string): Promise<Task | null> {
+/**
+ * Fetch a single task by id, scoped to a workspace.
+ * The `workspaceId` predicate is a defense-in-depth guard: callers
+ * already validate workspace membership, but binding it here means a
+ * foreign id is a DB-level miss rather than a post-fetch check miss.
+ */
+export async function getTaskById(
+  id: string,
+  workspaceId: string,
+): Promise<Task | null> {
   const [row] = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(eq(tasks.id, id));
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, workspaceId)));
   return row ? rowToTask(row) : null;
 }
 
@@ -262,16 +284,23 @@ function rowToAttachment(row: AttachmentRow): Attachment {
 }
 
 /** Attachments bound to a task — oldest first so the panel reads top-
- *  down in upload order. Workspace-scoped reads happen at the action
- *  layer (the action resolves the active workspace and ensures the
- *  parent task belongs to it). */
+ *  down in upload order. The `workspaceId` predicate is a defense-in-
+ *  depth guard: the action layer already confirms the parent task
+ *  belongs to the caller's workspace before calling here, but binding
+ *  it in the query means a stale or mismatched id is a DB miss. */
 export async function getAttachmentsForTask(
   taskId: string,
+  workspaceId: string,
 ): Promise<Attachment[]> {
   const rows = await db
     .select()
     .from(attachments)
-    .where(eq(attachments.taskId, taskId))
+    .where(
+      and(
+        eq(attachments.taskId, taskId),
+        eq(attachments.workspaceId, workspaceId),
+      ),
+    )
     .orderBy(asc(attachments.createdAt));
   return rows.map(rowToAttachment);
 }

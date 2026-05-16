@@ -20,6 +20,7 @@ import {
 } from "@/server/auth";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
+import { emailSendLimiter } from "@/server/rate-limit";
 import { seedDomainAction } from "@/server/actions/seed";
 import { emitTasksChanged } from "@/server/events";
 import type { DomainId } from "@/lib/domains";
@@ -246,6 +247,12 @@ export async function inviteMemberByEmailAction(
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
     throw new Error("That doesn't look like an email.");
   }
+  // Rate limit: 5 invite emails per user per minute.
+  const me = await getCurrentUser();
+  const rateCheck = emailSendLimiter.check(me);
+  if (!rateCheck.allowed) {
+    throw new Error("Too many invites — wait a minute before sending more.");
+  }
   const role = await getMyRoleInActiveWorkspace();
   if (role !== "owner") {
     throw new Error("Only the owner can invite new members.");
@@ -257,7 +264,6 @@ export async function inviteMemberByEmailAction(
     );
   }
 
-  const me = await getCurrentUser();
   const [inviter] = await db
     .select({ name: users.name, email: users.email })
     .from(users)

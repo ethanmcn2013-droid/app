@@ -46,7 +46,7 @@ export async function getSubtasksAction(
     .from(tasks)
     .where(and(eq(tasks.id, parentTaskId), eq(tasks.workspaceId, ws)));
   if (!parent) return [];
-  return getSubtasks(parentTaskId);
+  return getSubtasks(parentTaskId, ws);
 }
 
 function nowSeconds(): number {
@@ -256,19 +256,48 @@ function sanitizeCents(value: number | null): number | null {
   return Math.min(int, 99_999_999);
 }
 
+/** Fields that `updateTaskAction` may write. Explicit allowlist so
+ *  identity / tenant fields (id, workspaceId, parentTaskId, createdAt,
+ *  sourceNoteId) can never be overwritten through a crafted call even
+ *  if the caller supplies them in the patch. */
+const UPDATE_ALLOWED_FIELDS = new Set<string>([
+  "title",
+  "description",
+  "lane",
+  "priority",
+  "assignees",
+  "estimate",
+  "due",
+  "dueAt",
+  "tags",
+  "recurrence",
+  "externalContactName",
+  "externalContactEmail",
+  "cents",
+  "idleDays",
+  "position",
+]);
+
 export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   const ws = await getActiveWorkspace();
-  // Drizzle accepts only known columns — strip undefined to avoid
-  // overwriting with NULL when the caller sends a sparse patch.
+  // Allowlist: only copy permitted fields; skip undefined values so we
+  // don't overwrite stored data with NULL when the patch is sparse.
   const cleaned: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined) cleaned[k] = v;
+    if (UPDATE_ALLOWED_FIELDS.has(k) && v !== undefined) cleaned[k] = v;
   }
   if ("cents" in cleaned) {
     cleaned.cents = sanitizeCents(cleaned.cents as number | null);
+  }
+  // Server-side length caps — truncate silently to avoid UX regression.
+  if (typeof cleaned.title === "string") {
+    cleaned.title = cleaned.title.slice(0, TITLE_MAX);
+  }
+  if (typeof cleaned.description === "string") {
+    cleaned.description = cleaned.description.slice(0, DESCRIPTION_MAX);
   }
   // Workspace guard: a write only lands when the row belongs to the
   // caller's active workspace. Without this clause an authenticated
@@ -293,6 +322,10 @@ export async function updateTaskAction(
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
 }
+
+/** Server-side length caps. Applied before any DB write. */
+const TITLE_MAX = 500;
+const DESCRIPTION_MAX = 10_000;
 
 export async function addTaskAction(input: {
   id?: string;
@@ -329,11 +362,14 @@ export async function addTaskAction(input: {
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
   const lane = input.lane ?? "todo";
   const position = await nextPositionForLane(lane, ws);
+  // Truncate at server-side caps — belt-and-braces behind the client cap.
+  const title = input.title.slice(0, TITLE_MAX);
+  const description = input.description?.slice(0, DESCRIPTION_MAX);
   await db.insert(tasks).values({
     id,
     workspaceId: ws,
-    title: input.title,
-    description: input.description,
+    title,
+    description,
     lane,
     priority: input.priority ?? "p2",
     assignees: input.assignees ?? [],
