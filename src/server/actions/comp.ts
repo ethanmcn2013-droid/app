@@ -236,10 +236,18 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     const sponsor = await lookupSponsorByCode(code);
     if (sponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
       await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
+      // Keystone dual-write: persist sponsor identity onto the
+      // workspace row in the same statement that flags the template,
+      // so venue-facing surfaces (eyebrow, couple briefing, seed) read
+      // it once off `workspaces` instead of re-parsing comp_codes JSON.
+      // Single redemption path only — the L178 re-hit branch leaves the
+      // row untouched because first redemption already wrote it.
       await db.run(sql`
         UPDATE workspaces
         SET template_id = ${VENUE_TEMPLATE_ID},
-            active_domain = 'wedding'
+            active_domain = 'wedding',
+            venue_sponsor_slug = ${sponsor.sponsorSlug},
+            venue_sponsor_name = ${sponsor.sponsorName}
         WHERE id = ${ws}
       `);
       sponsorSlug = sponsor.sponsorSlug;

@@ -138,6 +138,17 @@ export const workspaces = sqliteTable("workspaces", {
    *  seed their per-layer slices on first visit. Strategy:
    *  studio/docs/TEMPLATES_STRATEGY.md. */
   templateId: text("template_id"),
+  /** Venue Edition sponsor identity, persisted on the workspace surface
+   *  at redemption (the keystone — competitor-review action plan, "The
+   *  single unlock for everything else"). Before this, sponsor identity
+   *  lived only in the entitlements row + comp_codes.notes JSON, so every
+   *  venue-facing surface (HBAP-1 eyebrow, HBAP-2 couple briefing, the
+   *  per-venue seed) paid a multi-table lookup. Slug is the stable id;
+   *  name is the display string the quiet eyebrow renders. Null = not
+   *  venue-sponsored. Resolved from comp_codes.notes via
+   *  lookupSponsorByCode in the comp.ts redemption short-circuit. */
+  venueSponsorSlug: text("venue_sponsor_slug"),
+  venueSponsorName: text("venue_sponsor_name"),
   /** Phase 3 publishable workspaces. Null = private. Non-null = public
    *  read-only render available at `/p/{slug}` since the timestamp.
    *  The owner toggles via `publishWorkspaceAction`. */
