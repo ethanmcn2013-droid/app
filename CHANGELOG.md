@@ -4,7 +4,29 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-05-16 · T·62 · ships · the daily digest now reports back to HQ
+## 2026-05-16 · T·65 · tightens · the digest cron survives an impersonal scheduled run
+
+**The daily digest cron had never actually run in production — the
+moment its auth was finally provisioned, it 500'd on every invocation.**
+T·62 wired the digest to report to Signal HQ, but the scheduled job
+resolved its user through `getCurrentUser()`, which throws in
+production when there is no Clerk session. Vercel's cron has no
+session, so the route threw before it could do anything. It had been
+masked because `CRON_SECRET` was never set in production either — the
+auth guard 500'd first, so the throw was never reached. Provisioning
+the cron secrets surfaced the latent bug.
+
+The route now resolves the user through the nullable path and, when
+there is no user — the normal shape of an impersonal scheduled run —
+records the Signal HQ heartbeat and returns cleanly instead of
+throwing. No user means no user-scoped digest and no email; a
+scheduled per-user digest still needs an explicit `?user=` override or
+a deliberate multi-user design, which is a separate decision, not this
+fix. Verified live on `tasks.signalstudio.ie`: the impersonal call now
+returns `200` with an honest `skipped` marker and fires the heartbeat,
+so HQ stops reporting the job as never having run.
+
+
 
 **The 09:00 UTC digest ran every day with nobody watching — Signal HQ
 had no way to know it was alive.** It now pings the umbrella when it
