@@ -44,7 +44,30 @@ export const PRICE_IDS = {
 
 export type PaidTier = keyof typeof PRICE_IDS;
 
-export function priceIdFor(tier: PaidTier): string | null {
+export type BillingInterval = "monthly" | "annual";
+
+/**
+ * Annual prices are sparse — only Workspace has one today (€120/yr,
+ * ratified 2026-05-16, Studio decision venue-editions-paid-tier). Set
+ * STRIPE_PRICE_WORKSPACE_ANNUAL once the Stripe Price object exists.
+ * Until then `priceIdFor(tier, "annual")` degrades to the monthly
+ * price so the page's annual link never 500s — the buyer simply gets
+ * the monthly plan rather than a broken checkout.
+ */
+const ANNUAL_PRICE_IDS: Partial<Record<PaidTier, string>> = {
+  workspace: process.env.STRIPE_PRICE_WORKSPACE_ANNUAL ?? "",
+};
+
+export function priceIdFor(
+  tier: PaidTier,
+  interval: BillingInterval = "monthly",
+): string | null {
+  if (interval === "annual") {
+    const annual = ANNUAL_PRICE_IDS[tier];
+    if (annual) return annual;
+    // Annual not provisioned yet → fall through to monthly. Honest
+    // degrade beats a dead button.
+  }
   const id = PRICE_IDS[tier];
   return id || null;
 }

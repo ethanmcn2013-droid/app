@@ -4,7 +4,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
-import { priceIdFor, stripe, type PaidTier } from "@/server/stripe";
+import {
+  priceIdFor,
+  stripe,
+  type BillingInterval,
+  type PaidTier,
+} from "@/server/stripe";
 import type { EntitlementTier } from "@/lib/data";
 import {
   expireSharedEntitlement,
@@ -56,6 +61,7 @@ function siteUrl(): string {
  */
 export async function createCheckoutSessionAction(
   tier: PaidTier,
+  interval: BillingInterval = "monthly",
 ): Promise<{ url: string }> {
   const me = await getCurrentUser();
   const ws = await getActiveWorkspace();
@@ -72,13 +78,14 @@ export async function createCheckoutSessionAction(
       workspaceId: scopedWorkspaceId,
       tier,
       source: "purchase",
-      durationDays: tier === "wedding" ? null : 30,
-      notes: "dev:no-stripe",
+      durationDays:
+        tier === "wedding" ? null : interval === "annual" ? 365 : 30,
+      notes: `dev:no-stripe${interval === "annual" ? ":annual" : ""}`,
     });
     return { url: `${siteUrl()}/app/board?upgrade=ok&dev=1` };
   }
 
-  const priceId = priceIdFor(tier);
+  const priceId = priceIdFor(tier, interval);
   if (!priceId) {
     throw new Error(`No Stripe price id for tier "${tier}"`);
   }
