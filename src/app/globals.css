@@ -145,6 +145,7 @@
   --spring-soft:  cubic-bezier(.32, .72, 0, 1);    /* settle — cards, panels */
   --spring-glide: cubic-bezier(.16, 1, .3, 1);     /* ride — sweeps, fades */
   --ease-out:     cubic-bezier(.22, .61, .36, 1);  /* default ease-out */
+  --ease-pulse:   cubic-bezier(.45, .05, .55, .95); /* wordmark dot · breathes */
 
   /* v0.2 aliases (existing callsites) */
   --ease-out-expo: var(--spring-glide);
@@ -364,12 +365,10 @@ body {
 }
 
 /* ────────────────────────────────────────────────────────────
-   Wordmark dot · tasks heartbeat
-   Per suite design-system v1 (2026-05-13): tasks is a verb, the
-   gesture is M·02 heartbeat — paired beats every 1.6s. Tap-tap,
-   rest. Work has a pulse; this is the rhythm of getting things
-   done. The emit ring retired — heartbeat doesn't broadcast,
-   it pulses.
+   Wordmark dot · pulse
+   Per suite design-system v1 (operator-ratified 2026-05-16):
+   tasks gesture is pulse · 2.6s · ease-in-out. The dot breathes
+   — a steady inhale/exhale at rest. Slow, confident, alive.
    ──────────────────────────────────────────────────────────── */
 .tasks-dot {
   display: inline-block;
@@ -380,14 +379,11 @@ body {
   border-radius: 50%;
   margin-left: 0.12em;
   transform: translateY(-0.38em);
-  animation: tasks-dot-beat 1.6s var(--spring-glide) infinite;
+  animation: tasks-dot-pulse 2.6s var(--ease-pulse) infinite;
 }
-@keyframes tasks-dot-beat {
-  0%, 30%, 100% { transform: translateY(-0.38em) scale(1); }
-  10%           { transform: translateY(-0.38em) scale(1.22); }
-  20%           { transform: translateY(-0.38em) scale(1); }
-  40%           { transform: translateY(-0.38em) scale(1.12); }
-  50%           { transform: translateY(-0.38em) scale(1); }
+@keyframes tasks-dot-pulse {
+  0%, 100% { transform: translateY(-0.38em) scale(1); }
+  50%      { transform: translateY(-0.38em) scale(1.18); }
 }
 
 /* ────────────────────────────────────────────────────────────
