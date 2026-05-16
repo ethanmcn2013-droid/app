@@ -42,12 +42,20 @@ export default async function AppLayout({
     getActiveDomain(ws),
     getCurrentUser(),
     db
-      .select({ slug: workspaces.slug })
+      .select({
+        slug: workspaces.slug,
+        venueSponsorName: workspaces.venueSponsorName,
+      })
       .from(workspaces)
       .where(eq(workspaces.id, ws))
       .then((rows) => rows[0]),
   ]);
   const slug = wsRow?.slug ?? ws;
+  // HBAP-1: a quiet venue-name eyebrow. Read once off the workspace
+  // row (the keystone — no comp_codes JSON re-parse). Attribution, not
+  // a skin: one line, no logo, no colour. Null = not venue-sponsored,
+  // renders nothing — zero footprint for every non-venue workspace.
+  const venueSponsorName = wsRow?.venueSponsorName ?? null;
   return (
     <CurrentUserProvider user={currentUser}>
       <DomainProvider domain={domain} workspaceId={ws} workspaceSlug={slug}>
@@ -58,7 +66,14 @@ export default async function AppLayout({
                 <PaletteRoot>
                   <div className="flex h-screen w-full overflow-hidden bg-bg">
                     <AppSidebar />
-                    <div className="flex min-w-0 flex-1 flex-col pt-9 pb-[60px] md:pt-0 md:pb-0">{children}</div>
+                    <div className="flex min-w-0 flex-1 flex-col pt-9 pb-[60px] md:pt-0 md:pb-0">
+                      {venueSponsorName ? (
+                        <div className="shrink-0 border-b border-line-soft px-4 py-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+                          Planning with {venueSponsorName}
+                        </div>
+                      ) : null}
+                      {children}
+                    </div>
                   </div>
                   <TaskDetailPanel />
                   <CrossWorkspaceOverdue />
