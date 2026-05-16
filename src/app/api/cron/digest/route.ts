@@ -15,6 +15,7 @@ import {
   reconcileEntitlements,
   type ReconcileResult,
 } from "@/server/db/reconcile-entitlements";
+import { pingStudio } from "@/lib/ops/ping-studio";
 
 /**
  * Daily digest cron endpoint.
@@ -144,6 +145,23 @@ export async function GET(req: Request) {
     reconcile = { error: err instanceof Error ? err.message : "unknown" };
     console.warn("[cron/digest] reconcile sweep failed:", err);
   }
+
+  // Cross-repo heartbeat: tell Studio HQ this digest ran, so the
+  // 09:00 UTC job is no longer a structural blind spot. Mirrors the
+  // analytics cron→Studio ping. Fail-silent: a missing env or a slow
+  // network must never break the digest. ok reflects the dispatch
+  // outcome — the job ran and email (if requested) was accepted.
+  const pingOk = emailResult ? emailResult.ok : true;
+  await pingStudio({
+    source: "tasks_digest",
+    ranAt: Date.now(),
+    ok: pingOk,
+    considered: 1,
+    sent: send && emailResult?.ok ? 1 : 0,
+    skipped: send ? 0 : 1,
+    failed: emailResult && !emailResult.ok ? 1 : 0,
+    notes: send ? "digest dispatched" : "digest compiled (no send)",
+  });
 
   return NextResponse.json({
     ok: true,

@@ -4,6 +4,19 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-16 · T·62 · ships · the daily digest now reports back to HQ
+
+**The 09:00 UTC digest ran every day with nobody watching — Signal HQ
+had no way to know it was alive.** It now pings the umbrella when it
+finishes, the same way the analytics briefing already does: a hardened,
+allowlisted, two-second, fail-silent caller that can never break the
+digest it rides on. HQ stops carrying a hardcoded "unmonitored" warning
+and starts deriving the digest's health from real run data. Nothing
+about the digest itself changed — this is the job learning to raise its
+hand. Until the umbrella ping address is configured on this project the
+caller stays a silent no-op and HQ reads it honestly as "never run",
+self-healing the first morning after.
+
 ## 2026-05-16 · T·61 · tightens · the tasks dot now pulses like the rest of the suite
 
 **The tasks· wordmark dot — live in the nav, footer, and every route's
