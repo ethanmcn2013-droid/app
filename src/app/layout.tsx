@@ -21,6 +21,11 @@ export const viewport: Viewport = {
   // Notch / home-indicator hardware: opt into the full screen so
   // env(safe-area-inset-*) becomes meaningful on iOS.
   viewportFit: "cover",
+  // White browser chrome during inter-domain navigation (R18). Without
+  // this, Safari/Chrome paint the manifest theme_color (#4f46e5 indigo)
+  // in the status bar / address bar between white-surface products,
+  // which reads as a dark flash on light-to-light transitions.
+  themeColor: "#ffffff",
 };
 
 export const metadata: Metadata = {
