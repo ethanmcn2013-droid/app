@@ -374,7 +374,7 @@ function SubscribeButton({ workspaceId }: { workspaceId: string }) {
           <path d="M4 4a16 16 0 0 1 16 16" />
           <circle cx="5" cy="19" r="1" />
         </svg>
-        Subscribe
+        Sync to calendar
       </button>
       {open ? (
         <div
