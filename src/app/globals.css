@@ -392,6 +392,11 @@ body {
   position: relative;
   width: 0.32em;
   height: 0.32em;
+  /* px ceiling: prevents the dot ballooning to 250px+ before CSS
+     hydrates when the em context is unset (R3 footgun). Normal render
+     the em values win; the clamp only fires pre-hydration. */
+  max-width: 8px;
+  max-height: 8px;
   background-color: var(--brand);
   border-radius: 50%;
   margin-left: 0.12em;
