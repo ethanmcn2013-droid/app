@@ -36,7 +36,7 @@ export function MyTasksApp() {
     return (
       <EmptyStateOverlay
         ghost={<ListGhost />}
-        headline={`Nothing on ${me.name}'s plate yet.`}
+        headline="Nothing on your plate yet."
         body="Assign yourself a task — or add a new one and it'll land here automatically."
       />
     );

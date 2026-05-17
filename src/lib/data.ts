@@ -61,14 +61,20 @@ const SEEDED: Record<string, UserMeta> = {
 /** Synthesize a `UserMeta` for ids the seeded map doesn't know — i.e.
  *  every real Clerk-issued user id post-Phase-A. Avatar shows two-
  *  letter initials from the id tail; color stays neutral until the
- *  webhook hydrates a real avatar. */
+ *  webhook hydrates a real avatar.
+ *
+ *  IMPORTANT: `name` must NEVER be the raw id string. A raw Clerk id
+ *  (e.g. `user_3Dpnq…`) surfacing in UI copy is a brand violation
+ *  (BRAND.md §2 "Plain English. No jargon."). Use "Someone" as a safe
+ *  humane fallback that reads correctly in every copy context:
+ *  "Nothing on Someone's plate yet." / "Assigned to Someone." */
 function fallbackUserMeta(id: string): UserMeta {
   // Strip the `user_` prefix Clerk uses; show the last 2 chars as
   // initials so two unknown users at least look distinct.
   const tail = id.replace(/^user_/, "").toUpperCase();
   return {
     id,
-    name: id,
+    name: "Someone",
     color: "#94a3b8", // ink-quiet neutral
     initials: tail.slice(-2) || "??",
   };
