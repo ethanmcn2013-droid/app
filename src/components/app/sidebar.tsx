@@ -24,12 +24,18 @@ const VIEWS = [
   { href: "/app/calendar", label: "Calendar", icon: "calendar" },
 ];
 
+// Wedding-planner domain seed teams. Labels reflect venue coordination
+// roles, not a generic SaaS org. R12: replaced Marketing/Engineering/
+// Design/CS/Ops which contradicted the active starter pack positioning.
+// R15: Design team used #7c3aed — visually adjacent to the retired/banned
+// #7c5cff purple accent (BRAND.md §2 Retired). Replaced with rose (#e11d48)
+// which sits in the wedding palette and clears the indigo/violet family.
 const TEAMS = [
-  { name: "Marketing", color: "#e4356d" },
-  { name: "Engineering", color: "#00a3b8" },
-  { name: "Design", color: "#7c3aed" },
-  { name: "Customer Success", color: "#10b981" },
-  { name: "Operations", color: "#f59e0b" },
+  { name: "Venue", color: "#e4356d" },
+  { name: "Catering", color: "#00a3b8" },
+  { name: "Flowers & Decor", color: "#e11d48" },
+  { name: "Photography", color: "#10b981" },
+  { name: "Logistics", color: "#f59e0b" },
 ];
 
 const NAV_BOTTOM = [
