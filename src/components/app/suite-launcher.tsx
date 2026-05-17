@@ -25,6 +25,57 @@ const PRODUCTS: {
 
 const INDIGO = "#4f46e5";
 
+const PRODUCT_ORIGINS = [TASKS_URL, ROADMAP_URL, NOTES_URL, ANALYTICS_URL];
+
+/**
+ * Phase 3 (instant-jump): warm a sibling product on hover/focus so the
+ * same-tab jump lands already-resolved. One <link rel="prefetch"> per
+ * URL, deduped. Cross-origin prefetch warms DNS/TLS + the document.
+ */
+function prefetchProduct(url: string) {
+  if (typeof document === "undefined") return;
+  if (document.head.querySelector(`link[data-suite-prefetch="${url}"]`)) return;
+  const l = document.createElement("link");
+  l.rel = "prefetch";
+  l.href = url;
+  l.as = "document";
+  l.setAttribute("data-suite-prefetch", url);
+  document.head.appendChild(l);
+}
+
+/**
+ * Phase 3 dot-morph: the brand transition between products. The indigo
+ * dot blooms over a paper field, then we navigate same-tab — the suite
+ * feels like one surface re-skinning, not four apps. Pure DOM so it is
+ * style-system agnostic. Reduced-motion + modifier clicks skip this at
+ * the call site (normal same-tab nav). ~380ms, then location.href.
+ */
+function suiteJump(url: string) {
+  if (typeof document === "undefined") {
+    window.location.href = url;
+    return;
+  }
+  const overlay = document.createElement("div");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.style.cssText =
+    "position:fixed;inset:0;z-index:2147483647;background:#ffffff;opacity:0;" +
+    "transition:opacity 260ms cubic-bezier(.32,0,.67,1);display:flex;" +
+    "align-items:center;justify-content:center;pointer-events:none";
+  const dot = document.createElement("div");
+  dot.style.cssText =
+    `width:9px;height:9px;border-radius:50%;background:${INDIGO};` +
+    "transform:scale(1);transition:transform 360ms cubic-bezier(.32,0,.67,1)";
+  overlay.appendChild(dot);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => {
+    overlay.style.opacity = "1";
+    dot.style.transform = "scale(28)";
+  });
+  window.setTimeout(() => {
+    window.location.href = url;
+  }, 380);
+}
+
 /**
  * Suite launcher. Replaces the static `signal studio.` breadcrumb anchor
  * with a click-to-open popover listing all four products. Same trigger
@@ -53,6 +104,24 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
       document.removeEventListener("mousedown", onDocClick);
       document.removeEventListener("keydown", onKey);
     };
+  }, [open]);
+
+  // Phase 3 (instant-jump): on open, preconnect every sibling origin so
+  // the first cross-product hop has a warm TLS connection ready.
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return;
+    for (const origin of PRODUCT_ORIGINS) {
+      if (
+        document.head.querySelector(`link[data-suite-preconnect="${origin}"]`)
+      )
+        continue;
+      const l = document.createElement("link");
+      l.rel = "preconnect";
+      l.href = origin;
+      l.crossOrigin = "";
+      l.setAttribute("data-suite-preconnect", origin);
+      document.head.appendChild(l);
+    }
   }, [open]);
 
   return (
@@ -87,11 +156,29 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
                 <li key={p.slug}>
                   <a
                     href={p.url}
-                    target={isCurrent ? undefined : "_blank"}
-                    rel={isCurrent ? undefined : "noopener noreferrer"}
+                    onMouseEnter={
+                      isCurrent ? undefined : () => prefetchProduct(p.url)
+                    }
+                    onFocus={
+                      isCurrent ? undefined : () => prefetchProduct(p.url)
+                    }
                     aria-current={isCurrent ? "true" : undefined}
                     role="menuitem"
-                    onClick={() => setOpen(false)}
+                    onClick={(e) => {
+                      setOpen(false);
+                      if (isCurrent) return;
+                      if (
+                        e.metaKey ||
+                        e.ctrlKey ||
+                        e.shiftKey ||
+                        e.altKey ||
+                        window.matchMedia("(prefers-reduced-motion: reduce)")
+                          .matches
+                      )
+                        return;
+                      e.preventDefault();
+                      suiteJump(p.url);
+                    }}
                     className={
                       "group flex items-center justify-between gap-3 rounded-md px-2.5 py-2 no-underline transition-colors " +
                       (isCurrent
