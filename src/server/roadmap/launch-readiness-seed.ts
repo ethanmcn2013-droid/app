@@ -161,15 +161,15 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-clerk-tier-check", category: "Auth", title: "Confirm Clerk pricing tier supports launch traffic", description: "Free tier caps at 10k MAU. Show HN + PH may push past on launch week. Watch the dashboard MAU counter daily.", blockerId: null, priority: "P1" },
 
   // ─── Payments & Stripe ────────────────────────────────────────────
-  { id: "AI-stripe-test-wedding", category: "Stripe", title: "Test purchase: Wedding $79 one-time", description: "Use test card 4242 4242 4242 4242; confirm checkout.session.completed webhook; entitlement row inserts; tier resolves correctly.", blockerId: null, priority: "P0" },
-  { id: "AI-stripe-test-pro", category: "Stripe", title: "Test purchase: Pro $4.99/mo", description: "Same drill; verify recurring sub created; entitlements has expiresAt set per cycle.", blockerId: null, priority: "P0" },
-  { id: "AI-stripe-test-studio", category: "Stripe", title: "Test purchase: Studio $14.95/mo", description: "Verify Studio tier flag in entitlements; verify TIER_RANK rejects downgrades.", blockerId: null, priority: "P0" },
-  { id: "AI-stripe-test-team", category: "Stripe", title: "Test purchase: Team $9.95/workspace/mo", description: "Verify per-workspace pricing math holds in `getEffectiveTier`.", blockerId: null, priority: "P0" },
+  { id: "AI-stripe-test-wedding", category: "Stripe", title: "Test purchase: Event €79 one-time", description: "Use test card 4242 4242 4242 4242; confirm checkout.session.completed webhook; entitlement row inserts; tier resolves correctly.", blockerId: null, priority: "P0" },
+  { id: "AI-stripe-test-pro", category: "Stripe", title: "Test purchase: Workspace €12/mo", description: "Same drill; verify recurring sub created; entitlements has expiresAt set per cycle.", blockerId: null, priority: "P0" },
+  { id: "AI-stripe-test-studio", category: "Stripe", title: "Test purchase: Studio tier (operator, unpriced publicly)", description: "Verify Studio tier flag in entitlements; verify TIER_RANK rejects downgrades.", blockerId: null, priority: "P0" },
+  { id: "AI-stripe-test-team", category: "Stripe", title: "Test purchase: Workspace €12/workspace/mo", description: "Verify per-workspace pricing math holds in `getEffectiveTier`.", blockerId: null, priority: "P0" },
   { id: "AI-stripe-test-update", category: "Stripe", title: "Test customer.subscription.updated webhook", description: "Trigger via Stripe CLI; verify entitlements row reflects new tier.", blockerId: null, priority: "P1" },
   { id: "AI-stripe-test-cancel", category: "Stripe", title: "Test customer.subscription.deleted webhook", description: "Cancel a test sub; verify entitlements expiresAt set; verify tier downgrades after expiresAt.", blockerId: null, priority: "P1" },
   { id: "AI-stripe-test-fail", category: "Stripe", title: "Test failed payment scenario", description: "Use test card 4000 0000 0000 0002 (decline). Verify graceful failure on /pricing.", blockerId: null, priority: "P1" },
   { id: "AI-stripe-test-idempotency", category: "Stripe", title: "Test webhook re-delivery (idempotency)", description: "Stripe re-delivers on transient failures. Trigger same event twice; verify processed_webhooks blocks duplicate entitlement insert.", blockerId: null, priority: "P0" },
-  { id: "AI-stripe-tax", category: "Stripe", title: "Decide Stripe Tax on/off for launch", description: "Wedding $79 + per-workspace mo are simple but US states vary. Decision: leave off for launch; revisit at $1k MRR.", blockerId: null, priority: "P2" },
+  { id: "AI-stripe-tax", category: "Stripe", title: "Decide Stripe Tax on/off for launch", description: "Event €79 + per-workspace mo are simple but US states vary. Decision: leave off for launch; revisit at $1k MRR.", blockerId: null, priority: "P2" },
   { id: "AI-stripe-receipts", category: "Stripe", title: "Confirm Stripe receipt emails configured", description: "Default Stripe receipts on; brand customisation in Stripe dashboard. Match our voice (no exclamation points).", blockerId: null, priority: "P1" },
   { id: "AI-stripe-refund-flow", category: "Stripe", title: "Test refund flow", description: "Issue full refund on a test charge; verify webhook fires; verify entitlement row marked as refunded (or expired immediately).", blockerId: null, priority: "P1" },
 
@@ -179,7 +179,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-promo-expired", category: "Promo codes", title: "Test expired comp code path", description: "Set expiresAt in the past; visit /redeem/<code>; expect a clear refusal screen, not a crash.", blockerId: null, priority: "P1" },
   { id: "AI-promo-exhausted", category: "Promo codes", title: "Test exhausted comp code path", description: "Mint with quantity=1; redeem once; second user attempts; expect graceful 'all gone'.", blockerId: null, priority: "P1" },
   { id: "AI-promo-rereeem", category: "Promo codes", title: "Test re-redemption (same user)", description: "Redeem same code twice from same user; expect 'already redeemed' message, not duplicate entitlement.", blockerId: null, priority: "P1" },
-  { id: "AI-promo-edu", category: "Promo codes", title: "Test .edu auto-Pro grant", description: "Sign up with a .edu email; verify Pro entitlement auto-granted (cycle 23 path).", blockerId: null, priority: "P1" },
+  { id: "AI-promo-edu", category: "Promo codes", title: "Test .edu auto-Workspace grant", description: "Sign up with a .edu email; verify Workspace entitlement auto-granted (cycle 23 path).", blockerId: null, priority: "P1" },
 
   // ─── File attachments (just shipped) ──────────────────────────────
   { id: "AI-attach-drag-drop", category: "Attachments", title: "Test drag-drop upload", description: "Drag a PDF into the detail panel; verify optimistic placeholder; verify final row replaces it; verify activity feed line.", blockerId: null, priority: "P1" },
@@ -292,8 +292,8 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   // ─── Pre-launch QA (D-1) ──────────────────────────────────────────
   { id: "AI-qa-marketing-200", category: "Pre-launch QA", title: "All marketing routes return 200", description: "Curl /, /about, /principles, /pricing, /changelog, /templates, /templates/*, /for/*. Run on prod, the morning of 06-15.", blockerId: null, priority: "P0" },
   { id: "AI-qa-app-routes", category: "Pre-launch QA", title: "All /app/* routes work signed-in", description: "Manual walk-through, signed in. /app/board, /list, /timeline, /calendar, /inbox, /settings. Look for broken state, console errors.", blockerId: null, priority: "P0" },
-  { id: "AI-qa-real-purchase-79", category: "Pre-launch QA", title: "One real $79 Wedding purchase tested in prod", description: "Use a real card; refund yourself after. Want to feel the actual flow, not the test-mode flow.", blockerId: null, priority: "P0" },
-  { id: "AI-qa-real-purchase-995", category: "Pre-launch QA", title: "One real $9.95 Team purchase tested in prod", description: "Same drill. Refund after.", blockerId: null, priority: "P0" },
+  { id: "AI-qa-real-purchase-79", category: "Pre-launch QA", title: "One real €79 Event purchase tested in prod", description: "Use a real card; refund yourself after. Want to feel the actual flow, not the test-mode flow.", blockerId: null, priority: "P0" },
+  { id: "AI-qa-real-purchase-995", category: "Pre-launch QA", title: "One real €12 Workspace purchase tested in prod", description: "Same drill. Refund after.", blockerId: null, priority: "P0" },
   { id: "AI-qa-status-page", category: "Pre-launch QA", title: "/status page shows green", description: "Verify it actually checks the right downstreams (DB, Clerk, Stripe webhook receipt).", blockerId: null, priority: "P1" },
   { id: "AI-qa-support-email", category: "Pre-launch QA", title: "Support email set up + tested", description: "hello@<domain> forwards to ethanmcn2013@gmail.com; reply-from-personal works for press replies.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-qa-rate-limits", category: "Pre-launch QA", title: "Confirm rate limits don't trip on launch traffic", description: "Show HN front-page = 100k+ visits in an hour. Validate Vercel function concurrency limit + Clerk request rate.", blockerId: null, priority: "P0" },
@@ -331,7 +331,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Insurance ────────────────────────────────────────────────────
   { id: "AI-general-liability", category: "Insurance", title: "General liability insurance decision", description: "Software-only, no physical premises, no employees: skip GL until first contract demands it. Vouch or Embroker quote when triggered.", blockerId: null, priority: "P2" },
-  { id: "AI-eo-insurance", category: "Insurance", title: "E&O / professional indemnity quote", description: "Once a Studio or Team customer asks for proof of insurance (it'll happen by month 6), get a $1M/$2M policy via Vouch — typically $80–150/mo for solo SaaS.", blockerId: null, priority: "P1" },
+  { id: "AI-eo-insurance", category: "Insurance", title: "E&O / professional indemnity quote", description: "Once a Studio or Workspace customer asks for proof of insurance (it'll happen by month 6), get a $1M/$2M policy via Vouch — typically $80–150/mo for solo SaaS.", blockerId: null, priority: "P1" },
   { id: "AI-cyber-liability", category: "Insurance", title: "Cyber liability quote", description: "Bundle with E&O via Vouch. Covers breach response, notification costs, ransomware. Required by most enterprise procurement past 50 seats.", blockerId: null, priority: "P2" },
   { id: "AI-jurisdiction-review", category: "Insurance", title: "Jurisdiction review before binding any policy", description: "Delaware LLC + NY operating address + customers globally — make sure the policy actually covers the surface area. Don't sign blind.", blockerId: null, priority: "P2" },
 
@@ -354,7 +354,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── CRM & contacts ──────────────────────────────────────────────
   { id: "AI-press-crm", category: "CRM & contacts", title: "Press contacts CRM: Attio", description: "Attio's free tier handles a press list cleanly; Folk is the alt if you want lighter UI. Spreadsheet works at <50 contacts but breaks fast.", blockerId: null, priority: "P1" },
-  { id: "AI-leads-crm", category: "CRM & contacts", title: "Customer leads CRM (same Attio workspace)", description: "Separate list inside Attio for inbound demos and sales conversations. Tag by tier interest (Wedding/Pro/Studio/Team) and source.", blockerId: null, priority: "P2" },
+  { id: "AI-leads-crm", category: "CRM & contacts", title: "Customer leads CRM (same Attio workspace)", description: "Separate list inside Attio for inbound demos and sales conversations. Tag by tier interest (Event/Workspace/Studio) and source.", blockerId: null, priority: "P2" },
   { id: "AI-influencer-rolodex", category: "CRM & contacts", title: "Influencer rolodex synced from venue-outreach.md", description: "Migrate the markdown contact list into Attio so DMs/replies/follow-ups don't fall through the cracks.", blockerId: null, priority: "P2" },
   { id: "AI-resend-attio-integration", category: "CRM & contacts", title: "Resend ↔ Attio integration for sends", description: "Sync Attio contacts into Resend audiences; track opens/clicks back into Attio timeline. Avoids the manual copy-paste loop.", blockerId: null, priority: "P2" },
 

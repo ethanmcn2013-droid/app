@@ -23,8 +23,9 @@ export const stripeConfigured = Boolean(SECRET);
  *  the dashboard. Production sets these via env; dev defaults to the
  *  template values from `.env.example`.
  *
- *  Studio (Phase 4) is the operator-tier — $14.95/mo, unlimited
- *  workspaces the user owns as sole admin. The Stripe subscription
+ *  Studio is the operator tier — unlimited workspaces the user
+ *  owns as sole admin; not sold on the public /pricing surface.
+ *  The Stripe subscription
  *  is at the user level; entitlement rows for Studio carry
  *  `workspaceId = NULL` so `getEffectiveTier` resolves it across all
  *  owned workspaces in one read. */

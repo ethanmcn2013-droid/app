@@ -6,11 +6,12 @@ import type { EntitlementTier } from "@/lib/data";
 import { TIER_RANK } from "@/lib/entitlements-shared/tiers";
 
 /**
- * The Free / Pro member cap. The shape: 1 owner + 3 invited editors
+ * The Free-tier member cap. The shape: 1 owner + 3 invited editors
  * = 4 total. The number is calibrated — a study group, a couple
  * plus the maid of honor, two roommates and a dog-walker, a
  * freelancer plus the client point-of-contact. Beyond three
- * invitees, it's a team, and Team is $9.95/workspace flat.
+ * invitees, it's a team — that's the Workspace tier (€12 per
+ * workspace, flat: invite anyone, the price doesn't move).
  *
  * The /pricing FAQ "Why three?" entry is the public commitment;
  * this constant is the structural enforcement.

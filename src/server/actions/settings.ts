@@ -253,7 +253,7 @@ export async function inviteMemberByEmailAction(
   const ws = await getActiveWorkspace();
   if (!(await canAddMember(ws))) {
     throw new Error(
-      "Free workspaces include three editing guests. Upgrade to Team to invite more.",
+      "Free workspaces include three editing guests. Upgrade to Workspace to invite more.",
     );
   }
 
@@ -399,7 +399,7 @@ export async function acceptInviteAction(token: string): Promise<{
   // changed (downgrade) between mint + accept.
   if (!(await canAddMemberByWorkspace(invite.workspaceId))) {
     throw new Error(
-      "This workspace is at its free-tier member cap. Ask the owner to upgrade to Team.",
+      "This workspace is at its free-tier member cap. Ask the owner to upgrade to Workspace.",
     );
   }
 

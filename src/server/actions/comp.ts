@@ -297,7 +297,7 @@ export async function requestStudentCodeAction(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   await sendEmail({
     to: trimmed,
-    subject: "Your Tasks Pro code · free for the school year",
+    subject: "Your Tasks Workspace code · free for the school year",
     html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
   });
 
