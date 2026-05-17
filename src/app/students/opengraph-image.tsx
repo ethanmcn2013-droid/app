@@ -74,7 +74,7 @@ export default async function StudentsOG() {
         >
           <div style={{ display: "flex" }}>{TASKS_DOMAIN}/students</div>
           <div style={{ display: "flex" }}>·</div>
-          <div style={{ display: "flex" }}>$0 · 365 days · re-verify yearly</div>
+          <div style={{ display: "flex" }}>€0 · 365 days · re-verify yearly</div>
         </div>
       </div>
     ),
