@@ -34,9 +34,16 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
     const es = new EventSource(url);
 
     let inflight = false;
+    let pendingWhileInflight = false;
     const fetchAndHydrate = async () => {
       // Coalesce bursts: a stream of 5 mutations in 30ms only refetches once.
-      if (inflight) return;
+      // But remember that an event arrived during the in-flight window so we
+      // don't settle on pre-event state until some unrelated future event
+      // happens to trigger another refetch (lost-update).
+      if (inflight) {
+        pendingWhileInflight = true;
+        return;
+      }
       inflight = true;
       try {
         const fresh = await getTasksAction();
@@ -46,9 +53,14 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
         console.warn("realtime: refetch failed", e);
       } finally {
         // Tiny gap so a follow-up mutation 50ms later doesn't get
-        // dropped — gives React a render tick to flush.
+        // dropped — gives React a render tick to flush. If events were
+        // coalesced away while we were in flight, run exactly once more.
         setTimeout(() => {
           inflight = false;
+          if (pendingWhileInflight) {
+            pendingWhileInflight = false;
+            void fetchAndHydrate();
+          }
         }, 100);
       }
     };

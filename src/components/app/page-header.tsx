@@ -93,7 +93,13 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {/* ≥md: full chip row */}
-          <button className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex">
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title="Filtering coming soon"
+            className="hidden cursor-not-allowed items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft/50 opacity-60 md:inline-flex"
+          >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="6" y1="12" x2="18" y2="12" />
@@ -176,7 +182,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
         <nav
           className={
             "flex items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll " +
-            (showWorkspaceTabs ? "" : "invisible")
+            (showWorkspaceTabs ? "" : "hidden")
           }
         >
           {TABS.map((t) => (
@@ -197,7 +203,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
 
         <div className="hidden items-center gap-1.5 text-[11.5px] text-ink-quiet sm:flex">
           <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          <span>Live · 3 here</span>
+          <span>Live</span>
         </div>
       </div>
     </header>
@@ -265,10 +271,10 @@ function OverflowMenu({
           <button
             type="button"
             role="menuitem"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
+            disabled
+            aria-disabled="true"
+            title="Filtering coming soon"
+            className="flex w-full cursor-not-allowed items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft/50 opacity-60"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="6" x2="21" y2="6" />

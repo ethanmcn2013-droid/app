@@ -73,7 +73,7 @@ async function nextPositionForLane(
       ),
     );
   const max = row?.max ?? 0;
-  return (max ?? 0) + 1.0;
+  return max + 1.0;
 }
 
 export async function moveTaskAction(

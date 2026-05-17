@@ -267,13 +267,11 @@ export function ForWeddings() {
             One fee. One wedding. Forever a memory you can hand someone.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="https://signalstudio.ie/pricing"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/templates/wedding-planning-workspace"
               className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
             >
-              See the event tier
+              Open the template free
               <svg
                 width="14"
                 height="14"
@@ -286,13 +284,32 @@ export function ForWeddings() {
               >
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
-            </a>
-            <Link
-              href="/templates/wedding-planning-workspace"
+            </Link>
+            <a
+              href="https://signalstudio.ie/pricing"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
-              Open the template free
-            </Link>
+              See the event tier
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="opacity-50"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+              <span className="sr-only">(opens in new tab)</span>
+            </a>
           </div>
         </div>
       </div>

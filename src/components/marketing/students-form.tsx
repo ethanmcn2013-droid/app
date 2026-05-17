@@ -1,8 +1,66 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+
+function CodeWithCopy({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = useCallback(() => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    } else {
+      // Graceful fallback for browsers without clipboard API
+      try {
+        const el = document.createElement("textarea");
+        el.value = code;
+        el.style.position = "fixed";
+        el.style.opacity = "0";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // silent — copy simply doesn't confirm
+      }
+    }
+  }, [code]);
+
+  return (
+    <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-soft bg-white pl-3 pr-2 py-1.5">
+      <span className="font-mono text-[12.5px] tabular-nums text-ink">{code}</span>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label={copied ? "Copied" : "Copy code"}
+        className="inline-flex items-center gap-1 rounded-full bg-bg-sunken px-2.5 py-1 text-[11px] font-medium text-ink-soft transition-colors hover:bg-line-soft hover:text-ink"
+      >
+        {copied ? (
+          <>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Copied
+          </>
+        ) : (
+          <>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
 import {
   requestStudentCodeAction,
   type StudentVerifyResult,
@@ -158,12 +216,9 @@ function SuccessCard({ code }: { code: string }) {
         Your free student code is ready.
       </h2>
       <p className="mx-auto mt-3 max-w-[40ch] text-[13.5px] leading-[1.55] text-ink-soft">
-        In production we&rsquo;d email this to you. For the demo,
-        here it is — click through to redeem.
+        Here&rsquo;s your code. Redeem it below — it&rsquo;s good for two years.
       </p>
-      <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-3 py-1.5 font-mono text-[12.5px] tabular-nums text-ink">
-        {code}
-      </div>
+      <CodeWithCopy code={code} />
       <div className="mt-5">
         <Link
           href={`/redeem/${code}`}

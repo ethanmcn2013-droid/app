@@ -208,6 +208,22 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     Date.now() + row.durationDays * 24 * 60 * 60 * 1000,
   );
 
+  // Atomic claim BEFORE issuing. The earlier `row.redeemed >= row.quantity`
+  // check is a fast UX path only — two users redeeming the last slot of a
+  // near-exhausted code can both pass it and both get a paid tier. The
+  // conditional decrement is the real guard: only one concurrent caller
+  // can move `redeemed` past the cap. If we don't win the slot, bail
+  // before inserting any entitlement. (Worst case if a later step throws
+  // after the claim is a harmless single slot-leak — admin can re-mint —
+  // which is strictly safer than over-issuing paid tiers.)
+  const claim = await db.run(sql`
+    UPDATE comp_codes SET redeemed = redeemed + 1
+    WHERE code = ${code} AND redeemed < quantity
+  `);
+  if (claim.rowsAffected === 0) {
+    return { ok: false, reason: "exhausted" };
+  }
+
   await db.insert(entitlements).values({
     id: newEntitlementId(),
     workspaceId: ws,
@@ -218,9 +234,6 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     expiresAt,
     notes: `comp:${code}`,
   });
-  await db.run(sql`
-    UPDATE comp_codes SET redeemed = redeemed + 1 WHERE code = ${code}
-  `);
 
   // Venue Editions short-circuit: if this is a wedding comp with
   // sponsor JSON, apply the wedding template and flag the workspace

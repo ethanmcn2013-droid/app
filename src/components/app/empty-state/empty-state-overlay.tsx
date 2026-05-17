@@ -25,14 +25,17 @@ export function EmptyStateOverlay({
   const { openDialog } = useAddTask();
   const [pending, startTransition] = useTransition();
   const [active, setActive] = useState<DomainId | null>(null);
+  const [seedError, setSeedError] = useState(false);
 
   const handleSeed = (id: DomainId) => {
     setActive(id);
+    setSeedError(false);
     startTransition(async () => {
       try {
         await seedDomainAction(id);
       } catch (e) {
         console.warn("seed-domain failed", e);
+        setSeedError(true);
       }
       setActive(null);
     });
@@ -114,6 +117,20 @@ export function EmptyStateOverlay({
                 );
               })}
             </div>
+            {seedError && active === null ? (
+              <div role="alert" className="mt-3 flex flex-col items-center gap-2">
+                <p className="text-[12px] text-ink-soft">
+                  That didn&rsquo;t take — check your connection and try again.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSeedError(false)}
+                  className="text-[12px] font-medium text-ink underline-offset-2 hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </motion.div>

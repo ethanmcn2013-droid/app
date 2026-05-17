@@ -79,27 +79,30 @@ export function DomainToggle({
       </LayoutGroup>
 
       {onTryInWorkspace ? (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={onTryInWorkspace}
-          className="group inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-soft transition-colors hover:text-ink disabled:opacity-60"
-        >
-          {pending ? "Loading…" : "Try this template in your workspace"}
-          <svg
-            width="11"
-            height="11"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="transition-transform group-hover:translate-x-0.5"
+        <div className="flex flex-col items-start gap-0.5">
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onTryInWorkspace}
+            className="group inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink-soft transition-colors hover:text-ink disabled:opacity-60"
           >
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
-        </button>
+            {pending ? "Loading…" : "Try this template in your workspace"}
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              <path d="M5 12h14M13 5l7 7-7 7" />
+            </svg>
+          </button>
+          <span className="text-[11px] text-ink-faint">Free to start. No card.</span>
+        </div>
       ) : null}
     </div>
   );

@@ -202,6 +202,15 @@ export async function emailShareLinkAction(input: {
     getActiveWorkspace(),
   ]);
 
+  // Ownership scope: the link was looked up by token alone. Without
+  // this, any authenticated user holding any valid token could send a
+  // branded email of someone else's link to an arbitrary recipient.
+  // Mirror revokeShareLinkAction's token+workspace scoping. Same opaque
+  // error as not-found so existence isn't revealed.
+  if (link.workspaceId !== ws) {
+    return { ok: false, error: "link-not-found" };
+  }
+
   const [meRow] = await db
     .select({ name: users.name })
     .from(users)

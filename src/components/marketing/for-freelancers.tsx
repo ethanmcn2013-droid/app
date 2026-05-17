@@ -153,8 +153,8 @@ export function ForFreelancers() {
               </div>
             </div>
             <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              1099s, expenses, S-corp 1120-S, Q1 estimated. The list
-              that turns April from a cliff into a Tuesday afternoon.
+              Receipts, VAT returns, contractor invoices, end-of-year accounts.
+              The list that turns filing season from a cliff into a Tuesday afternoon.
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
               Open the template

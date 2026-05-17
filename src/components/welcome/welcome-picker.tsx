@@ -261,15 +261,6 @@ export function WelcomePicker({
             </a>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.65, duration: 0.4 }}
-            className="mt-12 text-center text-[11.5px] leading-[1.5] text-ink-faint"
-          >
-            No account required to try. We&rsquo;ll never email you
-            unless you ask.
-          </motion.p>
         </div>
       </main>
     </div>

@@ -7,7 +7,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { motion, LayoutGroup, AnimatePresence } from "motion/react";
+import { motion, LayoutGroup, AnimatePresence, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO, MOTION_BASE, MOTION_MODERATE } from "@/lib/motion";
 import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
 import {
   DOMAINS,
@@ -52,6 +53,7 @@ export function CinematicDemo({
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
   const [mounted, setMounted] = useState(false);
   const [paused, setPaused] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
   const pausedRef = useRef(false);
   const aliveRef = useRef(true);
   const currentStateRef = useRef<DemoState | null>(null);
@@ -249,7 +251,11 @@ export function CinematicDemo({
   // --- Scene runner ---
 
   useEffect(() => {
-    if (!mounted) return;
+    // Under prefers-reduced-motion the demo renders a static representative
+    // frame (all 4 lanes visible, tasks in place) — no frozen mid-animation,
+    // no timing loops. The scene runner only starts for users who have not
+    // opted out of motion.
+    if (!mounted || prefersReducedMotion) return;
     aliveRef.current = true;
     pausedRef.current = paused;
 
@@ -712,7 +718,7 @@ export function CinematicDemo({
           </div>
           <div className="flex items-center gap-3">
             <PresenceStrip />
-            <button className="rounded-md border border-line bg-white px-2 py-0.5 text-[11px] font-medium text-ink-soft hover:bg-bg-sunken">
+            <button type="button" aria-hidden="true" tabIndex={-1} className="rounded-md border border-line bg-white px-2 py-0.5 text-[11px] font-medium text-ink-soft hover:bg-bg-sunken">
               Share
             </button>
           </div>
@@ -728,7 +734,7 @@ export function CinematicDemo({
                 key={pack.workspaceCrumb}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: MOTION_BASE, ease: EASE_OUT_EXPO }}
               >
                 {pack.workspaceCrumb}
               </motion.span>
@@ -737,7 +743,7 @@ export function CinematicDemo({
               key={pack.workspaceTitle}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: MOTION_MODERATE, ease: EASE_OUT_EXPO }}
               className="mt-1 text-[19px] font-semibold tracking-tight"
             >
               {pack.workspaceTitle}
@@ -792,39 +798,42 @@ export function CinematicDemo({
         <div className="flex items-center justify-between border-t border-line-soft bg-white px-4 py-1.5 text-[10.5px] text-ink-quiet">
           <span className="flex items-center gap-1.5">
             <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            Live · 3 collaborators
+            Demo
           </span>
-          <span>
-            Scene: <span className="font-medium text-ink-soft">{state.scene}</span>
-          </span>
+          <span aria-hidden data-debug-scene={state.scene} />
         </div>
       </motion.div>
 
-      {/* Bottom controls: pause / restart */}
-      <div className="mt-4 flex items-center justify-center gap-3 text-[12px] text-ink-quiet">
-        <button
-          onClick={() => setPaused((p) => !p)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 transition-colors hover:bg-bg-sunken"
-        >
-          {paused ? (
-            <>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Resume
-            </>
-          ) : (
-            <>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="4" width="4" height="16" />
-                <rect x="14" y="4" width="4" height="16" />
-              </svg>
-              Pause
-            </>
-          )}
-        </button>
-        <span>This is a self-running demo. Hover to feel the depth.</span>
-      </div>
+      {/* Bottom controls: pause / restart — hidden under prefers-reduced-motion
+          because the scene runner is also gated off; the control would be a
+          ghost that does nothing for those users. */}
+      {!prefersReducedMotion && (
+        <div className="mt-4 flex items-center justify-center gap-3 text-[12px] text-ink-quiet">
+          <button
+            type="button"
+            onClick={() => setPaused((p) => !p)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3 py-1 transition-colors hover:bg-bg-sunken"
+          >
+            {paused ? (
+              <>
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="5 3 19 12 5 21 5 3" />
+                </svg>
+                Resume
+              </>
+            ) : (
+              <>
+                <svg aria-hidden="true" width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="4" width="4" height="16" />
+                  <rect x="14" y="4" width="4" height="16" />
+                </svg>
+                Pause
+              </>
+            )}
+          </button>
+          <span className="text-ink-soft">A self-running demo. Interact any time.</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -837,7 +846,7 @@ function PresenceStrip() {
         <Avatar user="david" size={20} ring />
         <Avatar user="alex" size={20} ring />
       </div>
-      <span className="text-[10.5px] text-ink-quiet">3 here</span>
+      <span className="text-[10.5px] text-ink-quiet">Demo workspace</span>
     </div>
   );
 }
@@ -930,9 +939,9 @@ function BoardSurface({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-              duration: 0.7,
-              delay: idx * 0.08,
-              ease: [0.16, 1, 0.3, 1],
+              duration: MOTION_MODERATE,
+              delay: idx * 0.06,
+              ease: EASE_OUT_EXPO,
             }}
             className="flex flex-col gap-2 overflow-hidden rounded-xl p-2"
             style={{ background: lane.bg }}
@@ -956,7 +965,7 @@ function BoardSurface({
                   {laneTasks.length}
                 </span>
               </div>
-              <button className="rounded p-0.5 text-ink-quiet hover:bg-white/60 hover:text-ink-soft">
+              <button type="button" aria-hidden="true" tabIndex={-1} className="rounded p-0.5 text-ink-quiet hover:bg-white/60 hover:text-ink-soft">
                 <svg
                   width="14"
                   height="14"

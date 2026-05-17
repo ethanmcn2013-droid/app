@@ -14,7 +14,7 @@ import { usePalette } from "@/components/app/palette/command-palette";
 const NAV_TOP = [
   { href: "/app/inbox", label: "Inbox", icon: "inbox" },
   { href: "/app/my-tasks", label: "My tasks", icon: "user" },
-  { href: "/app/search", label: "Search", icon: "search" },
+  { href: undefined, label: "Search", icon: "search" },
 ];
 
 const VIEWS = [
@@ -74,7 +74,13 @@ function DesktopSidebar({ active }: { active: string }) {
           <span aria-hidden className="flex-shrink-0 text-[12px] text-ink-faint">/</span>
           <Wordmark size="md" />
         </div>
-        <button className="rounded p-1 text-ink-quiet hover:bg-line-soft hover:text-ink-soft">
+        {/* Collapse chevron — decorative chrome; no collapse state exists yet.
+            Hidden from AT and keyboard until a real collapse handler is wired. */}
+        <span
+          aria-hidden="true"
+          tabIndex={-1}
+          className="rounded p-1 text-ink-quiet"
+        >
           <svg
             width="14"
             height="14"
@@ -85,7 +91,7 @@ function DesktopSidebar({ active }: { active: string }) {
           >
             <path d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
           </svg>
-        </button>
+        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-3">
@@ -100,8 +106,13 @@ function DesktopSidebar({ active }: { active: string }) {
 
         <div className="mt-5 flex items-center justify-between px-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
           <span>Teams</span>
-          <button className="rounded p-0.5 hover:bg-line-soft hover:text-ink-soft">
+          <button
+            type="button"
+            aria-label="Add team"
+            className="rounded p-0.5 hover:bg-line-soft hover:text-ink-soft"
+          >
             <svg
+              aria-hidden="true"
               width="11"
               height="11"
               viewBox="0 0 24 24"
@@ -117,7 +128,7 @@ function DesktopSidebar({ active }: { active: string }) {
         <ul className="mt-1 space-y-px">
           {TEAMS.map((t) => (
             <li key={t.name}>
-              <button className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-line-soft/60 hover:text-ink">
+              <button type="button" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-line-soft/60 hover:text-ink">
                 <span
                   className="block h-1.5 w-1.5 flex-shrink-0 rounded-full"
                   style={{ background: t.color }}
@@ -145,7 +156,7 @@ function Group({
   items,
   active,
 }: {
-  items: { href: string; label: string; icon: string }[];
+  items: { href?: string; label: string; icon: string }[];
   active: string;
 }) {
   // The sidebar lives inside <TasksProvider> for /app routes; this
@@ -160,7 +171,7 @@ function Group({
   return (
     <ul className="space-y-px">
       {items.map((it) => {
-        const isActive = active === it.href;
+        const isActive = it.href !== undefined && active === it.href;
         const count =
           it.icon === "inbox"
             ? inboxCount
@@ -189,7 +200,7 @@ function Group({
           </>
         );
         return (
-          <li key={it.href}>
+          <li key={it.href ?? it.label}>
             {isSearch ? (
               <button
                 type="button"
@@ -198,11 +209,11 @@ function Group({
               >
                 {inner}
               </button>
-            ) : (
+            ) : it.href ? (
               <Link href={it.href} className={className}>
                 {inner}
               </Link>
-            )}
+            ) : null}
           </li>
         );
       })}
@@ -416,6 +427,8 @@ function MobileTabBar({ active }: { active: string }) {
           onClick={() => setViewsOpen((v) => !v)}
           active={isViewActive}
           chevron
+          ariaExpanded={viewsOpen}
+          ariaHaspopup="menu"
         />
       </ul>
     </nav>
@@ -466,18 +479,24 @@ function TabbarButton({
   onClick,
   active,
   chevron,
+  ariaExpanded,
+  ariaHaspopup,
 }: {
   icon: string;
   label: string;
   onClick: () => void;
   active: boolean;
   chevron?: boolean;
+  ariaExpanded?: boolean;
+  ariaHaspopup?: "menu" | "listbox" | "tree" | "grid" | "dialog" | boolean;
 }) {
   return (
     <li className="flex-1">
       <button
         type="button"
         onClick={onClick}
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHaspopup}
         className={
           "flex w-full flex-col items-center gap-0.5 rounded-md px-2 py-1.5 text-[10.5px] font-medium transition-colors " +
           (active ? "text-brand" : "text-ink-quiet hover:text-ink-soft")

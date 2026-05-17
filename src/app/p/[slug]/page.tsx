@@ -12,7 +12,11 @@ import { DOMAINS } from "@/lib/domains";
  * The owner toggles publication via Settings → Workspace.
  */
 
-export const dynamic = "force-dynamic";
+// ISR, not force-dynamic: this is a public, indexable, rarely-changing
+// page hit by crawlers and social unfurls. publish/unpublish both call
+// revalidatePath(`/p/${slug}`) so owner toggles reflect immediately;
+// the 60s window only delays task-content edits. Mirrors /share/[token].
+export const revalidate = 60;
 
 export async function generateMetadata({
   params,

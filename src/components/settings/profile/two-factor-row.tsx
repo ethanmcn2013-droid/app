@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { TOTPResource, UserResource } from "@clerk/shared/types";
-import QRCode from "qrcode";
+// qrcode (~30KB) is lazy-loaded inside the TOTP setup flow — only the
+// fraction of users who actually start 2FA enrollment pay for it,
+// instead of every visitor to profile settings.
 import { Dialog } from "@/components/primitives/dialog";
 import { SettingsRow } from "@/components/settings/section";
 
@@ -83,6 +85,7 @@ function TotpSetupFlow({
         if (cancelled) return;
         setTotp(created);
         if (created.uri) {
+          const { default: QRCode } = await import("qrcode");
           const svg = await QRCode.toString(created.uri, {
             type: "svg",
             margin: 0,

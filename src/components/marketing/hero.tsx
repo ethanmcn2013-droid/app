@@ -42,25 +42,28 @@ export function Hero() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <a
-            href="/app/board"
-            className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
-          >
-            Open the workspace
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="transition-transform group-hover:translate-x-0.5"
+          <div className="flex flex-col items-start gap-1">
+            <a
+              href="/app/board"
+              className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
             >
-              <path d="M5 12h14M13 5l7 7-7 7" />
-            </svg>
-          </a>
+              Open the workspace
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-transform group-hover:translate-x-0.5"
+              >
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </a>
+            <span className="text-[12px] text-ink-faint">Free to start. No card.</span>
+          </div>
           <a
             href="#features"
             className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-5 py-2.5 text-[14px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
@@ -70,7 +73,7 @@ export function Hero() {
         </div>
         <p className="mt-3 inline-flex items-center gap-2 text-[12.5px] text-ink-faint">
           <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          Demo is live · interact at any time
+          Demo is live
         </p>
 
         {/* Domain toggle — proves the tool fits whatever you do.

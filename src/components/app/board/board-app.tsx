@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { EASE_OUT_EXPO, MOTION_MODERATE } from "@/lib/motion";
 import {
   LANES,
   LANE_ORDER,
@@ -255,12 +256,14 @@ export function BoardApp() {
         return (
           <motion.div
             key={laneId}
+            role="group"
+            aria-label={lane.name}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-              duration: 0.55,
-              delay: idx * 0.06,
-              ease: [0.16, 1, 0.3, 1],
+              duration: MOTION_MODERATE,
+              delay: idx * 0.05,
+              ease: EASE_OUT_EXPO,
             }}
             className="flex w-[85vw] max-w-[298px] flex-shrink-0 flex-col rounded-xl p-2.5 transition-colors sm:w-[298px]"
             style={{
@@ -308,7 +311,10 @@ export function BoardApp() {
                   {laneTasks.length}
                 </span>
               </div>
-              <button className="rounded p-1 text-ink-quiet hover:bg-white/60 hover:text-ink-soft">
+              <button
+                aria-label={`Add task to ${lane.name}`}
+                className="rounded p-1 text-ink-quiet hover:bg-white/60 hover:text-ink-soft"
+              >
                 <svg
                   width="13"
                   height="13"
@@ -316,6 +322,7 @@ export function BoardApp() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
+                  aria-hidden
                 >
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
@@ -537,6 +544,10 @@ function Card({
     };
   }, [menuOpen]);
 
+  // A card is "pending" while it is settling from a drop (momentum present)
+  // or while it is mid-drag. aria-busy signals the transient state to AT.
+  const isPending = isDragging || !!momentum;
+
   // motion.div redefines onDragStart/onDragEnd for its pan system; we want
   // native HTML5 drag for cross-column moves. Cast through `as` so the
   // native handlers reach the DOM untouched.
@@ -596,15 +607,16 @@ function Card({
       }}
       {...nativeDragProps}
       onClick={onClick}
-      whileHover={{ y: -1 }}
+      whileHover={!isPending ? { y: -1 } : undefined}
       style={{
         outline,
         outlineOffset: -1,
       }}
+      aria-busy={isPending ? "true" : undefined}
       data-task-id={task.id}
       data-task-title={task.title}
       data-task-focused={isFocused ? "true" : undefined}
-      className="group relative cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline] duration-200 hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]"
+      className="group relative cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline,box-shadow] hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]"
     >
       <div className="flex items-start justify-between gap-2">
         <span className="line-clamp-2 flex-1">{task.title}</span>
