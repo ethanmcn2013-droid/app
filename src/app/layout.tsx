@@ -28,6 +28,10 @@ export const metadata: Metadata = {
   description:
     "Execution clarity for live work: four views of the same list, plain-English dates, and enough motion to show what changed.",
   metadataBase: new URL(TASKS_URL),
+  // metadataBase alone does not emit <link rel="canonical">. Without an
+  // explicit canonical, Google can index Vercel preview/deployment URLs
+  // alongside the canonical domain. Resolves against metadataBase.
+  alternates: { canonical: "/" },
   manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Signal Tasks — execution clarity",

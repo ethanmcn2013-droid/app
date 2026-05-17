@@ -72,8 +72,17 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
 
     // Hello + heartbeat are silent; presence-only signals.
     const onError = () => {
-      // EventSource will auto-retry; nothing to do here. Console noise
-      // suppressed because dev-server restarts trigger this routinely.
+      // Transient transport errors (dev-server restart, brief network drop)
+      // leave readyState at CONNECTING — let EventSource auto-retry, which
+      // is the documented reconnect strategy. But when realtime is disabled
+      // in production the endpoint answers 204, the browser fails the
+      // connection (readyState CLOSED), and some browsers then reconnect on
+      // a fixed interval forever — every /app tab hammering /api/events for
+      // a stream that will never exist. A CLOSED stream is permanent: close
+      // it explicitly so no further reconnect is attempted.
+      if (es.readyState === EventSource.CLOSED) {
+        es.close();
+      }
     };
     es.addEventListener("error", onError);
 
