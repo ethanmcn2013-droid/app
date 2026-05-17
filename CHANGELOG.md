@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-17 · T·66 · fixes · suite UX remediation — R2/R3/R8/R12/R15/R16/R18
+
+**Every real signup was greeted by their Clerk database id instead of their name — now every surface in Tasks says "Someone" when the user isn't seeded, and the My Tasks empty state reads "Nothing on your plate yet." in second person.** The Clerk-id-as-display-name leak (`user_3Dpnq…`) was closed at the source in `fallbackUserMeta()`, hardening avatars, AI digests, assignee fields, conversation threads, and daily digests simultaneously. Six additional P2 issues from the operator screen recording also closed: the `/app` segment now has its own loading boundary with a px-clamped pulse dot; Settings/Workspace no longer says "chrome" (reads as the browser) or "admire the metadata" (dev in-joke); the sidebar Teams list shows venue coordination roles (Venue / Catering / Flowers & Decor / Photography / Logistics) instead of a generic SaaS org; the banned `#7c3aed` purple is gone; the Calendar button says "Sync to calendar" not "Subscribe"; and `theme-color: #ffffff` now prevents the indigo browser-chrome flash between white-surface products.
+
 ## 2026-05-16 · T·65 · tightens · the digest cron survives an impersonal scheduled run
 
 **The daily digest cron had never actually run in production — the
