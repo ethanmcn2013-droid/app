@@ -86,6 +86,15 @@ export const tasks = sqliteTable("tasks", {
    *  never lands here — only the creator-authored extract_body becomes
    *  the task title. */
   sourceNoteId: text("source_note_id"),
+  /** RW-3b: milestone promotion flag. True when the owner explicitly
+   *  "promotes to milestone" in the task panel. The flag is additive
+   *  and reversible — a milestone is still a normal board task; the
+   *  column is the strategy gate that drives the Roadmap sync
+   *  (ARCH_SPEC §1.1). NOT NULL DEFAULT 0 keeps legacy rows clean.
+   *  Index-friendly: Roadmap queries `WHERE is_milestone=1`. */
+  isMilestone: integer("is_milestone", { mode: "boolean" })
+    .notNull()
+    .default(false),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

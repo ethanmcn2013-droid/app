@@ -304,6 +304,13 @@ body {
   overflow-x: clip;
 }
 
+/* RW-5: neutralise the Layer-0 pre-paint pseudo-elements once globals.css
+   loads. The inline <style> in layout.tsx paints body::before (white field)
+   and body::after (indigo dot) for the brief pre-stylesheet window.
+   Once this stylesheet loads, the SuiteLoader div takes over. */
+body::before,
+body::after { content: none; }
+
 ::selection {
   background: var(--indigo-200);
   color: var(--ink-900);
@@ -461,6 +468,43 @@ body {
 @keyframes suite-content-arrive {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── RW-5 Dot-morph — cross-origin pre-paint primitive ───────────
+   CREATIVE_SPEC §3 · ARCH_SPEC §3
+   Canonical block. Copy byte-identical into each repo's globals.css.
+   Never modify individually — any change must propagate to all 5.
+
+   Source-side: word collapses toward its period, dot lifts.
+   Destination-side: dot-land fires if data-dot-landing="1" on <html>.
+   Reduced-motion: no animation (rules below are no-preference only).
+   ──────────────────────────────────────────────────────────────── */
+
+/* Source-side — word collapses toward its period */
+@keyframes word-collapse {
+  0%   { opacity: 1; letter-spacing: -0.025em; }
+  100% { opacity: 0; letter-spacing: -0.15em; }
+}
+
+/* Source-side — dot lifts after word collapses */
+@keyframes dot-lift {
+  0%   { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(1.25); opacity: 0.7; }
+}
+
+/* Destination-side — dot settles into the wordmark period */
+@keyframes dot-land {
+  0%   { transform: scale(1.5); opacity: 0.6; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* Apply destination animation only when sessionStorage flag was detected.
+   Scoped to no-preference — reduced-motion gets static dot, no jump. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-dot-landing="1"] .brand-mark .md,
+  [data-dot-landing="1"] .brand-mark .pd {
+    animation: dot-land 320ms cubic-bezier(.2, .9, .2, 1.2) forwards;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────

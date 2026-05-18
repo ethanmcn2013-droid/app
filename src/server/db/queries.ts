@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   getTableColumns,
+  isNotNull,
   isNull,
   like,
   sql,
@@ -19,6 +20,8 @@ import {
   shareLinks,
   shareLinkVisits,
   workspaces,
+  workspaceMembers,
+  users,
 } from "./schema";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
@@ -539,4 +542,102 @@ export async function resolveShareLink(
     workspaceCrumb: pack.workspaceCrumb,
     domainId,
   };
+}
+
+// ── RW-3c Producer shape ─────────────────────────────────────────────────────
+
+/**
+ * RW-3b/3c: Read all milestone tasks for a given owner email.
+ *
+ * This is the PRODUCER side of the Roadmap sync read shape (ARCH_SPEC §1.2).
+ * The Roadmap app reads the Tasks DB directly (Analytics precedent, D2) — it
+ * imports this query's return type as its data contract. This function lives
+ * in Tasks as the canonical source; the Roadmap's tasks-milestone-source.ts
+ * calls the same SQL via its own read-only Turso client connection.
+ *
+ * Shape returned (ARCH_SPEC §1.2):
+ *   id, title, lane, dueAt, isMilestone, workspaceId,
+ *   workspaceSlug, workspaceName, ownerEmail
+ *
+ * Constraints:
+ *   - Top-level tasks only (parent_task_id IS NULL) — subtask milestones
+ *     are not surfaced; the roadmap spine is flat in v1.
+ *   - WHERE is_milestone = 1 — additive filter, never a task dump.
+ *   - Email-keyed (the only cross-product key between Clerk apps; D2).
+ *   - Ordered by workspace then due date for stable pagination.
+ *   - Hard LIMIT 200 — same safety cap as getTasks.
+ *
+ * D6 contract: this read is pure projection. Nothing here auto-publishes.
+ */
+export type MilestoneTaskRow = {
+  id: string;
+  title: string;
+  lane: string;
+  dueAt: Date | null;
+  isMilestone: boolean;
+  workspaceId: string;
+  workspaceSlug: string;
+  workspaceName: string;
+  ownerEmail: string | null;
+};
+
+export async function getMilestoneTasks(
+  ownerEmail: string,
+): Promise<MilestoneTaskRow[]> {
+  // 1. Resolve the user row by email.
+  const [user] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.email, ownerEmail))
+    .limit(1);
+  if (!user) return [];
+
+  // 2. Fetch all milestone top-level tasks where the user is a workspace
+  //    member, joined to their workspace for slug + name.
+  //    The workspace owner check uses workspace_members (the join table
+  //    that covers both owner and member roles) so workspace owners who
+  //    haven't explicitly been added as members still resolve correctly
+  //    (ownerUserId is in workspace_members as role='owner').
+  const rows = await db
+    .select({
+      id: tasks.id,
+      title: tasks.title,
+      lane: tasks.lane,
+      dueAt: tasks.dueAt,
+      isMilestone: tasks.isMilestone,
+      workspaceId: workspaces.id,
+      workspaceSlug: workspaces.slug,
+      workspaceName: workspaces.name,
+      ownerEmail: users.email,
+    })
+    .from(tasks)
+    .innerJoin(workspaces, eq(tasks.workspaceId, workspaces.id))
+    .innerJoin(
+      workspaceMembers,
+      and(
+        eq(workspaceMembers.workspaceId, workspaces.id),
+        eq(workspaceMembers.userId, user.id),
+      ),
+    )
+    .innerJoin(users, eq(users.id, user.id))
+    .where(
+      and(
+        eq(tasks.isMilestone, true),
+        isNull(tasks.parentTaskId),
+      ),
+    )
+    .orderBy(asc(tasks.workspaceId), asc(tasks.dueAt))
+    .limit(200);
+
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    lane: r.lane,
+    dueAt: r.dueAt ?? null,
+    isMilestone: r.isMilestone,
+    workspaceId: r.workspaceId,
+    workspaceSlug: r.workspaceSlug,
+    workspaceName: r.workspaceName,
+    ownerEmail: r.ownerEmail ?? null,
+  }));
 }

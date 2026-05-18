@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { getTaskConversationAction } from "@/server/actions/conversation";
+import { setTaskMilestoneAction } from "@/server/actions/tasks";
 import type { ConversationItem } from "@/server/db/queries";
 import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
@@ -13,6 +14,7 @@ import { ContactEditor } from "./contact-editor";
 import { CentsEditor } from "./cents-editor";
 import { DescriptionEditor } from "./description-editor";
 import { RepeatButton } from "./repeat-button";
+import { ROADMAP_URL } from "@/lib/product-urls";
 import { SubtasksSection } from "./subtasks-section";
 import { AttachmentsSection } from "./attachments-section";
 import type { Task } from "@/lib/data";
@@ -152,42 +154,134 @@ function Section({
 /**
  * Bottom row of the panel. Quiet by design — sibling buttons only.
  * "Repeat" opens the chain-duplicate popover; "Focus" dispatches
- * `focus-mode:open` so the global FocusMode overlay picks it up.
+ * `focus-mode:open` so the global FocusMode overlay picks it up;
+ * "Milestone" (RW-3b) toggles the `is_milestone` DB flag.
  * Sits below Contact + Cents so it never collides with those sections.
  */
 function PanelFooter({ task }: { task: Task }) {
   return (
-    <div className="flex items-center justify-end gap-1 border-t border-line-soft px-6 py-3">
-      <RepeatButton task={task} />
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(
-            new CustomEvent("focus-mode:open", {
-              detail: { id: task.id, title: task.title },
-            }),
-          );
-        }}
-        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
-        aria-label="Open focus mode for this task"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
+    <div className="flex flex-col gap-0 border-t border-line-soft">
+      {/* "See it in your plan →" CTA — UX_SPEC §RW-3b friction point 3.
+          Shown only when isMilestone=true so it guides Niamh from Tasks to
+          Roadmap at the moment she needs it. Cross-product nav — quiet text
+          link, never a prominent button. */}
+      {task.isMilestone ? (
+        <div className="flex justify-end px-6 pt-2">
+          <a
+            href={`${ROADMAP_URL}/app`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-ink-quiet transition-colors hover:text-ink-soft"
+          >
+            See it in your plan
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      ) : null}
+      <div className="flex items-center justify-end gap-1 px-6 py-3">
+        <RepeatButton task={task} />
+        <MilestoneButton task={task} />
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("focus-mode:open", {
+                detail: { id: task.id, title: task.title },
+              }),
+            );
+          }}
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+          aria-label="Open focus mode for this task"
         >
-          <circle cx="12" cy="12" r="9" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        Focus
-      </button>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Focus
+        </button>
+      </div>
     </div>
+  );
+}
+
+/**
+ * RW-3b — "Milestone" toggle button in the PanelFooter.
+ *
+ * Visual treatment (UX_SPEC §RW-3b):
+ *   - Unset: diamond outline SVG (◇) + label "Milestone", ink-quiet color.
+ *   - Set: filled diamond SVG (◆) + same label, brand color with soft
+ *     background tint.
+ * aria-pressed signals state to assistive technology.
+ * No confirm dialog — it's a toggle, reversible in one click.
+ *
+ * D6 contract: toggling to true fills the Roadmap's private draft only.
+ * Nothing here auto-publishes.
+ */
+function MilestoneButton({ task }: { task: Task }) {
+  const [isPending, startTransition] = useTransition();
+  const [optimistic, setOptimistic] = useOptimistic(!!task.isMilestone);
+
+  function handleClick() {
+    const next = !optimistic;
+    startTransition(async () => {
+      setOptimistic(next);
+      await setTaskMilestoneAction(task.id, next);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isPending}
+      aria-pressed={optimistic}
+      aria-label={optimistic ? "Remove milestone" : "Mark as milestone"}
+      title={optimistic ? "Remove milestone" : "This task will appear on your plan"}
+      className={[
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-colors",
+        optimistic
+          ? "bg-[color-mix(in_srgb,var(--brand)_10%,transparent)] text-[var(--brand)]"
+          : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
+      ].join(" ")}
+    >
+      {/* Diamond SVG — outline when unset, filled when set */}
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill={optimistic ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M12 2 L22 12 L12 22 L2 12 Z" />
+      </svg>
+      Milestone
+    </button>
   );
 }
 

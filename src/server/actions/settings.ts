@@ -39,6 +39,7 @@ const VALID_DOMAINS = new Set<DomainId>([
   "student",
   "freelance",
   "wedding",
+  "trades",
 ]);
 
 /** Resolve the current user's role in the active workspace. Used by
