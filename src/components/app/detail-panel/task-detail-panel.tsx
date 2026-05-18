@@ -14,6 +14,7 @@ import { ContactEditor } from "./contact-editor";
 import { CentsEditor } from "./cents-editor";
 import { DescriptionEditor } from "./description-editor";
 import { RepeatButton } from "./repeat-button";
+import { ROADMAP_URL } from "@/lib/product-urls";
 import { SubtasksSection } from "./subtasks-section";
 import { AttachmentsSection } from "./attachments-section";
 import type { Task } from "@/lib/data";
@@ -159,37 +160,68 @@ function Section({
  */
 function PanelFooter({ task }: { task: Task }) {
   return (
-    <div className="flex items-center justify-end gap-1 border-t border-line-soft px-6 py-3">
-      <RepeatButton task={task} />
-      <MilestoneButton task={task} />
-      <button
-        type="button"
-        onClick={() => {
-          window.dispatchEvent(
-            new CustomEvent("focus-mode:open", {
-              detail: { id: task.id, title: task.title },
-            }),
-          );
-        }}
-        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
-        aria-label="Open focus mode for this task"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
+    <div className="flex flex-col gap-0 border-t border-line-soft">
+      {/* "See it in your plan →" CTA — UX_SPEC §RW-3b friction point 3.
+          Shown only when isMilestone=true so it guides Niamh from Tasks to
+          Roadmap at the moment she needs it. Cross-product nav — quiet text
+          link, never a prominent button. */}
+      {task.isMilestone ? (
+        <div className="flex justify-end px-6 pt-2">
+          <a
+            href={ROADMAP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-[11px] text-ink-quiet transition-colors hover:text-ink-soft"
+          >
+            See it in your plan
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      ) : null}
+      <div className="flex items-center justify-end gap-1 px-6 py-3">
+        <RepeatButton task={task} />
+        <MilestoneButton task={task} />
+        <button
+          type="button"
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("focus-mode:open", {
+                detail: { id: task.id, title: task.title },
+              }),
+            );
+          }}
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+          aria-label="Open focus mode for this task"
         >
-          <circle cx="12" cy="12" r="9" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-        Focus
-      </button>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Focus
+        </button>
+      </div>
     </div>
   );
 }
