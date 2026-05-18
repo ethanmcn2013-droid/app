@@ -26,15 +26,22 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 // to prerender app routes against a build-time empty DB.
 export const dynamic = "force-dynamic";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * AppShell — async server component that holds all auth-dependent data
+ * fetching. Lives inside a Suspense boundary so the loading.tsx dot paints
+ * while auth() + DB reads resolve.
+ *
+ * DECISIONS.md D5: auth() must not block the layout — it prevents
+ * loading.tsx from painting (Next 16.2 fact: a layout awaiting runtime
+ * data blocks the segment loading boundary entirely).
+ *
+ * SuiteChrome (no auth deps, client component) stays at layout level
+ * and renders instantly — "chrome lives in layout (instant, never re-blanks)".
+ */
+async function AppShell({ children }: { children: React.ReactNode }) {
   const ws = await getActiveWorkspace();
-  // First-run gate: punt straight to /welcome until the user picks a
-  // starter or explicitly skips. /welcome itself reverse-redirects
-  // returning users so a stale bookmark there can't trap anyone.
+  // First-run gate: redirect to /welcome until user has a starter workspace.
+  // /welcome reverse-redirects returning users so a stale bookmark can't trap.
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
@@ -53,38 +60,62 @@ export default async function AppLayout({
     <CurrentUserProvider user={currentUser}>
       <DomainProvider domain={domain} workspaceId={ws} workspaceSlug={slug}>
         <TasksProvider initialTasks={tasks}>
-          <Suspense fallback={null}>
-            <ToastRoot>
-              <AddTaskRoot>
-                <PaletteRoot>
-                  {/*
-                   * L4 — persistent top chrome (DESIGN.md §14).
-                   * SuiteChrome is sticky h-14; it replaces the former
-                   * MobileSuiteBar (removed from AppSidebar) and gives
-                   * desktop a cross-product breadcrumb above the sidebar.
-                   * Layout restructured: flex-col wraps chrome + flex-row
-                   * (sidebar + content). overflow-hidden moves to the inner
-                   * row so the chrome scrolls with the page (sticky) while
-                   * the content area clips correctly.
-                   */}
-                  <div className="flex h-screen w-full flex-col bg-bg">
-                    <SuiteChrome />
-                    <div className="flex min-w-0 flex-1 overflow-hidden">
-                      <AppSidebar />
-                      <div className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">{children}</div>
-                    </div>
-                  </div>
-                  <TaskDetailPanel />
-                  <CrossWorkspaceOverdue />
-                  <CrossWorkspaceSearch />
-                  <FocusMode />
-                  <ToastBridge />
-                </PaletteRoot>
-              </AddTaskRoot>
-            </ToastRoot>
-          </Suspense>
+          <ToastRoot>
+            <AddTaskRoot>
+              <PaletteRoot>
+                <AppSidebar />
+                <div className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">
+                  {children}
+                </div>
+                <TaskDetailPanel />
+                <CrossWorkspaceOverdue />
+                <CrossWorkspaceSearch />
+                <FocusMode />
+                <ToastBridge />
+              </PaletteRoot>
+            </AddTaskRoot>
+          </ToastRoot>
         </TasksProvider>
       </DomainProvider>
     </CurrentUserProvider>
+  );
+}
+
+/**
+ * AppLayout — the /app segment layout.
+ *
+ * SuiteChrome renders synchronously at this level (client component,
+ * no auth deps) so it is always painted and never re-blanks — the
+ * monotonic reveal contract from LOADING_SYSTEM.md §4.
+ *
+ * AppShell (auth + DB reads) wraps in Suspense so loading.tsx paints
+ * while data resolves. Board mounts exactly once: Suspense resolves into
+ * AppShell; AppShell never unmounts (layout is stable).
+ */
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    /*
+     * L4 — persistent top chrome (DESIGN.md §14).
+     * SuiteChrome is sticky h-14; gives all /app routes the cross-product
+     * breadcrumb. Layout restructured: flex-col wraps chrome + flex-row
+     * (sidebar + content). overflow-hidden on the inner row so the chrome
+     * scrolls with the page (sticky) while the content area clips correctly.
+     *
+     * P1-2/P1-4 fix (DECISIONS.md D5): SuiteChrome rendered at this
+     * synchronous layout level; auth/data moved into <AppShell> under
+     * <Suspense> so loading.tsx boundary can paint. Board mounts once.
+     */
+    <div className="flex h-screen w-full flex-col bg-bg">
+      <SuiteChrome />
+      <div className="flex min-w-0 flex-1 overflow-hidden">
+        <Suspense fallback={null}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
+      </div>
+    </div>
   );
 }

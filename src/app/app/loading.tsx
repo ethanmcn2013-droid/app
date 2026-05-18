@@ -1,40 +1,39 @@
-/**
- * /app segment loading boundary — shown while the authenticated
- * workspace shell is resolving (data fetch, Clerk session, DB read).
- *
- * Mirrors the root loading.tsx contract: tasks· wordmark with its
- * canonical pulse gesture (M·02, 2.6s ease-in-out) centred on the
- * Tasks paper background. No spinner — a spinner is the productivity-
- * suite default this brand refuses (BRAND.md refusal list).
- *
- * The dot is px-clamped (max-width/max-height 8px) so it cannot
- * balloon to 250px+ before CSS hydrates — the suite-wide footgun
- * caught in R3. The em sizing still holds the proportional position at
- * normal font sizes; the clamp only caps the pre-hydration worst case.
- */
+// app/app/loading.tsx
+// Signal Studio /app segment loading boundary — LOADING_SYSTEM.md §1.
+// Renders while the authenticated workspace shell resolves (Clerk auth,
+// DB reads). Chrome (SuiteChrome) lives in layout and renders instantly;
+// this boundary fills only the content well — hence position:fixed + z:9999
+// still covers the sub-chrome area cleanly.
+//
+// Server Component: zero JS overhead, paints with the RSC shell.
+// DECISIONS.md D5: auth() moved out of layout into Suspense child so this
+// boundary actually paints (Next 16.2 blocks loading.tsx when layout awaits
+// runtime data).
 export default function AppLoading() {
   return (
     <div
-      aria-busy="true"
-      aria-label="Loading workspace"
+      aria-hidden
       style={{
         position: "fixed",
         inset: 0,
-        display: "grid",
-        placeItems: "center",
-        background: "#ffffff",
-        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper, #ffffff)",
+        zIndex: 9999,
       }}
     >
-      <span
-        className="relative inline-flex select-none items-baseline text-2xl font-semibold"
-        style={{ letterSpacing: "-0.05em" }}
-      >
-        <span className="wordmark" style={{ fontWeight: 600 }}>
-          tasks
-        </span>
-        <span className="tasks-dot" aria-hidden />
-      </span>
+      <div
+        className="signal-loading-dot"
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: "var(--indigo, #4f46e5)",
+          flexShrink: 0,
+          willChange: "transform, opacity",
+        }}
+      />
     </div>
   );
 }

@@ -78,11 +78,42 @@ export default function RootLayout({
         },
       }}
     >
+      {/*
+       * Layer-0 instant canvas — LOADING_SYSTEM.md §2 / DECISIONS.md D4.
+       *
+       * style={{ background, colorScheme }} on <html> fires before any
+       * stylesheet resolves. colorScheme:"light" is the load-bearing token:
+       * it prevents the UA from painting dark-mode grey even when the OS
+       * is in dark mode — the grey void on cross-origin first-paint comes
+       * from the UA default, not our CSS. background:"#fff" on both <html>
+       * and <body> is belt-and-braces to survive the brief window before
+       * the linked stylesheet resolves.
+       *
+       * The inline <style> in <head> is synchronous — it fires before the
+       * linked stylesheet resolves on a cold cross-origin load.
+       *
+       * Preconnect/dns-prefetch for sibling product origins establishes
+       * TCP+TLS early; shaves ~100–300ms from the first cross-product click.
+       */}
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        style={{ background: "#fff", colorScheme: "light" }}
       >
-        <body className="min-h-full flex flex-col">
+        <head>
+          {/* Belt-and-braces synchronous inline style — fires before linked stylesheet */}
+          <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
+          {/* Cross-origin preconnect for sibling products */}
+          <link rel="preconnect" href="https://roadmap.signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://roadmap.signalstudio.ie" />
+          <link rel="preconnect" href="https://notes.signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://notes.signalstudio.ie" />
+          <link rel="preconnect" href="https://analytics.signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://analytics.signalstudio.ie" />
+          <link rel="preconnect" href="https://signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://signalstudio.ie" />
+        </head>
+        <body className="min-h-full flex flex-col" style={{ background: "#fff" }}>
           <MotionProvider>{children}</MotionProvider>
         </body>
       </html>

@@ -13,10 +13,16 @@ import { db } from "@/server/db";
  * DO UPDATE, so when it eventually fires it harmlessly updates the row
  * with full email / name / handle that we don't have here.
  *
- * Safe to call repeatedly — every write is conditional on absence.
+ * B6 (Phase 3.6): when `email` is supplied and the row already exists with
+ * a NULL email column, this call backfills it. This closes the pre-migration
+ * NULL-email recurrence risk for users provisioned before the email column
+ * existed, without touching rows that already have email set.
+ *
+ * Safe to call repeatedly — every write is conditional on absence or NULL.
  */
 export async function ensureUserProvisioned(
   clerkUserId: string,
+  email?: string | null,
 ): Promise<void> {
   if (!clerkUserId || !clerkUserId.startsWith("user_")) return;
 
@@ -33,6 +39,18 @@ export async function ensureUserProvisioned(
       INSERT OR IGNORE INTO users (id, clerk_id, handle, color, initials)
       VALUES (${clerkUserId}, ${clerkUserId}, ${handle}, ${color}, ${initials})
     `);
+
+    // B6: backfill email when the row exists but email is NULL.
+    // Only runs when email was passed and is non-empty.
+    // Uses WHERE email IS NULL so it never overwrites a real value.
+    if (email) {
+      await tx.run(sql`
+        UPDATE users SET email = ${email}
+        WHERE (id = ${clerkUserId} OR clerk_id = ${clerkUserId})
+          AND email IS NULL
+      `);
+    }
+
     await tx.run(sql`
       INSERT OR IGNORE INTO workspaces (id, slug, name, owner_user_id, active_domain)
       VALUES (${workspaceId}, ${slug}, 'Personal', ${clerkUserId}, NULL)

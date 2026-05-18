@@ -8,9 +8,13 @@
  * occurs between subdomains. Monorepo + DB-merge ruled out by locked
  * decisions.
  *
- * Layout:
- *   Left  — signal studio. (umbrella wordmark → signalstudio.ie) + / + tasks
- *   Right — Products switcher (SuiteLauncher, authed mode) + UserButton
+ * Layout (P2-4 fix — IA_COHERENCE.md §3B canon):
+ *   Left  — SuiteLauncher (IS the "signal studio." trigger) + / + tasks
+ *   Right — UserButtonWithSuite only
+ *
+ * "signal studio." appears exactly ONCE in this header. The static anchor
+ * that was the left wordmark has been replaced by the SuiteLauncher trigger —
+ * matching the Notes/Roadmap pattern and resolving the Tasks outlier (D6).
  *
  * Height: h-14 (56px). Sticky top-0 z-40. backdrop-blur-md.
  * Background: bg semi-transparent (uses Tailwind; matches SiteNav).
@@ -23,9 +27,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { STUDIO_URL } from "@/lib/product-urls";
-
-const INDIGO = "#4f46e5";
+import { Wordmark } from "@/components/brand/wordmark";
 
 export function SuiteChrome() {
   // Hairline border-b on scroll — transparent at rest
@@ -58,17 +60,17 @@ export function SuiteChrome() {
       }
     >
       <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between px-6">
-        {/* Left slot: signal studio. / tasks breadcrumb */}
+        {/*
+         * Left slot — IA_COHERENCE.md §3B canon:
+         *   [SuiteLauncher] [/] [product-mark]
+         *
+         * The SuiteLauncher IS the "signal studio." trigger — clicking it
+         * opens the product switcher panel. There is no separate static
+         * anchor. "signal studio." appears exactly once in this header.
+         */}
         <div className="flex items-center gap-2 min-w-0">
-          {/* Umbrella wordmark — links to signalstudio.ie */}
-          <a
-            href={STUDIO_URL}
-            aria-label="Signal Studio"
-            className="flex-shrink-0 text-[12px] font-normal tracking-[-0.01em] text-[var(--ink-quiet,#71717a)] transition-colors hover:text-[var(--ink,#111111)]"
-            style={{ textDecoration: "none" }}
-          >
-            signal studio<span style={{ color: INDIGO }}>.</span>
-          </a>
+          {/* Umbrella trigger — SuiteLauncher in authed mode */}
+          <SuiteLauncher current="tasks" isAuthed={true} />
 
           {/* Separator */}
           <span
@@ -78,24 +80,16 @@ export function SuiteChrome() {
             /
           </span>
 
-          {/* Product mark — tasks, lowercase, ink-soft */}
-          <span
-            className="flex-shrink-0 text-[12px] font-normal tracking-[-0.01em] text-[var(--ink-soft,#3f3f46)]"
-            aria-label="Current product: tasks"
-          >
-            tasks
-          </span>
+          {/* Product mark — tasks· with its gesture dot */}
+          <Wordmark size="sm" />
         </div>
 
-        {/* Right slot: suite switcher (authed mode) + account menu */}
+        {/*
+         * Right slot — UserButtonWithSuite only.
+         * The SuiteLauncher is in the LEFT slot; no second instance here.
+         * This matches the Notes/Roadmap/Analytics pattern.
+         */}
         <div className="flex items-center gap-3">
-          {/*
-           * SuiteLauncher in authed mode: deep-links to /app entries,
-           * app-context labels. Positioned in the chrome, not the
-           * marketing nav, so it is always rendered on /app/* surfaces.
-           */}
-          <SuiteLauncher current="tasks" isAuthed={true} />
-
           <UserButtonWithSuite current="tasks" />
         </div>
       </div>
