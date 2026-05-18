@@ -12,8 +12,7 @@ import {
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 
 /**
- * Product catalogue — ratified order: Roadmap → Tasks → Notes → Analytics.
- * (IA_COHERENCE.md §1I, ratified 2026-05-16; ISSUE_REGISTER.md P2-6)
+ * Product order (operator-directed 2026-05-18): notes → tasks → roadmap → analytics.
  *
  * Authed labels (§1C canon): "Open roadmap" / "Open tasks" / "Open notes" /
  * "Open analytics" — lowercase product noun, no article form, no Title Case.
@@ -31,16 +30,16 @@ const PRODUCTS: {
   /** App-context label (authed mode) — IA_COHERENCE.md §1C canon. */
   appLabel: string;
 }[] = [
-  // Ratified hierarchy: Roadmap → Tasks → Notes → Analytics (2026-05-16)
-  { slug: "roadmap",   word: "roadmap",   tagline: "Direction clarity",  url: ROADMAP_URL,   appUrl: `${ROADMAP_URL}/app`,   appLabel: "Open roadmap" },
-  { slug: "tasks",     word: "tasks",     tagline: "Execution clarity",  url: TASKS_URL,     appUrl: `${TASKS_URL}/app`,     appLabel: "Open tasks" },
+  // Product order (operator-directed 2026-05-18): notes → tasks → roadmap → analytics
   { slug: "notes",     word: "notes",     tagline: "Capture clarity",    url: NOTES_URL,     appUrl: `${NOTES_URL}/app`,     appLabel: "Open notes" },
+  { slug: "tasks",     word: "tasks",     tagline: "Execution clarity",  url: TASKS_URL,     appUrl: `${TASKS_URL}/app`,     appLabel: "Open tasks" },
+  { slug: "roadmap",   word: "roadmap",   tagline: "Direction clarity",  url: ROADMAP_URL,   appUrl: `${ROADMAP_URL}/app`,   appLabel: "Open roadmap" },
   { slug: "analytics", word: "analytics", tagline: "Attention clarity",  url: ANALYTICS_URL, appUrl: `${ANALYTICS_URL}/app`, appLabel: "Open analytics" },
 ];
 
 const INDIGO = "#4f46e5";
 
-const PRODUCT_ORIGINS = [ROADMAP_URL, TASKS_URL, NOTES_URL, ANALYTICS_URL];
+const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, ROADMAP_URL, ANALYTICS_URL];
 
 /**
  * Phase 3 (instant-jump): warm a sibling product on hover/focus so the

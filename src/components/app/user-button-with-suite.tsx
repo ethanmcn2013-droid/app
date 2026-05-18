@@ -40,15 +40,15 @@ function clearPreviewCookie() {
 /**
  * Cross-product links — IA_COHERENCE.md §1G + §4B canon.
  *
- * Order: tasks → roadmap → notes → analytics (ratified hierarchy §1I).
+ * Order: notes → tasks → roadmap → analytics (operator-directed 2026-05-18).
  * Labels: "Open [product]" where [product] is the lowercase wordmark name.
  * "Open Tasks" / "Open Roadmap" (Title Case) are retired; lowercase is canon.
  * The current product is excluded via the filter below.
  */
 const PRODUCTS: { slug: ProductSlug; label: string; url: string }[] = [
-  { slug: "roadmap",   label: "Open roadmap",   url: `${ROADMAP_URL}/app` },
-  { slug: "tasks",     label: "Open tasks",     url: `${TASKS_URL}/app` },
   { slug: "notes",     label: "Open notes",     url: `${NOTES_URL}/app` },
+  { slug: "tasks",     label: "Open tasks",     url: `${TASKS_URL}/app` },
+  { slug: "roadmap",   label: "Open roadmap",   url: `${ROADMAP_URL}/app` },
   { slug: "analytics", label: "Open analytics", url: `${ANALYTICS_URL}/app` },
 ];
 
