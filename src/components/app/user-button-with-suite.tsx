@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser, useClerk } from "@clerk/nextjs";
 import {
   ANALYTICS_URL,
   NOTES_URL,
@@ -87,6 +87,24 @@ function GearIcon() {
   );
 }
 
+function CameraIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
 function EyeIcon() {
   return (
     <svg
@@ -117,6 +135,14 @@ function EyeIcon() {
  */
 export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
   const [isPreview, setIsPreview] = useState(false);
+  const { user } = useUser();
+  const { openUserProfile } = useClerk();
+  // hasImage is true once the user has uploaded a custom avatar. When false
+  // (default Clerk-generated initials avatar), we surface an "Add a photo"
+  // shortcut that opens the built-in Clerk profile editor.
+  // Clerk API: user.hasImage (boolean, @clerk/nextjs useUser hook).
+  // openUserProfile() from useClerk() opens the <UserProfile> modal.
+  const hasPhoto = user?.hasImage ?? true; // default true so no flicker on load
 
   useEffect(() => {
     setIsPreview(readPreviewCookie());
@@ -148,6 +174,18 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
           href="/settings/profile"
           labelIcon={<GearIcon />}
         />
+        {/* Item 4: when the user hasn't uploaded a photo, surface a direct
+            "Add a photo" entry that opens the built-in Clerk profile editor.
+            Clerk API: openUserProfile() from useClerk() opens <UserProfile>
+            modal — avatar upload is on the first tab. hasImage from useUser()
+            detects whether a custom photo has been uploaded. */}
+        {!hasPhoto ? (
+          <UserButton.Action
+            label="Add a photo"
+            labelIcon={<CameraIcon />}
+            onClick={() => openUserProfile()}
+          />
+        ) : null}
         <UserButton.Action label="manageAccount" />
         {PRODUCTS.filter((p) => p.slug !== current).map((p) => (
           <UserButton.Link

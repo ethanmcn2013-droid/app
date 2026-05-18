@@ -42,6 +42,14 @@ const MODE_OPTIONS: Array<{
   },
 ];
 
+/**
+ * Item 6 — Share is now a first-class surface, not a secondary action.
+ * The trigger label is unchanged ("Share") but the popover leads with
+ * reassuring copy: anyone with the link can read — no account needed.
+ * The "Generate magic link" CTA is the primary action; the mode/expiry
+ * options are still there for power users but the default (view, 7 days)
+ * covers 90% of sharing intent without any configuration.
+ */
 export function ShareButton({ view }: { view: ShareView }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"new" | "manage">("new");
@@ -151,10 +159,12 @@ export function ShareButton({ view }: { view: ShareView }) {
 
   return (
     <div ref={wrapRef} className="relative">
+      {/* Item 6: prominent Share trigger — indigo-accented ring so it
+          reads as the primary collaborative action in the header row. */}
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+        className="inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand-soft px-2.5 py-1.5 text-[12px] font-medium text-brand transition-colors hover:border-brand/50 hover:bg-brand-soft"
       >
         <svg
           width="12"
@@ -288,9 +298,11 @@ function NewLinkForm({
 }) {
   return (
     <div>
+      {/* Item 6: reassuring entry copy — "no account needed" is the key
+          trust signal. Plain language, calm tone per Signal brand voice. */}
       <p className="text-[12.5px] leading-[1.55] text-ink-soft">
-        Generate a link anyone can open without signing up. Pick the
-        guest&rsquo;s power level and set an expiry.
+        Share this board with anyone — they can open it straight away, no
+        account needed. Set how much they can do, then copy the link.
       </p>
 
       <Field label="Label (optional)">
@@ -370,9 +382,9 @@ function NewLinkForm({
         type="button"
         onClick={onGenerate}
         disabled={pending}
-        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[12.5px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
       >
-        {pending ? "Generating…" : "Generate magic link"}
+        {pending ? "Creating link…" : "Get a shareable link"}
       </button>
     </div>
   );
@@ -412,14 +424,21 @@ function ShareSuccess({
 }) {
   return (
     <div>
-      <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-        Magic link
+      {/* Item 6: reassurance first. The key fact — no account needed — is
+          the main anxiety to resolve. Copy then details. */}
+      <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2.5">
+        <p className="text-[12px] font-medium text-emerald-800">
+          Link ready — anyone can open it, no account needed.
+        </p>
+        <p className="mt-0.5 text-[11px] text-emerald-700">
+          {mode === "view" ? "Read only." : mode === "comment" ? "Can comment." : "Can edit."}{" "}
+          Expires: {expiry}.
+        </p>
       </div>
-      <p className="mt-1 text-[12px] leading-[1.5] text-ink-soft">
-        Mode: <span className="font-medium text-ink-soft">{mode}</span> ·
-        Expiry: <span className="font-medium text-ink-soft">{expiry}</span>
-      </p>
-      <div className="mt-3 flex items-center gap-1.5 rounded-md border border-line-soft bg-bg-sunken/40 px-2 py-1.5">
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+        Your link
+      </div>
+      <div className="mt-1.5 flex items-center gap-1.5 rounded-md border border-line-soft bg-bg-sunken/40 px-2 py-1.5">
         <span className="block flex-1 truncate font-mono text-[11px] text-ink-soft">
           {url}
         </span>
