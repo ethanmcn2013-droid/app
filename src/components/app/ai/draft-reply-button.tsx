@@ -112,8 +112,8 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled || isStreaming}
-        aria-label="Draft a reply with AI"
-        title="Draft a reply with AI"
+        aria-label="Draft a reply"
+        title="Draft a reply"
         className="group inline-flex h-[22px] items-center gap-1 rounded-full border border-line-soft bg-white px-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40"
         style={{
           transitionTimingFunction: "var(--ease-out-expo)",
