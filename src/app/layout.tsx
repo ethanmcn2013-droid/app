@@ -101,23 +101,8 @@ export default function RootLayout({
         style={{ background: "#fff", colorScheme: "light" }}
       >
         <head>
-          {/* RW-5 Layer-0 pre-paint primitive — ARCH_SPEC §3, CREATIVE_SPEC §3.
-              Two synchronous inlines that fire before any linked stylesheet
-              or script resolves. Together they kill the dark frame on every
-              cross-origin hop:
-              1. <style>: white field on html + body; body::before = full-screen
-                 white overlay (z:9998); body::after = centred 12px #4f46e5 dot
-                 (z:9999). All literals — no var(), no em, no JS. Identical
-                 across all 5 repos so the dot appears at the same coords on
-                 both sides of a cross-origin hop → perceptually continuous.
-                 globals.css overrides body::before/after to content:none once
-                 the stylesheet loads, handing off to SuiteLoader.
-              2. <script>: reads sessionStorage key `signal_dot_nav`. If set,
-                 clears it and marks <html data-dot-landing="1"> so that the
-                 dot-land @keyframes in globals.css fires on the wordmark period.
-          */}
-          {/* eslint-disable-next-line react/no-danger */}
-          <style dangerouslySetInnerHTML={{ __html: "html,body{background:#fff}" }} />
+          {/* Belt-and-braces synchronous inline style — fires before linked stylesheet */}
+          <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
           {/* Cross-origin preconnect for sibling products */}
           <link rel="preconnect" href="https://roadmap.signalstudio.ie" />
           <link rel="dns-prefetch" href="https://roadmap.signalstudio.ie" />
