@@ -30,6 +30,7 @@ const DOMAIN_IDS = new Set<DomainId>([
   "student",
   "freelance",
   "wedding",
+  "trades",
 ]);
 
 function strHash(s: string): number {

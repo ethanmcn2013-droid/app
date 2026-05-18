@@ -38,6 +38,10 @@ export function WorkspaceSection({
 }) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
+  // Track which pack is actively reseeding so the card itself shows
+  // "Reseeding…" rather than relying on a shared pending flag that
+  // the name-save transition also uses. Cleared on success or error.
+  const [reseedingDomain, setReseedingDomain] = useState<DomainId | null>(null);
   const [name, setName] = useState(workspace?.name ?? "");
   const [domainConfirm, setDomainConfirm] = useState<DomainId | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,18 +71,21 @@ export function WorkspaceSection({
 
   function applyDomain(next: DomainId) {
     setDomainConfirm(null);
+    setReseedingDomain(next);
     startTransition(async () => {
       try {
         await updateWorkspaceAction({ domain: next });
-        toast("Domain pack switched", {
+        toast(`Reseeded with ${DOMAINS[next].label}`, {
           tone: "success",
-          body: "Your tasks have been re-seeded.",
+          body: "Board repopulated. Old tasks are gone.",
         });
       } catch (e) {
         toast("Switch failed", {
           tone: "error",
           body: (e as Error).message,
         });
+      } finally {
+        setReseedingDomain(null);
       }
     });
   }
@@ -137,6 +144,7 @@ export function WorkspaceSection({
               const pack = DOMAINS[id];
               const isActive =
                 isDomainId(currentDomain) && currentDomain === id;
+              const isReseeding = reseedingDomain === id;
               return (
                 <button
                   key={id}
@@ -145,18 +153,25 @@ export function WorkspaceSection({
                   onClick={() => setDomainConfirm(id)}
                   className={
                     "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
-                    (isActive
-                      ? "border-brand/40 bg-brand-soft/60"
-                      : canEdit
-                        ? "border-line bg-white hover:border-ink-soft/30"
-                        : "border-line-soft bg-bg-sunken/30 opacity-70")
+                    (isReseeding
+                      ? "border-brand/60 bg-brand-soft/40"
+                      : isActive
+                        ? "border-brand/40 bg-brand-soft/60"
+                        : canEdit
+                          ? "border-line bg-white hover:border-ink-soft/30"
+                          : "border-line-soft bg-bg-sunken/30 opacity-70")
                   }
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] font-semibold text-ink">
                       {pack.label}
                     </span>
-                    {isActive ? (
+                    {isReseeding ? (
+                      <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-brand">
+                        <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+                        Reseeding…
+                      </span>
+                    ) : isActive ? (
                       <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.1em] text-brand">
                         Active
                       </span>
@@ -224,7 +239,7 @@ export function WorkspaceSection({
               onClick={() => domainConfirm && applyDomain(domainConfirm)}
               className="rounded-full bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-60"
             >
-              {pending ? "Re-seeding…" : "Re-seed it"}
+              {reseedingDomain ? "Reseeding…" : "Re-seed it"}
             </button>
           </div>
         </div>
