@@ -26,8 +26,8 @@ export default function Loading() {
       <div
         className="signal-loading-dot"
         style={{
-          width: 10,
-          height: 10,
+          width: 12,
+          height: 12,
           borderRadius: "50%",
           background: "var(--indigo, #4f46e5)",
           flexShrink: 0,

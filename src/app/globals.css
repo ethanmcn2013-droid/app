@@ -420,7 +420,7 @@ body {
   /* ── Loading field ──────────────────────────────────────── */
   --load-bg:                var(--paper, #ffffff);
   --load-dot-color:         var(--indigo, #4f46e5);
-  --load-dot-size:          10px;           /* hard px — immune to font-size pre-hydration */
+  --load-dot-size:          12px;           /* hard px — immune to font-size pre-hydration. D8: 10px→12px */
   --load-dot-radius:        50%;
   --load-pulse-scale-min:   0.72;
   --load-pulse-scale-max:   1.0;
