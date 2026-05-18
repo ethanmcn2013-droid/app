@@ -168,7 +168,7 @@ function PanelFooter({ task }: { task: Task }) {
       {task.isMilestone ? (
         <div className="flex justify-end px-6 pt-2">
           <a
-            href={ROADMAP_URL}
+            href={`${ROADMAP_URL}/app`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-[11px] text-ink-quiet transition-colors hover:text-ink-soft"
