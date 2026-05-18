@@ -117,9 +117,7 @@ export default function RootLayout({
                  dot-land @keyframes in globals.css fires on the wordmark period.
           */}
           {/* eslint-disable-next-line react/no-danger */}
-          <style dangerouslySetInnerHTML={{ __html: "html,body{background:#fff}body::before{content:\"\";position:fixed;inset:0;background:#fff;z-index:9998;pointer-events:none}body::after{content:\"\";position:fixed;top:50%;left:50%;width:12px;height:12px;background:#4f46e5;border-radius:50%;transform:translate(-50%,-50%);z-index:9999;pointer-events:none}" }} />
-          {/* eslint-disable-next-line react/no-danger */}
-          <script dangerouslySetInnerHTML={{ __html: "(function(){var k='signal_dot_nav';if(sessionStorage.getItem(k)==='1'){sessionStorage.removeItem(k);document.documentElement.setAttribute('data-dot-landing','1');}})()" }} />
+          <style dangerouslySetInnerHTML={{ __html: "html,body{background:#fff}" }} />
           {/* Cross-origin preconnect for sibling products */}
           <link rel="preconnect" href="https://roadmap.signalstudio.ie" />
           <link rel="dns-prefetch" href="https://roadmap.signalstudio.ie" />
