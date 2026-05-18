@@ -12,7 +12,7 @@ const NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/#features", label: "Features" },
   { href: "/app/board", label: "App" },
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
-  { href: "/changelog", label: "Changelog" },
+  { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
 ];
 
 /**

@@ -98,7 +98,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "views")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <rect x="3" y="3" width="7" height="18" rx="1.4" />
           <rect x="14" y="3" width="7" height="11" rx="1.4" />
         </svg>
@@ -107,7 +107,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "presence")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="9" cy="8" r="3" />
           <circle cx="17" cy="11" r="2.4" />
           <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
@@ -118,7 +118,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "ai")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z" />
         </svg>
       </span>
@@ -126,7 +126,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "deps")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <circle cx="6" cy="7" r="2" />
           <circle cx="18" cy="17" r="2" />
           <path d="M8 7h6a4 4 0 0 1 4 4v4" strokeLinecap="round" />
@@ -136,7 +136,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "spark")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 17l4-6 4 3 4-7 6 9" />
         </svg>
       </span>
@@ -144,7 +144,7 @@ function FeatureGlyph({ kind }: { kind: string }) {
   if (kind === "motion")
     return (
       <span className={wrap}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 12c4-9 14-9 18 0M3 12c4 9 14 9 18 0" />
         </svg>
       </span>

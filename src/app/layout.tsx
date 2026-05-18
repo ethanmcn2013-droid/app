@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Signal Tasks — execution clarity",
     description:
-      "A live task workspace for the work people actually do.",
+      "Four views of the same list, real-time when it matters, plain-English dates — free to start.",
     type: "website",
   },
 };

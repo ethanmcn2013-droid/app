@@ -365,7 +365,7 @@ function DemoCard({
               transition={SPRING_SNAP}
               className="rounded-[5px] -mx-1 px-1 text-[14px] font-medium leading-snug text-ink outline-none cursor-pointer"
             >
-              Launch demo video — final cut
+              Finalise run-of-show · ceremony to reception
             </motion.span>
             <motion.span
               {...hoverProps("priority")}

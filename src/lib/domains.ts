@@ -369,7 +369,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "venues · vendors · vows · run-of-show",
     workspaceTitle: "Hartwell Wedding · 6.14.26",
     workspaceCrumb: "Weddings",
-    workspaceUrl: `${TASKS_DOMAIN}/weddings/hartwell`,
+    workspaceUrl: `hartwell-wedding`,
     demoCommentText: "Florals confirmed — peonies and garden roses.",
     emptyStateHeadline: "This is where the day comes together.",
     emptyStateBody:

@@ -134,7 +134,7 @@ export default async function StatusPage() {
                     {i.name}
                   </span>
                   <span className="text-[10.5px] text-ink-quiet">
-                    {i.ok ? "live" : "—"}
+                    {i.ok ? "live" : "not monitored"}
                   </span>
                 </li>
               ))}
