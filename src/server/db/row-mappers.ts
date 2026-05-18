@@ -30,6 +30,10 @@ export function rowToTask(row: TaskRow): Task {
     externalContactEmail: row.externalContactEmail ?? null,
     cents: row.cents ?? null,
     parentTaskId: row.parentTaskId ?? null,
+    // RW-3b: milestone flag — coerce DB integer boolean to JS boolean.
+    // Undefined (not false) for untouched rows so the flag reads as
+    // falsy without adding noise to the client type.
+    isMilestone: row.isMilestone || undefined,
     updatedAt: row.updatedAt,
   };
 }

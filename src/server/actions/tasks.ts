@@ -427,3 +427,32 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
 }
+
+/**
+ * RW-3b — toggle the milestone flag on a task.
+ *
+ * D6 contract: setting isMilestone=true fills the Roadmap's PRIVATE draft
+ * only. Nothing here auto-publishes. The publish gate is separate and
+ * lives entirely in the Roadmap app. This action ONLY sets the flag.
+ *
+ * Reversible: calling with `false` unsets the flag. If a Roadmap node
+ * was generated from this task, the Roadmap curation overlay controls
+ * visibility (hide toggle) — the node is NOT auto-deleted on unset,
+ * preventing accidental data loss from an accidental mis-tap.
+ *
+ * Workspace guard: the update only fires when the row belongs to the
+ * caller's active workspace (same pattern as all other task mutations).
+ */
+export async function setTaskMilestoneAction(
+  id: string,
+  isMilestone: boolean,
+): Promise<Task[]> {
+  const ws = await getActiveWorkspace();
+  await db
+    .update(tasks)
+    .set({ isMilestone, ...bump() })
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  revalidatePath("/app", "layout");
+  emitTasksChanged({ kind: "tasks" });
+  return getTasks(ws);
+}

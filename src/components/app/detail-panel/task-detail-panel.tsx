@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { getTaskConversationAction } from "@/server/actions/conversation";
+import { setTaskMilestoneAction } from "@/server/actions/tasks";
 import type { ConversationItem } from "@/server/db/queries";
 import { PanelShell } from "./panel-shell";
 import { PanelHeader } from "./panel-header";
@@ -152,13 +153,15 @@ function Section({
 /**
  * Bottom row of the panel. Quiet by design — sibling buttons only.
  * "Repeat" opens the chain-duplicate popover; "Focus" dispatches
- * `focus-mode:open` so the global FocusMode overlay picks it up.
+ * `focus-mode:open` so the global FocusMode overlay picks it up;
+ * "Milestone" (RW-3b) toggles the `is_milestone` DB flag.
  * Sits below Contact + Cents so it never collides with those sections.
  */
 function PanelFooter({ task }: { task: Task }) {
   return (
     <div className="flex items-center justify-end gap-1 border-t border-line-soft px-6 py-3">
       <RepeatButton task={task} />
+      <MilestoneButton task={task} />
       <button
         type="button"
         onClick={() => {
@@ -188,6 +191,65 @@ function PanelFooter({ task }: { task: Task }) {
         Focus
       </button>
     </div>
+  );
+}
+
+/**
+ * RW-3b — "Milestone" toggle button in the PanelFooter.
+ *
+ * Visual treatment (UX_SPEC §RW-3b):
+ *   - Unset: diamond outline SVG (◇) + label "Milestone", ink-quiet color.
+ *   - Set: filled diamond SVG (◆) + same label, brand color with soft
+ *     background tint.
+ * aria-pressed signals state to assistive technology.
+ * No confirm dialog — it's a toggle, reversible in one click.
+ *
+ * D6 contract: toggling to true fills the Roadmap's private draft only.
+ * Nothing here auto-publishes.
+ */
+function MilestoneButton({ task }: { task: Task }) {
+  const [isPending, startTransition] = useTransition();
+  const [optimistic, setOptimistic] = useOptimistic(!!task.isMilestone);
+
+  function handleClick() {
+    const next = !optimistic;
+    startTransition(async () => {
+      setOptimistic(next);
+      await setTaskMilestoneAction(task.id, next);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isPending}
+      aria-pressed={optimistic}
+      aria-label={optimistic ? "Remove milestone" : "Mark as milestone"}
+      title={optimistic ? "Remove milestone" : "This task will appear on your plan"}
+      className={[
+        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-colors",
+        optimistic
+          ? "bg-[color-mix(in_srgb,var(--brand)_10%,transparent)] text-[var(--brand)]"
+          : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
+      ].join(" ")}
+    >
+      {/* Diamond SVG — outline when unset, filled when set */}
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill={optimistic ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M12 2 L22 12 L12 22 L2 12 Z" />
+      </svg>
+      Milestone
+    </button>
   );
 }
 

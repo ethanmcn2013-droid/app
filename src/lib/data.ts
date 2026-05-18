@@ -178,6 +178,11 @@ export type Task = {
    *  billable amount, anyone who'd otherwise stash the number in a
    *  separate sheet. Null when no amount is set. */
   cents: number | null;
+  /** RW-3b: milestone promotion flag. True when the owner explicitly
+   *  marks a task as a milestone in the task panel. Additive + reversible.
+   *  Drives the Roadmap sync read query (ARCH_SPEC §1.1). Optional/falsy
+   *  for all legacy tasks; the schema column defaults to 0. */
+  isMilestone?: boolean;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };

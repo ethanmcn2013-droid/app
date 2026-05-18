@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { EASE_OUT_EXPO, MOTION_MODERATE } from "@/lib/motion";
 import {
@@ -23,6 +23,7 @@ import { BoardGhost } from "@/components/app/empty-state/ghost-views";
 import { BlockerBadge } from "@/components/app/blockers/blocker-badge";
 import { Popover } from "@/components/app/detail-panel/popover";
 import { RecurrenceChip } from "@/components/app/cards/recurrence-chip";
+import { setTaskMilestoneAction } from "@/server/actions/tasks";
 
 /** True when viewport is <768px. SSR-safe: starts false, flips on mount. */
 function useIsMobile() {
@@ -616,16 +617,36 @@ function Card({
       data-task-id={task.id}
       data-task-title={task.title}
       data-task-focused={isFocused ? "true" : undefined}
-      className="group relative cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline,box-shadow] hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]"
+      className={[
+        "group relative cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline,box-shadow] hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]",
+        // RW-3b: milestone tasks get a 2px indigo left-edge accent (additive,
+        // does not collide with the existing brand outline used for focus/select
+        // which is on outline not border-left).
+        task.isMilestone ? "border-l-[2px] border-l-[var(--brand)]" : "",
+      ].join(" ")}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-2 flex-1">{task.title}</span>
+        {/* RW-3b: diamond glyph prepended to title when milestone is set */}
+        <span className="line-clamp-2 flex-1">
+          {task.isMilestone ? (
+            <span
+              className="mr-1 inline-block text-[10px] text-[var(--brand)]"
+              aria-hidden
+            >
+              ◇
+            </span>
+          ) : null}
+          {task.title}
+        </span>
         <div className="flex flex-shrink-0 items-center gap-1.5">
           {task.priority === "p0" ? (
             <span className="rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wider text-red-600">
               P0
             </span>
           ) : null}
+          {/* RW-3b quick-toggle: diamond appears on hover on desktop.
+              On mobile the panel "Milestone" button is the primary path. */}
+          <MilestoneQuickToggle task={task} />
           <div ref={menuRef} className="relative">
             <button
               type="button"
@@ -730,5 +751,62 @@ function Card({
         </div>
       ) : null}
     </motion.div>
+  );
+}
+
+/**
+ * RW-3b — quick milestone toggle on the board card.
+ *
+ * Desktop: visible on group-hover only (opacity-0 md:group-hover:opacity-100),
+ * same pattern as the lane-move menu button. Clicking toggles `isMilestone`
+ * without opening the detail panel.
+ *
+ * Optimistic: state flips instantly; server action fires in a transition.
+ * aria-pressed communicates state to assistive technology.
+ */
+function MilestoneQuickToggle({ task }: { task: Task }) {
+  const [isPending, startTransition] = useTransition();
+  const [optimistic, setOptimistic] = useOptimistic(!!task.isMilestone);
+
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation(); // don't open the detail panel
+    const next = !optimistic;
+    startTransition(async () => {
+      setOptimistic(next);
+      await setTaskMilestoneAction(task.id, next);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={isPending}
+      aria-pressed={optimistic}
+      aria-label={optimistic ? "Remove milestone" : "Mark as milestone"}
+      title={optimistic ? "Remove milestone" : "Mark as milestone"}
+      className={[
+        "inline-flex h-5 w-5 items-center justify-center rounded transition-colors",
+        // Mirror the lane-move button: hidden on mobile, reveal on hover.
+        "opacity-100 md:opacity-0 md:group-hover:opacity-100",
+        optimistic
+          ? "text-[var(--brand)]"
+          : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
+      ].join(" ")}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill={optimistic ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M12 2 L22 12 L12 22 L2 12 Z" />
+      </svg>
+    </button>
   );
 }
