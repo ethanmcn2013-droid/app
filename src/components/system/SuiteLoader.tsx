@@ -230,8 +230,8 @@ export function SuiteLoaderField() {
       <div
         className="signal-loading-dot"
         style={{
-          width: "var(--load-dot-size, 10px)",
-          height: "var(--load-dot-size, 10px)",
+          width: "var(--load-dot-size, 12px)",
+          height: "var(--load-dot-size, 12px)",
           borderRadius: "var(--load-dot-radius, 50%)",
           background: "var(--load-dot-color, var(--indigo, #4f46e5))",
           flexShrink: 0,

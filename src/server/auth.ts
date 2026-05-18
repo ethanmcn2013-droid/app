@@ -1,6 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users, workspaceMembers, workspaces } from "@/server/db/schema";
@@ -77,7 +77,19 @@ export async function getCurrentUser(): Promise<UserId> {
     // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
     // INSERT OR IGNORE — safe to call on every request; DB round-trip is
     // cheap relative to the auth() call already above.
-    await ensureUserProvisioned(clerkId);
+    //
+    // B6 (Phase 3.6): pass email so ensureUserProvisioned can backfill
+    // the email column for rows provisioned before the column existed
+    // (pre-migration NULL-email recurrence risk, pm's finding). currentUser()
+    // is a Clerk server helper that fetches the full user object; it is
+    // slightly more expensive than auth() (one extra Clerk API call) but only
+    // fires on the already-auth-gated path. We use the primary email address.
+    const clerkUserObj = await currentUser();
+    const clerkEmail =
+      clerkUserObj?.emailAddresses?.find(
+        (e) => e.id === clerkUserObj.primaryEmailAddressId,
+      )?.emailAddress ?? null;
+    await ensureUserProvisioned(clerkId, clerkEmail);
 
     // Clerk id IS the internal user id post-Phase-A. The webhook
     // provisions the row; this query is the safety net in case a
