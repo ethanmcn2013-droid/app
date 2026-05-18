@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { PrinciplesManifesto } from "@/components/marketing/principles-manifesto";
 
@@ -24,7 +24,7 @@ export const metadata = {
 export default function PrinciplesPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <PrinciplesManifesto />
       </main>

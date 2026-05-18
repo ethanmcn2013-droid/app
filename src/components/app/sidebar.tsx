@@ -48,26 +48,16 @@ export function AppSidebar({ active: activeProp }: { active?: string }) {
   const active = activeProp ?? pathname ?? "";
   return (
     <>
-      <MobileSuiteBar />
+      {/*
+       * MobileSuiteBar removed — L4 SuiteChrome (suite-chrome.tsx) is now
+       * the persistent top bar on all /app/* surfaces (mobile + desktop).
+       * It renders above this sidebar in the layout. Content pt-9 on mobile
+       * was the MobileSuiteBar clearance; now the chrome is sticky (not
+       * fixed) so that padding is gone from /app/layout.tsx.
+       */}
       <MobileTabBar active={active} />
       <DesktopSidebar active={active} />
     </>
-  );
-}
-
-/**
- * Mobile-only top suite bar. Mirrors the desktop sidebar header's
- * breadcrumb (`signal studio. / tasks·`) so mobile users have the same
- * cross-product launcher entry point. Hidden at md+ where the desktop
- * sidebar already carries it.
- */
-function MobileSuiteBar() {
-  return (
-    <header className="fixed inset-x-0 top-0 z-30 flex h-9 items-center gap-2 border-b border-line-soft bg-white/95 px-3 backdrop-blur md:hidden">
-      <SuiteLauncher current="tasks" />
-      <span aria-hidden className="text-[12px] text-ink-faint">/</span>
-      <Wordmark size="sm" />
-    </header>
   );
 }
 
@@ -76,7 +66,8 @@ function DesktopSidebar({ active }: { active: string }) {
     <aside className="hidden h-full w-[252px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
       <div className="flex h-12 items-center justify-between border-b border-line-soft/70 px-4">
         <div className="flex min-w-0 items-center gap-2">
-          <SuiteLauncher current="tasks" />
+          {/* Authed mode: deep-links to /app entries (DESIGN.md §14 L3) */}
+          <SuiteLauncher current="tasks" isAuthed={true} />
           <span aria-hidden className="flex-shrink-0 text-[12px] text-ink-faint">/</span>
           <Wordmark size="md" />
         </div>

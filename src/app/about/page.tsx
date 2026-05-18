@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AboutManifesto } from "@/components/marketing/about-manifesto";
 import { ROADMAP_URL, STUDIO_URL } from "@/lib/product-urls";
@@ -24,7 +24,7 @@ export const metadata = {
 export default function AboutPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <AboutManifesto />
 

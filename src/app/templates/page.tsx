@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { TemplatesGallery } from "@/components/marketing/templates-gallery";
 import { TEMPLATES } from "@/lib/templates";
@@ -19,7 +19,7 @@ export const metadata = {
 export default function TemplatesPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <TemplatesGallery templates={TEMPLATES} />
       </main>

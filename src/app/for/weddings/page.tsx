@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForWeddings } from "@/components/marketing/for-weddings";
 
@@ -23,7 +23,7 @@ export const metadata = {
 export default function ForWeddingsPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <ForWeddings />
       </main>

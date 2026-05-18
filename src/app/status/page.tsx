@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,7 @@ export default async function StatusPage() {
 
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <section className="pt-16 md:pt-24">
           <div className="mx-auto w-full max-w-[820px] px-6">

@@ -5,6 +5,7 @@ import { db } from "@/server/db";
 import { pendingInvites, workspaces, users } from "@/server/db/schema";
 import { getCurrentUserOrNull } from "@/server/auth";
 import { SiteNav } from "@/components/marketing/site-nav";
+// L3: pass isAuthed derived from getCurrentUserOrNull (already called below)
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AcceptInviteButton } from "./accept-button";
 
@@ -92,7 +93,7 @@ export default async function InviteAcceptPage({
 
   return (
     <>
-      <SiteNav />
+      <SiteNav isAuthed={Boolean(me)} />
       <main className="flex-1">
         <section className="mx-auto w-full max-w-[640px] px-6 py-20">
           <div className="rounded-2xl border border-line-soft bg-bg-elevated px-8 py-10">

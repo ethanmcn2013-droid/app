@@ -16,11 +16,15 @@ const PRODUCTS: {
   word: string;
   tagline: string;
   url: string;
+  /** App entry deep-link (authed mode). DESIGN.md §14 */
+  appUrl: string;
+  /** App-context label (authed mode). DESIGN.md §14 */
+  appLabel: string;
 }[] = [
-  { slug: "tasks", word: "tasks", tagline: "Execution clarity", url: TASKS_URL },
-  { slug: "roadmap", word: "roadmap", tagline: "Direction clarity", url: ROADMAP_URL },
-  { slug: "notes", word: "notes", tagline: "Capture clarity", url: NOTES_URL },
-  { slug: "analytics", word: "analytics", tagline: "Attention clarity", url: ANALYTICS_URL },
+  { slug: "tasks", word: "tasks", tagline: "Execution clarity", url: TASKS_URL, appUrl: `${TASKS_URL}/app`, appLabel: "Open the workspace" },
+  { slug: "roadmap", word: "roadmap", tagline: "Direction clarity", url: ROADMAP_URL, appUrl: `${ROADMAP_URL}/app`, appLabel: "Open the roadmap" },
+  { slug: "notes", word: "notes", tagline: "Capture clarity", url: NOTES_URL, appUrl: `${NOTES_URL}/app`, appLabel: "Open the notebook" },
+  { slug: "analytics", word: "analytics", tagline: "Attention clarity", url: ANALYTICS_URL, appUrl: `${ANALYTICS_URL}/app`, appLabel: "Open the briefing" },
 ];
 
 const INDIGO = "#4f46e5";
@@ -83,8 +87,18 @@ function suiteJump(url: string) {
  * an extra caret. Current product is shown but de-emphasised with a
  * "here" tag; other products open in a new tab so the user keeps their
  * current workspace.
+ *
+ * L3 auth-aware mode (DESIGN.md §14):
+ * - isAuthed=true: deep-links to product /app entries; app-context labels.
+ * - isAuthed=false (default): marketing homepage URLs + marketing taglines.
  */
-export function SuiteLauncher({ current }: { current: ProductSlug }) {
+export function SuiteLauncher({
+  current,
+  isAuthed = false,
+}: {
+  current: ProductSlug;
+  isAuthed?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -152,15 +166,18 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
           <ul className="p-1">
             {PRODUCTS.map((p) => {
               const isCurrent = p.slug === current;
+              // L3 auth-aware: authed users get /app deep-links (DESIGN.md §14)
+              const href = isAuthed ? p.appUrl : p.url;
+              const sublabel = isAuthed ? p.appLabel : p.tagline;
               return (
                 <li key={p.slug}>
                   <a
-                    href={p.url}
+                    href={href}
                     onMouseEnter={
-                      isCurrent ? undefined : () => prefetchProduct(p.url)
+                      isCurrent ? undefined : () => prefetchProduct(href)
                     }
                     onFocus={
-                      isCurrent ? undefined : () => prefetchProduct(p.url)
+                      isCurrent ? undefined : () => prefetchProduct(href)
                     }
                     aria-current={isCurrent ? "true" : undefined}
                     role="menuitem"
@@ -177,7 +194,7 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
                       )
                         return;
                       e.preventDefault();
-                      suiteJump(p.url);
+                      suiteJump(href);
                     }}
                     className={
                       "group flex items-center justify-between gap-3 rounded-md px-2.5 py-2 no-underline transition-colors " +
@@ -192,7 +209,7 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
                         <span style={{ color: INDIGO }}>·</span>
                       </div>
                       <div className="text-[11px] font-normal text-ink-quiet">
-                        {p.tagline}
+                        {sublabel}
                       </div>
                     </div>
                     {isCurrent ? (
@@ -227,7 +244,7 @@ export function SuiteLauncher({ current }: { current: ProductSlug }) {
             onClick={() => setOpen(false)}
             className="block border-t border-line-soft/70 px-3.5 py-2.5 text-[11px] text-ink-quiet no-underline transition-colors hover:bg-bg-sunken/40 hover:text-ink"
           >
-            Visit signalstudio.ie →
+            {isAuthed ? "Back to Signal Studio →" : "Visit signalstudio.ie →"}
           </a>
         </div>
       ) : null}

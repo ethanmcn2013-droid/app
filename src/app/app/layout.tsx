@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app/sidebar";
+import { SuiteChrome } from "@/components/app/suite-chrome";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
 import { TaskDetailPanel } from "@/components/app/detail-panel/task-detail-panel";
 import { AddTaskRoot } from "@/components/app/add-task/add-task-context";
@@ -56,9 +57,22 @@ export default async function AppLayout({
             <ToastRoot>
               <AddTaskRoot>
                 <PaletteRoot>
-                  <div className="flex h-screen w-full overflow-hidden bg-bg">
-                    <AppSidebar />
-                    <div className="flex min-w-0 flex-1 flex-col pt-9 pb-[60px] md:pt-0 md:pb-0">{children}</div>
+                  {/*
+                   * L4 — persistent top chrome (DESIGN.md §14).
+                   * SuiteChrome is sticky h-14; it replaces the former
+                   * MobileSuiteBar (removed from AppSidebar) and gives
+                   * desktop a cross-product breadcrumb above the sidebar.
+                   * Layout restructured: flex-col wraps chrome + flex-row
+                   * (sidebar + content). overflow-hidden moves to the inner
+                   * row so the chrome scrolls with the page (sticky) while
+                   * the content area clips correctly.
+                   */}
+                  <div className="flex h-screen w-full flex-col bg-bg">
+                    <SuiteChrome />
+                    <div className="flex min-w-0 flex-1 overflow-hidden">
+                      <AppSidebar />
+                      <div className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">{children}</div>
+                    </div>
                   </div>
                   <TaskDetailPanel />
                   <CrossWorkspaceOverdue />

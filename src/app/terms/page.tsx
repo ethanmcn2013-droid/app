@@ -1,4 +1,4 @@
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { CONTACT_EMAIL } from "@/lib/product-urls";
 
@@ -20,7 +20,7 @@ const LAST_UPDATED = "2026-05-07";
 export default function TermsPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <article className="mx-auto w-full max-w-[720px] px-6 py-20">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { TemplateDetail } from "@/components/marketing/template-detail";
 import { TEMPLATES } from "@/lib/templates";
@@ -77,7 +77,7 @@ export default async function TemplateSlugPage({
 
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <TemplateDetail
           template={template}

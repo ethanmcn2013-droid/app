@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteNav } from "@/components/marketing/site-nav";
+import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ROADMAP_URL } from "@/lib/product-urls";
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function RoadmapPage() {
   return (
     <>
-      <SiteNav />
+      <SiteNavServer />
       <main className="flex-1">
         <section className="flex min-h-[30vh] items-center">
           <div className="mx-auto w-full max-w-[820px] px-6 py-20">

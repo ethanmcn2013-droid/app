@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import { SuiteLauncher } from "@/components/app/suite-launcher";
+import { UserButton } from "@clerk/nextjs";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 
@@ -14,7 +15,13 @@ const NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/changelog", label: "Changelog" },
 ];
 
-export function SiteNav() {
+/**
+ * L3 — auth-aware marketing nav (DESIGN.md §14).
+ * When authed: no "Sign in"/"Start for free"; account menu replaces CTA.
+ * The isAuthed prop is set by the server wrapper (SiteNavServer) so no
+ * client-side auth fetch is needed. Unauthed: identical to prior behavior.
+ */
+export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuId = "mobile-nav-menu";
@@ -40,7 +47,7 @@ export function SiteNav() {
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
         <div className="flex items-center gap-3">
           <div className="hidden sm:inline-flex">
-            <SuiteLauncher current="tasks" />
+            <SuiteLauncher current="tasks" isAuthed={isAuthed} />
           </div>
           <span aria-hidden className="hidden sm:inline" style={{ color: "var(--ink-faint)", fontSize: 12 }}>/</span>
           <Wordmark size="md" />
@@ -72,30 +79,43 @@ export function SiteNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/sign-in"
-            className="hidden rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:text-ink md:inline-flex"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/app/board"
-            className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-medium text-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md"
-          >
-            Open the workspace
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14M13 5l7 7-7 7" />
-            </svg>
-          </Link>
+          {isAuthed ? (
+            /* L3: authed — account menu replaces auth CTAs (DESIGN.md §14) */
+            <div className="hidden md:inline-flex items-center">
+              <UserButton
+                appearance={{
+                  elements: { avatarBox: "h-8 w-8 rounded-full" },
+                }}
+              />
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:text-ink md:inline-flex"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/app/board"
+                className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-medium text-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md"
+              >
+                Open the workspace
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </>
+          )}
 
           {/* Mobile menu toggle — only visible below md */}
           <button
@@ -161,15 +181,18 @@ export function SiteNav() {
               </li>
             ))}
           </ul>
-          <div className="mt-4 border-t border-line-soft/60 pt-4">
-            <Link
-              href="/sign-in"
-              onClick={closeMenu}
-              className="block rounded-md px-2 py-2.5 text-[14px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-            >
-              Sign in
-            </Link>
-          </div>
+          {/* L3: only show Sign in when unauthed */}
+          {!isAuthed && (
+            <div className="mt-4 border-t border-line-soft/60 pt-4">
+              <Link
+                href="/sign-in"
+                onClick={closeMenu}
+                className="block rounded-md px-2 py-2.5 text-[14px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
+              >
+                Sign in
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

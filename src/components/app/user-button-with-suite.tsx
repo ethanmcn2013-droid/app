@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import {
   ANALYTICS_URL,
@@ -10,11 +11,37 @@ import {
 
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 
+/**
+ * L3 escape hatch cookie name (DESIGN.md §14).
+ * Set as a short-lived SameSite=Strict cookie; the proxy reads it
+ * to suppress the M→/app redirect for the bearer.
+ */
+const PREVIEW_COOKIE = "signal_preview_public";
+const PREVIEW_COOKIE_VALUE = "1";
+const PREVIEW_COOKIE_MAX_AGE = 86400; // 24h
+
+function readPreviewCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.cookie
+    .split("; ")
+    .some((c) => c === `${PREVIEW_COOKIE}=${PREVIEW_COOKIE_VALUE}`);
+}
+
+function setPreviewCookie() {
+  document.cookie = `${PREVIEW_COOKIE}=${PREVIEW_COOKIE_VALUE}; path=/; max-age=${PREVIEW_COOKIE_MAX_AGE}; SameSite=Strict`;
+  sessionStorage.setItem(PREVIEW_COOKIE, PREVIEW_COOKIE_VALUE);
+}
+
+function clearPreviewCookie() {
+  document.cookie = `${PREVIEW_COOKIE}=; path=/; max-age=0; SameSite=Strict`;
+  sessionStorage.removeItem(PREVIEW_COOKIE);
+}
+
 const PRODUCTS: { slug: ProductSlug; label: string; url: string }[] = [
-  { slug: "tasks", label: "Open Tasks", url: TASKS_URL },
-  { slug: "roadmap", label: "Open Roadmap", url: ROADMAP_URL },
-  { slug: "notes", label: "Open Notes", url: NOTES_URL },
-  { slug: "analytics", label: "Open Analytics", url: ANALYTICS_URL },
+  { slug: "tasks", label: "Open Tasks", url: `${TASKS_URL}/app` },
+  { slug: "roadmap", label: "Open Roadmap", url: `${ROADMAP_URL}/app` },
+  { slug: "notes", label: "Open Notes", url: `${NOTES_URL}/app` },
+  { slug: "analytics", label: "Open Analytics", url: `${ANALYTICS_URL}/app` },
 ];
 
 function ArrowIcon() {
@@ -52,13 +79,51 @@ function GearIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 /**
  * Tasks-flavoured Clerk UserButton — same h-8 avatar + soft popover
- * shadow as before, plus three "Open <Sibling>" links above the
- * Manage account / Sign out rows. Each link opens the sibling product
- * in a new tab so the user keeps their current Tasks workspace.
+ * shadow as before, plus "Open <Sibling>" links (L3: deep-linking to
+ * /app entries per DESIGN.md §14), and the owner-only escape hatch
+ * "View public site" / "Exit preview" (L3: DESIGN.md §14).
+ *
+ * The escape hatch sets `signal_preview_public=1` as a short-lived
+ * same-site cookie + sessionStorage mirror so the proxy allows an
+ * authed user to view the marketing site without being redirected.
  */
 export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
+  const [isPreview, setIsPreview] = useState(false);
+
+  useEffect(() => {
+    setIsPreview(readPreviewCookie());
+  }, []);
+
+  function handleViewPublic() {
+    setPreviewCookie();
+    window.location.href = "/";
+  }
+
+  function handleExitPreview() {
+    clearPreviewCookie();
+    window.location.reload();
+  }
+
   return (
     <UserButton
       appearance={{
@@ -84,6 +149,15 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
             labelIcon={<ArrowIcon />}
           />
         ))}
+        {/* L3 escape hatch — DESIGN.md §14. Owner-only: sets the
+            signal_preview_public cookie so the proxy skips M→/app
+            redirect, letting the operator demo the public marketing
+            site while signed in. Not linked anywhere else. */}
+        <UserButton.Action
+          label={isPreview ? "Exit preview" : "View public site"}
+          labelIcon={<EyeIcon />}
+          onClick={isPreview ? handleExitPreview : handleViewPublic}
+        />
       </UserButton.MenuItems>
     </UserButton>
   );
