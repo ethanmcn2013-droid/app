@@ -7,6 +7,17 @@ import {
   STUDIO_URL,
 } from "@/lib/product-urls";
 
+const SOCIALS = [
+  { label: "X", href: "https://x.com/signalstudio_ie", title: "Signal Tasks on X",
+    svg: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden><path d="M18.244 2H21l-6.59 7.53L22 22h-6.828l-4.78-6.234L4.8 22H2l7.06-8.07L1.5 2h6.91l4.32 5.69L18.244 2Zm-2.39 18.4h1.594L7.21 3.512H5.5L15.853 20.4Z" /></svg>) },
+  { label: "YouTube", href: "https://www.youtube.com/@signalstudio_ie", title: "Signal Tasks on YouTube",
+    svg: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>) },
+  { label: "TikTok", href: "https://www.tiktok.com/@signalstudio_ie", title: "Signal Tasks on TikTok",
+    svg: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.84-.1z" /></svg>) },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/signal-studio-ie", title: "Signal Tasks on LinkedIn",
+    svg: (<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden><path d="M20.452 20.452h-3.554v-5.569c0-1.328-.024-3.037-1.852-3.037-1.853 0-2.136 1.447-2.136 2.94v5.666H9.356V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.602 0 4.268 2.37 4.268 5.455v6.286ZM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124ZM7.117 20.452H3.555V9h3.562v11.452ZM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003Z" /></svg>) },
+] as const;
+
 export function SiteFooter() {
   return (
     <footer className="mt-32 border-t border-line-soft/70 pb-10 pt-16">
@@ -76,8 +87,26 @@ export function SiteFooter() {
         <span>© {new Date().getFullYear()} Signal Tasks. A Signal Studio product.</span>
         <span>Clarity, not configuration.</span>
       </div>
+      <nav
+        aria-label="Signal Tasks on social"
+        className="mx-auto mt-4 flex w-full max-w-[1240px] items-center gap-x-1 px-6"
+      >
+        {SOCIALS.map(({ label, href, title, svg }) => (
+          <a
+            key={label}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={title}
+            aria-label={title}
+            className="inline-flex min-h-[32px] items-center px-2 py-1 text-ink-quiet transition-colors hover:text-ink"
+          >
+            {svg}
+          </a>
+        ))}
+      </nav>
       <div
-        className="mx-auto mt-4 flex w-full max-w-[1240px] flex-wrap items-center gap-x-1 gap-y-1 px-6 font-mono text-[12px] uppercase tracking-[0.08em] text-ink-quiet"
+        className="mx-auto mt-2 flex w-full max-w-[1240px] flex-wrap items-center gap-x-1 gap-y-1 px-6 font-mono text-[12px] uppercase tracking-[0.08em] text-ink-quiet"
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
       >
         <a href="https://signalstudio.ie/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Privacy</a>

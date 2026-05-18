@@ -48,11 +48,10 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
 
   const isMyTasks = pathname === "/app/my-tasks";
   const isInbox = pathname === "/app/inbox";
-  const breadcrumb = isMyTasks
-    ? { lead: "Personal", trail: "Assigned to me" }
-    : isInbox
-      ? { lead: "Personal", trail: "Inbox" }
-      : { lead: pack.workspaceCrumb, trail: pack.workspaceTitle };
+  // Breadcrumb mini-row removed 2026-05-18: SuiteChrome already establishes
+  // the "signal studio. / tasks" context one row up, so lead › trail here
+  // was a redundant second context line that made this read as a stacked
+  // bar. Workspace identity now lives only in the title.
   const title = isMyTasks
     ? "My tasks"
     : isInbox
@@ -65,30 +64,21 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const shareView = inferShareView(pathname ?? "/app/board");
   const printPath = inferPrintPath(pathname ?? "/app/board");
 
+  // De-stacked 2026-05-18: no border-b and lighter top padding so this
+  // reads as one continuous header region beneath the sticky SuiteChrome
+  // switcher, not a second stacked bar. SuiteChrome owns the only hairline
+  // (its scroll border); a second border here was the "two header rows" /
+  // amateur tell.
   return (
-    <header className="border-b border-line-soft px-4 pb-3 pt-4 md:px-8 md:pt-5">
+    <header className="px-4 pb-3 pt-3 md:px-8 md:pt-4">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11.5px] text-ink-quiet">
-            <span className="truncate">{breadcrumb.lead}</span>
-            <span>›</span>
-            <span className="truncate">{breadcrumb.trail}</span>
-          </div>
-          <h1 className="mt-1.5 flex items-center gap-2 text-[20px] font-semibold tracking-tight md:text-[24px]">
-            <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-brand-soft text-brand">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-              >
-                <polyline points="9 11 12 14 22 4" />
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-              </svg>
-            </span>
-            <span className="truncate">{title}</span>
+          {/* Redundant Tasks-logo glyph box removed 2026-05-18: SuiteChrome
+              already carries product identity (signal studio. + tasks·);
+              repeating the brand mark next to every workspace title read
+              as duplicated branding. Title now stands on its own. */}
+          <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
+            <span className="block truncate">{title}</span>
           </h1>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
