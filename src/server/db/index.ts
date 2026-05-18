@@ -12,10 +12,12 @@ import { seedIfEmpty } from "./seed";
  * the repo root on first boot exactly as before.
  *
  * TASKS_DATABASE_URL is intentionally separate from TURSO_DATABASE_URL
- * (which is used by roadmap-db/index.ts and points at the shared
- * roadmap DB). Keeping them apart prevents the tasks seed from hitting
- * the roadmap schema and emitting "table comments has no column named
- * workspace_id".
+ * (which points at the physically distinct roadmap-only Turso DB and
+ * is used solely by the raw-SQL cycle-log scripts — scripts/log-cycle.ts
+ * and scripts/check-cycles.ts; there is no longer a drizzle roadmap-db
+ * layer in this repo). Keeping them apart prevents the tasks seed from
+ * hitting the roadmap schema and emitting "table comments has no column
+ * named workspace_id".
  *
  * Switching on TASKS_DATABASE_URL presence (not just VERCEL) so a
  * local dev session can also point at the remote DB by setting the env
