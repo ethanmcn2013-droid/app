@@ -256,16 +256,61 @@ function sanitizeCents(value: number | null): number | null {
   return Math.min(int, 99_999_999);
 }
 
+/**
+ * Columns in the `Task` type that `updateTaskAction` is permitted to
+ * write. Structural / ownership / identity columns are intentionally
+ * absent and will be stripped even if the caller somehow submits them.
+ *
+ * Non-patchable via this action (and why):
+ *   - `id`            — PK; never mutated after insert
+ *   - `workspaceId`   — tenant boundary; relocating a task into a
+ *                       foreign workspace is the P1-1 vuln
+ *   - `parentTaskId`  — structural relationship; set only at creation
+ *                       via `addTaskAction`
+ *   - `sourceNoteId`  — provenance metadata; set at creation only
+ *   - `isMilestone`   — has its own dedicated `setTaskMilestoneAction`
+ *   - `createdAt`     — server-managed; immutable after insert
+ *   - `updatedAt`     — server-managed; always written via `bump()`
+ *   - `comments`      — derived count in the query layer, not a column
+ */
+const PATCHABLE_TASK_COLUMNS = new Set([
+  "title",
+  "description",
+  "lane",
+  "priority",
+  "assignees",
+  "due",
+  "dueAt",
+  "estimate",
+  "tags",
+  "idleDays",
+  "blockedBy",
+  "recurrence",
+  "startDay",
+  "durationDays",
+  "position",
+  "externalContactName",
+  "externalContactEmail",
+  "cents",
+] as const);
+
 export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   const ws = await getActiveWorkspace();
-  // Drizzle accepts only known columns — strip undefined to avoid
-  // overwriting with NULL when the caller sends a sparse patch.
+  // Build the SET payload from only explicitly allowed columns.
+  // This is an action-boundary allowlist — it strips ownership /
+  // structural / identity columns (workspaceId, parentTaskId,
+  // sourceNoteId, isMilestone, createdAt, updatedAt) regardless of
+  // what the caller submits, and independently of the input type.
+  // Also strips undefined values so Drizzle doesn't overwrite with NULL
+  // on a sparse patch.
   const cleaned: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(patch)) {
-    if (v !== undefined) cleaned[k] = v;
+    if (v !== undefined && PATCHABLE_TASK_COLUMNS.has(k as never)) {
+      cleaned[k] = v;
+    }
   }
   if ("cents" in cleaned) {
     cleaned.cents = sanitizeCents(cleaned.cents as number | null);
