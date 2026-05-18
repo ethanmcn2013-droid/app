@@ -11,6 +11,16 @@ import {
 
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 
+/**
+ * Product catalogue — ratified order: Roadmap → Tasks → Notes → Analytics.
+ * (IA_COHERENCE.md §1I, ratified 2026-05-16; ISSUE_REGISTER.md P2-6)
+ *
+ * Authed labels (§1C canon): "Open roadmap" / "Open tasks" / "Open notes" /
+ * "Open analytics" — lowercase product noun, no article form, no Title Case.
+ *
+ * Footer: authed → "Back to Signal Studio →" same-tab (§1F).
+ *         unauthed → "Visit signalstudio.ie →" new-tab (§1F).
+ */
 const PRODUCTS: {
   slug: ProductSlug;
   word: string;
@@ -18,18 +28,19 @@ const PRODUCTS: {
   url: string;
   /** App entry deep-link (authed mode). DESIGN.md §14 */
   appUrl: string;
-  /** App-context label (authed mode). DESIGN.md §14 */
+  /** App-context label (authed mode) — IA_COHERENCE.md §1C canon. */
   appLabel: string;
 }[] = [
-  { slug: "tasks", word: "tasks", tagline: "Execution clarity", url: TASKS_URL, appUrl: `${TASKS_URL}/app`, appLabel: "Open the workspace" },
-  { slug: "roadmap", word: "roadmap", tagline: "Direction clarity", url: ROADMAP_URL, appUrl: `${ROADMAP_URL}/app`, appLabel: "Open the roadmap" },
-  { slug: "notes", word: "notes", tagline: "Capture clarity", url: NOTES_URL, appUrl: `${NOTES_URL}/app`, appLabel: "Open the notebook" },
-  { slug: "analytics", word: "analytics", tagline: "Attention clarity", url: ANALYTICS_URL, appUrl: `${ANALYTICS_URL}/app`, appLabel: "Open the briefing" },
+  // Ratified hierarchy: Roadmap → Tasks → Notes → Analytics (2026-05-16)
+  { slug: "roadmap",   word: "roadmap",   tagline: "Direction clarity",  url: ROADMAP_URL,   appUrl: `${ROADMAP_URL}/app`,   appLabel: "Open roadmap" },
+  { slug: "tasks",     word: "tasks",     tagline: "Execution clarity",  url: TASKS_URL,     appUrl: `${TASKS_URL}/app`,     appLabel: "Open tasks" },
+  { slug: "notes",     word: "notes",     tagline: "Capture clarity",    url: NOTES_URL,     appUrl: `${NOTES_URL}/app`,     appLabel: "Open notes" },
+  { slug: "analytics", word: "analytics", tagline: "Attention clarity",  url: ANALYTICS_URL, appUrl: `${ANALYTICS_URL}/app`, appLabel: "Open analytics" },
 ];
 
 const INDIGO = "#4f46e5";
 
-const PRODUCT_ORIGINS = [TASKS_URL, ROADMAP_URL, NOTES_URL, ANALYTICS_URL];
+const PRODUCT_ORIGINS = [ROADMAP_URL, TASKS_URL, NOTES_URL, ANALYTICS_URL];
 
 /**
  * Phase 3 (instant-jump): warm a sibling product on hover/focus so the
@@ -81,12 +92,10 @@ function suiteJump(url: string) {
 }
 
 /**
- * Suite launcher. Replaces the static `signal studio.` breadcrumb anchor
- * with a click-to-open popover listing all four products. Same trigger
- * type/colour as the prior anchor — discovery is via cursor + click, not
- * an extra caret. Current product is shown but de-emphasised with a
- * "here" tag; other products open in a new tab so the user keeps their
- * current workspace.
+ * Suite launcher — the "signal studio." trigger that opens a product
+ * switcher panel. This IS the left-slot umbrella breadcrumb in SuiteChrome
+ * (P2-4 fix, IA_COHERENCE.md §3B). The static anchor that previously lived
+ * in the left slot has been retired; this component replaces it.
  *
  * L3 auth-aware mode (DESIGN.md §14):
  * - isAuthed=true: deep-links to product /app entries; app-context labels.
@@ -101,6 +110,7 @@ export function SuiteLauncher({
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -110,7 +120,10 @@ export function SuiteLauncher({
       }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     }
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -141,6 +154,7 @@ export function SuiteLauncher({
   return (
     <div ref={wrapRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
@@ -155,6 +169,7 @@ export function SuiteLauncher({
           role="menu"
           className="absolute left-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-xl border border-line-soft bg-white shadow-[0_24px_60px_-24px_rgba(20,21,26,0.22)]"
         >
+          {/* Popover header — §1E canon: "Signal Studio" / "Four products, one studio." No auth-state branch. */}
           <div className="border-b border-line-soft/70 px-3.5 py-2.5">
             <div className="text-[11px] font-medium tracking-[-0.005em] text-ink-soft">
               Signal Studio
@@ -237,10 +252,11 @@ export function SuiteLauncher({
               );
             })}
           </ul>
+          {/* Footer — §1F canon: authed same-tab, unauthed new-tab. */}
           <a
             href={STUDIO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={isAuthed ? undefined : "_blank"}
+            rel={isAuthed ? undefined : "noopener noreferrer"}
             onClick={() => setOpen(false)}
             className="block border-t border-line-soft/70 px-3.5 py-2.5 text-[11px] text-ink-quiet no-underline transition-colors hover:bg-bg-sunken/40 hover:text-ink"
           >

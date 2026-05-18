@@ -18,7 +18,8 @@ export function SettingsChrome({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-bg">
       <header className="border-b border-line-soft bg-white">
         <div className="mx-auto flex h-12 max-w-[1080px] items-center gap-2 px-4 md:px-8">
-          <SuiteLauncher current="tasks" />
+          {/* isAuthed={true}: Settings is always an authed surface (IA_COHERENCE.md §3E) */}
+          <SuiteLauncher current="tasks" isAuthed={true} />
           <span aria-hidden className="text-[12px] text-ink-faint">/</span>
           <Wordmark size="md" />
           <span aria-hidden className="text-[12px] text-ink-faint">/</span>

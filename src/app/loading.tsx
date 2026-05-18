@@ -1,41 +1,39 @@
-/**
- * Route loading state — the tasks· wordmark holding its pulse
- * (M·02, 2.6s ease-in-out) on white while a route resolves.
- *
- * Replaces Next's blank default. No spinner: a spinner is the
- * productivity-suite default this brand refuses (BRAND.md refusal
- * list). The wordmark's own gesture is the wait — the dot keeps its
- * pulse via the existing .tasks-dot rule, so this adds no animation
- * code. Reduced motion holds the dot still (global reduced-motion
- * block) and the wordmark simply sits there, which is correct.
- *
- * Sibling products replicate this with their own wordmark + gesture:
- * roadmap· advance, analytics· tick, notes. settle. One done here,
- * per the one-product brief.
- */
+// app/loading.tsx
+// Signal Studio loading boundary — LOADING_SYSTEM.md §1.
+// One dot. Paper white field. No wordmark. No chrome. No skeleton.
+// Server Component: zero JS overhead, paints with the RSC shell.
+//
+// Hard refusals (cite LOADING_SYSTEM.md §1 if asked to add any):
+//   - No wordmark in the loading state
+//   - No skeleton bars as system loader
+//   - No large disc, spinner, or ring
+//   - No product-colour differentiation
+//   - No text ("Loading...", "Please wait.")
 export default function Loading() {
   return (
     <div
-      aria-busy="true"
-      aria-label="Loading"
+      aria-hidden
       style={{
         position: "fixed",
         inset: 0,
-        display: "grid",
-        placeItems: "center",
-        background: "#ffffff",
-        zIndex: 50,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--paper, #ffffff)",
+        zIndex: 9999,
       }}
     >
-      <span
-        className="relative inline-flex select-none items-baseline text-2xl font-semibold"
-        style={{ letterSpacing: "-0.05em" }}
-      >
-        <span className="wordmark" style={{ fontWeight: 600 }}>
-          tasks
-        </span>
-        <span className="tasks-dot" aria-hidden />
-      </span>
+      <div
+        className="signal-loading-dot"
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: "var(--indigo, #4f46e5)",
+          flexShrink: 0,
+          willChange: "transform, opacity",
+        }}
+      />
     </div>
   );
 }

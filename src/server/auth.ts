@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { users, workspaceMembers, workspaces } from "@/server/db/schema";
 import type { UserId } from "@/lib/data";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
+import { ensureUserProvisioned } from "@/server/db/ensure-user";
 
 /**
  * Auth resolution. Two layers:
@@ -67,6 +68,16 @@ export async function getCurrentUser(): Promise<UserId> {
       }
       return DEV_FALLBACK_USER;
     }
+
+    // P0-1 hardening (DECISIONS.md D1 / ARCH_SPEC.md §1):
+    // Idempotently provision the users row on every authed board entry.
+    // This closes the webhook-race hole from the Tasks side: a user who
+    // arrives via the shared Clerk session (seamless flow) before the
+    // `user.created` webhook fires will have a users row so Analytics
+    // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
+    // INSERT OR IGNORE — safe to call on every request; DB round-trip is
+    // cheap relative to the auth() call already above.
+    await ensureUserProvisioned(clerkId);
 
     // Clerk id IS the internal user id post-Phase-A. The webhook
     // provisions the row; this query is the safety net in case a
