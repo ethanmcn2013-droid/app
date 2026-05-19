@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wordmark } from "@/components/brand/wordmark";
-import { SuiteLauncher } from "@/components/app/suite-launcher";
+import { SuiteSwitcher } from "@/components/app/suite-switcher-pills";
 
 const TABS = [
   { href: "/settings/profile", label: "Profile" },
@@ -18,10 +17,11 @@ export function SettingsChrome({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-bg">
       <header className="border-b border-line-soft bg-white">
         <div className="mx-auto flex h-12 max-w-[1080px] items-center gap-2 px-4 md:px-8">
-          {/* isAuthed={true}: Settings is always an authed surface (IA_COHERENCE.md §3E) */}
-          <SuiteLauncher current="tasks" isAuthed={true} />
-          <span aria-hidden className="text-[12px] text-ink-faint">/</span>
-          <Wordmark size="md" />
+          {/* Settings is always an authed surface (IA_COHERENCE.md §3E) —
+              §14 (amended 2026-05-19): umbrella anchor (once) + pills, then
+              the Settings sub-crumb. The active "tasks" pill is the
+              product indicator (no separate wordmark). */}
+          <SuiteSwitcher current="tasks" />
           <span aria-hidden className="text-[12px] text-ink-faint">/</span>
           <span className="text-[13px] text-ink-soft">Settings</span>
           <div className="flex-1" />

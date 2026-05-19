@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wordmark } from "@/components/brand/wordmark";
-import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { useCurrentUser } from "@/lib/auth-context";
@@ -66,9 +65,18 @@ function DesktopSidebar({ active }: { active: string }) {
     <aside className="hidden h-full w-[252px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
       <div className="flex h-12 items-center justify-between border-b border-line-soft/70 px-4">
         <div className="flex min-w-0 items-center gap-2">
-          {/* Authed mode: deep-links to /app entries (DESIGN.md §14 L3) */}
-          <SuiteLauncher current="tasks" isAuthed={true} />
-          <span aria-hidden className="flex-shrink-0 text-[12px] text-ink-faint">/</span>
+          {/*
+           * SuiteLauncher + "/" umbrella breadcrumb removed 2026-05-19:
+           * the always-visible SuiteSwitcher pills row (suite-chrome.tsx,
+           * shipped S·63/T·68) now renders the "signal studio." umbrella
+           * anchor + 4-product switch directly above this rail. Keeping the
+           * launcher here stacked a SECOND "signal studio." ~12px below the
+           * first (operator-reported regression). The pills fully serve the
+           * popover's purpose (discoverability) — the sidebar header now
+           * carries only product context. SuiteLauncher is still retained
+           * in unauthed marketing nav + Roadmap public header (no pills
+           * there). See memory project-suite-switcher-pills-2026-05-19.
+           */}
           <Wordmark size="md" />
         </div>
         {/* Collapse chevron — decorative chrome; no collapse state exists yet.

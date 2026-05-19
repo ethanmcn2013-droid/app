@@ -4,6 +4,18 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-19 · T·68 · ships · the suite switcher is four visible pills
+
+**The app top chrome and the Settings chrome now show all four products as
+always-visible pills — the cross-product switch is no longer hidden behind
+the faint "signal studio." popover trigger.** One canonical `SuiteSwitcher`
+(shared byte-identical across the suite) replaces the launcher popover on
+the authed surfaces, carrying the umbrella anchor once, the dot-morph jump,
+hover-prefetch and preconnect. The popover stays in the unauthed marketing
+nav and the 252px sidebar rail, where four horizontal pills do not fit.
+Typecheck and build clean; deployed to prod and verified (200 marketing,
+307 app entry).
+
 ## 2026-05-18 · T·67 · ships · seamless ecosystem — auth-aware entry + persistent suite chrome
 
 **Signed-in users no longer hit the marketing homepage — they land in the workspace, and every surface in the app wears the correct identity.** Three layers shipped together. Layer 2 wires the M-route redirect in the proxy: authenticated requests to `/`, `/features`, `/pricing`, and `/changelog` get a 307 to `/app`, while unauthenticated visitors still see the marketing site unchanged. The escape hatch is exact: `signal_preview_public=1` cookie or `?preview=public` query param suppresses the redirect for the duration of a tab session, so the operator can walk a prospect through the public site without signing out. Layer 3 kills the false "Sign in" — the nav no longer shows authentication CTAs to a signed-in user; `<UserButton />` replaces them, and the suite launcher deep-links to `/app` entries with app-context labels ("Open the workspace", "Open the notebook", etc.) instead of marketing taglines. "View public site" / "Exit preview" lands in the account menu. Layer 4 mounts the persistent top chrome on every `/app/*` surface: a sticky `h-14` bar with the `signal studio. / tasks` breadcrumb on the left and the authed suite switcher + account menu on the right, byte-identical in geometry to the spec so cross-product jumps swap only the body. The former mobile-only `MobileSuiteBar` (fixed, `h-9`, not in spec) is retired — the new chrome serves all viewports.

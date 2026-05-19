@@ -8,13 +8,16 @@
  * occurs between subdomains. Monorepo + DB-merge ruled out by locked
  * decisions.
  *
- * Layout (P2-4 fix — IA_COHERENCE.md §3B canon):
- *   Left  — SuiteLauncher (IS the "signal studio." trigger) + / + tasks
+ * Layout (amended 2026-05-19 — §14 pill-switcher revision):
+ *   Left  — "signal studio." umbrella anchor (once, same-tab) + 4-product
+ *           pill switcher (SuiteSwitcher). The active pill IS the product
+ *           breadcrumb — no separate "/ product" mark needed.
  *   Right — UserButtonWithSuite only
  *
- * "signal studio." appears exactly ONCE in this header. The static anchor
- * that was the left wordmark has been replaced by the SuiteLauncher trigger —
- * matching the Notes/Roadmap pattern and resolving the Tasks outlier (D6).
+ * "signal studio." appears exactly ONCE in this header (D6 contract held).
+ * The cross-product switcher is now always-visible pills instead of the
+ * click-to-open popover (SuiteLauncher) — the popover stays on the
+ * unauthed marketing nav where one product is in view at a time.
  *
  * Height: h-14 (56px). Sticky top-0 z-40. backdrop-blur-md.
  * Background: bg semi-transparent (uses Tailwind; matches SiteNav).
@@ -25,9 +28,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { SuiteLauncher } from "@/components/app/suite-launcher";
+import { SuiteSwitcher } from "@/components/app/suite-switcher-pills";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { Wordmark } from "@/components/brand/wordmark";
 
 export function SuiteChrome() {
   // Hairline border-b on scroll — transparent at rest
@@ -59,37 +61,25 @@ export function SuiteChrome() {
           : "border-b border-transparent")
       }
     >
-      <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between gap-3 px-6">
         {/*
-         * Left slot — IA_COHERENCE.md §3B canon:
-         *   [SuiteLauncher] [/] [product-mark]
+         * Left slot — §14 (amended 2026-05-19):
+         *   [signal studio.] | [notes][tasks][roadmap][analytics]
          *
-         * The SuiteLauncher IS the "signal studio." trigger — clicking it
-         * opens the product switcher panel. There is no separate static
-         * anchor. "signal studio." appears exactly once in this header.
+         * SuiteSwitcher renders the quiet umbrella anchor (once — D6), a
+         * hairline divider, then the always-visible 4-product pills. The
+         * active pill is the product-you-are-in indicator, so there is no
+         * separate "/ product" breadcrumb.
          */}
-        <div className="flex items-center gap-2 min-w-0">
-          {/* Umbrella trigger — SuiteLauncher in authed mode */}
-          <SuiteLauncher current="tasks" isAuthed={true} />
-
-          {/* Separator */}
-          <span
-            aria-hidden
-            className="flex-shrink-0 select-none text-[12px] text-[var(--ink-ghost,#d4d4d8)]"
-          >
-            /
-          </span>
-
-          {/* Product mark — tasks· with its gesture dot */}
-          <Wordmark size="sm" />
+        <div className="flex min-w-0 items-center">
+          <SuiteSwitcher current="tasks" />
         </div>
 
         {/*
          * Right slot — UserButtonWithSuite only.
-         * The SuiteLauncher is in the LEFT slot; no second instance here.
          * This matches the Notes/Roadmap/Analytics pattern.
          */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-shrink-0 items-center gap-3">
           <UserButtonWithSuite current="tasks" />
         </div>
       </div>
