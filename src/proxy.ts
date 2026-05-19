@@ -85,6 +85,9 @@ const isPublicRoute = createRouteMatcher([
   // Internal cross-product reads (bearer-auth via PARTNER_STATS_SECRET).
   // Not Clerk-protected because the calling service has no Clerk session.
   "/api/internal/(.*)",
+  // Cross-repo Notes→Tasks extract (bearer-auth via NOTES_TO_TASKS_SECRET).
+  // The Notes server action has no Clerk session — bearer guards the route.
+  "/api/notes-extract",
   "/sitemap.xml",
   "/robots.txt",
   "/sign-in(.*)",
