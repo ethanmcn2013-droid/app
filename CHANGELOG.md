@@ -4,6 +4,25 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-19 · T·70 · ships · the inbox knows your name again
+
+**Six rough edges that made Tasks feel unfinished are gone — the morning
+greeting is yours by name, an empty conversation reads as calm instead of
+broken, and the dead "coming soon" Filter button no longer sits there
+greyed out.**
+
+The daily inbox now greets you by your real name instead of "Someone".
+Activity in settings shows who did what as a person, not a code. An empty
+task conversation says "No conversation yet." rather than shimmering
+forever, and if a load ever stalls there is now a try-again instead of an
+endless wait. Seeded demo people are quietly marked "sample" so they never
+read as real colleagues, and the disabled Filter control has been pulled
+from the screen until it actually does something.
+
+Two things flagged in review turned out to be non-issues on closer look
+and were deliberately left alone. The change shipped from a clean isolated
+build so an unrelated in-progress feature stayed untouched.
+
 ## 2026-05-19 · T·68 · ships · the suite switcher is four visible pills
 
 **The app top chrome and the Settings chrome now show all four products as
