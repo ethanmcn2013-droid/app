@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useCallback, useEffect, useOptimistic, useState, useTransition } from "react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { getTaskConversationAction } from "@/server/actions/conversation";
@@ -28,32 +28,50 @@ export function TaskDetailPanel() {
   // Re-fetches when taskId OR task.updatedAt changes.
   const [items, setItems] = useState<ConversationItem[]>([]);
   const [loading, setLoading] = useState(false);
+  // C4: track whether the last fetch timed out so we can offer a retry.
+  const [timedOut, setTimedOut] = useState(false);
 
   const refreshKey = task?.updatedAt?.getTime();
 
+  // C4: stable fetch function so the retry button can re-run the same
+  // logic without duplicating the effect body.
+  const fetchConversation = useCallback(
+    (taskId: string, signal: { ignored: boolean }) => {
+      setLoading(true);
+      setTimedOut(false);
+
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 5000),
+      );
+
+      Promise.race([getTaskConversationAction(taskId), timeout])
+        .then((rows) => {
+          if (!signal.ignored) {
+            setItems(rows);
+            setLoading(false);
+          }
+        })
+        .catch((err) => {
+          if (!signal.ignored) {
+            const isTimeout =
+              err instanceof Error && err.message === "timeout";
+            // eslint-disable-next-line no-console
+            console.warn("conversation: fetch failed", err);
+            setItems([]);
+            setLoading(false);
+            if (isTimeout) setTimedOut(true);
+          }
+        });
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!task) return;
-    let ignore = false;
-    setLoading(true);
-
-    getTaskConversationAction(task.id)
-      .then((rows) => {
-        if (!ignore) {
-          setItems(rows);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (!ignore) {
-          // eslint-disable-next-line no-console
-          console.warn("conversation: fetch failed", err);
-          setItems([]);
-          setLoading(false);
-        }
-      });
-
+    const signal = { ignored: false };
+    fetchConversation(task.id, signal);
     return () => {
-      ignore = true;
+      signal.ignored = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, refreshKey]);
@@ -88,6 +106,15 @@ export function TaskDetailPanel() {
             <Section title="Conversation">
               {loading ? (
                 <ConversationSkeleton />
+              ) : timedOut ? (
+                // C4: timeout path — show the C3 empty state copy + a
+                // "Try again" control so the user isn't stuck on blank.
+                <ConversationTimeout
+                  onRetry={() => {
+                    const signal = { ignored: false };
+                    fetchConversation(task.id, signal);
+                  }}
+                />
               ) : (
                 <ConversationFeed
                   key={task.id}
@@ -133,6 +160,27 @@ function ConversationSkeleton() {
   );
 }
 
+
+// C4: shown when the conversation fetch exceeds the 5s timeout guard.
+// Uses the same voice as the C3 empty state + a "Try again" control.
+function ConversationTimeout({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="py-1">
+      <div className="text-[13px] text-ink-quiet">No conversation yet.</div>
+      <div className="mt-1 text-[12px] text-ink-faint">
+        Took too long to load.{" "}
+        <button
+          type="button"
+          onClick={onRetry}
+          className="underline decoration-ink-faint underline-offset-2 hover:text-ink-soft hover:decoration-ink-soft transition-colors"
+        >
+          Try again
+        </button>
+        .
+      </div>
+    </div>
+  );
+}
 
 function Section({
   title,

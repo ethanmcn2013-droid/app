@@ -89,7 +89,14 @@ export async function getCurrentUser(): Promise<UserId> {
       clerkUserObj?.emailAddresses?.find(
         (e) => e.id === clerkUserObj.primaryEmailAddressId,
       )?.emailAddress ?? null;
-    await ensureUserProvisioned(clerkId, clerkEmail);
+    // C2: pass first/last name so ensureUserProvisioned can backfill the
+    // name column if the row was provisioned before the webhook fired.
+    await ensureUserProvisioned(
+      clerkId,
+      clerkEmail,
+      clerkUserObj?.firstName ?? null,
+      clerkUserObj?.lastName ?? null,
+    );
 
     // Clerk id IS the internal user id post-Phase-A. The webhook
     // provisions the row; this query is the safety net in case a

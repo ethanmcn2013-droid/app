@@ -83,20 +83,8 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           {/* ≥md: full chip row */}
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            title="Filtering coming soon"
-            className="hidden cursor-not-allowed items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft/50 opacity-60 md:inline-flex"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="6" y1="12" x2="18" y2="12" />
-              <line x1="9" y1="18" x2="15" y2="18" />
-            </svg>
-            Filter
-          </button>
+          {/* C6: Filter affordance removed from DOM while inactive.
+              Restore this disabled chip when filtering ships. */}
           <button
             type="button"
             onClick={openPalette}
@@ -258,21 +246,8 @@ function OverflowMenu({
           role="menu"
           className="absolute right-0 top-full z-30 mt-1.5 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
         >
-          <button
-            type="button"
-            role="menuitem"
-            disabled
-            aria-disabled="true"
-            title="Filtering coming soon"
-            className="flex w-full cursor-not-allowed items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft/50 opacity-60"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="6" y1="12" x2="18" y2="12" />
-              <line x1="9" y1="18" x2="15" y2="18" />
-            </svg>
-            Filter
-          </button>
+          {/* C6: Filter affordance removed from DOM while inactive.
+              Restore this disabled menu item when filtering ships. */}
           <button
             type="button"
             role="menuitem"

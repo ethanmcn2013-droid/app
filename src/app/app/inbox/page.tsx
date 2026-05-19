@@ -11,7 +11,7 @@ import { aiConfigured } from "@/server/ai";
 import { buildWeeklySnapshotFor } from "@/server/digest-narration";
 import { getOverdueTodayCount } from "@/server/actions/roll-forward";
 import { db } from "@/server/db";
-import { workspaces } from "@/server/db/schema";
+import { users, workspaces } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function InboxPage() {
   // Server-fetch in parallel: notifications + digest + the task list
   // we need to compute rules-based nudges from. All three scoped to
   // the current workspace.
-  const [notifications, digest, tasks, weeklySnapshot, wsMeta, overdueCount] =
+  const [notifications, digest, tasks, weeklySnapshot, wsMeta, overdueCount, userRow] =
     await Promise.all([
       getNotificationsForUser(me, ws),
       compileDailyDigest(me, ws),
@@ -42,6 +42,14 @@ export default async function InboxPage() {
       // so the button's render decision doesn't hinge on a client-side
       // filter pass.
       getOverdueTodayCount(),
+      // C1: resolve the real user's display name from DB so the inbox
+      // greeting uses the actual name rather than the USERS Proxy
+      // fallback ("Someone") for Clerk-issued ids.
+      db
+        .select({ name: users.name })
+        .from(users)
+        .where(eq(users.id, me))
+        .then((rows) => rows[0] ?? null),
     ]);
   const nudges = generateNudges(tasks, me);
   return (
@@ -57,6 +65,7 @@ export default async function InboxPage() {
         workspaceName={wsMeta?.name}
         workspaceSlug={wsMeta?.slug}
         overdueCount={overdueCount}
+        userName={userRow?.name ?? undefined}
       />
     </>
   );

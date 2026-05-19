@@ -13,6 +13,7 @@ import {
   useTransition,
 } from "react";
 import {
+  isSeedUser,
   LANES,
   USERS,
   type Activity,
@@ -181,9 +182,9 @@ function keyOf(i: ConversationItem): Date {
 function EmptyState() {
   return (
     <div className="py-1">
-      <div className="text-[13px] text-ink-quiet">No history yet.</div>
+      <div className="text-[13px] text-ink-quiet">No conversation yet.</div>
       <div className="text-[12px] text-ink-faint">
-        Comments and changes will land here as they happen.
+        Comments and changes will appear here as they happen.
       </div>
     </div>
   );
@@ -219,6 +220,11 @@ function CommentRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
           <span className="text-[12.5px] font-medium text-ink">{u.name}</span>
+          {isSeedUser(comment.userId) ? (
+            <span className="rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
+              sample
+            </span>
+          ) : null}
           <span
             className="text-[11px] tabular-nums text-ink-quiet"
             title={comment.createdAt.toLocaleString()}
@@ -270,7 +276,12 @@ function ActivityRow({ activity }: { activity: Activity }) {
         <Avatar user={activity.userId} size={14} />
       </span>
       <span className="min-w-0 flex-1 truncate">
-        <span className="font-medium text-ink-soft">{u.name}</span>{" "}
+        <span className="font-medium text-ink-soft">{u.name}</span>
+        {isSeedUser(activity.userId) ? (
+          <span className="ml-1 rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
+            sample
+          </span>
+        ) : null}{" "}
         <span>{sentence}</span>
       </span>
       <span

@@ -80,6 +80,14 @@ function fallbackUserMeta(id: string): UserMeta {
   };
 }
 
+/** C5: Returns true for the five canonical seed-persona ids (chloe /
+ *  david / alex / ada / marcus). These are demo-only identities, not
+ *  real workspace members — callers can use this to show a "(sample)"
+ *  label so seeded content doesn't read as real colleague activity. */
+export function isSeedUser(id: string): boolean {
+  return Object.prototype.hasOwnProperty.call(SEEDED, id);
+}
+
 /**
  * USERS is a `Proxy` over `SEEDED`. Known-seed lookups return their
  * canonical row; anything else (a Clerk id, a guest, an old comment

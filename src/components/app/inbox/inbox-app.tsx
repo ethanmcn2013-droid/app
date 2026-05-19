@@ -46,6 +46,7 @@ export function InboxApp({
   workspaceName,
   workspaceSlug,
   overdueCount,
+  userName,
 }: {
   notifications: Notification[];
   digest: DailyDigest;
@@ -70,9 +71,14 @@ export function InboxApp({
   /** Server-computed count of tasks overdue today. Drives whether
    *  the roll-forward button renders at all (zero → hidden). */
   overdueCount?: number;
+  /** C1: real display name resolved from DB at the page level; takes
+   *  priority over the USERS Proxy fallback so Clerk users see their
+   *  actual name instead of "Someone" in the greeting. */
+  userName?: string;
 }) {
   const { openTask } = useTaskPanel();
   const me = USERS[digest.user];
+  const displayName = userName ?? me.name;
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-4 py-5 md:px-8 md:py-6">
@@ -90,7 +96,7 @@ export function InboxApp({
         <section>
           <SectionHead
             eyebrow="Daily digest"
-            title={`Good morning, ${me.name}.`}
+            title={`Good morning, ${displayName}.`}
             subtitle="Your one summary for the day. We don't send anything else unless someone tags you directly."
             action={
               <div className="flex items-center gap-2">
