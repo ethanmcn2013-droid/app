@@ -6,6 +6,7 @@ import { LANES, type Task } from "@/lib/data";
 import { Avatar, AvatarStack } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { useActiveWorkspace } from "@/lib/domain-context";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { CalendarGhost } from "@/components/app/empty-state/ghost-views";
 import { useToast } from "@/components/primitives/toast";
@@ -24,7 +25,12 @@ function dayLabel(i: number) {
   return num.toString();
 }
 
-export function CalendarApp({ workspaceId }: { workspaceId: string }) {
+// D4: workspaceId prop removed — read from DomainProvider context directly
+// so calendar/page.tsx can be a sync server component (no Suspense boundary
+// against the board-shaped parent loading.tsx).
+export function CalendarApp() {
+  const ws = useActiveWorkspace();
+  const workspaceId = ws?.id ?? "";
   const state = useTasksState();
   const { taskId: openTaskId, openTask } = useTaskPanel();
 

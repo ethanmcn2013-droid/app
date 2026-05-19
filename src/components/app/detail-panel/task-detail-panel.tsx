@@ -48,7 +48,6 @@ export function TaskDetailPanel() {
         .then((rows) => {
           if (!signal.ignored) {
             setItems(rows);
-            setLoading(false);
           }
         })
         .catch((err) => {
@@ -58,8 +57,15 @@ export function TaskDetailPanel() {
             // eslint-disable-next-line no-console
             console.warn("conversation: fetch failed", err);
             setItems([]);
-            setLoading(false);
             if (isTimeout) setTimedOut(true);
+          }
+        })
+        .finally(() => {
+          // Always clear loading for the signal that owns this fetch.
+          // Ignored signals belong to aborted fetches — their loading
+          // state is already superseded by the next fetch's setLoading(true).
+          if (!signal.ignored) {
+            setLoading(false);
           }
         });
     },
@@ -166,7 +172,7 @@ function ConversationSkeleton() {
 function ConversationTimeout({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="py-1">
-      <div className="text-[13px] text-ink-quiet">No conversation yet.</div>
+      <div className="text-[13px] text-ink-quiet">Couldn't load conversation.</div>
       <div className="mt-1 text-[12px] text-ink-faint">
         Took too long to load.{" "}
         <button
