@@ -48,7 +48,7 @@ export function AvatarStack({
   const overflow = users.length - visible.length;
   return (
     <div
-      className="flex items-center -space-x-1.5"
+      className="flex items-center -space-x-0.5"
       role="group"
       aria-label={`Assignees: ${users.length}`}
     >
