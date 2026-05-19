@@ -47,7 +47,7 @@ export function AvatarStack({
   const visible = users.slice(0, max);
   const overflow = users.length - visible.length;
   return (
-    <div className="flex items-center -space-x-1.5">
+    <div className="flex items-center -space-x-0.5">
       {visible.map((u) => (
         <Avatar key={u} user={u} size={size} ring />
       ))}

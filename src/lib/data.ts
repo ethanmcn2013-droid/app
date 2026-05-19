@@ -58,26 +58,77 @@ const SEEDED: Record<string, UserMeta> = {
   },
 };
 
-/** Synthesize a `UserMeta` for ids the seeded map doesn't know — i.e.
- *  every real Clerk-issued user id post-Phase-A. Avatar shows two-
- *  letter initials from the id tail; color stays neutral until the
- *  webhook hydrates a real avatar.
+/**
+ * Derive human-readable initials from a display name.
  *
- *  IMPORTANT: `name` must NEVER be the raw id string. A raw Clerk id
- *  (e.g. `user_3Dpnq…`) surfacing in UI copy is a brand violation
- *  (BRAND.md §2 "Plain English. No jargon."). Use "Someone" as a safe
- *  humane fallback that reads correctly in every copy context:
- *  "Nothing on Someone's plate yet." / "Assigned to Someone." */
-function fallbackUserMeta(id: string): UserMeta {
-  // Strip the `user_` prefix Clerk uses; show the last 2 chars as
-  // initials so two unknown users at least look distinct.
-  const tail = id.replace(/^user_/, "").toUpperCase();
+ * Rules (in priority order):
+ *  1. Two or more words → first letter of first word + first letter of
+ *     last word, uppercased. "Chloe Murphy" → "CM".
+ *  2. Single word → first two letters, uppercased. "Niamh" → "NI".
+ *  3. Empty string → neutral glyph "·" (not ID-derived noise).
+ *
+ * Never uses raw Clerk id fragments — those look like real initials
+ * but carry zero meaning for a human reader (BRAND.md §2).
+ */
+export function initialsFromName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "·";
+  const parts = trimmed.split(/\s+/);
+  if (parts.length >= 2) {
+    return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
+  }
+  return trimmed.slice(0, 2).toUpperCase();
+}
+
+/** Synthesize a `UserMeta` for ids the seeded map doesn't know — i.e.
+ *  every real Clerk-issued user id post-Phase-A. Initials are derived
+ *  from the display name when known, falling back to a neutral glyph
+ *  (never raw Clerk id characters, which look like real initials but
+ *  carry no meaning — BRAND.md §2 "Plain English. No jargon.").
+ *
+ *  Pass `displayName` whenever a workspace-member lookup is available.
+ *  Omit it (or pass undefined) only when no name context exists.
+ *
+ *  IMPORTANT: `name` must NEVER be the raw id string. Use "Someone" as
+ *  the safe humane fallback: "Nothing on Someone's plate yet." */
+function fallbackUserMeta(id: string, displayName?: string): UserMeta {
+  const name = displayName?.trim() || "Someone";
   return {
     id,
-    name: "Someone",
+    name,
     color: "#94a3b8", // ink-quiet neutral
-    initials: tail.slice(-2) || "??",
+    initials: displayName?.trim() ? initialsFromName(displayName) : "·",
   };
+}
+
+/**
+ * resolveUser — name-aware user resolution.
+ *
+ * Use this in any context where you have the member's display name
+ * (e.g. getWorkspaceMembers() response). The USERS proxy is for the
+ * showcase cinematic system only (closed set of seeded personas).
+ *
+ * Returns a complete UserMeta with initials derived from the real name.
+ * Color is the seed color for known personas; neutral grey for unknowns.
+ */
+export function resolveUser(id: string, displayName?: string): UserMeta {
+  // Known seed persona — return canonical row but override initials from
+  // name if the caller provides a better one.
+  if (Object.prototype.hasOwnProperty.call(SEEDED, id)) {
+    const seed = SEEDED[id]!;
+    return displayName?.trim()
+      ? { ...seed, name: displayName.trim(), initials: initialsFromName(displayName) }
+      : seed;
+  }
+  return fallbackUserMeta(id, displayName);
+}
+
+/** C5: Returns true for the five canonical seed-persona ids (chloe /
+ *  david / alex / ada / marcus). These are demo-only identities, not
+ *  real workspace members — callers can use this to show a "(sample)"
+ *  label so seeded content doesn't read as real colleague activity. */
+export function isSeedUser(id: string): boolean {
+  return Object.prototype.hasOwnProperty.call(SEEDED, id);
 }
 
 /**
@@ -85,6 +136,10 @@ function fallbackUserMeta(id: string): UserMeta {
  * canonical row; anything else (a Clerk id, a guest, an old comment
  * by a now-deleted user) gets a synthesized fallback so render code
  * never has to null-check `USERS[someId]`.
+ *
+ * Note: this proxy cannot carry display-name context because the key
+ * is the id only. Use resolveUser(id, displayName) in any context
+ * where the member's real name is available from the DB or API.
  */
 export const USERS: Record<string, UserMeta> = new Proxy(SEEDED, {
   get(target, prop: string | symbol): UserMeta | undefined {
@@ -183,6 +238,11 @@ export type Task = {
    *  Drives the Roadmap sync read query (ARCH_SPEC §1.1). Optional/falsy
    *  for all legacy tasks; the schema column defaults to 0. */
   isMilestone?: boolean;
+  /** T·69 step 5 — custom board column key. Null/undefined = the task
+   *  displays in its canonical `lane` column. Non-null = overrides the
+   *  board column without changing the semantic `lane` so list/timeline/
+   *  calendar views are unaffected. Requires migration 0007 on prod. */
+  boardColumnKey?: string | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };
