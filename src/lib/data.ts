@@ -72,7 +72,7 @@ const SEEDED: Record<string, UserMeta> = {
  */
 export function initialsFromName(name: string): string {
   const trimmed = name.trim();
-  if (!trimmed) return "·";
+  if (!trimmed) return "?";
   const parts = trimmed.split(/\s+/);
   if (parts.length >= 2) {
     return ((parts[0]?.[0] ?? "") + (parts[parts.length - 1]?.[0] ?? "")).toUpperCase();
@@ -97,7 +97,7 @@ function fallbackUserMeta(id: string, displayName?: string): UserMeta {
     id,
     name,
     color: "#94a3b8", // ink-quiet neutral
-    initials: displayName?.trim() ? initialsFromName(displayName) : "·",
+    initials: displayName?.trim() ? initialsFromName(displayName) : "?",
   };
 }
 
