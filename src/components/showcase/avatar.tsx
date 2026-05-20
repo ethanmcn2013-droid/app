@@ -47,7 +47,11 @@ export function AvatarStack({
   const visible = users.slice(0, max);
   const overflow = users.length - visible.length;
   return (
-    <div className="flex items-center -space-x-1.5">
+    <div
+      className="flex items-center -space-x-1.5"
+      role="group"
+      aria-label={`Assignees: ${users.length}`}
+    >
       {visible.map((u) => (
         <Avatar key={u} user={u} size={size} ring />
       ))}
@@ -55,6 +59,8 @@ export function AvatarStack({
         <span
           className="inline-flex items-center justify-center rounded-full bg-bg-sunken text-[10px] font-medium text-ink-soft ring-2 ring-white"
           style={{ width: size, height: size }}
+          aria-label={`${overflow} more`}
+          title={`${overflow} more`}
         >
           +{overflow}
         </span>

@@ -4,6 +4,19 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-21 · T·73 · tightens · one primary on the empty workspace, one voice for the assignee row
+
+**The empty workspace asks for one thing first, and the assignee
+stack tells a screen reader who is there.** Add your first task is
+now the only button on the empty state — the four starter packs
+collapse into a quiet inline line so the hierarchy reads cleanly
+without losing the audience cue.
+
+The avatar stack picks up a group label and the more indicator
+announces the count instead of sitting there as silent decoration.
+Both calls came out of the product walkthrough as M-tier polish
+after the C1 wave closed the louder defects.
+
 ## 2026-05-19 · T·70 · ships · the inbox knows your name again
 
 **Six rough edges that made Tasks feel unfinished are gone — the morning

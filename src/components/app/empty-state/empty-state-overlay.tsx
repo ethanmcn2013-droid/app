@@ -84,39 +84,33 @@ export function EmptyStateOverlay({
             </kbd>
           </button>
 
-          <div className="mt-6 border-t border-line-soft pt-5">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-              Or try a starter pack
-            </div>
-            <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
-              {DOMAIN_ORDER.map((id) => {
+          <div className="mt-5 border-t border-line-soft pt-4">
+            <p className="text-[12.5px] leading-[1.6] text-ink-quiet">
+              Or load a starter pack:{" "}
+              {DOMAIN_ORDER.map((id, i) => {
                 const pack = DOMAINS[id];
                 const isPending = pending && active === id;
                 return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => handleSeed(id)}
-                    disabled={pending}
-                    className={
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium transition-colors " +
-                      (isPending
-                        ? "border-brand bg-brand-soft text-brand"
-                        : "border-line bg-white text-ink-soft hover:border-ink-soft/30 hover:text-ink") +
-                      " disabled:opacity-60"
-                    }
-                  >
-                    {isPending ? (
-                      <span
-                        className="block h-1.5 w-1.5 animate-pulse rounded-full"
-                        style={{ background: "var(--brand)" }}
-                      />
-                    ) : null}
-                    {pack.label}
-                  </button>
+                  <span key={id}>
+                    <button
+                      type="button"
+                      onClick={() => handleSeed(id)}
+                      disabled={pending}
+                      className={
+                        "underline decoration-dotted decoration-line underline-offset-[3px] transition-colors hover:decoration-ink-soft disabled:opacity-60 " +
+                        (isPending
+                          ? "text-brand"
+                          : "text-ink-soft hover:text-ink")
+                      }
+                    >
+                      {pack.label}
+                      {isPending ? "…" : ""}
+                    </button>
+                    {i < DOMAIN_ORDER.length - 1 ? " · " : ""}
+                  </span>
                 );
               })}
-            </div>
+            </p>
             {seedError && active === null ? (
               <div role="alert" className="mt-3 flex flex-col items-center gap-2">
                 <p className="text-[12px] text-ink-soft">
