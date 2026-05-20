@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import AppLoading from "./loading";
 import { AppSidebar } from "@/components/app/sidebar";
 import { SuiteChrome } from "@/components/app/suite-chrome";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
@@ -108,11 +109,18 @@ export default function AppLayout({
      * P1-2/P1-4 fix (DECISIONS.md D5): SuiteChrome rendered at this
      * synchronous layout level; auth/data moved into <AppShell> under
      * <Suspense> so loading.tsx boundary can paint. Board mounts once.
+     *
+     * Fallback = <AppLoading /> (the wordmark identity loader from
+     * ./loading.tsx). The prior `fallback={null}` left the body blank
+     * beneath SuiteChrome during AppShell's auth+DB fetch, which read
+     * as a white flash between "chrome paints" and "board arrives".
+     * Sharing the loader with the segment-level boundary means the
+     * same wordmark holds the moment either way — no re-blank.
      */
     <div className="flex h-screen w-full flex-col bg-bg">
       <SuiteChrome />
       <div className="flex min-w-0 flex-1 overflow-hidden">
-        <Suspense fallback={null}>
+        <Suspense fallback={<AppLoading />}>
           <AppShell>{children}</AppShell>
         </Suspense>
       </div>
