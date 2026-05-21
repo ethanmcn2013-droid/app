@@ -4,6 +4,21 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-21 · T·74 · fixes · the avatar row stops overlapping and reads as people
+
+**Stacked assignee chips no longer crash into each other, and the
+two-letter initials inside them now come from a person's actual
+name rather than arbitrary characters lifted off an identifier.**
+A nameless slot renders a clean question mark rather than a stray
+dot, so an unknown face reads as intentional rather than as a
+render artifact.
+
+The change rounds out the avatar work the M wave started — the
+group label and overflow announcement landed in the previous
+cycle, the visual overlap and humane initials landed here. The
+original work was authored alongside the C wave but had not yet
+pushed at the time.
+
 ## 2026-05-21 · T·73 · tightens · one primary on the empty workspace, one voice for the assignee row
 
 **The empty workspace asks for one thing first, and the assignee
