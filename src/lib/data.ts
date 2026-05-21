@@ -131,14 +131,6 @@ export function resolveUser(id: string, displayName?: string): UserMeta {
   return fallbackUserMeta(id, displayName);
 }
 
-/** C5: Returns true for the five canonical seed-persona ids (chloe /
- *  david / alex / ada / marcus). These are demo-only identities, not
- *  real workspace members — callers can use this to show a "(sample)"
- *  label so seeded content doesn't read as real colleague activity. */
-export function isSeedUser(id: string): boolean {
-  return Object.prototype.hasOwnProperty.call(SEEDED, id);
-}
-
 /**
  * USERS is a `Proxy` over `SEEDED`. Known-seed lookups return their
  * canonical row; anything else (a Clerk id, a guest, an old comment
@@ -246,11 +238,6 @@ export type Task = {
    *  Drives the Roadmap sync read query (ARCH_SPEC §1.1). Optional/falsy
    *  for all legacy tasks; the schema column defaults to 0. */
   isMilestone?: boolean;
-  /** T·69 step 5 — custom board column key. Null/undefined = the task
-   *  displays in its canonical `lane` column. Non-null = overrides the
-   *  board column without changing the semantic `lane` so list/timeline/
-   *  calendar views are unaffected. Requires migration 0007 on prod. */
-  boardColumnKey?: string | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };
