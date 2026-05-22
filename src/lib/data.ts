@@ -238,6 +238,14 @@ export type Task = {
    *  Drives the Roadmap sync read query (ARCH_SPEC §1.1). Optional/falsy
    *  for all legacy tasks; the schema column defaults to 0. */
   isMilestone?: boolean;
+  /** T·69 step 5 — custom board column key. NULL = "use `lane` as the
+   *  canonical board column." Non-null = task belongs to a custom column
+   *  whose key is stored in meta `board:{wsId}:columns`. Effective board
+   *  column = COALESCE(boardColumnKey, lane). See schema.ts:101 +
+   *  drizzle/0007_add_board_column_key.sql for the persisted shape;
+   *  optional here because legacy rows + the in-file seed fixtures
+   *  predate the column. */
+  boardColumnKey?: string | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };

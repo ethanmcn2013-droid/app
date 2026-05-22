@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import {
+  LANE_ORDER,
   SEED_TASKS,
   type LaneId,
   type Priority,
@@ -27,6 +28,7 @@ import {
   toggleCompleteAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
+import { moveTaskToColumnAction } from "@/server/actions/board";
 import { useRealtimeSync } from "./use-realtime-sync";
 
 /** Gap-numbered float position so inserts never need to renumber the
@@ -73,6 +75,14 @@ function generateId(): string {
 
 export type TasksDispatchers = {
   moveTask: (id: string, toLane: LaneId) => void;
+  /**
+   * Move a task to any board column — system lane or custom column.
+   * For system lanes, equivalent to moveTask but goes through the
+   * column-aware server action that also clears boardColumnKey.
+   * For custom columns, sets boardColumnKey without changing lane
+   * (lane remains canonical for list/timeline/calendar/export views).
+   */
+  moveTaskToColumn: (id: string, columnKey: string) => void;
   /** Place a task into a lane at a target index. Cross-lane and
    *  same-lane drops both flow through here. The dispatcher computes
    *  a gap-numbered float `position` from the current siblings before
@@ -170,6 +180,24 @@ export function TasksProvider({
           () => dispatch({ type: "move", id, toLane }),
           () => moveTaskAction(id, toLane),
         ),
+      moveTaskToColumn: (id, columnKey) => {
+        const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
+        // Optimistic: update local state immediately.
+        dispatch({ type: "moveToColumn", id, columnKey, isSystemLane });
+        // Server sync: fire and reconcile via getTasksAction after completion.
+        startTransition(async () => {
+          const prior = stateRef.current.tasks;
+          try {
+            await moveTaskToColumnAction(id, columnKey);
+            const fresh = await (await import("@/server/actions/tasks")).getTasksAction();
+            dispatch({ type: "hydrate", tasks: fresh });
+          } catch (err) {
+            // eslint-disable-next-line no-console
+            console.warn("tasks: moveTaskToColumn failed; reverting", err);
+            dispatch({ type: "hydrate", tasks: prior });
+          }
+        });
+      },
       reorderTask: (id, toLane, toIndex) => {
         const position = computeDropPosition(
           stateRef.current.tasks,

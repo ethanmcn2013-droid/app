@@ -9,6 +9,18 @@ export type TasksState = {
 
 export type TasksAction =
   | { type: "move"; id: string; toLane: LaneId }
+  | {
+      /**
+       * Move a task to a board column identified by `columnKey`.
+       * System lane key → clears boardColumnKey, sets lane.
+       * Custom column key → sets boardColumnKey, keeps lane unchanged.
+       * Mirrors the server-side logic in moveTaskToColumnAction.
+       */
+      type: "moveToColumn";
+      id: string;
+      columnKey: string;
+      isSystemLane: boolean;
+    }
   | { type: "reorder"; id: string; toIndex: number }
   | {
       type: "place";
@@ -52,6 +64,34 @@ export function tasksReducer(
       const previousLane = { ...state.previousLane };
       delete previousLane[action.id];
       return { tasks, previousLane };
+    }
+
+    case "moveToColumn": {
+      const idx = state.tasks.findIndex((t) => t.id === action.id);
+      if (idx < 0) return state;
+      const t = state.tasks[idx];
+      const tasks = state.tasks.slice();
+      if (action.isSystemLane) {
+        // System lane: update lane, clear boardColumnKey.
+        tasks[idx] = {
+          ...t,
+          lane: action.columnKey as LaneId,
+          boardColumnKey: null,
+          idleDays: undefined,
+          updatedAt: new Date(),
+        };
+        const previousLane = { ...state.previousLane };
+        delete previousLane[action.id];
+        return { tasks, previousLane };
+      } else {
+        // Custom column: set boardColumnKey, keep lane unchanged.
+        tasks[idx] = {
+          ...t,
+          boardColumnKey: action.columnKey,
+          updatedAt: new Date(),
+        };
+        return { ...state, tasks };
+      }
     }
 
     case "reorder": {

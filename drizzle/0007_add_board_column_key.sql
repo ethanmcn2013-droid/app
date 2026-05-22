@@ -1,0 +1,27 @@
+-- T·69 step 5: add board_column_key to support custom / additional board columns.
+--
+-- Design rationale (see ARCH_SPEC board-column extension comment in board.ts):
+--   - Keeps `lane` canonical so all existing queries (list/timeline/calendar/
+--     export/print/SSE/recurrence) keep working unchanged.
+--   - Effective board column = COALESCE(board_column_key, lane).
+--   - Moving a task into a CUSTOM column sets board_column_key + does NOT
+--     change lane (task stays in its canonical semantic lane for other views).
+--   - Moving a task into a SYSTEM column (todo/doing/review/done) clears
+--     board_column_key and updates lane — lane stays canonical.
+--   - Custom-column tasks group under "doing" in List/Timeline/Calendar (sane
+--     in-progress default) — documented in board.ts addColumnAction comment.
+--   - NOT NULL DEFAULT '' is intentional — empty string = "no custom column"
+--     (the COALESCE pattern reads NULL naturally but SQLite's '' works too;
+--     board-app.tsx treats empty string as no override).
+--
+-- !! DO NOT APPLY TO PROD AUTOMATICALLY !!
+-- Apply on Turso prod ONLY after operator review, via:
+--   turso db shell ethanmcnamara-tasks \
+--     "ALTER TABLE tasks ADD COLUMN board_column_key TEXT;"
+--
+-- The column is nullable (no DEFAULT constraint) so the ALTER is safe on
+-- existing rows: all existing tasks get NULL = "use lane as canonical column".
+-- The runtime code defensively handles the column being absent (SELECT returns
+-- null for missing columns in libSQL) — steps 1-4 ship and verify independently.
+
+ALTER TABLE tasks ADD COLUMN board_column_key TEXT;

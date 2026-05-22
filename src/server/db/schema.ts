@@ -86,6 +86,19 @@ export const tasks = sqliteTable("tasks", {
    *  never lands here — only the creator-authored extract_body becomes
    *  the task title. */
   sourceNoteId: text("source_note_id"),
+  /** T·69 step 5 — custom board column key. NULL = "use `lane` as the
+   *  canonical board column." Non-null = task belongs to a custom column
+   *  whose key is stored in meta `board:{wsId}:columns`. Effective board
+   *  column = COALESCE(boardColumnKey, lane).
+   *
+   *  MIGRATION REQUIRED before this column is readable from prod:
+   *  see drizzle/0007_add_board_column_key.sql. The runtime code in
+   *  board-app.tsx + moveTaskAction is written to handle the column
+   *  being absent (libSQL returns null for unknown columns in
+   *  SELECT *; the row-mapper ignores undefined fields gracefully).
+   *
+   *  Steps 1-4 of T·69 are independently shippable without this column. */
+  boardColumnKey: text("board_column_key"),
   /** RW-3b: milestone promotion flag. True when the owner explicitly
    *  "promotes to milestone" in the task panel. The flag is additive
    *  and reversible — a milestone is still a normal board task; the
