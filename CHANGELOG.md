@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-05-22 · T·76 · ships · close your account from the avatar dropdown, install Tasks to a home screen
+
+**Settings · Account is now reachable from the avatar dropdown, with an irreversible delete that closes your Signal identity in one step; the web app installs to a phone or desktop home screen with the Tasks mark.** Brings Tasks into parity with the suite-wide account-deletion + PWA pattern that Studio (S·65), Roadmap (R·16), Notes (N·19), and Analytics (A·14) already ship. Typing your email confirms the delete; the server wipes every workspace you own — tasks, subtasks, comments, the lot — and then asks the identity layer to close the Signal account. There is no grace period; the action is final and visible before you commit to it. Installable add-to-home-screen now ships a route-based manifest (replacing the static `public/manifest.webmanifest`), an Apple touch icon carrying the full wordmark, and a maskable Android tile. The sidebar gets a small surface tightening: collapsed account state shows the user identity cleanly without overflowing. Required for Apple App Store submission later this summer.
+
+## 2026-05-22 · T·75 · ships · custom board columns — drag tasks into lanes that aren't the default four
+
+**The board on the owner's workspace now supports custom column keys, so a wedding planner who thinks in "venue / catering / day-of" can author those columns directly instead of bending the default lane vocabulary to fit.** New `board_column_key` column on the tasks table (migration `drizzle/0007_add_board_column_key.sql`) — NULL means "use `lane` as the canonical column" so legacy rows and the in-file seed fixtures stay unchanged. Non-null means the task belongs to a custom column whose key is stored in the workspace `meta` blob. Effective board column = `COALESCE(boardColumnKey, lane)`. The board UI (`board-app.tsx`) reads the meta blob, renders the custom columns, and routes drag-drop writes through a new `moveTaskAction` that updates `boardColumnKey` atomically with the existing lane bookkeeping. State machinery (`tasks-context`, `tasks-reducer`, `selectors`) carries the column key through optimistic UI; row-mappers parse it on read. The libSQL forward-compat trick: the runtime code handles the column being absent from prod SELECTs, so the UI ships safely before the migration runs, and the migration ships safely on top without a coordination window. Drives toward the "for the 80% not in tech" promise — a wedding planner's mental model is not project-management lanes.
+
 ## 2026-05-21 · T·74 · fixes · the avatar row stops overlapping and reads as people
 
 **Stacked assignee chips no longer crash into each other, and the
