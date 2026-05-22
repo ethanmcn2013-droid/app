@@ -23,19 +23,10 @@ const VIEWS = [
   { href: "/app/calendar", label: "Calendar", icon: "calendar" },
 ];
 
-// Wedding-planner domain seed teams. Labels reflect venue coordination
-// roles, not a generic SaaS org. R12: replaced Marketing/Engineering/
-// Design/CS/Ops which contradicted the active starter pack positioning.
-// R15: Design team used #7c3aed — visually adjacent to the retired/banned
-// #7c5cff purple accent (BRAND.md §2 Retired). Replaced with rose (#e11d48)
-// which sits in the wedding palette and clears the indigo/violet family.
-const TEAMS = [
-  { name: "Venue", color: "#e4356d" },
-  { name: "Catering", color: "#00a3b8" },
-  { name: "Flowers & Decor", color: "#e11d48" },
-  { name: "Photography", color: "#10b981" },
-  { name: "Logistics", color: "#f59e0b" },
-];
+// TEAMS removed 2026-05-19: Teams was never built — the const was a
+// placeholder that rendered non-functional "+ add team" / team-list UI.
+// Dead affordances erode trust faster than missing features. Deleted per
+// product-freeze scope (T·69).
 
 const NAV_BOTTOM = [
   { href: "/app/import", label: "Import", icon: "import" },
@@ -108,41 +99,6 @@ function DesktopSidebar({ active }: { active: string }) {
         <div className="mt-1">
           <Group items={VIEWS} active={active} />
         </div>
-
-        <div className="mt-5 flex items-center justify-between px-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-          <span>Teams</span>
-          <button
-            type="button"
-            aria-label="Add team"
-            className="rounded p-0.5 hover:bg-line-soft hover:text-ink-soft"
-          >
-            <svg
-              aria-hidden="true"
-              width="11"
-              height="11"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-            >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
-        <ul className="mt-1 space-y-px">
-          {TEAMS.map((t) => (
-            <li key={t.name}>
-              <button type="button" className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-line-soft/60 hover:text-ink">
-                <span
-                  className="block h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                  style={{ background: t.color }}
-                />
-                {t.name}
-              </button>
-            </li>
-          ))}
-        </ul>
 
         <div className="mt-5 border-t border-line-soft/70 pt-3">
           <Group items={NAV_BOTTOM} active={active} />
