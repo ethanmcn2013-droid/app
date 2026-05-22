@@ -16,12 +16,17 @@ export const metadata = {
   },
 };
 
-export default function TemplatesPage() {
+export default async function TemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ audience?: string }>;
+}) {
+  const params = await searchParams;
   return (
     <>
       <SiteNavServer />
       <main className="flex-1">
-        <TemplatesGallery templates={TEMPLATES} />
+        <TemplatesGallery templates={TEMPLATES} audience={params.audience} />
       </main>
       <SiteFooter />
     </>

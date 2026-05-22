@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { applyTemplateAction } from "@/server/actions/templates";
 import type { Template } from "@/lib/templates";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { TemplateGlyph } from "@/components/marketing/template-glyph";
+import {
+  TemplatePills,
+  type TemplatePill,
+} from "@/components/marketing/template-pills";
 
 /**
  * `/templates` gallery. Each card carries the template name, a short
@@ -18,8 +22,95 @@ import { TemplateGlyph } from "@/components/marketing/template-glyph";
  * The action grants the entitlement-equivalent local-write path even
  * when Clerk isn't configured — no auth gate at the gallery layer.
  * Real auth gating is enforced server-side by `getActiveWorkspace`.
+ *
+ * Pills (TP-3, 2026-05-22). Audience filter row sits below the hero,
+ * above the grid. Pills = wedge-canon order (Wedding → Trades →
+ * Freelance → Marketing) plus an "All" pill at position 0. Default =
+ * All (gallery is a working surface — maximize browse / serendipity).
+ * Students live in "All" only (per segment canon, students never get
+ * a pill); /for-students landing page is the dedicated surface.
+ *
+ * URL contract is byte-identical to studio /templates: `?audience=<id>`
+ * with the default omitting the param.
  */
-export function TemplatesGallery({ templates }: { templates: Template[] }) {
+
+type GalleryAudience =
+  | "all"
+  | "wedding"
+  | "trades"
+  | "freelance"
+  | "marketing";
+
+const PILL_ORDER: GalleryAudience[] = [
+  "all",
+  "wedding",
+  "trades",
+  "freelance",
+  "marketing",
+];
+
+const PILL_LABELS: Record<GalleryAudience, string> = {
+  all: "All",
+  wedding: "Weddings",
+  trades: "Trades",
+  freelance: "Freelance",
+  marketing: "Marketing",
+};
+
+const DEPTH_NOUN: Record<GalleryAudience, { one: string; many: string }> = {
+  all: { one: "template", many: "templates" },
+  wedding: { one: "wedding template", many: "wedding templates" },
+  trades: { one: "trades template", many: "trades templates" },
+  freelance: { one: "freelance template", many: "freelance templates" },
+  marketing: { one: "marketing template", many: "marketing templates" },
+};
+
+function parseAudience(raw: string | undefined): GalleryAudience {
+  if (raw && (PILL_ORDER as string[]).includes(raw)) {
+    return raw as GalleryAudience;
+  }
+  return "all";
+}
+
+export function TemplatesGallery({
+  templates,
+  audience,
+}: {
+  templates: Template[];
+  audience?: string;
+}) {
+  const current = parseAudience(audience);
+
+  const counts = useMemo(() => {
+    const byDomain: Record<string, number> = {};
+    for (const t of templates) {
+      byDomain[t.domain] = (byDomain[t.domain] ?? 0) + 1;
+    }
+    return {
+      all: templates.length,
+      wedding: byDomain.wedding ?? 0,
+      trades: byDomain.trades ?? 0,
+      freelance: byDomain.freelance ?? 0,
+      marketing: byDomain.marketing ?? 0,
+    } as Record<GalleryAudience, number>;
+  }, [templates]);
+
+  const filtered = useMemo(
+    () => (current === "all" ? templates : templates.filter((t) => t.domain === current)),
+    [templates, current],
+  );
+
+  const pills: TemplatePill[] = PILL_ORDER.map((id) => ({
+    id,
+    label: PILL_LABELS[id],
+    count: counts[id],
+  }));
+
+  const noun =
+    filtered.length === 1 ? DEPTH_NOUN[current].one : DEPTH_NOUN[current].many;
+  const depthLabel = `${filtered.length} ${noun}`;
+  const studentCount = templates.filter((t) => t.domain === "student").length;
+
   return (
     <section className="relative pb-32 pt-16 md:pt-24">
       {/* Soft brand glow, same idiom as /about + /students */}
@@ -35,18 +126,7 @@ export function TemplatesGallery({ templates }: { templates: Template[] }) {
       <div className="mx-auto w-full max-w-[1080px] px-6">
         <Eyebrow />
         <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.4rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink">
-          The work,{" "}
-          <span className="relative inline-block whitespace-nowrap">
-            <span
-              aria-hidden
-              className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
-              style={{
-                background:
-                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
-              }}
-            />
-            pre-written.
-          </span>
+          The work, pre-written.
         </h1>
         <p className="mx-auto mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] text-ink-soft">
           Wedding planning workspaces, thesis sprints, freelance
@@ -55,12 +135,60 @@ export function TemplatesGallery({ templates }: { templates: Template[] }) {
           Doesn&rsquo;t touch your existing tasks.
         </p>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {templates.map((t, i) => (
-            <TemplateCard key={t.id} template={t} index={i} />
-          ))}
+        {/* ── Pill filter row ─────────────────────────── */}
+        <div className="mt-10">
+          <TemplatePills
+            pills={pills}
+            current={current}
+            basePath="/templates"
+            defaultId="all"
+            depthLabel={depthLabel}
+          />
         </div>
+
+        <div
+          key={current}
+          className="tg-fadein mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {filtered.length === 0 ? (
+            <div className="col-span-full rounded-2xl border border-dashed border-line-soft px-6 py-8 text-center text-[13.5px] text-ink-faint">
+              No templates for this filter yet.
+            </div>
+          ) : (
+            filtered.map((t, i) => (
+              <TemplateCard key={t.id} template={t} index={i} />
+            ))
+          )}
+        </div>
+
+        {/* Student footer link — students get a dedicated landing page,
+            not a pill (segment canon 2026-05-16). The templates still
+            appear in "All"; this surfaces them as a named alternative. */}
+        {studentCount > 0 ? (
+          <div className="mt-12 text-center text-[13px] text-ink-faint">
+            Studying?{" "}
+            <a
+              href="/for-students"
+              className="underline decoration-line-soft underline-offset-[3px] hover:text-ink hover:decoration-ink"
+            >
+              Signal is free with a .edu address
+            </a>
+            {" — "}
+            {studentCount} student templates live under{" "}
+            <span className="font-medium text-ink-soft">All</span>.
+          </div>
+        ) : null}
       </div>
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html:
+            ".tg-fadein{animation:tg-fadein 150ms ease both}" +
+            "@keyframes tg-fadein{from{opacity:0}to{opacity:1}}" +
+            "@media (prefers-reduced-motion: reduce){" +
+            ".tg-fadein{animation:none}}",
+        }}
+      />
     </section>
   );
 }
@@ -122,6 +250,7 @@ function TemplateCard({ template, index }: { template: Template; index: number }
           type="button"
           onClick={apply}
           disabled={pending}
+          aria-label={`Use the ${template.name} template`}
           className="inline-flex items-center gap-1 rounded-full bg-ink px-3 py-1.5 text-[12px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
         >
           {pending ? "Applying…" : "Use this template"}
@@ -152,12 +281,7 @@ function Eyebrow() {
   return (
     <div className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white/60 py-1 pl-1 pr-3 text-[11.5px] font-medium text-ink-soft backdrop-blur">
       <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
-        style={{
-          background:
-            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
-          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
-        }}
+        className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
       >
         Templates
       </span>
