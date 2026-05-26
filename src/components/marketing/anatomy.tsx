@@ -91,7 +91,7 @@ export function Anatomy() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <section className="mt-32 md:mt-40">
+      <section id="anatomy" className="mt-32 scroll-mt-24 md:mt-40">
         <div className="mx-auto w-full max-w-[1240px] px-6">
           <SectionHeading
             eyebrow="Anatomy of a card"

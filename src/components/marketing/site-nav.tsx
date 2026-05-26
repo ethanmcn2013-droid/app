@@ -9,7 +9,8 @@ import { UserButton } from "@clerk/nextjs";
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 
 const NAV: { href: string; label: string; external?: boolean }[] = [
-  { href: "/#features", label: "Features" },
+  { href: "/#demo", label: "Demo" },
+  { href: "/#anatomy", label: "Anatomy" },
   { href: "/app/board", label: "App" },
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
   { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
@@ -17,7 +18,7 @@ const NAV: { href: string; label: string; external?: boolean }[] = [
 
 /**
  * L3 — auth-aware marketing nav (DESIGN.md §14).
- * When authed: no "Sign in"/"Start for free"; account menu replaces CTA.
+ * When authed: no "Sign in"; account menu replaces auth controls.
  * The isAuthed prop is set by the server wrapper (SiteNavServer) so no
  * client-side auth fetch is needed. Unauthed: identical to prior behavior.
  */
@@ -80,7 +81,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
 
         <div className="flex items-center gap-2">
           {isAuthed ? (
-            /* L3: authed — account menu replaces auth CTAs (DESIGN.md §14) */
+            /* L3: authed — account menu replaces auth controls (DESIGN.md §14) */
             <div className="hidden md:inline-flex items-center">
               <UserButton
                 appearance={{
@@ -95,24 +96,6 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
                 className="hidden rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:text-ink md:inline-flex"
               >
                 Sign in
-              </Link>
-              <Link
-                href="/app/board"
-                className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-medium text-white shadow-sm transition-transform hover:-translate-y-px hover:shadow-md"
-              >
-                Open the workspace
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
               </Link>
             </>
           )}

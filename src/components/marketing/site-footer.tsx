@@ -44,7 +44,8 @@ export function SiteFooter() {
         <FooterCol
           heading="Product"
           links={[
-            { href: "/#features", label: "Features" },
+            { href: "/#demo", label: "Demo" },
+            { href: "/#anatomy", label: "Anatomy" },
             { href: "/app/board", label: "Board" },
             { href: "/app/list", label: "List" },
             { href: "/app/timeline", label: "Timeline" },
