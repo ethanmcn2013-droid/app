@@ -6,8 +6,8 @@ import Link from "next/link";
  * and anyone whose work is dispatched as a list of calls and
  * finished with a signature.
  *
- * Sister landing to `/for/weddings` (rose), `/for/freelancers`
- * (teal), `/for/students` (amber). Trades carries safety-orange.
+ * Sister landing to `/for/freelancers` (teal) and `/for/students`
+ * (amber). Wedding self-serve now lives on studio `/weddings`.
  *
  * Anchors on `new-client-onboarding` + `tax-season` templates —
  * the same shape as freelance, just with tooling and a license

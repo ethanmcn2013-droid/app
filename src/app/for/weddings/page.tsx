@@ -1,33 +1,25 @@
-import { SiteNavServer } from "@/components/marketing/site-nav-server";
-import { SiteFooter } from "@/components/marketing/site-footer";
-import { ForWeddings } from "@/components/marketing/for-weddings";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
-  title: "Tasks for Weddings — Plan the Whole Day in One Workspace",
+  title: "Wedding Planning Workspace - Signal Studio",
   description:
-    "Vendors, RSVPs, run-of-show, vows, marriage license — one workspace, €79 once. Unlimited guests. No per-seat tax.",
+    "The canonical self-serve wedding workspace now lives on Signal Studio.",
+  alternates: {
+    canonical: "https://signalstudio.ie/weddings",
+  },
   openGraph: {
-    title: "Plan the wedding in one place.",
+    title: "Wedding Planning Workspace - Signal Studio",
     description:
-      "One workspace, €79 once. Vendors, RSVPs, run-of-show, vows. Unlimited guests.",
+      "Plan one wedding without building a system first.",
     type: "article",
-    images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Plan the wedding in one place.",
-    description: "€79 once. Unlimited guests. No per-seat tax.",
+    title: "Wedding Planning Workspace - Signal Studio",
+    description: "Plan one wedding without building a system first.",
   },
 };
 
 export default function ForWeddingsPage() {
-  return (
-    <>
-      <SiteNavServer />
-      <main className="flex-1">
-        <ForWeddings />
-      </main>
-      <SiteFooter />
-    </>
-  );
+  permanentRedirect("https://signalstudio.ie/weddings");
 }

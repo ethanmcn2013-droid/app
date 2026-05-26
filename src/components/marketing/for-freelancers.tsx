@@ -2,7 +2,8 @@ import Link from "next/link";
 
 /**
  * `/for/freelancers` — long-form vertical landing for solo developers,
- * designers, and consultants. Sister to `/for/weddings`.
+ * designers, and consultants. Wedding self-serve now lives on
+ * studio `/weddings`; Tasks keeps the application/template surfaces.
  *
  * The strong commercial hook here is the multi-client structure:
  * the Workspace tier (€12/mo, canonical — see studio /pricing) is

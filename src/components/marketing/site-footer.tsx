@@ -66,7 +66,7 @@ export function SiteFooter() {
           heading="Resources"
           links={[
             { href: "/templates", label: "Templates" },
-            { href: "/for/weddings", label: "For weddings" },
+            { href: "https://signalstudio.ie/weddings", label: "For weddings", external: true },
             { href: "/for/freelancers", label: "For freelancers" },
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },

@@ -2,7 +2,8 @@ import Link from "next/link";
 
 /**
  * `/for/students` — long-form vertical landing for college students.
- * Sister to `/for/weddings` and `/for/freelancers`.
+ * Sister to `/for/freelancers`. Wedding self-serve now lives on
+ * studio `/weddings`; Tasks keeps the application/template surfaces.
  *
  * Distinct from the existing `/students` page, which is the action
  * surface (.edu verification + free Workspace-tier-for-two-years signup). This
