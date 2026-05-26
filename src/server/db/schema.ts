@@ -216,7 +216,8 @@ type _SchemaCoversTask = keyof Omit<Task, "comments"> extends keyof typeof tasks
 const _checkTask: _SchemaCoversTask = true;
 void _checkTask;
 
-type _SchemaCoversComment = keyof Comment extends keyof typeof comments.$inferSelect
+// authorName is resolved via LEFT JOIN users at query time, not a column.
+type _SchemaCoversComment = keyof Omit<Comment, "authorName"> extends keyof typeof comments.$inferSelect
   ? true
   : never;
 const _checkComment: _SchemaCoversComment = true;
@@ -240,8 +241,9 @@ export const activities = sqliteTable("activities", {
     .default(sql`(unixepoch())`),
 });
 
+// authorName is resolved via LEFT JOIN users at query time, not a column.
 type _SchemaCoversActivity =
-  keyof Activity extends keyof typeof activities.$inferSelect ? true : never;
+  keyof Omit<Activity, "authorName"> extends keyof typeof activities.$inferSelect ? true : never;
 const _checkActivity: _SchemaCoversActivity = true;
 void _checkActivity;
 

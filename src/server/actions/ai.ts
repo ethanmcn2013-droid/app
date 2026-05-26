@@ -50,7 +50,7 @@ function renderConversation(items: ConversationItem[]): string {
   const lines: string[] = [];
   for (const it of items) {
     if (it.kind === "comment") {
-      const name = USERS[it.comment.userId]?.name ?? it.comment.userId;
+      const name = it.comment.authorName ?? USERS[it.comment.userId]?.name ?? it.comment.userId;
       lines.push(`${name}: ${it.comment.body}`);
     } else {
       // Activity rows are noisy for the model; skip everything except

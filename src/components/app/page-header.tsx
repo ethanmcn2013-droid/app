@@ -109,12 +109,12 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
               href={printPath}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
+              className="hidden items-center justify-center rounded-md border border-line bg-white p-1.5 text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
               aria-label="Open printable view"
             >
               <svg
-                width="12"
-                height="12"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -127,7 +127,6 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                 <rect x="6" y="14" width="12" height="8" />
               </svg>
-              Print
             </Link>
           ) : null}
           {showShare ? (

@@ -200,13 +200,14 @@ export async function getTasksForUser(
   return rows.map(rowToTask);
 }
 
-type CommentRow = typeof comments.$inferSelect;
+type CommentRow = typeof comments.$inferSelect & { authorName: string | null };
 
 function rowToComment(row: CommentRow): Comment {
   return {
     id: row.id,
     taskId: row.taskId,
     userId: row.userId as UserId,
+    authorName: row.authorName,
     body: row.body,
     createdAt: row.createdAt,
   };
@@ -216,20 +217,25 @@ export async function getCommentsForTask(
   taskId: string,
 ): Promise<Comment[]> {
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(comments),
+      authorName: users.name,
+    })
     .from(comments)
+    .leftJoin(users, eq(comments.userId, users.id))
     .where(eq(comments.taskId, taskId))
     .orderBy(asc(comments.createdAt));
   return rows.map(rowToComment);
 }
 
-type ActivityRow = typeof activities.$inferSelect;
+type ActivityRow = typeof activities.$inferSelect & { authorName: string | null };
 
 function rowToActivity(row: ActivityRow): Activity {
   return {
     id: row.id,
     taskId: row.taskId,
-    userId: row.userId,
+    userId: row.userId as UserId,
+    authorName: row.authorName,
     kind: row.kind as ActivityKind,
     payload: row.payload as ActivityPayload,
     createdAt: row.createdAt,
@@ -240,8 +246,12 @@ export async function getActivitiesForTask(
   taskId: string,
 ): Promise<Activity[]> {
   const rows = await db
-    .select()
+    .select({
+      ...getTableColumns(activities),
+      authorName: users.name,
+    })
     .from(activities)
+    .leftJoin(users, eq(activities.userId, users.id))
     .where(eq(activities.taskId, taskId))
     .orderBy(desc(activities.createdAt))
     .limit(50);

@@ -47,24 +47,24 @@ export function ExportMenu() {
           ref={ref}
           type="button"
           onClick={onClick}
-          className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
+          className="hidden items-center justify-center rounded-md border border-line bg-white p-1.5 text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
           aria-label="Export"
         >
           <svg
-            width="12"
-            height="12"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Export
         </button>
       )}
     >

@@ -1,7 +1,7 @@
 import "server-only";
-import { and, desc, eq, gte, like, lte } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, like, lte } from "drizzle-orm";
 import { db } from "./index";
-import { activities, tasks } from "./schema";
+import { activities, tasks, users } from "./schema";
 import { rowToTask } from "./row-mappers";
 import type { Task, UserId } from "@/lib/data";
 import { USERS } from "@/lib/data";
@@ -88,8 +88,12 @@ export async function compileDailyDigest(
   // snippet contains @user references; the comments table itself is
   // searched for the actual @-mention bodies).
   const mentionRows = await db
-    .select()
+    .select({
+      ...getTableColumns(activities),
+      authorName: users.name,
+    })
     .from(activities)
+    .leftJoin(users, eq(activities.userId, users.id))
     .where(
       and(
         eq(activities.kind, "commentAdd"),
@@ -113,7 +117,7 @@ export async function compileDailyDigest(
     mentions.push({
       snippet,
       from: a.userId as UserId,
-      fromName: USERS[a.userId as UserId]?.name ?? a.userId,
+      fromName: a.authorName ?? USERS[a.userId as UserId]?.name ?? a.userId,
       taskId: a.taskId,
       taskTitle: t?.title ?? "(deleted task)",
       createdAt: a.createdAt,

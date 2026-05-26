@@ -71,6 +71,10 @@ export function ConversationFeed({ taskId, initialItems }: Props) {
         id: tempId,
         taskId,
         userId: me,
+        // authorName null here — the server round-trip will supply the real
+        // name; the fallback in CommentRow reads USERS[me].name for seed
+        // users and will show the right name for the current session user.
+        authorName: null,
         body: trimmed,
         createdAt: new Date(),
       };
@@ -201,6 +205,9 @@ function CommentRow({
 }) {
   const reduce = useReducedMotion();
   const u = USERS[comment.userId];
+  // authorName is resolved at query time via LEFT JOIN users; fall back to
+  // the seeded USERS map for demo data, then to a generic label.
+  const displayName = comment.authorName ?? u.name;
   const isOwn = comment.userId === me;
 
   return (
@@ -219,7 +226,7 @@ function CommentRow({
       <Avatar user={comment.userId} size={22} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[12.5px] font-medium text-ink">{u.name}</span>
+          <span className="text-[12.5px] font-medium text-ink">{displayName}</span>
           {isSeedUser(comment.userId) ? (
             <span className="rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
               sample
@@ -263,6 +270,8 @@ function CommentRow({
 
 function ActivityRow({ activity }: { activity: Activity }) {
   const u = USERS[activity.userId];
+  // authorName resolved at query time; fall back to seeded USERS map.
+  const displayName = activity.authorName ?? u.name;
   const sentence = formatActivityLine(activity.payload);
   return (
     <motion.li
@@ -276,7 +285,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
         <Avatar user={activity.userId} size={14} />
       </span>
       <span className="min-w-0 flex-1 truncate">
-        <span className="font-medium text-ink-soft">{u.name}</span>
+        <span className="font-medium text-ink-soft">{displayName}</span>
         {isSeedUser(activity.userId) ? (
           <span className="ml-1 rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
             sample

@@ -501,6 +501,10 @@ export type Comment = {
   id: string;
   taskId: string;
   userId: UserId;
+  /** Display name resolved at query time via LEFT JOIN users.
+   *  Null for legacy rows whose user row has no name yet. Use this
+   *  instead of USERS[userId].name in any render path. */
+  authorName: string | null;
   body: string;
   createdAt: Date;
 };
@@ -583,6 +587,9 @@ export type Activity = {
   id: string;
   taskId: string;
   userId: UserId;
+  /** Display name resolved at query time via LEFT JOIN users.
+   *  Null for legacy rows whose user row has no name yet. */
+  authorName: string | null;
   kind: ActivityKind;
   payload: ActivityPayload;
   createdAt: Date;
