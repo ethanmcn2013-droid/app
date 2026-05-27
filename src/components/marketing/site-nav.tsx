@@ -9,11 +9,10 @@ import { UserButton } from "@clerk/nextjs";
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 
 const NAV: { href: string; label: string; external?: boolean }[] = [
-  { href: "/#demo", label: "Demo" },
-  { href: "/#anatomy", label: "Anatomy" },
-  { href: "/app/board", label: "App" },
+  { href: "/#demo",        label: "Demo"    },
+  { href: "/#anatomy",     label: "Anatomy" },
+  { href: "/app/board",    label: "App"     },
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
-  { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
 ];
 
 /**
