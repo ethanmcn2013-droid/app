@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tasks· — director pass</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#111;--indigo:#4f46e5;
+  --s4:#b8b2a3;--s5:#8c887e;
+  --hl:rgba(17,17,17,.07);
+  --sans:system-ui,-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  --mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,monospace;
+  --pw:min(92vw,800px);
+}
+html,body{height:100%;background:#fff}
+
+/*
+ * CD: warm tint transition fires when wordmark lands —
+ * signals arrival, not just timeout.
+ */
+.hero{
+  position:relative;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;padding:80px 24px;
+  transition:background .9s ease;
+}
+.hero.warm{background:#fafaf8}
+
+/* ── Chrome — CD: TR chrome stripped, marketing visitors don't need it ── */
+.chrome{
+  position:absolute;font-family:var(--mono);font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;
+  color:var(--s5);display:inline-flex;align-items:center;gap:10px;z-index:10;
+}
+.tl{top:28px;left:28px}
+.badge{
+  font-family:var(--sans);font-weight:500;font-size:14px;
+  letter-spacing:-.025em;line-height:.95;color:var(--ink);text-transform:none;
+  display:inline-flex;align-items:baseline;
+}
+.bdot{width:.16em;height:.16em;border-radius:50%;background:var(--indigo);
+  margin-left:.06em;align-self:flex-end;margin-bottom:.06em;flex-shrink:0}
+.sep{color:var(--s5);margin:0 .4em;font-weight:300}
+
+/* ── Well ────────────────────────────── */
+.well{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;align-items:center;
+  width:100%;
+}
+
+/* ── Task board panel ──────────────── */
+.panel{
+  display:flex;flex-direction:column;
+  width:var(--pw);
+}
+
+.rule{
+  width:100%;height:1px;background:var(--hl);
+  transform:scaleX(0);transform-origin:left center;
+}
+.rule.on{
+  transform:scaleX(1);
+  transition:transform .32s cubic-bezier(.5,0,0,1);
+}
+
+/* Meta row: tag pill + progress dots (UX: dots replace passive counter) */
+.meta{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0;opacity:0;
+}
+.meta-tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--indigo);background:rgba(79,70,229,.1);
+  padding:3px 10px;border-radius:99px;font-weight:500;
+}
+
+/* UX: active progress dots — forward momentum read */
+.meta-dots{display:flex;gap:7px;align-items:center}
+.meta-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--s4);
+  transition:background .22s ease,transform .22s ease;
+}
+.meta-dot.act{background:var(--indigo);transform:scale(1.3)}
+
+.text-wrap{padding:8px 0 12px}
+
+/*
+ * overflow:hidden clips the strike's spring overshoot so it
+ * doesn't bleed past the text edge.
+ */
+.flip-text{
+  font-family:var(--mono);
+  font-size:clamp(42px,11vw,104px);
+  font-weight:500;color:var(--ink);
+  letter-spacing:.015em;line-height:1;
+  position:relative;
+  display:inline-flex;align-items:center;flex-wrap:nowrap;
+  overflow:hidden;
+}
+.flip-text .ch{display:inline-block;line-height:1;will-change:transform}
+.flip-text .sp{display:inline-block;width:.28em}
+
+/*
+ * Motion: micro-spring easing so the line feels *placed*, not just drawn.
+ * cubic-bezier(.34,1.56,.64,1) produces a small overshoot on the right
+ * edge — overflow:hidden on .flip-text clips it cleanly.
+ */
+.strike{
+  position:absolute;left:0;top:50%;
+  height:3px;width:0;background:var(--indigo);
+  transform:translateY(-50%);border-radius:2px;pointer-events:none;
+}
+.strike.on{
+  transition:width .52s cubic-bezier(.34,1.56,.64,1);
+  width:100%;
+}
+
+/* ── Wordmark reveal ─────────────────── */
+/*
+ * Intrinsic-width panel so .wm (full-width, centered) places "tasks."
+ * in the true viewport centre; caption left-aligns under the "t".
+ */
+.wm{display:none;flex-direction:column;align-items:center;width:100%}
+.wm.vis{display:flex}
+
+.wm-panel{
+  display:inline-flex;flex-direction:column;
+  align-items:flex-start;
+}
+
+.wm-inner{
+  display:inline-flex;align-items:baseline;
+  font-family:var(--sans);
+  font-size:clamp(56px,14vw,136px);
+  font-weight:500;letter-spacing:-.04em;line-height:1;color:var(--ink);
+}
+.wm-inner .wm-ch{
+  display:inline-block;line-height:1;will-change:transform;
+}
+
+.wmdot{
+  width:.155em;height:.155em;border-radius:50%;background:var(--indigo);
+  margin-left:.05em;align-self:flex-end;margin-bottom:.09em;flex-shrink:0;
+  opacity:0;
+}
+.wmdot.on{
+  animation:
+    dot-in    .44s cubic-bezier(.34,1.56,.64,1) forwards,
+    dot-pulse  2.6s ease-in-out            1.3s  infinite;
+}
+@keyframes dot-in{
+  0%  {opacity:0;transform:scale(.18)}
+  100%{opacity:1;transform:scale(1)}
+}
+@keyframes dot-pulse{
+  0%,30%,100%{transform:scale(1)}
+  15%         {transform:scale(1.28)}
+  22%         {transform:scale(.9)}
+}
+/* Motion: deeper idle pulse — fires once at hold midpoint */
+@keyframes dot-deep{
+  0%  {transform:scale(1);opacity:1}
+  28% {transform:scale(1.62);opacity:.7}
+  56% {transform:scale(.8);opacity:.9}
+  100%{transform:scale(1);opacity:1}
+}
+
+/*
+ * CD/UX: caption copy changed to "your list. cleared." — echoes
+ * the strike mechanic, warmer tone, product-focused payoff.
+ */
+.cap{
+  font-family:var(--mono);font-size:11px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--s5);
+  margin-top:clamp(18px,3vh,28px);opacity:0;
+}
+.cap.on{animation:cap-in .65s cubic-bezier(.22,.7,.2,1) forwards}
+@keyframes cap-in{
+  0%  {opacity:0;transform:translateY(5px)}
+  100%{opacity:1;transform:translateY(0)}
+}
+
+.dir{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--s4);z-index:100;background:#fff;padding:4px 14px;
+  border-radius:99px;border:1px solid var(--hl);white-space:nowrap;
+}
+</style>
+</head>
+<body>
+<div class="hero" id="hero">
+
+  <!-- CD: TR "queue · live" chrome stripped — sole badge stays -->
+  <div class="chrome tl">
+    <span class="badge">signal studio<span class="bdot"></span><span class="sep">/</span>tasks</span>
+  </div>
+
+  <div class="well" id="well">
+
+    <div class="panel" id="panel">
+      <div class="rule" id="rule-top"></div>
+      <div class="meta" id="meta">
+        <span class="meta-tag" id="meta-tag"></span>
+        <!-- UX: progress dots, not passive "01 · 04" counter -->
+        <span class="meta-dots" id="meta-dots"></span>
+      </div>
+      <div class="text-wrap">
+        <div class="flip-text" id="flip-text">
+          <div class="strike" id="strike"></div>
+        </div>
+      </div>
+      <div class="rule" id="rule-bot"></div>
+    </div>
+
+    <div class="wm" id="wm">
+      <div class="wm-panel">
+        <div class="wm-inner" id="wm-inner">
+          <span class="wmdot" id="wmdot"></span>
+        </div>
+        <p class="cap" id="cap">your list. cleared.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="dir">tasks· · loops automatically</p>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────
+   DATA
+   CD: mixed-case text — warmth for a wedding audience.
+   CD: category pills (GUESTS / LOGISTICS / CATERING / MUSIC)
+   replace the old tautological tag = text pairing.
+───────────────────────────────────────────────────── */
+var TASKS=[
+  {tag:'GUESTS',    text:'Send invites'},
+  {tag:'LOGISTICS', text:'Venue visit'},
+  {tag:'CATERING',  text:'Cake tasting'},
+  {tag:'MUSIC',     text:'Confirm band'},
+];
+var N=TASKS.length;
+/* UX: shorter hold on mobile — users scroll past in 3–4 s */
+var HOLD=window.innerWidth<=768?6000:20000;
+var GLYPHS='ABCDEFGHIJKLMNOPQRSTUVWXYZ·-';
+var firstPlay=true;
+
+var $=function(id){return document.getElementById(id);};
+var wait=function(ms){return new Promise(function(r){setTimeout(r,ms);});};
+function rndG(){return GLYPHS[Math.floor(Math.random()*GLYPHS.length)];}
+
+/* ─────────────────────────────────────────────────────
+   PROGRESS DOTS — build once on parse
+───────────────────────────────────────────────────── */
+(function initDots(){
+  var el=$('meta-dots');
+  for(var d=0;d<N;d++){
+    var dot=document.createElement('span');
+    dot.className='meta-dot';
+    el.appendChild(dot);
+  }
+}());
+
+function setActiveDot(i){
+  var dots=$('meta-dots').querySelectorAll('.meta-dot');
+  dots.forEach(function(d,di){d.classList.toggle('act',di===i);});
+}
+
+/* ─────────────────────────────────────────────────────
+   FLIP MECHANICS
+───────────────────────────────────────────────────── */
+async function flipChar(span,target,lowercase){
+  span.style.opacity='1';
+  for(var i=0;i<3;i++){
+    span.style.transition='transform 28ms ease-in';
+    span.style.transform='scaleY(0.04)';
+    await wait(30);
+    if(i<2){
+      span.textContent=lowercase
+        ? String.fromCharCode(97+Math.floor(Math.random()*26))
+        : rndG();
+    } else {
+      span.textContent=target;
+    }
+    span.style.transition='transform 38ms ease-out';
+    span.style.transform='scaleY(1)';
+    await wait(40);
+  }
+}
+
+function buildChars(el,text){
+  var strike=$('strike');
+  strike.classList.remove('on');
+  strike.style.transition='none';
+  strike.style.width='0';
+  el.innerHTML='';
+  el.appendChild(strike);
+  var chars=[];
+  Array.from(text).forEach(function(ch){
+    if(ch===' '){
+      var sp=document.createElement('span');
+      sp.className='sp';
+      el.insertBefore(sp,strike);
+      chars.push({isSpace:true});
+    } else {
+      var s=document.createElement('span');
+      s.className='ch';
+      s.style.cssText='display:inline-block;opacity:0';
+      s.textContent=rndG();
+      el.insertBefore(s,strike);
+      chars.push({span:s,char:ch,isSpace:false});
+    }
+  });
+  return chars;
+}
+
+function flipIn(chars,stagger){
+  var idx=0,ps=[];
+  chars.forEach(function(c){
+    if(!c.isSpace){
+      (function(s,ch,d){
+        ps.push(wait(d).then(function(){return flipChar(s,ch,false);}));
+      })(c.span,c.char,idx*stagger);
+      idx++;
+    }
+  });
+  return Promise.all(ps);
+}
+
+function flipOut(chars){
+  var idx=0,ps=[];
+  chars.forEach(function(c){
+    if(!c.isSpace){
+      (function(s,d){
+        ps.push(wait(d).then(function(){
+          s.style.transition='transform 26ms ease-in';
+          s.style.transform='scaleY(0.04)';
+          return wait(28).then(function(){s.style.opacity='0';});
+        }));
+      })(c.span,idx*9);
+      idx++;
+    }
+  });
+  return Promise.all(ps);
+}
+
+/*
+ * Motion: simultaneous scramble before the exit wave.
+ * Simulates the airport board "clearing" — all slots squish
+ * and show a random glyph together, then the wave disperses them.
+ * Adds ~52ms of mechanical chaos that reads as authenticity.
+ */
+async function scrambleAndExit(chars){
+  var active=chars.filter(function(c){return !c.isSpace;});
+  /* All chars squish at once */
+  active.forEach(function(c){
+    c.span.style.transition='transform 20ms ease-in';
+    c.span.style.transform='scaleY(0.04)';
+  });
+  await wait(22);
+  /* All show a random glyph */
+  active.forEach(function(c){
+    c.span.textContent=rndG();
+    c.span.style.transition='transform 26ms ease-out';
+    c.span.style.transform='scaleY(1)';
+  });
+  await wait(30);
+  /* Then the staggered exit wave */
+  await flipOut(chars);
+}
+
+/* ─────────────────────────────────────────────────────
+   TASK DISPLAY
+───────────────────────────────────────────────────── */
+async function showTask(task,i){
+  var isFirst=(i===0);
+  var isLast=(i===N-1);
+  var metaEl=$('meta');
+
+  $('meta-tag').textContent=task.tag;
+  setActiveDot(i);
+
+  if(isFirst){
+    $('rule-top').classList.add('on');
+    await wait(80);
+    $('rule-bot').classList.add('on');
+    await wait(140);
+  }
+
+  metaEl.style.transition='opacity .18s ease';
+  metaEl.style.opacity='1';
+  await wait(60);
+
+  var chars=buildChars($('flip-text'),task.text);
+  await flipIn(chars,17);
+  await wait(220);
+
+  $('strike').classList.add('on');
+  /* +60ms vs previous — gives the spring overshoot time to fully settle */
+  await wait(520);
+  await wait(isLast?480:200);
+
+  metaEl.style.transition='opacity .12s ease';
+  metaEl.style.opacity='0';
+  await scrambleAndExit(chars);
+}
+
+/* ─────────────────────────────────────────────────────
+   WORDMARK REVEAL
+───────────────────────────────────────────────────── */
+async function revealWordmark(){
+  /* CD: warm tint — background shifts from #fff → #fafaf8 */
+  $('hero').classList.add('warm');
+
+  var rt=$('rule-top'),rb=$('rule-bot');
+  rt.style.transition='opacity .3s ease';rt.style.opacity='0';
+  rb.style.transition='opacity .3s ease';rb.style.opacity='0';
+  await wait(320);
+  $('panel').style.display='none';
+
+  var wi=$('wm-inner');
+  var dot=$('wmdot');
+  while(wi.firstChild!==dot) wi.removeChild(wi.firstChild);
+
+  var wmChars=[];
+  Array.from('tasks').forEach(function(ch){
+    var s=document.createElement('span');
+    s.className='wm-ch';
+    s.style.cssText='display:inline-block;opacity:0';
+    s.textContent=rndG();
+    wi.insertBefore(s,dot);
+    wmChars.push({span:s,char:ch});
+  });
+
+  $('wm').classList.add('vis');
+  await wait(30);
+
+  /*
+   * Motion: stagger 40ms (up from 32ms).
+   * Larger letterforms feel more deliberate at a slower pace.
+   */
+  var idx=0,ps=wmChars.map(function(c){
+    return (function(s,ch,d){
+      return wait(d).then(function(){return flipChar(s,ch,true);});
+    })(c.span,c.char,idx++*40);
+  });
+  await Promise.all(ps);
+
+  await wait(70);
+  dot.classList.add('on');
+
+  await wait(560);
+  $('cap').classList.add('on');
+}
+
+/* ─────────────────────────────────────────────────────
+   IDLE HOLD — keeps the 20s hold feeling like a live system
+───────────────────────────────────────────────────── */
+var _idleTimers=[];
+function clearIdleTimers(){
+  _idleTimers.forEach(clearTimeout);
+  _idleTimers=[];
+}
+
+async function idleHold(ms){
+  clearIdleTimers();
+
+  /* Only fire idle events on a long enough hold (desktop) */
+  if(ms>=12000){
+    /* Motion: deep dot pulse at the halfway mark */
+    _idleTimers.push(setTimeout(function(){
+      var dot=$('wmdot');
+      dot.style.animation='dot-deep .8s cubic-bezier(.34,1.56,.64,1)';
+      _idleTimers.push(setTimeout(function(){
+        /* Resume the standard pulse (skip dot-in re-run) */
+        dot.style.animation='dot-pulse 2.6s ease-in-out infinite';
+      }, 840));
+    }, Math.floor(ms*0.5)));
+
+    /* UX/Motion: caption fades out then back in at 65% mark
+       — signals the loop is patient, not stalled */
+    _idleTimers.push(setTimeout(function(){
+      var cap=$('cap');
+      cap.style.transition='opacity 1.2s ease';
+      cap.style.opacity='0';
+      _idleTimers.push(setTimeout(function(){
+        cap.style.transition='opacity 1s ease';
+        cap.style.opacity='1';
+      }, 2800));
+    }, Math.floor(ms*0.65)));
+  }
+
+  await wait(ms);
+  clearIdleTimers();
+}
+
+/* ─────────────────────────────────────────────────────
+   RESET
+───────────────────────────────────────────────────── */
+function reset(){
+  clearIdleTimers();
+  $('hero').classList.remove('warm');
+  $('panel').style.cssText='';
+
+  var rt=$('rule-top'),rb=$('rule-bot');
+  rt.classList.remove('on');rt.style.cssText='';
+  rb.classList.remove('on');rb.style.cssText='';
+  $('meta').style.cssText='opacity:0';
+  setActiveDot(-1); /* clear all dots */
+
+  var fe=$('flip-text'),st=$('strike');
+  st.classList.remove('on');st.style.cssText='';
+  fe.innerHTML='';fe.appendChild(st);
+
+  $('wm').classList.remove('vis');
+  var wi=$('wm-inner'),dot=$('wmdot');
+  while(wi.firstChild!==dot) wi.removeChild(wi.firstChild);
+  dot.classList.remove('on');dot.style.animation='';
+
+  var cap=$('cap');
+  cap.classList.remove('on');cap.style.cssText='';
+}
+
+/* ─────────────────────────────────────────────────────
+   MAIN
+───────────────────────────────────────────────────── */
+async function play(){
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+    $('panel').style.display='none';
+    var wi=$('wm-inner'),dot=$('wmdot');
+    Array.from('tasks').forEach(function(ch){
+      var s=document.createElement('span');
+      s.className='wm-ch';s.textContent=ch;
+      wi.insertBefore(s,dot);
+    });
+    $('wm').classList.add('vis');
+    $('hero').classList.add('warm');
+    dot.classList.add('on');
+    $('cap').classList.add('on');
+    return;
+  }
+
+  /*
+   * UX: no blank cold start.
+   * First load: board + rules appear immediately, task 0 text already
+   * set (no scramble). Sequence starts at the strike — zero blank time.
+   * Subsequent loops use the normal flip-in for task 0.
+   */
+  if(firstPlay){
+    firstPlay=false;
+    var task0=TASKS[0];
+
+    /* Rules drawn instantly — no transition on first paint */
+    $('rule-top').style.transform='scaleX(1)';
+    $('rule-bot').style.transform='scaleX(1)';
+
+    /* Meta immediately visible */
+    $('meta-tag').textContent=task0.tag;
+    setActiveDot(0);
+    $('meta').style.opacity='1';
+
+    /* First task text set without flip (static read on arrival) */
+    var fe=$('flip-text');
+    var chars0=buildChars(fe,task0.text);
+    chars0.forEach(function(c){
+      if(!c.isSpace){c.span.style.opacity='1';c.span.textContent=c.char;}
+    });
+
+    await wait(300); /* brief reading beat */
+    $('strike').classList.add('on');
+    await wait(520);
+    await wait(480);
+    $('meta').style.transition='opacity .12s ease';
+    $('meta').style.opacity='0';
+    await scrambleAndExit(chars0);
+
+    /* Tasks 1..N-1 with full flip mechanic */
+    for(var i=1;i<N;i++) await showTask(TASKS[i],i);
+
+  } else {
+    /* Loops 2+: clean fast start */
+    await wait(80);
+    for(var i=0;i<N;i++) await showTask(TASKS[i],i);
+  }
+
+  await revealWordmark();
+  await idleHold(HOLD);
+  reset();
+  await wait(200);
+  play();
+}
+
+play();
+</script>
+</body>
+</html>
