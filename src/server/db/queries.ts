@@ -219,7 +219,9 @@ export async function getCommentsForTask(
   const rows = await db
     .select({
       ...getTableColumns(comments),
-      authorName: users.name,
+      // M7: COALESCE name → handle → email-prefix so real users never
+      // show as "Someone" even when name hasn't been backfilled yet.
+      authorName: sql<string | null>`COALESCE(${users.name}, ${users.handle}, CASE WHEN ${users.email} IS NOT NULL THEN SUBSTR(${users.email}, 1, INSTR(${users.email}, '@') - 1) END)`,
     })
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
@@ -248,7 +250,8 @@ export async function getActivitiesForTask(
   const rows = await db
     .select({
       ...getTableColumns(activities),
-      authorName: users.name,
+      // M7: same COALESCE as comments — name → handle → email-prefix.
+      authorName: sql<string | null>`COALESCE(${users.name}, ${users.handle}, CASE WHEN ${users.email} IS NOT NULL THEN SUBSTR(${users.email}, 1, INSTR(${users.email}, '@') - 1) END)`,
     })
     .from(activities)
     .leftJoin(users, eq(activities.userId, users.id))

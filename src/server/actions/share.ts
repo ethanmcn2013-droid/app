@@ -212,7 +212,8 @@ export async function emailShareLinkAction(input: {
   }
 
   const [meRow] = await db
-    .select({ name: users.name })
+    // M7: fetch handle + email so the share email never reads "Someone".
+    .select({ name: users.name, handle: users.handle, email: users.email })
     .from(users)
     .where(eq(users.id, me));
   const [wsRow] = await db
@@ -224,13 +225,20 @@ export async function emailShareLinkAction(input: {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   const url = `${baseUrl}/share/${input.token}`;
 
+  // M7: resolve sender display name — name → handle → email-prefix → fallback.
+  const senderName =
+    meRow?.name?.trim() ||
+    meRow?.handle?.trim() ||
+    (meRow?.email ? meRow.email.split("@")[0] : null) ||
+    "A teammate";
+
   const result = await sendEmail({
     to: trimmed,
-    subject: `${meRow?.name ?? "Someone"} shared "${wsRow?.name ?? "a workspace"}" with you on Tasks`,
+    subject: `${senderName} shared "${wsRow?.name ?? "a workspace"}" with you on Tasks`,
     html: shareLinkEmailHtml(
       wsRow?.name ?? "a workspace",
       url,
-      meRow?.name ?? "A teammate",
+      senderName,
     ),
   });
 
