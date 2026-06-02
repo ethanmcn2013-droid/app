@@ -4,6 +4,7 @@ import { TasksHeroTicker } from "@/components/marketing/tasks-hero-ticker";
 import { Hero } from "@/components/marketing/hero";
 import { Anatomy } from "@/components/marketing/anatomy";
 import { CallToAction } from "@/components/marketing/cta";
+import { SuiteArrows } from "@/components/suite-arrows";
 
 /**
  * Tasks marketing homepage — structure:
@@ -16,6 +17,7 @@ export default function Home() {
   return (
     <>
       <SiteNavServer />
+      <SuiteArrows current="tasks" />
       <main className="flex-1">
         <TasksHeroTicker />
         <Hero />
