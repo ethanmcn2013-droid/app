@@ -34,12 +34,20 @@ const MARKETING_PATHS = new Set(["/", "/features", "/pricing", "/changelog"]);
 /** App entry for tasks. */
 const APP_ENTRY = "/app";
 
-function marketingToAppRedirect(request: NextRequest): NextResponse | null {
+/**
+ * @param isAuthed real Clerk session state (userId present), NOT raw cookie
+ * presence. Using the `__session` cookie alone wrongly treats a stale/expired
+ * cookie as authed, 307'ing the visitor to /app where protect() then walls
+ * them at /sign-in — the "forced sign-in unless incognito" bug. A genuine
+ * session redirects to the app; everyone else keeps the public marketing view.
+ */
+function marketingToAppRedirect(
+  request: NextRequest,
+  isAuthed: boolean,
+): NextResponse | null {
   const { pathname } = request.nextUrl;
 
   if (!MARKETING_PATHS.has(pathname)) return null;
-
-  const isAuthed = Boolean(request.cookies.get("__session")?.value);
   if (!isAuthed) return null;
 
   // Escape hatch: operator set signal_preview_public cookie or ?preview=public
@@ -102,9 +110,11 @@ const clerkConfigured = Boolean(
 export default clerkMiddleware(async (auth, req) => {
   if (!clerkConfigured) return; // dev pass-through
 
-  // Layer 2 — M-route redirect runs BEFORE Clerk protect so we never
-  // call protect() on a marketing page an authed user should skip anyway.
-  const redirect = marketingToAppRedirect(req);
+  // Layer 2 — M-route redirect uses the REAL session (userId), so a stale
+  // __session cookie no longer bounces a signed-out visitor into the /app
+  // sign-in wall. Genuine sessions still land in the workspace.
+  const { userId } = await auth();
+  const redirect = marketingToAppRedirect(req, Boolean(userId));
   if (redirect) return redirect;
 
   if (!isPublicRoute(req)) {

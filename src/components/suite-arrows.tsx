@@ -128,29 +128,43 @@ const CSS = `
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 30;
+  z-index: 50;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   height: 44px;
-  padding: 0 14px;
+  padding: 0 10px;
   color: var(--ink, #111);
   text-decoration: none;
-  opacity: 0.24;
-  transition: opacity 220ms cubic-bezier(.22,.7,.2,1);
+  opacity: 0.6;
+  transition: opacity 200ms cubic-bezier(.22,.7,.2,1);
   -webkit-tap-highlight-color: transparent;
 }
-.sa-prev { left: 6px; }
-.sa-next { right: 6px; }
+.sa-prev { left: 10px; }
+.sa-next { right: 10px; }
 .sa-arrow:hover,
 .sa-arrow:focus-visible { opacity: 1; outline: none; }
+/* Circle target so the chevron reads on a white hero instead of vanishing. */
 .sa-chev {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
+  border-radius: 50%;
+  color: var(--ink, #111);
+  border: 1px solid color-mix(in srgb, var(--ink, #111) 16%, transparent);
+  background: color-mix(in srgb, var(--bg, #fff) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 1px 2px rgba(17,17,17,0.04);
+  transition: border-color 200ms ease, transform 200ms cubic-bezier(.22,.7,.2,1);
+}
+.sa-arrow:hover .sa-chev,
+.sa-arrow:focus-visible .sa-chev {
+  border-color: #4f46e5;
+  transform: scale(1.06);
 }
 .sa-label {
   display: inline-flex;
