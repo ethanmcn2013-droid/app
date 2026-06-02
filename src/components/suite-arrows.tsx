@@ -69,11 +69,11 @@ function SuiteArrow({
       )}
       <span className="sa-chev" aria-hidden>
         {isNext ? (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 6l6 6-6 6" />
           </svg>
         ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 6l-6 6 6 6" />
           </svg>
         )}
@@ -132,11 +132,11 @@ const CSS = `
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 44px;
-  padding: 0 10px;
+  height: 56px;
+  padding: 0 8px;
   color: var(--ink, #111);
   text-decoration: none;
-  opacity: 0.6;
+  opacity: 0.72;
   transition: opacity 200ms cubic-bezier(.22,.7,.2,1);
   -webkit-tap-highlight-color: transparent;
 }
@@ -149,8 +149,8 @@ const CSS = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 56px;
+  height: 56px;
   flex: 0 0 auto;
   border-radius: 50%;
   color: var(--ink, #111);
@@ -176,19 +176,19 @@ const CSS = `
   opacity: 0;
   font-family: var(--font-geist), "Geist", system-ui, sans-serif;
   font-weight: 500;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: -0.025em;
   transition: max-width 280ms cubic-bezier(.22,.7,.2,1), opacity 200ms ease;
 }
 .sa-arrow:hover .sa-label,
 .sa-arrow:focus-visible .sa-label {
-  max-width: 160px;
+  max-width: 180px;
   opacity: 1;
 }
 .sa-dot {
   align-self: flex-end;
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   margin: 0 0 3px 1px;
   border-radius: 50%;
   background: #4f46e5;

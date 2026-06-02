@@ -523,7 +523,10 @@ const CSS = `
   --txr-sans: var(--font-geist-sans,'Geist',system-ui,sans-serif);
   --txr-mono: var(--font-geist-mono,'Geist Mono',ui-monospace,monospace);
 }
-.txr-section.txr-warm { background: #fafaf8; }
+/* Hero stays genuinely white — the warm tint shifted it off-white (#fafaf8)
+   and broke white consistency across the suite heroes. Kept the class so the
+   JS that toggles it is a harmless no-op. */
+.txr-section.txr-warm { background: #ffffff; }
 
 /* Chrome */
 .txr-chrome {
