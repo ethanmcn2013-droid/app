@@ -1,24 +1,37 @@
 "use client";
 
 /**
- * Tasks hero loader — the product's identity moment.
+ * Tasks hero loader — v2, combined split-flap.
  *
- * The dot rolls in left → right, assembling "tasks" as it passes each
- * letter. It lands, squishes on impact, then a strikethrough draws across
- * the word — done. A fresh "tasks" rises below, its dot entering a slow
- * continuous pulse: the queue is alive.
+ * Real task copy scrambles in character by character (departure-board
+ * mechanism) on the white canvas — no dark box, just type on paper. Both
+ * rows strike through in indigo, then a board wipe scatters the chars.
+ * "tasks" reassembles at full wordmark scale using the identical mechanism:
+ * same physics, different size, Geist Mono → Geist. The font shift at that
+ * larger scale is the brand crystallisation moment.
  *
- * SAFETY CONTRACT (post-2026-05-18 SEV-0 loader canon):
- *   · Fully scoped — every class and @keyframes is prefixed `txl-`.
+ * SAFETY CONTRACT (loader canon §13):
+ *   · Fully scoped — every class and @keyframes prefixed `txl-`.
  *   · In-flow only — no position:fixed, no inset:0, no high z-index.
- *   · rAF loop runs only during the roll then cancels itself.
- *   · prefers-reduced-motion → renders final settled state immediately.
+ *   · All setTimeout IDs collected; cancelled + cleared on unmount.
+ *   · prefers-reduced-motion → final settled state rendered immediately,
+ *     no animation, no delay.
  */
 
 import { useEffect, useRef } from "react";
 
+const SC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·–/";
+const SN = 3;    // scramble steps before landing
+const FM = 54;   // ms per scramble frame
+const QST = 27;  // queue char stagger ms
+const WST = 44;  // wordmark char stagger ms (heavier weight)
+
+function rc() {
+  return SC[Math.floor(Math.random() * SC.length)];
+}
+
 export function TasksHeroLoader() {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -26,95 +39,197 @@ export function TasksHeroLoader() {
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const firstWordEl = root.querySelector<HTMLElement>(".txl-word-done");
-    const dotEl = root.querySelector<HTMLElement>(".txl-dot");
-    const composerDoneEl = root.querySelector<HTMLElement>(".txl-composer-done");
+    // ── Element refs (! justified — we own the JSX) ──
+    const queueEl = root.querySelector<HTMLElement>(".txl-queue")!;
+    const qr1     = root.querySelector<HTMLElement>(".txl-qr1")!;
+    const qr2     = root.querySelector<HTMLElement>(".txl-qr2")!;
+    const qt1     = root.querySelector<HTMLElement>(".txl-qt1")!;
+    const qt2     = root.querySelector<HTMLElement>(".txl-qt2")!;
+    const qx1     = root.querySelector<HTMLElement>(".txl-qx1")!;
+    const qx2     = root.querySelector<HTMLElement>(".txl-qx2")!;
+    const wmsEl   = root.querySelector<HTMLElement>(".txl-wm-stage")!;
+    const wmcEl   = root.querySelector<HTMLElement>(".txl-wm-chars")!;
+    const wmdEl   = root.querySelector<HTMLElement>(".txl-wm-dot")!;
+    const capEl   = root.querySelector<HTMLElement>(".txl-caption")!;
 
-    if (!firstWordEl || !dotEl || !composerDoneEl) return;
+    // Runtime safety guard
+    if (!queueEl || !qr1 || !qr2 || !qt1 || !qt2 || !qx1 || !qx2 ||
+        !wmsEl   || !wmcEl || !wmdEl || !capEl) return;
 
-    const letterEls = [...firstWordEl.querySelectorAll<HTMLElement>(".txl-letter")];
-
+    // ── Reduced motion: skip to final state ──────
     if (reduced) {
-      letterEls.forEach((el) => {
-        el.style.opacity = "1";
-        el.style.transform = "translateY(0)";
-        el.style.color = "var(--txl-stone-400)";
+      buildChars(wmcEl, "tasks", "txl-wc").forEach(({ span, ch }) => {
+        if (ch !== " ") span.textContent = ch;
       });
-      root.classList.add("txl-settled");
+      queueEl.classList.add("txl-hidden");
+      wmsEl.classList.add("txl-on");
+      wmdEl.classList.add("txl-on");
+      capEl.classList.add("txl-on");
       return;
     }
 
-    const ROLL_MS = 2600;
-    const RISE_MS = 280;
-    const RISE_LEAD = 80;
+    // ── Cancellation + timer tracking ────────────
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    const start = performance.now();
-    let risenAt: Array<number | null> = new Array(letterEls.length).fill(null);
-    let centers: number[] = [];
-    let raf = 0;
-
-    const measure = () => {
-      const cl = composerDoneEl.getBoundingClientRect().left;
-      centers = letterEls.map((el) => {
-        const r = el.getBoundingClientRect();
-        return r.left + r.width / 2 - cl;
-      });
+    const defer = (fn: () => void, ms: number) => {
+      const id = setTimeout(() => { if (!cancelled) fn(); }, ms);
+      timers.push(id);
     };
+    const wait = (ms: number) =>
+      new Promise<void>((ok) => {
+        const id = setTimeout(ok, ms);
+        timers.push(id);
+      });
 
-    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    // ── DOM helpers ───────────────────────────────
+    interface Cell { span: HTMLSpanElement; ch: string; }
 
-    const frame = () => {
-      const elapsed = performance.now() - start;
-      if (elapsed > ROLL_MS) {
-        letterEls.forEach((el) => {
-          el.style.opacity = "1";
-          el.style.transform = "translateY(0)";
-        });
-        return;
-      }
+    function buildChars(el: HTMLElement, text: string, cls: string): Cell[] {
+      el.innerHTML = "";
+      return [...text].map((ch) => {
+        const span = document.createElement("span");
+        span.className = cls + (ch === " " ? " txl-sp" : "");
+        span.textContent = " ";
+        el.appendChild(span);
+        return { span, ch };
+      });
+    }
 
-      const cl = composerDoneEl.getBoundingClientRect().left;
-      const dr = dotEl.getBoundingClientRect();
-      const dotX = dr.left + dr.width / 2 - cl;
-      const dotOpacity = parseFloat(getComputedStyle(dotEl).opacity);
-
-      letterEls.forEach((el, i) => {
-        const lx = centers[i];
-        if (lx === undefined) return;
-        if (risenAt[i] === null && dotOpacity > 0.2 && lx - dotX < RISE_LEAD) {
-          risenAt[i] = elapsed;
-        }
-        if (risenAt[i] === null) {
-          el.style.opacity = "0";
-          el.style.transform = "translateY(115%)";
+    function animSpan(span: HTMLSpanElement, target: string, startAt: number) {
+      return new Promise<void>((ok) => {
+        if (target === " ") {
+          const id = setTimeout(ok, startAt + FM);
+          timers.push(id);
           return;
         }
-        let p = Math.min(1, Math.max(0, (elapsed - risenAt[i]!) / RISE_MS));
-        p = easeOutCubic(p);
-        el.style.opacity = p.toString();
-        el.style.transform = `translateY(${(1 - p) * 115}%)`;
+        let n = 0;
+        function tick() {
+          if (cancelled) { ok(); return; }
+          span.classList.remove("txl-flip", "txl-snap", "txl-wipe");
+          void span.offsetWidth;
+          if (n < SN) {
+            span.textContent = rc();
+            span.classList.add("txl-flip");
+            n++;
+            defer(tick, FM);
+          } else {
+            span.textContent = target;
+            span.classList.add("txl-snap");
+            const id = setTimeout(ok, 68);
+            timers.push(id);
+          }
+        }
+        defer(tick, startAt);
       });
+    }
 
-      raf = requestAnimationFrame(frame);
-    };
+    function animText(
+      el: HTMLElement,
+      text: string,
+      cls: string,
+      stagger: number
+    ) {
+      const cells = buildChars(el, text, cls);
+      return Promise.all(
+        cells.map(({ span, ch }, i) => animSpan(span, ch, i * stagger))
+      );
+    }
 
-    raf = requestAnimationFrame(() => {
-      measure();
-      raf = requestAnimationFrame(frame);
-    });
-    window.addEventListener("resize", measure);
+    function strikeRow(rowEl: HTMLElement) {
+      return new Promise<void>((ok) => {
+        rowEl.classList.add("txl-struck");
+        const id = setTimeout(ok, 320);
+        timers.push(id);
+      });
+    }
+
+    function wipeChars(el: HTMLElement) {
+      [...el.querySelectorAll<HTMLElement>(".txl-c")].forEach((s) => {
+        const jitter = Math.floor(Math.random() * 28);
+        defer(() => {
+          s.classList.remove("txl-flip", "txl-snap", "txl-wipe");
+          void s.offsetWidth;
+          s.classList.add("txl-wipe");
+          defer(() => {
+            s.textContent = " ";
+            s.classList.remove("txl-wipe");
+          }, 50);
+        }, jitter);
+      });
+      return new Promise<void>((ok) => {
+        const id = setTimeout(ok, 110);
+        timers.push(id);
+      });
+    }
+
+    // ── Main sequence ─────────────────────────────
+    async function play() {
+      // Row 1: tag on, chars assemble
+      await wait(320);
+      if (cancelled) return;
+      qt1.classList.add("txl-on");
+      await animText(qx1, "BREGMAN · EDIT R2", "txl-c", QST);
+      if (cancelled) return;
+      await wait(230);
+      if (cancelled) return;
+      await strikeRow(qr1);
+
+      // Row 2: tag on, chars assemble
+      await wait(160);
+      if (cancelled) return;
+      qt2.classList.add("txl-on");
+      await animText(qx2, "COOMBE · FINAL DLVR", "txl-c", QST);
+      if (cancelled) return;
+      await wait(230);
+      if (cancelled) return;
+      await strikeRow(qr2);
+
+      // Board wipe: tags fade, chars scatter, queue hides
+      await wait(320);
+      if (cancelled) return;
+      qt1.style.opacity = "0";
+      qt2.style.opacity = "0";
+      await Promise.all([wipeChars(qx1), wipeChars(qx2)]);
+      if (cancelled) return;
+      queueEl.classList.add("txl-hidden");
+
+      // Wordmark assembles using same split-flap mechanism
+      await wait(60);
+      if (cancelled) return;
+      wmsEl.classList.add("txl-on");
+      await animText(wmcEl, "tasks", "txl-wc", WST);
+      if (cancelled) return;
+
+      // Dot materialises
+      await wait(130);
+      if (cancelled) return;
+      wmdEl.style.animation = "";
+      void wmdEl.offsetWidth;
+      wmdEl.classList.add("txl-on");
+
+      // Caption
+      await wait(500);
+      if (cancelled) return;
+      capEl.classList.add("txl-on");
+    }
+
+    play();
+
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
+      cancelled = true;
+      timers.forEach(clearTimeout);
     };
   }, []);
 
   return (
-    <section className="txl-hero-section" aria-label="Signal Tasks">
+    <section className="txl-hero-section" ref={rootRef} aria-label="Signal Tasks">
+
       {/* Corner chrome */}
       <div className="txl-chrome txl-chrome-tl">
-        <span className="txl-wm">
-          signal studio<span className="txl-dot-static" />
+        <span className="txl-wm-badge">
+          signal studio
+          <span className="txl-badge-dot" />
           <span className="txl-sep">/</span>tasks
         </span>
       </div>
@@ -123,39 +238,31 @@ export function TasksHeroLoader() {
         queue · live
       </div>
 
-      {/* Stage */}
-      <div className="txl-stage" ref={rootRef} aria-hidden>
-        <div className="txl-composer-stack">
-          {/* First wordmark: rolls in, gets struck through */}
-          <div className="txl-composer txl-composer-done">
-            <span className="txl-word txl-word-done">
-              {"tasks".split("").map((ch, i) => (
-                <span key={i} className="txl-letter">{ch}</span>
-              ))}
-            </span>
-            <span className="txl-trail txl-t1" />
-            <span className="txl-trail txl-t2" />
-            <span className="txl-trail txl-t3" />
-            <span className="txl-ripple-slow" />
-            <span className="txl-ripple" />
-            <span className="txl-dot" />
-            <span className="txl-strike" />
-          </div>
+      {/* Animated stage — queue and wordmark share this center */}
+      <div className="txl-stage" aria-hidden>
 
-          {/* Fresh wordmark: the next task */}
-          <div className="txl-composer txl-composer-fresh">
-            <span className="txl-word txl-word-fresh">
-              {"tasks".split("").map((ch, i) => (
-                <span key={i} className="txl-letter-fresh">{ch}</span>
-              ))}
-            </span>
-            <span className="txl-dot-fresh" />
+        {/* Task queue rows — populated by JS */}
+        <div className="txl-queue">
+          <div className="txl-qrow txl-qr1">
+            <span className="txl-qtag txl-qt1">WEDDING</span>
+            <span className="txl-qtext txl-qx1" />
+          </div>
+          <div className="txl-qrow txl-qr2">
+            <span className="txl-qtag txl-qt2">DELIVERY</span>
+            <span className="txl-qtext txl-qx2" />
           </div>
         </div>
+
+        {/* Wordmark — hidden until queue clears, chars injected by JS */}
+        <div className="txl-wm-stage">
+          <div className="txl-wm-chars" />
+          <div className="txl-wm-dot" />
+        </div>
+
       </div>
 
       {/* Caption */}
-      <p className="txl-caption">the live queue</p>
+      <p className="txl-caption">every task. done.</p>
 
       <style>{CSS}</style>
     </section>
@@ -163,248 +270,285 @@ export function TasksHeroLoader() {
 }
 
 const CSS = `
-.txl-hero-section{
-  position:relative;
-  overflow:hidden;
-  background:var(--bg, #ffffff);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-height:min(88vh,900px);
-  padding:clamp(80px,12vh,160px) 24px clamp(64px,10vh,128px);
+/* ── Section ──────────────────────────────────── */
+.txl-hero-section {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg, #ffffff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: min(88vh, 900px);
+  padding: clamp(80px,12vh,160px) 24px clamp(64px,10vh,128px);
 }
 
-/* ─── CSS custom props ─────────────────────── */
-.txl-hero-section{
-  --txl-ink:#111111;
-  --txl-stone-400:#b8b2a3;
-  --txl-stone-500:#8c887e;
-  --txl-indigo:#4f46e5;
-  --txl-indigo-300:#a5b4fc;
-  --txl-hairline:rgba(17,17,17,0.06);
-  --txl-wm-size:clamp(56px,12vw,168px);
-  --txl-roll:calc(var(--txl-wm-size) * 8);
-  --txl-font:var(--font-geist-sans,'Geist',system-ui,sans-serif);
-  --txl-mono:var(--font-geist-mono,'Geist Mono',ui-monospace,monospace);
+/* ── Design tokens ────────────────────────────── */
+.txl-hero-section {
+  --txl-ink:        #111111;
+  --txl-stone-400:  #b8b2a3;
+  --txl-stone-500:  #8c887e;
+  --txl-indigo:     #4f46e5;
+  --txl-hairline:   rgba(17,17,17,0.05);
+  --txl-font:       var(--font-geist-sans,'Geist',system-ui,sans-serif);
+  --txl-mono:       var(--font-geist-mono,'Geist Mono',ui-monospace,monospace);
+  --txl-wm-size:    clamp(58px,10vw,108px);
 }
 
-/* ─── Chrome ───────────────────────────────── */
-.txl-chrome{
-  position:absolute;
-  font-family:var(--txl-mono);
-  font-size:11px;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  color:var(--txl-stone-500);
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
+/* ── Chrome ───────────────────────────────────── */
+.txl-chrome {
+  position: absolute;
+  font-family: var(--txl-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--txl-stone-500);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
-.txl-chrome-tl{top:28px;left:32px;}
-.txl-chrome-tr{top:28px;right:32px;}
-.txl-wm{
-  display:inline-flex;align-items:baseline;
-  font-family:var(--txl-font);font-weight:500;
-  font-size:14px;letter-spacing:-.025em;line-height:.95;
-  color:var(--txl-ink);text-transform:none;
+.txl-chrome-tl { top: 28px; left: 32px; }
+.txl-chrome-tr { top: 28px; right: 32px; }
+.txl-wm-badge {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--txl-font);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -.025em;
+  line-height: .95;
+  color: var(--txl-ink);
+  text-transform: none;
 }
-.txl-dot-static{
-  width:.16em;height:.16em;border-radius:50%;
-  background:var(--txl-indigo);margin-left:.06em;
-  align-self:flex-end;margin-bottom:.06em;flex:0 0 auto;
+.txl-badge-dot {
+  width: .16em; height: .16em;
+  border-radius: 50%;
+  background: var(--txl-indigo);
+  margin-left: .06em;
+  align-self: flex-end;
+  margin-bottom: .06em;
+  flex: 0 0 auto;
 }
-.txl-sep{color:var(--txl-stone-500);margin:0 .4em;font-weight:300;}
-.txl-pip{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--txl-indigo);display:inline-block;
-  animation:txl-pip-blink 1.6s cubic-bezier(.45,.05,.55,.95) infinite;
+.txl-sep { color: var(--txl-stone-500); margin: 0 .4em; font-weight: 300; }
+.txl-pip {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--txl-indigo);
+  display: inline-block;
+  animation: txl-pip-blink 1.6s cubic-bezier(.45,.05,.55,.95) infinite;
 }
-@keyframes txl-pip-blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes txl-pip-blink { 0%,100%{opacity:1} 50%{opacity:.35} }
 
-/* ─── Stage ────────────────────────────────── */
-.txl-stage{
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  width:100%;
-}
-.txl-composer-stack{
-  position:relative;
-  display:flex;flex-direction:column;
-  align-items:center;
-  gap:0;
-}
-.txl-composer{
-  position:relative;
-  display:inline-flex;align-items:baseline;
-  font-family:var(--txl-font);font-weight:500;
-  font-size:var(--txl-wm-size);line-height:.95;
-  letter-spacing:-.03em;color:var(--txl-ink);
-  padding-bottom:calc(var(--txl-wm-size) * .25);
-}
-.txl-composer::before{
-  content:'';position:absolute;
-  left:calc(-1 * var(--txl-wm-size) * 3.2);
-  right:calc(-1 * var(--txl-wm-size) * 1.2);
-  bottom:calc(var(--txl-wm-size) * .15);
-  height:1px;background:var(--txl-hairline);
-}
-.txl-word,.txl-word-done,.txl-word-fresh{
-  display:inline-flex;gap:0;position:relative;z-index:1;
-}
-.txl-letter{
-  display:inline-block;opacity:0;
-  transform:translateY(115%);
-  color:var(--txl-ink);will-change:opacity,transform;
+/* ── Stage ────────────────────────────────────── */
+.txl-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--txl-wm-size);
 }
 
-/* ─── Roll dot (done) ──────────────────────── */
-.txl-dot{
-  position:relative;width:.16em;height:.16em;border-radius:50%;
-  background:var(--txl-indigo);margin-left:.06em;align-self:flex-end;
-  margin-bottom:.06em;transform-origin:center bottom;z-index:3;
+/* ── Queue ────────────────────────────────────── */
+.txl-queue {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px,1.2vw,12px);
+  align-items: flex-start;
+  transition: opacity .18s ease;
+}
+.txl-queue.txl-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.txl-qrow + .txl-qrow {
+  border-top: 1px solid var(--txl-hairline);
+  padding-top: clamp(6px,1.2vw,12px);
+}
+
+.txl-qrow {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px,1.4vw,14px);
+}
+
+.txl-qtag {
+  font-family: var(--txl-mono);
+  font-size: 9px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--txl-indigo);
+  background: rgba(79,70,229,.1);
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  min-width: 72px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity .22s ease;
+}
+.txl-qtag.txl-on { opacity: 1; }
+
+/* Strike line on text region */
+.txl-qtext {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  position: relative;
+}
+.txl-qtext::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  height: 1.5px; width: 0;
+  background: var(--txl-indigo);
+  transform: translateY(-50%);
+  transition: width .3s cubic-bezier(.55,.06,.68,.19);
+  pointer-events: none;
+}
+.txl-qrow.txl-struck .txl-qtext::after { width: 100%; }
+.txl-qrow.txl-struck .txl-c {
+  color: var(--txl-stone-400) !important;
+  transition: color .18s ease .06s;
+}
+
+/* ── Queue char cells ─────────────────────────── */
+.txl-c {
+  display: inline-block;
+  font-family: var(--txl-mono);
+  font-size: clamp(14px,2.4vw,19px);
+  font-weight: 500;
+  color: var(--txl-ink);
+  width: 1ch;
+  text-align: center;
+  line-height: 1.3;
+  position: relative;
+}
+.txl-c.txl-sp { width: .52ch; }
+
+/* Hinge line — the split-flap tell */
+.txl-c:not(.txl-sp)::after {
+  content: '';
+  position: absolute;
+  top: calc(50% + .5px);
+  left: 1px; right: 1px;
+  height: 1px;
+  background: rgba(17,17,17,.07);
+  pointer-events: none;
+}
+
+/* ── Wordmark stage ───────────────────────────── */
+.txl-wm-stage {
+  position: absolute;
+  display: inline-flex;
+  align-items: baseline;
+  font-size: var(--txl-wm-size);
+  opacity: 0;
+}
+.txl-wm-stage.txl-on { opacity: 1; }
+
+.txl-wm-chars {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 1em;
+}
+
+/* Wordmark char cells — Geist sans, large scale */
+.txl-wc {
+  display: inline-block;
+  font-family: var(--txl-font);
+  font-size: 1em;
+  font-weight: 500;
+  letter-spacing: -.04em;
+  color: var(--txl-ink);
+  line-height: .95;
+}
+
+/* Dot — em units inherit from .txl-wm-stage font-size */
+.txl-wm-dot {
+  width: .155em; height: .155em;
+  border-radius: 50%;
+  background: var(--txl-indigo);
+  margin-left: .045em;
+  align-self: flex-end;
+  margin-bottom: .075em;
+  flex: 0 0 auto;
+  opacity: 0;
+}
+.txl-wm-dot.txl-on {
   animation:
-    txl-roll  2.6s cubic-bezier(.34,1.56,.64,1) 0s 1 forwards,
-    txl-done  .5s  cubic-bezier(.22,.7,.2,1)    2.96s 1 forwards;
+    txl-dot-in   .44s cubic-bezier(.34,1.56,.64,1)    forwards,
+    txl-dot-pulse 2.6s ease-in-out               1.3s infinite;
 }
-@keyframes txl-roll{
-  0%  {transform:translate(calc(-1 * var(--txl-roll)),0) scale(1,1);opacity:0}
-  8%  {transform:translate(calc(-1 * var(--txl-roll)),0) scale(1,1);opacity:1}
-  63% {transform:translate(calc(-.03 * var(--txl-wm-size)),0) scale(1,1);opacity:1}
-  67% {transform:translate(0,0) scale(1,1);opacity:1}
-  73% {transform:translate(0,0) scale(1.55,.55);opacity:1}
-  78% {transform:translate(0,0) scale(1.96,.4);opacity:1}
-  82% {transform:translate(0,0) scale(1.88,.43);opacity:1}
-  88% {transform:translate(0,calc(-.075 * var(--txl-wm-size))) scale(.74,1.34);opacity:1}
-  93% {transform:translate(0,0) scale(1.24,.82);opacity:1}
-  96% {transform:translate(0,0) scale(.96,1.05);opacity:1}
-  100%{transform:translate(0,0) scale(1,1);opacity:1}
+@keyframes txl-dot-in {
+  0%   { opacity: 0; transform: scale(.25); }
+  100% { opacity: 1; transform: scale(1);   }
 }
-@keyframes txl-done{
-  0%  {background:var(--txl-indigo);opacity:1}
-  100%{background:var(--txl-stone-400);opacity:.85}
+@keyframes txl-dot-pulse {
+  0%,30%,100% { transform: scale(1);    opacity: 1; }
+  15%         { transform: scale(1.26); opacity: 1; }
+  22%         { transform: scale(.92);  opacity: 1; }
 }
 
-/* ─── Trails ───────────────────────────────── */
-.txl-trail{
-  position:absolute;width:.16em;height:.16em;border-radius:50%;
-  background:var(--txl-indigo);align-self:flex-end;margin-bottom:.06em;
-  margin-left:.06em;opacity:0;z-index:2;
+/* ── Shared char animations ───────────────────── */
+@keyframes txl-flip {
+  0%   { transform: scaleY(1);    }
+  38%  { transform: scaleY(.04);  }
+  100% { transform: scaleY(1);    }
 }
-.txl-t1{animation:txl-ghost1 2.6s cubic-bezier(.34,1.56,.64,1) 0s 1 forwards;}
-.txl-t2{animation:txl-ghost2 2.6s cubic-bezier(.34,1.56,.64,1) 0s 1 forwards;}
-.txl-t3{animation:txl-ghost3 2.6s cubic-bezier(.34,1.56,.64,1) 0s 1 forwards;}
-@keyframes txl-ghost1{
-  0%,10%{transform:translate(calc(-1 * var(--txl-roll)),0);opacity:0}
-  27%{transform:translate(calc(-.85 * var(--txl-roll)),0);opacity:.5}
-  50%{transform:translate(calc(-.2 * var(--txl-roll)),0);opacity:.26}
-  63%,100%{transform:translate(calc(-.1 * var(--txl-roll)),0);opacity:0}
+@keyframes txl-snap {
+  0%   { transform: scaleY(.04);  }
+  66%  { transform: scaleY(1.07); }
+  100% { transform: scaleY(1);    }
 }
-@keyframes txl-ghost2{
-  0%,13%{transform:translate(calc(-1 * var(--txl-roll)),0);opacity:0}
-  30%{transform:translate(calc(-.78 * var(--txl-roll)),0);opacity:.36}
-  50%{transform:translate(calc(-.28 * var(--txl-roll)),0);opacity:.18}
-  63%,100%{transform:translate(calc(-.16 * var(--txl-roll)),0);opacity:0}
+@keyframes txl-wipe {
+  0%   { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(0); opacity: 0; }
 }
-@keyframes txl-ghost3{
-  0%,17%{transform:translate(calc(-1 * var(--txl-roll)),0);opacity:0}
-  34%{transform:translate(calc(-.7 * var(--txl-roll)),0);opacity:.24}
-  50%{transform:translate(calc(-.35 * var(--txl-roll)),0);opacity:.11}
-  63%,100%{transform:translate(calc(-.24 * var(--txl-roll)),0);opacity:0}
+.txl-c.txl-flip,
+.txl-wc.txl-flip { animation: txl-flip 52ms ease          forwards; }
+.txl-c.txl-snap,
+.txl-wc.txl-snap { animation: txl-snap 60ms cubic-bezier(.34,1.4,.64,1) forwards; }
+.txl-c.txl-wipe,
+.txl-wc.txl-wipe { animation: txl-wipe 45ms ease          forwards; }
+
+/* ── Caption ──────────────────────────────────── */
+.txl-caption {
+  font-family: var(--txl-mono);
+  font-size: 11px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--txl-stone-500);
+  opacity: 0;
+  margin-top: clamp(28px,5vh,48px);
+}
+.txl-caption.txl-on {
+  animation: txl-caption-in .65s cubic-bezier(.22,.7,.2,1) forwards;
+}
+@keyframes txl-caption-in {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0);   }
 }
 
-/* ─── Impact ripples ───────────────────────── */
-.txl-ripple,.txl-ripple-slow{
-  position:absolute;width:.16em;height:.16em;border-radius:50%;
-  background:transparent;align-self:flex-end;margin-bottom:.06em;
-  margin-left:.06em;opacity:0;transform:scale(1);z-index:1;
-}
-.txl-ripple{border:1px solid var(--txl-indigo);animation:txl-rip-fast 2.6s cubic-bezier(.22,.7,.2,1) 0s 1 forwards;}
-.txl-ripple-slow{border:1px solid var(--txl-indigo-300);animation:txl-rip-slow 2.6s cubic-bezier(.22,.7,.2,1) 0s 1 forwards;}
-@keyframes txl-rip-fast{0%,75%{transform:scale(1);opacity:0}78%{transform:scale(1);opacity:.7}100%{transform:scale(11);opacity:0}}
-@keyframes txl-rip-slow{0%,75%{transform:scale(1);opacity:0}78%{transform:scale(1);opacity:.45}100%{transform:scale(22);opacity:0}}
-
-/* ─── Strikethrough ────────────────────────── */
-.txl-strike{
-  position:absolute;left:0;top:50%;height:.07em;width:0;
-  background:var(--txl-indigo);transform:translateY(-15%);
-  pointer-events:none;z-index:2;
-  animation:txl-strike-draw .36s cubic-bezier(.55,.06,.68,.19) 2.6s 1 forwards;
-}
-@keyframes txl-strike-draw{0%{width:0}100%{width:100%}}
-
-/* done fade — letters + dot */
-.txl-composer-done .txl-letter{
-  animation:txl-letter-done .5s cubic-bezier(.22,.7,.2,1) 2.96s 1 forwards;
-}
-@keyframes txl-letter-done{
-  0%  {color:var(--txl-ink);opacity:1}
-  100%{color:var(--txl-stone-400);opacity:.85}
+/* ── Reduced motion ───────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .txl-queue.txl-hidden     { opacity: 0 !important; }
+  .txl-wm-stage.txl-on      { opacity: 1 !important; }
+  .txl-wm-dot.txl-on        { opacity: 1 !important; animation: none !important; }
+  .txl-caption.txl-on       { opacity: 1 !important; animation: none !important; }
+  .txl-pip                  { animation: none !important; }
 }
 
-/* ─── Fresh wordmark ───────────────────────── */
-.txl-composer-fresh{
-  margin-top:calc(var(--txl-wm-size) * -.05);
-  opacity:0;
-  animation:txl-fresh-in .8s cubic-bezier(.22,.7,.2,1) 3.5s 1 forwards;
+/* ── Responsive chrome ────────────────────────── */
+@media (max-width: 600px) {
+  .txl-chrome-tl { top: 18px; left: 20px; }
+  .txl-chrome-tr { top: 18px; right: 20px; font-size: 10px; }
 }
-@keyframes txl-fresh-in{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
-
-.txl-letter-fresh{
-  display:inline-block;opacity:0;transform:translateY(115%);
-  animation:txl-fresh-letter .5s cubic-bezier(.22,.7,.2,1) forwards;
+@media (max-width: 420px) {
+  .txl-chrome-tr { display: none; }
 }
-.txl-word-fresh .txl-letter-fresh:nth-child(1){animation-delay:3.6s}
-.txl-word-fresh .txl-letter-fresh:nth-child(2){animation-delay:3.66s}
-.txl-word-fresh .txl-letter-fresh:nth-child(3){animation-delay:3.72s}
-.txl-word-fresh .txl-letter-fresh:nth-child(4){animation-delay:3.78s}
-.txl-word-fresh .txl-letter-fresh:nth-child(5){animation-delay:3.84s}
-@keyframes txl-fresh-letter{
-  0%  {opacity:0;transform:translateY(115%)}
-  100%{opacity:1;transform:translateY(0)}
-}
-
-.txl-dot-fresh{
-  width:.16em;height:.16em;border-radius:50%;
-  background:var(--txl-indigo);margin-left:.06em;align-self:flex-end;
-  margin-bottom:.06em;transform-origin:center;opacity:0;
-  animation:
-    txl-dot-fresh-in  .4s  cubic-bezier(.22,.7,.2,1)    4s   1        forwards,
-    txl-dot-pulse     2.6s cubic-bezier(.45,.05,.55,.95) 4.5s infinite;
-}
-@keyframes txl-dot-fresh-in{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:scale(1)}}
-@keyframes txl-dot-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.78);opacity:.62}}
-
-/* ─── Caption ──────────────────────────────── */
-.txl-caption{
-  font-family:var(--txl-mono);
-  font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--txl-stone-500);
-  opacity:0;margin-top:48px;
-  animation:txl-caption-in .7s cubic-bezier(.22,.7,.2,1) 4.4s 1 forwards;
-}
-@keyframes txl-caption-in{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
-
-/* ─── Reduced motion ───────────────────────── */
-@media(prefers-reduced-motion:reduce){
-  .txl-dot,.txl-trail,.txl-ripple,.txl-ripple-slow,
-  .txl-strike,.txl-letter,.txl-composer-fresh,
-  .txl-letter-fresh,.txl-dot-fresh,.txl-caption,
-  .txl-pip{animation:none!important}
-  .txl-dot{opacity:.85;transform:none;background:var(--txl-stone-400)}
-  .txl-strike{width:100%}
-  .txl-letter{opacity:.85;transform:none;color:var(--txl-stone-400)}
-  .txl-trail,.txl-ripple,.txl-ripple-slow{display:none}
-  .txl-composer-fresh{opacity:1;transform:none}
-  .txl-letter-fresh{opacity:1;transform:none}
-  .txl-dot-fresh{opacity:1;transform:scale(1)}
-  .txl-caption{opacity:1}
-}
-
-/* ─── Responsive chrome ────────────────────── */
-@media(max-width:600px){
-  .txl-chrome-tl{top:18px;left:20px}
-  .txl-chrome-tr{top:18px;right:20px;font-size:10px}
-}
-@media(max-width:420px){.txl-chrome-tr{display:none}}
 `;
