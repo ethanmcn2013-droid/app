@@ -1,5 +1,5 @@
 /**
- * Persistent top chrome — L4 seamless ecosystem (DESIGN.md §14).
+ * Persistent top chrome — L4 unified suite chrome (DESIGN.md §14).
  *
  * Byte-identical geometry across all five products so a cross-product
  * jump swaps only the body; the chrome appears not to move.

@@ -16,7 +16,7 @@ import type { NextRequest } from "next/server";
  * before the workspace owner provisions secrets. `getCurrentUser()`
  * falls back to the legacy seed identity in that mode.
  *
- * Layer 2 — seamless ecosystem (DESIGN.md §14):
+ * Layer 2 — unified ecosystem (DESIGN.md §14):
  * Authed users hitting a marketing (M) route are 307'd to /app so
  * they land in the workspace rather than the marketing site. The
  * exact M set is defined in LAYER0_ROUTE_ALLOWLIST.md §tasks.

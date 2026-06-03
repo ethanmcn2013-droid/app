@@ -72,7 +72,7 @@ export async function getCurrentUser(): Promise<UserId> {
     // P0-1 hardening (DECISIONS.md D1 / ARCH_SPEC.md §1):
     // Idempotently provision the users row on every authed board entry.
     // This closes the webhook-race hole from the Tasks side: a user who
-    // arrives via the shared Clerk session (seamless flow) before the
+    // arrives via the shared Clerk session (cross-product hop) before the
     // `user.created` webhook fires will have a users row so Analytics
     // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
     // INSERT OR IGNORE — safe to call on every request; DB round-trip is
