@@ -18,14 +18,25 @@ import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === "development";
 
+// CSP allowlists mirrored from notes/next.config.ts (suite-locked enforce model). Report-Only until cross-suite verification — see audit/ISSUES.md suite-01.
+// Clerk's prod Frontend API is a CNAME under our own domain, so the
+// wildcard `https://*.signalstudio.ie` covers whatever label Clerk
+// uses without a deploy-time guess. *.clerk.com + clerk-telemetry.com
+// cover Clerk infra/telemetry; Turnstile bot-protection on Cloudflare.
+// Stripe (js.stripe.com, api.stripe.com, hooks.stripe.com) and Sentry
+// browser ingest are tasks-specific and stay.
+const clerkHosts =
+  "https://*.signalstudio.ie https://*.clerk.accounts.dev https://*.clerk.com https://clerk-telemetry.com";
+const turnstile = "https://challenges.cloudflare.com";
+
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com https://clerk.accounts.dev https://*.clerk.accounts.dev https://js.stripe.com https://*.sentry.io`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: https:`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://va.vercel-scripts.com https://*.clerk.accounts.dev https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io`,
-  `frame-src 'self' https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
+  `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io`,
+  `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
   `worker-src 'self' blob:`,
   `frame-ancestors 'none'`,
   `base-uri 'self'`,
