@@ -68,6 +68,8 @@ export function SiteFooter() {
             { href: "/templates", label: "Templates" },
             { href: "https://signalstudio.ie/weddings", label: "For weddings", external: true },
             { href: "/for/freelancers", label: "For freelancers" },
+            { href: "/for/small-business", label: "For small business" },
+            { href: "/for/community", label: "For coordinators" },
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
             { href: "/status", label: "Status" },
