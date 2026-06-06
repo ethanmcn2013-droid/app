@@ -398,7 +398,7 @@ export async function reorderColumnsAction(
  * reappear in their canonical system lane. This is the least-surprising
  * outcome: no data loss, tasks don't vanish, they just "fall back" to
  * their semantic lane. A deleted "Staging" column with 5 tasks → those
- * tasks reappear in "In progress" (their canonical `doing` lane).
+ * tasks reappear in "Moving" (their canonical `doing` lane).
  *
  * We chose reassign-to-canonical-lane over blocking deletion because:
  *   - The directive says tasks must "survive" deletion.
@@ -426,7 +426,7 @@ export async function deleteColumnAction(
   if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
 
   // Count tasks in this column before clearing — for the return value so
-  // the client can surface "5 tasks moved to In progress" in a toast.
+  // the client can surface "5 tasks moved to Moving" in a toast.
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(tasks)

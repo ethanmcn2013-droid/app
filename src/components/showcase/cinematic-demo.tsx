@@ -408,7 +408,7 @@ export function CinematicDemo({
       drop("david", dest);
       {
         const t = currentStateRef.current?.tasks.find((x) => x.id === "t-101");
-        pushActivity("david", "moved to In progress", shorten(t?.title ?? "this task"));
+        pushActivity("david", "moved to Moving", shorten(t?.title ?? "this task"));
       }
       await wait(900);
 

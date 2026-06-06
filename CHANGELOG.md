@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-06-06 · T·81 · tightens · default lane vocabulary reads human — "Moving" and "Waiting" replace "In progress" and "In review"
+
+**The two middle lanes on every workspace board now read "Moving" and "Waiting" by default — the project-management words "In progress" and "In review" are out of the product.** A wedding planner opening Signal Tasks for the first time sees To do · Moving · Waiting · Done — five seconds of legibility instead of vocabulary they have to mentally translate. Per-workspace column renames (T·75) still override the defaults, so any team that wants "Doing" or "Review" keeps them. The LaneId enum (`todo / doing / review / done`) and every CSS token are untouched — this is a label shift, not a schema move. Nudge copy in the inbox follows: "Quietly enjoying its life in the Moving lane", "Waiting pile is getting top-heavy", and the day-4 review nudge now reads "Waiting for {n} days. Are we reviewing it or admiring it?" The cinematic landing demo's activity feed also drops the old vocabulary. First move in a suite-wide Tier 1 vocabulary alignment — Roadmap, Notes, and Analytics will follow once their distinct surfaces are designed in.
+
 ## 2026-05-28 · T·80 · tightens · M-tier product polish (toolbar, My Tasks, avatars, activity names)
 
 **Export and Print are out of the primary toolbar — they live in the ··· overflow menu now.** The desktop header reads Search | Share | New task with a quiet secondary overflow for the tools few users reach in a session. The overflow is visible on all screen sizes; the mobile menu gets the same items. My Tasks hides the Share button entirely — a personal filtered view has no share destination, and 'New task' reads cleanly as the sole primary CTA. Activity comments and the share invite email now resolve display names via COALESCE(name, handle, email-prefix) at query time — the 'Someone' ghost that appeared for newly-provisioned Clerk users is gone. Avatars gain `role="img"` so the aria-label is honoured by screen readers across all browsers.

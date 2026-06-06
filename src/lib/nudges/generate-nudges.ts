@@ -50,9 +50,9 @@ function pickRand<T>(arr: T[], seed: string): T {
 // ────────────────────────────────────────────────────────────────────
 
 const IDLE_DOING_4: string[] = [
-  "Day 4 of being in-progress. The progress is implied.",
+  "Day 4 in Moving. The motion is implied.",
   "This is starting to look load-bearing. Maybe poke it?",
-  "Quietly enjoying its life in the In progress lane.",
+  "Quietly enjoying its life in the Moving lane.",
 ];
 
 const IDLE_DOING_7: string[] = [
@@ -62,8 +62,8 @@ const IDLE_DOING_7: string[] = [
 ];
 
 const IDLE_REVIEW_4: string[] = [
-  "In review for {n} days. Are we reviewing it or admiring it?",
-  "Five days in review reads less like review and more like a museum exhibit.",
+  "Waiting for {n} days. Are we reviewing it or admiring it?",
+  "Five days waiting reads less like review and more like a museum exhibit.",
   "Review status: pending, vibes: stagnant.",
 ];
 
@@ -86,15 +86,15 @@ const BLOCKER_CLEARED: string[] = [
 ];
 
 const REVIEW_PILE: string[] = [
-  "{n} tasks in In review. Bottleneck-shaped, isn't it?",
+  "{n} tasks Waiting. Bottleneck-shaped, isn't it?",
   "{n} reviews queued. The reviewer's name rhymes with 'you'.",
   "{n} tasks waiting on a yes-or-no. Most are yes. Just guessing.",
 ];
 
 const DOING_EMPTY: string[] = [
-  "{todo} in To do, zero in progress. We can do one.",
+  "{todo} in To do, nothing Moving. We can do one.",
   "Nothing currently in flight. The runway is yours.",
-  "In progress is suspiciously empty. Coincidence?",
+  "Moving is suspiciously empty. Coincidence?",
 ];
 
 // ────────────────────────────────────────────────────────────────────
@@ -213,7 +213,7 @@ export function generateNudges(
     out.push({
       id: `review-pile-${reviewCount}`,
       kind: "review-pile",
-      headline: "Review queue is getting top-heavy",
+      headline: "Waiting pile is getting top-heavy",
       body: tpl.replace("{n}", String(reviewCount)),
       severity: 40,
     });

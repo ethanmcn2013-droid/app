@@ -161,14 +161,14 @@ export const LANES: Record<
   },
   doing: {
     id: "doing",
-    name: "In progress",
+    name: "Moving",
     ink: "var(--lane-doing-ink)",
     bg: "var(--lane-doing)",
     dot: "var(--lane-doing-dot)",
   },
   review: {
     id: "review",
-    name: "In review",
+    name: "Waiting",
     ink: "var(--lane-review-ink)",
     bg: "var(--lane-review)",
     dot: "var(--lane-review-dot)",
