@@ -55,6 +55,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Tree-shake heavy barrel imports — Clerk is used in 17 files across
+    // the app + marketing; the full barrel ships ~6× what we actually call.
+    // Roadmap's next.config carries the same shape (Phase 6.2).
+    optimizePackageImports: ["@clerk/nextjs", "motion"],
+  },
   async headers() {
     return [
       {
