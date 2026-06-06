@@ -12,7 +12,7 @@ import { usePalette } from "@/components/app/palette/command-palette";
 
 const NAV_TOP = [
   { href: "/app/inbox", label: "Inbox", icon: "inbox" },
-  { href: "/app/my-tasks", label: "My tasks", icon: "user" },
+  { href: "/app/my-tasks", label: "My week", icon: "user" },
   { href: undefined, label: "Search", icon: "search" },
 ];
 
@@ -372,7 +372,7 @@ function MobileTabBar({ active }: { active: string }) {
         <TabbarItem
           href="/app/my-tasks"
           icon="user"
-          label="My tasks"
+          label="My week"
           active={active === "/app/my-tasks"}
           badge={myCount}
         />

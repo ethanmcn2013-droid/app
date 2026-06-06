@@ -59,7 +59,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   // was a redundant second context line that made this read as a stacked
   // bar. Workspace identity now lives only in the title.
   const title = isMyTasks
-    ? "My tasks"
+    ? "My week"
     : isInbox
       ? "Inbox"
       : shortenTitle(pack.workspaceTitle);
