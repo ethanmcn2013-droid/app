@@ -38,6 +38,10 @@ export function rowToTask(row: TaskRow): Task {
     // applied (migration 0007 not yet run) — board-app.tsx falls back to
     // the canonical `lane` column in that case.
     boardColumnKey: row.boardColumnKey ?? null,
+    // Cross-product provenance. Set on tasks created via the Notes →
+    // Tasks extract endpoint; drives the "↩ From Notes" chip in the
+    // detail-panel header. Null on every task authored inside Tasks.
+    sourceNoteId: row.sourceNoteId ?? null,
     updatedAt: row.updatedAt,
   };
 }

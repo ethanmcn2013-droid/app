@@ -246,6 +246,12 @@ export type Task = {
    *  optional here because legacy rows + the in-file seed fixtures
    *  predate the column. */
   boardColumnKey?: string | null;
+  /** Provenance: cross-product `{ownerUserId}:{noteId}` tuple set when
+   *  the task was created via the Notes → Tasks extract endpoint
+   *  (`src/app/api/notes-extract/route.ts`). Drives the quiet
+   *  `↩ From Notes` chip in the detail-panel header. Null/undefined on
+   *  every task authored inside Tasks directly. */
+  sourceNoteId?: string | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };

@@ -18,6 +18,7 @@ export function PanelHeader({
         <div className="flex items-center gap-1.5">
           <TaskIdChip id={task.id} />
           <EditedStamp updatedAt={task.updatedAt} />
+          {task.sourceNoteId ? <FromNotesChip /> : null}
         </div>
         <button
           type="button"
@@ -66,6 +67,29 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
         title={updatedAt.toLocaleString("en-US")}
       >
         edited {formatRelativeTime(updatedAt)}
+      </span>
+    </>
+  );
+}
+
+/**
+ * Quiet provenance chip — surfaces when a task arrived via the Notes →
+ * Tasks extract endpoint (`task.sourceNoteId` is set). Matches the
+ * TaskIdChip register: mono, 10.5px, ink-quiet, bg-sunken on hover.
+ *
+ * Non-interactive for now — the sourceNoteId is the `{userId}:{noteId}`
+ * idempotency tuple, not a public URL. When Notes ships a deep-link
+ * surface for individual notes, swap the span for an anchor.
+ */
+function FromNotesChip() {
+  return (
+    <>
+      <span className="text-ink-faint">·</span>
+      <span
+        className="select-none rounded px-1 py-0.5 text-[10.5px] tracking-tight text-ink-quiet"
+        title="Created from a Signal Notes extract"
+      >
+        <span aria-hidden="true">↩</span> From Notes
       </span>
     </>
   );
