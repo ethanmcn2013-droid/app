@@ -289,6 +289,14 @@ export function BoardApp() {
       const mod = e.metaKey || e.ctrlKey;
       const curColIdx = columns.findIndex((c) => c.key === curColKey);
 
+      // Single-key complete — the landing wordmark promises a one-keystroke
+      // "done" gesture; deliver it on the focused card. `x` only — no
+      // modifier — to keep parity with the composer's single-key `c` open.
+      // Cmd/Ctrl+Enter is retained below as the alternate.
+      if (!mod && !e.shiftKey && !e.altKey && e.key === "x") {
+        e.preventDefault(); toggleComplete(id); return;
+      }
+
       if (mod && e.key === "Enter") {
         e.preventDefault(); toggleComplete(id); return;
       }
@@ -925,7 +933,7 @@ function ShortcutHint() {
                 <span className="text-ink-quiet">open</span>
               </div>
               <div className="flex items-center gap-2">
-                <Keys keys={["⌘⏎"]} />
+                <Keys keys={["X"]} />
                 <span className="text-ink-quiet">mark done</span>
               </div>
               <div className="flex items-center gap-2">
