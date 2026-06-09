@@ -21,8 +21,9 @@ import { tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
  * the existing task; never creates a duplicate. Notes can retry safely.
  *
  * Workspace selection: the user's first membership wins. If the user
- * has none, return 404 — Notes should surface this to the user as
- * "create a workspace in Tasks first."
+ * has none, return 404 with venue-operator English — Notes renders the
+ * `error` string to the user verbatim, so the prose has to read in the
+ * suite's voice (BRAND.md §3) rather than in PM-tool register.
  */
 
 export const dynamic = "force-dynamic";
@@ -118,9 +119,9 @@ export async function POST(req: Request) {
       .where(eq(users.id, userId))
       .limit(1);
     if (!userRow) {
-      return bad("User not found in Tasks — sign in to tasks.signalstudio.ie first", 404);
+      return bad("Sign in to Signal Tasks once, then try again.", 404);
     }
-    return bad("No workspace yet — create one in Tasks before sending extracts", 404);
+    return bad("Open Signal Tasks once to set up your space, then try again.", 404);
   }
 
   const workspaceId = member.workspaceId;
@@ -135,11 +136,13 @@ export async function POST(req: Request) {
 
   const taskId = `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
 
+  // No static description — the `↩ From Notes` chip in the detail-panel
+  // header (rendered when `sourceNoteId` is set) carries the provenance.
+  // Prior decorative prose was duplicative chrome dressed as content.
   await db.insert(tasks).values({
     id: taskId,
     workspaceId,
     title: body,
-    description: "Drafted from a private note in Signal Notes.",
     lane: "todo",
     priority: "p2",
     assignees: [],
