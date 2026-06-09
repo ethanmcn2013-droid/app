@@ -70,24 +70,6 @@ function DesktopSidebar({ active }: { active: string }) {
            */}
           <Wordmark size="md" />
         </div>
-        {/* Collapse chevron — decorative chrome; no collapse state exists yet.
-            Hidden from AT and keyboard until a real collapse handler is wired. */}
-        <span
-          aria-hidden="true"
-          tabIndex={-1}
-          className="rounded p-1 text-ink-quiet"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-          </svg>
-        </span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 py-3">
