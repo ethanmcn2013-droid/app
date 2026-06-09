@@ -6,6 +6,7 @@ import { LANES } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Dialog } from "@/components/primitives/dialog";
 import { useDomain } from "@/lib/domain-context";
+import { useToast } from "@/components/primitives/toast";
 import { parseTaskInput } from "@/lib/nlp/parse-task-input";
 import {
   looksLikeUnsupportedRecurrence,
@@ -20,6 +21,7 @@ export function QuickCreateDialog({
   onClose: () => void;
 }) {
   const { addTask } = useTasksDispatch();
+  const { toast } = useToast();
   const [title, setTitle] = useState("");
   const todoLane = LANES.todo;
   const pack = useDomain();
@@ -37,15 +39,26 @@ export function QuickCreateDialog({
 
   function submit() {
     if (!parsed.title.trim()) return; // silent no-op
-    if (recurrenceRefusal) return; // don't create if the recurrence is unsupported
+    // Soft-fail on unsupported recurrence: create the task without the
+    // recurrence and surface a quiet toast so the keystroke produces a
+    // visible result. The product's job is to capture the thought; the
+    // recurrence becomes a follow-up nudge, not a silent block.
+    const droppedRecurrence = recurrenceRefusal;
     addTask({
       title: parsed.title,
       due: parsed.dueLabel,
       dueAt: parsed.dueAt,
-      recurrence: parsed.recurrence,
+      recurrence: droppedRecurrence ? undefined : parsed.recurrence,
     });
     setTitle("");
     onClose();
+    if (droppedRecurrence) {
+      toast("Task created", {
+        body: "Recurrence not supported yet — try \"every Tuesday\" or set it from the task panel.",
+        tone: "info",
+        duration: 5200,
+      });
+    }
   }
 
   function close() {

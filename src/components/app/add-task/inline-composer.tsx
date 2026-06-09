@@ -4,6 +4,7 @@ import { motion, useReducedMotion, AnimatePresence } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LaneId } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { useToast } from "@/components/primitives/toast";
 import { parseTaskInput } from "@/lib/nlp/parse-task-input";
 import {
   looksLikeUnsupportedRecurrence,
@@ -19,6 +20,7 @@ export function InlineComposer({
 }) {
   const reduce = useReducedMotion();
   const { addTask } = useTasksDispatch();
+  const { toast } = useToast();
   const [title, setTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,17 +41,27 @@ export function InlineComposer({
       onClose();
       return;
     }
-    if (recurrenceRefusal) return;
+    // Soft-fail on unsupported recurrence: drop the recurrence, create
+    // the task, and surface a quiet toast. Enter must produce a visible
+    // result — silent no-ops read as "the app froze."
+    const droppedRecurrence = recurrenceRefusal;
     addTask({
       title: parsed.title,
       lane,
       due: parsed.dueLabel,
       dueAt: parsed.dueAt,
-      recurrence: parsed.recurrence,
+      recurrence: droppedRecurrence ? undefined : parsed.recurrence,
     });
     setTitle("");
     // Composer stays open for rapid follow-ups.
     requestAnimationFrame(() => inputRef.current?.focus());
+    if (droppedRecurrence) {
+      toast("Task created", {
+        body: "Recurrence not supported yet — try \"every Tuesday\" or set it from the task panel.",
+        tone: "info",
+        duration: 5200,
+      });
+    }
   }
 
   return (
