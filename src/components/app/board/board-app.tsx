@@ -38,7 +38,7 @@ import {
   deleteColumnAction,
   type ColumnConfig,
 } from "@/server/actions/board";
-import { useColumnConfig } from "@/lib/domain-context";
+import { useColumnConfig, usePersonalization } from "@/lib/domain-context";
 
 // ─── ARCH NOTE: Custom columns and the canonical lane ─────────────────────────
 //
@@ -175,6 +175,7 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
 export function BoardApp() {
   const state = useTasksState();
   const columnConfig = useColumnConfig();
+  const personalization = usePersonalization();
   const { moveTask, moveTaskToColumn, toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -347,8 +348,8 @@ export function BoardApp() {
     return (
       <EmptyStateOverlay
         ghost={<BoardGhost />}
-        headline="This is where your master plan goes."
-        body="Drop tasks into lanes. Drag them across as work moves. Watch momentum build."
+        headline={personalization.headline}
+        body={personalization.body}
       />
     );
   }

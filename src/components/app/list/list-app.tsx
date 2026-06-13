@@ -17,12 +17,14 @@ import { groupByLane, tasksSortedByStartDay } from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
+import { usePersonalization } from "@/lib/domain-context";
 import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
 import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 import { BlockerBadge } from "@/components/app/blockers/blocker-badge";
 import { RecurrenceChip } from "@/components/app/cards/recurrence-chip";
 
 export function ListApp() {
+  const personalization = usePersonalization();
   const state = useTasksState();
   const { toggleComplete, moveTask, removeTask } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
@@ -117,8 +119,9 @@ export function ListApp() {
     return (
       <EmptyStateOverlay
         ghost={<ListGhost />}
-        headline="A clean slate, ready for your first task."
-        body="Write it down once. Check it off when it&rsquo;s done. That&rsquo;s the whole product."
+        headline={personalization.headline}
+        body={personalization.body}
+        primaryLabel={personalization.firstTaskExample}
       />
     );
   }

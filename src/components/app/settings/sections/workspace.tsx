@@ -9,6 +9,13 @@ import {
   updateWorkspaceAction,
 } from "@/server/actions/settings";
 import { DOMAINS, DOMAIN_ORDER, type DomainId } from "@/lib/domains";
+import {
+  SEGMENTS,
+  SEGMENT_ORDER,
+  isPrimaryUseCase,
+  type PrimaryUseCase,
+} from "@/lib/onboarding/segments";
+import { updateSegmentAction } from "@/server/actions/onboarding";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 import { SectionHeader } from "../settings-app";
 import type { SettingsWorkspace } from "../settings-app";
@@ -44,9 +51,19 @@ export function WorkspaceSection({
   const [reseedingDomain, setReseedingDomain] = useState<DomainId | null>(null);
   const [name, setName] = useState(workspace?.name ?? "");
   const [domainConfirm, setDomainConfirm] = useState<DomainId | null>(null);
+  const [segmentConfirm, setSegmentConfirm] = useState<PrimaryUseCase | null>(
+    null,
+  );
+  const [reseedingSegment, setReseedingSegment] = useState<PrimaryUseCase | null>(
+    null,
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const canEdit = myRole === "owner";
   const currentDomain = workspace?.activeDomain;
+  const currentSegment =
+    workspace?.primaryUseCase && isPrimaryUseCase(workspace.primaryUseCase)
+      ? workspace.primaryUseCase
+      : null;
 
   // Keep local input in sync if the workspace prop changes (e.g.
   // after a re-seed kicks off a server-side revalidate).
@@ -65,6 +82,38 @@ export function WorkspaceSection({
       } catch (e) {
         toast("Couldn't save", { tone: "error", body: (e as Error).message });
         setName(workspace.name);
+      }
+    });
+  }
+
+  function applySegment(next: PrimaryUseCase, reseed: boolean) {
+    setSegmentConfirm(null);
+    if (reseed) setReseedingSegment(next);
+    startTransition(async () => {
+      try {
+        await updateSegmentAction({
+          primaryUseCase: next,
+          secondaryContext: workspace?.secondaryContext ?? null,
+          reseed,
+        });
+        toast(
+          reseed
+            ? `Reseeded for ${SEGMENTS[next].label}`
+            : `Now coordinating as ${SEGMENTS[next].label}`,
+          {
+            tone: "success",
+            body: reseed
+              ? "Board repopulated with new examples."
+              : "Copy and examples will reflect your choice.",
+          },
+        );
+      } catch (e) {
+        toast("Couldn't update", {
+          tone: "error",
+          body: (e as Error).message,
+        });
+      } finally {
+        setReseedingSegment(null);
       }
     });
   }
@@ -130,6 +179,58 @@ export function WorkspaceSection({
             <span className="text-[11.5px] text-ink-quiet">
               {pending ? "Saving…" : canEdit ? "Tab or click out to save" : "Owner-only"}
             </span>
+          </div>
+        </div>
+
+        {/* Coordination type */}
+        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
+          <Label>What you&apos;re coordinating</Label>
+          <Caption>
+            Changes copy and recommended examples. Choose &ldquo;update only&rdquo; to keep your tasks, or re-seed for fresh starters.
+          </Caption>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {SEGMENT_ORDER.map((id) => {
+              const seg = SEGMENTS[id];
+              const isActive = currentSegment === id;
+              const isReseeding = reseedingSegment === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  disabled={!canEdit || pending || isActive}
+                  onClick={() => setSegmentConfirm(id)}
+                  className={
+                    "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
+                    (isReseeding
+                      ? "border-brand/60 bg-brand-soft/40"
+                      : isActive
+                        ? "border-brand/40 bg-brand-soft/60"
+                        : canEdit
+                          ? "border-line bg-white hover:border-ink-soft/30"
+                          : "border-line-soft bg-bg-sunken/30 opacity-70")
+                  }
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-semibold text-ink">
+                      {seg.label}
+                    </span>
+                    {isReseeding ? (
+                      <span className="inline-flex items-center gap-1.5 text-[10.5px] font-medium text-brand">
+                        <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
+                        Updating…
+                      </span>
+                    ) : isActive ? (
+                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10.5px] font-medium uppercase tracking-[0.1em] text-brand">
+                        Active
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 text-[11.5px] leading-[1.5] text-ink-quiet">
+                    {seg.description}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -203,6 +304,58 @@ export function WorkspaceSection({
           </dl>
         </div>
       </div>
+
+      <Dialog
+        open={segmentConfirm !== null}
+        onClose={() => setSegmentConfirm(null)}
+        labelledBy="segment-confirm-title"
+        width={440}
+      >
+        <div className="px-5 py-5">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand">
+            Coordination type
+          </div>
+          <h3
+            id="segment-confirm-title"
+            className="mt-1 text-[17px] font-semibold tracking-tight"
+          >
+            Switch to {segmentConfirm ? SEGMENTS[segmentConfirm].label : ""}?
+          </h3>
+          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
+            Update only changes copy and examples. Re-seed wipes tasks and
+            loads new starters for this coordination type.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setSegmentConfirm(null)}
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                segmentConfirm && applySegment(segmentConfirm, false)
+              }
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink hover:border-ink-soft/30"
+            >
+              Update only
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                segmentConfirm && applySegment(segmentConfirm, true)
+              }
+              className="rounded-full bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-ink-soft"
+            >
+              Re-seed workspace
+            </button>
+          </div>
+        </div>
+      </Dialog>
 
       <Dialog
         open={domainConfirm !== null}

@@ -25,6 +25,8 @@ export type SettingsWorkspace = {
   slug: string;
   name: string;
   activeDomain: string | null;
+  primaryUseCase: string | null;
+  secondaryContext: string | null;
   createdAt: string | null;
   ownerUserId: string | null;
   /** Phase 3 publishable workspaces. Null = private; ISO string =

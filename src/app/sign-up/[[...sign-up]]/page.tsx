@@ -1,6 +1,11 @@
 import { SignUp } from "@clerk/nextjs";
 import { Wordmark } from "@/components/brand/wordmark";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+import {
+  buildWelcomeUrl,
+  getSegment,
+  segmentFromParam,
+} from "@/lib/onboarding/segments";
 
 export const metadata = { title: "Sign up — Tasks" };
 
@@ -9,7 +14,7 @@ const REDEEM_PATH = /^\/redeem\/([A-Za-z0-9-]+)\/?$/;
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect_url?: string }>;
+  searchParams: Promise<{ redirect_url?: string; use?: string }>;
 }) {
   const sp = await searchParams;
   let sponsor: { name: string; code: string } | null = null;
@@ -21,6 +26,12 @@ export default async function SignUpPage({
       if (info) sponsor = { name: info.sponsorName, code };
     }
   }
+
+  const preselected = segmentFromParam(sp.use);
+  const welcomeUrl = buildWelcomeUrl(preselected);
+  const segmentLabel = preselected
+    ? getSegment(preselected).label
+    : null;
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -43,8 +54,18 @@ export default async function SignUpPage({
               {sponsor.code}
             </div>
           </div>
+        ) : segmentLabel ? (
+          <div className="mb-6 flex w-full max-w-[420px] flex-col items-center text-center">
+            <p className="text-[14px] leading-[1.5] text-ink-soft">
+              Setting up for{" "}
+              <span className="font-medium text-ink">{segmentLabel}</span>
+            </p>
+          </div>
         ) : null}
-        <SignUp />
+        <SignUp
+          fallbackRedirectUrl={welcomeUrl}
+          forceRedirectUrl={welcomeUrl}
+        />
       </main>
     </div>
   );

@@ -22,6 +22,7 @@ import {
   isFirstRun,
 } from "@/server/db/queries";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 
 // Layout reads from a runtime DB; mark dynamic so Next doesn't try
 // to prerender app routes against a build-time empty DB.
@@ -51,15 +52,27 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     getActiveDomain(ws),
     getCurrentUser(),
     db
-      .select({ slug: workspaces.slug })
+      .select({
+        slug: workspaces.slug,
+        primaryUseCase: workspaces.primaryUseCase,
+      })
       .from(workspaces)
       .where(eq(workspaces.id, ws))
       .then((rows) => rows[0]),
   ]);
   const slug = wsRow?.slug ?? ws;
+  const personalization = getWorkspacePersonalization({
+    primaryUseCase: wsRow?.primaryUseCase,
+    activeDomain: domain,
+  });
   return (
     <CurrentUserProvider user={currentUser}>
-      <DomainProvider domain={domain} workspaceId={ws} workspaceSlug={slug}>
+      <DomainProvider
+        domain={domain}
+        workspaceId={ws}
+        workspaceSlug={slug}
+        personalization={personalization}
+      >
         <TasksProvider initialTasks={tasks}>
           <ToastRoot>
             <AddTaskRoot>

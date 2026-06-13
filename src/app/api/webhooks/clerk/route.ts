@@ -6,6 +6,7 @@ import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users, workspaces, workspaceMembers } from "@/server/db/schema";
 import { grantEntitlement } from "@/server/actions/billing";
+import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
 /**
@@ -204,6 +205,13 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
   // exists by this point, and a failure here shouldn't roll back
   // the user creation. Worst case: the entitlement is missed, the
   // student lands on Free, and they redeem manually later.
+  const emailDomain = email?.split("@")[1]?.toLowerCase() ?? null;
+  await trackOnboardingEventServer(userId, "signup_completed", {
+    email_domain: emailDomain ?? undefined,
+    source: "clerk_webhook",
+    primary_use_case: emailDomain && isEduEmail(email!) ? "student" : undefined,
+  });
+
   if (email && isEduEmail(email)) {
     try {
       await grantEntitlement({

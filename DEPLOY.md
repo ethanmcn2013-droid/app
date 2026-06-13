@@ -45,8 +45,14 @@ SENTRY_DSN=https://...@sentry.io/...
 NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
 SENTRY_ENVIRONMENT=production
 
-# Database (when migrating off SQLite)
-DATABASE_URL=postgres://...
+# Database (Turso / libSQL)
+TASKS_DATABASE_URL=libsql://...
+TASKS_DATABASE_AUTH_TOKEN=...
+
+# PostHog (onboarding funnel + signup_completed)
+POSTHOG_API_KEY=phc_...
+# Optional — default https://eu.i.posthog.com
+NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
 ```
 
 ## 3. Webhook endpoints
@@ -101,13 +107,28 @@ Sentry → Create Project → Next.js. Copy the DSN into both
 `SENTRY_ENVIRONMENT=production`. Optionally set
 `SENTRY_AUTH_TOKEN` to enable source-map upload during deploy.
 
+## 8b. Onboarding schema migration
+
+After deploy, apply the segment onboarding columns on Turso:
+
+```bash
+turso db shell <your-db> < drizzle/0008_onboarding_segment.sql
+```
+
+Or run the SQL in the Turso dashboard. Adds `primary_use_case`,
+`secondary_context`, `onboarding_completed_at` on `workspaces`.
+
 ## 9. Smoke test (production, from a phone in incognito)
 
 - [ ] `/` renders, demo plays
 - [ ] `/pricing`, `/about`, `/students` unfurl with correct OG cards
   in iMessage/Slack
 - [ ] Sign up flow works → lands in `/welcome`
-- [ ] Pick a starter pack → board renders with seeded tasks
+- [ ] `/sign-up?use=wedding` → welcome pre-selects wedding segment
+- [ ] Segmented onboarding (welcome → use case → context → starter) completes
+- [ ] Pick a starter pack → board renders with seeded tasks + segment empty-state copy
+- [ ] Settings → change coordination type (update only + re-seed paths)
+- [ ] PostHog receives `signup_completed` and `onboarding_completed` (if key set)
 - [ ] Check off a task → DopamineCheck animation fires
 - [ ] Generate a magic link → another tab/incognito visits → renders
   read-only

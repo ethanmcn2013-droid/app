@@ -18,6 +18,7 @@ import { tasksSortedByStartDay } from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { TimelineGhost } from "@/components/app/empty-state/ghost-views";
+import { usePersonalization } from "@/lib/domain-context";
 import { setTaskTimelineAction } from "@/server/actions/timeline-drag";
 
 const DAYS = 14;
@@ -83,6 +84,7 @@ type DragState =
     };
 
 export function TimelineApp() {
+  const personalization = usePersonalization();
   const state = useTasksState();
   const dispatch = useTasksDispatch();
   const sorted = tasksSortedByStartDay(state);
@@ -186,9 +188,9 @@ export function TimelineApp() {
     return (
       <EmptyStateOverlay
         ghost={<TimelineGhost />}
-        headline="Your timeline starts the moment you add a milestone."
-        body="Drop in dates. Watch the bars settle into the next two weeks. See what's about to overlap."
-        primaryLabel="Add your first milestone"
+        headline={personalization.headline}
+        body={personalization.body}
+        primaryLabel={personalization.firstTaskExample}
       />
     );
   }

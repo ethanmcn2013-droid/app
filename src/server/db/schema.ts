@@ -154,6 +154,15 @@ export const workspaces = sqliteTable("workspaces", {
   ownerUserId: text("owner_user_id").references(() => users.id),
   /** Replaces meta.activeDomain. Marketing / Student / Freelance / Wedding. */
   activeDomain: text("active_domain"),
+  /** Segmented onboarding — primary coordination use case
+   *  (venue | wedding | student | small-business | …). */
+  primaryUseCase: text("primary_use_case"),
+  /** Optional second-step context (e.g. wedding-venue, society). */
+  secondaryContext: text("secondary_context"),
+  /** Unix timestamp when onboarding flow completed. */
+  onboardingCompletedAt: integer("onboarding_completed_at", {
+    mode: "timestamp",
+  }),
   /** Canonical workspace template id this workspace was remixed from
    *  (e.g. "wedding-planning-workspace"). Null = workspace was created
    *  blank or before T-1. Notes/Roadmap/Analytics use this to lazily
@@ -382,7 +391,7 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
  */
 export const userPreferences = sqliteTable("user_preferences", {
   userId: text("user_id").primaryKey(),
-  /** Signal Analytics daily briefing email cadence. */
+  /** Signal daily briefing email cadence. */
   dailySignalCadence: text("daily_signal_cadence")
     .$type<"off" | "weekdays" | "daily">()
     .notNull()

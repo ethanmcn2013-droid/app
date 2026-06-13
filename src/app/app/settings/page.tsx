@@ -74,6 +74,8 @@ export default async function SettingsPage() {
                 slug: workspaceRow.slug,
                 name: workspaceRow.name,
                 activeDomain: workspaceRow.activeDomain ?? null,
+                primaryUseCase: workspaceRow.primaryUseCase ?? null,
+                secondaryContext: workspaceRow.secondaryContext ?? null,
                 createdAt: workspaceRow.createdAt
                   ? workspaceRow.createdAt.toISOString()
                   : null,

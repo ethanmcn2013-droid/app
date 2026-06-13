@@ -6,7 +6,7 @@ import { LANES, type Task } from "@/lib/data";
 import { Avatar, AvatarStack } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { useActiveWorkspace } from "@/lib/domain-context";
+import { useActiveWorkspace, usePersonalization } from "@/lib/domain-context";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { CalendarGhost } from "@/components/app/empty-state/ghost-views";
 import { useToast } from "@/components/primitives/toast";
@@ -29,6 +29,7 @@ function dayLabel(i: number) {
 // so calendar/page.tsx can be a sync server component (no Suspense boundary
 // against the board-shaped parent loading.tsx).
 export function CalendarApp() {
+  const personalization = usePersonalization();
   const ws = useActiveWorkspace();
   const workspaceId = ws?.id ?? "";
   const state = useTasksState();
@@ -38,8 +39,9 @@ export function CalendarApp() {
     return (
       <EmptyStateOverlay
         ghost={<CalendarGhost />}
-        headline="Your week takes shape as soon as you add a date."
-        body="Schedule a task. The grid fills with what's coming. No more 'wait, when was that?'"
+        headline={personalization.headline}
+        body={personalization.body}
+        primaryLabel={personalization.firstTaskExample}
       />
     );
   }

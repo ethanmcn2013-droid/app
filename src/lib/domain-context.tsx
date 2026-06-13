@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { DOMAINS, type DomainId, type DomainPack } from "@/lib/domains";
+import type { WorkspacePersonalization } from "@/lib/onboarding/personalization";
 import type { LaneId } from "@/lib/data";
 import type { ColumnConfig } from "@/server/actions/board";
 
@@ -22,6 +23,8 @@ type DomainCtx = {
    *  Null when no config has been stored — consumers fall back to LANES
    *  defaults and LANE_ORDER. */
   columnConfig: ColumnConfig | null;
+  /** Segment-aware copy for empty states and chrome. */
+  personalization: WorkspacePersonalization;
 };
 
 const DomainContext = createContext<DomainCtx | null>(null);
@@ -35,11 +38,13 @@ export function DomainProvider({
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
    *  migrated yet; merged into a synthetic ColumnConfig if columnConfig is absent. */
   columnNames,
+  personalization,
   children,
 }: {
   domain: DomainId;
   workspaceId: string;
   workspaceSlug: string;
+  personalization: WorkspacePersonalization;
   /** Resolved from meta table in the layout server component. */
   boardName?: string | null;
   /** Full column config resolved by getColumnConfig() in the layout. */
@@ -64,6 +69,7 @@ export function DomainProvider({
         workspaceSlug,
         boardName: boardName ?? null,
         columnConfig: resolvedConfig,
+        personalization,
       }}
     >
       {children}
@@ -114,4 +120,19 @@ export function useColumnConfig(): ColumnConfig | null {
 export function useColumnNames(): Partial<Record<LaneId, string>> | null {
   const v = useContext(DomainContext);
   return v?.columnConfig?.system ?? null;
+}
+
+/** Segment-aware workspace copy — empty states, examples, titles. */
+export function usePersonalization(): WorkspacePersonalization {
+  const v = useContext(DomainContext);
+  if (!v) {
+    const pack = DOMAINS.wedding;
+    return {
+      headline: pack.emptyStateHeadline,
+      body: pack.emptyStateBody,
+      firstTaskExample: pack.firstTaskExample,
+      workspaceTitle: pack.workspaceTitle,
+    };
+  }
+  return v.personalization;
 }
