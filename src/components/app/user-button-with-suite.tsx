@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { UserButton, useUser, useClerk } from "@clerk/nextjs";
 import {
-  ANALYTICS_URL,
+  SIGNAL_URL,
   NOTES_URL,
-  ROADMAP_URL,
+  TIMELINE_URL,
   TASKS_URL,
 } from "@/lib/product-urls";
 
@@ -48,8 +48,8 @@ function clearPreviewCookie() {
 const PRODUCTS: { slug: ProductSlug; label: string; url: string }[] = [
   { slug: "notes",     label: "Open notes",     url: `${NOTES_URL}/app` },
   { slug: "tasks",     label: "Open tasks",     url: `${TASKS_URL}/app` },
-  { slug: "roadmap",   label: "Open roadmap",   url: `${ROADMAP_URL}/app` },
-  { slug: "analytics", label: "Open analytics", url: `${ANALYTICS_URL}/app` },
+  { slug: "roadmap",   label: "Open timeline",   url: `${TIMELINE_URL}/app` },
+  { slug: "analytics", label: "Open signal", url: `${SIGNAL_URL}/app` },
 ];
 
 function ArrowIcon() {

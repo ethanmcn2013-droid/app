@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import {
   NOTES_URL,
   TASKS_URL,
-  ROADMAP_URL,
-  ANALYTICS_URL,
+  TIMELINE_URL,
+  SIGNAL_URL,
 } from "@/lib/product-urls";
 
 type Slug = "notes" | "tasks" | "roadmap" | "analytics";
@@ -28,8 +28,8 @@ type Slug = "notes" | "tasks" | "roadmap" | "analytics";
 const ORDER: { slug: Slug; word: string; url: string }[] = [
   { slug: "notes", word: "notes", url: NOTES_URL },
   { slug: "tasks", word: "tasks", url: TASKS_URL },
-  { slug: "roadmap", word: "roadmap", url: ROADMAP_URL },
-  { slug: "analytics", word: "analytics", url: ANALYTICS_URL },
+  { slug: "roadmap", word: "timeline", url: TIMELINE_URL },
+  { slug: "analytics", word: "signal", url: SIGNAL_URL },
 ];
 
 function prefetch(url: string) {

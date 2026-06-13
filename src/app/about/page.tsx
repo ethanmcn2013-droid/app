@@ -1,7 +1,7 @@
 import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AboutManifesto } from "@/components/marketing/about-manifesto";
-import { ROADMAP_URL, STUDIO_URL } from "@/lib/product-urls";
+import { TIMELINE_URL, STUDIO_URL } from "@/lib/product-urls";
 
 export const metadata = {
   title: "About — Signal Tasks",
@@ -46,12 +46,12 @@ export default function AboutPage() {
               </a>{" "}
               We also make{" "}
               <a
-                href={ROADMAP_URL}
+                href={TIMELINE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
-                Signal Roadmap
+                Signal Timeline
               </a>{" "}
               &mdash; direction clarity for public plans, changes, and
               decisions people can read.

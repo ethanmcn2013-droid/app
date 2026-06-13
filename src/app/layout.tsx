@@ -104,12 +104,12 @@ export default function RootLayout({
           {/* Belt-and-braces synchronous inline style — fires before linked stylesheet */}
           <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
           {/* Cross-origin preconnect for sibling products */}
-          <link rel="preconnect" href="https://roadmap.signalstudio.ie" />
-          <link rel="dns-prefetch" href="https://roadmap.signalstudio.ie" />
+          <link rel="preconnect" href="https://timeline.signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://timeline.signalstudio.ie" />
           <link rel="preconnect" href="https://notes.signalstudio.ie" />
           <link rel="dns-prefetch" href="https://notes.signalstudio.ie" />
-          <link rel="preconnect" href="https://analytics.signalstudio.ie" />
-          <link rel="dns-prefetch" href="https://analytics.signalstudio.ie" />
+          <link rel="preconnect" href="https://signal.signalstudio.ie" />
+          <link rel="dns-prefetch" href="https://signal.signalstudio.ie" />
           <link rel="preconnect" href="https://signalstudio.ie" />
           <link rel="dns-prefetch" href="https://signalstudio.ie" />
         </head>

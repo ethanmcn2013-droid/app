@@ -91,7 +91,7 @@ export function ForCommunity() {
           />
           <Reason
             title="The roadmap is the parent email."
-            body="Pair this workspace with a public Signal Roadmap. Parents and members read the plan at midnight on their phone. No login. No app. No follow-up email asking what was decided last week."
+            body="Pair this workspace with a public Signal Timeline. Parents and members read the plan at midnight on their phone. No login. No app. No follow-up email asking what was decided last week."
           />
           <Reason
             title="No project-manager vocabulary."

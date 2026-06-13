@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/components/primitives/toast";
 import { TEMPLATES } from "@/lib/templates";
 import { SYNCED_TEMPLATE_IDS } from "@/lib/templates.generated";
-import { ROADMAP_URL } from "@/lib/product-urls";
+import { TIMELINE_URL } from "@/lib/product-urls";
 
 /**
  * Reads `?templated={id}` or `?remixed={id}` from the URL on `/app/board`
@@ -50,7 +50,7 @@ export function TemplatedToast() {
         action:
           isRemix && isCanonical
             ? {
-                href: `${ROADMAP_URL}/onboarding/from-template/${encodeURIComponent(templateId)}`,
+                href: `${TIMELINE_URL}/onboarding/from-template/${encodeURIComponent(templateId)}`,
                 label: "Create a Roadmap for this",
                 external: true,
               }

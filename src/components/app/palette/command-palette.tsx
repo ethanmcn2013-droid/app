@@ -16,9 +16,9 @@ import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
 import {
-  ANALYTICS_URL,
+  SIGNAL_URL,
   NOTES_URL,
-  ROADMAP_URL,
+  TIMELINE_URL,
 } from "@/lib/product-urls";
 
 type Ctx = { open: boolean; openPalette: () => void; closePalette: () => void };
@@ -278,9 +278,9 @@ function Empty({ query }: { query: string }) {
 }
 
 const SUITE_JUMPS: { word: string; tagline: string; url: string }[] = [
-  { word: "roadmap", tagline: "Direction clarity", url: ROADMAP_URL },
+  { word: "timeline", tagline: "Direction clarity", url: TIMELINE_URL },
   { word: "notes", tagline: "Capture clarity", url: NOTES_URL },
-  { word: "analytics", tagline: "Attention clarity", url: ANALYTICS_URL },
+  { word: "signal", tagline: "Attention clarity", url: SIGNAL_URL },
 ];
 
 function SuiteJumps({ only }: { only?: typeof SUITE_JUMPS }) {

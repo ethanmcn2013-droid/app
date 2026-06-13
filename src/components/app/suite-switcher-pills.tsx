@@ -44,10 +44,10 @@ const NOTES_URL =
   process.env.NEXT_PUBLIC_NOTES_URL ?? "https://notes.signalstudio.ie";
 const TASKS_URL =
   process.env.NEXT_PUBLIC_TASKS_URL ?? "https://tasks.signalstudio.ie";
-const ROADMAP_URL =
-  process.env.NEXT_PUBLIC_ROADMAP_URL ?? "https://roadmap.signalstudio.ie";
-const ANALYTICS_URL =
-  process.env.NEXT_PUBLIC_ANALYTICS_URL ?? "https://analytics.signalstudio.ie";
+const TIMELINE_URL =
+  process.env.NEXT_PUBLIC_TIMELINE_URL ?? "https://timeline.signalstudio.ie";
+const SIGNAL_URL =
+  process.env.NEXT_PUBLIC_SIGNAL_URL ?? "https://signal.signalstudio.ie";
 
 const INDIGO = "#4f46e5";
 
@@ -56,11 +56,11 @@ type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 const PRODUCTS: { slug: ProductSlug; word: string; appUrl: string }[] = [
   { slug: "notes", word: "notes", appUrl: `${NOTES_URL}/app` },
   { slug: "tasks", word: "tasks", appUrl: `${TASKS_URL}/app` },
-  { slug: "roadmap", word: "roadmap", appUrl: `${ROADMAP_URL}/app` },
-  { slug: "analytics", word: "analytics", appUrl: `${ANALYTICS_URL}/app` },
+  { slug: "roadmap", word: "timeline", appUrl: `${TIMELINE_URL}/app` },
+  { slug: "analytics", word: "signal", appUrl: `${SIGNAL_URL}/app` },
 ];
 
-const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, ROADMAP_URL, ANALYTICS_URL];
+const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, TIMELINE_URL, SIGNAL_URL];
 
 /**
  * Phase 3 (instant-jump): warm a sibling product on hover/focus so the

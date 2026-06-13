@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ANALYTICS_URL,
+  SIGNAL_URL,
   NOTES_URL,
-  ROADMAP_URL,
+  TIMELINE_URL,
   STUDIO_URL,
   TASKS_URL,
 } from "@/lib/product-urls";
@@ -14,8 +14,8 @@ type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 /**
  * Product order (operator-directed 2026-05-18): notes → tasks → roadmap → analytics.
  *
- * Authed labels (§1C canon): "Open roadmap" / "Open tasks" / "Open notes" /
- * "Open analytics" — lowercase product noun, no article form, no Title Case.
+ * Authed labels (§1C canon): "Open timeline" / "Open tasks" / "Open notes" /
+ * "Open signal" — lowercase product noun, no article form, no Title Case.
  *
  * Footer: authed → "Back to Signal Studio →" same-tab (§1F).
  *         unauthed → "Visit signalstudio.ie →" new-tab (§1F).
@@ -33,13 +33,13 @@ const PRODUCTS: {
   // Product order (operator-directed 2026-05-18): notes → tasks → roadmap → analytics
   { slug: "notes",     word: "notes",     tagline: "Capture clarity",    url: NOTES_URL,     appUrl: `${NOTES_URL}/app`,     appLabel: "Open notes" },
   { slug: "tasks",     word: "tasks",     tagline: "Execution clarity",  url: TASKS_URL,     appUrl: `${TASKS_URL}/app`,     appLabel: "Open tasks" },
-  { slug: "roadmap",   word: "roadmap",   tagline: "Direction clarity",  url: ROADMAP_URL,   appUrl: `${ROADMAP_URL}/app`,   appLabel: "Open roadmap" },
-  { slug: "analytics", word: "analytics", tagline: "Attention clarity",  url: ANALYTICS_URL, appUrl: `${ANALYTICS_URL}/app`, appLabel: "Open analytics" },
+  { slug: "roadmap",   word: "timeline",   tagline: "Direction clarity",  url: TIMELINE_URL,   appUrl: `${TIMELINE_URL}/app`,   appLabel: "Open timeline" },
+  { slug: "analytics", word: "signal", tagline: "Attention clarity",  url: SIGNAL_URL, appUrl: `${SIGNAL_URL}/app`, appLabel: "Open signal" },
 ];
 
 const INDIGO = "#4f46e5";
 
-const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, ROADMAP_URL, ANALYTICS_URL];
+const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, TIMELINE_URL, SIGNAL_URL];
 
 /**
  * Phase 3 (instant-jump): warm a sibling product on hover/focus so the

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
-import { ROADMAP_URL } from "@/lib/product-urls";
+import { TIMELINE_URL } from "@/lib/product-urls";
 
 export const metadata: Metadata = {
   title: "Roadmap — Tasks",
@@ -34,7 +34,7 @@ export default function RoadmapPage() {
               everyone, not just us.
             </p>
             <a
-              href={ROADMAP_URL}
+              href={TIMELINE_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-8 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"

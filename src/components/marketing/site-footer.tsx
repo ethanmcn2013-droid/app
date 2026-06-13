@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import {
-  ANALYTICS_URL,
+  SIGNAL_URL,
   NOTES_URL,
-  ROADMAP_URL,
+  TIMELINE_URL,
   STUDIO_URL,
 } from "@/lib/product-urls";
 
@@ -81,8 +81,8 @@ export function SiteFooter() {
           links={[
             { href: STUDIO_URL,    label: "Signal Studio",    external: true },
             { href: NOTES_URL,     label: "Signal Notes",     external: true },
-            { href: ROADMAP_URL,   label: "Signal Roadmap",   external: true },
-            { href: ANALYTICS_URL, label: "Signal Analytics", external: true },
+            { href: TIMELINE_URL,   label: "Signal Timeline",   external: true },
+            { href: SIGNAL_URL, label: "Signal", external: true },
           ]}
         />
       </div>
