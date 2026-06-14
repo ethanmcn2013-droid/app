@@ -34,9 +34,10 @@ software sprint board.
 cp .env.example .env.local   # set both vars to demo (or review)
 npm run dev
 ```
-Preview deploy: set both env vars to `demo`/`review` on the preview env. No
-Clerk/Turso keys required to render. To restore production auth, set both back
-to `production` (or unset — production is the default in a prod build).
+Preview deploy: set both env vars to `demo`/`review` on the preview env. Keep
+the Clerk keys present (Clerk's middleware needs them); demo requires no valid
+session and no Turso DB. To restore production auth, set both back to
+`production` (or unset — production is the default in a prod build).
 
 ## Review routes
 

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MotionProvider } from "@/components/motion-provider";
 import { DevBanner } from "@/components/dev-banner";
+import { clerkPublishableKey } from "@/lib/access-mode";
 import { TASKS_URL } from "@/lib/product-urls";
 import "./globals.css";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider
+      publishableKey={clerkPublishableKey()}
       appearance={{
         variables: {
           colorPrimary: "#4f46e5",

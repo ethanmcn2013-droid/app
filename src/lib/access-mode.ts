@@ -85,6 +85,30 @@ export function showDevBanner(): boolean {
   return getAccessMode() !== "production";
 }
 
+/**
+ * A syntactically valid but inert Clerk publishable key. Used only in
+ * demo/review when no real key is configured, so ClerkProvider can mount and
+ * the app renders keylessly on a preview deploy. No real Clerk backend is
+ * contacted on the demo path (the proxy and server auth layer short-circuit
+ * before any Clerk call), so this never reaches a network round-trip server-side.
+ */
+export const DEMO_CLERK_PUBLISHABLE_KEY =
+  "pk_test_ZGVtby1zaWduYWwuY2xlcmsuYWNjb3VudHMuZGV2JA==";
+
+/**
+ * The publishable key to hand ClerkProvider:
+ *   - the real key when configured (production + normal demo deploys);
+ *   - the inert placeholder in demo/review when none is set (keyless preview);
+ *   - undefined in production when unset — ClerkProvider then fails closed,
+ *     which is the correct, loud behaviour.
+ */
+export function clerkPublishableKey(): string | undefined {
+  const real = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (real) return real;
+  if (isDemoMode()) return DEMO_CLERK_PUBLISHABLE_KEY;
+  return undefined;
+}
+
 /** Human-readable label for the current mode (banner / debug surfaces). */
 export function accessModeLabel(): string {
   switch (getAccessMode()) {
