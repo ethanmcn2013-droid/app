@@ -1,8 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "motion/react";
 import { LANES, USERS, type Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
+import { generateNudges } from "@/lib/nudges/generate-nudges";
+import { NudgesRail } from "@/components/app/my-week/nudges-rail";
 import { AvatarStack } from "@/components/showcase/avatar";
 import {
   useTasksDispatch,
@@ -32,6 +35,12 @@ export function MyWeekApp() {
   const meId = useCurrentUser();
   const me = USERS[meId];
   const buckets = bucketMyWeek(state.tasks, meId);
+  // Nudges are computed client-side from the same task list (generateNudges
+  // is pure) — the proactive "what's stuck" surface folded in from the inbox.
+  const nudges = useMemo(
+    () => generateNudges(state.tasks, meId),
+    [state.tasks, meId],
+  );
 
   const totalAttention =
     buckets.today.length + buckets.thisWeek.length + buckets.waiting.length;
@@ -108,6 +117,8 @@ export function MyWeekApp() {
           empty=""
           muted
         />
+
+        <NudgesRail nudges={nudges} onOpen={openTask} />
       </div>
     </div>
   );
