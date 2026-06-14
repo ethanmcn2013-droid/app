@@ -7,6 +7,8 @@ import { users, workspaceMembers, workspaces } from "@/server/db/schema";
 import type { UserId } from "@/lib/data";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
+import { isDemoMode } from "@/lib/access-mode";
+import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 
 /**
  * Auth resolution. Two layers:
@@ -49,6 +51,10 @@ function clerkConfigured(): boolean {
  * Callers in production must be behind a Clerk-protected route.
  */
 export async function getCurrentUser(): Promise<UserId> {
+  // Demo/Review: synthetic identity, paired with the in-memory read
+  // short-circuits in queries.ts. Never touches Clerk or the DB.
+  if (isDemoMode()) return DEMO_USER_ID;
+
   const isProd = process.env.NODE_ENV === "production";
 
   if (!clerkConfigured()) {
@@ -139,6 +145,8 @@ export async function getCurrentUserOrNull(): Promise<UserId | null> {
  * leak data across tenants.
  */
 export async function getActiveWorkspace(): Promise<string> {
+  if (isDemoMode()) return DEMO_WORKSPACE_ID;
+
   const me = await getCurrentUser();
   const c = await cookies();
   const cookieValue = c.get(ACTIVE_WORKSPACE_COOKIE)?.value;
@@ -176,6 +184,17 @@ export async function getActiveWorkspace(): Promise<string> {
 export async function listMyWorkspaces(): Promise<
   Array<{ id: string; name: string; slug: string; role: string }>
 > {
+  if (isDemoMode()) {
+    return [
+      {
+        id: DEMO_WORKSPACE_ID,
+        name: "The Orchard — events",
+        slug: "the-orchard",
+        role: "owner",
+      },
+    ];
+  }
+
   const me = await getCurrentUser();
   const rows = await db
     .select({

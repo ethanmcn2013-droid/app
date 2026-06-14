@@ -23,6 +23,11 @@ import {
 } from "@/server/db/queries";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_PRIMARY_USE_CASE,
+  DEMO_WORKSPACE_SLUG,
+} from "@/server/demo/tasks-demo";
 
 // Layout reads from a runtime DB; mark dynamic so Next doesn't try
 // to prerender app routes against a build-time empty DB.
@@ -51,14 +56,20 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
-    db
-      .select({
-        slug: workspaces.slug,
-        primaryUseCase: workspaces.primaryUseCase,
-      })
-      .from(workspaces)
-      .where(eq(workspaces.id, ws))
-      .then((rows) => rows[0]),
+    // Demo/Review: synthesize the workspace row instead of hitting the DB.
+    isDemoMode()
+      ? Promise.resolve({
+          slug: DEMO_WORKSPACE_SLUG,
+          primaryUseCase: DEMO_PRIMARY_USE_CASE,
+        })
+      : db
+          .select({
+            slug: workspaces.slug,
+            primaryUseCase: workspaces.primaryUseCase,
+          })
+          .from(workspaces)
+          .where(eq(workspaces.id, ws))
+          .then((rows) => rows[0]),
   ]);
   const slug = wsRow?.slug ?? ws;
   const personalization = getWorkspacePersonalization({

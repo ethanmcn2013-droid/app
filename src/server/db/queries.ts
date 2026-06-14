@@ -37,6 +37,8 @@ import type {
 } from "@/lib/data";
 
 import { rowToTask } from "./row-mappers";
+import { isDemoMode } from "@/lib/access-mode";
+import { DEMO_DOMAIN, demoTasks } from "@/server/demo/tasks-demo";
 
 const taskColumnsWithCount = {
   ...getTableColumns(tasks),
@@ -60,6 +62,8 @@ const laneOrderSql = sql`CASE ${tasks.lane} ${sql.join(
 const positionOrderSql = sql`COALESCE(${tasks.position}, CAST(${tasks.createdAt} AS REAL))`;
 
 export async function getTasks(workspaceId: string): Promise<Task[]> {
+  // Demo/Review: serve the in-memory venue board; never reach the real DB.
+  if (isDemoMode()) return demoTasks();
   // Top-level only — subtasks (rows with a non-null parent_task_id)
   // live exclusively in the detail panel for cycle 25. They'd
   // otherwise multiply into the board / list / timeline / calendar
@@ -310,6 +314,7 @@ export async function getAttachmentById(
 export async function getActiveDomain(
   workspaceId: string,
 ): Promise<DomainId> {
+  if (isDemoMode()) return DEMO_DOMAIN;
   const [row] = await db
     .select({ activeDomain: workspaces.activeDomain })
     .from(workspaces)
@@ -323,6 +328,9 @@ export async function getActiveDomain(
  *  `workspaces.activeDomain` column as the signal — a null domain
  *  means the welcome flow hasn't run yet for this workspace. */
 export async function isFirstRun(workspaceId: string): Promise<boolean> {
+  // Demo/Review: the seeded workspace is always "onboarded" so the app shell
+  // renders the board instead of redirecting to /welcome.
+  if (isDemoMode()) return false;
   const [row] = await db
     .select({ activeDomain: workspaces.activeDomain })
     .from(workspaces)

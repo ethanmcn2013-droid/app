@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MotionProvider } from "@/components/motion-provider";
+import { DevBanner } from "@/components/dev-banner";
 import { TASKS_URL } from "@/lib/product-urls";
 import "./globals.css";
 
@@ -115,6 +116,7 @@ export default function RootLayout({
         </head>
         <body className="min-h-full flex flex-col" style={{ background: "#fff" }}>
           <MotionProvider>{children}</MotionProvider>
+          <DevBanner />
         </body>
       </html>
     </ClerkProvider>

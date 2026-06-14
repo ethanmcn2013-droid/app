@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextRequest } from "next/server";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -108,6 +109,12 @@ const clerkConfigured = Boolean(
 );
 
 export default clerkMiddleware(async (auth, req) => {
+  // Demo/Review: /app/* is publicly reachable. Auth resolves to the synthetic
+  // demo user bound to in-memory seed data (lib/access-mode.ts,
+  // server/demo/tasks-demo.ts). Flip SIGNAL_ACCESS_MODE back to production to
+  // restore this exact gate.
+  if (isDemoMode()) return;
+
   if (!clerkConfigured) return; // dev pass-through
 
   // Layer 2 — M-route redirect uses the REAL session (userId), so a stale
