@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
+import { parseTaskInput } from "@/lib/nlp/parse-task-input";
 
 /**
  * Cross-repo Notes -> Tasks extract endpoint (Cycle 9.4b second half,
@@ -139,13 +140,22 @@ export async function POST(req: Request) {
   // No static description — the `↩ From Notes` chip in the detail-panel
   // header (rendered when `sourceNoteId` is set) carries the provenance.
   // Prior decorative prose was duplicative chrome dressed as content.
+  // Run the creator's extract wording through the same quick-add parser
+  // Tasks uses everywhere — so a Notes extract that includes a date or a
+  // #tag ("call florist friday #claire-wedding") lands as a properly dated,
+  // tagged task instead of a flat title. Keeps Notes free of date/tag
+  // pickers (its anti-configuration brand) while still setting them inline.
+  const parsed = parseTaskInput(body);
   await db.insert(tasks).values({
     id: taskId,
     workspaceId,
-    title: body,
+    title: parsed.title || body,
     lane: "todo",
     priority: "p2",
     assignees: [],
+    due: parsed.dueLabel,
+    dueAt: parsed.dueAt,
+    tags: parsed.tags,
     position,
     sourceNoteId,
   });
