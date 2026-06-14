@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-06-14 · T·86 · ships · My Week learns what's stuck
+
+**The calm front door gains the proactive surface it was missing — the nudges rail, folded in from the inbox.** Idle cards, past-due dates and cleared blockers now surface as a quiet 'What's stuck' rail under My Week's sections: client-computed from the same task list, capped at three, silent on a quiet week, dismissals shared with the inbox. The loud parts of the fold — weekly recap, notifications bell, mention chips — stay sequenced as a reviewed cycle because they need a server-data seam into My Week; the inbox route is untouched and working. Branch-pending via PR.
+
 ## 2026-06-14 · T·85 · ships · quick-add learns #tags, and finishing a task finally feels like finishing
 
 **Capture now lands a task in the right project from one typed line, and completion reads as progress instead of a silent lane change.** Quick-add parses inline `#tags` — the only project primitive in Tasks (tags-as-projects) — alongside the existing date and recurrence parsing, with a live chip in both composer surfaces. Deterministic, no model in the path. A card landing in `done`, by keyboard `x`, drag, or the detail panel, plays a one-shot indigo check-draw and a soft ring, fully suppressed under reduced motion. Shipped in the same cycle: the 2026-06-09 segmented-onboarding work preserved and verified type-green, and an implementation-ready plan for the inbox → My Week fold. Branch-pending via PR #5; cycle number reconciles at merge.

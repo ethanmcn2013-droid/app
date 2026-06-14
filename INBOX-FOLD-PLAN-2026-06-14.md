@@ -1,5 +1,12 @@
 # Inbox-fold — implementation plan (2026-06-14)
 
+> **STATUS (2026-06-14):** Step 3a **shipped** (T·86) — the **nudges rail** is folded
+> into My Week, computed client-side (no server seam), low-density, dismissals shared
+> with the inbox. Remaining: **weekly recap**, **notifications bell**, **mention chips**,
+> **inbox route retirement**. These are all server/LLM-fed and require the data seam in
+> step 2 below, so they stay sequenced as a reviewed cycle. The inbox route is untouched
+> and fully working — nothing was retired, so nothing is stranded.
+
 Supersedes the audit in `INBOX-FOLD-BLOCKED-2026-06-09.md`. Operator approved the
 shape (2026-06-14): **nudges + weekly recap → My Week as low-density rails;
 notifications → a header bell + popover; mentions → per-row chips.** This file is
