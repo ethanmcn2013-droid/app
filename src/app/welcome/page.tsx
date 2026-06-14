@@ -9,7 +9,8 @@ import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
-import { WelcomePicker } from "@/components/welcome/welcome-picker";
+import { OnboardingFlow } from "@/components/welcome/onboarding-flow";
+import { segmentFromParam } from "@/lib/onboarding/segments";
 import { StillProvisioning } from "@/components/welcome/still-provisioning";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,15 @@ export const metadata = {
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
-export default async function WelcomePage() {
+type SearchParams = Promise<{ use?: string }>;
+
+export default async function WelcomePage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const preselectedSegment = segmentFromParam(params.use);
   const me = await getCurrentUser();
   // Guarantee the user has a real workspace before any state-mutating
   // code runs. Webhook race / missing-webhook protection — see
@@ -54,7 +63,9 @@ export default async function WelcomePage() {
     await db.run(sql`
       UPDATE workspaces
       SET template_id = ${VENUE_TEMPLATE_ID},
-          active_domain = 'wedding'
+          active_domain = 'wedding',
+          primary_use_case = 'venue',
+          onboarding_completed_at = unixepoch()
       WHERE id = ${ws}
     `);
     const target = `/app/board?welcome=venue&v=${encodeURIComponent(
@@ -78,5 +89,10 @@ export default async function WelcomePage() {
     pendingTemplate = { id: t.id, name: t.name };
   }
 
-  return <WelcomePicker pendingTemplate={pendingTemplate} />;
+  return (
+    <OnboardingFlow
+      pendingTemplate={pendingTemplate}
+      preselectedSegment={preselectedSegment}
+    />
+  );
 }

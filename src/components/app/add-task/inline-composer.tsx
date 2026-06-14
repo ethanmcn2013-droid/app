@@ -27,6 +27,7 @@ export function InlineComposer({
   const parsed = useMemo(() => parseTaskInput(title), [title]);
   const dateDetected = !!parsed.dueAt && !!parsed.dueLabel;
   const recurrenceDetected = !!parsed.recurrence;
+  const tagsDetected = !!parsed.tags && parsed.tags.length > 0;
   const recurrenceRefusal = useMemo(
     () => !recurrenceDetected && looksLikeUnsupportedRecurrence(title),
     [title, recurrenceDetected],
@@ -51,6 +52,7 @@ export function InlineComposer({
       due: parsed.dueLabel,
       dueAt: parsed.dueAt,
       recurrence: droppedRecurrence ? undefined : parsed.recurrence,
+      tags: parsed.tags,
     });
     setTitle("");
     // Composer stays open for rapid follow-ups.
@@ -101,13 +103,13 @@ export function InlineComposer({
         onBlur={() => {
           if (!title.trim()) onClose();
         }}
-        placeholder={`What's next? Try "by Friday at 3pm"`}
+        placeholder={`What's next? Try "by Friday at 3pm #claire-wedding"`}
         autoComplete="off"
         spellCheck={false}
         className="block w-full bg-transparent px-2 py-2 text-[13px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
       />
       <AnimatePresence initial={false}>
-        {(dateDetected || recurrenceDetected) ? (
+        {(dateDetected || recurrenceDetected || tagsDetected) ? (
           <motion.div
             key="composer-nlp"
             initial={{ opacity: 0, height: 0 }}
@@ -132,6 +134,17 @@ export function InlineComposer({
                   {formatRecurrenceLabel(parsed.recurrence)}
                 </span>
               ) : null}
+              {tagsDetected
+                ? parsed.tags!.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] font-medium text-ink-quiet"
+                    >
+                      <span aria-hidden="true">#</span>
+                      {tag}
+                    </span>
+                  ))
+                : null}
             </span>
           </motion.div>
         ) : null}

@@ -38,7 +38,7 @@ import {
   deleteColumnAction,
   type ColumnConfig,
 } from "@/server/actions/board";
-import { useColumnConfig } from "@/lib/domain-context";
+import { useColumnConfig, usePersonalization } from "@/lib/domain-context";
 
 // ─── ARCH NOTE: Custom columns and the canonical lane ─────────────────────────
 //
@@ -175,6 +175,7 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
 export function BoardApp() {
   const state = useTasksState();
   const columnConfig = useColumnConfig();
+  const personalization = usePersonalization();
   const { moveTask, moveTaskToColumn, toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -347,8 +348,8 @@ export function BoardApp() {
     return (
       <EmptyStateOverlay
         ghost={<BoardGhost />}
-        headline="This is where your master plan goes."
-        body="Drop tasks into lanes. Drag them across as work moves. Watch momentum build."
+        headline={personalization.headline}
+        body={personalization.body}
       />
     );
   }
@@ -1019,6 +1020,23 @@ function Card({
     };
   }, [menuOpen]);
 
+  // Completion flourish — a one-shot beat the moment a card lands in "done",
+  // whatever the trigger (keyboard `x`, drag, or the detail panel). Detecting
+  // the transition here keeps it centralised and reduced-motion-safe; the
+  // landing wordmark promises completion should *feel* like progress.
+  const isDone = currentColumnKey === "done";
+  const wasDoneRef = useRef(isDone);
+  const [celebrate, setCelebrate] = useState(false);
+  useEffect(() => {
+    if (isDone && !wasDoneRef.current && !reduce) {
+      setCelebrate(true);
+      const t = setTimeout(() => setCelebrate(false), 720);
+      wasDoneRef.current = isDone;
+      return () => clearTimeout(t);
+    }
+    wasDoneRef.current = isDone;
+  }, [isDone, reduce]);
+
   const isPending = isDragging || !!momentum;
 
   const nativeDragProps = draggable
@@ -1066,6 +1084,42 @@ function Card({
         task.isMilestone ? "border-l-[2px] border-l-[var(--brand)]" : "",
       ].join(" ")}
     >
+      <AnimatePresence>
+        {celebrate ? (
+          <motion.span
+            key="done-flourish"
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.span
+              className="absolute rounded-full"
+              style={{ width: 40, height: 40, border: "2px solid var(--brand)" }}
+              initial={{ scale: 0.3, opacity: 0.5 }}
+              animate={{ scale: 2.1, opacity: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            />
+            <motion.svg
+              width="26" height="26" viewBox="0 0 24 24" fill="none"
+              stroke="var(--brand)" strokeWidth="3"
+              strokeLinecap="round" strokeLinejoin="round"
+              initial={{ scale: 0.6 }}
+              animate={{ scale: [0.6, 1.15, 1] }}
+              transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <motion.path
+                d="M20 6 9 17l-5-5"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.34, ease: "easeOut" }}
+              />
+            </motion.svg>
+          </motion.span>
+        ) : null}
+      </AnimatePresence>
       <div className="flex items-start justify-between gap-2">
         <span className="line-clamp-2 flex-1">
           {task.isMilestone ? (

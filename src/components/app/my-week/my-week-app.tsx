@@ -12,6 +12,7 @@ import { bucketMyWeek, type MyWeekBuckets } from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
+import { usePersonalization } from "@/lib/domain-context";
 import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
 import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 
@@ -23,6 +24,7 @@ import { DoneTitle } from "@/components/app/done-dopamine/done-title";
  * renders so an empty day reads as confidence, not absence.
  */
 export function MyWeekApp() {
+  const personalization = usePersonalization();
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
@@ -43,8 +45,9 @@ export function MyWeekApp() {
     return (
       <EmptyStateOverlay
         ghost={<ListGhost />}
-        headline={`Nothing on ${me?.name?.split(" ")[0] ?? "your"} plate yet.`}
-        body="Assign yourself a task — or add a new one and it'll land here automatically."
+        headline={personalization.headline}
+        body={personalization.body}
+        primaryLabel={personalization.firstTaskExample}
       />
     );
   }

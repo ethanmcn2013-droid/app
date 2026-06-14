@@ -3,7 +3,7 @@ import type { RecurrenceSpec } from "@/lib/data";
 import { extractRecurrence } from "@/lib/nlp/parse-recurrence";
 
 export type ParsedTaskInput = {
-  /** The task's clean title — date AND recurrence phrases stripped. */
+  /** The task's clean title — date, recurrence AND #tag phrases stripped. */
   title: string;
   /** Structured due date if one was found in the input. */
   dueAt?: Date;
@@ -13,7 +13,36 @@ export type ParsedTaskInput = {
   dueLabel?: string;
   /** Parsed recurrence spec if a supported recurrence phrase was found. */
   recurrence?: RecurrenceSpec;
+  /** Inline #tags found in the input. Tags are this product's only
+   *  project primitive (tags-as-projects, SUITE.md §4) — capturing one
+   *  inline lets a note land in the right "project" at quick-add speed
+   *  without a picker. Lowercased, de-duped, order-preserved. */
+  tags?: string[];
 };
+
+/**
+ * Pull inline #tags out of a quick-add string and strip them from the
+ * title. A tag is `#` followed by a letter/digit then letters, digits,
+ * hyphens or underscores — matching the kebab tag style used across the
+ * workspace (e.g. `#claire-wedding`). The leading `#` and the token are
+ * removed from the returned title.
+ */
+function extractTags(input: string): { title: string; tags: string[] } {
+  const tags: string[] = [];
+  const seen = new Set<string>();
+  const TAG_RE = /(?:^|\s)#([a-z0-9][a-z0-9_-]*)/gi;
+  let m: RegExpExecArray | null;
+  while ((m = TAG_RE.exec(input)) !== null) {
+    const tag = m[1].toLowerCase();
+    if (!seen.has(tag)) {
+      seen.add(tag);
+      tags.push(tag);
+    }
+  }
+  if (tags.length === 0) return { title: input, tags };
+  const title = input.replace(TAG_RE, " ").replace(/\s+/g, " ").trim();
+  return { title, tags };
+}
 
 /** Days of the week names → for short formatting. */
 const DOW_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -99,16 +128,20 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
   const input = raw.trim();
   if (!input) return { title: "" };
 
-  // Strip recurrence phrase first — the date parser sees a cleaner string.
-  const recurrenceResult = extractRecurrence(input);
-  const inputAfterRecurrence = recurrenceResult?.title ?? input;
+  // Strip #tags first so they never reach chrono or end up in the title.
+  const { title: inputAfterTags, tags } = extractTags(input);
+  const tagsOut = tags.length ? tags : undefined;
+
+  // Strip recurrence phrase next — the date parser sees a cleaner string.
+  const recurrenceResult = extractRecurrence(inputAfterTags);
+  const inputAfterRecurrence = recurrenceResult?.title ?? inputAfterTags;
   const recurrence = recurrenceResult?.recurrence;
 
   const results = chrono.parse(inputAfterRecurrence, new Date(), {
     forwardDate: true,
   });
   if (results.length === 0) {
-    return { title: inputAfterRecurrence || input, recurrence };
+    return { title: inputAfterRecurrence || input, recurrence, tags: tagsOut };
   }
 
   // Use the LAST match — usually the trailing "by next Friday" form.
@@ -134,5 +167,5 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
   if (!title) title = inputAfterRecurrence || input;
 
   const dueLabel = formatDueLabel(dueAt, hasTime);
-  return { title, dueAt, dueLabel, recurrence };
+  return { title, dueAt, dueLabel, recurrence, tags: tagsOut };
 }

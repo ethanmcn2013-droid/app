@@ -31,6 +31,7 @@ export function QuickCreateDialog({
   const parsed = useMemo(() => parseTaskInput(title), [title]);
   const dateDetected = !!parsed.dueAt && !!parsed.dueLabel;
   const recurrenceDetected = !!parsed.recurrence;
+  const tagsDetected = !!parsed.tags && parsed.tags.length > 0;
   // True when input looks like a recurrence attempt but the parser couldn't handle it.
   const recurrenceRefusal = useMemo(
     () => !recurrenceDetected && looksLikeUnsupportedRecurrence(title),
@@ -49,6 +50,7 @@ export function QuickCreateDialog({
       due: parsed.dueLabel,
       dueAt: parsed.dueAt,
       recurrence: droppedRecurrence ? undefined : parsed.recurrence,
+      tags: parsed.tags,
     });
     setTitle("");
     onClose();
@@ -95,7 +97,7 @@ export function QuickCreateDialog({
             and recurrence chip so the user sees what the parser will do
             BEFORE pressing Enter — no surprise. */}
         <AnimatePresence initial={false}>
-          {(dateDetected || recurrenceDetected) ? (
+          {(dateDetected || recurrenceDetected || tagsDetected) ? (
             <motion.div
               key="nlp-preview"
               initial={{ opacity: 0, height: 0, marginTop: 0 }}
@@ -148,6 +150,17 @@ export function QuickCreateDialog({
                       {formatRecurrenceLabel(parsed.recurrence)}
                     </span>
                   ) : null}
+                  {tagsDetected
+                    ? parsed.tags!.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-quiet"
+                        >
+                          <span aria-hidden="true">#</span>
+                          {tag}
+                        </span>
+                      ))
+                    : null}
                 </span>
               </div>
             </motion.div>
