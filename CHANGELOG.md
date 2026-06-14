@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-06-14 · T·87 · ships · a note that becomes a task arrives dated and tagged
+
+**A Notes extract now lands as a real task, not a flat line — the cross-repo receiver runs the creator's wording through the same quick-add parser the board uses.** "Call florist friday #claire-wedding" sent from Notes arrives in Tasks with the due date and the `claire-wedding` tag already set, and a clean title. This keeps Notes free of date and tag pickers — its anti-configuration brand — while still setting both inline at promote time; the parse is deterministic, no model. Backward-compatible: a plain extract still lands as a plain task. Branch-pending via PR.
+
 ## 2026-06-14 · T·86 · ships · My Week learns what's stuck
 
 **The calm front door gains the proactive surface it was missing — the nudges rail, folded in from the inbox.** Idle cards, past-due dates and cleared blockers now surface as a quiet 'What's stuck' rail under My Week's sections: client-computed from the same task list, capped at three, silent on a quiet week, dismissals shared with the inbox. The loud parts of the fold — weekly recap, notifications bell, mention chips — stay sequenced as a reviewed cycle because they need a server-data seam into My Week; the inbox route is untouched and working. Branch-pending via PR.
