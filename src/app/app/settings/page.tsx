@@ -12,6 +12,13 @@ import {
 } from "@/server/actions/settings";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_USER_ID,
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_SLUG,
+  DEMO_WORKSPACE_NAME,
+} from "@/server/demo/tasks-demo";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +33,55 @@ export const dynamic = "force-dynamic";
  * client shell stays a pure UI orchestrator.
  */
 export default async function SettingsPage() {
+  // Demo/Review: render a coherent settings surface from the synthetic
+  // workspace instead of the real DB (whose tables aren't present on a
+  // keyless preview). Interactions are inert in demo; the surface is for
+  // visual review.
+  if (isDemoMode()) {
+    const nowIso = new Date().toISOString();
+    return (
+      <>
+        <AppPageHeader />
+        <SettingsApp
+          currentUserId={DEMO_USER_ID}
+          myRole="owner"
+          workspace={{
+            id: DEMO_WORKSPACE_ID,
+            slug: DEMO_WORKSPACE_SLUG,
+            name: DEMO_WORKSPACE_NAME,
+            activeDomain: "wedding",
+            primaryUseCase: "venue",
+            secondaryContext: null,
+            createdAt: nowIso,
+            ownerUserId: DEMO_USER_ID,
+            publishedAt: null,
+          }}
+          members={[
+            {
+              userId: DEMO_USER_ID,
+              role: "owner",
+              joinedAt: nowIso,
+              name: "You",
+              email: "you@theorchard.example",
+              handle: "you",
+              color: null,
+              initials: "YO",
+            },
+          ]}
+          tier="free"
+          memberCapacity={{ current: 1, max: 3, tier: "free" }}
+          notificationPrefs={{
+            dailyDigest: true,
+            mentions: true,
+            commentReplies: true,
+          }}
+          pendingInvites={[]}
+          recentActivity={[]}
+        />
+      </>
+    );
+  }
+
   const [me, ws, myRole] = await Promise.all([
     getCurrentUser(),
     getActiveWorkspace(),
