@@ -29,10 +29,23 @@ function FreeView() {
         href="https://signalstudio.ie/pricing"
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-5 inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+        className="group mt-5 inline-flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
       >
         See paid plans
-        <span aria-hidden>→</span>
+        <svg
+          className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M9 6l6 6-6 6" />
+        </svg>
       </Link>
     </div>
   );
@@ -123,10 +136,23 @@ function PaidView({
             type="button"
             disabled={pending}
             onClick={openPortal}
-            className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-ink-soft disabled:opacity-50"
+            className="group inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-ink-soft disabled:opacity-50"
           >
             {pending ? "Opening…" : "Manage billing"}
-            <span aria-hidden>→</span>
+            <svg
+              className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M9 6l6 6-6 6" />
+            </svg>
           </button>
         </div>
         {error ? (

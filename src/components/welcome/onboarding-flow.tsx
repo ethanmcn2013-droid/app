@@ -397,9 +397,23 @@ export function OnboardingFlow({
                 <button
                   type="button"
                   onClick={() => setStep("segment")}
-                  className="mb-6 text-[13px] text-ink-quiet transition-colors hover:text-ink-soft"
+                  className="group mb-6 inline-flex items-center gap-1.5 text-[13px] text-ink-quiet transition-colors hover:text-ink-soft"
                 >
-                  ← Back
+                  <svg
+                    className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M19 12H5M11 19l-7-7 7-7" />
+                  </svg>
+                  Back
                 </button>
                 <h2 className="text-balance text-[clamp(1.5rem,1rem+2vw,2.2rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
                   {segmentConfig.contextQuestion}
@@ -494,9 +508,23 @@ export function OnboardingFlow({
                       <button
                         type="button"
                         onClick={() => setStep("segment")}
-                        className="mb-6 text-[13px] text-ink-quiet transition-colors hover:text-ink-soft"
+                        className="group mb-6 inline-flex items-center gap-1.5 text-[13px] text-ink-quiet transition-colors hover:text-ink-soft"
                       >
-                        ← Back
+                        <svg
+                          className="transition-transform group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden
+                        >
+                          <path d="M19 12H5M11 19l-7-7 7-7" />
+                        </svg>
+                        Back
                       </button>
                     )}
                     <h2 className="text-balance text-[clamp(1.5rem,1rem+2vw,2.2rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-ink">
