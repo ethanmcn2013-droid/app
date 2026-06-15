@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import AppLoading from "./loading";
 import { AppSidebar } from "@/components/app/sidebar";
 import { SuiteChrome } from "@/components/app/suite-chrome";
+import { FirstCompletionMoment } from "@/components/app/done-dopamine/first-completion-moment";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
 import { TaskDetailPanel } from "@/components/app/detail-panel/task-detail-panel";
 import { AddTaskRoot } from "@/components/app/add-task/add-task-context";
@@ -143,6 +144,7 @@ export default function AppLayout({
      */
     <div className="flex h-screen w-full flex-col bg-bg">
       <SuiteChrome />
+      <FirstCompletionMoment />
       <div className="flex min-w-0 flex-1 overflow-hidden">
         <Suspense fallback={<AppLoading />}>
           <AppShell>{children}</AppShell>

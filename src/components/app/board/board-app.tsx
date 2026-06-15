@@ -18,6 +18,7 @@ import {
   type Task,
 } from "@/lib/data";
 import { AvatarStack } from "@/components/showcase/avatar";
+import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
 import {
   useTasksDispatch,
   useTasksState,
@@ -1028,11 +1029,16 @@ function Card({
   const wasDoneRef = useRef(isDone);
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
-    if (isDone && !wasDoneRef.current && !reduce) {
-      setCelebrate(true);
-      const t = setTimeout(() => setCelebrate(false), 720);
-      wasDoneRef.current = isDone;
-      return () => clearTimeout(t);
+    if (isDone && !wasDoneRef.current) {
+      // Once-ever first-completion beat — fires regardless of reduced motion
+      // (the moment itself honours it); the per-card flourish stays motion-gated.
+      maybeFireFirstCompletion();
+      if (!reduce) {
+        setCelebrate(true);
+        const t = setTimeout(() => setCelebrate(false), 720);
+        wasDoneRef.current = isDone;
+        return () => clearTimeout(t);
+      }
     }
     wasDoneRef.current = isDone;
   }, [isDone, reduce]);
