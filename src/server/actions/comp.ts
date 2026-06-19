@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { compCodes, entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { callerIsAdmin } from "@/server/admin";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { sendEmail, studentCodeEmailHtml } from "@/server/email";
@@ -68,20 +69,8 @@ async function mintCompCodeInternal(
 }
 
 /**
- * Admin allowlist for the comp-code minter. Set
- * `ADMIN_USER_IDS` to a comma-separated list of Clerk user ids in
- * production. When unset (dev), the action accepts the legacy seed
- * user only — i.e. no Clerk session = no minting.
- */
-function callerIsAdmin(userId: string): boolean {
-  const raw = process.env.ADMIN_USER_IDS ?? "";
-  if (!raw.trim()) return userId === "david";
-  const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  return ids.includes(userId);
-}
-
-/**
- * Public, admin-gated comp-code minter. Calls fail-closed: if the
+ * Public, admin-gated comp-code minter. The admin gate now lives in
+ * `@/server/admin` (callerIsAdmin), shared with the GTM-roadmap actions. Calls fail-closed: if the
  * caller's user id isn't in `ADMIN_USER_IDS`, we throw before
  * touching the database. The .edu student flow uses the internal
  * helper directly to avoid this gate.

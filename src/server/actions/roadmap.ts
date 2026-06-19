@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { roadmapItems, blockers, actionItems } from "@/server/db/schema";
+import { requireAdmin } from "@/server/admin";
 
 export type RoadmapStatus = "pending" | "in_progress" | "completed";
 
@@ -14,6 +15,7 @@ export type RoadmapStatus = "pending" | "in_progress" | "completed";
  * up. Revalidates `/roadmap` so the page refetches in place.
  */
 export async function cycleRoadmapStatusAction(id: string): Promise<void> {
+  await requireAdmin();
   const [row] = await db
     .select({ status: roadmapItems.status })
     .from(roadmapItems)
@@ -44,6 +46,7 @@ export async function setRoadmapStatusAction(
   id: string,
   status: RoadmapStatus,
 ): Promise<void> {
+  await requireAdmin();
   const now = new Date();
   await db
     .update(roadmapItems)
@@ -61,6 +64,7 @@ export async function setRoadmapNoteAction(
   id: string,
   note: string,
 ): Promise<void> {
+  await requireAdmin();
   // UI clamps to 140; server enforces too in case someone bypasses.
   const clamped = note.trim().slice(0, 140);
   await db
@@ -81,6 +85,7 @@ export async function setRoadmapNoteAction(
    ────────────────────────────────────────────────────────────── */
 
 export async function toggleBlockerResolvedAction(id: string): Promise<void> {
+  await requireAdmin();
   const [row] = await db
     .select({ resolvedAt: blockers.resolvedAt })
     .from(blockers)
@@ -103,6 +108,7 @@ export async function setBlockerNoteAction(
   id: string,
   note: string,
 ): Promise<void> {
+  await requireAdmin();
   const clamped = note.trim().slice(0, 140);
   await db
     .update(blockers)
@@ -121,6 +127,7 @@ export async function setBlockerNoteAction(
    ────────────────────────────────────────────────────────────── */
 
 export async function cycleActionItemStatusAction(id: string): Promise<void> {
+  await requireAdmin();
   const [row] = await db
     .select({ status: actionItems.status })
     .from(actionItems)
@@ -151,6 +158,7 @@ export async function setActionItemNoteAction(
   id: string,
   note: string,
 ): Promise<void> {
+  await requireAdmin();
   const clamped = note.trim().slice(0, 140);
   await db
     .update(actionItems)
