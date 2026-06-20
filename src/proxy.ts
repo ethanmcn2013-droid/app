@@ -91,6 +91,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/(.*)",
   "/api/cron/(.*)",
   "/api/health/(.*)",
+  // Public so the browser can POST CSP violation reports without a session.
+  "/api/csp-report",
   // Internal cross-product reads (bearer-auth via PARTNER_STATS_SECRET).
   // Not Clerk-protected because the calling service has no Clerk session.
   "/api/internal/(.*)",

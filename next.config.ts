@@ -43,10 +43,15 @@ const csp = [
   `form-action 'self'`,
   `object-src 'none'`,
   `upgrade-insecure-requests`,
+  // CSP violation reporting — collected at /api/csp-report so we can verify
+  // the policy is clean before promoting Report-Only → enforce.
+  `report-uri /api/csp-report`,
+  `report-to csp`,
 ].join("; ");
 
 const securityHeaders = [
   { key: "Content-Security-Policy-Report-Only", value: csp },
+  { key: "Reporting-Endpoints", value: 'csp="/api/csp-report"' },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
