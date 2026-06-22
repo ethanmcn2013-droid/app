@@ -3,20 +3,20 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { StudentsForm } from "@/components/marketing/students-form";
 
 export const metadata = {
-  title: "Free for students — Tasks",
+  title: "Tasks for students",
   description:
-    "Verify a .edu address and get the Workspace tier free for the full school year.",
+    "The full Workspace tier at the student price: €9.99 a year. Verify with any student email, no .edu needed.",
   openGraph: {
-    title: "Tasks Workspace, free for students.",
+    title: "Tasks Workspace, the student rate.",
     description:
-      "Verify a .edu and you're in. Full school year. No card, no trial, no catch.",
+      "Verify any student email and you're in. The full Workspace tier for €9.99 a year.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Tasks Workspace, free for students.",
+    title: "Tasks Workspace, the student rate.",
     description:
-      ".edu in, full school year out. No card, no trial, no catch.",
+      "Any student email in. The full Workspace tier for €9.99 a year.",
   },
 };
 

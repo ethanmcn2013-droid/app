@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
-export const alt = "Tasks Pro, free for students.";
+export const alt = "Tasks, the student rate.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -31,7 +31,7 @@ export default async function StudentsOG() {
             display: "flex",
           }}
         >
-          Students · Free Pro
+          Students · Student rate
         </div>
         <div
           style={{
@@ -45,7 +45,7 @@ export default async function StudentsOG() {
             maxWidth: 980,
           }}
         >
-          Free for{" "}
+          Built for{" "}
           <span style={{ color: "#4f46e5", display: "flex", marginLeft: 18 }}>
             students.
           </span>
@@ -60,7 +60,7 @@ export default async function StudentsOG() {
             display: "flex",
           }}
         >
-          Verify a .edu address. Tasks Pro for the full school year. No card.
+          Verify any student email. The full Workspace tier, €9.99 a year.
         </div>
         <div style={{ flex: 1, display: "flex" }} />
         <div
@@ -74,7 +74,7 @@ export default async function StudentsOG() {
         >
           <div style={{ display: "flex" }}>{TASKS_DOMAIN}/students</div>
           <div style={{ display: "flex" }}>·</div>
-          <div style={{ display: "flex" }}>€0 · 365 days · re-verify yearly</div>
+          <div style={{ display: "flex" }}>€9.99 / year · verified student</div>
         </div>
       </div>
     ),

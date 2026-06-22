@@ -56,7 +56,7 @@ export function SiteFooter() {
           heading="Company"
           links={[
             { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
-            { href: "/for/students", label: "Free for students" },
+            { href: "/for/students", label: "For students" },
             { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
@@ -72,7 +72,6 @@ export function SiteFooter() {
             { href: "/for/community", label: "For coordinators" },
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
-            { href: "/status", label: "Status" },
             { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
           ]}
         />

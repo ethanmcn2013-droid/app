@@ -171,9 +171,9 @@ export function TemplatesGallery({
               href="/for-students"
               className="underline decoration-line-soft underline-offset-[3px] hover:text-ink hover:decoration-ink"
             >
-              Signal is free with a .edu address
+              Students get the full tier for €9.99 a year
             </a>
-            {" — "}
+            {". "}
             {studentCount} student templates live under{" "}
             <span className="font-medium text-ink-soft">All</span>.
           </div>

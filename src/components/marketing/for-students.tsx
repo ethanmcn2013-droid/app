@@ -6,9 +6,9 @@ import Link from "next/link";
  * studio `/weddings`; Tasks keeps the application/template surfaces.
  *
  * Distinct from the existing `/students` page, which is the action
- * surface (.edu verification + free Workspace-tier-for-two-years signup). This
+ * surface (student-email verification + the €9.99/yr student rate). This
  * page is the top-of-funnel SEO landing that links to `/students`
- * for the .edu offer at the bottom of the page.
+ * for the student-rate offer at the bottom of the page.
  *
  * Anchors on final-paper-push + midterm-week templates.
  */
@@ -20,7 +20,7 @@ export function ForStudents() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(245,158,11,0.16), rgba(245,158,11,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -35,7 +35,7 @@ export function ForStudents() {
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(245,158,11,0.30), rgba(217,119,6,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
               }}
             />
             in one place.
@@ -49,15 +49,15 @@ export function ForStudents() {
           that pays for it. The tools you&rsquo;re given to manage that
           are a notebook, the LMS that hates you, and a Notes app full
           of nine half-finished lists. We built the workspace where
-          all of it lives in one shape — without sprints, without
+          all of it lives in one shape, without sprints, without
           epics, without a tutorial.
         </p>
 
         <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
-          The Free tier runs forever — one workspace, three editing
-          guests, which is exactly the size of a study group. With a
-          .edu address you get the full Workspace tier free for two
-          years instead: unlimited workspaces, unlimited guests.
+          The Free tier runs forever: one workspace, three editing
+          guests, which is exactly the size of a study group. The full
+          Workspace tier is €9.99 a year for students, verified with any
+          student email: unlimited workspaces, unlimited guests.
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
@@ -71,7 +71,7 @@ export function ForStudents() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-emerald-600"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
               >
                 <svg
                   width="22"
@@ -125,7 +125,7 @@ export function ForStudents() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-emerald-600"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
               >
                 <svg
                   width="22"
@@ -196,21 +196,21 @@ export function ForStudents() {
         </ul>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          Got a .edu address?
+          The student rate.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          The full Workspace tier is free for two years with a .edu
-          address. Unlimited workspaces — one per class, one for the
-          job search, one for the part-time shift, one for the trip
-          you&rsquo;re planning over spring break. Recurring tasks for
-          weekly problem sets. Stuck-work nudges for the stuff
-          that&rsquo;s slipping. Apply once, get the code, run the
-          rest of your degree on it.
+          The full Workspace tier is €9.99 a year for students. Verify
+          with any student email, no .edu needed. Unlimited workspaces:
+          one per class, one for the job search, one for the part-time
+          shift, one for the trip you&rsquo;re planning over spring
+          break. Recurring tasks for weekly problem sets. Stuck-work
+          nudges for the stuff that&rsquo;s slipping. Verify once, get
+          the code, run the rest of your degree on it.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            Free forever, or the full tier free for two years with .edu
+            Free forever, or the full tier for €9.99 a year as a student
           </div>
           <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
             Open a workspace today. Bring a friend. Bring two more
@@ -221,7 +221,7 @@ export function ForStudents() {
               href="/students"
               className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
             >
-              Get the .edu offer
+              Get the student rate
               <svg
                 width="14"
                 height="14"
@@ -251,7 +251,7 @@ export function ForStudents() {
 function Reason({ title, body }: { title: string; body: string }) {
   return (
     <li className="grid grid-cols-[24px_1fr] gap-3">
-      <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-amber-500" aria-hidden />
+      <span className="mt-1.5 inline-block h-2 w-2 rounded-full" style={{ background: "var(--brand)" }} aria-hidden />
       <div>
         <div className="text-[15.5px] font-semibold text-ink">{title}</div>
         <p className="mt-1 text-[14.5px] leading-[1.55] text-ink-soft">
@@ -269,8 +269,8 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, #d97706 0%, #f59e0b 100%)",
-          boxShadow: "0 4px 10px rgba(245, 158, 11, 0.32)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
+          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         For students

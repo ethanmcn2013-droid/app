@@ -71,8 +71,6 @@ const FAILURE_COPY: Record<
   string
 > = {
   "invalid-email": "That doesn't look like an email. Try again?",
-  "not-edu":
-    "We need a .edu address to verify you're a student. Drop it in and we'll send the code.",
 };
 
 export function StudentsForm() {
@@ -103,7 +101,7 @@ export function StudentsForm() {
         <Eyebrow />
 
         <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink">
-          Free for{" "}
+          Built for{" "}
           <span className="relative inline-block whitespace-nowrap">
             <span
               aria-hidden
@@ -118,19 +116,18 @@ export function StudentsForm() {
         </h1>
 
         <p className="mx-auto mt-5 max-w-[52ch] text-[17px] leading-[1.55] text-ink-soft">
-          The full Workspace tier, on us, while you study. Sign up
-          with your .edu address and it lands automatically — no card,
-          no trial, no catch. The form below is for the rare cases the
-          auto-grant missed; otherwise just open the workspace and
-          start.
+          The full Workspace tier at a student price: €9.99 a year. No
+          .edu needed. Verify with your student email and the rate
+          applies. Renew each year while you study.
         </p>
 
-        <div className="mx-auto mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/40 px-4 py-1.5 text-[12.5px] font-medium text-emerald-800">
+        <div className="mx-auto mt-6 inline-flex items-center gap-2 rounded-full border border-line-soft bg-bg-elevated px-4 py-1.5 text-[12.5px] font-medium text-ink-soft">
           <span
-            className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500"
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ background: "var(--brand)" }}
             aria-hidden
           />
-          Auto-applied at signup · two-year window
+          €9.99 a year · verified student
         </div>
 
         <AnimatePresence mode="wait">
@@ -155,7 +152,7 @@ export function StudentsForm() {
                     setEmail(e.target.value);
                     setResult(null);
                   }}
-                  placeholder="you@school.edu"
+                  placeholder="you@your-college.ie"
                   className="flex-1 bg-transparent px-3 py-2 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
                 />
                 <button
@@ -163,7 +160,7 @@ export function StudentsForm() {
                   disabled={pending || !email.trim()}
                   className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
                 >
-                  {pending ? "Verifying…" : "Get free access"}
+                  {pending ? "Verifying…" : "Verify student email"}
                 </button>
               </div>
 
@@ -213,10 +210,11 @@ function SuccessCard({ code }: { code: string }) {
         Code minted
       </div>
       <h2 className="mt-1.5 text-[20px] font-semibold tracking-[-0.005em] text-ink">
-        Your free student code is ready.
+        Your student code is ready.
       </h2>
       <p className="mx-auto mt-3 max-w-[40ch] text-[13.5px] leading-[1.55] text-ink-soft">
-        Here&rsquo;s your code. Redeem it below — it&rsquo;s good for two years.
+        Here&rsquo;s your code. Redeem it below to unlock the student rate
+        for the year.
       </p>
       <CodeWithCopy code={code} />
       <div className="mt-5">
@@ -248,16 +246,16 @@ function FineGrain() {
     <ul className="mx-auto mt-10 grid max-w-[560px] grid-cols-1 gap-3 text-left sm:grid-cols-3">
       {[
         {
-          h: "Two years, free",
-          b: "The full Workspace tier — unlimited workspaces, unlimited guests, recurring tasks, stuck-work nudges. The same tier everyone else pays for.",
+          h: "€9.99 a year",
+          b: "The full Workspace tier: unlimited workspaces, unlimited guests, recurring tasks, stuck-work nudges. The same tier everyone else pays €12 a month for.",
         },
         {
-          h: ".edu only",
-          b: "We just check your email domain. No transcript, no ID upload, no awkward verification calls.",
+          h: "Any student email",
+          b: "No .edu needed. We just check a working student email. No transcript, no ID upload, no awkward verification calls.",
         },
         {
-          h: "Re-verify after two years",
-          b: "When the window's up, prove you're still a student and we'll re-up. Graduated? The Workspace tier is €12 a month if you want to keep it.",
+          h: "Renew while you study",
+          b: "Re-verify each year to keep the student rate. Graduated? The Workspace tier is €12 a month, or €100 a year, if you want to keep it.",
         },
       ].map((item) => (
         <li
@@ -287,7 +285,7 @@ function Eyebrow() {
       >
         Students
       </span>
-      Workspace tier, free, .edu only
+      Workspace tier · student rate
     </div>
   );
 }

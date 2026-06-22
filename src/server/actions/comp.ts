@@ -259,14 +259,14 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
 
 export type StudentVerifyResult =
   | { ok: true; code: string; tier: EntitlementTier; durationDays: number }
-  | { ok: false; reason: "invalid-email" | "not-edu" };
+  | { ok: false; reason: "invalid-email" };
 
 /**
- * Stub for the .edu free-Pro program. In production this would send
- * a magic-link email to the address that, when clicked, redeems a
- * dynamically-generated comp code. For the demo we synthesize the
- * code right here and surface it to the caller — same end state, no
- * email infrastructure required.
+ * Student-rate verification. Students get the full Workspace tier at
+ * the student price (€9.99 a year). Ireland and most of the world
+ * outside the US don't issue .edu addresses, so verification is on the
+ * honour system: any working student email is accepted (operator
+ * decision 2026-06-22). We send the access code to that address.
  */
 export async function requestStudentCodeAction(
   email: string,
@@ -276,13 +276,10 @@ export async function requestStudentCodeAction(
     return { ok: false, reason: "invalid-email" };
   }
   const domain = trimmed.split("@")[1];
-  if (!domain.endsWith(".edu")) {
-    return { ok: false, reason: "not-edu" };
-  }
 
-  // Mint a single-use, 1-year code tagged with the .edu domain.
-  // Calls the internal helper directly so this trusted flow doesn't
-  // need to live behind the admin allowlist.
+  // Mint a single-use, 1-year student-rate code tagged with the email
+  // domain. Calls the internal helper directly so this trusted flow
+  // doesn't need to live behind the admin allowlist.
   const { code } = await mintCompCodeInternal({
     prefix: "STUDENT",
     tier: "workspace",
@@ -292,14 +289,14 @@ export async function requestStudentCodeAction(
     expiresInDays: 30, // user has 30 days to actually click through
   });
 
-  // Email the code to the .edu address. In dev (no Resend key) the
+  // Email the code to the student address. In dev (no Resend key) the
   // helper logs to console; the response still surfaces the code so
   // the marketing form can fall back gracefully.
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   await sendEmail({
     to: trimmed,
-    subject: "Your Tasks Workspace code · free for the school year",
+    subject: "Your Tasks Workspace student code",
     html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
   });
 
