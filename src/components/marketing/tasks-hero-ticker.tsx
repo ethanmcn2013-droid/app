@@ -452,17 +452,9 @@ export function TasksHeroTicker() {
       className="txr-section"
       aria-label="Tasks by Signal Studio"
     >
-      {/* Chrome — TL badge only, TR stripped per brand direction */}
-      <div className="txr-chrome txr-tl">
-        <span className="txr-badge">
-          signal studio
-          <span className="txr-bdot" aria-hidden="true" />
-          <span className="txr-sep">/</span>
-          tasks
-        </span>
-      </div>
-
-      {/* Animated well — board + wordmark, aria-hidden (decorative) */}
+      {/* Animated well — board + wordmark, aria-hidden (decorative).
+          TL wordmark badge removed: the site header already carries the
+          signal studio / tasks breadcrumb. */}
       <div className="txr-well" aria-hidden="true">
 
         {/* Departure board */}
@@ -527,42 +519,6 @@ const CSS = `
    and broke white consistency across the suite heroes. Kept the class so the
    JS that toggles it is a harmless no-op. */
 .txr-section.txr-warm { background: #ffffff; }
-
-/* Chrome */
-.txr-chrome {
-  position: absolute;
-  font-family: var(--txr-mono);
-  font-size: 11px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--txr-s5);
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 10;
-}
-.txr-tl { top: 28px; left: 28px; }
-.txr-badge {
-  font-family: var(--txr-sans);
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: -.025em;
-  line-height: .95;
-  color: var(--txr-ink);
-  text-transform: none;
-  display: inline-flex;
-  align-items: baseline;
-}
-.txr-bdot {
-  width: .16em; height: .16em;
-  border-radius: 50%;
-  background: var(--txr-indigo);
-  margin-left: .06em;
-  align-self: flex-end;
-  margin-bottom: .06em;
-  flex-shrink: 0;
-}
-.txr-sep { color: var(--txr-s5); margin: 0 .4em; font-weight: 300; }
 
 /* Well */
 .txr-well {
@@ -733,14 +689,6 @@ const CSS = `
 @keyframes txr-cap-in {
   0%   { opacity: 0; transform: translateY(5px); }
   100% { opacity: 1; transform: translateY(0);   }
-}
-
-/* Responsive chrome */
-@media (max-width: 600px) {
-  .txr-tl { top: 18px; left: 18px; }
-}
-@media (max-width: 420px) {
-  .txr-tl { display: none; }
 }
 
 /* Reduced motion */
