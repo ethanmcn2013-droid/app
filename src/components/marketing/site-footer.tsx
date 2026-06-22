@@ -79,8 +79,8 @@ export function SiteFooter() {
           heading="Suite"
           links={[
             { href: STUDIO_URL,    label: "Signal Studio",    external: true },
-            { href: NOTES_URL,     label: "Signal Notes",     external: true },
-            { href: TIMELINE_URL,   label: "Signal Timeline",   external: true },
+            { href: NOTES_URL,     label: "Notes",            external: true },
+            { href: TIMELINE_URL,   label: "Timeline",          external: true },
             { href: SIGNAL_URL, label: "Signal", external: true },
           ]}
         />
