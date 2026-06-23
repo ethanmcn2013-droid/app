@@ -53,7 +53,16 @@ export async function GET(
     headers: {
       "Content-Type": att.mimeType || "application/octet-stream",
       "Content-Length": String(size),
-      "Content-Disposition": dispositionHeader(att.filename),
+      "Content-Disposition": dispositionHeader(att.filename, att.mimeType),
+      // Defense against stored XSS via user-uploaded content served from
+      // this authed origin:
+      //   - nosniff: the browser must honour Content-Type, never sniff a
+      //     "text/plain" upload into executable text/html.
+      //   - CSP default-src 'none' + sandbox: even if a file is rendered,
+      //     no script/network/form/same-origin context is available, so an
+      //     HTML/SVG payload can't run in the tasks origin or touch Clerk.
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; sandbox; frame-ancestors 'none'",
       // User content — never CDN-cache it. The `id` is opaque enough
       // that browser memory cache is fine; intermediaries shouldn't
       // hold copies because authorization is per-request.
@@ -70,14 +79,30 @@ function notFound(): Response {
 }
 
 /**
+ * MIME types safe to render `inline` in the browser. Everything else is
+ * forced to `attachment` (download) so an HTML/SVG/XML upload can never be
+ * rendered as active content in this origin. SVG is deliberately EXCLUDED —
+ * it is an XML document that can carry <script>.
+ */
+const INLINE_SAFE_MIME = new Set<string>([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+]);
+
+/**
  * Build a `Content-Disposition` value that respects RFC 6266: send a
  * sanitized ASCII fallback alongside a UTF-8 `filename*` parameter so
- * non-Latin filenames survive the round-trip. We use `inline` so
- * images / PDFs preview in the browser; the UI side renders an
- * explicit anchor with `download` attr when the user picks Download.
+ * non-Latin filenames survive the round-trip. `inline` (browser preview)
+ * is used ONLY for the safe-preview allowlist; every other type is forced
+ * to `attachment` so it downloads rather than rendering.
  */
-function dispositionHeader(filename: string): string {
+function dispositionHeader(filename: string, mimeType: string): string {
   const ascii = filename.replace(/[^\x20-\x7E]/g, "_");
   const encoded = encodeURIComponent(filename);
-  return `inline; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+  const mode = INLINE_SAFE_MIME.has(mimeType) ? "inline" : "attachment";
+  return `${mode}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }

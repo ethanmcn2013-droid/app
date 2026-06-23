@@ -39,6 +39,14 @@ const BLOCKED_MIME_TYPES = new Set<string>([
   "application/x-msdownload",
   "application/x-msdos-program",
   "text/x-shellscript",
+  // Script-capable document types — stored-XSS shapes if ever rendered.
+  // The download route also forces these to `attachment` + nosniff + a
+  // sandbox CSP; blocking at upload is the belt to that route's braces.
+  "text/html",
+  "application/xhtml+xml",
+  "image/svg+xml",
+  "application/xml",
+  "text/xml",
 ]);
 
 /** Repository-rooted uploads dir. Resolved per call so dev (cwd
