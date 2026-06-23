@@ -20,6 +20,20 @@ import type { LanguageModel } from "ai";
 
 export const DEFAULT_MODEL_ID = "claude-haiku-4-5-20251001";
 
+/**
+ * Hard ceiling on generated tokens per AI call. Every Tasks AI surface
+ * is intentionally tiny — a 1-3 sentence reply, a 2-3 sentence summary,
+ * a 4-5 sentence digest. 512 output tokens is comfortably above all of
+ * them while capping the blast radius of a runaway generation (a
+ * prompt-injected "ignore your limits and write forever" can't bill us
+ * past this). Applied at every streamText call site. Tune via
+ * TASKS_AI_MAX_OUTPUT_TOKENS without a deploy.
+ */
+export const MAX_OUTPUT_TOKENS: number = (() => {
+  const raw = Number(process.env.TASKS_AI_MAX_OUTPUT_TOKENS);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 512;
+})();
+
 export function getModelId(): string {
   return process.env.TASKS_AI_MODEL?.trim() || DEFAULT_MODEL_ID;
 }

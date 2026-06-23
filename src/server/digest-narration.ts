@@ -2,6 +2,7 @@ import "server-only";
 import { streamText } from "ai";
 import {
   AI_NOT_CONFIGURED_MESSAGE,
+  MAX_OUTPUT_TOKENS,
   WEEKLY_DIGEST_PROMPT,
   aiConfigured,
   getModel,
@@ -98,6 +99,7 @@ export async function weeklyDigestNarrationFor(
   try {
     const result = streamText({
       model,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
       messages: [
         {
           role: "system",

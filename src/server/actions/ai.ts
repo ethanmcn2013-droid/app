@@ -4,6 +4,7 @@ import { streamText } from "ai";
 import {
   AI_NOT_CONFIGURED_MESSAGE,
   DRAFT_REPLY_PROMPT,
+  MAX_OUTPUT_TOKENS,
   SUMMARIZE_THREAD_PROMPT,
   aiConfigured,
   getModel,
@@ -123,6 +124,7 @@ export async function draftReplyAction(
   try {
     const result = streamText({
       model,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
       messages: [
         {
           role: "system",
@@ -190,6 +192,7 @@ export async function summarizeConversationAction(
   try {
     const result = streamText({
       model,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
       messages: [
         {
           role: "system",
