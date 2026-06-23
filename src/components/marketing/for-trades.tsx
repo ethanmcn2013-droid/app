@@ -6,8 +6,9 @@ import Link from "next/link";
  * and anyone whose work is dispatched as a list of calls and
  * finished with a signature.
  *
- * Sister landing to `/for/freelancers` (teal) and `/for/students`
- * (amber). Wedding self-serve now lives on studio `/weddings`.
+ * Sister landing to `/for/freelancers` and `/for/students`. All wedge
+ * pages carry the single suite indigo. Wedding self-serve lives on studio
+ * `/weddings`.
  *
  * Anchors on `new-client-onboarding` + `tax-season` templates —
  * the same shape as freelance, just with tooling and a license
@@ -21,7 +22,7 @@ export function ForTrades() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(249,115,22,0.16), rgba(249,115,22,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -29,14 +30,14 @@ export function ForTrades() {
         <Eyebrow />
 
         <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.6rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink">
-          Calls, jobs, invoices —{" "}
+          Calls, jobs, invoices,{" "}
           <span className="relative inline-block whitespace-nowrap">
             <span
               aria-hidden
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(249,115,22,0.30), rgba(234,88,12,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
               }}
             />
             one binder.
@@ -48,7 +49,7 @@ export function ForTrades() {
           orders, signatures, and invoices that didn&rsquo;t go out
           last week. The clipboard works. So does the spreadsheet.
           The phone is mostly fine. The thing that&rsquo;s missing is
-          a place where all of it lives at once — readable on the
+          a place where all of it lives at once, readable on the
           truck, share-able with the office, and not built for
           office workers.
         </p>
@@ -72,7 +73,7 @@ export function ForTrades() {
               <span
                 aria-hidden
                 className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[18px] font-mono"
-                style={{ background: "rgba(249,115,22,0.10)", color: "#9a3412" }}
+                style={{ background: "rgba(79,70,229,0.10)", color: "var(--accent-deep)" }}
               >
                 01
               </span>
@@ -103,7 +104,7 @@ export function ForTrades() {
               <span
                 aria-hidden
                 className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-[18px] font-mono"
-                style={{ background: "rgba(249,115,22,0.10)", color: "#9a3412" }}
+                style={{ background: "rgba(79,70,229,0.10)", color: "var(--accent-deep)" }}
               >
                 02
               </span>
@@ -134,7 +135,7 @@ export function ForTrades() {
         <ul className="mt-5 space-y-4">
           <Reason
             title="One link to the crew, not a screenshot at 6am."
-            body="Magic-link guests are free — three of them. The new apprentice opens the link from his phone in the truck and sees today's calls in order. No login, no app to install."
+            body="Magic-link guests are free, three of them. The new apprentice opens the link from his phone in the truck and sees today's calls in order. No login, no app to install."
           />
           <Reason
             title="Pinned materials list per job."
@@ -158,10 +159,10 @@ export function ForTrades() {
           workspace, all four products, three editing guests for a
           small crew, no card. Running more than one truck: Workspace
           is €12 a month for unlimited workspaces, one per truck if
-          you dispatch them separately — and inviting people never
+          you dispatch them separately, and inviting people never
           moves the price, so the whole site, the GC and the
           inspector cost the same as just you. A single big job that
-          runs for months — a full fit-out, a site that lasts a
+          runs for months, a full fit-out, a site that lasts a
           season: Event is €79 once, and the workspace keeps reading
           for twelve months after it&rsquo;s done.
         </p>
@@ -169,7 +170,7 @@ export function ForTrades() {
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div
             className="text-[11.5px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "#c2410c" }}
+            style={{ color: "var(--accent-deep)" }}
           >
             Free tier covers a one-truck route
           </div>
@@ -204,7 +205,7 @@ function Reason({ title, body }: { title: string; body: string }) {
     <li className="grid grid-cols-[24px_1fr] gap-3">
       <span
         className="mt-1.5 inline-block h-2 w-2 rounded-full"
-        style={{ background: "#f97316" }}
+        style={{ background: "var(--brand)" }}
         aria-hidden
       />
       <div>
@@ -241,8 +242,8 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, #c2410c 0%, #f97316 100%)",
-          boxShadow: "0 4px 10px rgba(249, 115, 22, 0.32)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
+          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         For trades

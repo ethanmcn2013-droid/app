@@ -5,11 +5,10 @@ import Link from "next/link";
  * who coordinate people who don't work for them: teachers, school
  * administrators, club coaches, parish coordinators, community
  * organisers. The §2.1 archetype whose hardest job is visibility into
- * other people's commitments — and whose tools have always been built
+ * other people's commitments, and whose tools have always been built
  * for engineering teams, not for parents, parishioners, and volunteers.
  *
- * Accent is community violet (#7c3aed) — distinct from brand indigo,
- * warm enough to read as people-coordination not engineering work.
+ * Carries the single suite indigo, like every wedge page.
  */
 export function ForCommunity() {
   return (
@@ -19,7 +18,7 @@ export function ForCommunity() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(124,58,237,0.16), rgba(124,58,237,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -34,7 +33,7 @@ export function ForCommunity() {
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(124,58,237,0.32), rgba(99,102,241,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
               }}
             />
             don&rsquo;t work for you.
@@ -53,7 +52,7 @@ export function ForCommunity() {
 
         <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
           One workspace. Volunteers, parents, players, parishioners,
-          colleagues — invited as magic-link guests, free, no app to
+          colleagues, invited as magic-link guests, free, no app to
           install. They see what concerns them. You see who said yes,
           who said maybe, who has gone quiet. No vocabulary anyone has
           to learn.
@@ -63,9 +62,9 @@ export function ForCommunity() {
           A coordinator template is in the works.
         </h2>
         <p className="mt-4 text-[15.5px] leading-[1.6] text-ink-soft">
-          The anchor template for this archetype — term planner for
+          The anchor template for this archetype, term planner for
           teachers, season setup for coaches, the rhythm a parish or
-          community group runs on — is being written. We refuse to ship
+          community group runs on, is being written. We refuse to publish
           template cards that link to nothing, so until the canonical
           coordinator template lands, you can start with a blank
           workspace and tag the work the way your group already names
@@ -91,7 +90,7 @@ export function ForCommunity() {
           />
           <Reason
             title="The roadmap is the parent email."
-            body="Pair this workspace with a public Signal Timeline. Parents and members read the plan at midnight on their phone. No login. No app. No follow-up email asking what was decided last week."
+            body="Pair this workspace with a public Timeline. Parents and members read the plan at midnight on their phone. No login. No app. No follow-up email asking what was decided last week."
           />
           <Reason
             title="No project-manager vocabulary."
@@ -108,20 +107,20 @@ export function ForCommunity() {
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
           Solo coordinator: the Free tier covers one workspace and
-          three editing guests — enough for you and two colleagues or
+          three editing guests, enough for you and two colleagues or
           one deputy, no card. A school, club, or parish coordinating
           many strands across sub-teams: Workspace is €12 a month for
           unlimited workspaces, and inviting the whole staff, the
           parents&rsquo; rep, and every volunteer never moves the
-          price — there is no per-seat surcharge at any size. A
-          one-off — a fundraiser, a show, a season: Event is €79 once
+          price. There is no per-seat surcharge at any size. A
+          one-off, a fundraiser, a show, a season: Event is €79 once
           and the workspace keeps reading for twelve months after.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div
             className="text-[11.5px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "#6d28d9" }}
+            style={{ color: "var(--accent-deep)" }}
           >
             Free tier covers the coordinator
           </div>
@@ -155,7 +154,7 @@ function Reason({ title, body }: { title: string; body: string }) {
     <li className="grid grid-cols-[24px_1fr] gap-3">
       <span
         className="mt-1.5 inline-block h-2 w-2 rounded-full"
-        style={{ background: "#7c3aed" }}
+        style={{ background: "var(--brand)" }}
         aria-hidden
       />
       <div>
@@ -192,8 +191,8 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%)",
-          boxShadow: "0 4px 10px rgba(124, 58, 237, 0.32)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
+          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         For coordinators

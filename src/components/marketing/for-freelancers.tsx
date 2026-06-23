@@ -21,7 +21,7 @@ export function ForFreelancers() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(20,184,166,0.16), rgba(20,184,166,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -36,7 +36,7 @@ export function ForFreelancers() {
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(20,184,166,0.30), rgba(13,148,136,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
               }}
             />
             one inbox.
@@ -49,7 +49,7 @@ export function ForFreelancers() {
           Linear logins for four orgs they barely remember the
           subdomains for. The work is fine. The structure is the
           problem. We built the workspace where each client gets its
-          own surface — without the per-seat tax, without the
+          own surface, without the per-seat tax, without the
           enterprise pretense, without an admin panel for things you do
           alone at 2pm.
         </p>
@@ -73,7 +73,7 @@ export function ForFreelancers() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-teal-600"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
               >
                 <svg
                   width="22"
@@ -127,7 +127,7 @@ export function ForFreelancers() {
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-teal-600"
+                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
               >
                 <svg
                   width="22"
@@ -204,7 +204,7 @@ export function ForFreelancers() {
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
           There is one shape, and it does not get more expensive as
           you grow. The Workspace tier is €12 a month for unlimited
-          workspaces — one per client, the full feature set on every
+          workspaces, one per client, the full feature set on every
           one, and inviting the client (or their VP, or your
           subcontractor) never moves the price. Five clients is €12.
           Twelve clients is €12. The bill stops being something you
@@ -256,7 +256,7 @@ export function ForFreelancers() {
 function Reason({ title, body }: { title: string; body: string }) {
   return (
     <li className="grid grid-cols-[24px_1fr] gap-3">
-      <span className="mt-1.5 inline-block h-2 w-2 rounded-full bg-teal-500" aria-hidden />
+      <span className="mt-1.5 inline-block h-2 w-2 rounded-full" style={{ background: "var(--brand)" }} aria-hidden />
       <div>
         <div className="text-[15.5px] font-semibold text-ink">{title}</div>
         <p className="mt-1 text-[14.5px] leading-[1.55] text-ink-soft">
@@ -274,8 +274,8 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)",
-          boxShadow: "0 4px 10px rgba(20, 184, 166, 0.32)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
+          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         For freelancers

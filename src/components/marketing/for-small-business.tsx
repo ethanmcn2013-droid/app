@@ -7,9 +7,9 @@ import Link from "next/link";
  * sales, all without a status meeting or a manager to surface what is
  * slipping.
  *
- * Anchored on a weekly + monthly cadence — the two patterns that
- * separate a business that holds together from one that limps. Accent
- * is operational teal (#0e7490).
+ * Anchored on a weekly + monthly cadence, the two patterns that
+ * separate a business that holds together from one that limps. Carries
+ * the single suite indigo, like every wedge page.
  */
 export function ForSmallBusiness() {
   return (
@@ -19,7 +19,7 @@ export function ForSmallBusiness() {
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgba(14,116,144,0.16), rgba(14,116,144,0.04), transparent 70%)",
+            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
         }}
       />
 
@@ -27,14 +27,14 @@ export function ForSmallBusiness() {
         <Eyebrow />
 
         <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.6rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink">
-          The shop, the books, the people —{" "}
+          The shop, the books, the people,{" "}
           <span className="relative inline-block whitespace-nowrap">
             <span
               aria-hidden
               className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
               style={{
                 background:
-                  "linear-gradient(110deg, rgba(14,116,144,0.32), rgba(8,145,178,0.16))",
+                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
               }}
             />
             one place.
@@ -46,7 +46,7 @@ export function ForSmallBusiness() {
           status meeting. There is no manager whose job is to notice when
           something is slipping. There is no quarterly review. There is the
           shop, the back of house, the books, the staff, the suppliers,
-          and the customer who left a voice note about Friday — and all of
+          and the customer who left a voice note about Friday, and all of
           it has to hold together at once, every week, without anyone
           else watching for you.
         </p>
@@ -70,7 +70,7 @@ export function ForSmallBusiness() {
               <span
                 aria-hidden
                 className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl font-mono text-[18px]"
-                style={{ background: "rgba(14,116,144,0.10)", color: "#155e75" }}
+                style={{ background: "rgba(79,70,229,0.10)", color: "var(--accent-deep)" }}
               >
                 01
               </span>
@@ -86,7 +86,7 @@ export function ForSmallBusiness() {
             <p className="mt-3 text-[14px] leading-[1.6] text-ink-soft">
               Month-end close, payroll, supplier invoices, marketing post,
               renewal review, staff one-to-ones, accountant summary. The
-              full pattern that turns reactive months into ones that hold —
+              full pattern that turns reactive months into ones that hold,
               ready to remix into your own operation.
             </p>
             <div className="mt-3 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink">
@@ -123,20 +123,20 @@ export function ForSmallBusiness() {
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
           Solo operator: the Free tier covers a single business
-          workspace and three editing guests — enough for you, the
+          workspace and three editing guests, enough for you, the
           bookkeeper, and a right hand, no card. Two locations, two
           operating modes, or a team across departments: Workspace is
           €12 a month for unlimited workspaces, and inviting the
           staff, the suppliers, and the accountant never moves the
-          price — there is no per-seat surcharge at any size. A
-          one-off — a launch, a fit-out, a move: Event is €79 once
+          price. There is no per-seat surcharge at any size. A
+          one-off, a launch, a fit-out, a move: Event is €79 once
           and that workspace keeps reading for twelve months after.
         </p>
 
         <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
           <div
             className="text-[11.5px] font-semibold uppercase tracking-[0.18em]"
-            style={{ color: "#155e75" }}
+            style={{ color: "var(--accent-deep)" }}
           >
             Free tier covers the operator
           </div>
@@ -170,7 +170,7 @@ function Reason({ title, body }: { title: string; body: string }) {
     <li className="grid grid-cols-[24px_1fr] gap-3">
       <span
         className="mt-1.5 inline-block h-2 w-2 rounded-full"
-        style={{ background: "#0e7490" }}
+        style={{ background: "var(--brand)" }}
         aria-hidden
       />
       <div>
@@ -207,8 +207,8 @@ function Eyebrow() {
         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
         style={{
           background:
-            "linear-gradient(135deg, #155e75 0%, #0891b2 100%)",
-          boxShadow: "0 4px 10px rgba(14, 116, 144, 0.32)",
+            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
+          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
         }}
       >
         For small business
