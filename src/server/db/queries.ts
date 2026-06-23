@@ -96,7 +96,11 @@ export async function getSubtasks(parentTaskId: string): Promise<Task[]> {
     .select(taskColumnsWithCount)
     .from(tasks)
     .where(eq(tasks.parentTaskId, parentTaskId))
-    .orderBy(asc(tasks.createdAt));
+    .orderBy(asc(tasks.createdAt))
+    // Bound the detail-panel subtask list. One level of nesting only; a
+    // task with hundreds of subtasks is already pathological — cap so a
+    // runaway parent can't balloon the panel payload.
+    .limit(500);
   return rows.map(rowToTask);
 }
 
@@ -197,7 +201,10 @@ export async function getTasksForUser(
         like(tasks.assignees, `%"${escapedId}"%`),
       ),
     )
-    .orderBy(laneOrderSql, positionOrderSql);
+    .orderBy(laneOrderSql, positionOrderSql)
+    // Mirror getTasks' hard cap — a per-user view is a subset of the board
+    // and must never scan unbounded.
+    .limit(2000);
   return rows.map(rowToTask);
 }
 
@@ -227,7 +234,11 @@ export async function getCommentsForTask(
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
     .where(eq(comments.taskId, taskId))
-    .orderBy(asc(comments.createdAt));
+    .orderBy(asc(comments.createdAt))
+    // Bound a single task's thread. A 500-comment task is already past any
+    // real workflow; the cap keeps the detail panel payload and the AI
+    // summarize context from scaling without limit.
+    .limit(500);
   return rows.map(rowToComment);
 }
 
@@ -289,7 +300,10 @@ export async function getAttachmentsForTask(
     .select()
     .from(attachments)
     .where(eq(attachments.taskId, taskId))
-    .orderBy(asc(attachments.createdAt));
+    .orderBy(asc(attachments.createdAt))
+    // Bound the per-task attachment list — defensive cap well past any real
+    // file count on a single task.
+    .limit(200);
   return rows.map(rowToAttachment);
 }
 
