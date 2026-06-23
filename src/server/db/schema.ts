@@ -5,6 +5,7 @@ import {
   integer,
   real,
   primaryKey,
+  index,
 } from "drizzle-orm/sqlite-core";
 import type {
   Activity,
@@ -114,7 +115,19 @@ export const tasks = sqliteTable("tasks", {
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
-});
+}, (t) => [
+  // These mirror drizzle/0003_hot_indexes.sql exactly (same names +
+  // columns) so `drizzle-kit push` treats them as already-present and
+  // never drops the prod indexes as schema↔DB drift. Tenant boundary:
+  // every read filters by workspace_id.
+  index("idx_tasks_workspace_id").on(t.workspaceId),
+  index("idx_tasks_parent_task_id").on(t.parentTaskId),
+  index("idx_tasks_ws_lane").on(t.workspaceId, t.lane),
+  index("idx_tasks_due_at").on(t.dueAt),
+  // NEW (0009): roadmap sync reads WHERE is_milestone=1 per workspace.
+  // The only hot path 0003 missed.
+  index("idx_tasks_ws_milestone").on(t.workspaceId, t.isMilestone),
+]);
 
 export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
@@ -197,7 +210,11 @@ export const workspaceMembers = sqliteTable(
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [primaryKey({ columns: [t.workspaceId, t.userId] })],
+  (t) => [
+    primaryKey({ columns: [t.workspaceId, t.userId] }),
+    // Mirror drizzle/0003_hot_indexes.sql — "my workspaces" lookups by user.
+    index("idx_workspace_members_user_id").on(t.userId),
+  ],
 );
 
 export const comments = sqliteTable("comments", {
@@ -213,7 +230,11 @@ export const comments = sqliteTable("comments", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql.
+  index("idx_comments_task_id").on(t.taskId),
+  index("idx_comments_user_id").on(t.userId),
+]);
 
 // Compile-time contract — flags drift between schema and the
 // hand-written client `Task` type in src/lib/data.ts. `comments`
@@ -248,7 +269,15 @@ export const activities = sqliteTable("activities", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql. 0003 wrote created_at DESC;
+  // drizzle 0.45 can't express index-column direction, so these are
+  // plain — SQLite reverse-scans an ASC index for ORDER BY ... DESC
+  // just as cheaply. push recreates the prod index without the DESC
+  // qualifier once (harmless; see 0009 note).
+  index("idx_activities_task_created").on(t.taskId, t.createdAt),
+  index("idx_activities_ws_created").on(t.workspaceId, t.createdAt),
+]);
 
 // authorName is resolved via LEFT JOIN users at query time, not a column.
 type _SchemaCoversActivity =
@@ -293,7 +322,12 @@ export const notifications = sqliteTable("notifications", {
     .default(sql`(unixepoch())`),
   /** Null = unread. */
   readAt: integer("read_at", { mode: "timestamp" }),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql. Inbox loads a user's
+  // notifications newest-first; task delete cascades by task_id.
+  index("idx_notifications_user_created").on(t.userId, t.createdAt),
+  index("idx_notifications_task_id").on(t.taskId),
+]);
 
 type _SchemaCoversNotification =
   keyof Notification extends keyof typeof notifications.$inferSelect
@@ -345,7 +379,14 @@ export const entitlements = sqliteTable("entitlements", {
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   notes: text("notes"),
   reachedBoardAt: integer("reached_board_at", { mode: "timestamp" }),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql. Entitlement resolution +
+  // Analytics cross-repo read key off (user_id, workspace_id).
+  // NB: 0003 also created idx_entitlements_notes on the free-text
+  // `notes` column — deliberately NOT mirrored; it's never queried, so
+  // letting push drop it is a cleanup (recorded in 0009).
+  index("idx_entitlements_user_workspace").on(t.userId, t.workspaceId),
+]);
 
 type _SchemaCoversEntitlement =
   keyof Entitlement extends keyof typeof entitlements.$inferSelect
@@ -442,7 +483,11 @@ export const shareLinks = sqliteTable("share_links", {
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   /** Counter incremented each time the link is opened. */
   visits: integer("visits").notNull().default(0),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql — manage-links UI lists a
+  // workspace's share links.
+  index("idx_share_links_workspace_id").on(t.workspaceId),
+]);
 
 /**
  * Per-visit log for share links. The fast `share_links.visits`
@@ -463,7 +508,11 @@ export const shareLinkVisits = sqliteTable("share_link_visits", {
     .notNull()
     .default(sql`(unixepoch())`),
   userAgentHint: text("user_agent_hint"),
-});
+}, (t) => [
+  // Mirror drizzle/0003_hot_indexes.sql — 7-day sparkline scans a
+  // token's visits newest-first.
+  index("idx_share_link_visits_token_at").on(t.token, t.visitedAt),
+]);
 
 /**
  * Stripe webhook idempotency. Stripe re-delivers events on transient
