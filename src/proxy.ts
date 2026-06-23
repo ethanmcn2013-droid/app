@@ -117,7 +117,18 @@ export default clerkMiddleware(async (auth, req) => {
   // restore this exact gate.
   if (isDemoMode()) return;
 
-  if (!clerkConfigured) return; // dev pass-through
+  if (!clerkConfigured) {
+    // Fail CLOSED in production. A prod deploy missing Clerk keys must
+    // not silently serve /app unauthenticated (the proxy is the edge
+    // backstop; getCurrentUser() already throws server-side). Locally we
+    // still pass through so dev runs before keys are provisioned.
+    if (process.env.NODE_ENV === "production") {
+      return new NextResponse("Authentication is not configured.", {
+        status: 503,
+      });
+    }
+    return; // dev pass-through
+  }
 
   // Layer 2 — M-route redirect uses the REAL session (userId), so a stale
   // __session cookie no longer bounces a signed-out visitor into the /app
