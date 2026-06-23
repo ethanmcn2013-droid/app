@@ -3,9 +3,13 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 
 export const dynamic = "force-dynamic";
 
+// Operator-facing status. Not a public marketing surface: noindex so it
+// stays out of search, and the footer link was removed (review 3 issues
+// 29, 30). A full auth gate behind Signal Studio HQ is the next step.
 export const metadata = {
-  title: "Status — Tasks",
+  title: "Status · Tasks",
   description: "Live system status. Mostly green. Sometimes amber.",
+  robots: { index: false, follow: false },
 };
 
 type CheckResult = {
