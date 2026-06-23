@@ -45,9 +45,11 @@ function pick<T>(arr: T[], seed: number): T {
 export async function seedIfEmpty(db: DbType): Promise<void> {
   const existingTasks = await db
     .select({ count: sql<number>`count(*)` })
+    // isolation-ok: global first-run emptiness check — no tenant scope by design.
     .from(tasks);
   const existingComments = await db
     .select({ count: sql<number>`count(*)` })
+    // isolation-ok: global first-run emptiness check — no tenant scope by design.
     .from(comments);
 
   const tasksEmpty = (existingTasks[0]?.count ?? 0) === 0;

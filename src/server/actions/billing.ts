@@ -143,6 +143,9 @@ export async function grantEntitlement(input: {
     const [existing] = await db
       .select({ id: entitlements.id })
       .from(entitlements)
+      // isolation-ok: idempotency dedupe keyed on the globally-unique comp
+      // `notes` marker; reads only the id to decide skip, returns no tenant
+      // data to any caller.
       .where(eq(entitlements.notes, input.notes))
       .limit(1);
     if (existing) return;

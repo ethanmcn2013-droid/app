@@ -37,6 +37,7 @@ import type {
 } from "@/lib/data";
 
 import { rowToTask } from "./row-mappers";
+import { byWorkspace } from "./tenant";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_DOMAIN, demoTasks } from "@/server/demo/tasks-demo";
 
@@ -71,12 +72,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(
-      and(
-        eq(tasks.workspaceId, workspaceId),
-        isNull(tasks.parentTaskId),
-      ),
-    )
+    .where(byWorkspace(tasks.workspaceId, workspaceId, isNull(tasks.parentTaskId)))
     .orderBy(laneOrderSql, positionOrderSql)
     // Hard safety cap. The board/list/timeline never need more than
     // this, and the public `/p/{slug}` share path resolves through
@@ -194,8 +190,9 @@ export async function getTasksForUser(
     .select(taskColumnsWithCount)
     .from(tasks)
     .where(
-      and(
-        eq(tasks.workspaceId, workspaceId),
+      byWorkspace(
+        tasks.workspaceId,
+        workspaceId,
         isNull(tasks.parentTaskId),
         like(tasks.assignees, `%"${escapedId}"%`),
       ),
@@ -405,9 +402,10 @@ export async function getNotificationsForUser(
     .select()
     .from(notifications)
     .where(
-      and(
+      byWorkspace(
+        notifications.workspaceId,
+        workspaceId,
         eq(notifications.userId, userId),
-        eq(notifications.workspaceId, workspaceId),
       ),
     )
     .orderBy(desc(notifications.createdAt))

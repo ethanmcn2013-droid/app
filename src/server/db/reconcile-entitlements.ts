@@ -54,6 +54,8 @@ export async function reconcileEntitlements(): Promise<ReconcileResult> {
   const rows = await db
     .select()
     .from(entitlements)
+    // isolation-ok: cross-user reconciler run from the daily-digest cron;
+    // intentionally scans every user's live entitlements (see fn docstring).
     .where(
       or(isNull(entitlements.expiresAt), gt(entitlements.expiresAt, now)),
     );
