@@ -3,6 +3,9 @@
 import { streamText } from "ai";
 import {
   AI_NOT_CONFIGURED_MESSAGE,
+  AI_RATE_LIMIT,
+  AI_RATE_LIMITED_MESSAGE,
+  AI_RATE_WINDOW,
   DRAFT_REPLY_PROMPT,
   MAX_OUTPUT_TOKENS,
   SUMMARIZE_THREAD_PROMPT,
@@ -16,6 +19,7 @@ import {
   weeklyDigestNarrationFor,
 } from "@/server/digest-narration";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { allow } from "@/lib/ratelimit";
 import { USERS } from "@/lib/data";
 import type { ConversationItem } from "@/server/db/queries";
 
@@ -99,6 +103,10 @@ export async function draftReplyAction(
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
   }
+  // Per-user burst cap (gated + fail-open until Upstash is provisioned).
+  if (!(await allow("ai", me, AI_RATE_LIMIT, AI_RATE_WINDOW))) {
+    return staticStream(AI_RATE_LIMITED_MESSAGE);
+  }
 
   const myName = USERS[me]?.name ?? me;
   const thread = renderConversation(items);
@@ -157,15 +165,20 @@ export async function summarizeConversationAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, ws] = await Promise.all([
+  const [task, items, me, ws] = await Promise.all([
     getTaskById(taskId),
     getTaskConversation(taskId),
+    getCurrentUser(),
     getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
   // Workspace guard mirrors draftReplyAction — same vector, same fix.
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
+  }
+  // Per-user burst cap (gated + fail-open until Upstash is provisioned).
+  if (!(await allow("ai", me, AI_RATE_LIMIT, AI_RATE_WINDOW))) {
+    return staticStream(AI_RATE_LIMITED_MESSAGE);
   }
 
   // The "≥ 6 messages" gate also lives client-side, but we re-check

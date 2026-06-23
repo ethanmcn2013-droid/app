@@ -34,6 +34,28 @@ export const MAX_OUTPUT_TOKENS: number = (() => {
   return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 512;
 })();
 
+/**
+ * Per-user burst cap on the interactive AI actions (draft reply, summarize
+ * thread). Pairs with MAX_OUTPUT_TOKENS: the token cap bounds the cost of
+ * ONE call; this bounds how many calls a single user can fire in a window,
+ * so a stuck client loop or a malicious caller can't run up an Anthropic
+ * bill. A human using the composer won't approach 20/minute.
+ *
+ * Enforced via src/lib/ratelimit.ts, which is GATED + FAILS OPEN: a no-op
+ * until the operator provisions Upstash (UPSTASH_REDIS_REST_URL/_TOKEN),
+ * then live with no deploy. Tune via env without a deploy.
+ */
+export const AI_RATE_LIMIT: number = (() => {
+  const raw = Number(process.env.TASKS_AI_RATE_LIMIT);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 20;
+})();
+export const AI_RATE_WINDOW = (process.env.TASKS_AI_RATE_WINDOW?.trim() ||
+  "1 m") as `${number} ${"ms" | "s" | "m" | "h" | "d"}`;
+
+/** Surfaced verbatim when a caller trips the per-user AI burst cap. */
+export const AI_RATE_LIMITED_MESSAGE =
+  "Too many AI requests in a short window. Give it a minute.";
+
 export function getModelId(): string {
   return process.env.TASKS_AI_MODEL?.trim() || DEFAULT_MODEL_ID;
 }
