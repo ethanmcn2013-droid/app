@@ -38,6 +38,7 @@ import type {
 
 import { rowToTask } from "./row-mappers";
 import { byWorkspace } from "./tenant";
+import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_DOMAIN, demoTasks } from "@/server/demo/tasks-demo";
 
@@ -69,6 +70,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
   // live exclusively in the detail panel for cycle 25. They'd
   // otherwise multiply into the board / list / timeline / calendar
   // alongside their parents.
+  return withReadRetry(async () => {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
@@ -81,7 +83,8 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
     // real workspace; if a workspace legitimately exceeds it, the
     // overflow is the long tail of oldest in-lane rows.
     .limit(2000);
-  return rows.map(rowToTask);
+    return rows.map(rowToTask);
+  });
 }
 
 /**
@@ -161,11 +164,13 @@ export async function getWorkspacePublishState(
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
-  const [row] = await db
-    .select(taskColumnsWithCount)
-    .from(tasks)
-    .where(eq(tasks.id, id));
-  return row ? rowToTask(row) : null;
+  return withReadRetry(async () => {
+    const [row] = await db
+      .select(taskColumnsWithCount)
+      .from(tasks)
+      .where(eq(tasks.id, id));
+    return row ? rowToTask(row) : null;
+  });
 }
 
 /**
@@ -224,6 +229,7 @@ function rowToComment(row: CommentRow): Comment {
 export async function getCommentsForTask(
   taskId: string,
 ): Promise<Comment[]> {
+  return withReadRetry(async () => {
   const rows = await db
     .select({
       ...getTableColumns(comments),
@@ -239,7 +245,8 @@ export async function getCommentsForTask(
     // real workflow; the cap keeps the detail panel payload and the AI
     // summarize context from scaling without limit.
     .limit(500);
-  return rows.map(rowToComment);
+    return rows.map(rowToComment);
+  });
 }
 
 type ActivityRow = typeof activities.$inferSelect & { authorName: string | null };
@@ -259,6 +266,7 @@ function rowToActivity(row: ActivityRow): Activity {
 export async function getActivitiesForTask(
   taskId: string,
 ): Promise<Activity[]> {
+  return withReadRetry(async () => {
   const rows = await db
     .select({
       ...getTableColumns(activities),
@@ -270,7 +278,8 @@ export async function getActivitiesForTask(
     .where(eq(activities.taskId, taskId))
     .orderBy(desc(activities.createdAt))
     .limit(50);
-  return rows.map(rowToActivity);
+    return rows.map(rowToActivity);
+  });
 }
 
 type AttachmentRow = typeof attachments.$inferSelect;
@@ -412,6 +421,7 @@ export async function getNotificationsForUser(
   userId: UserId,
   workspaceId: string,
 ): Promise<Notification[]> {
+  return withReadRetry(async () => {
   const rows = await db
     .select()
     .from(notifications)
@@ -424,7 +434,8 @@ export async function getNotificationsForUser(
     )
     .orderBy(desc(notifications.createdAt))
     .limit(50);
-  return rows.map(rowToNotification);
+    return rows.map(rowToNotification);
+  });
 }
 
 /**
