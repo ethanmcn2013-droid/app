@@ -24,10 +24,14 @@ import { seedIfEmpty } from "./seed";
  * var, which is useful for post-migration smoke tests.
  */
 
-// Fail closed on ALL Vercel deploys (production AND preview) — preview
-// deploys share the same Turso DB and must not silently fall back to
-// the local file:tasks.db which doesn't exist in the Vercel runtime.
-if (process.env.VERCEL === "1" && !process.env.TASKS_DATABASE_URL) {
+// Fail closed on real Vercel deploys (production AND normal preview).
+// Demo/review deploys intentionally use seeded data and must be able to
+// boot without Turso credentials for design review links.
+if (
+  process.env.VERCEL === "1" &&
+  !isDemoMode() &&
+  !process.env.TASKS_DATABASE_URL
+) {
   throw new Error(
     "TASKS_DATABASE_URL is required in all Vercel environments (production and preview). " +
       "Set it (and TASKS_AUTH_TOKEN) in the Vercel project settings.",
