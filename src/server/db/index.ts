@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 import { seedIfEmpty } from "./seed";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * libSQL client for Tasks. In production (VERCEL=1) this connects to
