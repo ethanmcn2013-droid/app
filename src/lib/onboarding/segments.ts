@@ -52,7 +52,7 @@ export type SegmentConfig = {
   workspaceTitle: string;
   /** Entitlement / pricing routing hint */
   pricingTier: "venue" | "event" | "workspace" | "student" | "free";
-  /** Analytics + marketing attribution */
+  /** Signal + marketing attribution */
   trackingSegment: string;
 };
 
@@ -127,33 +127,34 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
 
   student: {
     id: "student",
-    label: "Student society / academic year",
-    description: "Committee work, events, deadlines — without the chaos",
+    label: "Student work",
+    description: "Assignments, exams, projects, societies - one calm semester",
     accent: "var(--aud-student)",
     domainId: "student",
     templateId: null,
-    contextQuestion: "What are you coordinating?",
+    contextQuestion: "What are you carrying first?",
     contextOptions: [
+      { id: "assignment", label: "Assignment" },
+      { id: "exam-week", label: "Exam week" },
+      { id: "group-project", label: "Group project" },
       { id: "society", label: "Society" },
-      { id: "club", label: "Club" },
-      { id: "class-group", label: "Class group" },
-      { id: "student-event", label: "Student event" },
-      { id: "academic-year", label: "Academic year" },
+      { id: "placement", label: "Placement" },
+      { id: "semester", label: "Whole semester" },
       { id: "other", label: "Other" },
     ],
     starterItems: [
-      "Society roadmap",
-      "Committee tasks",
-      "Event planning",
-      "Member notes",
-      "Sponsorship tracker",
+      "Assignment due Friday",
+      "Revision plan",
+      "Group project owners",
+      "Lecture notes to turn into tasks",
+      "Semester timeline",
     ],
     emptyState: {
       headline: "This is where your semester comes together.",
-      body: "Papers, events, committee work — stop losing things at 2am.",
-      firstTaskExample: "Submit society budget by next Friday",
+      body: "Papers, exams, group work, and society commitments in one calm place.",
+      firstTaskExample: "Finish literature review by Friday",
     },
-    workspaceTitle: "Society · Spring term",
+    workspaceTitle: "Student semester",
     pricingTier: "student",
     trackingSegment: "student",
   },

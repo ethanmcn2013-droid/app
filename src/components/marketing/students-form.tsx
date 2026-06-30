@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useId, useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -74,6 +74,7 @@ const FAILURE_COPY: Record<
 };
 
 export function StudentsForm() {
+  const emailId = useId();
   const [email, setEmail] = useState("");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<StudentVerifyResult | null>(null);
@@ -100,25 +101,13 @@ export function StudentsForm() {
       <div className="mx-auto w-full max-w-[680px] px-6 text-center">
         <Eyebrow />
 
-        <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink">
-          Built for{" "}
-          <span className="relative inline-block whitespace-nowrap">
-            <span
-              aria-hidden
-              className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
-              style={{
-                background:
-                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
-              }}
-            />
-            students.
-          </span>
+        <h1 className="mt-6 text-balance text-[clamp(2.35rem,1.55rem+3.4vw,4.35rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink">
+          Get the student rate.
         </h1>
 
         <p className="mx-auto mt-5 max-w-[52ch] text-[17px] leading-[1.55] text-ink-soft">
-          The full Workspace tier at a student price: €9.99 a year. No
-          .edu needed. Verify with your student email and the rate
-          applies. Renew each year while you study.
+          Signal Studio for Students is €9.99 a year. Verify with any
+          working student email and keep the rate while you study.
         </p>
 
         <div className="mx-auto mt-6 inline-flex items-center gap-2 rounded-full border border-line-soft bg-bg-elevated px-4 py-1.5 text-[12.5px] font-medium text-ink-soft">
@@ -127,7 +116,7 @@ export function StudentsForm() {
             style={{ background: "var(--brand)" }}
             aria-hidden
           />
-          €9.99 a year · verified student
+          €9.99 a year. Verified student.
         </div>
 
         <AnimatePresence mode="wait">
@@ -143,8 +132,12 @@ export function StudentsForm() {
               transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="mx-auto mt-10 flex w-full max-w-[480px] flex-col gap-3"
             >
-              <div className="flex items-center gap-2 rounded-full border border-line-soft bg-bg-elevated p-1.5 shadow-[0_8px_24px_-12px_rgba(20,21,26,0.16)] focus-within:border-ink-soft/30">
+              <label htmlFor={emailId} className="sr-only">
+                Student email
+              </label>
+              <div className="flex flex-col gap-2 rounded-2xl border border-line-soft bg-bg-elevated p-2 shadow-[0_8px_24px_-12px_rgba(20,21,26,0.16)] focus-within:border-ink-soft/30 sm:flex-row sm:items-center sm:rounded-full">
                 <input
+                  id={emailId}
                   type="email"
                   required
                   value={email}
@@ -153,14 +146,14 @@ export function StudentsForm() {
                     setResult(null);
                   }}
                   placeholder="you@your-college.ie"
-                  className="flex-1 bg-transparent px-3 py-2 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
+                  className="min-h-11 w-full min-w-0 flex-1 bg-transparent px-3 text-[15px] text-ink placeholder:text-ink-faint focus:outline-none"
                 />
                 <button
                   type="submit"
                   disabled={pending || !email.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-[13px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60"
+                  className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-full bg-ink px-4 text-[13px] font-medium text-white transition-transform hover:-translate-y-px disabled:opacity-60 sm:w-auto"
                 >
-                  {pending ? "Verifying…" : "Verify student email"}
+                  {pending ? "Verifying..." : "Verify student email"}
                 </button>
               </div>
 
@@ -210,11 +203,10 @@ function SuccessCard({ code }: { code: string }) {
         Code minted
       </div>
       <h2 className="mt-1.5 text-[20px] font-semibold tracking-[-0.005em] text-ink">
-        Your student code is ready.
+        Your student rate is ready.
       </h2>
       <p className="mx-auto mt-3 max-w-[40ch] text-[13.5px] leading-[1.55] text-ink-soft">
-        Here&rsquo;s your code. Redeem it below to unlock the student rate
-        for the year.
+        Your code is below. Redeem it to unlock the student rate for the year.
       </p>
       <CodeWithCopy code={code} />
       <div className="mt-5">
@@ -247,15 +239,15 @@ function FineGrain() {
       {[
         {
           h: "€9.99 a year",
-          b: "The full Workspace tier: unlimited workspaces, unlimited guests, recurring tasks, stuck-work nudges. The same tier everyone else pays €12 a month for.",
+          b: "Notes, Tasks, Timeline, and Signal at the student rate. The same yearly access, priced for study.",
         },
         {
           h: "Any student email",
-          b: "No .edu needed. We just check a working student email. No transcript, no ID upload, no awkward verification calls.",
+          b: "No .edu needed. We check a working student email. No transcript, no ID upload, no verification call.",
         },
         {
           h: "Renew while you study",
-          b: "Re-verify each year to keep the student rate. Graduated? The Workspace tier is €12 a month, or €100 a year, if you want to keep it.",
+          b: "Re-verify each year to keep the student rate. Graduated? Keep Signal Studio on the standard yearly plan.",
         },
       ].map((item) => (
         <li
@@ -285,7 +277,7 @@ function Eyebrow() {
       >
         Students
       </span>
-      Workspace tier · student rate
+      Student rate
     </div>
   );
 }

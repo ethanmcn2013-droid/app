@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
-export const alt = "Tasks, the student rate.";
+export const alt = "Signal Studio for Students.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -16,7 +16,7 @@ export default async function StudentsOG() {
           display: "flex",
           flexDirection: "column",
           background:
-            "linear-gradient(135deg, #faf5ff 0%, #f3f4f6 60%, #e5e7eb 100%)",
+            "linear-gradient(135deg, #ffffff 0%, #f4f4f5 62%, #eef2ff 100%)",
           padding: "72px 96px",
           fontFamily: "Inter, system-ui, sans-serif",
         }}
@@ -31,7 +31,7 @@ export default async function StudentsOG() {
             display: "flex",
           }}
         >
-          Students · Student rate
+          Signal Studio for Students
         </div>
         <div
           style={{
@@ -45,10 +45,7 @@ export default async function StudentsOG() {
             maxWidth: 980,
           }}
         >
-          Built for{" "}
-          <span style={{ color: "#4f46e5", display: "flex", marginLeft: 18 }}>
-            students.
-          </span>
+          Your semester, without the noise.
         </div>
         <div
           style={{
@@ -60,7 +57,7 @@ export default async function StudentsOG() {
             display: "flex",
           }}
         >
-          Verify any student email. The full Workspace tier, €9.99 a year.
+          Notes, Tasks, Timeline, and Signal. €9.99 a year with any student email.
         </div>
         <div style={{ flex: 1, display: "flex" }} />
         <div
@@ -73,8 +70,8 @@ export default async function StudentsOG() {
           }}
         >
           <div style={{ display: "flex" }}>{TASKS_DOMAIN}/students</div>
-          <div style={{ display: "flex" }}>·</div>
-          <div style={{ display: "flex" }}>€9.99 / year · verified student</div>
+          <div style={{ display: "flex" }}>|</div>
+          <div style={{ display: "flex" }}>€9.99 / year. Verified student.</div>
         </div>
       </div>
     ),
