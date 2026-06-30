@@ -262,7 +262,7 @@ export type StudentVerifyResult =
   | { ok: false; reason: "invalid-email" };
 
 /**
- * Student-rate verification. Students get the full Workspace tier at
+ * Student-rate verification. Students get Signal Studio at
  * the student price (€9.99 a year). Ireland and most of the world
  * outside the US don't issue .edu addresses, so verification is on the
  * honour system: any working student email is accepted (operator
@@ -296,7 +296,7 @@ export async function requestStudentCodeAction(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   await sendEmail({
     to: trimmed,
-    subject: "Your Tasks Workspace student code",
+    subject: "Your Signal Studio student code",
     html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
   });
 

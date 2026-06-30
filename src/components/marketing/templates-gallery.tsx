@@ -28,7 +28,7 @@ import {
  * Freelance → Marketing) plus an "All" pill at position 0. Default =
  * All (gallery is a working surface — maximize browse / serendipity).
  * Students live in "All" only (per segment canon, students never get
- * a pill); /for-students landing page is the dedicated surface.
+ * a pill); /for/students landing page is the dedicated surface.
  *
  * URL contract is byte-identical to studio /templates: `?audience=<id>`
  * with the default omitting the param.
@@ -155,8 +155,8 @@ export function TemplatesGallery({
               No templates for this filter yet.
             </div>
           ) : (
-            filtered.map((t, i) => (
-              <TemplateCard key={t.id} template={t} index={i} />
+            filtered.map((t) => (
+              <TemplateCard key={t.id} template={t} />
             ))
           )}
         </div>
@@ -168,10 +168,10 @@ export function TemplatesGallery({
           <div className="mt-12 text-center text-[13px] text-ink-faint">
             Studying?{" "}
             <a
-              href="/for-students"
+              href="/for/students"
               className="underline decoration-line-soft underline-offset-[3px] hover:text-ink hover:decoration-ink"
             >
-              Students get the full tier for €9.99 a year
+              Students get Signal Studio for €9.99 a year
             </a>
             {". "}
             {studentCount} student templates live under{" "}
@@ -193,7 +193,7 @@ export function TemplatesGallery({
   );
 }
 
-function TemplateCard({ template, index }: { template: Template; index: number }) {
+function TemplateCard({ template }: { template: Template }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

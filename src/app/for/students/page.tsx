@@ -3,20 +3,20 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForStudents } from "@/components/marketing/for-students";
 
 export const metadata = {
-  title: "Tasks for Students: A Whole Semester in One Workspace",
+  title: "Signal Studio for Students: Your Semester Without the Noise",
   description:
-    "Four classes, three group projects, two midterms, one job application, all in one workspace. The full tier at the student price: €9.99 a year, any student email.",
+    "A calm student workspace for notes, tasks, timelines, and one clear signal on what needs attention. €9.99 a year with any student email.",
   openGraph: {
-    title: "The semester in one place.",
+    title: "Your semester, without the noise.",
     description:
-      "Made for college and the study group. The full tier for €9.99 a year, any student email.",
+      "Notes, Tasks, Timeline, and Signal for students. €9.99 a year with any working student email.",
     type: "article",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "The semester in one place.",
-    description: "The full tier for €9.99 a year. Any student email.",
+    title: "Your semester, without the noise.",
+    description: "Signal Studio for Students is €9.99 a year. Any student email.",
   },
 };
 

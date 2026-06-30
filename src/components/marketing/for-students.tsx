@@ -1,281 +1,230 @@
 import Link from "next/link";
 
-/**
- * `/for/students` — long-form vertical landing for college students.
- * Sister to `/for/freelancers`. Wedding self-serve now lives on
- * studio `/weddings`; Tasks keeps the application/template surfaces.
- *
- * Distinct from the existing `/students` page, which is the action
- * surface (student-email verification + the €9.99/yr student rate). This
- * page is the top-of-funnel SEO landing that links to `/students`
- * for the student-rate offer at the bottom of the page.
- *
- * Anchors on final-paper-push + midterm-week templates.
- */
+const START_POINTS = [
+  {
+    title: "Assignment due Friday",
+    body: "Paste the brief, pull out the next steps, and see what needs doing before the deadline arrives.",
+  },
+  {
+    title: "Exam week",
+    body: "Keep revision blocks, readings, practice questions, and recovery time visible in one place.",
+  },
+  {
+    title: "Group project",
+    body: "Everyone can see who owns the source list, the slides, the draft, and the final upload.",
+  },
+] as const;
+
+const LOOP = [
+  ["Notes", "The rough material. Lecture notes, chat decisions, links, and things you might need later."],
+  ["Tasks", "The clear next steps. What needs doing, who owns it, and when it is due."],
+  ["Timeline", "The semester view. Exams, projects, meetings, and hand-ins in one calm line."],
+  ["Signal", "The short read. What needs attention today and what can wait."],
+] as const;
+
 export function ForStudents() {
   return (
     <section className="relative isolate overflow-hidden pb-32 pt-12 md:pt-16">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(79,70,229,0.16), rgba(79,70,229,0.04), transparent 70%)",
-        }}
-      />
+      <div className="mx-auto grid w-full max-w-[1120px] gap-12 px-6 md:grid-cols-[minmax(0,0.9fr)_minmax(420px,1fr)] md:gap-16">
+        <div className="md:sticky md:top-24 md:self-start">
+          <Eyebrow />
 
-      <div className="mx-auto w-full max-w-[820px] px-6">
-        <Eyebrow />
+          <h1 className="mt-6 text-balance text-[clamp(2.35rem,1.55rem+3.4vw,4.4rem)] font-semibold leading-[1] tracking-[-0.045em] text-ink">
+            Your semester, without the noise.
+          </h1>
 
-        <h1 className="mt-6 text-balance text-[clamp(2.4rem,1.6rem+3.6vw,4.6rem)] font-semibold leading-[0.98] tracking-[-0.04em] text-ink">
-          The semester{" "}
-          <span className="relative inline-block whitespace-nowrap">
-            <span
-              aria-hidden
-              className="absolute inset-x-1 -bottom-1 -z-10 h-[0.46em] rounded-md"
-              style={{
-                background:
-                  "linear-gradient(110deg, rgba(79,70,229,0.28), rgba(79,70,229,0.16))",
-              }}
-            />
-            in one place.
-          </span>
-        </h1>
-
-        <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
-          A college semester has four classes, three group projects,
-          two midterms in the same week, one job application that
-          should have gone out last Tuesday, and the part-time shift
-          that pays for it. The tools you&rsquo;re given to manage that
-          are a notebook, the LMS that hates you, and a Notes app full
-          of nine half-finished lists. We built the workspace where
-          all of it lives in one shape, without sprints, without
-          epics, without a tutorial.
-        </p>
-
-        <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
-          The Free tier runs forever: one workspace, three editing
-          guests, which is exactly the size of a study group. The full
-          Workspace tier is €9.99 a year for students, verified with any
-          student email: unlimited workspaces, unlimited guests.
-        </p>
-
-        <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The two templates that survive a hard week.
-        </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <Link
-            href="/templates/final-paper-push"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
-          >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-                  <path d="M14 3v5h5" />
-                  <path d="M9 13h6M9 17h4" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Final paper push
-                </div>
-                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  8 tasks · thesis to submit
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Pick a thesis, gather sources, outline, draft, edit,
-              submit. The order that beats the 4am panic.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
-              Open the template
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="transition-transform group-hover:translate-x-0.5"
-              >
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
-          <Link
-            href="/templates/midterm-week"
-            className="group block rounded-2xl border border-line-soft bg-white p-5 transition-all hover:border-ink-soft/30 hover:shadow-[0_18px_42px_-18px_rgba(20,21,26,0.18)]"
-          >
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft text-[var(--brand)]"
-              >
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z" />
-                  <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5H6.5A2.5 2.5 0 0 0 4 19.5z" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
-                  Midterm week
-                </div>
-                <div className="mt-0.5 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
-                  7 tasks · review · sleep
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
-              Review sheets, redo practice problems, study group, eight
-              hours of sleep, breakfast. The boring stuff that wins.
-            </p>
-            <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink">
-              Open the template
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="transition-transform group-hover:translate-x-0.5"
-              >
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
-            </div>
-          </Link>
-        </div>
-
-        <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          Why this beats the LMS, the Notes app, and the productivity influencer.
-        </h2>
-        <ul className="mt-5 space-y-4">
-          <Reason
-            title="Group projects work better when everyone can edit."
-            body="Three editing guests are free on every workspace, including yours. Your two group-project teammates drop in via magic link — no email-the-Google-doc, no dance over who has edit access. They open the link and write."
-          />
-          <Reason
-            title="No sprints, no epics, no jargon."
-            body="The whole industry has spent twenty years convincing people that getting work done requires a vocabulary. It doesn't. You write what you have to do, when it's due, and who's doing it. That's it."
-          />
-          <Reason
-            title="Four lenses for the same list."
-            body="Board for what's-where, list for triage, calendar for the day-to-day, timeline for the four classes laid out across the semester. Same tasks, four views. Useful when the LMS gives you only one."
-          />
-          <Reason
-            title="Daily digest, no notification spam."
-            body="One email each morning with what's due. No red dots, no buzzing phone, no Slack pings. The internet has enough of those."
-          />
-        </ul>
-
-        <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The student rate.
-        </h2>
-        <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          The full Workspace tier is €9.99 a year for students. Verify
-          with any student email, no .edu needed. Unlimited workspaces:
-          one per class, one for the job search, one for the part-time
-          shift, one for the trip you&rsquo;re planning over spring
-          break. Recurring tasks for weekly problem sets. Stuck-work
-          nudges for the stuff that&rsquo;s slipping. Verify once, get
-          the code, run the rest of your degree on it.
-        </p>
-
-        <div className="mt-20 rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
-          <div className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            Free forever, or the full tier for €9.99 a year as a student
-          </div>
-          <p className="mt-3 text-[18px] font-medium leading-[1.45] text-ink">
-            Open a workspace today. Bring a friend. Bring two more
-            friends. The whole study group fits.
+          <p className="mt-6 max-w-[58ch] text-[17px] leading-[1.6] text-ink-soft">
+            Signal Studio gives students one calm place for lecture notes,
+            assignments, exams, group work, and the short read on what needs
+            attention next.
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+
+          <p className="mt-5 max-w-[56ch] text-[15.5px] leading-[1.6] text-ink-quiet">
+            The student rate is €9.99 a year with any working student email.
+            No .edu requirement. No transcript upload. Renew each year while
+            you study.
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/students"
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-[14px] font-medium text-white shadow-[0_8px_24px_-12px_rgba(20,21,26,0.42)] transition-transform hover:-translate-y-px"
             >
-              Get the student rate
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
+              Verify student email
             </Link>
             <Link
               href="/templates/final-paper-push"
-              className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white px-5 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-line-soft bg-white px-5 text-[14px] font-medium text-ink transition-colors hover:border-ink-soft/30"
             >
               Start with a template
             </Link>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <StudentLoop />
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {START_POINTS.map((item) => (
+              <article
+                key={item.title}
+                className="rounded-xl border border-line-soft bg-white p-4"
+              >
+                <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-ink">
+                  {item.title}
+                </h2>
+                <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
+                  {item.body}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <section className="rounded-2xl border border-line-soft bg-bg-elevated p-5 md:p-6">
+            <h2 className="text-[22px] font-semibold tracking-[-0.025em] text-ink">
+              Start with the week in front of you.
+            </h2>
+            <p className="mt-3 max-w-[62ch] text-[14.5px] leading-[1.6] text-ink-soft">
+              Templates are not the product. They are a fast first step when
+              the page is blank and the deadline is real.
+            </p>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <TemplateCard
+                href="/templates/final-paper-push"
+                title="Final paper push"
+                meta="8 tasks. From thesis to upload."
+                body="Choose the thesis, gather sources, outline, draft, edit, submit. The order that beats the 4am panic."
+              />
+              <TemplateCard
+                href="/templates/midterm-week"
+                title="Midterm week"
+                meta="7 tasks. Review, practice, sleep."
+                body="Review sheets, redo practice questions, meet the study group, eat breakfast, and protect the hours that matter."
+              />
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-line-soft bg-white p-5 md:p-6">
+            <h2 className="text-[22px] font-semibold tracking-[-0.025em] text-ink">
+              Built for students who do not want another system.
+            </h2>
+            <div className="mt-5 grid gap-3">
+              <Reason
+                title="Group work stays readable."
+                body="Invite classmates with a link. Keep the plan separate from the chat."
+              />
+              <Reason
+                title="No sprint vocabulary."
+                body="Write the work in plain language. Signal Studio keeps the structure quiet."
+              />
+              <Reason
+                title="One morning read."
+                body="A short signal tells you what is slipping. No dashboard habit required."
+              />
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-line-soft bg-bg-elevated px-6 py-7 text-center md:px-10">
+            <div className="text-[11.5px] font-semibold uppercase tracking-[0.16em] text-ink-quiet">
+              Student rate
+            </div>
+            <p className="mx-auto mt-3 max-w-[48ch] text-[18px] font-medium leading-[1.45] text-ink">
+              €9.99 a year. Any working student email. Notes, Tasks,
+              Timeline, and Signal.
+            </p>
+            <div className="mt-6">
+              <Link
+                href="/students"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-[14px] font-medium text-white shadow-[0_8px_24px_-12px_rgba(20,21,26,0.42)] transition-transform hover:-translate-y-px"
+              >
+                Get the student rate
+              </Link>
+            </div>
+          </section>
         </div>
       </div>
     </section>
   );
 }
 
+function StudentLoop() {
+  return (
+    <div className="rounded-2xl border border-line-soft bg-white p-4 shadow-[0_24px_70px_-54px_rgba(20,21,26,0.3)] md:p-5">
+      <div className="flex items-start justify-between gap-4 border-b border-line-soft pb-3">
+        <div>
+          <div className="text-[13px] font-semibold text-ink">
+            Group assignment
+          </div>
+          <div className="mt-1 text-[12px] text-ink-quiet">
+            Research methods. Due Friday.
+          </div>
+        </div>
+        <div className="rounded-full bg-brand-soft px-3 py-1 font-mono text-[10px] font-semibold uppercase text-brand">
+          Clear today
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3">
+        {LOOP.map(([name, copy]) => (
+          <div
+            key={name}
+            className="grid gap-3 rounded-xl border border-line-soft bg-bg-elevated/70 p-3 sm:grid-cols-[86px_1fr]"
+          >
+            <div className="text-[13px] font-semibold text-ink">{name}</div>
+            <p className="text-[13px] leading-[1.5] text-ink-soft">{copy}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TemplateCard({
+  href,
+  title,
+  meta,
+  body,
+}: {
+  href: string;
+  title: string;
+  meta: string;
+  body: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group block rounded-xl border border-line-soft bg-white p-4 transition-all hover:border-ink-soft/30 hover:shadow-[0_16px_42px_-24px_rgba(20,21,26,0.22)]"
+    >
+      <div className="text-[15px] font-semibold tracking-[-0.005em] text-ink">
+        {title}
+      </div>
+      <div className="mt-1 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-quiet">
+        {meta}
+      </div>
+      <p className="mt-3 text-[13.5px] leading-[1.55] text-ink-soft">
+        {body}
+      </p>
+      <div className="mt-4 text-[12px] font-medium text-ink transition-transform group-hover:translate-x-0.5">
+        Open template
+      </div>
+    </Link>
+  );
+}
+
 function Reason({ title, body }: { title: string; body: string }) {
   return (
-    <li className="grid grid-cols-[24px_1fr] gap-3">
-      <span className="mt-1.5 inline-block h-2 w-2 rounded-full" style={{ background: "var(--brand)" }} aria-hidden />
-      <div>
-        <div className="text-[15.5px] font-semibold text-ink">{title}</div>
-        <p className="mt-1 text-[14.5px] leading-[1.55] text-ink-soft">
-          {body}
-        </p>
-      </div>
-    </li>
+    <div className="rounded-xl border border-line-soft bg-bg-elevated/60 p-4">
+      <div className="text-[15px] font-semibold text-ink">{title}</div>
+      <p className="mt-1 text-[13.5px] leading-[1.55] text-ink-soft">{body}</p>
+    </div>
   );
 }
 
 function Eyebrow() {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-line-soft bg-white/60 py-1 pl-1 pr-3 text-[11.5px] font-medium text-ink-soft backdrop-blur">
-      <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white"
-        style={{
-          background:
-            "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
-          boxShadow: "0 4px 10px rgba(79, 70, 229, 0.32)",
-        }}
-      >
-        For students
-      </span>
-      A semester in one workspace
+    <div className="inline-flex items-center rounded-full border border-line-soft bg-white px-3 py-1.5 text-[11.5px] font-medium text-ink-soft">
+      Signal Studio for Students
     </div>
   );
 }

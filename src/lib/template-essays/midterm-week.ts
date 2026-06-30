@@ -23,7 +23,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why drop it into Tasks, not a Notes app",
       body:
-        "Because the study group needs to see the same list you’re looking at. Tasks gives you a workspace free, plus three editing guests — exactly the size of a working study group, no per-seat upgrade, no “invite the team” modal. You drag the practice-problem task into doing, your roommate sees it, the third person stops re-doing the same set. If you want unlimited workspaces across every class, a .edu address gets the full Workspace tier free for two years. Otherwise the free tier covers a midterm week with room to spare.",
+        "Because the study group needs to see the same list you are looking at. Tasks gives you a workspace free, plus three editing guests - exactly the size of a working study group, no per-seat upgrade, no invite-the-team modal. You drag the practice-problem task into doing, your roommate sees it, the third person stops re-doing the same set. The free workspace covers a midterm week; the student rate is €9.99 a year when you want every class, group project, and exam plan in Signal Studio.",
     },
   ],
   closer:

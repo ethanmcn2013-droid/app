@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
  * the row sits BELOW the page hero on every surface. Strategy guardrail
  * (segment canon, 2026-05-16): pills are a templates filter, not an
  * audience-wedge switcher. Students stay out of the main pill row;
- * surfaces link to /for-students from below the grid.
+ * surfaces link to /for/students from below the grid.
  *
  * Order is wedge-canon when audience pills are used: Wedding → Trades →
  * Freelance → Marketing. Tasks may prepend an "all" pill (defaultId="all").

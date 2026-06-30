@@ -3,20 +3,20 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { StudentsForm } from "@/components/marketing/students-form";
 
 export const metadata = {
-  title: "Tasks for students",
+  title: "Signal Studio for Students",
   description:
-    "The full Workspace tier at the student price: €9.99 a year. Verify with any student email, no .edu needed.",
+    "Verify any working student email and keep Signal Studio for Students at €9.99 a year while you study.",
   openGraph: {
-    title: "Tasks Workspace, the student rate.",
+    title: "Signal Studio for Students",
     description:
-      "Verify any student email and you're in. The full Workspace tier for €9.99 a year.",
+      "Your semester, without the noise. Verify any working student email and keep the €9.99 yearly student rate.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Tasks Workspace, the student rate.",
+    title: "Signal Studio for Students",
     description:
-      "Any student email in. The full Workspace tier for €9.99 a year.",
+      "Verify any working student email and keep the €9.99 yearly student rate.",
   },
 };
 
