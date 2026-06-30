@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import {
+  IOS_APP_URL,
   SIGNAL_URL,
   NOTES_URL,
   TIMELINE_URL,
   STUDIO_URL,
+  TASKS_URL,
 } from "@/lib/product-urls";
+
+type FooterLink = {
+  href: string;
+  label: string;
+  external?: boolean;
+};
 
 const SOCIALS = [
   { label: "X", href: "https://x.com/signalstudio_ie", title: "Signal Tasks on X",
@@ -19,17 +27,19 @@ const SOCIALS = [
 ] as const;
 
 export function SiteFooter() {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="mt-32 border-t border-line-soft/70 pb-10 pt-16">
-      <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-6 md:grid-cols-[1.4fr_repeat(4,1fr)]">
-        <div>
+      <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-6 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)]">
+        <div className="sm:col-span-2 lg:col-span-1">
           <Wordmark size="lg" />
           <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-            Execution clarity for live work. Four views, real-time
-            when it matters, plain-English dates.
+            Execution clarity for live work. Dates, owners, and the week ahead
+            in plain English.
           </p>
           <p className="mt-4 text-[12px] text-ink-quiet">
-            A{" "}
+            Made by{" "}
             <a
               href={STUDIO_URL}
               target="_blank"
@@ -37,89 +47,84 @@ export function SiteFooter() {
               className="font-medium text-ink-soft transition-colors hover:text-ink"
             >
               Signal Studio
-            </a>{" "}
-            product.
+            </a>
+            .
           </p>
+          <SocialLinks />
         </div>
+
         <FooterCol
           heading="Product"
           links={[
             { href: "/#demo", label: "Demo" },
             { href: "/#anatomy", label: "Anatomy" },
-            { href: "/app/board", label: "Board" },
-            { href: "/app/list", label: "List" },
-            { href: "/app/timeline", label: "Timeline" },
-            { href: "/app/calendar", label: "Calendar" },
+            { href: "/app/board", label: "Workspace" },
+            { href: "/templates", label: "Templates" },
+            { href: "/status", label: "Status" },
           ]}
         />
         <FooterCol
           heading="Company"
           links={[
             { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
-            { href: "/for/students", label: "For students" },
-            { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
             { href: "/about", label: "About" },
             { href: "/principles", label: "Principles" },
+            { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
+            { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
           ]}
         />
         <FooterCol
           heading="Resources"
           links={[
-            { href: "/templates", label: "Templates" },
-            { href: "https://signalstudio.ie/weddings", label: "For weddings", external: true },
+            { href: "/for/community", label: "For coordinators" },
             { href: "/for/freelancers", label: "For freelancers" },
             { href: "/for/small-business", label: "For small business" },
-            { href: "/for/community", label: "For coordinators" },
             { href: "/for/students", label: "For students" },
             { href: "/for/trades", label: "For trades" },
-            { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
+            { href: IOS_APP_URL, label: "iOS app", external: true },
           ]}
         />
         <FooterCol
           heading="Suite"
           links={[
-            { href: STUDIO_URL,    label: "Signal Studio",    external: true },
-            { href: NOTES_URL,     label: "Notes",            external: true },
-            { href: TIMELINE_URL,   label: "Timeline",          external: true },
+            { href: STUDIO_URL, label: "Signal Studio", external: true },
+            { href: NOTES_URL, label: "Signal Notes", external: true },
+            { href: TASKS_URL, label: "Signal Tasks", external: true },
+            { href: TIMELINE_URL, label: "Signal Timeline", external: true },
             { href: SIGNAL_URL, label: "Signal", external: true },
           ]}
         />
       </div>
+
       <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-line-soft/70 px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
-        <span>© {new Date().getFullYear()} Signal Tasks. A Signal Studio product.</span>
+        <span>&copy; {year} Signal Tasks. Made by Signal Studio.</span>
         <span>Clarity, not configuration.</span>
       </div>
-      <nav
-        aria-label="Signal Tasks on social"
-        className="mx-auto mt-4 flex w-full max-w-[1240px] items-center gap-x-1 px-6"
-      >
-        {SOCIALS.map(({ label, href, title, svg }) => (
-          <a
-            key={label}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={title}
-            aria-label={title}
-            className="inline-flex min-h-[32px] items-center px-2 py-1 text-ink-quiet transition-colors hover:text-ink"
-          >
-            {svg}
-          </a>
-        ))}
-      </nav>
-      <div
-        className="mx-auto mt-2 flex w-full max-w-[1240px] flex-wrap items-center gap-x-1 gap-y-1 px-6 font-mono text-[12px] uppercase tracking-[0.08em] text-ink-quiet"
-        style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
-      >
-        <a href="https://signalstudio.ie/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Privacy</a>
-        <span aria-hidden className="opacity-50">·</span>
-        <a href="https://signalstudio.ie/terms" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Terms</a>
-        <span aria-hidden className="opacity-50">·</span>
-        <a href="https://signalstudio.ie/security" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Security</a>
-        <span aria-hidden className="opacity-50">·</span>
-        <a href="https://signalstudio.ie/accessibility" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink">Accessibility</a>
-      </div>
+      <LegalLinks />
     </footer>
+  );
+}
+
+function SocialLinks() {
+  return (
+    <nav
+      aria-label="Signal Tasks on social"
+      className="-ml-2 mt-3 flex items-center text-ink-quiet"
+    >
+      {SOCIALS.map(({ label, href, title, svg }) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={title}
+          aria-label={title}
+          className="inline-flex h-10 w-10 items-center justify-center transition-colors hover:text-ink"
+        >
+          {svg}
+        </a>
+      ))}
+    </nav>
   );
 }
 
@@ -128,36 +133,74 @@ function FooterCol({
   links,
 }: {
   heading: string;
-  links: { href: string; label: string; external?: boolean }[];
+  links: FooterLink[];
 }) {
   return (
-    <div>
+    <nav aria-label={heading}>
       <div className="mb-3 text-[12px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
         {heading}
       </div>
       <ul className="space-y-2 text-[13.5px] text-ink-soft">
-        {links.map((l) => (
-          <li key={l.label}>
-            {l.external ? (
+        {links.map((link) => (
+          <li key={`${heading}-${link.href}`}>
+            {link.external ? (
               <a
-                href={l.href}
+                href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition-colors hover:text-ink"
+                className="inline-flex min-h-[32px] items-center transition-colors hover:text-ink"
               >
-                {l.label}
+                {link.label}
+                <span aria-hidden className="ml-1 text-[11px] text-ink-quiet">
+                  &rarr;
+                </span>
               </a>
             ) : (
               <Link
-                href={l.href}
-                className="transition-colors hover:text-ink"
+                href={link.href}
+                className="inline-flex min-h-[32px] items-center transition-colors hover:text-ink"
               >
-                {l.label}
+                {link.label}
               </Link>
             )}
           </li>
         ))}
       </ul>
-    </div>
+    </nav>
+  );
+}
+
+function LegalLinks() {
+  const links = [
+    { href: "https://signalstudio.ie/privacy", label: "Privacy" },
+    { href: "https://signalstudio.ie/terms", label: "Terms" },
+    { href: "https://signalstudio.ie/security", label: "Security" },
+    { href: "https://signalstudio.ie/accessibility", label: "Accessibility" },
+  ];
+
+  return (
+    <nav
+      aria-label="Legal"
+      className="mx-auto mt-4 flex w-full max-w-[1240px] flex-wrap items-center gap-x-1 gap-y-1 px-6 font-mono text-[12px] uppercase tracking-[0.08em] text-ink-quiet"
+      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+    >
+      {links.map((link, index) => (
+        <span key={link.href} className="inline-flex items-center">
+          {index > 0 && (
+            <span aria-hidden className="px-1 opacity-50">
+              &middot;
+            </span>
+          )}
+          <a
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-[32px] items-center px-2 py-1 transition-colors hover:text-ink"
+          >
+            {link.label}
+          </a>
+        </span>
+      ))}
+    </nav>
   );
 }

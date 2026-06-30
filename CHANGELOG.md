@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-06-30 · T·88 · tightens · the footer joins the suite shape and points to the iOS app
+
+**The public footer now matches the suite-wide structure: Product, Company, Resources, Suite, with Signal Studio named as the maker.** The product column keeps Tasks-specific paths, the company and legal links route to the Studio-owned surfaces, and the Suite column links Signal Studio, Signal Notes, Signal Tasks, Signal Timeline, and Signal in one predictable order. The new `iOS app` resource points to the Studio `/ios` status page, so the mobile signal is visible without pretending the App Store listing is live. Typecheck and production build are clean; browser footer checks passed on the public about page in demo mode.
+
 ## 2026-06-14 · T·87 · ships · a note that becomes a task arrives dated and tagged
 
 **A Notes extract now lands as a real task, not a flat line — the cross-repo receiver runs the creator's wording through the same quick-add parser the board uses.** "Call florist friday #claire-wedding" sent from Notes arrives in Tasks with the due date and the `claire-wedding` tag already set, and a clean title. This keeps Notes free of date and tag pickers — its anti-configuration brand — while still setting both inline at promote time; the parse is deterministic, no model. Backward-compatible: a plain extract still lands as a plain task. Branch-pending via PR.
