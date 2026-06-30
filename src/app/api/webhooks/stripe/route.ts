@@ -7,7 +7,9 @@ import {
   expireEntitlementByNotes,
   grantEntitlement,
 } from "@/server/actions/billing";
+import { paidTierDurationDays } from "@/server/billing-tiers";
 import type { EntitlementTier } from "@/lib/data";
+import type { BillingInterval } from "@/server/stripe";
 import { entitlementsDb } from "@/lib/entitlements-shared/client";
 import { processedWebhooks as sharedProcessedWebhooks } from "@/lib/entitlements-shared/schema";
 
@@ -115,6 +117,9 @@ export async function POST(req: Request) {
       const userId = s.metadata?.userId;
       const rawWorkspaceId = s.metadata?.workspaceId;
       const tier = s.metadata?.tier as EntitlementTier | undefined;
+      const interval = (s.metadata?.interval === "annual"
+        ? "annual"
+        : "monthly") satisfies BillingInterval;
       if (!userId || !rawWorkspaceId || !tier) break;
       const workspaceId = decodeWorkspaceId(rawWorkspaceId);
       // Studio is the only tier where workspaceId may be null;
@@ -126,7 +131,7 @@ export async function POST(req: Request) {
         workspaceId,
         tier,
         source: "purchase",
-        durationDays: tier === "wedding" ? null : 30,
+        durationDays: paidTierDurationDays(tier, interval),
         notes: `stripe:${s.id}`,
       });
       break;

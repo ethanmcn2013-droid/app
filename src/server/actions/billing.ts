@@ -10,6 +10,11 @@ import {
   type BillingInterval,
   type PaidTier,
 } from "@/server/stripe";
+import {
+  isOneTimePaidTier,
+  paidTierDurationDays,
+} from "@/server/billing-tiers";
+import { STUDIO_URL } from "@/lib/product-urls";
 import type { EntitlementTier } from "@/lib/data";
 import {
   expireSharedEntitlement,
@@ -45,6 +50,23 @@ function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? FALLBACK_BASE;
 }
 
+function checkoutTierLabel(tier: PaidTier): string {
+  if (tier === "workspace") return "Pro";
+  if (tier === "event") return "Event Workspace";
+  if (tier === "studio") return "Studio";
+  return "Wedding Workspace";
+}
+
+function checkoutSubmitMessage(tier: PaidTier): string {
+  if (tier === "event") {
+    return "One event workspace. No subscription. The record stays readable after the paid window.";
+  }
+  if (tier === "wedding") {
+    return "One wedding workspace. The plan stays readable after the paid window.";
+  }
+  return "Your price covers every product and every guest. Cancel anytime; your work stays readable.";
+}
+
 /**
  * Mint a Stripe Checkout session for the chosen tier. Returns the
  * redirect URL the client should `window.location` to.
@@ -78,11 +100,12 @@ export async function createCheckoutSessionAction(
       workspaceId: scopedWorkspaceId,
       tier,
       source: "purchase",
-      durationDays:
-        tier === "wedding" ? null : interval === "annual" ? 365 : 30,
+      durationDays: paidTierDurationDays(tier, interval),
       notes: `dev:no-stripe${interval === "annual" ? ":annual" : ""}`,
     });
-    return { url: `${siteUrl()}/app/board?upgrade=ok&dev=1` };
+    return {
+      url: `${siteUrl()}/app/checkout/ready?tier=${tier}&interval=${interval}&dev=1`,
+    };
   }
 
   const priceId = priceIdFor(tier, interval);
@@ -96,17 +119,65 @@ export async function createCheckoutSessionAction(
   const metadataWorkspaceId = scopedWorkspaceId ?? "*";
 
   const session = await stripe.checkout.sessions.create({
-    mode: tier === "wedding" ? "payment" : "subscription",
+    mode: isOneTimePaidTier(tier) ? "payment" : "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${siteUrl()}/app/board?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl()}/pricing?upgrade=cancel`,
+    success_url: `${siteUrl()}/app/checkout/ready?tier=${tier}&interval=${interval}&session={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${siteUrl()}/checkout/canceled?tier=${tier}&interval=${interval}`,
     client_reference_id: `${me}::${metadataWorkspaceId}`,
-    metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
+    metadata: {
+      userId: me,
+      workspaceId: metadataWorkspaceId,
+      tier,
+      interval,
+      returnSurface: "checkout-ready",
+    },
+    billing_address_collection: "auto",
+    branding_settings: {
+      background_color: "#fafaf7",
+      border_style: "rounded",
+      button_color: "#4f46e5",
+      display_name: "Signal Studio",
+    },
+    custom_text: {
+      submit: {
+        message: checkoutSubmitMessage(tier),
+      },
+      after_submit: {
+        message:
+          "Payment complete. We will bring you back to your workspace.",
+      },
+    },
+    after_expiration: {
+      recovery: {
+        enabled: true,
+        allow_promotion_codes: false,
+      },
+    },
+    customer_creation: isOneTimePaidTier(tier) ? "always" : undefined,
+    invoice_creation: isOneTimePaidTier(tier)
+      ? {
+          enabled: true,
+          invoice_data: {
+            description: `Signal Studio ${checkoutTierLabel(tier)}`,
+            footer: `Questions: hello@signalstudio.ie. Pricing: ${STUDIO_URL}/pricing`,
+            metadata: {
+              tier,
+              interval,
+              workspaceId: metadataWorkspaceId,
+            },
+          },
+        }
+      : undefined,
     subscription_data:
-      tier === "wedding"
+      isOneTimePaidTier(tier)
         ? undefined
         : {
-            metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
+            metadata: {
+              userId: me,
+              workspaceId: metadataWorkspaceId,
+              tier,
+              interval,
+            },
           },
   });
 
@@ -168,7 +239,7 @@ export async function grantEntitlement(input: {
   });
 
   // E-3.2 · Mirror the grant into the shared signal-entitlements DB
-  // so Roadmap / Analytics / Notes / Studio can read the same tier.
+  // so Timeline/ Signal / Notes / Studio can read the same tier.
   // Fire-and-forget: if shared write fails, the local grant still
   // succeeds, and a future reconcile sweep can backfill. Entitlement
   // mirroring MUST NOT break a paid checkout.
