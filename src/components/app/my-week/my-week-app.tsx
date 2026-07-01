@@ -11,7 +11,11 @@ import {
   useTasksDispatch,
   useTasksState,
 } from "@/lib/tasks/tasks-context";
-import { bucketMyWeek, type MyWeekBuckets } from "@/lib/tasks/selectors";
+import {
+  bucketMyWeek,
+  splitTodayDayparts,
+  type MyWeekBuckets,
+} from "@/lib/tasks/selectors";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
@@ -35,6 +39,11 @@ export function MyWeekApp() {
   const meId = useCurrentUser();
   const me = USERS[meId];
   const buckets = bucketMyWeek(state.tasks, meId);
+  // Dayparts — "This evening" splits out of Today only when a task
+  // carries an explicit evening time. No time typed, no daypart.
+  const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
+    buckets.today,
+  );
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure) — the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
@@ -77,12 +86,23 @@ export function MyWeekApp() {
 
         <Section
           title="Today"
-          tasks={buckets.today}
+          tasks={todayDay}
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
           empty="Today is clear."
-          showEmpty
+          // "Today is clear." is only true when the evening is clear
+          // too; an evening-only day suppresses the empty line and
+          // leads with the This-evening section instead.
+          showEmpty={todayEvening.length === 0}
+        />
+        <Section
+          title="This evening"
+          tasks={todayEvening}
+          openTaskId={openTaskId}
+          openTask={openTask}
+          toggleComplete={toggleComplete}
+          empty=""
         />
         <Section
           title="Needs attention"
