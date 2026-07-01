@@ -193,6 +193,37 @@ export function bucketMyWeek(
   return buckets;
 }
 
+/**
+ * Split the Today bucket into dayparts: "Today" and "This evening".
+ *
+ * A task belongs to the evening when its due time is *today* at 17:00
+ * or later — a clock the user actually typed ("florist 6pm"); quick-add
+ * dates without a time resolve to midday, and carried items from
+ * earlier days keep their morning place in Today. Zero configuration:
+ * the daypart appears only when the day's own data can honestly draw
+ * the line, and disappears when it can't.
+ */
+export function splitTodayDayparts(
+  today: Task[],
+  now: Date = new Date(),
+): { day: Task[]; evening: Task[] } {
+  const todayStart = startOfLocalDay(now).getTime();
+  const eveningStart = todayStart + 17 * 60 * 60 * 1000;
+  const tomorrowStart = todayStart + DAY_MS;
+
+  const day: Task[] = [];
+  const evening: Task[] = [];
+  for (const t of today) {
+    const due = t.dueAt?.getTime();
+    if (due !== undefined && due >= eveningStart && due < tomorrowStart) {
+      evening.push(t);
+    } else {
+      day.push(t);
+    }
+  }
+  return { day, evening };
+}
+
 const PRIORITY_RANK: Record<string, number> = { p0: 0, p1: 1, p2: 2, p3: 3 };
 
 function byDueThenPriority(a: Task, b: Task): number {
