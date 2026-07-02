@@ -43,13 +43,20 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
   const closeMenu = () => setOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line-soft/60 bg-bg/72 backdrop-blur-md backdrop-saturate-150">
+    <header
+      className="sticky top-0 z-40 border-b border-line-soft/75"
+      style={{
+        background: "color-mix(in srgb, var(--bg) 88%, transparent)",
+        backdropFilter: "saturate(150%) blur(12px)",
+        WebkitBackdropFilter: "saturate(150%) blur(12px)",
+      }}
+    >
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:inline-flex">
+        <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
+          <div className="inline-flex">
             <SuiteLauncher current="tasks" isAuthed={isAuthed} />
           </div>
-          <span aria-hidden className="hidden sm:inline" style={{ color: "var(--ink-faint)", fontSize: 12 }}>/</span>
+          <span aria-hidden style={{ color: "var(--ink-faint)", fontSize: 12 }}>/</span>
           <Wordmark size="md" />
         </div>
 
@@ -81,7 +88,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
         <div className="flex items-center gap-2">
           {isAuthed ? (
             /* L3: authed — account menu replaces auth controls (DESIGN.md §14) */
-            <div className="hidden md:inline-flex items-center">
+            <div className="inline-flex items-center">
               <UserButton
                 appearance={{
                   elements: { avatarBox: "h-8 w-8 rounded-full" },
@@ -92,7 +99,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
             <>
               <Link
                 href="/sign-in"
-                className="hidden rounded-full px-3.5 py-1.5 text-[13px] font-medium text-ink-soft transition-colors hover:text-ink md:inline-flex"
+                className="inline-flex min-h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-ink-soft transition-colors hover:text-ink"
               >
                 Sign in
               </Link>
@@ -107,7 +114,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
             aria-controls={menuId}
             aria-label={open ? "Close navigation" : "Open navigation"}
             onClick={() => setOpen((v) => !v)}
-            className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-md text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink md:hidden"
+            className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-line-soft/75 text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink md:hidden"
           >
             {open ? (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -163,18 +170,6 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
               </li>
             ))}
           </ul>
-          {/* L3: only show Sign in when unauthed */}
-          {!isAuthed && (
-            <div className="mt-4 border-t border-line-soft/60 pt-4">
-              <Link
-                href="/sign-in"
-                onClick={closeMenu}
-                className="block rounded-md px-2 py-2.5 text-[14px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-              >
-                Sign in
-              </Link>
-            </div>
-          )}
         </div>
       )}
     </header>
