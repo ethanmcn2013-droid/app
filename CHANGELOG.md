@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-02 · T·89 · tightens · the chrome fix lands on main
+
+**The accepted Tasks footer and product-header chrome now sit on current main instead of a side branch.** The public footer follows the suite frame, points to Studio's iOS status page, and names the five surfaces in one order. The product header keeps the shared sticky 56px shell so Tasks reads as one product inside Signal Studio, not a separate app with its own chrome rules.
+
 ## 2026-07-01 · T·88 · ships · My Week learns the difference between today and tonight
 
 **When a task carries an evening time — "florist 6pm" — My Week now sets it apart under its own quiet heading, This evening, so the morning read stops mixing tonight's errand into right-now's list.** Zero configuration, honestly derived: the daypart exists only when a task is due today at 17:00 or later, a clock the user actually typed; un-timed quick-adds resolve to midday and stay in Today, and items carried from earlier days keep their place in Today whatever their original clock. When no task earns the evening, the section does not render and "Today is clear." keeps meaning what it says — the empty line now speaks only when the evening is clear too. Five unit tests lock the boundary. Also repairs `pnpm-workspace.yaml`, whose placeholder `allowBuilds` values ("set this to true or false", literally) failed every fresh install with ERR_PNPM_IGNORED_BUILDS. Branch-pending via PR.
