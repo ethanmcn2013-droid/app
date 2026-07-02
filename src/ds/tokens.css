@@ -1,0 +1,230 @@
+/* VENDORED from signal-design-system@2.0.1 (50e7faf) — do not edit.
+ * Regenerate: node scripts/ds-vendor.mjs (from the signal-design-system repo). */
+/* ═══════════════════════════════════════════════════════════════════
+   Signal Design System · tokens.css · v2.0.0
+   The single source of truth for every Signal Studio surface.
+   Approved at Checkpoint 2/3 of the 2026-07-02 design-system mandate.
+
+   Three tiers, one direction of reference:
+     primitive  →  semantic  →  (component, sparingly)
+   Product code uses SEMANTIC tokens only. Primitives are reachable
+   only inside this file and in data-visualisation code.
+
+   Local redefinition of any token in this file is a drift-gate
+   failure. Product-local tokens use the --x- extension prefix.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── PRIMITIVES ──────────────────────────────────────────────── */
+
+  /* Indigo ramp — #4f46e5 is canonical (confirmed Checkpoint 1). */
+  --indigo-50:  #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-200: #c7d2fe;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-800: #3730a3;
+  --indigo-900: #312e81;
+
+  /* Zinc ramp — charts and decoration only; use ink aliases in UI. */
+  --zinc-50:  #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
+
+  /* ── SEMANTIC · colour ───────────────────────────────────────── */
+
+  /* Paper — white, locked by operator decision 2026-07-02. */
+  --paper:      #ffffff;
+  --paper-soft: #fafafa;
+  --paper-deep: #f4f4f5;
+
+  /* Ink — four steps; body text never lighter than --ink-faint. */
+  --ink:       #111111;
+  --ink-soft:  #3f3f46;
+  --ink-faint: #71717a;
+  --ink-ghost: #d4d4d8;
+
+  /* Accent — THE indigo. One earned indigo moment per view. */
+  --accent:       var(--indigo-600);
+  --accent-hover: var(--indigo-700);
+  --accent-tint:  var(--indigo-50);
+  --accent-glow:  rgba(79, 70, 229, 0.32);
+  --accent-soft:  rgba(79, 70, 229, 0.12);
+
+  /* Hairlines do the work shadows would in a louder system. */
+  --hairline:      rgba(17, 17, 17, 0.10);
+  --hairline-soft: rgba(17, 17, 17, 0.06);
+
+  /* Status — functional UI only, never marketing surfaces.
+     Queued is neutral: the accent is never ambiguous between
+     "brand" and "todo". */
+  --status-done:    #10b981;
+  --status-flight:  #f59e0b;
+  --status-blocked: #ef4444;
+  --status-next:    var(--ink-faint);
+
+  /* Pill washes — the "12% fill" of the Badge spec, one per state. */
+  --status-done-bg:    #d1fae5;
+  --status-flight-bg:  #fef3c7;
+  --status-blocked-bg: #fee2e2;
+  --status-next-bg:    var(--paper-deep);
+
+  /* ── SEMANTIC · typography ───────────────────────────────────── */
+
+  /* next/font apps expose Geist via --font-geist-*; the var() fallback
+     keeps this stack correct both inside Next and standalone. */
+  --font-sans: var(--font-geist-sans, "Geist"), "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono, "Geist Mono"), "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Weights: 400 / 500 / 600. Three weights, full stop. */
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+
+  /* Nine named steps. No tenth. Pair each size with its leading
+     and tracking — they are one decision, not three. */
+  --text-display: clamp(2.75rem, 1.8rem + 4.2vw, 5.5rem);   /* lh 1.04 · ls -0.04em · 600 */
+  --text-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem); /* lh 1.10 · ls -0.03em · 600 */
+  --text-section: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);   /* lh 1.15 · ls -0.02em · 600 */
+  --text-heading: 1.25rem;    /* 20px · lh 1.30 · ls -0.01em · 600 */
+  --text-body-lg: 1.0625rem;  /* 17px · lh 1.60 · 400 */
+  --text-body:    0.9375rem;  /* 15px · lh 1.55 · 400 */
+  --text-body-sm: 0.8125rem;  /* 13px · lh 1.50 · 400 */
+  --text-caption: 0.75rem;    /* 12px · lh 1.40 · 400/500 */
+  --text-label:   0.6875rem;  /* 11px · lh 1 · mono caps · ls +0.08em · 500 */
+
+  --leading-display: 1.04;
+  --leading-title:   1.1;
+  --leading-section: 1.15;
+  --leading-heading: 1.3;
+  --leading-body:    1.55;
+  --leading-body-lg: 1.6;
+
+  --tracking-display: -0.04em;
+  --tracking-title:   -0.03em;
+  --tracking-section: -0.02em;
+  --tracking-heading: -0.01em;
+  --tracking-label:    0.08em;
+
+  /* ── SEMANTIC · spacing ──────────────────────────────────────── */
+
+  /* Base-4 scale. If a value isn't here, the answer is the nearest
+     step, not a new value. */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  --section-gap: clamp(64px, 8vw, 128px);
+  --content-gap: var(--space-6);
+  --container:   1120px;
+
+  /* ── SEMANTIC · radii ────────────────────────────────────────── */
+
+  --radius-sm:   4px;   /* chips, tags, small controls */
+  --radius-md:   6px;   /* buttons, inputs — the default */
+  --radius-lg:   10px;  /* cards, panels */
+  --radius-pill: 999px; /* pills, avatars */
+
+  /* ── SEMANTIC · elevation ────────────────────────────────────── */
+
+  /* Exactly two shadows. Flat surfaces get hairlines, never shadows. */
+  --shadow-float: 0 1px 2px rgba(17,17,17,0.04), 0 6px 16px rgba(17,17,17,0.04);
+  --shadow-modal: 0 4px 8px rgba(17,17,17,0.04), 0 16px 40px rgba(17,17,17,0.07);
+
+  /* ── SEMANTIC · motion ───────────────────────────────────────── */
+
+  /* One easing dialect: fast arrival, long settle. */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Four durations. Nothing else. */
+  --motion-instant: 80ms;   /* hovers, toggles */
+  --motion-fast:    140ms;  /* micro state changes */
+  --motion-base:    220ms;  /* enters, exits, reveals */
+  --motion-slow:    400ms;  /* panels, page-level transitions */
+
+  /* ── COMPONENT (sparingly) ───────────────────────────────────── */
+
+  --control-h-sm: 28px;
+  --control-h-md: 36px;
+  --nav-h:        56px;
+  --table-row-h:  44px;
+
+  /* ── DEPRECATED ALIASES · removed at 3.0 ─────────────────────── */
+  /* Kept one major so migrating repos build while they rename.    */
+
+  --brand:        var(--accent);        /* deprecated: use --accent */
+  --brand-deep:   var(--accent-hover);  /* deprecated: use --accent-hover */
+  --brand-soft:   var(--accent-tint);   /* deprecated: use --accent-tint */
+  --accent-deep:  var(--accent-hover);  /* deprecated: use --accent-hover */
+  --indigo:       var(--accent);        /* deprecated: use --accent */
+  --indigo-soft:  var(--accent-soft);   /* deprecated: use --accent-soft */
+  --border:       var(--hairline);      /* deprecated: use --hairline */
+  --border-soft:  var(--hairline-soft); /* deprecated: use --hairline-soft */
+  --bg:           var(--paper);         /* deprecated: use --paper */
+  --ink-quiet:    var(--ink-faint);     /* deprecated: use --ink-faint */
+  --text:         var(--ink);           /* deprecated: use --ink */
+  --ease-standard: var(--ease-out);     /* deprecated: use --ease-out */
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Dark theme — designed, not shipped (operator decision 2026-07-02).
+   Complete mapping so enabling it later is a switch, not a migration.
+   No product sets data-theme="dark" before launch.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] {
+  --paper:      #0f0f10;
+  --paper-soft: #161618;
+  --paper-deep: #1d1d20;
+
+  --ink:       #f4f4f5;
+  --ink-soft:  #d4d4d8;
+  --ink-faint: #a1a1aa;
+  --ink-ghost: #3f3f46;
+
+  /* Dark surfaces need lighter hovers, not darker. */
+  --accent:       var(--indigo-600);
+  --accent-hover: var(--indigo-500);
+  --accent-tint:  rgba(79, 70, 229, 0.16);
+  --accent-glow:  rgba(99, 102, 241, 0.40);
+  --accent-soft:  rgba(79, 70, 229, 0.20);
+
+  --hairline:      rgba(255, 255, 255, 0.10);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
+
+  --status-next: var(--ink-faint);
+
+  --shadow-float: 0 1px 2px rgba(0,0,0,0.32), 0 6px 16px rgba(0,0,0,0.32);
+  --shadow-modal: 0 4px 8px rgba(0,0,0,0.36), 0 16px 40px rgba(0,0,0,0.44);
+}
+
+/* Reduced motion is honoured everywhere, wordmark gestures included. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0ms;
+    --motion-fast:    0ms;
+    --motion-base:    0ms;
+    --motion-slow:    0ms;
+  }
+}

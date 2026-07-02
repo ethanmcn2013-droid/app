@@ -29,9 +29,8 @@ export default function EmbedLayout({
         .tasks-embed-root {
           margin: 0;
           padding: 16px;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system,
-            BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-            Arial, sans-serif;
+          font-family: Geist, ui-sans-serif, system-ui, -apple-system,
+            BlinkMacSystemFont, "Segoe UI", sans-serif;
           color: #14151a;
           -webkit-font-smoothing: antialiased;
         }

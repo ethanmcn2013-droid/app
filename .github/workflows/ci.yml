@@ -46,6 +46,12 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      # SDS 2.0 drift gate — banned colours, system-token redefinition,
+      # non-Geist fonts hard-fail; hex/easing debt ratchets via
+      # .ds-grandfather.json (may only shrink).
+      - name: Design-system drift gate
+        run: pnpm run ds:check
+
       - name: Test
         run: pnpm test
 

@@ -69,7 +69,7 @@ export function inviteEmailHtml(input: {
   return `
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Tasks · invite</title></head>
-<body style="margin:0;padding:0;background:#fafafa;font-family:Inter,system-ui,sans-serif;color:#14151a;">
+<body style="margin:0;padding:0;background:#fafafa;font-family:Geist,system-ui,sans-serif;color:#14151a;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;padding:48px 24px;">
     <tr><td align="center">
       <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">

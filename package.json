@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "ds:check": "node scripts/ds/ds-check.mjs",
     "db:push": "drizzle-kit push --force",
     "db:check": "drizzle-kit check",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",

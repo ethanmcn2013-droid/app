@@ -25,14 +25,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Signal Tasks - execution clarity",
+  title: "Signal Tasks · execution clarity",
   description:
     "Execution clarity for live work: four views of the same list, plain-English dates, and enough motion to show what changed.",
   metadataBase: new URL(TASKS_URL),
   alternates: { canonical: "/" },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "Signal Tasks - execution clarity",
+    title: "Signal Tasks · execution clarity",
     description:
       "Four views of the same list, real-time when it matters, plain-English dates - free to start.",
     type: "website",
