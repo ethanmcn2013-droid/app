@@ -807,8 +807,7 @@ export function CinematicDemo({
       {/* Bottom controls: pause / restart — hidden under prefers-reduced-motion
           because the scene runner is also gated off; the control would be a
           ghost that does nothing for those users. */}
-      {!prefersReducedMotion && (
-        <div className="mt-4 flex items-center justify-center gap-3 text-[12px] text-ink-quiet">
+      <div className="mt-4 flex items-center justify-center gap-3 text-[12px] text-ink-quiet">
           <button
             type="button"
             onClick={() => setPaused((p) => !p)}
@@ -832,8 +831,7 @@ export function CinematicDemo({
             )}
           </button>
           <span className="text-ink-soft">A self-running demo. Interact any time.</span>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

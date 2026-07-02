@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import type { NextRequest } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { isDemoMode } from "@/lib/access-mode";
 
 /**
@@ -110,7 +110,7 @@ const clerkConfigured = Boolean(
     process.env.CLERK_SECRET_KEY,
 );
 
-export default clerkMiddleware(async (auth, req) => {
+const productionProxy = clerkMiddleware(async (auth, req) => {
   // Demo/Review: /app/* is publicly reachable. Auth resolves to the synthetic
   // demo user bound to in-memory seed data (lib/access-mode.ts,
   // server/demo/tasks-demo.ts). Flip SIGNAL_ACCESS_MODE back to production to
@@ -147,6 +147,11 @@ export default clerkMiddleware(async (auth, req) => {
     });
   }
 });
+
+export default function proxy(req: NextRequest, event: NextFetchEvent) {
+  if (isDemoMode()) return NextResponse.next();
+  return productionProxy(req, event);
+}
 
 export const config = {
   // Scope Clerk to routes that actually need auth. Unknown paths fall

@@ -42,7 +42,6 @@ const csp = [
   `base-uri 'self'`,
   `form-action 'self'`,
   `object-src 'none'`,
-  `upgrade-insecure-requests`,
   // CSP violation reporting — collected at /api/csp-report so we can verify
   // the policy is clean before promoting Report-Only → enforce.
   `report-uri /api/csp-report`,

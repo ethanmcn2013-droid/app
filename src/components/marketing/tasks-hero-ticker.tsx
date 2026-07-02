@@ -1,488 +1,182 @@
 "use client";
 
 /**
- * Tasks hero ticker — departure-board animation.
+ * Tasks hero ticker: Departure Board V2.
  *
- * A single task cycles through a split-flap (scaleY squish) flip mechanic:
- * scrambles in character-by-character, struck with an indigo spring line,
- * simultaneous scramble-clear, then out. 4 tasks, then "tasks." assembles
- * via the same mechanic and holds for 20 s desktop / 6 s mobile before
- * looping. First load has no cold-start blank — task 0 is set statically,
- * sequence begins immediately at the strike.
+ * Product proof is visible on first paint. The split-flap board arrives after
+ * that proof and resolves into the Tasks wordmark. The final dot uses the
+ * paired completion pulse only, with no decorative success layer.
  *
- * SAFETY CONTRACT (loader canon §13):
- *   · Fully scoped — every class and @keyframes prefixed `txr-`.
- *   · In-flow only — no position:fixed, no inset:0, no high z-index.
- *   · All setTimeout IDs collected; cancelled + cleared on unmount.
- *   · prefers-reduced-motion → final settled state rendered immediately,
- *     no animation, no delay.
+ * Safety contract:
+ * - fully scoped: every class and keyframe uses the `txr-` prefix
+ * - in-flow only: no fixed positioning and no global selectors
+ * - all timers are cleared on unmount
+ * - reduced motion: proof plus settled wordmark, no animation delay
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 const TASKS = [
-  { tag: "GUESTS",    text: "Send invites" },
-  { tag: "LOGISTICS", text: "Venue visit"  },
-  { tag: "CATERING",  text: "Cake tasting" },
-  { tag: "MUSIC",     text: "Confirm band" },
+  { tag: "OWNER", text: "Confirm venue access" },
+  { tag: "WAITING", text: "Send guest count" },
+  { tag: "READY", text: "Share supplier notes" },
+  { tag: "DONE", text: "Close final checklist" },
 ] as const;
 
-const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ·-";
+const PROOF_ROWS = [
+  {
+    task: "Confirm venue access",
+    owner: "Venue",
+    due: "Today",
+    state: "Done",
+  },
+  {
+    task: "Send guest count",
+    owner: "Couple",
+    due: "Thu",
+    state: "Waiting",
+  },
+  {
+    task: "Share supplier notes",
+    owner: "Planner",
+    due: "Next",
+    state: "Ready",
+  },
+] as const;
 
-function rndG() {
-  return GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+type Stage = "proof" | "board" | "wordmark";
+
+function wait(ms: number, timers: ReturnType<typeof setTimeout>[]) {
+  return new Promise<void>((resolve) => {
+    const id = setTimeout(resolve, ms);
+    timers.push(id);
+  });
 }
-function rndLC() {
-  return String.fromCharCode(97 + Math.floor(Math.random() * 26));
+
+function splitText(text: string) {
+  return Array.from(text);
 }
 
 export function TasksHeroTicker() {
-  const rootRef = useRef<HTMLElement>(null);
+  const [stage, setStage] = useState<Stage>("proof");
+  const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let cancelled = false;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const N = TASKS.length;
-    const HOLD = window.innerWidth <= 768 ? 6000 : 20000;
+    const hold = window.innerWidth <= 768 ? 6000 : 20000;
 
-    // ── DOM refs — all scoped within root ───────────────────────────────────
-    const sectionEl  = root;
-    const panelEl    = root.querySelector<HTMLElement>(".txr-panel")!;
-    const ruleTopEl  = root.querySelector<HTMLElement>(".txr-rule-top")!;
-    const ruleBotEl  = root.querySelector<HTMLElement>(".txr-rule-bot")!;
-    const metaEl     = root.querySelector<HTMLElement>(".txr-meta")!;
-    const metaTagEl  = root.querySelector<HTMLElement>(".txr-meta-tag")!;
-    const metaDotsEl = root.querySelector<HTMLElement>(".txr-meta-dots")!;
-    const flipTextEl = root.querySelector<HTMLElement>(".txr-flip-text")!;
-    const strikeEl   = root.querySelector<HTMLElement>(".txr-strike")!;
-    const wmEl       = root.querySelector<HTMLElement>(".txr-wm")!;
-    const wmInnerEl  = root.querySelector<HTMLElement>(".txr-wm-inner")!;
-    const wmdotEl    = root.querySelector<HTMLElement>(".txr-wmdot")!;
-    const capEl      = root.querySelector<HTMLElement>(".txr-cap")!;
-
-    if (
-      !panelEl || !ruleTopEl || !ruleBotEl || !metaEl || !metaTagEl ||
-      !metaDotsEl || !flipTextEl || !strikeEl || !wmEl || !wmInnerEl ||
-      !wmdotEl || !capEl
-    ) return;
-
-    // ── Reduced motion: skip to final state immediately ─────────────────────
-    if (reduced) {
-      panelEl.style.display = "none";
-      Array.from("tasks").forEach((ch) => {
-        const s = document.createElement("span");
-        s.className = "txr-wm-ch";
-        s.style.cssText = "display:inline-block";
-        s.textContent = ch;
-        wmInnerEl.insertBefore(s, wmdotEl);
-      });
-      wmEl.classList.add("txr-vis");
-      sectionEl.classList.add("txr-warm");
-      wmdotEl.style.cssText = "opacity:1;transform:scale(1)";
-      capEl.style.cssText = "opacity:1;transform:translateY(0)";
-      return;
-    }
-
-    // ── Cancellation + timer tracking ───────────────────────────────────────
-    let cancelled = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    const wait = (ms: number) =>
-      new Promise<void>((ok) => {
-        const id = setTimeout(() => { if (!cancelled) ok(); }, ms);
-        timers.push(id);
-      });
-
-    // ── Progress dots — built once ──────────────────────────────────────────
-    metaDotsEl.innerHTML = "";
-    for (let d = 0; d < N; d++) {
-      const dot = document.createElement("span");
-      dot.className = "txr-meta-dot";
-      metaDotsEl.appendChild(dot);
-    }
-
-    function setActiveDot(i: number) {
-      metaDotsEl
-        .querySelectorAll<HTMLElement>(".txr-meta-dot")
-        .forEach((d, di) => d.classList.toggle("txr-act", di === i));
-    }
-
-    // ── Single character flip (scaleY squish, 3 cycles) ─────────────────────
-    async function flipChar(
-      span: HTMLElement,
-      target: string,
-      lowercase: boolean
-    ) {
-      span.style.opacity = "1";
-      for (let i = 0; i < 3; i++) {
-        span.style.transition = "transform 28ms ease-in";
-        span.style.transform  = "scaleY(0.04)";
-        await wait(30);
-        if (cancelled) return;
-        span.textContent = i < 2 ? (lowercase ? rndLC() : rndG()) : target;
-        span.style.transition = "transform 38ms ease-out";
-        span.style.transform  = "scaleY(1)";
-        await wait(40);
-        if (cancelled) return;
-      }
-    }
-
-    // ── Build char spans inside .txr-flip-text ──────────────────────────────
-    interface CharCell { span: HTMLElement; char: string; isSpace: boolean; }
-
-    function buildChars(text: string): CharCell[] {
-      strikeEl.classList.remove("txr-on");
-      strikeEl.style.transition = "none";
-      strikeEl.style.width = "0";
-      flipTextEl.innerHTML = "";
-      flipTextEl.appendChild(strikeEl);
-
-      const cells: CharCell[] = [];
-      Array.from(text).forEach((ch) => {
-        if (ch === " ") {
-          const sp = document.createElement("span");
-          sp.className = "txr-sp";
-          flipTextEl.insertBefore(sp, strikeEl);
-          cells.push({ span: sp, char: " ", isSpace: true });
-        } else {
-          const s = document.createElement("span");
-          s.className = "txr-ch";
-          s.style.cssText = "display:inline-block;opacity:0";
-          s.textContent = rndG();
-          flipTextEl.insertBefore(s, strikeEl);
-          cells.push({ span: s, char: ch, isSpace: false });
-        }
-      });
-      return cells;
-    }
-
-    // ── Flip all chars in (L→R stagger) ────────────────────────────────────
-    function flipIn(cells: CharCell[], stagger: number) {
-      let idx = 0;
-      const ps: Promise<void>[] = [];
-      cells.forEach((c) => {
-        if (!c.isSpace) {
-          const d = idx++ * stagger;
-          ps.push(
-            wait(d).then(() => {
-              if (!cancelled) return flipChar(c.span, c.char, false);
-            })
-          );
-        }
-      });
-      return Promise.all(ps);
-    }
-
-    // ── Simultaneous scramble then staggered exit ───────────────────────────
-    async function scrambleAndExit(cells: CharCell[]) {
-      const active = cells.filter((c) => !c.isSpace);
-      // All chars squish at once — board-clearing chaos
-      active.forEach((c) => {
-        c.span.style.transition = "transform 20ms ease-in";
-        c.span.style.transform  = "scaleY(0.04)";
-      });
-      await wait(22);
-      if (cancelled) return;
-      active.forEach((c) => {
-        c.span.textContent        = rndG();
-        c.span.style.transition   = "transform 26ms ease-out";
-        c.span.style.transform    = "scaleY(1)";
-      });
-      await wait(30);
-      if (cancelled) return;
-      // Staggered exit wave
-      let idx = 0;
-      const ps: Promise<void>[] = [];
-      cells.forEach((c) => {
-        if (!c.isSpace) {
-          const d = idx++ * 9;
-          ps.push(
-            wait(d).then(() => {
-              if (cancelled) return;
-              c.span.style.transition = "transform 26ms ease-in";
-              c.span.style.transform  = "scaleY(0.04)";
-              return wait(28).then(() => {
-                if (!cancelled) c.span.style.opacity = "0";
-              });
-            })
-          );
-        }
-      });
-      await Promise.all(ps);
-    }
-
-    // ── Show one task on the board ──────────────────────────────────────────
-    async function showTask(task: (typeof TASKS)[number], i: number) {
-      if (cancelled) return;
-      const isFirst = i === 0;
-      const isLast  = i === N - 1;
-
-      metaTagEl.textContent = task.tag;
-      setActiveDot(i);
-
-      if (isFirst) {
-        ruleTopEl.classList.add("txr-on");
-        await wait(80);  if (cancelled) return;
-        ruleBotEl.classList.add("txr-on");
-        await wait(140); if (cancelled) return;
+    async function run() {
+      if (reduced) {
+        setStage("wordmark");
+        setActiveIndex(TASKS.length - 1);
+        return;
       }
 
-      metaEl.style.transition = "opacity .18s ease";
-      metaEl.style.opacity    = "1";
-      await wait(60); if (cancelled) return;
-
-      const cells = buildChars(task.text);
-      await flipIn(cells, 17);
-      if (cancelled) return;
-
-      await wait(220); if (cancelled) return;
-
-      // Strike — micro-spring easing makes line feel placed not just drawn
-      strikeEl.classList.add("txr-on");
-      await wait(520); if (cancelled) return;
-      await wait(isLast ? 480 : 200); if (cancelled) return;
-
-      metaEl.style.transition = "opacity .12s ease";
-      metaEl.style.opacity    = "0";
-      await scrambleAndExit(cells);
-      if (cancelled) return;
-
-      // 50ms visual breath between tasks
-      if (!isLast) { await wait(50); if (cancelled) return; }
-    }
-
-    // ── Wordmark reveal (same flip mechanic, lowercase landing) ────────────
-    async function revealWordmark() {
-      if (cancelled) return;
-
-      // Warm tint — background shifts from #fff → #fafaf8
-      sectionEl.classList.add("txr-warm");
-
-      ruleTopEl.style.transition = "opacity .3s ease";
-      ruleTopEl.style.opacity    = "0";
-      ruleBotEl.style.transition = "opacity .3s ease";
-      ruleBotEl.style.opacity    = "0";
-      await wait(320); if (cancelled) return;
-      panelEl.style.display = "none";
-
-      // Build letter spans
-      while (wmInnerEl.firstChild !== wmdotEl) {
-        wmInnerEl.removeChild(wmInnerEl.firstChild!);
-      }
-      const wmCells: Array<{ span: HTMLElement; char: string }> = [];
-      Array.from("tasks").forEach((ch) => {
-        const s = document.createElement("span");
-        s.className    = "txr-wm-ch";
-        s.style.cssText = "display:inline-block;opacity:0";
-        s.textContent  = rndG();
-        wmInnerEl.insertBefore(s, wmdotEl);
-        wmCells.push({ span: s, char: ch });
-      });
-
-      wmEl.classList.add("txr-vis");
-      await wait(30); if (cancelled) return;
-
-      // 40ms stagger — larger letterforms read more deliberate at slower pace
-      let idx = 0;
-      const ps = wmCells.map(({ span, char }) => {
-        const d = idx++ * 40;
-        return wait(d).then(() => {
-          if (!cancelled) return flipChar(span, char, true);
-        });
-      });
-      await Promise.all(ps);
-      if (cancelled) return;
-
-      await wait(70); if (cancelled) return;
-      wmdotEl.classList.add("txr-on");
-
-      await wait(560); if (cancelled) return;
-      capEl.classList.add("txr-on");
-    }
-
-    // ── Idle hold — keeps the wordmark state feeling alive ──────────────────
-    const idleTimers: ReturnType<typeof setTimeout>[] = [];
-    function clearIdleTimers() {
-      idleTimers.forEach(clearTimeout);
-      idleTimers.length = 0;
-    }
-
-    async function idleHold(ms: number) {
-      clearIdleTimers();
-      if (ms >= 12000) {
-        // Deep dot pulse at halfway mark
-        idleTimers.push(setTimeout(() => {
-          if (cancelled) return;
-          wmdotEl.style.animation = "txr-dot-deep .8s cubic-bezier(.34,1.56,.64,1)";
-          idleTimers.push(setTimeout(() => {
-            if (cancelled) return;
-            // Explicitly hold opacity:1 — .txr-wmdot base has opacity:0
-            wmdotEl.style.opacity   = "1";
-            wmdotEl.style.animation = "txr-dot-pulse 2.6s ease-in-out infinite";
-          }, 840));
-        }, Math.floor(ms * 0.5)));
-
-        // Caption breath at 65% mark — signals patient system, not stalled
-        idleTimers.push(setTimeout(() => {
-          if (cancelled) return;
-          capEl.style.transition = "opacity 1.2s ease";
-          capEl.style.opacity    = "0";
-          idleTimers.push(setTimeout(() => {
-            if (cancelled) return;
-            capEl.style.transition = "opacity 1s ease";
-            capEl.style.opacity    = "1";
-          }, 2800));
-        }, Math.floor(ms * 0.65)));
-      }
-      await wait(ms);
-      clearIdleTimers();
-    }
-
-    // ── Reset ───────────────────────────────────────────────────────────────
-    function reset() {
-      clearIdleTimers();
-      sectionEl.classList.remove("txr-warm");
-      panelEl.style.cssText = "";
-
-      ruleTopEl.classList.remove("txr-on"); ruleTopEl.style.cssText = "";
-      ruleBotEl.classList.remove("txr-on"); ruleBotEl.style.cssText = "";
-      metaEl.style.cssText = "opacity:0";
-      setActiveDot(-1);
-
-      strikeEl.classList.remove("txr-on"); strikeEl.style.cssText = "";
-      flipTextEl.innerHTML = "";
-      flipTextEl.appendChild(strikeEl);
-
-      wmEl.classList.remove("txr-vis");
-      while (wmInnerEl.firstChild !== wmdotEl) {
-        wmInnerEl.removeChild(wmInnerEl.firstChild!);
-      }
-      wmdotEl.classList.remove("txr-on");
-      wmdotEl.style.animation = "";
-      wmdotEl.style.opacity   = "";
-
-      capEl.classList.remove("txr-on");
-      capEl.style.cssText = "";
-    }
-
-    // ── Main loop ───────────────────────────────────────────────────────────
-    let firstPlay = true;
-
-    async function play() {
-      if (cancelled) return;
-
-      if (firstPlay) {
-        firstPlay = false;
-        const task0 = TASKS[0];
-
-        // Rules drawn immediately — no transition on first paint
-        ruleTopEl.style.transform = "scaleX(1)";
-        ruleBotEl.style.transform = "scaleX(1)";
-
-        // Meta immediately visible
-        metaTagEl.textContent   = task0.tag;
-        setActiveDot(0);
-        metaEl.style.opacity    = "1";
-
-        // Task 0 text set without flip — chars fade in with L→R stagger
-        // so the "already set" state feels deliberate, not a render snap
-        const cells0 = buildChars(task0.text);
-        let ci = 0;
-        cells0.forEach((c) => {
-          if (!c.isSpace) {
-            c.span.textContent        = c.char;
-            c.span.style.opacity      = "0";
-            c.span.style.transition   = "opacity 80ms ease";
-            const delay = ci++ * 6;
-            const id = setTimeout(() => {
-              if (!cancelled) c.span.style.opacity = "1";
-            }, delay);
-            timers.push(id);
-          }
-        });
-
-        await wait(300); if (cancelled) return;
-        strikeEl.classList.add("txr-on");
-        await wait(520); if (cancelled) return;
-        await wait(480); if (cancelled) return;
-
-        metaEl.style.transition = "opacity .12s ease";
-        metaEl.style.opacity    = "0";
-        await scrambleAndExit(cells0);
+      while (!cancelled) {
+        setStage("proof");
+        await wait(560, timers);
         if (cancelled) return;
 
-        // Tasks 1..N-1 with full flip mechanic
-        for (let i = 1; i < N; i++) {
-          await showTask(TASKS[i], i);
+        setStage("board");
+        for (let i = 0; i < TASKS.length; i += 1) {
+          setActiveIndex(i);
+          await wait(i === TASKS.length - 1 ? 520 : 360, timers);
           if (cancelled) return;
         }
-      } else {
-        // Loops 2+: brief pause then full flip sequence
-        await wait(80); if (cancelled) return;
-        for (let i = 0; i < N; i++) {
-          await showTask(TASKS[i], i);
-          if (cancelled) return;
-        }
+
+        setStage("wordmark");
+        await wait(hold, timers);
       }
-
-      await revealWordmark();
-      if (cancelled) return;
-      await idleHold(HOLD);
-      if (cancelled) return;
-
-      reset();
-      await wait(200); if (cancelled) return;
-      play();
     }
 
-    play();
+    run();
 
     return () => {
       cancelled = true;
-      clearIdleTimers();
       timers.forEach(clearTimeout);
     };
   }, []);
 
+  const task = TASKS[activeIndex];
+
   return (
     <section
-      ref={rootRef}
-      className="txr-section"
-      aria-label="Tasks by Signal Studio"
+      className={`txr-section txr-stage-${stage}`}
+      aria-label="Signal Tasks proof and ticker"
     >
-      {/* Animated well — board + wordmark, aria-hidden (decorative).
-          TL wordmark badge removed: the site header already carries the
-          signal studio / tasks breadcrumb. */}
-      <div className="txr-well" aria-hidden="true">
-
-        {/* Departure board */}
-        <div className="txr-panel">
-          <div className="txr-rule txr-rule-top" />
-          <div className="txr-meta">
-            <span className="txr-meta-tag" />
-            <span className="txr-meta-dots" />
+      <div className="txr-layout">
+        <article className="txr-proof" aria-label="Task proof">
+          <div className="txr-proof-head">
+            <p>Signal Tasks</p>
+            <h2>Today is already clear.</h2>
           </div>
-          <div className="txr-text-wrap">
-            <div className="txr-flip-text">
-              <div className="txr-strike" />
+
+          <div className="txr-proof-list">
+            {PROOF_ROWS.map((row) => (
+              <div className="txr-proof-row" key={row.task}>
+                <p>{row.task}</p>
+                <div className="txr-proof-meta">
+                  <span>{row.owner}</span>
+                  <span>{row.due}</span>
+                  <span className="txr-state">{row.state}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <div className="txr-payoff" aria-hidden="true">
+          <div className="txr-board" key={`board-${activeIndex}`}>
+            <div className="txr-rule" />
+            <div className="txr-meta">
+              <span>{task.tag}</span>
+              <span className="txr-dots">
+                {TASKS.map((item, index) => (
+                  <span
+                    className={index === activeIndex ? "txr-dot txr-dot-active" : "txr-dot"}
+                    key={item.text}
+                  />
+                ))}
+              </span>
             </div>
-          </div>
-          <div className="txr-rule txr-rule-bot" />
-        </div>
-
-        {/* Wordmark — hidden until board sequence completes */}
-        <div className="txr-wm">
-          <div className="txr-wm-panel">
-            <div className="txr-wm-inner">
-              {/* letter spans injected by JS */}
-              <span className="txr-wmdot" />
+            <div className="txr-board-text" aria-label={task.text}>
+              {splitText(task.text).map((char, index) =>
+                char === " " ? (
+                  <span className="txr-space" key={`${task.text}-${index}`} />
+                ) : (
+                  <span
+                    className="txr-char"
+                    key={`${task.text}-${index}`}
+                    style={{ "--txr-i": index } as CSSProperties}
+                  >
+                    {char}
+                  </span>
+                )
+              )}
+              <span className="txr-strike" />
             </div>
-            <p className="txr-cap">your list. cleared.</p>
+            <div className="txr-rule" />
+          </div>
+
+          <div className="txr-wordmark" key={`wordmark-${stage}`}>
+            <div className="txr-wordmark-inner" aria-label="tasks">
+              {"tasks".split("").map((char, index) => (
+                <span
+                  className="txr-word-char"
+                  key={`${char}-${index}`}
+                  style={{ "--txr-i": index } as CSSProperties}
+                >
+                  {char}
+                </span>
+              ))}
+              <span className="txr-word-dot" />
+            </div>
+            <p>work accounted for.</p>
           </div>
         </div>
-
       </div>
 
       <style>{CSS}</style>
@@ -490,210 +184,421 @@ export function TasksHeroTicker() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Styles — fully scoped to txr- prefix
-// ─────────────────────────────────────────────────────────────────────────────
 const CSS = `
-/* Section */
 .txr-section {
   position: relative;
   overflow: hidden;
-  background: var(--bg, #fff);
+  background: #ffffff;
+  min-height: min(88dvh, 880px);
+  padding: 88px 24px 82px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: min(88vh, 900px);
-  padding: clamp(80px,12vh,160px) 24px clamp(64px,10vh,128px);
-  transition: background .9s ease;
-  --txr-pw: min(92vw, 800px);
-  --txr-ink: #111;
-  --txr-s4: #b8b2a3;
-  --txr-s5: #8c887e;
+  color: #111111;
+  --txr-ink: #111111;
+  --txr-ink-soft: #5f5c55;
+  --txr-ink-muted: #8c887e;
+  --txr-line: rgba(17, 17, 17, 0.08);
+  --txr-panel: #fbfbfa;
   --txr-indigo: #4f46e5;
-  --txr-hl: rgba(17,17,17,.07);
-  --txr-sans: var(--font-geist-sans,'Geist',system-ui,sans-serif);
-  --txr-mono: var(--font-geist-mono,'Geist Mono',ui-monospace,monospace);
+  --txr-indigo-soft: rgba(79, 70, 229, 0.1);
+  --txr-sans: var(--font-geist-sans, 'Geist', system-ui, sans-serif);
+  --txr-mono: var(--font-geist-mono, 'Geist Mono', ui-monospace, monospace);
 }
-/* Hero stays genuinely white — the warm tint shifted it off-white (#fafaf8)
-   and broke white consistency across the suite heroes. Kept the class so the
-   JS that toggles it is a harmless no-op. */
-.txr-section.txr-warm { background: #ffffff; }
 
-/* Well */
-.txr-well {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
+.txr-layout {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.92fr) minmax(380px, 1.08fr);
+  gap: 56px;
   align-items: center;
-  width: 100%;
 }
 
-/* Board panel */
-.txr-panel {
+.txr-proof {
+  border: 1px solid var(--txr-line);
+  border-radius: 8px;
+  background: var(--txr-panel);
+  box-shadow: 0 28px 70px rgba(17, 17, 17, 0.08);
+  padding: 24px;
+}
+
+.txr-proof-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--txr-line);
+}
+
+.txr-proof-head p {
+  margin: 0;
+  font-family: var(--txr-mono);
+  font-size: 12px;
+  line-height: 1;
+  color: var(--txr-indigo);
+}
+
+.txr-proof-head h2 {
+  margin: 10px 0 0;
+  font-family: var(--txr-sans);
+  font-size: 34px;
+  line-height: 1.08;
+  font-weight: 570;
+  letter-spacing: 0;
+  color: var(--txr-ink);
+}
+
+.txr-proof-list {
+  display: grid;
+}
+
+.txr-proof-row {
+  display: grid;
+  gap: 10px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--txr-line);
+}
+
+.txr-proof-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.txr-proof-row p {
+  margin: 0;
+  font-family: var(--txr-sans);
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 520;
+  color: var(--txr-ink);
+}
+
+.txr-proof-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.txr-proof-meta span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--txr-line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--txr-ink-soft);
+  padding: 5px 9px;
+  font-family: var(--txr-mono);
+  font-size: 11px;
+  line-height: 1;
+}
+
+.txr-proof-meta .txr-state {
+  border-color: rgba(79, 70, 229, 0.2);
+  background: var(--txr-indigo-soft);
+  color: var(--txr-indigo);
+}
+
+.txr-payoff {
+  position: relative;
+  min-height: 286px;
+  display: flex;
+  align-items: center;
+}
+
+.txr-board,
+.txr-wordmark {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  width: var(--txr-pw);
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.36s ease, transform 0.36s ease;
 }
 
-/* Hairline rules — draw L→R via scaleX */
+.txr-stage-board .txr-board,
+.txr-stage-wordmark .txr-wordmark {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .txr-rule {
   width: 100%;
   height: 1px;
-  background: var(--txr-hl);
+  background: var(--txr-line);
   transform: scaleX(0);
   transform-origin: left center;
 }
-.txr-rule.txr-on {
-  transform: scaleX(1);
-  transition: transform .32s cubic-bezier(.5,0,0,1);
+
+.txr-stage-board .txr-rule {
+  animation: txr-rule-in 0.32s cubic-bezier(0.5, 0, 0, 1) both;
 }
 
-/* Meta row: tag pill + progress dots */
 .txr-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  opacity: 0;
-}
-.txr-meta-tag {
+  gap: 18px;
+  padding: 12px 0;
   font-family: var(--txr-mono);
-  font-size: 9px;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--txr-indigo);
-  background: rgba(79,70,229,.1);
-  padding: 3px 10px;
-  border-radius: 99px;
-  font-weight: 500;
-}
-.txr-meta-dots { display: flex; gap: 7px; align-items: center; }
-.txr-meta-dot {
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: var(--txr-s4);
-  transition: background .22s ease, transform .22s ease;
-}
-.txr-meta-dot.txr-act {
-  background: var(--txr-indigo);
-  transform: scale(1.3);
-}
-
-/* Text zone */
-.txr-text-wrap { padding: 10px 0 16px; }
-
-/* Flip display — overflow:hidden clips strike spring overshoot */
-.txr-flip-text {
-  font-family: var(--txr-mono);
-  font-size: clamp(42px,11vw,104px);
-  font-weight: 500;
-  color: var(--txr-ink);
-  letter-spacing: .015em;
+  font-size: 11px;
   line-height: 1;
+  color: var(--txr-indigo);
+}
+
+.txr-dots {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.txr-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #b8b2a3;
+  transform: scale(1);
+}
+
+.txr-dot-active {
+  background: var(--txr-indigo);
+  transform: scale(1.25);
+}
+
+.txr-board-text {
   position: relative;
   display: inline-flex;
   align-items: center;
-  flex-wrap: nowrap;
+  width: max-content;
+  max-width: 100%;
   overflow: hidden;
+  padding: 14px 0 18px;
+  font-family: var(--txr-mono);
+  font-size: clamp(34px, 3.6vw, 52px);
+  line-height: 1;
+  font-weight: 520;
+  color: var(--txr-ink);
 }
-.txr-ch { display: inline-block; line-height: 1; will-change: transform; }
-.txr-sp { display: inline-block; width: .28em; }
 
-/* Strike — micro-spring easing so line feels placed, not just drawn */
+.txr-char {
+  display: inline-block;
+  animation: txr-char-in 0.48s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--txr-i) * 16ms);
+  transform-origin: center;
+}
+
+.txr-space {
+  display: inline-block;
+  width: 0.32em;
+}
+
 .txr-strike {
   position: absolute;
-  left: 0; top: 50%;
-  height: 3px; width: 0;
+  left: 0;
+  top: 50%;
+  width: 0;
+  height: 3px;
+  border-radius: 999px;
   background: var(--txr-indigo);
   transform: translateY(-50%);
-  border-radius: 2px;
-  pointer-events: none;
-}
-.txr-strike.txr-on {
-  transition: width .52s cubic-bezier(.34,1.56,.64,1);
-  width: 100%;
+  animation: txr-strike-in 0.54s cubic-bezier(0.34, 1.56, 0.64, 1) 0.68s both;
 }
 
-/* Wordmark — intrinsic-width panel, centered in viewport */
-.txr-wm {
-  display: none;
-  flex-direction: column;
+.txr-wordmark {
   align-items: center;
-  width: 100%;
+  text-align: left;
 }
-.txr-wm.txr-vis { display: flex; }
-.txr-wm-panel {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.txr-wm-inner {
+
+.txr-wordmark-inner {
   display: inline-flex;
   align-items: baseline;
   font-family: var(--txr-sans);
-  font-size: clamp(56px,14vw,136px);
-  font-weight: 500;
-  letter-spacing: -.04em;
-  line-height: 1;
+  font-size: 128px;
+  font-weight: 560;
+  line-height: 0.94;
+  letter-spacing: 0;
   color: var(--txr-ink);
 }
-.txr-wm-ch { display: inline-block; line-height: 1; will-change: transform; }
 
-/* Dot — em units inherit from .txr-wm-inner */
-.txr-wmdot {
-  width: .155em; height: .155em;
-  border-radius: 50%;
+.txr-word-char {
+  display: inline-block;
+  animation: txr-word-char-in 0.5s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--txr-i) * 42ms);
+  transform-origin: center;
+}
+
+.txr-word-dot {
+  width: 0.155em;
+  height: 0.155em;
+  border-radius: 999px;
   background: var(--txr-indigo);
-  margin-left: .05em;
+  margin-left: 0.055em;
   align-self: flex-end;
-  margin-bottom: .09em;
-  flex-shrink: 0;
-  opacity: 0;
-}
-.txr-wmdot.txr-on {
+  margin-bottom: 0.09em;
   animation:
-    txr-dot-in    .44s cubic-bezier(.34,1.56,.64,1) forwards,
-    txr-dot-pulse  2.6s ease-in-out            1.3s  infinite;
-}
-@keyframes txr-dot-in {
-  0%   { opacity: 0; transform: scale(.18); }
-  100% { opacity: 1; transform: scale(1);   }
-}
-@keyframes txr-dot-pulse {
-  0%,30%,100% { transform: scale(1);    }
-  15%          { transform: scale(1.28); }
-  22%          { transform: scale(.9);  }
-}
-@keyframes txr-dot-deep {
-  0%   { transform: scale(1);    opacity: 1;  }
-  28%  { transform: scale(1.62); opacity: .7; }
-  56%  { transform: scale(.8);   opacity: .9; }
-  100% { transform: scale(1);    opacity: 1;  }
+    txr-dot-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) 0.44s both,
+    txr-dot-paired 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.3s infinite;
 }
 
-/* Caption */
-.txr-cap {
+.txr-wordmark p {
+  margin: 22px 0 0;
   font-family: var(--txr-mono);
-  font-size: 11px;
-  letter-spacing: .13em;
-  text-transform: uppercase;
-  color: var(--txr-s5);
-  margin-top: clamp(18px,3vh,28px);
-  opacity: 0;
-}
-.txr-cap.txr-on {
-  animation: txr-cap-in .65s cubic-bezier(.22,.7,.2,1) forwards;
-}
-@keyframes txr-cap-in {
-  0%   { opacity: 0; transform: translateY(5px); }
-  100% { opacity: 1; transform: translateY(0);   }
+  font-size: 12px;
+  line-height: 1;
+  color: var(--txr-ink-muted);
 }
 
-/* Reduced motion */
+@keyframes txr-rule-in {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes txr-char-in {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05);
+  }
+  34% {
+    opacity: 1;
+    transform: scaleY(1.2);
+  }
+  58% {
+    transform: scaleY(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes txr-strike-in {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}
+
+@keyframes txr-word-char-in {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.05);
+  }
+  45% {
+    opacity: 1;
+    transform: scaleY(1.14);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes txr-dot-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.18);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes txr-dot-paired {
+  0%,
+  34%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  6% {
+    transform: scale(1.3);
+  }
+  11% {
+    transform: scale(0.92);
+  }
+  18% {
+    transform: scale(1.2);
+  }
+  24% {
+    transform: scale(0.96);
+  }
+}
+
+@media (max-width: 980px) {
+  .txr-section {
+    min-height: auto;
+    padding: 76px 20px 70px;
+  }
+
+  .txr-layout {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .txr-payoff {
+    min-height: 236px;
+  }
+
+  .txr-board-text {
+    font-size: 58px;
+  }
+
+  .txr-wordmark-inner {
+    font-size: 104px;
+  }
+}
+
+@media (max-width: 620px) {
+  .txr-proof {
+    padding: 18px;
+  }
+
+  .txr-proof-head h2 {
+    font-size: 28px;
+  }
+
+  .txr-payoff {
+    min-height: 198px;
+  }
+
+  .txr-board-text {
+    font-size: 36px;
+  }
+
+  .txr-wordmark {
+    align-items: flex-start;
+  }
+
+  .txr-wordmark-inner {
+    font-size: 66px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .txr-wmdot.txr-on  { animation: none !important; opacity: 1 !important; }
-  .txr-cap.txr-on    { animation: none !important; opacity: 1 !important; }
+  .txr-board,
+  .txr-wordmark,
+  .txr-rule,
+  .txr-char,
+  .txr-strike,
+  .txr-word-char,
+  .txr-word-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .txr-stage-wordmark .txr-wordmark {
+    opacity: 1;
+    transform: none;
+  }
+
+  .txr-word-char,
+  .txr-word-dot {
+    opacity: 1;
+    transform: none;
+  }
 }
 `;
