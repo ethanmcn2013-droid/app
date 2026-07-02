@@ -76,14 +76,15 @@ export function TasksHeroTicker() {
       }
 
       while (!cancelled) {
+        setActiveIndex(0);
         setStage("proof");
-        await wait(560, timers);
+        await wait(360, timers);
         if (cancelled) return;
 
         setStage("board");
         for (let i = 0; i < TASKS.length; i += 1) {
           setActiveIndex(i);
-          await wait(i === TASKS.length - 1 ? 520 : 360, timers);
+          await wait(i === TASKS.length - 1 ? 360 : 280, timers);
           if (cancelled) return;
         }
 
@@ -149,6 +150,7 @@ export function TasksHeroTicker() {
                 ) : (
                   <span
                     className="txr-char"
+                    data-char={char}
                     key={`${task.text}-${index}`}
                     style={{ "--txr-i": index } as CSSProperties}
                   >
@@ -382,9 +384,10 @@ const CSS = `
 
 .txr-char {
   display: inline-block;
-  animation: txr-char-in 0.48s cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation: txr-char-in 0.5s cubic-bezier(0.22, 0.7, 0.2, 1) both;
   animation-delay: calc(var(--txr-i) * 16ms);
   transform-origin: center;
+  backface-visibility: hidden;
 }
 
 .txr-space {
@@ -437,7 +440,8 @@ const CSS = `
   margin-bottom: 0.09em;
   animation:
     txr-dot-in 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) 0.44s both,
-    txr-dot-paired 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.3s infinite;
+    txr-dot-deep 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) 1.08s 1 both,
+    txr-dot-paired 3.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) 1.92s infinite;
 }
 
 .txr-wordmark p {
@@ -457,18 +461,21 @@ const CSS = `
 @keyframes txr-char-in {
   0% {
     opacity: 0;
-    transform: scaleY(0.05);
+    filter: blur(1.5px);
+    transform: perspective(420px) rotateX(-82deg) scaleY(0.08);
   }
   34% {
     opacity: 1;
-    transform: scaleY(1.2);
+    filter: blur(0);
+    transform: perspective(420px) rotateX(18deg) scaleY(1.18);
   }
   58% {
-    transform: scaleY(0.82);
+    transform: perspective(420px) rotateX(-7deg) scaleY(0.88);
   }
   100% {
     opacity: 1;
-    transform: scaleY(1);
+    filter: blur(0);
+    transform: perspective(420px) rotateX(0) scaleY(1);
   }
 }
 
@@ -504,6 +511,22 @@ const CSS = `
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes txr-dot-deep {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  38% {
+    opacity: 1;
+    transform: scale(1.58);
+  }
+  64% {
+    opacity: 1;
+    transform: scale(0.86);
   }
 }
 
