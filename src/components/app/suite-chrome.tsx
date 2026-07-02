@@ -54,14 +54,18 @@ export function SuiteChrome() {
   return (
     <header
       className={
-        "sticky top-0 z-40 backdrop-blur-md transition-[border-color] duration-150 " +
-        "bg-white/85 " +
+        "sticky top-0 z-40 transition-[border-color] duration-150 " +
         (scrolled
           ? "border-b border-[var(--line-soft,#e4e4e7)]"
           : "border-b border-transparent")
       }
+      style={{
+        background: "color-mix(in srgb, var(--bg) 88%, transparent)",
+        backdropFilter: "saturate(150%) blur(12px)",
+        WebkitBackdropFilter: "saturate(150%) blur(12px)",
+      }}
     >
-      <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between gap-3 px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between gap-3 px-6">
         {/*
          * Left slot — §14 (amended 2026-05-19):
          *   [signal studio.] | [notes][tasks][roadmap][analytics]
@@ -77,7 +81,7 @@ export function SuiteChrome() {
 
         {/*
          * Right slot — UserButtonWithSuite only.
-         * This matches the Notes/Roadmap/Analytics pattern.
+         * This matches the Notes/Timeline/Signal pattern.
          */}
         <div className="flex flex-shrink-0 items-center gap-3">
           <UserButtonWithSuite current="tasks" />
