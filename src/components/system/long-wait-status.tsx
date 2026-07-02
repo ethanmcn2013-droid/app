@@ -1,1 +1,57 @@
-"use client";  /**  * LongWaitStatus ÔÇö honest long-wait escalation (loading canon, pitch 6).  *  * Renders nothing until a real ~5s timer elapses, then shows one calm  * line ("Opening the workspace"). No spinner, no percentage, no extra  * animation beyond a 200ms opacity fade ÔÇö the quiet mark above stays  * the only motion.  *  * Accessibility contract (canon law 6): this is real wait copy, so it  * carries role="status" + aria-live="polite" and lives OUTSIDE the  * aria-hidden decorative wordmark. The 5s timer is a real timer and  * also applies under prefers-reduced-motion ÔÇö the reduced-motion rule  * ("no artificial delay") governs the loader hold, not the escalation  * measure. Only decorative motion is suppressed.  *  * Scope: document/app boot only. Never mount this on local region  * fetches or actions.  *  * Canon: studio DESIGN.md ┬º13 ┬À signal-studio-loading-screen-pitches.md ┬º6  * Review room: signalstudio.ie/hq/loading-review  */  import { useEffect, useState } from "react";  const ESCALATE_AFTER_MS = 5000;  export function LongWaitStatus({ line }: { line: string }) {   const [escalated, setEscalated] = useState(false);    useEffect(() => {     const t = window.setTimeout(() => setEscalated(true), ESCALATE_AFTER_MS);     return () => window.clearTimeout(t);   }, []);    return (     <div       role="status"       aria-live="polite"       style={{         minHeight: 20,         fontFamily:           'var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif',         fontSize: 14,         fontWeight: 600,         letterSpacing: "-0.01em",         color: "var(--ink-soft, #3f3f46)",         textAlign: "center",         opacity: escalated ? 1 : 0,         transition: "opacity 200ms cubic-bezier(.22,.61,.36,1)",       }}     >       {escalated ? line : null}     </div>   ); }
+"use client";
+
+/**
+ * LongWaitStatus — honest long-wait escalation (loading canon, pitch 6).
+ *
+ * Renders nothing until a real ~5s timer elapses, then shows one calm
+ * line ("Opening the workspace"). No spinner, no percentage, no extra
+ * animation beyond a 200ms opacity fade — the quiet mark above stays
+ * the only motion.
+ *
+ * Accessibility contract (canon law 6): this is real wait copy, so it
+ * carries role="status" + aria-live="polite" and lives OUTSIDE the
+ * aria-hidden decorative wordmark. The 5s timer is a real timer and
+ * also applies under prefers-reduced-motion — the reduced-motion rule
+ * ("no artificial delay") governs the loader hold, not the escalation
+ * measure. Only decorative motion is suppressed.
+ *
+ * Scope: document/app boot only. Never mount this on local region
+ * fetches or actions.
+ *
+ * Canon: studio DESIGN.md §13 · signal-studio-loading-screen-pitches.md §6
+ * Review room: signalstudio.ie/hq/loading-review
+ */
+
+import { useEffect, useState } from "react";
+
+const ESCALATE_AFTER_MS = 5000;
+
+export function LongWaitStatus({ line }: { line: string }) {
+  const [escalated, setEscalated] = useState(false);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setEscalated(true), ESCALATE_AFTER_MS);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        minHeight: 20,
+        fontFamily:
+          'var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif',
+        fontSize: 14,
+        fontWeight: 600,
+        letterSpacing: "-0.01em",
+        color: "var(--ink-soft, #3f3f46)",
+        textAlign: "center",
+        opacity: escalated ? 1 : 0,
+        transition: "opacity 200ms cubic-bezier(.22,.61,.36,1)",
+      }}
+    >
+      {escalated ? line : null}
+    </div>
+  );
+}
