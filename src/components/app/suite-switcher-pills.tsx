@@ -83,7 +83,7 @@ function prefetchProduct(url: string) {
  * dot blooms over a paper field, then we navigate same-tab — the suite
  * feels like one surface re-skinning, not four apps. Pure DOM so it is
  * style-system agnostic. Reduced-motion + modifier clicks skip this at
- * the call site (normal same-tab nav). ~380ms, then location.href.
+ * the call site (normal same-tab nav). press <=120ms, never delays nav (law 8).
  */
 function suiteJump(url: string) {
   if (typeof document === "undefined") {
@@ -108,7 +108,7 @@ function suiteJump(url: string) {
   });
   window.setTimeout(() => {
     window.location.href = url;
-  }, 380);
+  }, 120);
 }
 
 const SCOPED_CSS = `

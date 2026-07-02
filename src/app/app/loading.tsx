@@ -18,15 +18,23 @@
  *
  * Reduced motion: letters appear fully (no rise), dot lands without
  * scale-bounce, pulse animation halts.
+ *
+ * Long-wait escalation (loading canon, pitch 6): after a real 5s wait
+ * one calm line appears — "Opening the workspace" — with role="status"
+ * aria-live="polite". The decorative wordmark stays aria-hidden; the
+ * status line is the only announced content.
  */
+import { LongWaitStatus } from "@/components/system/long-wait-status";
+
 export default function TasksLoading() {
   return (
     <div
-      aria-hidden
       style={{
         position: "fixed",
         inset: 0,
         display: "flex",
+        flexDirection: "column",
+        gap: 18,
         alignItems: "center",
         justifyContent: "center",
         background: "var(--paper, #ffffff)",
@@ -34,6 +42,7 @@ export default function TasksLoading() {
       }}
     >
       <span
+        aria-hidden
         style={{
           fontFamily:
             'var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
@@ -60,11 +69,12 @@ export default function TasksLoading() {
         ))}
         <span
           style={{
+            // 10px hard px — boundary-dot authority (DESIGN.md §13.3).
             display: "inline-block",
-            width: 11,
-            height: 11,
-            maxWidth: 11,
-            maxHeight: 11,
+            width: 10,
+            height: 10,
+            maxWidth: 10,
+            maxHeight: 10,
             borderRadius: "50%",
             background: "var(--indigo, #4f46e5)",
             marginLeft: 6,
@@ -75,6 +85,7 @@ export default function TasksLoading() {
           }}
         />
       </span>
+      <LongWaitStatus line="Opening the workspace" />
       <style>{`
         @keyframes signal-letter-rise {
           from { opacity: 0; transform: translateY(6px); }

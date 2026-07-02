@@ -7,14 +7,14 @@
 # Canonical source: studio src/components/system/SuiteLoader.tsx
 # Copy byte-identical to: tasks / roadmap / notes / analytics
 # Rationale: DECISIONS.md D3 — "copied byte-identical to the other 4"
-# Reference hash sealed at Phase 3.6 remediation (B5).
+# Reference hash resealed 2026-07-01 (loading canon: boundary dot 10px, DESIGN.md S13).
 #
 # Usage: bash scripts/check-suiteloader-identity.sh
 # Wired via package.json "test" script so drift fails CI.
 
 set -euo pipefail
 
-CANONICAL_SHA="aaa5246e3daba6edd289dd4742e5faddf3698e1daa989e9b55bebf9d8175f789"
+CANONICAL_SHA="8f6b05767bddae56ac341bacf56faff99267b7675c57d887ea825edd2533b8ca"
 FILE="src/components/system/SuiteLoader.tsx"
 
 if [ ! -f "$FILE" ]; then

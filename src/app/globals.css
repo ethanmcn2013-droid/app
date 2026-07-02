@@ -427,7 +427,7 @@ body::after { content: none; }
   /* ── Loading field ──────────────────────────────────────── */
   --load-bg:                var(--paper, #ffffff);
   --load-dot-color:         var(--indigo, #4f46e5);
-  --load-dot-size:          12px;           /* hard px — immune to font-size pre-hydration. D8: 10px→12px */
+  --load-dot-size:         10px;   /* Hard px. DESIGN.md S13.3 authority; supersedes D8 12px (loading-review 2026-07-01: one boundary dot, 10px, matches wordmark ceiling min(0.16em, 10px)). */
   --load-dot-radius:        50%;
   --load-pulse-scale-min:   0.72;
   --load-pulse-scale-max:   1.0;
