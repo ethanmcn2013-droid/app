@@ -14,7 +14,7 @@ export function Hero() {
   const pack = DOMAINS[domain];
 
   return (
-    <section className="relative isolate overflow-hidden pt-8 md:pt-14">
+    <section className="relative isolate overflow-hidden pt-2 md:pt-6">
       <div className="mx-auto w-full max-w-[1240px] px-5 md:px-6">
         <Eyebrow />
         <h1 className="mt-5 max-w-[14ch] text-balance text-[clamp(2.6rem,1.8rem+4.6vw,5.5rem)] font-semibold leading-[0.96] tracking-[-0.045em] text-ink">

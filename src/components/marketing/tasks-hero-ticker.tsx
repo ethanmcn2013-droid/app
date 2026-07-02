@@ -413,11 +413,9 @@ export function TasksHeroTicker() {
         await scrambleAndExit(cells0);
         if (cancelled) return;
 
-        // Tasks 1..N-1 with full flip mechanic
-        for (let i = 1; i < N; i++) {
-          await showTask(TASKS[i], i);
-          if (cancelled) return;
-        }
+        // First visit resolves quickly into the product mark. Later loops can
+        // show the full board cycle, but the first hero pass should not make
+        // the page wait through every sample row before the identity rests.
       } else {
         // Loops 2+: brief pause then full flip sequence
         await wait(80); if (cancelled) return;
@@ -503,10 +501,11 @@ const CSS = `
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: min(88vh, 900px);
-  padding: clamp(80px,12vh,160px) 24px clamp(64px,10vh,128px);
+  min-height: clamp(500px, 60svh, 700px);
+  padding: clamp(72px,10svh,112px) 24px clamp(44px,7svh,72px);
+  border-bottom: 1px solid var(--txr-hl);
   transition: background .9s ease;
-  --txr-pw: min(92vw, 800px);
+  --txr-pw: min(86vw, 720px);
   --txr-ink: #111;
   --txr-s4: #b8b2a3;
   --txr-s5: #8c887e;
@@ -528,6 +527,7 @@ const CSS = `
   flex-direction: column;
   align-items: center;
   width: 100%;
+  transform: translateY(-8px);
 }
 
 /* Board panel */
@@ -587,7 +587,7 @@ const CSS = `
 /* Flip display — overflow:hidden clips strike spring overshoot */
 .txr-flip-text {
   font-family: var(--txr-mono);
-  font-size: clamp(42px,11vw,104px);
+  font-size: clamp(42px,9vw,92px);
   font-weight: 500;
   color: var(--txr-ink);
   letter-spacing: .015em;
@@ -633,7 +633,7 @@ const CSS = `
   display: inline-flex;
   align-items: baseline;
   font-family: var(--txr-sans);
-  font-size: clamp(56px,14vw,136px);
+  font-size: clamp(56px,10.8vw,118px);
   font-weight: 500;
   letter-spacing: -.04em;
   line-height: 1;
@@ -695,5 +695,15 @@ const CSS = `
 @media (prefers-reduced-motion: reduce) {
   .txr-wmdot.txr-on  { animation: none !important; opacity: 1 !important; }
   .txr-cap.txr-on    { animation: none !important; opacity: 1 !important; }
+}
+@media (max-width: 760px) {
+  .txr-section {
+    min-height: 58svh;
+    padding: 58px 20px 44px;
+    --txr-pw: min(88vw, 520px);
+  }
+  .txr-well { transform: translateY(-4px); }
+  .txr-flip-text { font-size: clamp(42px, 15vw, 76px); }
+  .txr-wm-inner { font-size: clamp(54px, 15vw, 82px); }
 }
 `;
