@@ -119,10 +119,6 @@
     "hex": 1,
     "ease": 0
   },
-  "src/components/app/suite-launcher.tsx": {
-    "hex": 2,
-    "ease": 2
-  },
   "src/components/app/suite-switcher-pills.tsx": {
     "hex": 9,
     "ease": 2
@@ -177,7 +173,7 @@
   },
   "src/components/marketing/tasks-hero-ticker.tsx": {
     "hex": 9,
-    "ease": 7
+    "ease": 5
   },
   "src/components/marketing/template-pills.tsx": {
     "hex": 13,
@@ -242,6 +238,10 @@
   "src/components/suite-arrows.tsx": {
     "hex": 6,
     "ease": 3
+  },
+  "src/components/system/long-wait-status.tsx": {
+    "hex": 1,
+    "ease": 1
   },
   "src/components/system/SuiteLoader.tsx": {
     "hex": 6,
