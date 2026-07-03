@@ -4,7 +4,7 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 /**
  * Canonical schema for the cross-product Signal entitlements DB.
  *
- * Lives on its own Turso DB (signal-entitlements) — readable by all
+ * Lives on its own Turso DB (signal-entitlements), readable by all
  * five product repos, writable by Tasks (via the Stripe webhook) and
  * Studio (via comp-code redemption + manual admin grants).
  *
@@ -18,11 +18,11 @@ import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
  *   - adds a processed_webhooks table for cross-product idempotency
  *
  * Studio's own DB (ethanmcnamara-studio) keeps cron_runs + the HQ
- * dashboard's local-first data — only the entitlements stack moves
+ * dashboard's local-first data, only the entitlements stack moves
  * here.
  */
 
-/** Tier vocabulary — matches the public pricing page. */
+/** Tier vocabulary, matches the public pricing page. */
 export const ENTITLEMENT_TIERS = [
   "free",
   "event",
@@ -32,7 +32,7 @@ export const ENTITLEMENT_TIERS = [
 ] as const;
 export type EntitlementTier = (typeof ENTITLEMENT_TIERS)[number];
 
-/** Source vocabulary — where a row came from. */
+/** Source vocabulary, where a row came from. */
 export const ENTITLEMENT_SOURCES = [
   "workspace_subscription",
   "event_pass",

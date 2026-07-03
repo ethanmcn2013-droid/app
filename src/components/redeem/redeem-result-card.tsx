@@ -10,7 +10,7 @@ const FAILURE_COPY: Record<
 > = {
   "not-found": {
     headline: "We don't recognize that code.",
-    body: "Double-check the link — letter for letter, dash for dash. If it came from us and still won't unlock, send it back and we'll look it up.",
+    body: "Double-check the link, letter for letter, dash for dash. If it came from us and still won't unlock, send it back and we'll look it up.",
   },
   exhausted: {
     headline: "All redemptions on this code are used up.",
@@ -22,7 +22,7 @@ const FAILURE_COPY: Record<
   },
   "already-redeemed": {
     headline: "You've already redeemed this one.",
-    body: "Your access is still active — head into the workspace.",
+    body: "Your access is still active, head into the workspace.",
   },
   "still-provisioning": {
     headline: "We're still setting up your account.",

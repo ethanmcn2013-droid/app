@@ -1,5 +1,5 @@
 /**
- * Account-export integration test — Signal Tasks. GDPR Art. 20 portability.
+ * Account-export integration test · Signal Tasks. GDPR Art. 20 portability.
  *
  * Runs the REAL `exportAccountData` against a real in-memory libSQL DB built
  * from the prod migrations. Two tenants: the target owns ws-a; a bystander

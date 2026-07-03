@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForFreelancers } from "@/components/marketing/for-freelancers";
 
 export const metadata = {
-  title: "Tasks for Freelancers — Five Clients, One Inbox",
+  title: "Tasks for Freelancers, Five Clients, One Inbox",
   description:
     "One workspace per client, €12/mo for unlimited workspaces, no per-seat tax. Templates for tax season and new client onboarding.",
   openGraph: {

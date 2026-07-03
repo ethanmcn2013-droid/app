@@ -49,31 +49,31 @@ export const tasks = sqliteTable("tasks", {
   estimate: integer("estimate"),
   tags: text("tags", { mode: "json" }).$type<string[]>(),
   // `comments` count is derived in the query layer (LEFT JOIN /
-  // subquery on the comments table) — never persisted on tasks.
+  // subquery on the comments table), never persisted on tasks.
   idleDays: integer("idle_days"),
   blockedBy: text("blocked_by", { mode: "json" }).$type<string[]>(),
   recurrence: text("recurrence", { mode: "json" }).$type<Recurrence>(),
   startDay: integer("start_day"),
   durationDays: integer("duration_days"),
   /** Float gap-numbering for stable in-lane ordering. NULL means
-   *  "fall back to creation order" — `getTasks` COALESCEs accordingly.
+   *  "fall back to creation order", `getTasks` COALESCEs accordingly.
    *  Drops between two siblings compute (prev + next) / 2 so neighbors
    *  never need renumbering. */
   position: real("position"),
   /** Optional parent task. NULL on every top-level task; non-null
-   *  rows are subtasks (one level of nesting in v1 — subtasks don't
+   *  rows are subtasks (one level of nesting in v1, subtasks don't
    *  themselves nest further). The detail panel loads children via
    *  `getSubtasks(parentId)`; `getTasks` filters to `parent_task_id
    *  IS NULL` so subtasks stay out of board / list / timeline /
    *  calendar in this cycle and live exclusively under their parent. */
   parentTaskId: text("parent_task_id"),
-  /** Optional outside person attached to the task — wedding planner's
+  /** Optional outside person attached to the task, wedding planner's
    *  vendor, freelance client invoice contact, anyone the work
    *  involves who isn't a workspace member. Both fields nullable;
    *  the panel renders whichever are present. */
   externalContactName: text("external_contact_name"),
   externalContactEmail: text("external_contact_email"),
-  /** Optional dollar amount attached to the task — wedding planner's
+  /** Optional dollar amount attached to the task, wedding planner's
    *  vendor invoice ($1,200 deposit), freelancer's billable rate,
    *  anywhere a number would otherwise leak into a separate Notion
    *  or Sheet. Stored as integer cents to dodge float drift. Nullable
@@ -81,13 +81,13 @@ export const tasks = sqliteTable("tasks", {
   cents: integer("cents"),
   /** Optional pointer back to the Signal Notes note that spawned this
    *  task via the cross-repo extract write (Cycle 9.4b second half,
-   *  2026-05-12). Format: `{ownerUserId}:{noteId}` — keeps the
+   *  2026-05-12). Format: `{ownerUserId}:{noteId}`, keeps the
    *  idempotency check user-scoped without needing a separate join.
    *  Null on every task created in Tasks directly. The Notes raw body
-   *  never lands here — only the creator-authored extract_body becomes
+   *  never lands here, only the creator-authored extract_body becomes
    *  the task title. */
   sourceNoteId: text("source_note_id"),
-  /** T·69 step 5 — custom board column key. NULL = "use `lane` as the
+  /** T·69 step 5, custom board column key. NULL = "use `lane` as the
    *  canonical board column." Non-null = task belongs to a custom column
    *  whose key is stored in meta `board:{wsId}:columns`. Effective board
    *  column = COALESCE(boardColumnKey, lane).
@@ -102,7 +102,7 @@ export const tasks = sqliteTable("tasks", {
   boardColumnKey: text("board_column_key"),
   /** RW-3b: milestone promotion flag. True when the owner explicitly
    *  "promotes to milestone" in the task panel. The flag is additive
-   *  and reversible — a milestone is still a normal board task; the
+   *  and reversible, a milestone is still a normal board task; the
    *  column is the strategy gate that drives the Roadmap sync
    *  (ARCH_SPEC §1.1). NOT NULL DEFAULT 0 keeps legacy rows clean.
    *  Index-friendly: Roadmap queries `WHERE is_milestone=1`. */
@@ -137,7 +137,7 @@ export const users = sqliteTable("users", {
   clerkId: text("clerk_id").unique(),
   /** Login email, hydrated by the Clerk `user.created` webhook. */
   email: text("email"),
-  /** Mention slug — what `@<handle>` matches in the comment composer.
+  /** Mention slug, what `@<handle>` matches in the comment composer.
    *  Derived from email-local-part on signup; user-editable later. */
   handle: text("handle").unique(),
   /** Display name. Nullable until first webhook sync; legacy seeds
@@ -153,7 +153,7 @@ export const users = sqliteTable("users", {
  * each workspace has exactly one owner and many members via
  * `workspace_members`.
  *
- * `activeDomain` was previously a `meta` key/value row — now lives
+ * `activeDomain` was previously a `meta` key/value row, now lives
  * here so it's naturally per-workspace.
  */
 export const workspaces = sqliteTable("workspaces", {
@@ -167,7 +167,7 @@ export const workspaces = sqliteTable("workspaces", {
   ownerUserId: text("owner_user_id").references(() => users.id),
   /** Replaces meta.activeDomain. Marketing / Student / Freelance / Wedding. */
   activeDomain: text("active_domain"),
-  /** Segmented onboarding — primary coordination use case
+  /** Segmented onboarding, primary coordination use case
    *  (venue | wedding | student | small-business | …). */
   primaryUseCase: text("primary_use_case"),
   /** Optional second-step context (e.g. wedding-venue, society). */
@@ -212,7 +212,7 @@ export const workspaceMembers = sqliteTable(
   },
   (t) => [
     primaryKey({ columns: [t.workspaceId, t.userId] }),
-    // Mirror drizzle/0003_hot_indexes.sql — "my workspaces" lookups by user.
+    // Mirror drizzle/0003_hot_indexes.sql, "my workspaces" lookups by user.
     index("idx_workspace_members_user_id").on(t.userId),
   ],
 );
@@ -236,7 +236,7 @@ export const comments = sqliteTable("comments", {
   index("idx_comments_user_id").on(t.userId),
 ]);
 
-// Compile-time contract — flags drift between schema and the
+// Compile-time contract, flags drift between schema and the
 // hand-written client `Task` type in src/lib/data.ts. `comments`
 // is excluded because it's a derived count populated by the query
 // layer, not a persisted column.
@@ -272,7 +272,7 @@ export const activities = sqliteTable("activities", {
 }, (t) => [
   // Mirror drizzle/0003_hot_indexes.sql. 0003 wrote created_at DESC;
   // drizzle 0.45 can't express index-column direction, so these are
-  // plain — SQLite reverse-scans an ASC index for ORDER BY ... DESC
+  // plain, SQLite reverse-scans an ASC index for ORDER BY ... DESC
   // just as cheaply. push recreates the prod index without the DESC
   // qualifier once (harmless; see 0009 note).
   index("idx_activities_task_created").on(t.taskId, t.createdAt),
@@ -301,7 +301,7 @@ export const meta = sqliteTable("meta", {
 /**
  * Anti-notification: only @mentions and direct blocks land here as
  * INSTANT items (rendered in the Inbox). Everything else (creates,
- * lane moves, simple updates) is intentionally NOT inserted — the
+ * lane moves, simple updates) is intentionally NOT inserted, the
  * daily digest is the only "broadcast" channel for that activity.
  */
 export const notifications = sqliteTable("notifications", {
@@ -337,7 +337,7 @@ const _checkNotification: _SchemaCoversNotification = true;
 void _checkNotification;
 
 /**
- * Bulk comp codes — one row per minted gift. Admin mints; users
+ * Bulk comp codes, one row per minted gift. Admin mints; users
  * redeem via /redeem/[code]. Each redemption decrements `quantity`
  * and inserts an `entitlements` row for the redeeming user.
  */
@@ -383,7 +383,7 @@ export const entitlements = sqliteTable("entitlements", {
   // Mirror drizzle/0003_hot_indexes.sql. Entitlement resolution +
   // Analytics cross-repo read key off (user_id, workspace_id).
   // NB: 0003 also created idx_entitlements_notes on the free-text
-  // `notes` column — deliberately NOT mirrored; it's never queried, so
+  // `notes` column, deliberately NOT mirrored; it's never queried, so
   // letting push drop it is a cleanup (recorded in 0009).
   index("idx_entitlements_user_workspace").on(t.userId, t.workspaceId),
 ]);
@@ -411,9 +411,9 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
   dailyDigest: integer("daily_digest", { mode: "boolean" })
     .notNull()
     .default(true),
-  /** "Mention notifications" toggle — direct @-mentions and blocks. */
+  /** "Mention notifications" toggle, direct @-mentions and blocks. */
   mentions: integer("mentions", { mode: "boolean" }).notNull().default(true),
-  /** "Comment notifications without @-mention" — off by default; opt-in
+  /** "Comment notifications without @-mention", off by default; opt-in
    *  noise if the user is the kind who wants every reply. */
   commentReplies: integer("comment_replies", { mode: "boolean" })
     .notNull()
@@ -425,7 +425,7 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
 
 /**
  * User-level preferences for cross-product email cadence. Owned by
- * the new /settings/notifications surface — separate from
+ * the new /settings/notifications surface, separate from
  * `notification_prefs` (which is in-app workspace-internal noise
  * policy). One row per user; settings page upserts. Plan-change /
  * expiry notices are always-on and not stored here.
@@ -442,7 +442,7 @@ export const userPreferences = sqliteTable("user_preferences", {
     .$type<"off" | "mondays">()
     .notNull()
     .default("off"),
-  /** IANA tz string. Optional — falls back to UTC when null. */
+  /** IANA tz string. Optional, falls back to UTC when null. */
   timeZone: text("time_zone"),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
@@ -484,18 +484,18 @@ export const shareLinks = sqliteTable("share_links", {
   /** Counter incremented each time the link is opened. */
   visits: integer("visits").notNull().default(0),
 }, (t) => [
-  // Mirror drizzle/0003_hot_indexes.sql — manage-links UI lists a
+  // Mirror drizzle/0003_hot_indexes.sql, manage-links UI lists a
   // workspace's share links.
   index("idx_share_links_workspace_id").on(t.workspaceId),
 ]);
 
 /**
  * Per-visit log for share links. The fast `share_links.visits`
- * counter answers "how many?"; this table answers "when?" — feeds
+ * counter answers "how many?"; this table answers "when?", feeds
  * the 7-day sparkline and "last visited" timestamp in the manage
  * popover. Cascades on link delete so we don't keep orphan visits.
  *
- * `userAgentHint` stores only the first 60 chars of the UA — enough
+ * `userAgentHint` stores only the first 60 chars of the UA, enough
  * to coarsely tell phone-vs-desktop later without holding a full
  * fingerprint.
  */
@@ -509,7 +509,7 @@ export const shareLinkVisits = sqliteTable("share_link_visits", {
     .default(sql`(unixepoch())`),
   userAgentHint: text("user_agent_hint"),
 }, (t) => [
-  // Mirror drizzle/0003_hot_indexes.sql — 7-day sparkline scans a
+  // Mirror drizzle/0003_hot_indexes.sql, 7-day sparkline scans a
   // token's visits newest-first.
   index("idx_share_link_visits_token_at").on(t.token, t.visitedAt),
 ]);
@@ -517,7 +517,7 @@ export const shareLinkVisits = sqliteTable("share_link_visits", {
 /**
  * Stripe webhook idempotency. Stripe re-delivers events on transient
  * failures (every 30s for up to 3 days), and our handler is non-
- * idempotent — a re-delivered `checkout.session.completed` would
+ * idempotent, a re-delivered `checkout.session.completed` would
  * grant a second entitlement row. Before doing any work, the route
  * INSERTs the event id here; if the id already exists, the route
  * bails as a no-op and returns 200 (Stripe stops retrying on 200).
@@ -546,7 +546,7 @@ export const processedWebhooks = sqliteTable("processed_webhooks", {
  * Tokens are URL-safe random strings; expiry is 7 days from mint.
  */
 /**
- * Interactive GTM roadmap item — one row per actionable line in
+ * Interactive GTM roadmap item, one row per actionable line in
  * `~/Projects/tasks/docs/gtm-plan.md`. The parser at
  * `src/server/roadmap/parser.ts` walks the §3 asset checklist, §7
  * 8-week content calendar, §9 14-day press Gantt, plus the launch
@@ -557,7 +557,7 @@ export const processedWebhooks = sqliteTable("processed_webhooks", {
  * load.
  */
 export const roadmapItems = sqliteTable("roadmap_items", {
-  /** Deterministic key — see parser. */
+  /** Deterministic key, see parser. */
   id: text("id").primaryKey(),
   /** 1..8 for content-calendar weeks; 0 for press/asset/milestone rows
    *  that don't have a week column. */
@@ -575,14 +575,14 @@ export const roadmapItems = sqliteTable("roadmap_items", {
   source: text("source"),
   cta: text("cta"),
   postingTime: text("posting_time"),
-  /** Free-text body — for asset rows it's the asset name; for press
+  /** Free-text body, for asset rows it's the asset name; for press
    *  rows it's the action verb; for posts it's the format text. */
   body: text("body"),
   status: text("status")
     .$type<"pending" | "in_progress" | "completed">()
     .notNull()
     .default("pending"),
-  /** True when the markdown surrounded the row in **bold** — flags
+  /** True when the markdown surrounded the row in **bold**, flags
    *  Show HN, PH, IH launch beats and the paid-ad rows. */
   isLaunch: integer("is_launch", { mode: "boolean" })
     .notNull()
@@ -590,7 +590,7 @@ export const roadmapItems = sqliteTable("roadmap_items", {
   /** Free-form note the user can attach via the UI ("got 47 likes",
    *  "slipped to Wednesday"). UI clamps to 140 chars. */
   note: text("note"),
-  /** Optional FK to `blockers.id` — the user-action that has to land
+  /** Optional FK to `blockers.id`, the user-action that has to land
    *  before this item can move. NULL = independent / scheduled-only. */
   blockerId: text("blocker_id"),
   /** Position within its week+date for stable rendering. */
@@ -605,7 +605,7 @@ export const roadmapItems = sqliteTable("roadmap_items", {
 });
 
 /**
- * File attachments — one row per uploaded file bound to a task. The
+ * File attachments, one row per uploaded file bound to a task. The
  * actual bytes live on disk under `<repo>/.data/uploads/...` (outside
  * `public/` so the Next static handler never streams them); this row
  * stores the metadata needed to re-locate, authorize, and render the
@@ -630,7 +630,7 @@ export const attachments = sqliteTable("attachments", {
    *  display + Content-Disposition on download. */
   filename: text("filename").notNull(),
   /** Server-relative path under `<repo>/.data/uploads/...`. Never
-   *  exposed to the client — the download route streams the bytes
+   *  exposed to the client, the download route streams the bytes
    *  through `/api/attachments/[id]` after re-checking auth. */
   storedPath: text("stored_path").notNull(),
   mimeType: text("mime_type").notNull(),
@@ -647,7 +647,7 @@ const _checkAttachment: _SchemaCoversAttachment = true;
 void _checkAttachment;
 
 /**
- * GTM blockers — the small set of user-only actions that gate large
+ * GTM blockers, the small set of user-only actions that gate large
  * groups of roadmap items. Domain purchase, ElevenLabs subscription,
  * X/Bluesky/PH handle claims, ScreenStudio recording session, Sentry
  * alert config, paid spend authorization, the live launch beats. Each
@@ -680,7 +680,7 @@ export const blockers = sqliteTable("blockers", {
 });
 
 /**
- * Action items — the launch-readiness QA checklist. Independent of
+ * Action items, the launch-readiness QA checklist. Independent of
  * `gtm-plan.md` and the marketing roadmap; this is the *engineering*
  * and *product* checklist (test SSO with a friend, mobile overlap
  * audit, security headers, BigQuery decision, etc.). Seeded once via
@@ -691,7 +691,7 @@ export const blockers = sqliteTable("blockers", {
 export const actionItems = sqliteTable("action_items", {
   /** Stable id like `AI-domain-purchase`, `AI-test-sso-google`. */
   id: text("id").primaryKey(),
-  /** Display category — see seed for the canonical set. */
+  /** Display category, see seed for the canonical set. */
   category: text("category").notNull(),
   title: text("title").notNull(),
   /** ≤200 char description shown in the row's expanded subline. */
@@ -700,13 +700,13 @@ export const actionItems = sqliteTable("action_items", {
     .$type<"pending" | "in_progress" | "completed">()
     .notNull()
     .default("pending"),
-  /** Optional FK to `blockers.id` — links a test/QA item to whatever
+  /** Optional FK to `blockers.id`, links a test/QA item to whatever
    *  user-action has to land before the test can run (e.g. "test SSO
    *  with a friend" depends on `B-domain` so deliverability works). */
   blockerId: text("blocker_id"),
   /** Free-form note. UI clamps to 140 chars. */
   note: text("note"),
-  /** "P0" / "P1" / "P2" — P0 must close before launch (06-16). */
+  /** "P0" / "P1" / "P2", P0 must close before launch (06-16). */
   priority: text("priority").$type<"P0" | "P1" | "P2">().notNull().default("P1"),
   ord: integer("ord").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" })
@@ -734,7 +734,7 @@ export const pendingInvites = sqliteTable("pending_invites", {
     .default(sql`(unixepoch())`),
   /** 7 days from createdAt. */
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-  /** Set when redeemed — keeps the row as an audit trail rather than
+  /** Set when redeemed, keeps the row as an audit trail rather than
    *  deleting. Null = pending. */
   acceptedAt: integer("accepted_at", { mode: "timestamp" }),
   acceptedByUserId: text("accepted_by_user_id"),

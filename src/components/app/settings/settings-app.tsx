@@ -57,7 +57,7 @@ const TABS: Array<{ id: Tab; label: string; eyebrow: string }> = [
  *
  * Why one page (not five routes): each section's mutations affect
  * shared state (workspace name appears in chrome, member role gates
- * danger zone, tier gates billing copy) — re-fetching across route
+ * danger zone, tier gates billing copy), re-fetching across route
  * boundaries would either flicker or require a parent layout that
  * does the same work this page does. Tabbed-in-page is just leaner.
  */
@@ -149,7 +149,7 @@ export function SettingsApp({
             })}
           </ul>
           <div className="mt-6 rounded-lg border border-line-soft bg-bg-elevated p-3 text-[11.5px] leading-[1.55] text-ink-quiet">
-            Changes save the moment you make them. No save button — we
+            Changes save the moment you make them. No save button, we
             don&apos;t do save buttons here.
           </div>
         </nav>

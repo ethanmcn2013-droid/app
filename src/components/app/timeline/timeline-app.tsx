@@ -54,7 +54,7 @@ function useIsMobile() {
 }
 
 /** Live drag state for whichever bar is being dragged. `mode` discriminates
- *  whole-bar moves from right-edge resizes — both share the same gesture
+ *  whole-bar moves from right-edge resizes, both share the same gesture
  *  scaffolding but write different fields on commit. */
 type DragState =
   | {
@@ -100,7 +100,7 @@ export function TimelineApp() {
   dragRef.current = drag;
 
   // Global pointermove / pointerup. Registered once when a drag is
-  // active so the gesture survives the cursor leaving the bar — which
+  // active so the gesture survives the cursor leaving the bar, which
   // happens immediately on a fast horizontal flick.
   useEffect(() => {
     if (!drag) return;
@@ -201,7 +201,7 @@ export function TimelineApp() {
     mode: "move" | "resize",
   ) {
     if (isMobile) return;
-    // Only react to the primary button — right-clicks and middle-clicks
+    // Only react to the primary button, right-clicks and middle-clicks
     // shouldn't start a drag.
     if (e.button !== 0) return;
     const trackEl = (e.currentTarget.closest("[data-timeline-track]") ??
@@ -272,7 +272,7 @@ export function TimelineApp() {
               : task.durationDays ?? 1;
             const left = (start / DAYS) * 100;
             const width = (dur / DAYS) * 100;
-            // Ghost destination — rendered behind the bar so the user
+            // Ghost destination, rendered behind the bar so the user
             // sees where the bar will land. Always matches the
             // currently-snapped values; visually distinct only while
             // dragging (when the bar itself moves with the ghost, the
@@ -315,7 +315,7 @@ export function TimelineApp() {
                     })}
                   </div>
 
-                  {/* Ghost destination overlay — only visible while
+                  {/* Ghost destination overlay, only visible while
                       this row is being dragged. Sits behind the bar
                       so the bar reads as the foreground element. */}
                   {isDragging ? (

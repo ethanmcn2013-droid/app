@@ -43,9 +43,9 @@ const MODE_OPTIONS: Array<{
 ];
 
 /**
- * Item 6 — Share is now a first-class surface, not a secondary action.
+ * Item 6, Share is now a first-class surface, not a secondary action.
  * The trigger label is unchanged ("Share") but the popover leads with
- * reassuring copy: anyone with the link can read — no account needed.
+ * reassuring copy: anyone with the link can read, no account needed.
  * The "Generate magic link" CTA is the primary action; the mode/expiry
  * options are still there for power users but the default (view, 7 days)
  * covers 90% of sharing intent without any configuration.
@@ -159,7 +159,7 @@ export function ShareButton({ view }: { view: ShareView }) {
 
   return (
     <div ref={wrapRef} className="relative">
-      {/* Item 6: prominent Share trigger — indigo-accented ring so it
+      {/* Item 6: prominent Share trigger, indigo-accented ring so it
           reads as the primary collaborative action in the header row. */}
       <button
         type="button"
@@ -298,10 +298,10 @@ function NewLinkForm({
 }) {
   return (
     <div>
-      {/* Item 6: reassuring entry copy — "no account needed" is the key
+      {/* Item 6: reassuring entry copy, "no account needed" is the key
           trust signal. Plain language, calm tone per Signal brand voice. */}
       <p className="text-[12.5px] leading-[1.55] text-ink-soft">
-        Share this board with anyone — they can open it straight away, no
+        Share this board with anyone, they can open it straight away, no
         account needed. Set how much they can do, then copy the link.
       </p>
 
@@ -424,11 +424,11 @@ function ShareSuccess({
 }) {
   return (
     <div>
-      {/* Item 6: reassurance first. The key fact — no account needed — is
+      {/* Item 6: reassurance first. The key fact, no account needed, is
           the main anxiety to resolve. Copy then details. */}
       <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2.5">
         <p className="text-[12px] font-medium text-emerald-800">
-          Link ready — anyone can open it, no account needed.
+          Link ready, anyone can open it, no account needed.
         </p>
         <p className="mt-0.5 text-[11px] text-emerald-700">
           {mode === "view" ? "Read only." : mode === "comment" ? "Can comment." : "Can edit."}{" "}
@@ -583,7 +583,7 @@ function WorkspaceTotal({
       </div>
       <div className="mt-1 text-[10.5px] text-ink-quiet">
         {total === 0
-          ? "Nothing to see yet — your links are still warming up."
+          ? "Nothing to see yet, your links are still warming up."
           : "Tracked since you minted the first link."}
       </div>
     </div>
@@ -640,7 +640,7 @@ function MostClickedCallout({
 
 /**
  * "Most clicked" only fires when ≥3 links exist and one link's
- * total is more than 2× the median — otherwise the call-out is
+ * total is more than 2× the median, otherwise the call-out is
  * just noise (tiny sample, no real outlier).
  */
 function pickMostClicked(
@@ -654,7 +654,7 @@ function pickMostClicked(
   if (totals.every((n) => n === 0)) return null;
   const median = computeMedian(totals);
   if (median <= 0) {
-    // Median is zero — fall back to "any link with > 0 visits" so
+    // Median is zero, fall back to "any link with > 0 visits" so
     // the very first hit on a fresh workspace is still surfaced.
     const idx = totals.indexOf(Math.max(...totals));
     if (totals[idx] < 2) return null;
@@ -764,7 +764,7 @@ function ShareLinkRow({
 
 /**
  * 60×16 inline bar sparkline. The shared `Sparkline` primitive draws
- * an area chart, which reads as "trend" — we want "per-day count" so
+ * an area chart, which reads as "trend", we want "per-day count" so
  * a row of bars is more honest. Empty buckets render as a faint
  * baseline tick so the strip doesn't disappear on a fresh link.
  */
@@ -806,7 +806,7 @@ function VisitBars({ values }: { values: number[] }) {
 /**
  * Two-step revoke: first click arms a 4-second window with red
  * "Confirm revoke?" copy; second click within the window fires.
- * Outside-click and timeout both cancel — feels like the GitHub
+ * Outside-click and timeout both cancel, feels like the GitHub
  * "delete repository" pattern but with a tighter timer because
  * link-revocation is recoverable (re-mint).
  */
@@ -874,7 +874,7 @@ function RevokeButton({
 
 /**
  * Compact "3h ago" / "12m ago" / "2d ago" formatter. Falls back to a
- * short date when the visit is older than a week — at that point the
+ * short date when the visit is older than a week, at that point the
  * sparkline already dropped its bar so the stamp's job is just to
  * say "stale".
  */

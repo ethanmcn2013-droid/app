@@ -67,7 +67,7 @@ export async function createShareLinkAction(input: {
 }
 
 /** List every minted share link, newest first. Used by the manage-
- *  links popover. Scoped to the caller's active workspace — the
+ *  links popover. Scoped to the caller's active workspace, the
  *  earlier global query leaked tokens across tenants. */
 export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
   const ws = await getActiveWorkspace();
@@ -111,7 +111,7 @@ export async function revokeShareLinkAction(token: string): Promise<void> {
  * `share_link_visits` powers the sparkline + last-visited timestamp.
  *
  * `userAgent` is optional and trimmed to 60 chars by the queries
- * helper — used later for a "looks like a phone vs desktop" hint.
+ * helper, used later for a "looks like a phone vs desktop" hint.
  */
 export async function bumpShareLinkVisitAction(
   token: string,
@@ -120,7 +120,7 @@ export async function bumpShareLinkVisitAction(
   await db.run(sql`
     UPDATE share_links SET visits = visits + 1 WHERE token = ${token}
   `);
-  // Best-effort visit log — never blocks the read-only render path.
+  // Best-effort visit log, never blocks the read-only render path.
   try {
     await recordShareLinkVisit(token, userAgent ?? null);
   } catch (e) {
@@ -144,10 +144,10 @@ export type ShareLinkAnalyticsSummary = {
 
 /**
  * Aggregate per-link analytics for the manage popover. Returns one
- * row per active+expired link (revoked links are skipped — once a
+ * row per active+expired link (revoked links are skipped, once a
  * link is dead its history isn't actionable). Visits without a
  * matching log row (e.g. legacy hits before the `share_link_visits`
- * table existed) fall back to all-zero buckets — the lifetime
+ * table existed) fall back to all-zero buckets, the lifetime
  * counter on `share_links` still reflects the truth.
  */
 export async function listShareLinkAnalyticsAction(): Promise<
@@ -225,7 +225,7 @@ export async function emailShareLinkAction(input: {
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   const url = `${baseUrl}/share/${input.token}`;
 
-  // M7: resolve sender display name — name → handle → email-prefix → fallback.
+  // M7: resolve sender display name, name → handle → email-prefix → fallback.
   const senderName =
     meRow?.name?.trim() ||
     meRow?.handle?.trim() ||

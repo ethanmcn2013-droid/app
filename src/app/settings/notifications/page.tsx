@@ -12,7 +12,7 @@ export default async function NotificationsSettingsPage() {
   return (
     <SettingsSection
       title="What we send you"
-      description="Email cadence across Signal Studio. We default to silence — pick the few touches you want."
+      description="Email cadence across Signal Studio. We default to silence, pick the few touches you want."
     >
       <NotificationsForm
         initial={{

@@ -18,7 +18,7 @@ import { db } from "@/server/db";
  * NULL-email recurrence risk for users provisioned before the email column
  * existed, without touching rows that already have email set.
  *
- * Safe to call repeatedly — every write is conditional on absence or NULL.
+ * Safe to call repeatedly, every write is conditional on absence or NULL.
  */
 export async function ensureUserProvisioned(
   clerkUserId: string,

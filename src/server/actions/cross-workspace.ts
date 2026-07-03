@@ -31,19 +31,19 @@ export type CrossWorkspaceOverdueItem = {
 
 /**
  * Every overdue task across every workspace the current user is a
- * member of (owner or member — both come back from
+ * member of (owner or member, both come back from
  * `workspace_members`). Sorted most-overdue-first.
  *
  * Overdue heuristic:
- *   1. Prefer the structured `dueAt` timestamp — strictly < start of
+ *   1. Prefer the structured `dueAt` timestamp, strictly < start of
  *      today in server time.
  *   2. Fall back to parsing the human `due` text when it matches an
  *      ISO date like `2026-04-12` and the date is < today. Free-form
  *      labels ("Today", "Tomorrow", "Mon", "Mar 12") are intentionally
- *      skipped — they're ambiguous without the source year, and the
+ *      skipped, they're ambiguous without the source year, and the
  *      digest-quality answer is good enough for v1.
  *
- * Tasks already in the `done` lane are excluded — finished work
+ * Tasks already in the `done` lane are excluded, finished work
  * isn't overdue, just late-shipped.
  */
 export async function getOverdueAcrossWorkspacesAction(): Promise<
@@ -51,7 +51,7 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
 > {
   const me = await getCurrentUser();
 
-  // Resolve the user's workspaces in one shot — name + slug come from
+  // Resolve the user's workspaces in one shot, name + slug come from
   // the join so the client doesn't need a second lookup.
   const memberships = await db
     .select({
@@ -132,11 +132,11 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
         });
         continue;
       }
-      // dueAt set but in the future — not overdue.
+      // dueAt set but in the future, not overdue.
       continue;
     }
 
-    // Branch 2: text-only — accept exactly ISO `YYYY-MM-DD`.
+    // Branch 2: text-only, accept exactly ISO `YYYY-MM-DD`.
     const iso = parseIsoDay(r.due);
     if (iso && iso < todayIso) {
       // Synthesize a sort key from the ISO date at midnight UTC; good
@@ -155,7 +155,7 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
     }
   }
 
-  // Most overdue first — smallest timestamp is furthest in the past.
+  // Most overdue first, smallest timestamp is furthest in the past.
   out.sort((a, b) => a.sortKey - b.sortKey);
 
   return out.map(({ sortKey: _sortKey, ...rest }) => rest);
@@ -164,7 +164,7 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
 /**
  * Set the active-workspace cookie so a subsequent navigation to
  * `/app/board` resolves into the chosen workspace. Validates
- * membership server-side — a hand-crafted call with someone else's
+ * membership server-side, a hand-crafted call with someone else's
  * id is silently ignored. Returns `{ ok: true }` regardless to keep
  * the client path simple; the navigation that follows will land
  * the user wherever `getActiveWorkspace` resolves.
@@ -188,7 +188,7 @@ export async function selectWorkspaceAction(
     path: "/",
     sameSite: "lax",
     httpOnly: false,
-    // 30 days — matches the lifetime expectations of a "remember
+    // 30 days, matches the lifetime expectations of a "remember
     // which workspace I was in" preference.
     maxAge: 60 * 60 * 24 * 30,
   });
@@ -203,7 +203,7 @@ function isoDay(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Accept `YYYY-MM-DD` only — return null for anything else. */
+/** Accept `YYYY-MM-DD` only, return null for anything else. */
 function parseIsoDay(value: string | null | undefined): string | null {
   if (!value) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());

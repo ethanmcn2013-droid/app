@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
-  title: "Security — Tasks",
+  title: "Security, Tasks",
   description:
     "How Tasks is built, who handles which sensitive bits, and how to report something we missed.",
 };
@@ -11,7 +11,7 @@ export const metadata = {
 const LAST_UPDATED = "2026-05-07";
 
 /**
- * /security — security overview + responsible disclosure. Plain
+ * /security, security overview + responsible disclosure. Plain
  * statement of posture: what we do, what our providers do, and what
  * we deliberately don&rsquo;t do (no SSO upsell, no enterprise tier,
  * same posture for the free workspace as the paid one).
@@ -35,7 +35,7 @@ export default function SecurityPage() {
           <div className="mt-10 space-y-8 text-[15.5px] leading-[1.65] text-ink-soft">
             <p>
               Tasks is a small product with a small surface. That works
-              in your favor — fewer moving parts, fewer places for
+              in your favor, fewer moving parts, fewer places for
               something to go wrong, fewer subprocessors to vet. Here
               is the honest map of what we run, what our providers
               run, and where we&rsquo;re still tightening.
@@ -45,7 +45,7 @@ export default function SecurityPage() {
               <p>
                 Every request goes over HTTPS. We negotiate modern TLS
                 (1.2+), HSTS is on, and we&rsquo;re in the process of
-                submitting to the HSTS preload list — see the roadmap
+                submitting to the HSTS preload list, see the roadmap
                 section below. There are no plaintext fallbacks
                 anywhere in the app.
               </p>
@@ -57,7 +57,7 @@ export default function SecurityPage() {
                 OAuth (Google, GitHub) are all handled by{" "}
                 <Link href="https://clerk.com/security">Clerk</Link>,
                 which is SOC 2 Type II audited. We never see your
-                password — Clerk does the hashing, the rotation, and
+                password, Clerk does the hashing, the rotation, and
                 the breach detection. Sessions are issued as signed
                 tokens on first-party cookies; logout invalidates them
                 server-side, not just in the browser.
@@ -71,7 +71,7 @@ export default function SecurityPage() {
                   PCI DSS Level 1
                 </Link>
                 . Cards never touch our servers; we hold a customer ID,
-                a brand, a country, and the last four digits — enough
+                a brand, a country, and the last four digits, enough
                 to render a billing row. Webhook payloads from Stripe
                 are signature-verified before we act on them.
               </p>
@@ -81,7 +81,7 @@ export default function SecurityPage() {
               <p>
                 Tasks runs on{" "}
                 <Link href="https://vercel.com/security">Vercel</Link>{" "}
-                — edge network, function execution, build pipeline.
+               , edge network, function execution, build pipeline.
                 Vercel publishes its own security posture; we
                 inherit the perimeter, the DDoS protection, and the
                 infrastructure-level audit work. Our application code
@@ -95,7 +95,7 @@ export default function SecurityPage() {
                 Everything in the database is encrypted at rest by the
                 storage provider. Everything in transit is TLS as
                 noted above. Attachments uploaded into Tasks live
-                behind authenticated URLs — no public bucket — and
+                behind authenticated URLs, no public bucket, and
                 expire from short-lived signed links a few minutes
                 after issuance. Backups are encrypted with the same
                 discipline as live data and rolled off on a 30-day
@@ -118,7 +118,7 @@ export default function SecurityPage() {
             <Section title="What we don&rsquo;t do">
               <p>
                 There is no separate enterprise security tier. There is
-                no SSO upsell — when SSO ships, every workspace gets
+                no SSO upsell, when SSO ships, every workspace gets
                 it at the same price. We don&rsquo;t partition the
                 free tier behind a weaker security posture than the
                 paid tier; the same encryption, the same audit logs,
@@ -137,7 +137,7 @@ export default function SecurityPage() {
                 fingerprint once generated]. We respond within
                 seventy-two hours, usually faster. We don&rsquo;t run
                 a paid bug bounty yet, but we credit researchers who
-                report responsibly — by name, with a link, in the
+                report responsibly, by name, with a link, in the
                 changelog and on this page if you want.
               </p>
               <p>
@@ -155,16 +155,16 @@ export default function SecurityPage() {
               </p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5">
                 <li>
-                  <strong className="text-ink">P0</strong> — full
+                  <strong className="text-ink">P0</strong>, full
                   Content Security Policy headers across the app
                   (currently in audit).
                 </li>
                 <li>
-                  <strong className="text-ink">P0</strong> — HSTS
+                  <strong className="text-ink">P0</strong>, HSTS
                   preload submission once the apex domain stabilizes.
                 </li>
                 <li>
-                  <strong className="text-ink">P1</strong> — automated
+                  <strong className="text-ink">P1</strong>, automated
                   secrets scanning on every pull request and a
                   retroactive sweep of historical commits.
                 </li>
@@ -172,7 +172,7 @@ export default function SecurityPage() {
             </Section>
 
             <p className="border-t border-line-soft pt-6 text-[14px] text-ink-quiet">
-              Security is a process, not a label — the badge on the
+              Security is a process, not a label, the badge on the
               footer is whatever the last commit deserved.
             </p>
           </div>

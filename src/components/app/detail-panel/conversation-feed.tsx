@@ -43,7 +43,7 @@ type Props = {
 };
 
 /**
- * Unified Conversation feed — comments and activity interleaved
+ * Unified Conversation feed, comments and activity interleaved
  * chronologically (oldest at top, composer at bottom). Replaces the
  * previous separate Activity + Comments sections so the panel reads
  * like a real conversation history.
@@ -71,7 +71,7 @@ export function ConversationFeed({ taskId, initialItems }: Props) {
         id: tempId,
         taskId,
         userId: me,
-        // authorName null here — the server round-trip will supply the real
+        // authorName null here, the server round-trip will supply the real
         // name; the fallback in CommentRow reads USERS[me].name for seed
         // users and will show the right name for the current session user.
         authorName: null,
@@ -358,7 +358,7 @@ function formatActivityLine(payload: ActivityPayload): string {
   }
 }
 
-/** Inline byte formatter — kept local to avoid pulling the
+/** Inline byte formatter, kept local to avoid pulling the
  *  attachments-section helper across the client boundary. Matches
  *  its rounding so the conversation copy reads consistently. */
 function formatBytesShort(bytes: number): string {
@@ -409,7 +409,7 @@ function Composer({
 
   // The Draft button writes streaming tokens directly into the
   // composer state, which means the user sees the reply forming in
-  // place — no modal, no review step. They can edit before posting.
+  // place, no modal, no review step. They can edit before posting.
   const handleDraft = useCallback((cumulative: string) => {
     setDraft(cumulative);
     requestAnimationFrame(() => {

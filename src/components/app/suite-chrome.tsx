@@ -1,22 +1,22 @@
 /**
- * Persistent top chrome — L4 unified suite chrome (DESIGN.md §14).
+ * Persistent top chrome, L4 unified suite chrome (DESIGN.md §14).
  *
  * Byte-identical geometry across all five products so a cross-product
  * jump swaps only the body; the chrome appears not to move.
  *
- * Perceived continuity, not a true SPA — hard document navigation still
+ * Perceived continuity, not a true SPA, hard document navigation still
  * occurs between subdomains. Monorepo + DB-merge ruled out by locked
  * decisions.
  *
- * Layout (amended 2026-05-19 — §14 pill-switcher revision):
- *   Left  — "signal studio." umbrella anchor (once, same-tab) + 4-product
+ * Layout (amended 2026-05-19, §14 pill-switcher revision):
+ *   Left , "signal studio." umbrella anchor (once, same-tab) + 4-product
  *           pill switcher (SuiteSwitcher). The active pill IS the product
- *           breadcrumb — no separate "/ product" mark needed.
- *   Right — UserButtonWithSuite only
+ *           breadcrumb, no separate "/ product" mark needed.
+ *   Right, UserButtonWithSuite only
  *
  * "signal studio." appears exactly ONCE in this header (D6 contract held).
  * The cross-product switcher is now always-visible pills instead of the
- * click-to-open popover (SuiteLauncher) — the popover stays on the
+ * click-to-open popover (SuiteLauncher), the popover stays on the
  * unauthed marketing nav where one product is in view at a time.
  *
  * Height: h-14 (56px). Sticky top-0 z-40. backdrop-blur-md.
@@ -32,7 +32,7 @@ import { SuiteSwitcher } from "@/components/app/suite-switcher-pills";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 
 export function SuiteChrome() {
-  // Hairline border-b on scroll — transparent at rest
+  // Hairline border-b on scroll, transparent at rest
   const [scrolled, setScrolled] = useState(false);
   const frameRef = useRef<number | null>(null);
 
@@ -67,10 +67,10 @@ export function SuiteChrome() {
     >
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between gap-3 px-6">
         {/*
-         * Left slot — §14 (amended 2026-05-19):
+         * Left slot, §14 (amended 2026-05-19):
          *   [signal studio.] | [notes][tasks][roadmap][analytics]
          *
-         * SuiteSwitcher renders the quiet umbrella anchor (once — D6), a
+         * SuiteSwitcher renders the quiet umbrella anchor (once, D6), a
          * hairline divider, then the always-visible 4-product pills. The
          * active pill is the product-you-are-in indicator, so there is no
          * separate "/ product" breadcrumb.
@@ -80,7 +80,7 @@ export function SuiteChrome() {
         </div>
 
         {/*
-         * Right slot — UserButtonWithSuite only.
+         * Right slot, UserButtonWithSuite only.
          * This matches the Notes/Timeline/Signal pattern.
          */}
         <div className="flex flex-shrink-0 items-center gap-3">

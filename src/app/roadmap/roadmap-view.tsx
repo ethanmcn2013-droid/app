@@ -20,7 +20,7 @@ import type {
 } from "@/server/roadmap/launch-readiness-seed";
 
 /**
- * RoadmapView — the operator surface. Top-of-page blockers strip
+ * RoadmapView, the operator surface. Top-of-page blockers strip
  * pins the small set of user-only actions (domain, ElevenLabs,
  * handle claims, recordings, paid spend, live launch beats); each
  * blocker carries a free-text note and the count of items it
@@ -28,7 +28,7 @@ import type {
  * week, blocker, status). Below that: the engineering / QA / launch-
  * readiness action-items checklist (categorized, ~95 items). All
  * notes clamped to 140 characters by both the UI and the server
- * action — accountability is single-line.
+ * action, accountability is single-line.
  */
 
 type Kind =
@@ -181,13 +181,13 @@ function roadmapAdvisory(row: RoadmapRow): string {
     if (row.channel === "HN") return "Live Show HN beat. Hour-by-hour playbook in docs/launch-day-show-hn.md. The single biggest organic acquisition lever in the 8 weeks.";
     if (row.channel === "Product Hunt") return "Live PH beat. Hour-by-hour playbook in docs/launch-day-product-hunt.md. Reply within 15 min for the first 6 hrs.";
     if (row.channel === "Indie Hackers") return "IH milestone post Wed 06-24. Body staged in docs/posts-week-7.md, references HN+PH numbers from the prior two days.";
-    return "Live launch beat — playbook in docs/launch-day-*.md.";
+    return "Live launch beat, playbook in docs/launch-day-*.md.";
   }
   if (row.kind === "press") return "Press touchpoint. Drafted in docs/press-drafts.md (or its 14-day Gantt mirror). Send 2026-06-08 (T-7 to Show HN), one sender, no BCC.";
   if (row.kind === "paid") {
     if ((row.format ?? "").toLowerCase().includes("reddit")) return "$300 Reddit Ads on r/weddingplanning + r/wedding. Kill if CPA >$5/signup by day 4 OR zero $79 conversions by day 7.";
     if ((row.format ?? "").toLowerCase().includes("ig") || (row.format ?? "").toLowerCase().includes("instagram")) return "$200 IG boost via wedding micro-influencer (15–50k). Kill if <200 clicks in 72h OR <5 signups from 1k clicks.";
-    return "Paid spend with kill-criteria — see gtm-plan.md §8.";
+    return "Paid spend with kill-criteria, see gtm-plan.md §8.";
   }
   if (row.kind === "kpi") return "Monday standup-with-yourself. Five numbers (free signups · paid · HN front-page mins · PH rank EOD · /p/ count) into docs/kpi-log.md.";
   if (row.kind === "asset") return "Pre-launch asset. One-time work; once shipped it compounds across the calendar.";
@@ -278,7 +278,7 @@ export function RoadmapView({
   }, [items, blockerRows, actionRows, drawer]);
 
   const counts = useMemo(() => {
-    // Combined view across all three tables — the page's full surface.
+    // Combined view across all three tables, the page's full surface.
     const itemTotal = items.length;
     const itemDone = items.filter((i) => i.status === "completed").length;
     const itemActive = items.filter(
@@ -565,7 +565,7 @@ export function RoadmapView({
               style={{ color: "var(--text-muted)", lineHeight: 1.55 }}
             >
               Eight weeks. Two launch beats. The plan, the work, and a check
-              next to every line — kept honest by re-parsing{" "}
+              next to every line, kept honest by re-parsing{" "}
               <code
                 className="text-[13px] px-1 py-0.5 rounded"
                 style={{ background: "var(--ink-100)" }}
@@ -1546,7 +1546,7 @@ function BlockerCard({
                   onBlur={() => {
                     onSaveNote(noteVal);
                   }}
-                  placeholder='one sentence — e.g. "card on file 5/10, transferring 5/12"'
+                  placeholder='one sentence, e.g. "card on file 5/10, transferring 5/12"'
                   className="mt-2 w-full text-[12px] p-2 rounded-md focus:outline-none"
                   style={{
                     background: "var(--bg)",
@@ -1803,7 +1803,7 @@ function ItemRow({
                   onSaveNote(noteVal);
                   setNoteOpen(false);
                 }}
-                placeholder='one sentence — e.g. "got 47 likes" or "slipped to Wed"'
+                placeholder='one sentence, e.g. "got 47 likes" or "slipped to Wed"'
                 className="mt-2 w-full text-[13px] p-2 rounded-md focus:outline-none"
                 style={{
                   background: "var(--bg)",
@@ -1927,7 +1927,7 @@ function ActionItemsSection({
         className="mb-6 text-[13.5px] max-w-[640px]"
         style={{ color: "var(--text-muted)", lineHeight: 1.55 }}
       >
-        Engineering, QA, security, mobile, accessibility, compliance — every
+        Engineering, QA, security, mobile, accessibility, compliance, every
         thing the GTM calendar doesn&apos;t cover. P0 must close before the
         Show HN beat on 06-16. Keep notes single-sentence so the page stays
         scannable.
@@ -2153,7 +2153,7 @@ function ActionItemRow({
                   onSaveNote(noteVal);
                   setNoteOpen(false);
                 }}
-                placeholder='one sentence — e.g. "tested via curl, 200 + valid OG"'
+                placeholder='one sentence, e.g. "tested via curl, 200 + valid OG"'
                 className="mt-2 w-full text-[13px] p-2 rounded-md focus:outline-none"
                 style={{
                   background: "var(--bg)",

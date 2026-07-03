@@ -13,7 +13,7 @@ test("isTransient classifies network/5xx errors as retryable, SQL errors as not"
   assert.equal(isTransient(new Error("ECONNRESET")), true);
   assert.equal(isTransient(new Error("Server returned HTTP 503")), true);
   assert.equal(isTransient(new Error("stream not found")), true);
-  // Non-transient — a real SQL error should never be retried.
+  // Non-transient, a real SQL error should never be retried.
   assert.equal(isTransient(new Error("SQLITE_ERROR: no such column: foo")), false);
   assert.equal(isTransient(new Error("UNIQUE constraint failed")), false);
   assert.equal(isTransient(null), false);

@@ -1,23 +1,23 @@
 import type { MetadataRoute } from "next";
 
 /**
- * PWA manifest — Signal Tasks.
+ * PWA manifest · Signal Tasks.
  *
  * Replaces the older static `public/manifest.webmanifest`. Next 16's
  * app/manifest.ts auto-emits the link tag, so the static file was
  * removed in this cycle to avoid duplicate-source confusion.
  *
  * start_url goes to /app/board because that's the post-auth work
- * surface — a home-screen tap should land on the board, not the
+ * surface, a home-screen tap should land on the board, not the
  * marketing homepage.
  *
  * `id: "/signal-tasks"` scopes the PWA identity so the four products
  * don't collide if origins are ever consolidated.
  *
- * Maskable icon at /icon1 (512×512) — content inside the
+ * Maskable icon at /icon1 (512×512), content inside the
  * 80%-diameter safe zone so Android adaptive masks don't clip.
  *
- * share_target preserved verbatim — this is the Web Share API target
+ * share_target preserved verbatim, this is the Web Share API target
  * that lets users share text/URLs into Tasks from any other Android
  * app via the system share sheet.
  */

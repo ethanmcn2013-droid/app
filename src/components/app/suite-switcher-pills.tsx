@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /**
- * SuiteSwitcher — canonical always-visible 4-product pill switcher.
+ * SuiteSwitcher, canonical always-visible 4-product pill switcher.
  *
  * CANONICAL SOURCE for all five repos (DESIGN.md §14, amended 2026-05-19).
  * Copy byte-identical into each repo at the path that repo's app chrome
@@ -13,14 +13,14 @@ import { useEffect } from "react";
  * Why pills, not the SuiteLauncher popover:
  * - SuiteLauncher is the click-to-open popover behind the faint
  *   "signal studio." text trigger. Correct for the *unauthed* marketing
- *   nav (low chrome, one product in view) — it stays there.
+ *   nav (low chrome, one product in view), it stays there.
  * - In the authed app the operator switches products constantly. A hidden
  *   text trigger is poor discoverability. This makes all four destinations
  *   visible and one click away. (Resolves the §14/D6 discoverability cost.)
  *
  * Restraint contract (BRAND "Everything important. Nothing distracting."):
  * an always-on bar is more chrome than the brand's minimalism prefers, so
- * the pills are deliberately quiet — text-only at rest, no boxes/borders,
+ * the pills are deliberately quiet, text-only at rest, no boxes/borders,
  * ink-faint. Hover lifts to ink with a faint sunken wash. The current
  * product is the only one carrying the indigo gesture dot + active wash.
  *
@@ -80,7 +80,7 @@ function prefetchProduct(url: string) {
 
 /**
  * Phase 3 dot-morph: the brand transition between products. The indigo
- * dot blooms over a paper field, then we navigate same-tab — the suite
+ * dot blooms over a paper field, then we navigate same-tab, the suite
  * feels like one surface re-skinning, not four apps. Pure DOM so it is
  * style-system agnostic. Reduced-motion + modifier clicks skip this at
  * the call site (normal same-tab nav). press <=120ms, never delays nav (law 8).
@@ -136,17 +136,17 @@ export function SuiteSwitcher({
   current,
   /** Show the quiet "signal studio." umbrella anchor + divider before the
    *  pills. The chrome keeps it to exactly one instance (D6). Pass false
-   *  on signalstudio.ie itself — you are already on the umbrella. */
+   *  on signalstudio.ie itself, you are already on the umbrella. */
   showUmbrella = true,
 }: {
   /** The product the user is in. Omit on the umbrella launcher (no
-   *  product is "current" there — every pill is an equal jump target). */
+   *  product is "current" there, every pill is an equal jump target). */
   current?: ProductSlug;
   showUmbrella?: boolean;
 }) {
   // Phase 3 (instant-jump): preconnect every sibling origin on mount so
   // the first cross-product hop has a warm TLS connection ready. The
-  // pills are always visible — warm eagerly, there is no "on open".
+  // pills are always visible, warm eagerly, there is no "on open".
   useEffect(() => {
     if (typeof document === "undefined") return;
     for (const origin of PRODUCT_ORIGINS) {

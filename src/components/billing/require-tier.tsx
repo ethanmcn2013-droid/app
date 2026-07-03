@@ -11,7 +11,7 @@ import Link from "next/link";
  * in the active workspace meets or exceeds `minimum`; otherwise
  * renders an inline upgrade prompt.
  *
- * Use sparingly — most Pro features should be feature-flag-shaped at
+ * Use sparingly, most Pro features should be feature-flag-shaped at
  * the route level, not section level. This is for surface-area gates
  * (a button, a card) inside an otherwise-free view.
  */
@@ -19,7 +19,7 @@ export async function RequireTier({
   minimum,
   children,
   fallbackTitle = "Upgrade to use this",
-  fallbackBody = "This is part of a paid tier — but the basics that make Tasks useful work without paying.",
+  fallbackBody = "This is part of a paid tier, but the basics that make Tasks useful work without paying.",
 }: {
   minimum: EntitlementTier;
   children: React.ReactNode;

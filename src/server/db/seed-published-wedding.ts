@@ -25,7 +25,7 @@ import type { LaneId } from "@/lib/data";
 
 const PUBLISHED_SLUG = "wedding-2026-public";
 const PUBLISHED_WS_ID = "ws-published-wedding";
-const OWNER_USER_ID = "david"; // legacy seeded user — owner of legacy ws
+const OWNER_USER_ID = "david"; // legacy seeded user, owner of legacy ws
 const TEMPLATE_ID = "wedding-3-month-countdown";
 
 function newTaskId(): string {

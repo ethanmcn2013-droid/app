@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Single-page settings surface, tabbed sub-views. NOT split into
- * /app/settings/billing etc. — owner-gated mutations would have to
+ * /app/settings/billing etc., owner-gated mutations would have to
  * re-resolve role in every nested layout, and the v1.0 spec is small
  * enough that one client-rendered tab switcher beats five layouts.
  *

@@ -61,13 +61,13 @@ export async function clearAllTasksAction(): Promise<Task[]> {
   return getTasks(ws);
 }
 
-/** Mark onboarding as seen — used by the "skip and start blank" path
+/** Mark onboarding as seen, used by the "skip and start blank" path
  *  on /welcome when the user wants the empty state instead of a pack.
  *  Sets the workspace's activeDomain to a sentinel so isFirstRun()
  *  returns false. */
 export async function markFirstRunCompleteAction(): Promise<void> {
   const ws = await getActiveWorkspace();
-  // Sentinel "marketing" — a chosen-but-empty domain. Welcome page
+  // Sentinel "marketing", a chosen-but-empty domain. Welcome page
   // stops intercepting; the next render shows an empty board.
   await db
     .update(workspaces)
@@ -89,7 +89,7 @@ export async function seedDomainAction(domain: DomainId): Promise<Task[]> {
   // Wipe this workspace's data only.
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));
 
-  // Ensure all canonical seed users exist (idempotent — used both
+  // Ensure all canonical seed users exist (idempotent, used both
   // for legacy ws-legacy and for new workspaces seeded with demo data).
   await db.run(sql`
     INSERT OR IGNORE INTO users (id, name, color, initials)

@@ -62,7 +62,7 @@ export function TaskDetailPanel() {
         })
         .finally(() => {
           // Always clear loading for the signal that owns this fetch.
-          // Ignored signals belong to aborted fetches — their loading
+          // Ignored signals belong to aborted fetches, their loading
           // state is already superseded by the next fetch's setLoading(true).
           if (!signal.ignored) {
             setLoading(false);
@@ -82,7 +82,7 @@ export function TaskDetailPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task?.id, refreshKey]);
 
-  // Stale id (e.g. task was deleted) — clear the param after a beat
+  // Stale id (e.g. task was deleted), clear the param after a beat
   // so a deep-link to a no-longer-existing task degrades gracefully.
   useEffect(() => {
     if (taskId && !task) {
@@ -113,7 +113,7 @@ export function TaskDetailPanel() {
               {loading ? (
                 <ConversationSkeleton />
               ) : timedOut ? (
-                // C4: timeout path — show the C3 empty state copy + a
+                // C4: timeout path, show the C3 empty state copy + a
                 // "Try again" control so the user isn't stuck on blank.
                 <ConversationTimeout
                   onRetry={() => {
@@ -206,7 +206,7 @@ function Section({
 }
 
 /**
- * Bottom row of the panel. Quiet by design — sibling buttons only.
+ * Bottom row of the panel. Quiet by design, sibling buttons only.
  * "Repeat" opens the chain-duplicate popover; "Focus" dispatches
  * `focus-mode:open` so the global FocusMode overlay picks it up;
  * "Milestone" (RW-3b) toggles the `is_milestone` DB flag.
@@ -215,9 +215,9 @@ function Section({
 function PanelFooter({ task }: { task: Task }) {
   return (
     <div className="flex flex-col gap-0 border-t border-line-soft">
-      {/* "See it in your plan →" CTA — UX_SPEC §RW-3b friction point 3.
+      {/* "See it in your plan →" CTA, UX_SPEC §RW-3b friction point 3.
           Shown only when isMilestone=true so it guides Niamh from Tasks to
-          Roadmap at the moment she needs it. Cross-product nav — quiet text
+          Roadmap at the moment she needs it. Cross-product nav, quiet text
           link, never a prominent button. */}
       {task.isMilestone ? (
         <div className="flex justify-end px-6 pt-2">
@@ -281,14 +281,14 @@ function PanelFooter({ task }: { task: Task }) {
 }
 
 /**
- * RW-3b — "Milestone" toggle button in the PanelFooter.
+ * RW-3b, "Milestone" toggle button in the PanelFooter.
  *
  * Visual treatment (UX_SPEC §RW-3b):
  *   - Unset: diamond outline SVG (◇) + label "Milestone", ink-quiet color.
  *   - Set: filled diamond SVG (◆) + same label, brand color with soft
  *     background tint.
  * aria-pressed signals state to assistive technology.
- * No confirm dialog — it's a toggle, reversible in one click.
+ * No confirm dialog, it's a toggle, reversible in one click.
  *
  * D6 contract: toggling to true fills the Roadmap's private draft only.
  * Nothing here auto-publishes.
@@ -320,7 +320,7 @@ function MilestoneButton({ task }: { task: Task }) {
           : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
       ].join(" ")}
     >
-      {/* Diamond SVG — outline when unset, filled when set */}
+      {/* Diamond SVG, outline when unset, filled when set */}
       <svg
         width="12"
         height="12"

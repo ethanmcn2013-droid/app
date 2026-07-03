@@ -40,7 +40,7 @@ import { useRealtimeSync } from "./use-realtime-sync";
  *
  *  Tasks that lack a position (legacy seed rows) get backfilled with
  *  their array index times 1000 for the purposes of this calculation
- *  — the server is the source of truth and will normalise on its
+ * , the server is the source of truth and will normalise on its
  *  next hydrate. */
 function computeDropPosition(
   tasks: Task[],
@@ -76,7 +76,7 @@ function generateId(): string {
 export type TasksDispatchers = {
   moveTask: (id: string, toLane: LaneId) => void;
   /**
-   * Move a task to any board column — system lane or custom column.
+   * Move a task to any board column, system lane or custom column.
    * For system lanes, equivalent to moveTask but goes through the
    * column-aware server action that also clears boardColumnKey.
    * For custom columns, sets boardColumnKey without changing lane
@@ -139,7 +139,7 @@ export function TasksProvider({
   // When the server-rendered layout passes a fresh `initialTasks`
   // (after revalidatePath fires for things like comment counts),
   // hydrate the client store. The reference identity of the array
-  // is the change signal — same array reference means no work.
+  // is the change signal, same array reference means no work.
   const lastInitialRef = useRef(initialTasks);
   useEffect(() => {
     if (!initialTasks) return;

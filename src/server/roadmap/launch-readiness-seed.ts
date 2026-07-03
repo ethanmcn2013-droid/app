@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { blockers, actionItems } from "@/server/db/schema";
 
 /**
- * Launch-readiness seed — populates `blockers` and `action_items`
+ * Launch-readiness seed, populates `blockers` and `action_items`
  * with the canonical launch-prep checklist. Idempotent: deterministic
  * IDs let re-running pick up additions without overwriting user-set
  * status, note, or completedAt. Drift on title/description is
@@ -106,7 +106,7 @@ const SEED_BLOCKERS: SeedBlocker[] = [
   },
   {
     id: "B-launch-show-hn",
-    title: "Show HN launch — Tue 2026-06-16 9:00am ET",
+    title: "Show HN launch, Tue 2026-06-16 9:00am ET",
     kind: "launch-beat",
     targetDate: "2026-06-16",
     description:
@@ -114,7 +114,7 @@ const SEED_BLOCKERS: SeedBlocker[] = [
   },
   {
     id: "B-launch-ph",
-    title: "Product Hunt launch — Tue 2026-06-23 3:01am PT",
+    title: "Product Hunt launch, Tue 2026-06-23 3:01am PT",
     kind: "launch-beat",
     targetDate: "2026-06-23",
     description:
@@ -122,7 +122,7 @@ const SEED_BLOCKERS: SeedBlocker[] = [
   },
   {
     id: "B-launch-ih",
-    title: "Indie Hackers milestone post — Wed 2026-06-24 9am ET",
+    title: "Indie Hackers milestone post, Wed 2026-06-24 9am ET",
     kind: "launch-beat",
     targetDate: "2026-06-24",
     description:
@@ -143,7 +143,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   // ─── Hosting & deployment ─────────────────────────────────────────
   { id: "AI-prod-deploy-latest", category: "Hosting", title: "Confirm prod is on the latest cycle 31 commit", description: "`vercel deploy --prod --yes` after the cycle-31 changelog lands. Watch the Functions logs for cold-start errors.", blockerId: null, priority: "P0" },
   { id: "AI-vercel-cron-digest", category: "Hosting", title: "Verify Vercel Cron runs /api/cron/digest daily 9am", description: "Trigger manually first via vercel.json's cron section; tail logs for 24 hrs to confirm it actually fires.", blockerId: null, priority: "P1" },
-  { id: "AI-vercel-cron-weekly", category: "Hosting", title: "Verify Vercel Cron runs /api/cron/weekly-digest Sun 9am", description: "Same drill — manual trigger then 7-day observation.", blockerId: null, priority: "P1" },
+  { id: "AI-vercel-cron-weekly", category: "Hosting", title: "Verify Vercel Cron runs /api/cron/weekly-digest Sun 9am", description: "Same drill, manual trigger then 7-day observation.", blockerId: null, priority: "P1" },
   { id: "AI-vercel-observability", category: "Hosting", title: "Enable Vercel Observability + Speed Insights", description: "Free tier suffices pre-launch; promotes to paid if traffic spikes after Show HN.", blockerId: null, priority: "P1" },
   { id: "AI-tasks-db-bundled", category: "Hosting", title: "Confirm tasks.db is bundled into the Vercel build", description: "Per project_tasks_deploy.md memo: SQLite ephemeral on /tmp; bundled file copied at cold start. Verify via `vercel logs --prod` showing 'tasks.db copied'.", blockerId: null, priority: "P0" },
   { id: "AI-clerk-webhook-reachable", category: "Hosting", title: "Confirm /api/webhooks/clerk is reachable from Clerk dashboard", description: "Send a test event; verify svix signature passes; verify users row created.", blockerId: null, priority: "P0" },
@@ -188,7 +188,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-attach-mime-blocklist", category: "Attachments", title: "Test mime blocklist (executables)", description: "Attempt to upload an .exe; expect refusal with a clear message.", blockerId: null, priority: "P0" },
   { id: "AI-attach-download", category: "Attachments", title: "Test authenticated download", description: "Click download; verify Content-Disposition has the original filename; verify bytes intact.", blockerId: null, priority: "P0" },
   { id: "AI-attach-delete", category: "Attachments", title: "Test delete with popover confirm", description: "Click delete; confirm popover appears; confirm; verify row gone from UI; verify file unlinked from .data/uploads.", blockerId: null, priority: "P1" },
-  { id: "AI-attach-cross-workspace-404", category: "Attachments", title: "Test cross-workspace 404 (security)", description: "Sign in as user A in workspace 1; try to fetch /api/attachments/<id> for an attachment in workspace 2; expect 404 (not 403 — opacity).", blockerId: null, priority: "P0" },
+  { id: "AI-attach-cross-workspace-404", category: "Attachments", title: "Test cross-workspace 404 (security)", description: "Sign in as user A in workspace 1; try to fetch /api/attachments/<id> for an attachment in workspace 2; expect 404 (not 403, opacity).", blockerId: null, priority: "P0" },
   { id: "AI-attach-image-thumb", category: "Attachments", title: "Test image thumbnail rendering", description: "Upload a JPG; verify the row shows a thumbnail, not just an icon.", blockerId: null, priority: "P2" },
 
   // ─── Share links ──────────────────────────────────────────────────
@@ -232,7 +232,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-seo-sitemap", category: "SEO", title: "Sitemap.xml includes every marketing route", description: "/, /pricing, /principles, /about, /changelog, /templates, /templates/<all-12-slugs>, /for/<all-vertical-slugs>. Verify on /sitemap.xml.", blockerId: null, priority: "P0" },
   { id: "AI-seo-robots", category: "SEO", title: "Robots.txt blocks /app/*, /share/*, /redeem/*, /api/*", description: "These should not be indexed. Verify on /robots.txt.", blockerId: null, priority: "P0" },
   { id: "AI-seo-canonical", category: "SEO", title: "Canonical URLs on every marketing page", description: "Use absolute https://<domain>/<route>. Helps with the trailing-slash + protocol disambiguation.", blockerId: null, priority: "P1" },
-  { id: "AI-seo-og-cards", category: "SEO", title: "OG cards render for every shareable URL", description: "Curl each /opengraph-image route; verify 200 + image/png. Already shipped — re-confirm post domain swap.", blockerId: null, priority: "P0" },
+  { id: "AI-seo-og-cards", category: "SEO", title: "OG cards render for every shareable URL", description: "Curl each /opengraph-image route; verify 200 + image/png. Already shipped, re-confirm post domain swap.", blockerId: null, priority: "P0" },
   { id: "AI-seo-schema-org", category: "SEO", title: "Add Schema.org markup (Product + Organization)", description: "JSON-LD blocks in head. Helps Google rich-snippet eligibility.", blockerId: null, priority: "P2" },
   { id: "AI-seo-search-console", category: "SEO", title: "Verify domain in Google Search Console", description: "Submit sitemap; monitor coverage report; flag any 'Submitted but not indexed' rows.", blockerId: "B-domain", priority: "P1" },
 
@@ -250,7 +250,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-sec-pii-logging", category: "Security", title: "Audit Sentry + Vercel logs for PII leakage", description: "Strip email/name from error reports; redact request headers containing auth tokens.", blockerId: null, priority: "P1" },
 
   // ─── Data storage & analytics ─────────────────────────────────────
-  { id: "AI-data-postgres-decision", category: "Data", title: "Decide Postgres vs SQLite-on-Vercel for prod", description: "Per project_tasks_deploy.md memo: SQLite-on-/tmp is ephemeral per instance — multi-replica = data loss. Phase D's Postgres adapter is queued. Decision needed before any user-facing prod push.", blockerId: null, priority: "P0" },
+  { id: "AI-data-postgres-decision", category: "Data", title: "Decide Postgres vs SQLite-on-Vercel for prod", description: "Per project_tasks_deploy.md memo: SQLite-on-/tmp is ephemeral per instance, multi-replica = data loss. Phase D's Postgres adapter is queued. Decision needed before any user-facing prod push.", blockerId: null, priority: "P0" },
   { id: "AI-data-bigquery-decision", category: "Data", title: "Decide BigQuery for analytics warehouse", description: "BQ is overkill at launch traffic; PostHog + Stripe dashboards cover Q3. Revisit at $5k MRR or 10k MAU. For now, decision = no.", blockerId: null, priority: "P2" },
   { id: "AI-data-backups", category: "Data", title: "Set up DB backup strategy", description: "Once Postgres is in: daily logical dump to Vercel Blob or S3; retention 30 days; restore drill quarterly.", blockerId: null, priority: "P0" },
   { id: "AI-data-gdpr-deletion", category: "Data", title: "Implement GDPR right-to-deletion", description: "Cascade delete on users → workspaces (if owner) → tasks → comments → attachments → activities → entitlements. Test on a fixture user.", blockerId: null, priority: "P1" },
@@ -274,7 +274,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Branding & assets ────────────────────────────────────────────
   { id: "AI-brand-favicon", category: "Branding", title: "Favicon (16/32/180/192/512px) + ICO", description: "Multi-size favicon set + Apple touch icon + maskable PWA icon. Generate from src/components/brand/wordmark.tsx via Playwright.", blockerId: null, priority: "P1" },
-  { id: "AI-brand-pwa-manifest", category: "Branding", title: "PWA manifest tuned for installability", description: "name, short_name, theme_color, background_color, icons. Already partly there — verify on /manifest.webmanifest.", blockerId: null, priority: "P1" },
+  { id: "AI-brand-pwa-manifest", category: "Branding", title: "PWA manifest tuned for installability", description: "name, short_name, theme_color, background_color, icons. Already partly there, verify on /manifest.webmanifest.", blockerId: null, priority: "P1" },
   { id: "AI-brand-kit-doc", category: "Branding", title: "Document the brand kit", description: "docs/brand.md: logo SVG, color tokens, type system, voice rules. So future contributors don't drift.", blockerId: null, priority: "P2" },
 
   // ─── Testing infrastructure ───────────────────────────────────────
@@ -302,12 +302,12 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-qa-launch-day-coffee", category: "Pre-launch QA", title: "Coffee + breakfast + no inbox before 9am ET 06-16", description: "Per launch-day-show-hn.md. The playbook is the playbook for a reason.", blockerId: null, priority: "P1" },
 
   // ─── Analytics & tracking ─────────────────────────────────────────
-  { id: "AI-ga4-setup", category: "Analytics & tracking", title: "GA4 property + measurement ID wired", description: "GA4 over Universal Analytics — UA is gone. Pair with GTM for tag governance; route through the existing /api/posthog proxy if you keep PostHog as primary.", blockerId: "B-domain", priority: "P0" },
+  { id: "AI-ga4-setup", category: "Analytics & tracking", title: "GA4 property + measurement ID wired", description: "GA4 over Universal Analytics, UA is gone. Pair with GTM for tag governance; route through the existing /api/posthog proxy if you keep PostHog as primary.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-gtm-container", category: "Analytics & tracking", title: "Google Tag Manager container", description: "One container for GA4 + any future Meta/LinkedIn pixels; keeps tags out of source. Trigger only on consent if cookie banner ships.", blockerId: "B-domain", priority: "P1" },
   { id: "AI-search-console", category: "Analytics & tracking", title: "Google Search Console verified + sitemap submitted", description: "Verify via DNS TXT (cleanest); submit /sitemap.xml; monitor coverage weekly for the first month post-launch.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-bing-webmaster", category: "Analytics & tracking", title: "Bing Webmaster Tools verified", description: "Bing powers DuckDuckGo + ChatGPT search. Import settings from Search Console with one click; don't sleep on the 10% non-Google share.", blockerId: "B-domain", priority: "P1" },
   { id: "AI-posthog-dashboards", category: "Analytics & tracking", title: "PostHog launch dashboard pinned", description: "One dashboard: signups, paid conversions, key funnels (visit → /pricing → checkout), retention cohorts. Pin to PostHog home for one-click status checks.", blockerId: null, priority: "P0" },
-  { id: "AI-vercel-web-analytics", category: "Analytics & tracking", title: "Decide Vercel Web Analytics on/off", description: "Free, zero-config, cookieless, doesn't pad bundle. Decision: on — it's complementary to PostHog (Vercel = aggregate, PostHog = behavioral).", blockerId: null, priority: "P1" },
+  { id: "AI-vercel-web-analytics", category: "Analytics & tracking", title: "Decide Vercel Web Analytics on/off", description: "Free, zero-config, cookieless, doesn't pad bundle. Decision: on, it's complementary to PostHog (Vercel = aggregate, PostHog = behavioral).", blockerId: null, priority: "P1" },
   { id: "AI-clarity-heatmap", category: "Analytics & tracking", title: "Microsoft Clarity for heatmaps + session replay", description: "Free, no MAU caps, no PII by default. Cleaner privacy story than Hotjar. Drop the script behind consent if EU traffic shows up.", blockerId: null, priority: "P1" },
   { id: "AI-plausible-eval", category: "Analytics & tracking", title: "Evaluate Plausible/Fathom as PostHog alternative", description: "If PostHog feels heavy or pricing scales weird post-launch, Plausible ($9/mo) or Fathom ($14/mo) are cleaner. Decision: stay PostHog through Q3.", blockerId: null, priority: "P2" },
 
@@ -317,7 +317,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-ein-application", category: "Business operations", title: "EIN application via IRS or Stripe Atlas", description: "Atlas handles it; takes 1–2 weeks. Required for bank account, payroll, 1099s. Don't try to launch revenue without it.", blockerId: null, priority: "P0" },
   { id: "AI-registered-agent", category: "Business operations", title: "Registered agent + business address", description: "Atlas includes a registered agent year one. Use a virtual mailbox (Earth Class Mail or iPostal1) so home address stays off public filings.", blockerId: null, priority: "P0" },
   { id: "AI-operating-agreement", category: "Business operations", title: "Operating agreement signed", description: "Atlas generates a single-member template; sign it and store with the corporate records. Required by most banks at account opening.", blockerId: null, priority: "P1" },
-  { id: "AI-capital-structure", category: "Business operations", title: "Initial capital structure documented", description: "Single-member LLC: simple. If anyone joins later, document the cap table from day zero — retrofitting equity is painful.", blockerId: null, priority: "P1" },
+  { id: "AI-capital-structure", category: "Business operations", title: "Initial capital structure documented", description: "Single-member LLC: simple. If anyone joins later, document the cap table from day zero, retrofitting equity is painful.", blockerId: null, priority: "P1" },
   { id: "AI-dba-decision", category: "Business operations", title: "DBA filing decision (Tasks vs legal entity name)", description: "If the LLC name differs from the brand 'Tasks', file a DBA in the home state so receipts and contracts can use the brand. Decision pending entity name.", blockerId: null, priority: "P2" },
 
   // ─── Banking & accounting ─────────────────────────────────────────
@@ -331,26 +331,26 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Insurance ────────────────────────────────────────────────────
   { id: "AI-general-liability", category: "Insurance", title: "General liability insurance decision", description: "Software-only, no physical premises, no employees: skip GL until first contract demands it. Vouch or Embroker quote when triggered.", blockerId: null, priority: "P2" },
-  { id: "AI-eo-insurance", category: "Insurance", title: "E&O / professional indemnity quote", description: "Once a Studio or Workspace customer asks for proof of insurance (it'll happen by month 6), get a $1M/$2M policy via Vouch — typically $80–150/mo for solo SaaS.", blockerId: null, priority: "P1" },
+  { id: "AI-eo-insurance", category: "Insurance", title: "E&O / professional indemnity quote", description: "Once a Studio or Workspace customer asks for proof of insurance (it'll happen by month 6), get a $1M/$2M policy via Vouch, typically $80–150/mo for solo SaaS.", blockerId: null, priority: "P1" },
   { id: "AI-cyber-liability", category: "Insurance", title: "Cyber liability quote", description: "Bundle with E&O via Vouch. Covers breach response, notification costs, ransomware. Required by most enterprise procurement past 50 seats.", blockerId: null, priority: "P2" },
-  { id: "AI-jurisdiction-review", category: "Insurance", title: "Jurisdiction review before binding any policy", description: "Delaware LLC + NY operating address + customers globally — make sure the policy actually covers the surface area. Don't sign blind.", blockerId: null, priority: "P2" },
+  { id: "AI-jurisdiction-review", category: "Insurance", title: "Jurisdiction review before binding any policy", description: "Delaware LLC + NY operating address + customers globally, make sure the policy actually covers the surface area. Don't sign blind.", blockerId: null, priority: "P2" },
 
   // ─── Customer support ────────────────────────────────────────────
   { id: "AI-support-tool", category: "Customer support", title: "Support tool: Plain or Help Scout", description: "Plain is the modern pick (Linear-aesthetic, free for solo); Help Scout is the workhorse. Crisp/Intercom are overkill at this stage. Decision: Plain.", blockerId: null, priority: "P1" },
   { id: "AI-help-faq", category: "Customer support", title: "Publish /help FAQ page", description: "Cover the top 12 questions extracted from beta-tester DMs and the launch-day playbook. Markdown in-repo, no CMS needed.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-support-email-forward", category: "Customer support", title: "support@ email forwarding configured", description: "support@<domain> → ethanmcn2013@gmail.com via Resend or registrar forwarding; Gmail filter labels them 'support' for triage.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-support-sla", category: "Customer support", title: "Self-imposed SLA: 24hr free, 8hr paid", description: "Publish on /help. Honesty about response time builds more trust than fake 'instant chat' promises that go unanswered overnight.", blockerId: null, priority: "P1" },
-  { id: "AI-community-decision", category: "Customer support", title: "Community: Slack, Discord, or neither", description: "Both create dead-channel risk pre-1k users. Decision: neither at launch — funnel everything to support@ until volume justifies a community.", blockerId: null, priority: "P2" },
+  { id: "AI-community-decision", category: "Customer support", title: "Community: Slack, Discord, or neither", description: "Both create dead-channel risk pre-1k users. Decision: neither at launch, funnel everything to support@ until volume justifies a community.", blockerId: null, priority: "P2" },
   { id: "AI-loom-async", category: "Customer support", title: "Loom for async support replies", description: "60-second screen recordings beat 4-paragraph emails for any 'how do I X' question. Free tier covers it.", blockerId: null, priority: "P2" },
 
   // ─── Newsletter & content marketing ──────────────────────────────
   { id: "AI-newsletter-platform", category: "Newsletter", title: "Newsletter platform: Beehiiv", description: "Beehiiv has the best free tier (2,500 subs), clean RSS, native referral program. Substack pulls audience away; ConvertKit is overkill solo.", blockerId: null, priority: "P1" },
   { id: "AI-newsletter-first-issue", category: "Newsletter", title: "Draft issue #1 (the refusal list, expanded)", description: "Lead with the manifesto angle that's already on /principles; ship same week as Show HN so launch traffic captures emails.", blockerId: null, priority: "P1" },
-  { id: "AI-newsletter-signup-form", category: "Newsletter", title: "Sign-up form on landing + footer", description: "Embed Beehiiv form in the homepage hero secondary slot and global footer. No popups — they erode trust.", blockerId: null, priority: "P1" },
+  { id: "AI-newsletter-signup-form", category: "Newsletter", title: "Sign-up form on landing + footer", description: "Embed Beehiiv form in the homepage hero secondary slot and global footer. No popups, they erode trust.", blockerId: null, priority: "P1" },
   { id: "AI-newsletter-welcome-seq", category: "Newsletter", title: "Welcome sequence (3 emails over 2 weeks)", description: "Email 1: confirm + the manifesto. Email 2: how Tasks differs from Linear/Asana. Email 3: invite to try free tier with a code.", blockerId: null, priority: "P2" },
   { id: "AI-newsletter-double-optin", category: "Newsletter", title: "Double opt-in for GDPR compliance", description: "Beehiiv supports it natively; turn it on for any subscriber whose IP geolocates to EU. Saves you from CASL/GDPR fines later.", blockerId: null, priority: "P1" },
   { id: "AI-newsletter-segmentation", category: "Newsletter", title: "Audience segmentation strategy", description: "Tag by source (Show HN, PH, organic, vertical-wedding, vertical-restaurant). Lets you send vertical-specific issues without spamming the rest.", blockerId: null, priority: "P2" },
-  { id: "AI-changelog-rss", category: "Newsletter", title: "RSS feed for /changelog", description: "Static XML emit at build time; lets indie hacker types subscribe via Feedly. Already on the trust list — many devs check RSS before signing up.", blockerId: null, priority: "P2" },
+  { id: "AI-changelog-rss", category: "Newsletter", title: "RSS feed for /changelog", description: "Static XML emit at build time; lets indie hacker types subscribe via Feedly. Already on the trust list, many devs check RSS before signing up.", blockerId: null, priority: "P2" },
 
   // ─── CRM & contacts ──────────────────────────────────────────────
   { id: "AI-press-crm", category: "CRM & contacts", title: "Press contacts CRM: Attio", description: "Attio's free tier handles a press list cleanly; Folk is the alt if you want lighter UI. Spreadsheet works at <50 contacts but breaks fast.", blockerId: null, priority: "P1" },
@@ -401,13 +401,13 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   // ─── Trademark & IP ──────────────────────────────────────────────
   { id: "AI-tm-wordmark", category: "Trademark & IP", title: "Wordmark trademark filing (USPTO class 9 + 42)", description: "~$350/class via USPTO TEAS Plus. File 'Tasks' wordmark for software (class 9) + SaaS services (class 42). Direct filing is cheaper than LegalZoom.", blockerId: null, priority: "P1" },
   { id: "AI-tm-international", category: "Trademark & IP", title: "International filing via Madrid Protocol (defer)", description: "Madrid Protocol lets you extend to 130+ countries from one US application; ~$3k+ for the basic set. Defer until you have international revenue.", blockerId: null, priority: "P2" },
-  { id: "AI-tm-design-mark", category: "Trademark & IP", title: "Design mark decision (logo)", description: "Wordmark is the priority — covers any visual treatment. File the design mark separately only if the wordmark application gets refused on genericness.", blockerId: null, priority: "P2" },
+  { id: "AI-tm-design-mark", category: "Trademark & IP", title: "Design mark decision (logo)", description: "Wordmark is the priority, covers any visual treatment. File the design mark separately only if the wordmark application gets refused on genericness.", blockerId: null, priority: "P2" },
   { id: "AI-tm-monitoring", category: "Trademark & IP", title: "Monitor for infringement (Markify or manual)", description: "Markify watches USPTO for confusingly similar filings; $30/mo. Manual quarterly USPTO TESS check is free and probably sufficient at this stage.", blockerId: null, priority: "P2" },
 
   // ─── Marketing & growth tools ────────────────────────────────────
-  { id: "AI-affiliate-program", category: "Marketing & growth", title: "Affiliate program decision: defer to month 3", description: "Rewardful integrates with Stripe in 10 min ($49/mo); Tapfiliate is the alt. Decision: no affiliate at launch — wait for product-market signal first.", blockerId: null, priority: "P2" },
+  { id: "AI-affiliate-program", category: "Marketing & growth", title: "Affiliate program decision: defer to month 3", description: "Rewardful integrates with Stripe in 10 min ($49/mo); Tapfiliate is the alt. Decision: no affiliate at launch, wait for product-market signal first.", blockerId: null, priority: "P2" },
   { id: "AI-referral-program", category: "Marketing & growth", title: "Referral program decision: in-house at month 2", description: "GrowSurf and Viral Loops are both ~$200/mo; we can build referral codes on top of the existing comp_codes table for $0. Defer until launch dust settles.", blockerId: null, priority: "P2" },
-  { id: "AI-pricing-experiments", category: "Marketing & growth", title: "Pricing-page A/B experiments via PostHog", description: "Once flags ship: test annual discount %, default tier, social proof placement. Don't run anything during the launch beats — too much noise.", blockerId: null, priority: "P2" },
+  { id: "AI-pricing-experiments", category: "Marketing & growth", title: "Pricing-page A/B experiments via PostHog", description: "Once flags ship: test annual discount %, default tier, social proof placement. Don't run anything during the launch beats, too much noise.", blockerId: null, priority: "P2" },
   { id: "AI-landing-variants", category: "Marketing & growth", title: "Landing-page variants by audience", description: "/for/<vertical> already exists for venues/restaurants. Add /for/agencies and /for/freelancers post-launch based on which verticals signal.", blockerId: null, priority: "P2" },
 
   // ─── Internal tooling ────────────────────────────────────────────
@@ -415,7 +415,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-notion-vs-tasks-docs", category: "Internal tooling", title: "Long-form docs: keep in-repo MDX", description: "Notion sprawls; in-repo MDX (docs/) keeps docs versioned with code. Decision: stay in-repo until a non-engineer joins and needs Notion's WYSIWYG.", blockerId: null, priority: "P2" },
   { id: "AI-bug-tracker", category: "Internal tooling", title: "Bug tracking: GitHub Issues", description: "Linear is great but $8/seat compounds; GitHub Issues is free and lives next to the code. Migrate to Linear when team grows past 2.", blockerId: null, priority: "P1" },
   { id: "AI-loom-walkthroughs", category: "Internal tooling", title: "Loom for product walkthroughs (internal + press)", description: "Free tier (25 videos, 5min cap) covers internal use. Useful for press follow-ups: 'here's a 3-min walkthrough of the feature you asked about'.", blockerId: null, priority: "P2" },
-  { id: "AI-calendly-press", category: "Internal tooling", title: "Calendly for press meetings", description: "Free tier handles 1 event type — make it a 20-min 'Tasks demo / press chat' link. Drop in every cold press email signature.", blockerId: null, priority: "P1" },
+  { id: "AI-calendly-press", category: "Internal tooling", title: "Calendly for press meetings", description: "Free tier handles 1 event type, make it a 20-min 'Tasks demo / press chat' link. Drop in every cold press email signature.", blockerId: null, priority: "P1" },
 
   // ─── Status & uptime ─────────────────────────────────────────────
   { id: "AI-status-page", category: "Status & uptime", title: "Public status page: BetterStack", description: "BetterStack: free tier covers status page + uptime monitoring + on-call paging in one tool. Statuspage is enterprise-priced; Instatus is the cheap alt.", blockerId: "B-domain", priority: "P0" },
@@ -444,7 +444,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 ];
 
 export async function seedLaunchReadinessIfMissing(): Promise<void> {
-  // Blockers — upsert by id, preserve resolvedAt + note.
+  // Blockers, upsert by id, preserve resolvedAt + note.
   const blockerIds = SEED_BLOCKERS.map((b) => b.id);
   const existingBlockers = await db
     .select()
@@ -490,7 +490,7 @@ export async function seedLaunchReadinessIfMissing(): Promise<void> {
     }
   }
 
-  // Action items — same upsert pattern, preserve status / note / completedAt.
+  // Action items, same upsert pattern, preserve status / note / completedAt.
   const actionIds = SEED_ACTION_ITEMS.map((a) => a.id);
   const existingActions = await db
     .select()

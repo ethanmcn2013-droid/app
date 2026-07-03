@@ -3,13 +3,13 @@ import type { LaneId } from "@/lib/data";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
- * Marketing theme. Editorial, magazine-grade — closer to Stripe Press
+ * Marketing theme. Editorial, magazine-grade, closer to Stripe Press
  * or the Linear changelog than to a kanban board. A reader should feel
  * like they’re reading a published brief, not navigating an app.
  *
  * Pure white page, generous typography, brand-purple used sparingly
  * (eyebrow, lane dots, the active-lane heading). Narrow editorial
- * column at 760px. Server component — no client hooks.
+ * column at 760px. Server component, no client hooks.
  */
 export function MarketingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
   const byLane = new Map<LaneId, typeof tasks>();
@@ -207,7 +207,7 @@ export function MarketingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
  * Helpers
  * ──────────────────────────────────────────────────────────────────── */
 
-/** Eyebrow chip copy — "Brief", "Plan", "Roadmap", "Launch" — chosen
+/** Eyebrow chip copy, "Brief", "Plan", "Roadmap", "Launch", chosen
  *  deterministically from the workspace name so the same workspace
  *  always reads with the same eyebrow across renders. */
 function pickEyebrow(name: string): string {
@@ -221,7 +221,7 @@ function pickEyebrow(name: string): string {
 }
 
 function fmtLong(d: Date): string {
-  // ISO-style for the editorial meta line — "2026-05-06" reads more
+  // ISO-style for the editorial meta line, "2026-05-06" reads more
   // like a masthead date than "May 6, 2026".
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -245,7 +245,7 @@ function formatDue(due: string): string {
   return due;
 }
 
-/** Tinted background for the priority chip — a 12% wash of the
+/** Tinted background for the priority chip, a 12% wash of the
  *  priority colour. Keeps the chip readable on white without
  *  introducing a second accent. */
 function tintFor(priority: "p0" | "p1" | "p2" | "p3"): string {

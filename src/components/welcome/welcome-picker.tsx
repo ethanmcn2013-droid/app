@@ -14,12 +14,12 @@ type PendingTemplate = { id: string; name: string };
 
 /**
  * The first-run welcome screen. A focused, full-page domain picker.
- * Renders once — until either a starter pack is chosen or the user
+ * Renders once, until either a starter pack is chosen or the user
  * clicks "skip and start blank," after which the
  * `firstRunCompletedAt` meta row is set and /welcome redirects back
  * to /app/board for all future visits.
  *
- * T1.2 — if a template was applied to this workspace before first
+ * T1.2, if a template was applied to this workspace before first
  * run (via the Tasks templates flow), `pendingTemplate` is set and
  * the picker leads with "Open with X" instead of asking the user
  * to re-pick a domain on top of a template they already chose.

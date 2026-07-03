@@ -10,7 +10,7 @@ import { addTaskAction } from "@/server/actions/tasks";
  *
  * The page server-component reads `?title=...&url=...&text=...` and
  * passes them in raw. We compose them into one editable line —
- * "Title — URL" when both are present, otherwise whichever single
+ * "Title, URL" when both are present, otherwise whichever single
  * field carried something. The user lands one tap away from save.
  */
 export function ShareTargetQuickAdd({
@@ -33,7 +33,7 @@ export function ShareTargetQuickAdd({
     if (title) parts.push(title);
     else if (text) parts.push(text);
     if (url && !parts.includes(url)) parts.push(url);
-    return parts.join(" — ");
+    return parts.join(", ");
   }, [title, url, text]);
 
   const [value, setValue] = useState(initial);
@@ -45,7 +45,7 @@ export function ShareTargetQuickAdd({
     if (title) return "A page title.";
     if (url) return "A link.";
     if (text) return "A snippet of selected text.";
-    return "Nothing recognisable came through — type it in.";
+    return "Nothing recognisable came through, type it in.";
   }, [title, url, text]);
 
   function save() {

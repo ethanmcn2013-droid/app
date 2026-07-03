@@ -1,10 +1,10 @@
 /**
- * Account-erasure integration test — Signal Tasks. GDPR right-to-erasure /
+ * Account-erasure integration test · Signal Tasks. GDPR right-to-erasure /
  * App Store 5.1.1(v) guard.
  *
  * Runs the REAL `eraseAccountData` against a real in-memory libSQL database
  * built from the actual production migrations (drizzle/0000…0009), so it
- * proves erasure end-to-end — not by source inspection.
+ * proves erasure end-to-end, not by source inspection.
  *
  * Two invariants, both load-bearing for the GDPR finding:
  *
@@ -17,9 +17,9 @@
  *      purpose: if a delete is missing, the row survives and the test
  *      fails. Nothing is allowed to hide behind a cascade.
  *
- *   2. NO COLLATERAL DELETION. A second "bystander" user — who owns their
+ *   2. NO COLLATERAL DELETION. A second "bystander" user, who owns their
  *      own workspace, is a member of the target's workspace, and posted on
- *      the target's tasks — keeps every one of their own rows. Global,
+ *      the target's tasks, keeps every one of their own rows. Global,
  *      non-tenant tables (comp_codes, roadmap_items, …) are untouched.
  *
  * Plus: the on-disk attachment binary is unlinked (a real probe file is
@@ -51,11 +51,11 @@ const drizzleDir = join(here, "..", "..", "drizzle");
 /** Apply every prod migration, in journal order, to a fresh in-memory DB. */
 async function freshDb() {
   const client = createClient({ url: ":memory:" });
-  // Prove the EXPLICIT deletes do all the work — no cascade safety net.
+  // Prove the EXPLICIT deletes do all the work, no cascade safety net.
   await client.execute("PRAGMA foreign_keys = OFF");
 
   // `attachments`, `roadmap_items`, `blockers`, `action_items` live in
-  // src/server/db/schema.ts but have NO migration file — they were created
+  // src/server/db/schema.ts but have NO migration file, they were created
   // on prod by `drizzle-kit push --force` (this repo's dev/db:push flow),
   // which the migration replay can't reproduce. These CREATE statements
   // mirror schema.ts so the in-memory DB matches prod. They run BEFORE the
@@ -209,7 +209,7 @@ async function seed(client: Client, probePath: string) {
       ('board:ws-b:name','B board'),
       ('activeDomain','wedding');
 
-    -- Non-tenant global tables — must be untouched by erasure.
+    -- Non-tenant global tables, must be untouched by erasure.
     INSERT INTO comp_codes (code, tier, duration_days, quantity) VALUES ('CODE1','pro',30,10);
     INSERT INTO processed_webhooks (event_id, event_type) VALUES ('evt_1','checkout.session.completed');
     INSERT INTO roadmap_items (id, week, kind) VALUES ('ri-1',0,'post');
@@ -255,7 +255,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       assert.equal(
         await count(client, where),
         0,
-        `residual rows left in ${table} after erasure — erasure is incomplete`,
+        `residual rows left in ${table} after erasure, erasure is incomplete`,
       );
     }
 
@@ -298,7 +298,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     assert.equal(
       existsSync(probePath),
       false,
-      "the owned attachment's on-disk binary was not unlinked — GDPR gap",
+      "the owned attachment's on-disk binary was not unlinked, GDPR gap",
     );
 
     // ── Idempotent: a retry after a partial failure is safe ─────────────

@@ -16,7 +16,7 @@ function newActivityId(): string {
 /**
  * Record an activity row as a side-effect of a server action.
  *
- * Activity is observability, not transactional — failures here are
+ * Activity is observability, not transactional, failures here are
  * caught and logged so the parent action's user-facing mutation
  * still completes successfully.
  */
@@ -27,7 +27,7 @@ export async function recordActivity(
 ): Promise<void> {
   try {
     // Inherit workspace from the parent task. If the task has been
-    // deleted in a race, fall through silently — activity logging
+    // deleted in a race, fall through silently, activity logging
     // is observability, not transactional.
     const [parent] = await db
       .select({ workspaceId: tasks.workspaceId })

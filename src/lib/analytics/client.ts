@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Browser analytics — posts to our first-party capture route.
+ * Browser analytics, posts to our first-party capture route.
  */
 
 export type ClientAnalyticsProps = Record<
@@ -21,6 +21,6 @@ export function captureClientEvent(
     body: JSON.stringify({ event, properties }),
     keepalive: true,
   }).catch(() => {
-    // Non-blocking — analytics must never break UX
+    // Non-blocking, analytics must never break UX
   });
 }

@@ -64,7 +64,7 @@ export async function getMyRoleInActiveWorkspace(): Promise<
 
 /** Rename + (optionally) re-seed the active workspace. The domain
  *  field re-seeds via `seedDomainAction`, which wipes tasks and
- *  re-overlays the chosen pack — same flow as /welcome. */
+ *  re-overlays the chosen pack, same flow as /welcome. */
 export async function updateWorkspaceAction(input: {
   name?: string;
   domain?: DomainId;
@@ -140,7 +140,7 @@ export async function setMemberRoleAction(
     throw new Error("Only the owner can change member roles.");
   }
   if (role === "member") {
-    // Demoting an owner — refuse if it would empty the owner list.
+    // Demoting an owner, refuse if it would empty the owner list.
     const owners = await db
       .select({ userId: workspaceMembers.userId })
       .from(workspaceMembers)
@@ -151,7 +151,7 @@ export async function setMemberRoleAction(
         ),
       );
     if (owners.length === 1 && owners[0]?.userId === userId) {
-      throw new Error("Demote a different owner first — one must remain.");
+      throw new Error("Demote a different owner first, one must remain.");
     }
   }
   await db
@@ -231,7 +231,7 @@ function siteUrl(): string {
 }
 
 /** Mint an invite token + send the email. Replaces the cycle-17 stub.
- *  The cap from cycle 17 is still checked first — the real flow
+ *  The cap from cycle 17 is still checked first, the real flow
  *  inherits the rule that Free + Pro workspaces cap at 4 members
  *  total (1 owner + 3 invitees).
  *
@@ -346,7 +346,7 @@ function mintInviteToken(): string {
     .replace(/=/g, "");
 }
 
-/** Accept-invite action — called from `/invite/[token]/page.tsx`
+/** Accept-invite action, called from `/invite/[token]/page.tsx`
  *  after the user signs in via Clerk. Validates the token's email
  *  matches the current user's email (case-insensitive), checks the
  *  cap, INSERTs the workspace_members row, marks the invite
@@ -396,7 +396,7 @@ export async function acceptInviteAction(token: string): Promise<{
     );
   }
 
-  // Re-check the cap at accept time — the workspace tier could have
+  // Re-check the cap at accept time, the workspace tier could have
   // changed (downgrade) between mint + accept.
   if (!(await canAddMemberByWorkspace(invite.workspaceId))) {
     throw new Error(
@@ -412,7 +412,7 @@ export async function acceptInviteAction(token: string): Promise<{
     throw new Error("This workspace no longer exists.");
   }
 
-  // INSERT or IGNORE — already-a-member is a no-op success.
+  // INSERT or IGNORE, already-a-member is a no-op success.
   await db.run(sql`
     INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
     VALUES (${invite.workspaceId}, ${me}, 'member')
@@ -445,7 +445,7 @@ export async function acceptInviteAction(token: string): Promise<{
 /**
  * Server action: list pending invites for the active workspace. Used
  * by the settings members panel so the owner can see who's been
- * invited and hasn't accepted yet — and resend or revoke.
+ * invited and hasn't accepted yet, and resend or revoke.
  * Scopes to invites that are unaccepted AND unexpired.
  */
 export type PendingInviteRead = {
@@ -521,7 +521,7 @@ async function canAddMemberByWorkspace(workspaceId: string): Promise<boolean> {
 }
 
 /** Read-the-row helper for the settings page. Materializes defaults
- *  for users who haven't toggled anything yet — defaults matter
+ *  for users who haven't toggled anything yet, defaults matter
  *  because the digest cron reads `dailyDigest` directly. */
 export async function getNotificationPrefs(): Promise<{
   dailyDigest: boolean;
@@ -606,7 +606,7 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Plain-English workspace activity feed — Sprint 2 cycle 10.4
+// Plain-English workspace activity feed, Sprint 2 cycle 10.4
 // ────────────────────────────────────────────────────────────────────
 
 export type WorkspaceActivityLine = {
@@ -618,17 +618,17 @@ export type WorkspaceActivityLine = {
 
 /**
  * Recent workspace activity, rendered as prose lines instead of the
- * raw "user_2k3 did entity_abc" jargon — Sprint 2 gesture #4.
+ * raw "user_2k3 did entity_abc" jargon, Sprint 2 gesture #4.
  *
  * Reads the last ~40 activity rows for the active workspace, joins to
  * users for display names, joins to tasks for titles, then groups
  * consecutive events of the same (user, kind, task-or-not) within a
  * 10-minute window into a single prose line. Returns at most 10 lines
- * — that's the locked cap from the Sprint 2 plan (compact rail, not
+ *, that's the locked cap from the Sprint 2 plan (compact rail, not
  * a configurable feed).
  *
  * Visible to all workspace members, not owner-gated. Collaboration
- * means "the invited person can see what changed" — gating activity
+ * means "the invited person can see what changed", gating activity
  * to owner-only breaks the loop.
  */
 export async function listWorkspaceActivityAction(): Promise<
@@ -636,7 +636,7 @@ export async function listWorkspaceActivityAction(): Promise<
 > {
   const ws = await getActiveWorkspace();
 
-  // Pull a generous window — grouping collapses many rows into few
+  // Pull a generous window, grouping collapses many rows into few
   // lines, so we over-fetch and cap the output post-grouping.
   const rows = await db
     .select({

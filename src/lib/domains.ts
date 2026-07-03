@@ -11,7 +11,7 @@ export type DomainId =
 /**
  * Per-domain overlay applied to the canonical 16-task seed structure.
  * The cinematic demo's scripted scenes (carry t-101 → doing,
- * comment on t-202, etc.) operate by task ID — so every domain MUST
+ * comment on t-202, etc.) operate by task ID, so every domain MUST
  * keep IDs t-101..t-404 with identical lane assignments and timeline
  * geometry. Only the user-facing flavor swaps.
  */
@@ -56,7 +56,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     workspaceTitle: "Q3 Launch · Plays in motion",
     workspaceCrumb: "Marketing",
     workspaceUrl: `${TASKS_DOMAIN}/team/marketing`,
-    demoCommentText: "Hero animation looks great — shipping today.",
+    demoCommentText: "Hero animation looks great, shipping today.",
     emptyStateHeadline: "This is where your launch plan goes.",
     emptyStateBody:
       "Plot the campaign. Drop in the deliverables. Watch them ship.",
@@ -78,7 +78,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
       },
       "t-201": { title: "Sales demo sync", tags: ["meeting"] },
       "t-202": {
-        title: "Launch demo video — final cut",
+        title: "Launch demo video, final cut",
         tags: ["launch"],
       },
       "t-203": {
@@ -102,9 +102,9 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     },
     commentBodies: [
       "Hero animation looks great in the latest cut.",
-      "Pinged finance — they'll review by EOW.",
+      "Pinged finance, they'll review by EOW.",
       "Bumped this to P1 after the demo sync. Keep moving.",
-      "Linking the brief — let me know if anything's unclear.",
+      "Linking the brief, let me know if anything's unclear.",
       "Marketing has the assets. We just need the copy review.",
       "Spec is locked, building now. ETA Tuesday.",
       "Two design tweaks left, then ready for review.",
@@ -160,10 +160,10 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
       "t-404": { title: "Submit financial aid forms", tags: ["admin"] },
     },
     commentBodies: [
-      "Got the syllabus — pacing is brutal week 6.",
+      "Got the syllabus, pacing is brutal week 6.",
       "Library quiet floor reserved Wed 6–10pm.",
       "Pushing this back. Midterms first.",
-      "Asked the TA — extension might be possible.",
+      "Asked the TA, extension might be possible.",
       "Found a study guide from last semester. Sharing now.",
       "Group's meeting Sunday at the union.",
       "Just turned this in. Took forever.",
@@ -178,7 +178,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     workspaceCrumb: "Studio",
     workspaceUrl: `${TASKS_DOMAIN}/me/studio`,
     demoCommentText:
-      "Final delivery sent · Coombe wedding gallery — invoice closed Friday.",
+      "Final delivery sent · Coombe wedding gallery, invoice closed Friday.",
     emptyStateHeadline: "This is where the client work actually ships.",
     emptyStateBody:
       "Briefs, edit rounds, deliveries, invoices. Three clients, one inbox, no notebook scattered around the desk.",
@@ -263,14 +263,14 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
       "t-105": ["t-303"],
     },
     commentBodies: [
-      "Loved the moody set — can we get one more with the bridesmaids?",
-      "Copy reads great. One change: 'studio' appears twice in para 2 — pick the stronger one.",
+      "Loved the moody set, can we get one more with the bridesmaids?",
+      "Copy reads great. One change: 'studio' appears twice in para 2, pick the stronger one.",
       "Final delivery sent · gallery passworded · receipt attached.",
       "Aoife's RSVP came in, full guest list updated.",
-      "Light was perfect after 5pm — moving the second cull session to tonight.",
+      "Light was perfect after 5pm, moving the second cull session to tonight.",
       "Niamh's brief locked. Mood board v2 going across Thursday.",
       "Mercury reconciled · Q2 invoices closed · numbers match.",
-      "Pinned the new MSA — Foley's solicitor signed off.",
+      "Pinned the new MSA, Foley's solicitor signed off.",
       "Brief attached. Flexible on the colour palette but the typeface is locked.",
     ],
   },
@@ -283,7 +283,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     workspaceCrumb: "Trades",
     workspaceUrl: `${TASKS_DOMAIN}/me/trades`,
     demoCommentText:
-      "Panel upgrade priced — quote out to the Hartwells tonight.",
+      "Panel upgrade priced, quote out to the Hartwells tonight.",
     emptyStateHeadline: "This is where the day's calls live.",
     emptyStateBody:
       "Service calls, quotes, materials, the invoice you keep meaning to send. One place.",
@@ -352,13 +352,13 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
       },
     },
     commentBodies: [
-      "Panel was deeper than it looked — pulled an extra hour.",
+      "Panel was deeper than it looked, pulled an extra hour.",
       "Materials list updated. Pickup on the way in tomorrow.",
       "Sandoval rescheduled to next Tuesday morning.",
       "Roy's running the Beechwood rough-in solo today.",
       "Permit cleared. We can break ground Friday.",
       "Invoice sent. Net 14 from today.",
-      "Truck back in the shop — alternator. Out of service Thursday.",
+      "Truck back in the shop, alternator. Out of service Thursday.",
       "Hartwells signed off. Final walk Monday at 10.",
     ],
   },
@@ -370,10 +370,10 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     workspaceTitle: "Hartwell Wedding · 6.14.26",
     workspaceCrumb: "Weddings",
     workspaceUrl: `hartwell-wedding`,
-    demoCommentText: "Florals confirmed — peonies and garden roses.",
+    demoCommentText: "Florals confirmed, peonies and garden roses.",
     emptyStateHeadline: "This is where the day comes together.",
     emptyStateBody:
-      "Vendors, run-of-show, RSVPs, the small things. Every detail in one place — finally.",
+      "Vendors, run-of-show, RSVPs, the small things. Every detail in one place, finally.",
     firstTaskExample: "Confirm catering tasting menu by Friday",
     tasks: {
       "t-101": {
@@ -421,10 +421,10 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
       "t-404": { title: "Marriage license filed", tags: ["legal"] },
     },
     commentBodies: [
-      "Florals confirmed — peonies and garden roses.",
+      "Florals confirmed, peonies and garden roses.",
       "RSVPs at 89%, on pace.",
       "Mariposa locked in. Tasting was 10/10.",
-      "DJ pulled the playlist together — sending now.",
+      "DJ pulled the playlist together, sending now.",
       "Hair and nails booked for the morning of.",
       "Sent 4 vendor reminders this morning.",
       "Photographer wants a 30min walkthrough Thursday.",
@@ -434,12 +434,12 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
 };
 
 /**
- * Public audience order — the homepage demo toggle and /about grid map
+ * Public audience order, the homepage demo toggle and /about grid map
  * this. Only the four real Signal Tasks audiences (BRAND.md §3's
  * canonical example set: a wedding planner, a tradesperson, a
  * freelancer, a student) are presented. `marketing` is retained in
  * DOMAINS as the inert canonical seed-structure fallback for
- * domain-context and templates, but is never shown to a user — a
+ * domain-context and templates, but is never shown to a user, a
  * tech-company marketing board is the §2.2 vocabulary alienation this
  * product refuses to put in front of the 80%.
  */

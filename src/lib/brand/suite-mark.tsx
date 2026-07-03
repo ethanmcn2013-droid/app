@@ -7,7 +7,7 @@ type SuiteMarkProps = {
   borderRadius?: number;
 };
 
-/** Proportions locked to option 6 — dot + broadcast ring. */
+/** Proportions locked to option 6, dot + broadcast ring. */
 export function suiteMarkMetrics(canvas: number) {
   const dot = Math.round(canvas * 0.36);
   const ring = Math.round(canvas * 0.72);
@@ -16,7 +16,7 @@ export function suiteMarkMetrics(canvas: number) {
 }
 
 /**
- * Suite favicon mark — indigo dot with broadcast ring on paper.
+ * Suite favicon mark, indigo dot with broadcast ring on paper.
  * Frozen frame of the umbrella pulse-slow / signal-emit gesture.
  */
 export function SuiteMark({

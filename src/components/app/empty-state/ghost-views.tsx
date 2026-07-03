@@ -2,7 +2,7 @@
 
 import { LANES, LANE_ORDER } from "@/lib/data";
 
-/** Tiny helpers — silver-pencil sketches of cards, rows, bars. They
+/** Tiny helpers, silver-pencil sketches of cards, rows, bars. They
  *  exist only to communicate "this is what your X view will look like
  *  once it has tasks." Always behind a fade overlay. */
 

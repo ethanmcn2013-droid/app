@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * LongWaitStatus — honest long-wait escalation (loading canon, pitch 6).
+ * LongWaitStatus, honest long-wait escalation (loading canon, pitch 6).
  *
  * Renders nothing until a real ~5s timer elapses, then shows one calm
  * line ("Opening the workspace"). No spinner, no percentage, no extra
- * animation beyond a 200ms opacity fade — the quiet mark above stays
+ * animation beyond a 200ms opacity fade, the quiet mark above stays
  * the only motion.
  *
  * Accessibility contract (canon law 6): this is real wait copy, so it
  * carries role="status" + aria-live="polite" and lives OUTSIDE the
  * aria-hidden decorative wordmark. The 5s timer is a real timer and
- * also applies under prefers-reduced-motion — the reduced-motion rule
+ * also applies under prefers-reduced-motion, the reduced-motion rule
  * ("no artificial delay") governs the loader hold, not the escalation
  * measure. Only decorative motion is suppressed.
  *

@@ -43,7 +43,7 @@ export function EmptyStateOverlay({
 
   return (
     <div className="relative h-full">
-      {/* Faded structural ghost — communicates the shape of the view */}
+      {/* Faded structural ghost, communicates the shape of the view */}
       <div className="pointer-events-none absolute inset-0 select-none opacity-[0.42]">
         {ghost}
       </div>
@@ -114,7 +114,7 @@ export function EmptyStateOverlay({
             {seedError && active === null ? (
               <div role="alert" className="mt-3 flex flex-col items-center gap-2">
                 <p className="text-[12px] text-ink-soft">
-                  That didn&rsquo;t take — check your connection and try again.
+                  That didn&rsquo;t take, check your connection and try again.
                 </p>
                 <button
                   type="button"

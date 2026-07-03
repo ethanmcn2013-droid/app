@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 
 /**
- * Focus Mode — a full-screen calm-down overlay with a 25-minute
+ * Focus Mode, a full-screen calm-down overlay with a 25-minute
  * Pomodoro-style countdown.
  *
  * Mounted once at the app layout level so the global keyboard
@@ -13,7 +13,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
  * across every /app/* page.
  *
  * Trigger paths:
- *   1. User presses `f` while a board card is keyboard-focused — we
+ *   1. User presses `f` while a board card is keyboard-focused, we
  *      read `[data-task-focused="true"]` to find the card and pull
  *      `data-task-id` + `data-task-title` off it.
  *   2. The detail panel dispatches `focus-mode:open` with the task's
@@ -23,7 +23,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
  * Strict no-pretense rules:
  *   - No notification sound, no system alert when the timer hits 0.
  *   - No streak counter, no analytics, no persistence.
- *   - Background is solid white — not the brand glow, not a gradient.
+ *   - Background is solid white, not the brand glow, not a gradient.
  *   - The colon in 25:00 does NOT blink.
  */
 const TOTAL_SECONDS = 25 * 60;
@@ -62,7 +62,7 @@ export function FocusMode() {
     setIsOpen(false);
   }, []);
 
-  // Imperative open via custom event — used by the detail-panel
+  // Imperative open via custom event, used by the detail-panel
   // footer button. Keeps the panel decoupled from this component's
   // React state.
   useEffect(() => {
@@ -74,7 +74,7 @@ export function FocusMode() {
     return () => window.removeEventListener("focus-mode:open", onOpen);
   }, [open]);
 
-  // Global keyboard listener — `f` opens, `space` pauses, `esc`
+  // Global keyboard listener, `f` opens, `space` pauses, `esc`
   // closes. Skips when the user is typing in an editable surface
   // (matches the cycle 16 / 22 board-app pattern).
   useEffect(() => {
@@ -111,7 +111,7 @@ export function FocusMode() {
       }
 
       if (e.key !== "f" && e.key !== "F") return;
-      // Modifier-stripped binding only — Cmd/Ctrl+F is the browser's
+      // Modifier-stripped binding only, Cmd/Ctrl+F is the browser's
       // find-in-page and we don't fight it.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
@@ -138,7 +138,7 @@ export function FocusMode() {
     return () => window.clearInterval(id);
   }, [isOpen, isPaused, secondsRemaining]);
 
-  // SSR safety — portal target only exists in the browser.
+  // SSR safety, portal target only exists in the browser.
   if (typeof document === "undefined") return null;
 
   const done = secondsRemaining <= 0;
@@ -194,7 +194,7 @@ export function FocusMode() {
             >
               {done ? (
                 <span className="text-[40px] font-semibold lowercase tracking-tight">
-                  0:00 · done — close out the work
+                  0:00 · done, close out the work
                 </span>
               ) : (
                 timeLabel

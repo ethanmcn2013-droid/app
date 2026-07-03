@@ -26,7 +26,7 @@ import type { LaneId } from "@/lib/data";
  *
  * Mounted once at the app layout level, alongside `<CrossWorkspaceOverdue />`,
  * so the shortcut is live on every /app/* page. The keydown listener
- * skips when focus is inside an editable surface — except when that
+ * skips when focus is inside an editable surface, except when that
  * surface is the popover's own search input.
  */
 export function CrossWorkspaceSearch() {
@@ -65,7 +65,7 @@ export function CrossWorkspaceSearch() {
 
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key.toLowerCase() === "k") {
-        // ⌘K is allowed even from inside another input — the user
+        // ⌘K is allowed even from inside another input, the user
         // genuinely wants the search overlay regardless of what's
         // focused. Mirrors VSCode / Linear behavior.
         e.preventDefault();
@@ -95,7 +95,7 @@ export function CrossWorkspaceSearch() {
     requestAnimationFrame(() => inputRef.current?.focus());
   }, [open]);
 
-  // Debounce the query at 180ms — same cadence as the typeahead in
+  // Debounce the query at 180ms, same cadence as the typeahead in
   // the import flow. Avoids hitting the action on every keystroke.
   useEffect(() => {
     if (!open) return;
@@ -104,7 +104,7 @@ export function CrossWorkspaceSearch() {
   }, [query, open]);
 
   // Fire the server action whenever the debounced query settles.
-  // Cancel-on-rerun via a sequence number — not the cleanup function,
+  // Cancel-on-rerun via a sequence number, not the cleanup function,
   // because a fresh query shouldn't blank the previous results until
   // the new ones arrive (avoids a flicker on every keystroke).
   const seqRef = useRef(0);
@@ -147,7 +147,7 @@ export function CrossWorkspaceSearch() {
         try {
           await selectWorkspaceAction(item.workspaceId);
         } catch {
-          // Best-effort — proceed with navigation regardless.
+          // Best-effort, proceed with navigation regardless.
         }
         router.push(`/app/board?task=${encodeURIComponent(item.taskId)}`);
         router.refresh();

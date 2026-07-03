@@ -252,7 +252,7 @@ export function CinematicDemo({
 
   useEffect(() => {
     // Under prefers-reduced-motion the demo renders a static representative
-    // frame (all 4 lanes visible, tasks in place) — no frozen mid-animation,
+    // frame (all 4 lanes visible, tasks in place), no frozen mid-animation,
     // no timing loops. The scene runner only starts for users who have not
     // opted out of motion.
     if (!mounted || prefersReducedMotion) return;
@@ -264,7 +264,7 @@ export function CinematicDemo({
     };
 
     const run = async () => {
-      // Initial settle — cursors arrive with their labels visible
+      // Initial settle, cursors arrive with their labels visible
       // (justArrived) for ~900ms so the eye reads who's here, then
       // the labels fade and we're at rest.
       await wait(700);
@@ -347,7 +347,7 @@ export function CinematicDemo({
      * The room breathes. Sets `scene: "settle"` and gently drifts each
      * cursor toward a nearby random point so the demo reads alive
      * rather than dead. No state mutations to tasks, overlays, or
-     * activity feed — those keep their last value visible.
+     * activity feed, those keep their last value visible.
      */
     const sceneSettle = async (durationMs = 1600) => {
       setState((s) => ({ ...s, scene: "settle" }));
@@ -798,7 +798,7 @@ export function CinematicDemo({
         </div>
       </motion.div>
 
-      {/* Bottom controls: pause / restart — hidden under prefers-reduced-motion
+      {/* Bottom controls: pause / restart, hidden under prefers-reduced-motion
           because the scene runner is also gated off; the control would be a
           ghost that does nothing for those users. */}
       <div className="mt-4 flex items-center justify-center gap-3 text-[12px] text-ink-quiet">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Lightweight health probe for the daily-digest pipeline.
- * Reports configuration presence (env var booleans) — does NOT
+ * Reports configuration presence (env var booleans), does NOT
  * trigger the pipeline. This is what the /status page probes so it
  * doesn't need the CRON_SECRET header and never produces a false
  * negative when the secret is correctly set.

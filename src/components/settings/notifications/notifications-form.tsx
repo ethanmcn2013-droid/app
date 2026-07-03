@@ -83,7 +83,7 @@ export function NotificationsForm({
       />
       <SettingsRow
         label="Weekly summary"
-        hint="Monday-morning view of last week and this week. Shipped on Mondays only — there's no daily-roundup-as-weekly trick."
+        hint="Monday-morning view of last week and this week. Shipped on Mondays only, there's no daily-roundup-as-weekly trick."
         control={
           <RadioGroup
             name="summary"
@@ -132,7 +132,7 @@ export function NotificationsForm({
       />
       <SettingsRow
         label="Plan changes & expiry notices"
-        hint="We'll let you know two weeks before a plan expires. There's no way to turn this off — it's the difference between a refund window and a surprise."
+        hint="We'll let you know two weeks before a plan expires. There's no way to turn this off, it's the difference between a refund window and a surprise."
         control={
           <div className="text-[12px] text-ink-quiet">Always on</div>
         }
@@ -193,7 +193,7 @@ function RadioGroup<T extends string>({
   );
 }
 
-// Curated short list — users in any other zone keep their selection
+// Curated short list, users in any other zone keep their selection
 // (Intl detection populates it in the form's initial-mount effect).
 const COMMON_TIMEZONES = [
   "Europe/Dublin",

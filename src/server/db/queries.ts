@@ -66,7 +66,7 @@ const positionOrderSql = sql`COALESCE(${tasks.position}, CAST(${tasks.createdAt}
 export async function getTasks(workspaceId: string): Promise<Task[]> {
   // Demo/Review: serve the in-memory venue board; never reach the real DB.
   if (isDemoMode()) return demoTasks();
-  // Top-level only — subtasks (rows with a non-null parent_task_id)
+  // Top-level only, subtasks (rows with a non-null parent_task_id)
   // live exclusively in the detail panel for cycle 25. They'd
   // otherwise multiply into the board / list / timeline / calendar
   // alongside their parents.
@@ -78,7 +78,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
     .orderBy(laneOrderSql, positionOrderSql)
     // Hard safety cap. The board/list/timeline never need more than
     // this, and the public `/p/{slug}` share path resolves through
-    // here too — without a bound a runaway workspace would scan the
+    // here too, without a bound a runaway workspace would scan the
     // whole table on every public page hit. 2000 is well past any
     // real workspace; if a workspace legitimately exceeds it, the
     // overflow is the long tail of oldest in-lane rows.
@@ -88,7 +88,7 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
 }
 
 /**
- * Children of a parent task — the subtask checklist rendered in the
+ * Children of a parent task, the subtask checklist rendered in the
  * detail panel. Ordered by createdAt ascending so the panel reads in
  * the order the user added items. Lives outside `getTasks` so the
  * top-level views never accidentally surface subtasks alongside their
@@ -101,7 +101,7 @@ export async function getSubtasks(parentTaskId: string): Promise<Task[]> {
     .where(eq(tasks.parentTaskId, parentTaskId))
     .orderBy(asc(tasks.createdAt))
     // Bound the detail-panel subtask list. One level of nesting only; a
-    // task with hundreds of subtasks is already pathological — cap so a
+    // task with hundreds of subtasks is already pathological, cap so a
     // runaway parent can't balloon the panel payload.
     .limit(500);
   return rows.map(rowToTask);
@@ -145,7 +145,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
   };
 }
 
-/** Lightweight read of a workspace's publish state — used by the
+/** Lightweight read of a workspace's publish state, used by the
  *  Settings UI to render the publish toggle without dragging the
  *  full workspace row in. */
 export async function getWorkspacePublishState(
@@ -176,7 +176,7 @@ export async function getTaskById(id: string): Promise<Task | null> {
 /**
  * Escape SQL LIKE wildcards in a string so a literal `%` or `_`
  * matches itself rather than acting as a wildcard. Drizzle doesn't
- * auto-escape — caller responsibility.
+ * auto-escape, caller responsibility.
  */
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (m) => `\\${m}`);
@@ -192,7 +192,7 @@ export async function getTasksForUser(
   userId: UserId,
   workspaceId: string,
 ): Promise<Task[]> {
-  // Mirror `getTasks` — only top-level rows. Subtasks are scoped to
+  // Mirror `getTasks`, only top-level rows. Subtasks are scoped to
   // their parent's detail panel, not surfaced in per-user lists.
   const escapedId = escapeLike(userId);
   const rows = await db
@@ -207,7 +207,7 @@ export async function getTasksForUser(
       ),
     )
     .orderBy(laneOrderSql, positionOrderSql)
-    // Mirror getTasks' hard cap — a per-user view is a subset of the board
+    // Mirror getTasks' hard cap, a per-user view is a subset of the board
     // and must never scan unbounded.
     .limit(2000);
   return rows.map(rowToTask);
@@ -270,7 +270,7 @@ export async function getActivitiesForTask(
   const rows = await db
     .select({
       ...getTableColumns(activities),
-      // M7: same COALESCE as comments — name → handle → email-prefix.
+      // M7: same COALESCE as comments, name → handle → email-prefix.
       authorName: sql<string | null>`COALESCE(${users.name}, ${users.handle}, CASE WHEN ${users.email} IS NOT NULL THEN SUBSTR(${users.email}, 1, INSTR(${users.email}, '@') - 1) END)`,
     })
     .from(activities)
@@ -298,7 +298,7 @@ function rowToAttachment(row: AttachmentRow): Attachment {
   };
 }
 
-/** Attachments bound to a task — oldest first so the panel reads top-
+/** Attachments bound to a task, oldest first so the panel reads top-
  *  down in upload order. Workspace-scoped reads happen at the action
  *  layer (the action resolves the active workspace and ensures the
  *  parent task belongs to it). */
@@ -310,13 +310,13 @@ export async function getAttachmentsForTask(
     .from(attachments)
     .where(eq(attachments.taskId, taskId))
     .orderBy(asc(attachments.createdAt))
-    // Bound the per-task attachment list — defensive cap well past any real
+    // Bound the per-task attachment list, defensive cap well past any real
     // file count on a single task.
     .limit(200);
   return rows.map(rowToAttachment);
 }
 
-/** Single attachment lookup — used by the authenticated download
+/** Single attachment lookup, used by the authenticated download
  *  route so it can re-check workspace membership before streaming
  *  the bytes. Returns null when the id is unknown. */
 export async function getAttachmentById(
@@ -345,7 +345,7 @@ export async function getActiveDomain(
 }
 
 /** True when the workspace has never completed onboarding. Reuses the
- *  `workspaces.activeDomain` column as the signal — a null domain
+ *  `workspaces.activeDomain` column as the signal, a null domain
  *  means the welcome flow hasn't run yet for this workspace. */
 export async function isFirstRun(workspaceId: string): Promise<boolean> {
   // Demo/Review: the seeded workspace is always "onboarded" so the app shell
@@ -358,7 +358,7 @@ export async function isFirstRun(workspaceId: string): Promise<boolean> {
   return !row || row.activeDomain == null;
 }
 
-/** Discriminated union — one row of the merged Conversation feed
+/** Discriminated union, one row of the merged Conversation feed
  *  (comments + activity). Renderers branch on `.kind`. */
 export type ConversationItem =
   | { kind: "comment"; comment: Comment }
@@ -445,7 +445,7 @@ export async function getNotificationsForUser(
  * counter on `share_links` is bumped by the action layer alongside
  * this insert.
  *
- * `userAgent` is truncated to 60 chars defensively — long enough to
+ * `userAgent` is truncated to 60 chars defensively, long enough to
  * tell phone-vs-desktop later, short enough to avoid hoarding raw UA
  * strings.
  */
@@ -476,7 +476,7 @@ export type ShareLinkAnalytics = {
 
 /**
  * Aggregate visit data across every share link in the workspace.
- * Returns one entry per link (even links with zero visits — those
+ * Returns one entry per link (even links with zero visits, those
  * are filled in by the action layer joining against `share_links`).
  */
 export async function getShareLinkVisitAnalytics(
@@ -594,7 +594,7 @@ export async function resolveShareLink(
  * RW-3b/3c: Read all milestone tasks for a given owner email.
  *
  * This is the PRODUCER side of the Roadmap sync read shape (ARCH_SPEC §1.2).
- * The Roadmap app reads the Tasks DB directly (Analytics precedent, D2) — it
+ * The Roadmap app reads the Tasks DB directly (Analytics precedent, D2), it
  * imports this query's return type as its data contract. This function lives
  * in Tasks as the canonical source; the Roadmap's tasks-milestone-source.ts
  * calls the same SQL via its own read-only Turso client connection.
@@ -604,12 +604,12 @@ export async function resolveShareLink(
  *   workspaceSlug, workspaceName, ownerEmail
  *
  * Constraints:
- *   - Top-level tasks only (parent_task_id IS NULL) — subtask milestones
+ *   - Top-level tasks only (parent_task_id IS NULL), subtask milestones
  *     are not surfaced; the roadmap spine is flat in v1.
- *   - WHERE is_milestone = 1 — additive filter, never a task dump.
+ *   - WHERE is_milestone = 1, additive filter, never a task dump.
  *   - Email-keyed (the only cross-product key between Clerk apps; D2).
  *   - Ordered by workspace then due date for stable pagination.
- *   - Hard LIMIT 200 — same safety cap as getTasks.
+ *   - Hard LIMIT 200, same safety cap as getTasks.
  *
  * D6 contract: this read is pure projection. Nothing here auto-publishes.
  */

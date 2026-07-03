@@ -15,7 +15,7 @@ import {
 
 type DbType = LibSQLDatabase<typeof import("./schema")>;
 
-/** Stable id for the dev legacy workspace — the bucket existing seed
+/** Stable id for the dev legacy workspace, the bucket existing seed
  *  data lands in so dev's workflow doesn't break on the schema cutover. */
 export const LEGACY_WORKSPACE_ID = "ws-legacy";
 const LEGACY_OWNER_USER_ID = "david";
@@ -45,11 +45,11 @@ function pick<T>(arr: T[], seed: number): T {
 export async function seedIfEmpty(db: DbType): Promise<void> {
   const existingTasks = await db
     .select({ count: sql<number>`count(*)` })
-    // isolation-ok: global first-run emptiness check — no tenant scope by design.
+    // isolation-ok: global first-run emptiness check, no tenant scope by design.
     .from(tasks);
   const existingComments = await db
     .select({ count: sql<number>`count(*)` })
-    // isolation-ok: global first-run emptiness check — no tenant scope by design.
+    // isolation-ok: global first-run emptiness check, no tenant scope by design.
     .from(comments);
 
   const tasksEmpty = (existingTasks[0]?.count ?? 0) === 0;
@@ -62,7 +62,7 @@ export async function seedIfEmpty(db: DbType): Promise<void> {
 
   await db.transaction(async (tx) => {
     if (tasksEmpty) {
-      // Users first — workspaces.ownerUserId FK and workspace_members.userId
+      // Users first, workspaces.ownerUserId FK and workspace_members.userId
       // FK both reference users.id, so this has to land before either.
       for (const u of Object.values(USERS)) {
         await tx.insert(users).values(u).onConflictDoNothing();

@@ -22,7 +22,7 @@ function FreeView() {
         </div>
         <p className="mt-2 max-w-[480px] text-[13.5px] leading-[1.6] text-ink-soft">
           One workspace, all four products, three editing guests. The default
-          we built around — most of what most people need.
+          we built around, most of what most people need.
         </p>
       </div>
       <Link
@@ -79,7 +79,7 @@ function CompWeddingView({
         </p>
         <p className="mt-3 max-w-[520px] text-[12.5px] leading-[1.65] text-ink-soft">
           When the year is up, the workspace stays. Tasks, notes, and the
-          timeline are yours — you'll just be moved to the Free tier, which
+          timeline are yours, you'll just be moved to the Free tier, which
           has everything most couples need after the wedding's done.
         </p>
       </div>

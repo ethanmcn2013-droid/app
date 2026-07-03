@@ -3,7 +3,7 @@ import { getPublishedWorkspaceBySlug } from "@/server/db/queries";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
-// nodejs runtime (not edge) — this OG image reads the workspace via
+// nodejs runtime (not edge), this OG image reads the workspace via
 // `getPublishedWorkspaceBySlug`, which transitively imports the libSQL
 // client. The existing per-template OG at `/templates/[slug]/opengraph-image`
 // stays edge because it reads only the in-memory TEMPLATES array.
@@ -17,7 +17,7 @@ export const contentType = "image/png";
  * workspace title, domain pack, task count, and the brand wordmark.
  *
  * The visual treatment is the same across all four domain packs at
- * the OG level — themes are for the page itself, not the social
+ * the OG level, themes are for the page itself, not the social
  * preview. Keeping a single OG style keeps the unfurl recognizable
  * as Tasks regardless of which workspace someone shared.
  */

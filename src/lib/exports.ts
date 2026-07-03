@@ -8,7 +8,7 @@ import { TASKS_DOMAIN } from "@/lib/product-urls";
  *
  * The Sprint-9 thesis: Tasks owns the data, Google is a destination
  * people happen to use. These bridges hand them their data formatted
- * for the destination — without Tasks ever needing OAuth.
+ * for the destination, without Tasks ever needing OAuth.
  */
 
 const CSV_COLS = [
@@ -22,7 +22,7 @@ const CSV_COLS = [
   "Contact email",
 ] as const;
 
-/** RFC 4180 escape — wrap in quotes when the cell contains comma,
+/** RFC 4180 escape, wrap in quotes when the cell contains comma,
  *  quote, CR, or LF. Doubled quotes inside cells. */
 function csvCell(s: string): string {
   if (s === "") return "";
@@ -115,7 +115,7 @@ function groupByLane(tasks: Task[]): Map<LaneId, Task[]> {
 }
 
 function formatDollars(cents: number): string {
-  // Internal helper — not exported because the cents-editor's
+  // Internal helper, not exported because the cents-editor's
   // Intl.NumberFormat path is the canonical user-facing formatter.
   // CSV gets a plain "1234.56" so spreadsheets can compute on it.
   const dollars = cents / 100;

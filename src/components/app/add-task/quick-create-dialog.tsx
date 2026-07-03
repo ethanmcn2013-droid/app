@@ -56,7 +56,7 @@ export function QuickCreateDialog({
     onClose();
     if (droppedRecurrence) {
       toast("Task created", {
-        body: "Recurrence not supported yet — try \"every Tuesday\" or set it from the task panel.",
+        body: "Recurrence not supported yet, try \"every Tuesday\" or set it from the task panel.",
         tone: "info",
         duration: 5200,
       });
@@ -86,16 +86,16 @@ export function QuickCreateDialog({
               submit();
             }
           }}
-          placeholder={`Name a task — try: ${pack.firstTaskExample}`}
+          placeholder={`Name a task, try: ${pack.firstTaskExample}`}
           autoComplete="off"
           spellCheck={false}
           className="w-full bg-transparent text-[17px] font-medium leading-snug tracking-[-0.01em] text-ink placeholder:text-ink-faint focus:outline-none"
         />
 
-        {/* NLP preview — slides in when chrono detects a date phrase or
+        {/* NLP preview, slides in when chrono detects a date phrase or
             the recurrence parser fires. Shows the cleaned title, due chip,
             and recurrence chip so the user sees what the parser will do
-            BEFORE pressing Enter — no surprise. */}
+            BEFORE pressing Enter, no surprise. */}
         <AnimatePresence initial={false}>
           {(dateDetected || recurrenceDetected || tagsDetected) ? (
             <motion.div
@@ -166,7 +166,7 @@ export function QuickCreateDialog({
             </motion.div>
           ) : null}
 
-          {/* Refusal hint — fires when the input looks like a recurrence
+          {/* Refusal hint, fires when the input looks like a recurrence
               attempt that the parser can't handle. Non-blocking: the user
               can still submit but the guard at submit() returns early. */}
           {recurrenceRefusal ? (
@@ -179,7 +179,7 @@ export function QuickCreateDialog({
               className="overflow-hidden"
             >
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-[1.4] text-amber-700">
-                Recurrence not supported — try &ldquo;every Tuesday&rdquo; or remove the timing language to skip recurrence.
+                Recurrence not supported, try &ldquo;every Tuesday&rdquo; or remove the timing language to skip recurrence.
               </p>
             </motion.div>
           ) : null}

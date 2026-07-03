@@ -1,5 +1,5 @@
 /**
- * RW-1 regression tests — starter-pack domain allowlists.
+ * RW-1 regression tests, starter-pack domain allowlists.
  *
  * Root cause: VALID_DOMAINS (settings.ts) and DOMAIN_IDS (seed.ts) both
  * omitted "trades", so clicking the Trades card threw "Unknown domain pack"
@@ -9,7 +9,7 @@
  * Run via:
  *   ./node_modules/.bin/tsx src/server/actions/seed.test.ts
  *
- * No DB connection required — tests import constants only.
+ * No DB connection required, tests import constants only.
  */
 
 import { strict as assert } from "node:assert";
@@ -62,7 +62,7 @@ test("every pack in DOMAIN_ORDER is present in VALID_DOMAINS (settings.ts guard)
   assert.deepEqual(
     missing,
     [],
-    `VALID_DOMAINS is missing: ${missing.join(", ")} — clicking these cards throws "Unknown domain pack"`,
+    `VALID_DOMAINS is missing: ${missing.join(", ")}, clicking these cards throws "Unknown domain pack"`,
   );
 });
 
@@ -71,7 +71,7 @@ test("every pack in DOMAIN_ORDER is present in DOMAIN_IDS (seed.ts guard)", () =
   assert.deepEqual(
     missing,
     [],
-    `DOMAIN_IDS is missing: ${missing.join(", ")} — seedDomainAction throws for these packs`,
+    `DOMAIN_IDS is missing: ${missing.join(", ")}, seedDomainAction throws for these packs`,
   );
 });
 
@@ -80,7 +80,7 @@ test("wedding pack seeds a non-empty task list", () => {
   const taskKeys = Object.keys(pack.tasks);
   assert.ok(
     taskKeys.length > 0,
-    "wedding pack has no tasks — reseed yields empty board",
+    "wedding pack has no tasks, reseed yields empty board",
   );
   // The canonical seed structure uses t-101..t-404 (16 tasks)
   assert.ok(
@@ -94,7 +94,7 @@ test("trades pack seeds a non-empty task list", () => {
   const taskKeys = Object.keys(pack.tasks);
   assert.ok(
     taskKeys.length > 0,
-    "trades pack has no tasks — reseed yields empty board",
+    "trades pack has no tasks, reseed yields empty board",
   );
   assert.ok(
     taskKeys.length >= 16,
@@ -118,7 +118,7 @@ test("'Start from empty' path (marketing sentinel) is NOT in DOMAIN_ORDER", () =
   assert.equal(
     DOMAIN_ORDER.includes("marketing"),
     false,
-    "marketing must not appear in DOMAIN_ORDER — it is the empty-state sentinel, never a user-visible pack",
+    "marketing must not appear in DOMAIN_ORDER, it is the empty-state sentinel, never a user-visible pack",
   );
 });
 
@@ -152,7 +152,7 @@ test("every pack in DOMAIN_ORDER has commentBodies (seed needs these)", () => {
     const pack = DOMAINS[id];
     assert.ok(
       Array.isArray(pack.commentBodies) && pack.commentBodies.length > 0,
-      `pack ${id} has empty commentBodies — seed falls back to generic comments`,
+      `pack ${id} has empty commentBodies, seed falls back to generic comments`,
     );
   }
 });

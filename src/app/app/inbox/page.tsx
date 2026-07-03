@@ -38,7 +38,7 @@ export default async function InboxPage() {
         .from(workspaces)
         .where(eq(workspaces.id, ws))
         .then((rows) => rows[0] ?? null),
-      // Pre-flight count for the roll-forward affordance — server-side
+      // Pre-flight count for the roll-forward affordance, server-side
       // so the button's render decision doesn't hinge on a client-side
       // filter pass.
       getOverdueTodayCount(),

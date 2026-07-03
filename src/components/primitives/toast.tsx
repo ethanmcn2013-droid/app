@@ -14,7 +14,7 @@ import { EASE_OUT_EXPO, MOTION_BASE } from "@/lib/motion";
 type ToastAction = {
   href: string;
   label: string;
-  /** Open in a new tab — required for cross-product links to roadmap/notes/etc. */
+  /** Open in a new tab, required for cross-product links to roadmap/notes/etc. */
   external?: boolean;
 };
 
@@ -210,7 +210,7 @@ function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
 export function useToast(): Ctx {
   const v = useContext(ToastContext);
   if (!v) {
-    // Safe fallback — log if no provider mounted.
+    // Safe fallback, log if no provider mounted.
     return {
       toast: (title, opts) => {
         // eslint-disable-next-line no-console

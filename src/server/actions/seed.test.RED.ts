@@ -1,5 +1,5 @@
 /**
- * RED test — proves the bug with the original (unfixed) allowlists.
+ * RED test, proves the bug with the original (unfixed) allowlists.
  * These use the exact values that were in settings.ts + seed.ts before
  * the RW-1 fix. Should fail on "trades" being absent.
  * Delete this file after capturing RED output.
@@ -8,7 +8,7 @@
 import { strict as assert } from "node:assert";
 import { DOMAIN_ORDER, DOMAINS, type DomainId } from "../../lib/domains.js";
 
-// BUGGY values — as they existed before the fix:
+// BUGGY values, as they existed before the fix:
 const VALID_DOMAINS_BUGGY = new Set<DomainId>([
   "marketing",
   "student",
@@ -39,7 +39,7 @@ test("[RED] every pack in DOMAIN_ORDER is present in VALID_DOMAINS (settings.ts 
   assert.deepEqual(
     missing,
     [],
-    `VALID_DOMAINS is missing: ${missing.join(", ")} — clicking these cards throws "Unknown domain pack"`,
+    `VALID_DOMAINS is missing: ${missing.join(", ")}, clicking these cards throws "Unknown domain pack"`,
   );
 });
 
@@ -48,7 +48,7 @@ test("[RED] every pack in DOMAIN_ORDER is present in DOMAIN_IDS (seed.ts guard)"
   assert.deepEqual(
     missing,
     [],
-    `DOMAIN_IDS is missing: ${missing.join(", ")} — seedDomainAction throws for these packs`,
+    `DOMAIN_IDS is missing: ${missing.join(", ")}, seedDomainAction throws for these packs`,
   );
 });
 

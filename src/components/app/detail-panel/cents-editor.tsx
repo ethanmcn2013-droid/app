@@ -15,7 +15,7 @@ import { Popover } from "./popover";
  *
  * Storage is integer cents to dodge float drift; the input takes a
  * dollar amount and the editor converts on save. Edit flow follows
- * the optimistic pattern shared with the rest of the panel — dispatch
+ * the optimistic pattern shared with the rest of the panel, dispatch
  * locally, reconcile inside `startTransition`.
  */
 const USD = new Intl.NumberFormat("en-US", {
@@ -23,7 +23,7 @@ const USD = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-const MAX_CENTS = 99_999_999; // $999,999.99 — beyond that suggests a typo.
+const MAX_CENTS = 99_999_999; // $999,999.99, beyond that suggests a typo.
 
 function formatDollars(cents: number): string {
   return USD.format(cents / 100);

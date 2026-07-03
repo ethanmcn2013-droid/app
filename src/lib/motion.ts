@@ -3,7 +3,7 @@
 // these typed tuples mirror them for use in motion/react `transition.ease`
 // where CSS vars cannot be passed directly (strict Easing type).
 //
-// SIGNAL STUDIO MOTION CONTRACT v1 — durations (in seconds, for motion/react)
+// SIGNAL STUDIO MOTION CONTRACT v1, durations (in seconds, for motion/react)
 // Identical semantics to the CSS --motion-* tokens in globals.css.
 // UI transitions ≤ MOTION_MODERATE; MOTION_SLOW reserved for the
 // homepage cinematic demo's largest scene beats only.
@@ -28,7 +28,7 @@ export const EASE_OUT_EXPO  = [0.16, 1, 0.3, 1]  as const; // --spring-glide (de
 export const EASE_SPRING    = [0.2, 0.9, 0.2, 1.2] as const; // --spring-snap (overshoot)
 export const EASE_SOFT      = [0.32, 0.72, 0, 1] as const;   // --spring-soft (settle)
 
-// Cinematic ease — used in demo's today-line draw and domain morphs
+// Cinematic ease, used in demo's today-line draw and domain morphs
 export const EASE_CINEMA    = [0.25, 1, 0.5, 1]  as const; // --ease-cinema
 
 /** Returns the glide ease, or instant linear when prefers-reduced-motion.

@@ -15,7 +15,7 @@ export function DescriptionEditor({ task }: { task: Task }) {
 
   // External description updates (e.g. server hydrate after own edit,
   // or another path mutates description) sync into draft only when
-  // not editing — never overwrite user's in-progress text.
+  // not editing, never overwrite user's in-progress text.
   useEffect(() => {
     if (!editing) setDraft(task.description ?? "");
   }, [task.description, editing]);
@@ -71,7 +71,7 @@ export function DescriptionEditor({ task }: { task: Task }) {
             revert();
           }
           // Enter inserts newline (default behavior). Multi-line is the
-          // mode — descriptions are prose.
+          // mode, descriptions are prose.
         }}
         className={`${TEXT_CLASSES} resize-none text-ink`}
         aria-label="Task description"

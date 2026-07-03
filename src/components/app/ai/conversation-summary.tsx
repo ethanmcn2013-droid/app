@@ -5,7 +5,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { summarizeConversationAction } from "@/server/actions/ai";
 
 /**
- * "Summarize this thread" — appears above the conversation feed
+ * "Summarize this thread", appears above the conversation feed
  * when the thread has ≥ 6 messages. Click to stream a 2-3 sentence
  * recap inline. The button stays in place after; user can re-run.
  *
@@ -15,7 +15,7 @@ import { summarizeConversationAction } from "@/server/actions/ai";
 type Props = {
   taskId: string;
   /** True when the parent feed has ≥ 6 messages. The component
-   *  itself returns null otherwise — gate is here so the parent
+   *  itself returns null otherwise, gate is here so the parent
    *  doesn't have to remember the threshold. */
   eligible: boolean;
 };

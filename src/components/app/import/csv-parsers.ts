@@ -2,12 +2,12 @@ import * as chrono from "chrono-node";
 import type { LaneId, Priority } from "@/lib/data";
 
 /**
- * CSV import — per-source parsing.
+ * CSV import, per-source parsing.
  *
  * Each external tool (Trello, Asana, Notion) exports a CSV with its own
  * column names and conventions. This module normalizes any of them into
  * a single canonical `ImportRow` the wizard previews and the server
- * action persists. Pure: no DB, no I/O — easy to test.
+ * action persists. Pure: no DB, no I/O, easy to test.
  */
 
 export const CANONICAL_FIELDS = [
@@ -45,7 +45,7 @@ export type ParseResult = {
   mapping: Record<CanonicalField, string | null>;
   /** Number of canonical fields the detector matched against this source. */
   matchScore: number;
-  /** Parsed rows — index aligned to the original CSV (header excluded). */
+  /** Parsed rows, index aligned to the original CSV (header excluded). */
   rows: ImportRow[];
   /** The raw, unnormalized rows in case the user wants to re-map columns. */
   raw: Record<string, string>[];
@@ -120,7 +120,7 @@ function splitList(value: string | undefined | null): string[] {
     .filter(Boolean);
 }
 
-/** Best-effort date parse — chrono is forgiving across Trello/Asana/Notion exports. */
+/** Best-effort date parse, chrono is forgiving across Trello/Asana/Notion exports. */
 function parseDate(value: string | undefined | null): {
   due?: string;
   dueAt?: Date;
@@ -136,7 +136,7 @@ function parseDate(value: string | undefined | null): {
 }
 
 // ---------------------------------------------------------------------------
-// Source heuristics — which canonical field maps to which header.
+// Source heuristics, which canonical field maps to which header.
 // ---------------------------------------------------------------------------
 
 type Heuristic = {

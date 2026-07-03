@@ -13,7 +13,7 @@ import { getTasks } from "@/server/db/queries";
 /**
  * Server-only digest narration. Lives outside `actions/` because the
  * RSC server-actions channel auto-exposes every export from any
- * `"use server"` file — and these helpers accept an explicit workspace
+ * `"use server"` file, and these helpers accept an explicit workspace
  * id, which would let any caller pass a workspace they don't belong to.
  *
  * Trusted server-side callers (cron routes, the inbox server component)

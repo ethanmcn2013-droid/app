@@ -25,7 +25,7 @@ import * as schema from "./db/schema";
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
  * full schema so the function can be exercised against any libSQL/Drizzle
- * instance — the production singleton OR an in-memory test DB. This is the
+ * instance, the production singleton OR an in-memory test DB. This is the
  * seam that makes erasure provably testable (see account-erasure.test.ts).
  */
 export type ErasureDb = LibSQLDatabase<typeof schema>;
@@ -42,12 +42,12 @@ export type ErasureDb = LibSQLDatabase<typeof schema>;
  * (comments/activities/attachments/notifications → tasks,
  * share_link_visits → share_links, workspace_members → users/workspaces).
  * But we run libSQL over Turso's stateless HTTP protocol, where
- * `PRAGMA foreign_keys = ON` is NOT reliably in force per request — a
+ * `PRAGMA foreign_keys = ON` is NOT reliably in force per request, a
  * cascade we assume is happening may silently not. So erasure deletes
  * every child row EXPLICITLY and treats any cascade as a redundant
  * safety net, never as the mechanism. The companion integration test
  * runs with foreign keys OFF precisely to prove the explicit deletes —
- * not the cascade — clear every table.
+ * not the cascade, clear every table.
  *
  * ── Why child rows are swept by BOTH taskId and workspaceId ───────────
  * `comments` / `activities` / `attachments` / `notifications` carry a
@@ -58,7 +58,7 @@ export type ErasureDb = LibSQLDatabase<typeof schema>;
  *
  * Idempotent: every delete is a no-op once the rows are gone, so a retry
  * after a partial failure is safe. Returns without writing when no `users`
- * row exists for `clerkId` (nothing provisioned yet) — the caller's Clerk
+ * row exists for `clerkId` (nothing provisioned yet), the caller's Clerk
  * delete still honours the request.
  */
 export async function eraseAccountData(
@@ -118,7 +118,7 @@ export async function eraseAccountData(
     }
     await database.delete(shareLinks).where(eq(shareLinks.workspaceId, wsId));
 
-    // Task-bound children — by task id AND by workspace id.
+    // Task-bound children, by task id AND by workspace id.
     await database
       .delete(activities)
       .where(byTaskOrWs(activities.taskId, activities.workspaceId));
@@ -138,7 +138,7 @@ export async function eraseAccountData(
       .delete(pendingInvites)
       .where(eq(pendingInvites.workspaceId, wsId));
 
-    // Workspace-scoped key/value meta — board name + custom columns.
+    // Workspace-scoped key/value meta, board name + custom columns.
     // Keys are `board:{wsId}:name` / `board:{wsId}:columns` (see board.ts).
     await database.delete(meta).where(like(meta.key, `board:${wsId}:%`));
 
@@ -186,7 +186,7 @@ export async function eraseAccountData(
 
   // Best-effort unlink of the now-orphaned attachment binaries. The rows
   // are already gone, so failures here only leave dead bytes on disk (no
-  // way to address them in-product) — log-worthy, never fatal, never a
+  // way to address them in-product), log-worthy, never fatal, never a
   // reason to fail the erasure. A missing file (already swept, or never
   // persisted in a serverless runtime) is expected and ignored.
   for (const storedPath of orphanedFiles) {

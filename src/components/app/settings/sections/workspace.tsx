@@ -152,14 +152,14 @@ export function WorkspaceSection({
       <SectionHeader
         eyebrow="Workspace"
         title="The shape of your workspace"
-        description="Rename it, swap the starter pack, or review your workspace details. Changes save instantly — no save button to forget."
+        description="Rename it, swap the starter pack, or review your workspace details. Changes save instantly, no save button to forget."
       />
 
       <div className="space-y-4">
         {/* Name */}
         <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
           <Label>Name</Label>
-          <Caption>What this workspace gets called everywhere — the header, share links, the daily digest.</Caption>
+          <Caption>What this workspace gets called everywhere, the header, share links, the daily digest.</Caption>
           <div className="mt-3 flex items-center gap-2">
             <input
               ref={inputRef}
@@ -464,7 +464,7 @@ function PublishBlock({
       <Caption>
         Publishing makes a read-only version of this workspace visible
         at <code className="rounded bg-bg-sunken/80 px-1 py-0.5 text-[11.5px]">{TASKS_DOMAIN}/p/{workspace.slug}</code>.
-        Anyone with the link can see your tasks and lanes — no signup,
+        Anyone with the link can see your tasks and lanes, no signup,
         no account. Looks like a real website, not the app.
       </Caption>
 

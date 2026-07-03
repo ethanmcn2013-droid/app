@@ -11,7 +11,7 @@ import {
 type Slug = "notes" | "tasks" | "roadmap" | "analytics";
 
 /**
- * Cross-product pivot — the intended workflow order (operator-directed
+ * Cross-product pivot, the intended workflow order (operator-directed
  * 2026-05-18): notes → tasks → roadmap → analytics. Capture → execute →
  * plan → measure. Endpoints are terminal (no wrap): notes has no back,
  * analytics has no forward.
@@ -19,7 +19,7 @@ type Slug = "notes" | "tasks" | "roadmap" | "analytics";
  * Ghost edge chevrons: ~25% opacity at rest, rise to full and reveal the
  * destination wordmark on hover/focus. Neighbour is prefetched on intent.
  * Desktop keyboard ←/→ mirror the arrows (suppressed in form fields).
- * Hidden below the suite breakpoint — the SuiteLauncher covers mobile
+ * Hidden below the suite breakpoint, the SuiteLauncher covers mobile
  * cross-navigation, and edge-anchored controls fight thumb-scroll there.
  *
  * Each jump is a real cross-subdomain navigation; the prefetch hint keeps

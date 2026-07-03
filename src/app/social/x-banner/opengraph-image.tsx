@@ -1,23 +1,23 @@
 import { ImageResponse } from "next/og";
 
-// nodejs runtime — see cycle-26 review note in
+// nodejs runtime, see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
 // dev mode + ImageResponse intermittently breaks with "failed to
 // pipe response"; nodejs is reliable.
 export const runtime = "nodejs";
-export const alt = "Tasks — strikethrough manifesto banner";
+export const alt = "Tasks, strikethrough manifesto banner";
 export const size = { width: 1500, height: 500 };
 export const contentType = "image/png";
 
 /**
- * X / Twitter banner — 1500×500.
+ * X / Twitter banner, 1500×500.
  *
  * Strikethrough manifesto wallpaper, per gtm-week-1.md Brief 1.
  * Studio off-white background. Ten jargon phrases tiled across the
  * canvas, each crossed out with a thin rose-300 line. Tagline anchored
  * bottom-right. No logo, no emojis.
  *
- * Geist requested in brief — but we don't fetch fonts here (matches
+ * Geist requested in brief, but we don't fetch fonts here (matches
  * the rest of the OG fleet, which uses the system stack). Geist
  * heads the font-family list so the page picks it up wherever the
  * renderer surfaces it; Satori falls back to its default sans
@@ -102,7 +102,7 @@ export default async function XBannerOG() {
                   >
                     {phrase}
                   </span>
-                  {/* Rose-300 strikethrough — absolute, centered */}
+                  {/* Rose-300 strikethrough, absolute, centered */}
                   <span
                     style={{
                       position: "absolute",

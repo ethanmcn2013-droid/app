@@ -8,7 +8,7 @@ export type VenueWelcome = {
   code: string;
   /** Display name to show in the welcome card. */
   sponsorName: string;
-  /** Stable slug — used in the dismissal localStorage key + analytics. */
+  /** Stable slug, used in the dismissal localStorage key + analytics. */
   sponsorSlug: string;
 };
 
@@ -88,10 +88,10 @@ export async function detectVenueWelcome(
 /**
  * Idempotently stamp the user's wedding-comp entitlement with the
  * first-board-reach timestamp. Powers the /hq/partners "Reached
- * board" column without an event-log table — one boolean per
+ * board" column without an event-log table, one boolean per
  * entitlement, written on the board's first venue-welcome render.
  *
- * Idempotent on `reached_board_at IS NULL` — subsequent visits leave
+ * Idempotent on `reached_board_at IS NULL`, subsequent visits leave
  * the original timestamp in place. Swallows errors (e.g. missing
  * column in pre-migration prod) so a measurement helper can never
  * break the board render. Worst case: the measurement is missed for
@@ -124,7 +124,7 @@ export type SponsorInfo = {
 
 /**
  * Look up the sponsor identity for a given comp code without needing
- * a redeemed entitlement. Used by the sign-up bridge — the visitor is
+ * a redeemed entitlement. Used by the sign-up bridge, the visitor is
  * not authenticated yet, so we cannot go via the user's entitlements
  * row. We resolve sponsor identity straight from `comp_codes.notes`
  * JSON (same shape studio's `issue-codes.ts` writes).

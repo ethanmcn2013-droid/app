@@ -4,7 +4,7 @@ const FEATURES = [
   {
     eyebrow: "Multi-view",
     title: "Four ways to see the same plan",
-    body: "Board for momentum, list for triage, timeline for sequencing, calendar for commitments. The same tasks, instantly morphed via shared layout — no reloads, no losing your spot.",
+    body: "Board for momentum, list for triage, timeline for sequencing, calendar for commitments. The same tasks, instantly morphed via shared layout, no reloads, no losing your spot.",
     glyph: "views",
   },
   {
@@ -16,7 +16,7 @@ const FEATURES = [
   {
     eyebrow: "Nudges",
     title: "Stuck work surfaces itself",
-    body: "Every idle card, every blocked dependency, every quiet review — surfaced as a one-tap nudge. Built on your team's actual rhythm, not generic reminders.",
+    body: "Every idle card, every blocked dependency, every quiet review, surfaced as a one-tap nudge. Built on your team's actual rhythm, not generic reminders.",
     glyph: "ai",
   },
   {
@@ -28,7 +28,7 @@ const FEATURES = [
   {
     eyebrow: "Live signals",
     title: "A pulse on every plan",
-    body: "A sparkline corner-mounted to every plan. Pace, idle ratio, review-to-done lag — surfaced as motion, not as a separate analytics tab.",
+    body: "A sparkline corner-mounted to every plan. Pace, idle ratio, review-to-done lag, surfaced as motion, not as a separate analytics tab.",
     glyph: "spark",
   },
   {

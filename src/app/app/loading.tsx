@@ -1,10 +1,10 @@
 /**
- * Tasks /app loading boundary — wordmark identity loader.
+ * Tasks /app loading boundary, wordmark identity loader.
  *
  * Replaces the prior skeleton + the bare indigo circle that the
  * cross-origin pre-CSS window was painting during sibling-product
  * jumps. Pure Server Component: zero JS, inlined keyframes so the
- * motion paints with the first HTML chunk — survives the brief
+ * motion paints with the first HTML chunk, survives the brief
  * window before globals.css resolves.
  *
  * Choreography:
@@ -12,7 +12,7 @@
  *      280ms cubic-bezier(0.16,1,0.3,1)).
  *   2. Indigo dot lands as the period with a soft overshoot bounce
  *      300ms after the last letter starts.
- *   3. Once landed, the dot enters the canonical Tasks pulse — the
+ *   3. Once landed, the dot enters the canonical Tasks pulse, the
  *      same gesture the product surfaces use, so the loader IS the
  *      product gesture continuing into the brief wait.
  *
@@ -20,7 +20,7 @@
  * scale-bounce, pulse animation halts.
  *
  * Long-wait escalation (loading canon, pitch 6): after a real 5s wait
- * one calm line appears — "Opening the workspace" — with role="status"
+ * one calm line appears, "Opening the workspace", with role="status"
  * aria-live="polite". The decorative wordmark stays aria-hidden; the
  * status line is the only announced content.
  */
@@ -69,7 +69,7 @@ export default function TasksLoading() {
         ))}
         <span
           style={{
-            // 10px hard px — boundary-dot authority (DESIGN.md §13.3).
+            // 10px hard px, boundary-dot authority (DESIGN.md §13.3).
             display: "inline-block",
             width: 10,
             height: 10,

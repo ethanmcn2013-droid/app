@@ -50,7 +50,7 @@ function extractMentions(body: string): UserId[] {
 /** Confirm the calling user is a member of the workspace that owns
  *  this task. Returns the workspace id when allowed, null when the
  *  task doesn't exist OR lives in a workspace the caller isn't in.
- *  Both comment read and write paths route through here — comments
+ *  Both comment read and write paths route through here, comments
  *  inherit the task's workspace boundary; callers outside that
  *  boundary must not see or write the thread. */
 async function resolveCallerTaskWorkspace(
@@ -108,7 +108,7 @@ export async function addCommentAction(
   });
 
   // Anti-notification policy: ONLY direct @mentions create instant
-  // inbox items. Plain comments produce no notification — they live
+  // inbox items. Plain comments produce no notification, they live
   // in the conversation feed and surface in the daily digest only if
   // the recipient was tagged.
   const mentions = extractMentions(trimmed);

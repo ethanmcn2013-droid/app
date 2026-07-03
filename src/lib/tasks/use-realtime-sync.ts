@@ -9,7 +9,7 @@ type Options = {
    *  arrives via SSE. The provider passes its `hydrate` dispatcher here. */
   onChange: (tasks: Task[]) => void;
   /** Stable per-tab id so the SSE stream can suppress this tab's own
-   *  echo. If omitted, every event triggers a refetch — strictly
+   *  echo. If omitted, every event triggers a refetch, strictly
    *  correct, but the originator pays an extra round-trip. */
   clientId?: string;
 };
@@ -53,7 +53,7 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
         console.warn("realtime: refetch failed", e);
       } finally {
         // Tiny gap so a follow-up mutation 50ms later doesn't get
-        // dropped — gives React a render tick to flush. If events were
+        // dropped, gives React a render tick to flush. If events were
         // coalesced away while we were in flight, run exactly once more.
         setTimeout(() => {
           inflight = false;
@@ -73,11 +73,11 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
     // Hello + heartbeat are silent; presence-only signals.
     const onError = () => {
       // Transient transport errors (dev-server restart, brief network drop)
-      // leave readyState at CONNECTING — let EventSource auto-retry, which
+      // leave readyState at CONNECTING, let EventSource auto-retry, which
       // is the documented reconnect strategy. But when realtime is disabled
       // in production the endpoint answers 204, the browser fails the
       // connection (readyState CLOSED), and some browsers then reconnect on
-      // a fixed interval forever — every /app tab hammering /api/events for
+      // a fixed interval forever, every /app tab hammering /api/events for
       // a stream that will never exist. A CLOSED stream is permanent: close
       // it explicitly so no further reconnect is attempted.
       if (es.readyState === EventSource.CLOSED) {

@@ -3,7 +3,7 @@ import type { DomainId } from "@/lib/domains";
 
 /**
  * The contract every domain theme renders against. Themes own the
- * full page body (everything inside <main>) — including their own
+ * full page body (everything inside <main>), including their own
  * hero treatment, task rendering, and any chrome above/around.
  *
  * The shared `<PublishedFooter>` is always rendered AFTER the theme

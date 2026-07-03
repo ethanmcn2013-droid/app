@@ -44,7 +44,7 @@ export function InlineComposer({
     }
     // Soft-fail on unsupported recurrence: drop the recurrence, create
     // the task, and surface a quiet toast. Enter must produce a visible
-    // result — silent no-ops read as "the app froze."
+    // result, silent no-ops read as "the app froze."
     const droppedRecurrence = recurrenceRefusal;
     addTask({
       title: parsed.title,
@@ -59,7 +59,7 @@ export function InlineComposer({
     requestAnimationFrame(() => inputRef.current?.focus());
     if (droppedRecurrence) {
       toast("Task created", {
-        body: "Recurrence not supported yet — try \"every Tuesday\" or set it from the task panel.",
+        body: "Recurrence not supported yet, try \"every Tuesday\" or set it from the task panel.",
         tone: "info",
         duration: 5200,
       });
@@ -158,7 +158,7 @@ export function InlineComposer({
             className="overflow-hidden px-2 pb-1.5"
           >
             <p className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[10.5px] leading-[1.4] text-amber-700">
-              Recurrence not supported — try &ldquo;every Tuesday&rdquo; or remove the timing language.
+              Recurrence not supported, try &ldquo;every Tuesday&rdquo; or remove the timing language.
             </p>
           </motion.div>
         ) : null}

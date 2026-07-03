@@ -25,7 +25,7 @@ export type CompleteOnboardingInput = {
 };
 
 /**
- * Complete segmented onboarding — persists segment, seeds workspace,
+ * Complete segmented onboarding, persists segment, seeds workspace,
  * marks first-run complete.
  */
 export async function completeOnboardingAction(
@@ -106,7 +106,7 @@ export async function completeOnboardingAction(
   });
 }
 
-/** Skip onboarding entirely — blank workspace, segment unknown. */
+/** Skip onboarding entirely, blank workspace, segment unknown. */
 export async function skipOnboardingAction(): Promise<void> {
   const [ws, userId] = await Promise.all([
     getActiveWorkspace(),
@@ -145,7 +145,7 @@ export type UpdateSegmentInput = {
 };
 
 /**
- * Change coordination type after onboarding — settings surface.
+ * Change coordination type after onboarding, settings surface.
  * Metadata-only by default; optional destructive reseed.
  */
 export async function updateSegmentAction(

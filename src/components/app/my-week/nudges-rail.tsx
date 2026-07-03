@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Nudge } from "@/lib/nudges/generate-nudges";
 
 /**
- * What's stuck — a low-density nudges rail for My Week.
+ * What's stuck, a low-density nudges rail for My Week.
  *
  * The inbox carries the loud version (rose/amber cards, per-kind icons).
  * My Week is the calm front door, so this rail is deliberately quieter:
@@ -16,7 +16,7 @@ import type { Nudge } from "@/lib/nudges/generate-nudges";
  *
  * Nudges are computed client-side from the same context task list the rest
  * of My Week reads (generateNudges is a pure function), so this rail needs
- * no server seam — it cannot break the front door.
+ * no server seam, it cannot break the front door.
  */
 
 const DISMISSED_KEY = "tasks_dismissed_nudges";
@@ -39,7 +39,7 @@ export function NudgesRail({
       const raw = localStorage.getItem(DISMISSED_KEY);
       if (raw) setDismissed(new Set(JSON.parse(raw) as string[]));
     } catch {
-      // ignore — a corrupt list just means nothing is pre-dismissed.
+      // ignore, a corrupt list just means nothing is pre-dismissed.
     }
   }, []);
 

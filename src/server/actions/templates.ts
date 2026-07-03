@@ -23,7 +23,7 @@ import { getTemplate, TEMPLATES } from "@/lib/templates";
 /**
  * Apply a template to the active workspace.
  *
- * Additive — does NOT clear existing tasks. Each templated task is
+ * Additive, does NOT clear existing tasks. Each templated task is
  * appended to the end of its lane via the same gap-numbering scheme
  * `addTaskAction` uses, so users can stack multiple templates without
  * any single one stomping on the others.
@@ -144,7 +144,7 @@ function randomToken(len: number): string {
 }
 
 /** Find a slug not already taken in `workspaces.slug`. Retries with a
- *  fresh suffix on collision, up to a sane bound — so a freak repeated
+ *  fresh suffix on collision, up to a sane bound, so a freak repeated
  *  collision raises rather than spinning forever. */
 async function reserveUniqueSlug(base: string): Promise<string> {
   for (let attempt = 0; attempt < 8; attempt++) {

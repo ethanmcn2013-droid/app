@@ -1,10 +1,10 @@
 /**
- * `/embed/guide` — how-to page for embedding a published Tasks
+ * `/embed/guide`, how-to page for embedding a published Tasks
  * workspace into Google Sites, Notion, indie blogs, Substack, or
  * anywhere that takes an iframe or a script tag.
  *
  * Sprint-9 thesis: distribution at the boundary, not OAuth-deep.
- * The cycle-23 embed widget already handles the rendering — this
+ * The cycle-23 embed widget already handles the rendering, this
  * page just teaches the patterns.
  */
 import Link from "next/link";
@@ -46,7 +46,7 @@ export function EmbedGuide() {
             {TASKS_DOMAIN}/p/{"{slug}"}
           </code>
           , you can drop it into a blog post, a Notion page, a Google
-          Site, a Substack, a Webflow project — anywhere that accepts
+          Site, a Substack, a Webflow project, anywhere that accepts
           an iframe or a script tag. No OAuth, no plugin, no
           permissions to negotiate.
         </p>
@@ -54,11 +54,11 @@ export function EmbedGuide() {
         <p className="mt-5 text-[15.5px] leading-[1.6] text-ink-quiet">
           You publish; the workspace becomes a URL; the URL drops
           into other tools. The pattern is the same as YouTube videos
-          or Tweets — paste the link, the destination unfurls it.
+          or Tweets, paste the link, the destination unfurls it.
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The simplest version — paste an iframe.
+          The simplest version, paste an iframe.
         </h2>
         <p className="mt-3 text-[15.5px] leading-[1.6] text-ink-soft">
           Most blog editors take raw HTML in a code block or
@@ -84,7 +84,7 @@ export function EmbedGuide() {
         </p>
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
-          The script-tag version — for repeating embeds.
+          The script-tag version, for repeating embeds.
         </h2>
         <p className="mt-3 text-[15.5px] leading-[1.6] text-ink-soft">
           If you want multiple workspaces on the same page (or want
@@ -107,7 +107,7 @@ export function EmbedGuide() {
           Per-element overrides:{" "}
           <code className="font-mono">data-tasks-width</code> and{" "}
           <code className="font-mono">data-tasks-height</code>. The
-          script is idempotent — if it loads twice or you re-render,
+          script is idempotent, if it loads twice or you re-render,
           existing iframes are skipped.
         </p>
 
@@ -128,11 +128,11 @@ export function EmbedGuide() {
         />
         <ToolBlock
           name="Webflow / Framer / Squarespace"
-          notes="All three have native HTML / Embed blocks. Paste the iframe. Set the height generously — the embed view is fixed-height, doesn't grow with content."
+          notes="All three have native HTML / Embed blocks. Paste the iframe. Set the height generously, the embed view is fixed-height, doesn't grow with content."
         />
         <ToolBlock
           name="Google Docs"
-          notes="Docs doesn't render iframes. Paste the published URL as a plain link — Docs adds a card with the page preview. You can also export your workspace tasks as Markdown from the in-app Export menu and paste that into Docs directly."
+          notes="Docs doesn't render iframes. Paste the published URL as a plain link, Docs adds a card with the page preview. You can also export your workspace tasks as Markdown from the in-app Export menu and paste that into Docs directly."
         />
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
@@ -150,8 +150,8 @@ export function EmbedGuide() {
           <code className="rounded bg-bg-sunken/70 px-1.5 py-0.5 font-mono text-[14px]">
             /p/{"{slug}"}
           </code>{" "}
-          page in a new tab. The styling stays restrained — white
-          background, system fonts, no app chrome — so the embed
+          page in a new tab. The styling stays restrained, white
+          background, system fonts, no app chrome, so the embed
           inherits the host page&rsquo;s look.
         </p>
 

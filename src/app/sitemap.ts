@@ -7,7 +7,7 @@ const BASE_URL = TASKS_URL;
 /**
  * Sitemap. Every public marketing surface is enumerated here so
  * Search Console can crawl it. The 12 `/templates/[slug]` routes are
- * the centerpiece of the SEO push — each one is its own destination
+ * the centerpiece of the SEO push, each one is its own destination
  * page, each one has its own OG card, each one targets a specific
  * long-tail query.
  */

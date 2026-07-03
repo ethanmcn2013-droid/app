@@ -14,7 +14,7 @@ import { useToast } from "@/components/primitives/toast";
  *
  * Two-step confirm matches the magic-link revoke pattern from cycle 16.
  *   - First click arms a 4s window and swaps copy to a rose-600
- *     "Confirm — roll {N} forward?".
+ *     "Confirm, roll {N} forward?".
  *   - Second click within the window fires the action.
  *   - Outside-click or the 4s timer cancels.
  *
@@ -38,7 +38,7 @@ export function RollForwardButton({ overdueCount }: { overdueCount: number }) {
     };
   }, [armed]);
 
-  // Outside-click cancels — mirrors the GitHub-style destructive
+  // Outside-click cancels, mirrors the GitHub-style destructive
   // confirm idiom used elsewhere in the app.
   useEffect(() => {
     if (!armed) return;
@@ -94,7 +94,7 @@ export function RollForwardButton({ overdueCount }: { overdueCount: number }) {
       disabled={pending}
       aria-label={
         armed
-          ? `Confirm — roll ${overdueCount} forward to tomorrow`
+          ? `Confirm, roll ${overdueCount} forward to tomorrow`
           : `Roll ${overdueCount} overdue ${overdueCount === 1 ? "task" : "tasks"} forward to tomorrow`
       }
       className={
@@ -107,7 +107,7 @@ export function RollForwardButton({ overdueCount }: { overdueCount: number }) {
       {pending
         ? "Rolling…"
         : armed
-          ? `Confirm — roll ${overdueCount} forward?`
+          ? `Confirm, roll ${overdueCount} forward?`
           : `Roll forward ${overdueCount}`}
     </button>
   );

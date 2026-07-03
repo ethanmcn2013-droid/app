@@ -24,10 +24,10 @@ import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
 import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 
 /**
- * My Week — calm editorial briefing.
+ * My Week, calm editorial briefing.
  *
  * Five sections, each rendered with a quiet small-caps header. Sections
- * with no tasks for the day are silent — except "Today", which always
+ * with no tasks for the day are silent, except "Today", which always
  * renders so an empty day reads as confidence, not absence.
  */
 export function MyWeekApp() {
@@ -39,13 +39,13 @@ export function MyWeekApp() {
   const meId = useCurrentUser();
   const me = USERS[meId];
   const buckets = bucketMyWeek(state.tasks, meId);
-  // Dayparts — "This evening" splits out of Today only when a task
+  // Dayparts, "This evening" splits out of Today only when a task
   // carries an explicit evening time. No time typed, no daypart.
   const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
     buckets.today,
   );
   // Nudges are computed client-side from the same task list (generateNudges
-  // is pure) — the proactive "what's stuck" surface folded in from the inbox.
+  // is pure), the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
     () => generateNudges(state.tasks, meId),
     [state.tasks, meId],

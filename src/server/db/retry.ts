@@ -1,20 +1,20 @@
 /**
  * Transient-failure retry for READ queries against Turso.
  *
- * Tasks runs libSQL over Turso's stateless HTTP protocol — every query is a
+ * Tasks runs libSQL over Turso's stateless HTTP protocol, every query is a
  * network round-trip, so an ordinary network blip (DNS hiccup, dropped
  * socket, a 5xx from the edge, an expired stream) surfaces to the user as a
  * hard 500 even though an immediate retry would succeed.
  *
  * This wraps a read thunk with bounded exponential backoff. It is scoped to
  * READS ON PURPOSE: a SELECT is idempotent, so re-running it can never cause
- * incorrectness — the worst case is a little added latency on a genuinely
+ * incorrectness, the worst case is a little added latency on a genuinely
  * failing read. Writes are deliberately NOT covered here: a mutation that
  * failed *after* the server applied it must not be blindly replayed, so
  * write-retry needs per-statement idempotency analysis and is out of scope.
  *
  * Non-transient errors (SQL errors like "no such column", constraint
- * violations) are re-thrown immediately — retrying them only wastes time.
+ * violations) are re-thrown immediately, retrying them only wastes time.
  */
 
 const TRANSIENT_RE =

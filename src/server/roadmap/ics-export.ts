@@ -4,19 +4,19 @@ import { db } from "@/server/db";
 import { roadmapItems } from "@/server/db/schema";
 
 /**
- * ICS export of `roadmap_items` — every dated row in the GTM plan
+ * ICS export of `roadmap_items`, every dated row in the GTM plan
  * (post-times, press-send beats, paid-spend launches, live launch
  * milestones) becomes a `VEVENT` so the user can one-tap import to
  * Google / Apple Calendar and never miss a beat.
  *
  * Sister to `src/lib/ical.ts` (which serves the per-workspace task
  * feed). Kept separate because (a) the column shape is roadmap-
- * specific, (b) the time-zone logic differs — roadmap rows store a
+ * specific, (b) the time-zone logic differs, roadmap rows store a
  * human "9am" / "3:01am" string per the GTM plan rather than a Date.
  *
  * All emitted timestamps are UTC (`Z`-suffixed). The 8-week window
  * (2026-05-11 → 2026-07-05) sits entirely inside US summer DST, so
- * ET = UTC-4 and PT = UTC-7 for the whole feed — no multi-offset
+ * ET = UTC-4 and PT = UTC-7 for the whole feed, no multi-offset
  * fallback needed. If the plan ever extends past November this needs
  * a real tz library.
  *
@@ -26,7 +26,7 @@ import { roadmapItems } from "@/server/db/schema";
  * `3:01am` or explicit `PT` string through the Pacific offset.
  *
  * Unrecognised time strings ("Coordinate w/ creator",
- * "7am/12pm/5pm", "—") fall back to all-day events — the calendar
+ * "7am/12pm/5pm", "—") fall back to all-day events, the calendar
  * still gets a marker, just no specific minute.
  */
 
@@ -82,7 +82,7 @@ function parsePostingTime(raw: string | null): ParsedTime | null {
     body = body.slice(0, zoneMatch.index).trim();
   }
 
-  // Match "9am", "9:00am", "12pm", etc. — tolerate a trailing word
+  // Match "9am", "9:00am", "12pm", etc., tolerate a trailing word
   // ("8am launch") by anchoring on the first time-shaped token.
   const m = body.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
   if (!m) return null;
@@ -95,7 +95,7 @@ function parsePostingTime(raw: string | null): ParsedTime | null {
   if (meridiem === "pm" && hour !== 12) hour += 12;
   if (meridiem === "am" && hour === 12) hour = 0;
 
-  // PH-launch convention — `3:01am` with no explicit zone is PT.
+  // PH-launch convention, `3:01am` with no explicit zone is PT.
   if (!zoneMatch && hour === 3 && minute === 1) {
     zone = "PT";
   }
@@ -157,7 +157,7 @@ function addDays(isoDate: string, n: number): string {
   );
 }
 
-/** RFC 5545 §3.3.11 text escaping — backslash first. */
+/** RFC 5545 §3.3.11 text escaping, backslash first. */
 function escapeText(s: string): string {
   return s
     .replace(/\\/g, "\\\\")
@@ -313,7 +313,7 @@ function buildVevent(row: RoadmapRowMin, dtstamp: string): string[] {
  * Build the full ICS document for every dated roadmap item. Returns
  * a complete VCALENDAR string ready to drop into an HTTP response.
  *
- * Server-only — opens the SQLite db.
+ * Server-only, opens the SQLite db.
  */
 export async function exportRoadmapIcs(): Promise<string> {
   const rows = await db

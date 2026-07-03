@@ -8,7 +8,7 @@ import { ShareTargetQuickAdd } from "@/components/app/share-target-quick-add";
  * carrying `?title=...&url=...&text=...`. We read those on the server
  * and hand them to a thin client component that owns the modal UX.
  *
- * The route is intentionally reachable by direct URL too — useful for
+ * The route is intentionally reachable by direct URL too, useful for
  * dev probing without an actual share-sheet round-trip.
  */
 export default async function ShareTargetPage({

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
 
-// Print routes read the DB at request time — no static pre-render.
+// Print routes read the DB at request time, no static pre-render.
 export const dynamic = "force-dynamic";
 
 export default async function PrintLayout({
@@ -15,7 +15,7 @@ export default async function PrintLayout({
 }) {
   const ws = await getActiveWorkspace();
 
-  // Same first-run gate as /app — uninitialized workspace must pick a
+  // Same first-run gate as /app, uninitialized workspace must pick a
   // starter before any view (including print) is meaningful.
   if (await isFirstRun(ws)) {
     redirect("/welcome");

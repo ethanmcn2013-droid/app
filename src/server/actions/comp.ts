@@ -17,7 +17,7 @@ import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
 function newCode(prefix: string): string {
-  // STUDENT26-A4B2X9 — readable + 7 random chars.
+  // STUDENT26-A4B2X9, readable + 7 random chars.
   const raw =
     globalThis.crypto?.randomUUID?.() ??
     Math.random().toString(36).slice(2);
@@ -107,7 +107,7 @@ export type RedeemResult =
     };
 
 /**
- * Redeem a comp code for the current user. Idempotent per-user — if
+ * Redeem a comp code for the current user. Idempotent per-user, if
  * the same user tries to redeem the same code twice (e.g. refresh
  * after success, browser back button), we return the existing
  * entitlement rather than treating the second hit as a failure.
@@ -153,7 +153,7 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   const userId = await getCurrentUser();
 
   // Idempotency: did this user already redeem this code? Comes BEFORE
-  // the exhausted check — see header doc for why.
+  // the exhausted check, see header doc for why.
   const [existing] = await db
     .select()
     .from(entitlements)
@@ -162,7 +162,7 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     );
   if (existing) {
     // Re-hit (refresh, browser back). Template was already applied on
-    // the first redemption — do NOT re-apply. Surface sponsorSlug so
+    // the first redemption, do NOT re-apply. Surface sponsorSlug so
     // the card can still deep-link to the welcomed board.
     const sponsor = await lookupSponsorByCode(code);
     return {
@@ -182,13 +182,13 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
 
   // Webhook-race / missing-webhook guard. Provision the user record
   // ourselves if the Clerk webhook hasn't (or won't) hydrate it. This
-  // is idempotent — the webhook can still fire afterwards and update
+  // is idempotent, the webhook can still fire afterwards and update
   // the row with email / name we don't have here.
   await ensureUserProvisioned(userId);
   const ws = await getActiveWorkspace();
   if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
     // Defensive: ensureUserProvisioned should have given us a real ws.
-    // If it didn't, something deeper is wrong — surface honestly rather
+    // If it didn't, something deeper is wrong, surface honestly rather
     // than write an orphan entitlement to ws-legacy.
     return { ok: false, reason: "still-provisioning" };
   }
@@ -198,12 +198,12 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   );
 
   // Atomic claim BEFORE issuing. The earlier `row.redeemed >= row.quantity`
-  // check is a fast UX path only — two users redeeming the last slot of a
+  // check is a fast UX path only, two users redeeming the last slot of a
   // near-exhausted code can both pass it and both get a paid tier. The
   // conditional decrement is the real guard: only one concurrent caller
   // can move `redeemed` past the cap. If we don't win the slot, bail
   // before inserting any entitlement. (Worst case if a later step throws
-  // after the claim is a harmless single slot-leak — admin can re-mint —
+  // after the claim is a harmless single slot-leak, admin can re-mint —
   // which is strictly safer than over-issuing paid tiers.)
   const claim = await db.run(sql`
     UPDATE comp_codes SET redeemed = redeemed + 1
@@ -227,10 +227,10 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   // Venue Editions short-circuit: if this is a wedding comp with
   // sponsor JSON, apply the wedding template and flag the workspace
   // inline. Lets the result card deep-link straight to the board
-  // with the sponsor banner — no /welcome hop.
+  // with the sponsor banner, no /welcome hop.
   //
   // Uses `applyTemplateToWorkspace` (pure DB) instead of the public
-  // action — the action calls `revalidatePath`, which is illegal
+  // action, the action calls `revalidatePath`, which is illegal
   // during the Server Component render this action runs inside.
   // That was the cycle-8.5 fresh-user 500.
   let sponsorSlug: string | undefined;

@@ -20,13 +20,13 @@ import {
  * surface a confirmation toast on first paint.
  *
  * The action grants the entitlement-equivalent local-write path even
- * when Clerk isn't configured — no auth gate at the gallery layer.
+ * when Clerk isn't configured, no auth gate at the gallery layer.
  * Real auth gating is enforced server-side by `getActiveWorkspace`.
  *
  * Pills (TP-3, 2026-05-22). Audience filter row sits below the hero,
  * above the grid. Pills = wedge-canon order (Wedding → Trades →
  * Freelance → Marketing) plus an "All" pill at position 0. Default =
- * All (gallery is a working surface — maximize browse / serendipity).
+ * All (gallery is a working surface, maximize browse / serendipity).
  * Students live in "All" only (per segment canon, students never get
  * a pill); /for-students landing page is the dedicated surface.
  *
@@ -161,7 +161,7 @@ export function TemplatesGallery({
           )}
         </div>
 
-        {/* Student footer link — students get a dedicated landing page,
+        {/* Student footer link, students get a dedicated landing page,
             not a pill (segment canon 2026-05-16). The templates still
             appear in "All"; this surfaces them as a named alternative. */}
         {studentCount > 0 ? (
@@ -215,7 +215,7 @@ function TemplateCard({ template, index }: { template: Template; index: number }
   return (
     /* No scroll-reveal: each card is a real template the 80% browse,
        and a whileInView opacity:0 left the gallery invisible to no-JS
-       and crawlers (proven, T·54). whileHover stays — JS-only, hides
+       and crawlers (proven, T·54). whileHover stays, JS-only, hides
        nothing. */
     <motion.div
       whileHover={{ y: -2 }}

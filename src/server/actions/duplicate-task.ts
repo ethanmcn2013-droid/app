@@ -10,7 +10,7 @@ import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace } from "@/server/auth";
 
 /**
- * "Repeat this task" — clone the source task N times, each copy shifted
+ * "Repeat this task", clone the source task N times, each copy shifted
  * `dayStep` days further out from the source's `dueAt`. Use cases:
  *   - daily standup that should exist Mon–Fri (count 5, dayStep 1)
  *   - 7-day countdown to a wedding (count 7, dayStep 1)
@@ -18,7 +18,7 @@ import { getActiveWorkspace } from "@/server/auth";
  *
  * The original task is left untouched; only the duplicates are inserted.
  *
- * Server-side clamping is non-negotiable — a hand-rolled client could
+ * Server-side clamping is non-negotiable, a hand-rolled client could
  * try to slip count=10000 past the form, so we cap both inputs here
  * regardless of what the popover sent.
  */
@@ -44,7 +44,7 @@ const MONTH_SHORT = [
   "Dec",
 ];
 
-/** Mirror of the formatter in tasks.ts — kept inline so this action
+/** Mirror of the formatter in tasks.ts, kept inline so this action
  *  doesn't import from the cents-extended file (collision avoidance). */
 function formatDueLabelForStorage(d: Date): string {
   const now = new Date();
@@ -133,7 +133,7 @@ export async function duplicateTaskAction(
       dueAt: nextDueAt,
       estimate: source.estimate ?? null,
       tags: source.tags ?? null,
-      // Reset per-instance state — comments, activity, idle accounting
+      // Reset per-instance state, comments, activity, idle accounting
       // belong to the original; the copies start fresh.
       idleDays: null,
       blockedBy: null,
@@ -156,7 +156,7 @@ export async function duplicateTaskAction(
     }
   });
 
-  // 6. Activity log per duplicate — observability, not transactional,
+  // 6. Activity log per duplicate, observability, not transactional,
   //    so we walk these outside the txn.
   await Promise.all(
     newIds.map((id) =>

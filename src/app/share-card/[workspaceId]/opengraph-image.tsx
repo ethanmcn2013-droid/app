@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 import { tasks, workspaces } from "@/server/db/schema";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
-// nodejs runtime — reads from the libSQL/Turso-backed Drizzle client.
+// nodejs runtime, reads from the libSQL/Turso-backed Drizzle client.
 //
 // Why this lives at `share-card/[workspaceId]/opengraph-image.tsx`
 // and not as a Route Handler: Turbopack + Next.js 16's nodejs route
@@ -14,7 +14,7 @@ import { TASKS_DOMAIN } from "@/lib/product-urls";
 // unfurls cleanly in Slack / Twitter / iMessage.
 //
 // Visual modeled closely on `src/app/p/[slug]/opengraph-image.tsx`
-// — single glow, conservative font sizing — because Satori (the
+//, single glow, conservative font sizing, because Satori (the
 // HTML-to-PNG renderer behind ImageResponse) is touchy about layout
 // edge cases. Stay on the proven shape.
 export const runtime = "nodejs";

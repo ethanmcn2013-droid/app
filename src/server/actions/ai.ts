@@ -33,7 +33,7 @@ import type { ConversationItem } from "@/server/db/queries";
  * static "AI not configured" message instead of throwing. The UI
  * never sees a runtime crash.
  *
- * Brand-voice enforcement lives in `src/server/ai.ts` — these actions
+ * Brand-voice enforcement lives in `src/server/ai.ts`, these actions
  * are thin glue that assembles the user-message context (thread,
  * tasks, intent) and delegates voice/shape to the system prompt.
  */
@@ -50,7 +50,7 @@ function staticStream(text: string): ReadableStream<string> {
 }
 
 /** Render a conversation slice as plain text the model can read. We
- *  keep this lightweight on purpose — names + bodies, no metadata. */
+ *  keep this lightweight on purpose, names + bodies, no metadata. */
 function renderConversation(items: ConversationItem[]): string {
   const lines: string[] = [];
   for (const it of items) {
@@ -98,7 +98,7 @@ export async function draftReplyAction(
     getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard — without this, an authenticated caller could
+  // Workspace guard, without this, an authenticated caller could
   // narrate any task in any workspace by passing its id.
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
@@ -112,7 +112,7 @@ export async function draftReplyAction(
   const thread = renderConversation(items);
   const userIntent = intent?.trim()
     ? `User-supplied intent: "${intent.trim()}"`
-    : "User-supplied intent: (none — pick the most natural reply)";
+    : "User-supplied intent: (none, pick the most natural reply)";
 
   const userMessage = [
     `Task: ${task.title}`,
@@ -172,7 +172,7 @@ export async function summarizeConversationAction(
     getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard mirrors draftReplyAction — same vector, same fix.
+  // Workspace guard mirrors draftReplyAction, same vector, same fix.
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
   }
@@ -232,7 +232,7 @@ export async function summarizeConversationAction(
 //
 // Public action narrates the caller's **active workspace only**. The
 // caller-supplied `workspaceId` parameter on previous versions was an
-// unguarded read across tenants — fixed by routing all explicit-id
+// unguarded read across tenants, fixed by routing all explicit-id
 // access through `@/server/digest-narration` (server-only, not RSC-
 // exposed) instead.
 // ────────────────────────────────────────────────────────────────────

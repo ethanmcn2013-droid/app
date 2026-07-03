@@ -20,7 +20,7 @@ import * as schema from "./db/schema";
 
 export type ExportDb = LibSQLDatabase<typeof schema>;
 
-/** Attachment columns minus the internal on-disk path — bytes are fetched
+/** Attachment columns minus the internal on-disk path, bytes are fetched
  *  via the authenticated download route, never inlined into the export. */
 const attachmentMeta = {
   id: attachments.id,
@@ -34,13 +34,13 @@ const attachmentMeta = {
 };
 
 /**
- * GDPR Art. 20 (data portability) — assemble everything Tasks holds for a
+ * GDPR Art. 20 (data portability), assemble everything Tasks holds for a
  * user: their profile, every workspace they own and all its content, and
  * their footprint in workspaces owned by others (comments/activity they
  * authored, attachments they uploaded, memberships, prefs, entitlements,
  * invites). Counterpart to `account-erasure.ts`; same db-injection seam.
  *
- * Attachment BYTES are never inlined — only metadata (the download route
+ * Attachment BYTES are never inlined, only metadata (the download route
  * serves bytes per-attachment). The internal `storedPath` is omitted.
  */
 export async function exportAccountData(database: ExportDb, clerkId: string) {

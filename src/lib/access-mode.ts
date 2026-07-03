@@ -1,20 +1,20 @@
 /**
- * access-mode.ts — the single source of truth for *how* Signal Studio is
+ * access-mode.ts, the single source of truth for *how* Signal Studio is
  * being accessed right now. One central layer; never scatter ad-hoc
  * `process.env.X === "true"` auth-bypass checks across the codebase.
  *
- * Four modes (suite-wide canonical — identical shape in every product repo):
+ * Four modes (suite-wide canonical, identical shape in every product repo):
  *
- *   production   — real Clerk auth required, real user data, normal security.
- *   development  — local developer access; existing keyless dev bypass applies.
- *   demo         — public, no login wall; a synthetic demo user bound to
+ *   production  , real Clerk auth required, real user data, normal security.
+ *   development , local developer access; existing keyless dev bypass applies.
+ *   demo        , public, no login wall; a synthetic demo user bound to
  *                  in-memory seed data. The real database is NEVER queried.
- *   review       — same access posture as demo, but signals an internal
+ *   review      , same access posture as demo, but signals an internal
  *                  design/Claude-Code/Fable review context (used for the
  *                  /review hub + slightly louder dev messaging).
  *
  * Resolution (server can read both vars; the browser only sees NEXT_PUBLIC_*):
- *   1. SIGNAL_ACCESS_MODE / NEXT_PUBLIC_SIGNAL_ACCESS_MODE — explicit, wins.
+ *   1. SIGNAL_ACCESS_MODE / NEXT_PUBLIC_SIGNAL_ACCESS_MODE, explicit, wins.
  *   2. NEXT_PUBLIC_DEMO_MODE=true (legacy/ergonomic alias) → "demo".
  *   3. Fallback: "production" when NODE_ENV==="production", else "development".
  *
@@ -57,7 +57,7 @@ export function getAccessMode(): AccessMode {
   return process.env.NODE_ENV === "production" ? "production" : "development";
 }
 
-/** demo OR review — i.e. the public, seed-data, no-login-wall posture. */
+/** demo OR review, i.e. the public, seed-data, no-login-wall posture. */
 export function isDemoMode(): boolean {
   const m = getAccessMode();
   return m === "demo" || m === "review";
@@ -99,7 +99,7 @@ export const DEMO_CLERK_PUBLISHABLE_KEY =
  * The publishable key to hand ClerkProvider:
  *   - the real key when configured (production + normal demo deploys);
  *   - the inert placeholder in demo/review when none is set (keyless preview);
- *   - undefined in production when unset — ClerkProvider then fails closed,
+ *   - undefined in production when unset, ClerkProvider then fails closed,
  *     which is the correct, loud behaviour.
  */
 export function clerkPublishableKey(): string | undefined {

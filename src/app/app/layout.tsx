@@ -35,16 +35,16 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * AppShell — async server component that holds all auth-dependent data
+ * AppShell, async server component that holds all auth-dependent data
  * fetching. Lives inside a Suspense boundary so the loading.tsx dot paints
  * while auth() + DB reads resolve.
  *
- * DECISIONS.md D5: auth() must not block the layout — it prevents
+ * DECISIONS.md D5: auth() must not block the layout, it prevents
  * loading.tsx from painting (Next 16.2 fact: a layout awaiting runtime
  * data blocks the segment loading boundary entirely).
  *
  * SuiteChrome (no auth deps, client component) stays at layout level
- * and renders instantly — "chrome lives in layout (instant, never re-blanks)".
+ * and renders instantly, "chrome lives in layout (instant, never re-blanks)".
  */
 async function AppShell({ children }: { children: React.ReactNode }) {
   const ws = await getActiveWorkspace();
@@ -108,10 +108,10 @@ async function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * AppLayout — the /app segment layout.
+ * AppLayout, the /app segment layout.
  *
  * SuiteChrome renders synchronously at this level (client component,
- * no auth deps) so it is always painted and never re-blanks — the
+ * no auth deps) so it is always painted and never re-blanks, the
  * monotonic reveal contract from LOADING_SYSTEM.md §4.
  *
  * AppShell (auth + DB reads) wraps in Suspense so loading.tsx paints
@@ -125,7 +125,7 @@ export default function AppLayout({
 }) {
   return (
     /*
-     * L4 — persistent top chrome (DESIGN.md §14).
+     * L4, persistent top chrome (DESIGN.md §14).
      * SuiteChrome is sticky h-14; gives all /app routes the cross-product
      * breadcrumb. Layout restructured: flex-col wraps chrome + flex-row
      * (sidebar + content). overflow-hidden on the inner row so the chrome
@@ -140,7 +140,7 @@ export default function AppLayout({
      * beneath SuiteChrome during AppShell's auth+DB fetch, which read
      * as a white flash between "chrome paints" and "board arrives".
      * Sharing the loader with the segment-level boundary means the
-     * same wordmark holds the moment either way — no re-blank.
+     * same wordmark holds the moment either way, no re-blank.
      */
     <div className="flex h-screen w-full flex-col bg-bg">
       <SuiteChrome />

@@ -17,7 +17,7 @@ export function rand(min: number, max: number) {
 }
 
 /** Relative time formatter for comments / activity. Returns "just now",
- *  "3m", "2h", "yesterday", "May 2", "May 2, 2024" — tabular-nums
+ *  "3m", "2h", "yesterday", "May 2", "May 2, 2024", tabular-nums
  *  friendly. */
 export function formatRelativeTime(date: Date | number | string): string {
   const d = date instanceof Date ? date : new Date(date);

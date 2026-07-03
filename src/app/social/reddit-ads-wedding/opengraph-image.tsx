@@ -1,30 +1,30 @@
 import { ImageResponse } from "next/og";
 
-// nodejs runtime — see cycle-26 review note in
+// nodejs runtime, see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
 // dev mode + ImageResponse intermittently breaks with "failed to
 // pipe response"; nodejs is reliable.
 export const runtime = "nodejs";
 export const alt =
-  "Tasks — wedding workspace creative for Reddit Ads, $79 once";
+  "Tasks, wedding workspace creative for Reddit Ads, $79 once";
 export const size = { width: 1200, height: 628 };
 export const contentType = "image/png";
 
 /**
- * Reddit Ads creative — 1200×628.
+ * Reddit Ads creative, 1200×628.
  *
  * The W4 paid wedding-vertical experiment per `docs/gtm-plan.md` §8.
  * A stylized rendering of a `/p/` published wedding workspace in the
- * wedding domain pack — ivory background (#faf7f2), blush card
+ * wedding domain pack, ivory background (#faf7f2), blush card
  * borders (#f5d4dd), italic serif lane labels, four lanes with
  * realistic 3-month-out tasks. The headline "$79 once. Fits the
  * bride, groom, both moms, and the DJ." anchors the lower-right.
  *
- * No emojis, no real photographs — pure typographic + geometric. The
+ * No emojis, no real photographs, pure typographic + geometric. The
  * card aspect (1200×628) also flatters Instagram feed when reused.
  *
  * Wedding token: --aud-wedding #be185d (used sparingly for the
- * wordmark dot only — the lanes stay desaturated so cards read).
+ * wordmark dot only, the lanes stay desaturated so cards read).
  */
 
 const FONT_STACK =
@@ -49,7 +49,7 @@ type Lane = {
 };
 
 // Lanes use progressively warmer blush tints. "Done" reads slightly
-// muted so the eye lands on "In progress" first — that's the lane
+// muted so the eye lands on "In progress" first, that's the lane
 // most weddings actually live in three months out.
 const LANES: Lane[] = [
   {
@@ -67,16 +67,16 @@ const LANES: Lane[] = [
     tint: BLUSH_SOFT,
     border: BLUSH,
     cards: [
-      "Confirm florist — peony swap",
+      "Confirm florist, peony swap",
       "Day-of run-of-show v2",
-      "Seating chart — both moms",
+      "Seating chart, both moms",
     ],
   },
   {
     label: "Reviewed",
     tint: "#ffffff",
     border: BLUSH,
-    cards: ["Tasting menu signed off", "DJ playlist — do-not-play"],
+    cards: ["Tasting menu signed off", "DJ playlist, do-not-play"],
   },
   {
     label: "Done",
@@ -102,7 +102,7 @@ export default async function RedditAdsWeddingOG() {
           position: "relative",
         }}
       >
-        {/* Wordmark — top-left */}
+        {/* Wordmark, top-left */}
         <div
           style={{
             display: "flex",
@@ -139,7 +139,7 @@ export default async function RedditAdsWeddingOG() {
           </span>
         </div>
 
-        {/* Board — four lanes */}
+        {/* Board, four lanes */}
         <div
           style={{
             display: "flex",
@@ -209,7 +209,7 @@ export default async function RedditAdsWeddingOG() {
                     >
                       {card}
                     </div>
-                    {/* meta row — tiny dot + faux date */}
+                    {/* meta row, tiny dot + faux date */}
                     <div
                       style={{
                         display: "flex",
@@ -240,7 +240,7 @@ export default async function RedditAdsWeddingOG() {
           ))}
         </div>
 
-        {/* Headline block — anchored bottom-right */}
+        {/* Headline block, anchored bottom-right */}
         <div
           style={{
             display: "flex",

@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 
 /**
- * FirstCompletionMoment — the once-ever beat the first time a task is ever
+ * FirstCompletionMoment, the once-ever beat the first time a task is ever
  * finished. The per-card flourish marks *every* completion; this marks the
  * emotional turn of the very first one: the brand check draws inside a
- * blooming ring and a single warm line settles — "First one done." — then it
+ * blooming ring and a single warm line settles, "First one done.", then it
  * fades. Non-blocking, reduced-motion aware, fires once and never again.
  *
  * Decoupled by a window event so any board card's done-transition can trigger

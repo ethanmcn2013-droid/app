@@ -17,7 +17,7 @@ export function PasswordRow({ user }: { user: UserResource }) {
         hint={
           has
             ? "Used when sign-in codes aren't reaching you."
-            : "You don't have a password — you sign in with a code or a connected account. Add one below if you'd like a fallback."
+            : "You don't have a password, you sign in with a code or a connected account. Add one below if you'd like a fallback."
         }
         control={
           <button

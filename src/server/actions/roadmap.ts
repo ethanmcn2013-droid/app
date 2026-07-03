@@ -79,7 +79,7 @@ export async function setRoadmapNoteAction(
 }
 
 /* ──────────────────────────────────────────────────────────────────
-   Blockers — the user-only actions (purchases, account claims, ad
+   Blockers, the user-only actions (purchases, account claims, ad
    spend, recordings, live launch beats, KPI write-ups) that gate
    the roadmap.
    ────────────────────────────────────────────────────────────── */
@@ -122,7 +122,7 @@ export async function setBlockerNoteAction(
 }
 
 /* ──────────────────────────────────────────────────────────────────
-   Action items — engineering / QA / launch-readiness checklist
+   Action items, engineering / QA / launch-readiness checklist
    independent of gtm-plan.md.
    ────────────────────────────────────────────────────────────── */
 

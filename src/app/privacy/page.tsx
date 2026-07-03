@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
-  title: "Privacy — Tasks",
+  title: "Privacy, Tasks",
   description:
     "What we collect, why, who else sees it, and how to get it back. Hand-written, not Termly mush.",
 };
@@ -11,9 +11,9 @@ export const metadata = {
 const LAST_UPDATED = "2026-05-07";
 
 /**
- * /privacy — hand-written privacy notice. Long-form prose intentionally,
+ * /privacy, hand-written privacy notice. Long-form prose intentionally,
  * not a bullet-graveyard. Sister pages: /terms, /security. The voice
- * matches /about — dry, em-dashes welcome, no "your privacy is
+ * matches /about, dry, em-dashes welcome, no "your privacy is
  * paramount" boilerplate. The page is server-rendered; no client JS.
  */
 export default function PrivacyPage() {
@@ -49,19 +49,19 @@ export default function PrivacyPage() {
                 email and (if you provided one) name. That&rsquo;s the
                 identity we attach your workspace to. If you signed in
                 with Google or another OAuth provider, we get the same
-                fields plus a stable provider ID — no contact list,
+                fields plus a stable provider ID, no contact list,
                 no friend graph, no inbox access.
               </p>
               <p>
                 <strong className="text-ink">Payment.</strong> If you
                 upgrade, Stripe collects your card. We never see the
                 number. We get back a customer ID, the last four digits,
-                the brand, and the country — enough to show you the
+                the brand, and the country, enough to show you the
                 right billing row in settings and run a refund.
               </p>
               <p>
                 <strong className="text-ink">Usage.</strong> PostHog
-                records anonymous product analytics — which view you
+                records anonymous product analytics, which view you
                 opened, whether the keyboard shortcut fired, how long
                 a session lasted. We pair it with Sentry, which catches
                 errors and stack traces so we know when something
@@ -83,32 +83,32 @@ export default function PrivacyPage() {
               <ul className="mt-2 list-disc space-y-1.5 pl-5">
                 <li>
                   <Link href="https://clerk.com/privacy">Clerk</Link>{" "}
-                  — authentication, session management.
+                 , authentication, session management.
                 </li>
                 <li>
                   <Link href="https://stripe.com/privacy">Stripe</Link>{" "}
-                  — payments, invoices, refunds.
+                 , payments, invoices, refunds.
                 </li>
                 <li>
                   <Link href="https://posthog.com/privacy">PostHog</Link>{" "}
-                  — product analytics, feature flags.
+                 , product analytics, feature flags.
                 </li>
                 <li>
                   <Link href="https://sentry.io/privacy/">Sentry</Link>{" "}
-                  — error monitoring.
+                 , error monitoring.
                 </li>
                 <li>
                   <Link href="https://resend.com/legal/privacy-policy">
                     Resend
                   </Link>{" "}
-                  — transactional email (digests, password resets,
+                 , transactional email (digests, password resets,
                   receipts).
                 </li>
                 <li>
                   <Link href="https://vercel.com/legal/privacy-policy">
                     Vercel
                   </Link>{" "}
-                  — hosting, edge network, function execution.
+                 , hosting, edge network, function execution.
                 </li>
               </ul>
               <p>
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
 
             <Section title="How long we keep it">
               <p>
-                Live data — your tasks, your account, your billing —
+                Live data, your tasks, your account, your billing —
                 stays until you delete the workspace. Encrypted backups
                 roll off on a 30-day window after that, after which
                 there&rsquo;s nothing left to restore even if we wanted
@@ -154,7 +154,7 @@ export default function PrivacyPage() {
                 stay signed in, a small CSRF token, and a theme
                 preference. PostHog runs in cookieless mode where the
                 browser supports it and falls back to a single
-                first-party cookie elsewhere — never a third-party
+                first-party cookie elsewhere, never a third-party
                 tracker. No advertising cookies. No social-share
                 pixels.
               </p>
@@ -171,7 +171,7 @@ export default function PrivacyPage() {
 
             <Section title="Changes">
               <p>
-                If we materially change this notice — new
+                If we materially change this notice, new
                 subprocessor, new data category, new retention rule —
                 we&rsquo;ll email signed-up users before it takes
                 effect and update the date at the top. Cosmetic edits

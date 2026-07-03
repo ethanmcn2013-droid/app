@@ -22,7 +22,7 @@ export type CrossWorkspaceSearchItem = {
   due: string | null;
 };
 
-/** Cap on rows returned to the client per query — mirrors the local
+/** Cap on rows returned to the client per query, mirrors the local
  *  command-palette's slice. */
 const RESULT_LIMIT = 30;
 
@@ -37,7 +37,7 @@ const MIN_QUERY_LENGTH = 2;
  * the client can wire the action straight to the input value without
  * a debounce-time guard of its own.
  *
- * Ranking is exact-prefix-first then alphabetical — same idiom as
+ * Ranking is exact-prefix-first then alphabetical, same idiom as
  * the workspace-local palette, just stretched across tenants.
  */
 export async function searchAcrossWorkspacesAction(
@@ -70,9 +70,9 @@ export async function searchAcrossWorkspacesAction(
     ]),
   );
 
-  // SQLite's LIKE is case-insensitive for ASCII by default — no
+  // SQLite's LIKE is case-insensitive for ASCII by default, no
   // separate ILIKE needed. Wrap the query in `%…%` for substring
-  // match. Every lane is included — search is for finding things,
+  // match. Every lane is included, search is for finding things,
   // not for prioritization, so the done lane stays in scope.
   const escaped = escapeLike(trimmed);
 
@@ -89,7 +89,7 @@ export async function searchAcrossWorkspacesAction(
       and(
         inArray(
           // Cast through `sql` so the nullable workspaceId column
-          // still type-checks against the non-null id list — same
+          // still type-checks against the non-null id list, same
           // dance the cycle-22 cross-workspace action does.
           sql`${tasks.workspaceId}`,
           workspaceIds,
@@ -136,7 +136,7 @@ export async function searchAcrossWorkspacesAction(
 /**
  * Escape SQL LIKE wildcards in user input so a literal `%` or `_` in
  * the query matches itself rather than acting as a wildcard. Drizzle
- * doesn't auto-escape — that's the caller's job.
+ * doesn't auto-escape, that's the caller's job.
  */
 function escapeLike(value: string): string {
   return value.replace(/[\\%_]/g, (m) => `\\${m}`);

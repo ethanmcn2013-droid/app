@@ -20,7 +20,7 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
         const c = cursors[id];
         if (!c) return null;
         const user = USERS[id];
-        // Labels appear only when the cursor is doing something — grabbing,
+        // Labels appear only when the cursor is doing something, grabbing,
         // reading, or just-arrived. Otherwise the cursor is a quiet arrow.
         const labelVisible =
           c.visible && (c.grabbing || c.reading || c.justArrived);

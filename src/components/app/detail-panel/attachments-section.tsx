@@ -175,7 +175,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
     [handleFiles],
   );
 
-  // Defer rendering until the first read resolves — flashing an
+  // Defer rendering until the first read resolves, flashing an
   // empty state would lie about the row count.
   if (items === null) return null;
 
@@ -266,7 +266,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Row state types — local to this component
+// Row state types, local to this component
 // ────────────────────────────────────────────────────────────────────
 
 type RealRow = {
@@ -454,7 +454,7 @@ function EmptyState({ dragging }: { dragging: boolean }) {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// File icon — branches on mime category. Image rows render the
+// File icon, branches on mime category. Image rows render the
 // thumbnail fetched through the authenticated route.
 // ────────────────────────────────────────────────────────────────────
 

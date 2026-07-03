@@ -46,7 +46,7 @@ export function AboutManifesto() {
           vocabulary.
         </p>
 
-        {/* The strikethrough block — the words we cut */}
+        {/* The strikethrough block, the words we cut */}
         <Strikethroughs />
 
         <h2 className="mt-16 text-[26px] font-semibold tracking-[-0.02em] text-ink">
@@ -57,7 +57,7 @@ export function AboutManifesto() {
             Sprints. Epics. Tickets. Issues. Stories. Backlogs.
             Burndowns. The whole industry has spent twenty years
             convincing people that getting something done together
-            requires a special language — and that the special language
+            requires a special language, and that the special language
             requires a special tool, sold at a special price, configured
             by a special role.
           </p>
@@ -69,7 +69,7 @@ export function AboutManifesto() {
             need a sprint review. They all need the same thing the
             engineering teams really need underneath all the jargon: a
             place to write what&rsquo;s on their plate, who&rsquo;s
-            doing it, and when it&rsquo;s due — and a few clean ways to
+            doing it, and when it&rsquo;s due, and a few clean ways to
             look at the same list.
           </p>
           <p>
@@ -152,7 +152,7 @@ function Strikethroughs() {
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] font-medium text-ink-quiet">
         {STRIKES.map((s, i) => (
           // Static, not a scroll-reveal. The struck words are content
-          // and the strike line is semantically load-bearing — it is
+          // and the strike line is semantically load-bearing, it is
           // what marks the jargon as rejected. A whileInView opacity:0
           // / scaleX:0 left no-JS and crawlers reading the banned words
           // with no strike, inverting the meaning (proven, T·54).
@@ -200,7 +200,7 @@ const PROMISES: { title: string; body: string }[] = [
   {
     title: "Free where it counts.",
     body:
-      "The features that make this useful — multi-view, real-time, shareable — work without paying. Always. We charge for power-user depth, not the basics. The basics belong to you.",
+      "The features that make this useful, multi-view, real-time, shareable, work without paying. Always. We charge for power-user depth, not the basics. The basics belong to you.",
   },
   {
     title: "No vocabulary tax.",
@@ -215,7 +215,7 @@ const PROMISES: { title: string; body: string }[] = [
   {
     title: "Out of your way.",
     body:
-      "Notifications are restrained — a daily digest, not a firehose. Capture is fast — write a sentence, the app picks out the date. The tool fades. The work stays.",
+      "Notifications are restrained, a daily digest, not a firehose. Capture is fast, write a sentence, the app picks out the date. The tool fades. The work stays.",
   },
 ];
 

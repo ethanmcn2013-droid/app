@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { SectionHeading } from "./features";
 
 // ─────────────────────────────────────────────────────────────
-// Motion grammar — every curve has a job.
+// Motion grammar, every curve has a job.
 // outExpo: confident exits, "settled" feel. Default reveal.
 // inOut:   bidirectional crossfades, pill swaps. Neutral.
 // backOut: enter with a hair of overshoot. Avatars, pills.
@@ -57,7 +57,7 @@ const ANN: { slot: Slot; label: string; note: string }[] = [
   {
     slot: "assignee",
     label: "Assignee stack",
-    note: "Live presence — pulses when the user is actively in the card.",
+    note: "Live presence, pulses when the user is actively in the card.",
   },
 ];
 
@@ -69,7 +69,7 @@ type Stage = {
   typing: boolean;
   dueHours: number;
   caption: boolean;
-  // ephemeral counters — increment to fire a one-shot motion
+  // ephemeral counters, increment to fire a one-shot motion
   lockBloom: number;
   presenceRipple: number;
 };
@@ -103,14 +103,14 @@ export function Anatomy() {
             }
           />
           <p className="mt-5 max-w-[58ch] text-[16px] leading-[1.55] text-ink-soft">
-            A card holds twelve signals. Most of them are quiet — they only step
+            A card holds twelve signals. Most of them are quiet, they only step
             forward when the moment calls for them. Idle days appear when work
             stalls. The lock outline shows when someone is in the card. Comments
             stream when the conversation is live.
           </p>
           <p className="mt-3 max-w-[58ch] text-[13px] text-ink-quiet">
-            Watch the card live, or hover a signal — on the card or in the
-            index — to see them speak to each other.
+            Watch the card live, or hover a signal, on the card or in the
+            index, to see them speak to each other.
           </p>
 
           <div className="mt-12 grid gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-20">
@@ -141,17 +141,17 @@ function useChoreography(active: boolean) {
         await wait(1400);
         if (cancelled) return;
 
-        // BEAT — first comment tick (the card is "being watched")
+        // BEAT, first comment tick (the card is "being watched")
         setStage((s) => ({ ...s, comments: 12 }));
         await wait(1900);
         if (cancelled) return;
 
-        // BEAT — lock outline draws (someone enters)
+        // BEAT, lock outline draws (someone enters)
         setStage((s) => ({ ...s, lock: true, lockBloom: s.lockBloom + 1 }));
         await wait(900);
         if (cancelled) return;
 
-        // BEAT — EM avatar joins (secondary: DV reacts)
+        // BEAT, EM avatar joins (secondary: DV reacts)
         setStage((s) => ({
           ...s,
           presence: true,
@@ -160,24 +160,24 @@ function useChoreography(active: boolean) {
         await wait(450);
         if (cancelled) return;
 
-        // BEAT — caption types in
+        // BEAT, caption types in
         setStage((s) => ({ ...s, caption: true }));
         await wait(700);
         if (cancelled) return;
 
-        // BEAT — idle → live swap (the actual product behavior)
+        // BEAT, idle → live swap (the actual product behavior)
         setStage((s) => ({ ...s, live: true }));
         await wait(950);
         if (cancelled) return;
 
-        // BEAT — due hours countdown, one step per beat
+        // BEAT, due hours countdown, one step per beat
         for (let h = 7; h >= 5; h--) {
           setStage((s) => ({ ...s, dueHours: h }));
           await wait(850);
           if (cancelled) return;
         }
 
-        // BEAT — typing → comment tick
+        // BEAT, typing → comment tick
         setStage((s) => ({ ...s, typing: true }));
         await wait(900);
         if (cancelled) return;
@@ -185,17 +185,17 @@ function useChoreography(active: boolean) {
         await wait(1400);
         if (cancelled) return;
 
-        // BEAT — EM leaves, caption fades
+        // BEAT, EM leaves, caption fades
         setStage((s) => ({ ...s, presence: false, caption: false }));
         await wait(450);
         if (cancelled) return;
 
-        // BEAT — live → idle
+        // BEAT, live → idle
         setStage((s) => ({ ...s, live: false }));
         await wait(500);
         if (cancelled) return;
 
-        // BEAT — lock fades + due resets
+        // BEAT, lock fades + due resets
         setStage((s) => ({ ...s, lock: false, dueHours: 8 }));
         await wait(1300);
       }
@@ -268,7 +268,7 @@ function DemoCard({
       className="relative flex items-center justify-center rounded-3xl border border-line-soft bg-gradient-to-b from-bg-elevated to-bg-sunken/60 px-6 py-20"
       onMouseLeave={() => setActive(null)}
     >
-      {/* Ambient ground glow — intensifies on focus + on "active" beats */}
+      {/* Ambient ground glow, intensifies on focus + on "active" beats */}
       <motion.div
         aria-hidden
         className="absolute inset-0 -z-10 rounded-3xl"
@@ -292,7 +292,7 @@ function DemoCard({
         transition={SPRING_SOFT}
         style={{ transformOrigin: "center center" }}
       >
-        {/* Lock outline — drawn via motion's pathLength */}
+        {/* Lock outline, drawn via motion's pathLength */}
         <svg
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -329,7 +329,7 @@ function DemoCard({
           />
         </svg>
 
-        {/* Lock bloom — one-shot inset flash when the outline lands */}
+        {/* Lock bloom, one-shot inset flash when the outline lands */}
         <AnimatePresence>
           {stage.lock && (
             <motion.div
@@ -356,7 +356,7 @@ function DemoCard({
           initial="hidden"
           animate={revealInView ? "visible" : "hidden"}
         >
-          {/* Top row — title + priority */}
+          {/* Top row, title + priority */}
           <div className="flex items-start justify-between gap-2">
             <motion.span
               {...hoverProps("title")}
@@ -378,7 +378,7 @@ function DemoCard({
             </motion.span>
           </div>
 
-          {/* Middle row — due + assignee */}
+          {/* Middle row, due + assignee */}
           <div className="mt-3 flex items-center justify-between">
             <motion.div
               {...hoverProps("due")}
@@ -459,7 +459,7 @@ function DemoCard({
               </AnimatePresence>
 
               <div className="flex -space-x-1.5">
-                {/* DV — gets a secondary squash when EM joins */}
+                {/* DV, gets a secondary squash when EM joins */}
                 <motion.span
                   className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-white ring-2 ring-white"
                   style={{ background: "var(--user-david)", zIndex: 2 }}
@@ -493,7 +493,7 @@ function DemoCard({
             </motion.div>
           </div>
 
-          {/* Bottom row — idle/live pill + comments */}
+          {/* Bottom row, idle/live pill + comments */}
           <div className="mt-3 flex items-center gap-2">
             <motion.div
               {...hoverProps("idle")}
@@ -646,7 +646,7 @@ function DemoCard({
         </motion.div>
       </motion.div>
 
-      {/* Caption — types in letter by letter */}
+      {/* Caption, types in letter by letter */}
       <div className="pointer-events-none absolute bottom-5 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.14em] text-ink-quiet">
         <Caption visible={stage.caption} text="Someone is in the card" />
       </div>

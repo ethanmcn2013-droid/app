@@ -17,7 +17,7 @@ import { isDemoMode } from "@/lib/access-mode";
  * before the workspace owner provisions secrets. `getCurrentUser()`
  * falls back to the legacy seed identity in that mode.
  *
- * Layer 2 — unified ecosystem (DESIGN.md §14):
+ * Layer 2, unified ecosystem (DESIGN.md §14):
  * Authed users hitting a marketing (M) route are 307'd to /app so
  * they land in the workspace rather than the marketing site. The
  * exact M set is defined in LAYER0_ROUTE_ALLOWLIST.md §tasks.
@@ -27,7 +27,7 @@ import { isDemoMode } from "@/lib/access-mode";
  */
 
 /**
- * Layer 0 M-routes for tasks. Explicit allowlist — never a heuristic.
+ * Layer 0 M-routes for tasks. Explicit allowlist, never a heuristic.
  * Source of truth: LAYER0_ROUTE_ALLOWLIST.md §tasks.
  */
 const MARKETING_PATHS = new Set(["/", "/features", "/pricing", "/changelog"]);
@@ -39,7 +39,7 @@ const APP_ENTRY = "/app";
  * @param isAuthed real Clerk session state (userId present), NOT raw cookie
  * presence. Using the `__session` cookie alone wrongly treats a stale/expired
  * cookie as authed, 307'ing the visitor to /app where protect() then walls
- * them at /sign-in — the "forced sign-in unless incognito" bug. A genuine
+ * them at /sign-in, the "forced sign-in unless incognito" bug. A genuine
  * session redirects to the app; everyone else keeps the public marketing view.
  */
 function marketingToAppRedirect(
@@ -97,7 +97,7 @@ const isPublicRoute = createRouteMatcher([
   // Not Clerk-protected because the calling service has no Clerk session.
   "/api/internal/(.*)",
   // Cross-repo Notes→Tasks extract (bearer-auth via NOTES_TO_TASKS_SECRET).
-  // The Notes server action has no Clerk session — bearer guards the route.
+  // The Notes server action has no Clerk session, bearer guards the route.
   "/api/notes-extract",
   "/sitemap.xml",
   "/robots.txt",
@@ -130,7 +130,7 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
     return; // dev pass-through
   }
 
-  // Layer 2 — M-route redirect uses the REAL session (userId), so a stale
+  // Layer 2, M-route redirect uses the REAL session (userId), so a stale
   // __session cookie no longer bounces a signed-out visitor into the /app
   // sign-in wall. Genuine sessions still land in the workspace.
   const { userId } = await auth();

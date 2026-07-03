@@ -50,13 +50,13 @@ function siteUrl(): string {
  * redirect URL the client should `window.location` to.
  *
  * Tier-scoping note (Phase 4):
- *   - `studio` is a user-level subscription — the entitlement row
+ *   - `studio` is a user-level subscription, the entitlement row
  *     gets `workspaceId = NULL` so it applies across every workspace
  *     the user owns.
  *   - `pro`, `team`, and `wedding` remain workspace-scoped.
  *
  * Dev fallback: when Stripe isn't configured, writes the entitlement
- * locally and returns a dev-success URL — lets the rest of the app's
+ * locally and returns a dev-success URL, lets the rest of the app's
  * tier-gating run without provisioning real keys.
  */
 export async function createCheckoutSessionAction(
@@ -126,7 +126,7 @@ export async function createCheckoutSessionAction(
  *
  *  Idempotent on `notes`: if a row with the same notes value already
  *  exists, the call is a no-op. This makes the function safe to retry
- *  from the Stripe webhook handler — the `stripe:<event-id>` notes
+ *  from the Stripe webhook handler, the `stripe:<event-id>` notes
  *  string serves as the natural dedup key, so a webhook retry after
  *  a partial-handler crash re-runs the grant without creating a
  *  duplicate entitlement. */
@@ -192,7 +192,7 @@ export async function grantEntitlement(input: {
   }
 }
 
-/** Cancel an active entitlement — called from Stripe's
+/** Cancel an active entitlement, called from Stripe's
  *  `customer.subscription.deleted` webhook. Sets `expiresAt = now`
  *  rather than deleting the row, so the audit trail survives. */
 export async function expireEntitlementByNotes(

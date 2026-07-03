@@ -7,7 +7,7 @@ import type { PublishedWorkspaceProps } from "./types";
  * generous whitespace. Reskins the published workspace as a save-the-
  * date / planning page rather than a productivity board.
  *
- * Server component — no client hooks.
+ * Server component, no client hooks.
  */
 export function WeddingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
   const byLane = new Map<LaneId, typeof tasks>();
@@ -175,7 +175,7 @@ export function WeddingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
  * ──────────────────────────────────────────────────────────────────── */
 
 function laneLabel(d: Date): string {
-  // "Published Saturday, May 6, 2026" — but lower-case, sparse, like
+  // "Published Saturday, May 6, 2026", but lower-case, sparse, like
   // a save-the-date corner mark rather than a banner.
   return `Published ${d.toLocaleDateString(undefined, {
     weekday: "long",
@@ -220,7 +220,7 @@ function formatDue(due: string): string {
 }
 
 /* ────────────────────────────────────────────────────────────────────
- * Floral motifs — tasteful inline SVG, no external assets, no bright
+ * Floral motifs, tasteful inline SVG, no external assets, no bright
  * colours. A small leafed sprig used as a horizontal rule and as a
  * footer mark. Stroke colour stays in the blush family.
  * ──────────────────────────────────────────────────────────────────── */
@@ -279,7 +279,7 @@ function Sprig() {
 }
 
 function FloralMark() {
-  // Footer-area accent — just the sprig, slightly larger, as a
+  // Footer-area accent, just the sprig, slightly larger, as a
   // closing flourish above the shared <PublishedFooter>.
   return (
     <svg

@@ -419,7 +419,7 @@ export function OnboardingFlow({
                   {segmentConfig.contextQuestion}
                 </h2>
                 <p className="mt-3 text-[15px] text-ink-soft">
-                  Optional — helps us line up the right examples.
+                  Optional, helps us line up the right examples.
                 </p>
 
                 <div className="mt-7 flex flex-wrap gap-2">

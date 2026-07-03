@@ -32,7 +32,7 @@ export function ListApp() {
 
   // Bulk selection. `selected` holds task ids; `anchor` is the last
   // shift-click root for range-select. `flatOrder` is the display
-  // order — same lane-then-position order as the rendered rows — so
+  // order, same lane-then-position order as the rendered rows, so
   // a shift-click range crosses lane boundaries the way the user sees.
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const anchorRef = useRef<string | null>(null);
@@ -259,7 +259,7 @@ export function ListApp() {
 }
 
 /**
- * Bulk-action bar — sticky-bottom-center, slides up when N rows are
+ * Bulk-action bar, sticky-bottom-center, slides up when N rows are
  * selected. Action buttons are round (the brand's "clickable" shape)
  * and the toolbar itself uses the elevated chrome shadow.
  *

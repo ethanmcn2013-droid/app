@@ -4,10 +4,10 @@ import { db } from "@/server/db";
 import { exportAccountData } from "@/server/account-export";
 
 /**
- * GET /api/account/export — Signal Tasks.
+ * GET /api/account/export · Signal Tasks.
  *
  * GDPR Art. 20 data portability: the signed-in user downloads a complete
- * machine-readable (JSON) copy of everything Tasks holds for them — their
+ * machine-readable (JSON) copy of everything Tasks holds for them, their
  * profile, every owned workspace and its content, and their footprint in
  * other workspaces. Authed; resolved from the Clerk session, never a
  * client-supplied id. Attachment bytes are not inlined (metadata only).

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 /**
  * CSP violation collector.
  *
- * Browsers POST here when a Content-Security-Policy is violated — wired via
+ * Browsers POST here when a Content-Security-Policy is violated, wired via
  * the `report-uri` / `report-to` directives + `Reporting-Endpoints` header in
  * next.config.ts. Until now the suite's Report-Only policies reported to
  * NOWHERE, so there was no evidence a policy was clean. This logs one concise
@@ -50,7 +50,7 @@ export async function POST(req: Request): Promise<NextResponse> {
       }
     }
   } catch {
-    // Malformed report — ignore, never error a browser beacon.
+    // Malformed report, ignore, never error a browser beacon.
   }
   return new NextResponse(null, { status: 204 });
 }

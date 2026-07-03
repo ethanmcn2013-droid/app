@@ -30,16 +30,16 @@ import type { Attachment } from "@/lib/data";
  *  the authority. */
 const MAX_BYTES = 25 * 1024 * 1024;
 
-/** Mime types we refuse outright. Not a full antivirus pass — that's
+/** Mime types we refuse outright. Not a full antivirus pass, that's
  *  a future enhancement (TODO: virus-scan via ClamAV / cloud scanner
- *  before the user-content surface goes external) — but enough to
+ *  before the user-content surface goes external), but enough to
  *  reject the obvious executable shapes a user might drop in by
  *  accident. */
 const BLOCKED_MIME_TYPES = new Set<string>([
   "application/x-msdownload",
   "application/x-msdos-program",
   "text/x-shellscript",
-  // Script-capable document types — stored-XSS shapes if ever rendered.
+  // Script-capable document types, stored-XSS shapes if ever rendered.
   // The download route also forces these to `attachment` + nosniff + a
   // sandbox CSP; blocking at upload is the belt to that route's braces.
   "text/html",
@@ -186,7 +186,7 @@ export async function uploadAttachmentAction(
 /**
  * Delete a single attachment row + best-effort unlink the file. The
  * disk unlink is wrapped because a missing file shouldn't keep the
- * row alive — the UI promise is "remove this", and an orphan blob is
+ * row alive, the UI promise is "remove this", and an orphan blob is
  * preferable to an orphan row that the user can't dismiss.
  */
 export async function deleteAttachmentAction(

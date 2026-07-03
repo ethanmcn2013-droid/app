@@ -1,19 +1,19 @@
 import { ImageResponse } from "next/og";
 import type { ReactElement } from "react";
 
-// nodejs runtime — see cycle-26 review note in
+// nodejs runtime, see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
 // dev mode + ImageResponse intermittently breaks with "failed to
 // pipe response"; nodejs is reliable.
 export const runtime = "nodejs";
-export const alt = "Tasks — four views (board, list, timeline, calendar)";
+export const alt = "Tasks, four views (board, list, timeline, calendar)";
 export const size = { width: 1500, height: 500 };
 export const contentType = "image/png";
 
 /**
- * Bluesky banner — 1500×500.
+ * Bluesky banner, 1500×500.
  *
- * Per gtm-week-1.md Brief 2: four view icons in a 2×2 grid — board
+ * Per gtm-week-1.md Brief 2: four view icons in a 2×2 grid, board
  * (lanes), list (lines), timeline (bars), calendar (cells). Each
  * labeled in 11px caps tracking. No tagline. Hand-drawn weight is
  * approximated with 1.5px strokes and a slight rotation per cell.
@@ -23,7 +23,7 @@ export const contentType = "image/png";
  * across rasterization. No external assets, no font fetches.
  *
  * Visual concession: Satori's font fallback (not true Geist) renders
- * the caption labels — readable at 11px, just not the brand face.
+ * the caption labels, readable at 11px, just not the brand face.
  */
 const FONT_STACK =
   '"Geist", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif';

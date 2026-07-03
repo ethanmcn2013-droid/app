@@ -14,7 +14,7 @@ import {
  * Sprint 9 · Google bridges (export-side).
  *
  * Three options the user reaches at the page-header. Each is a pure
- * client-side formatter + clipboard write — no OAuth, no server
+ * client-side formatter + clipboard write, no OAuth, no server
  * round-trip beyond what the page already loaded.
  *
  *   - Copy as CSV       → spreadsheet-ready (Google Sheets, Excel, Numbers)
@@ -33,7 +33,7 @@ export function ExportMenu() {
   const pack = useDomain();
   const ws = useActiveWorkspace();
 
-  // Skip rendering when not in app shell — the marketing surfaces
+  // Skip rendering when not in app shell, the marketing surfaces
   // mount the page-header but don't have an active workspace.
   if (!ws) return null;
 

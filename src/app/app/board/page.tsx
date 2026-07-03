@@ -21,7 +21,7 @@ export default async function BoardPage({
     venue = await detectVenueWelcome(me);
     if (venue) {
       // Stamp the entitlement's reached_board_at on first venue-welcome
-      // render. Idempotent — subsequent visits leave the original
+      // render. Idempotent, subsequent visits leave the original
       // timestamp in place. Fires the /hq/partners "Reached board"
       // signal without an event-log table.
       await markVenueEntitlementReached(me);

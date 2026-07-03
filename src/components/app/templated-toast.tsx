@@ -18,7 +18,7 @@ import { TIMELINE_URL } from "@/lib/product-urls";
  *   that opens the synced from-template route on roadmap. Specialty
  *   Tasks-only templates skip the action.
  *
- * Mounted as a leaf inside the board's page chrome — pure side-effect
+ * Mounted as a leaf inside the board's page chrome, pure side-effect
  * component, renders nothing.
  */
 export function TemplatedToast() {

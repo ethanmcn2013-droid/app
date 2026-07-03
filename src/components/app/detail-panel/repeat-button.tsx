@@ -7,7 +7,7 @@ import { duplicateTaskAction } from "@/server/actions/duplicate-task";
 import { Popover } from "./popover";
 
 /**
- * "Repeat this task" — one-tap chain duplication.
+ * "Repeat this task", one-tap chain duplication.
  *
  * Two inputs: `count` (how many copies) and `dayStep` (days between
  * each). The original stays put; we create N copies, each shifted

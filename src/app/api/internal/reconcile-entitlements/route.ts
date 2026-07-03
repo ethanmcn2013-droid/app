@@ -11,7 +11,7 @@ import { reconcileEntitlements } from "@/server/db/reconcile-entitlements";
  *
  * The same reconcile sweep that fires from the daily digest cron,
  * exposed as a standalone Bearer-authed endpoint so an operator can
- * trigger it between daily runs — useful after a Stripe webhook
+ * trigger it between daily runs, useful after a Stripe webhook
  * crash, after seeding LAMBSHIL codes, or while waiting for the
  * next daily window.
  *

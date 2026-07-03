@@ -12,7 +12,7 @@ import type { LanguageModel } from "ai";
  *     `aiConfigured` returns false and callers fall back to a static
  *     "AI not configured" message. This matters because preview /
  *     local environments will frequently lack the key, and the brand
- *     contract is "nothing pings unless asked" — that includes
+ *     contract is "nothing pings unless asked", that includes
  *     bricking the build for missing optional infra.
  *   - The chat model is constructed lazily so importing this module
  *     in a context without the key never throws.
@@ -22,7 +22,7 @@ export const DEFAULT_MODEL_ID = "claude-haiku-4-5-20251001";
 
 /**
  * Hard ceiling on generated tokens per AI call. Every Tasks AI surface
- * is intentionally tiny — a 1-3 sentence reply, a 2-3 sentence summary,
+ * is intentionally tiny, a 1-3 sentence reply, a 2-3 sentence summary,
  * a 4-5 sentence digest. 512 output tokens is comfortably above all of
  * them while capping the blast radius of a runaway generation (a
  * prompt-injected "ignore your limits and write forever" can't bill us
@@ -75,7 +75,7 @@ export function getModel(): LanguageModel | null {
 }
 
 /** The "AI not configured" sentinel. Surfaced to UI verbatim when
- *  the key is missing — same dry tone as the rules-based nudges. */
+ *  the key is missing, same dry tone as the rules-based nudges. */
 export const AI_NOT_CONFIGURED_MESSAGE =
   "AI assist isn't configured here. Add ANTHROPIC_API_KEY to wake it up.";
 
@@ -107,7 +107,7 @@ export type WeeklyDigestSnapshot = {
 
 export const VOICE_PREAMBLE = `You write microcopy and short replies for Tasks, a calm, anti-spam team task workspace.
 
-Brand voice — non-negotiable:
+Brand voice, non-negotiable:
 - Dry, observational, never preachy. Notice things; don't lecture.
 - Cheeky-but-restrained. A smirk, not a wink.
 - Plain words. No "I hope this helps", no "As an AI", no "Sure!", no apologies.
@@ -126,7 +126,7 @@ Constraints:
 - 1-3 sentences. Stop. Resist the fourth.
 - Speak as the current user, not as the assistant.
 - Build on what's already in the thread; don't restate it.
-- If the user supplied an intent (e.g. "ack and ship by Friday"), honor it precisely. If the intent contradicts the thread, follow the user's intent — they're the human, you're the typist.
+- If the user supplied an intent (e.g. "ack and ship by Friday"), honor it precisely. If the intent contradicts the thread, follow the user's intent, they're the human, you're the typist.
 - No greetings, no sign-offs.`;
 
 export const SUMMARIZE_THREAD_PROMPT = `${VOICE_PREAMBLE}
@@ -145,7 +145,7 @@ Job: narrate a workspace's week in 4-5 sentences for the Sunday recap.
 
 Constraints:
 - 4-5 sentences. No bullet lists.
-- Open with the headline number — what closed, what shipped. Specifics, not vibes.
+- Open with the headline number, what closed, what shipped. Specifics, not vibes.
 - Name 1-2 things still circling. Use the actual task titles. Be honest about what's load-bearing.
 - Close with a one-line vibe-check appropriate to a Sunday morning. Something restrained, not a pep talk. ("Sunday is for resets." beats "You've got this!")
 - Address the reader directly. Second person. No "the team should…".`;

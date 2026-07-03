@@ -6,7 +6,7 @@ import { DOMAINS, DOMAIN_ORDER, type DomainId } from "@/lib/domains";
 type Props = {
   domain: DomainId;
   onChange: (next: DomainId) => void;
-  /** Optional CTA — when present, renders a "Try this in your workspace →"
+  /** Optional CTA, when present, renders a "Try this in your workspace →"
    *  affordance that the parent can wire to the seed-domain action. */
   onTryInWorkspace?: () => void;
   pending?: boolean;

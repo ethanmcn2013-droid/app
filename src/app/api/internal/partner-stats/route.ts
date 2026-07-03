@@ -10,13 +10,13 @@ export const runtime = "nodejs";
 
 /**
  * Tasks-owned partner-stats read. Replaces Studio's direct libSQL read
- * of Tasks's `comp_codes` + `entitlements` tables — Studio now fetches
+ * of Tasks's `comp_codes` + `entitlements` tables, Studio now fetches
  * this endpoint over HTTP. Schema changes here become a versioned API
  * contract instead of a silent cross-repo break.
  *
  * Auth: bearer `PARTNER_STATS_SECRET` (shared between Studio + Tasks).
  *
- * Query: `?sponsor=<slug>` — sponsor slug as written into
+ * Query: `?sponsor=<slug>`, sponsor slug as written into
  * `comp_codes.notes` JSON `{ sponsor_slug }` by Studio's issue-codes
  * script.
  *

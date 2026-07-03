@@ -25,7 +25,7 @@ const TOGGLES: Array<{
     key: "mentions",
     title: "Mention notifications",
     description:
-      "Direct hits — when someone @-mentions you, or a task you own gets blocked. The only thing we'll buzz you about in real time.",
+      "Direct hits, when someone @-mentions you, or a task you own gets blocked. The only thing we'll buzz you about in real time.",
     defaultsOn: true,
   },
   {
@@ -48,7 +48,7 @@ export function NotificationsSection({
   const [pending, startTransition] = useTransition();
 
   function handleToggle(key: PrefKey, next: boolean) {
-    // Optimistic — toggle UI immediately, revert on failure.
+    // Optimistic, toggle UI immediately, revert on failure.
     setState((s) => ({ ...s, [key]: next }));
     startTransition(async () => {
       try {

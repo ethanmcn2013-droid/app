@@ -3,9 +3,9 @@ import "server-only";
 /**
  * Per-caller rate limiting for Signal Tasks.
  *
- * Behavioural twin of `analytics/src/lib/ratelimit.ts` — same public
+ * Behavioural twin of `analytics/src/lib/ratelimit.ts`, same public
  * `allow(name, identifier, limit, window)` contract and the same two
- * guarantees — but implemented over the Upstash Redis REST API with
+ * guarantees, but implemented over the Upstash Redis REST API with
  * `fetch` instead of the `@upstash/*` SDK. Tasks doesn't carry those deps,
  * and the contract here is identical, so we avoid adding a dependency just
  * to call a one-line REST endpoint.
@@ -13,7 +13,7 @@ import "server-only";
  * Design decisions (mirrors analytics):
  *   - GATED. When `UPSTASH_REDIS_REST_URL` / `_TOKEN` are unset (dev,
  *     preview, or before the operator provisions Upstash) the limiter is a
- *     no-op that ALLOWS. Wiring this up never breaks a deployment — it
+ *     no-op that ALLOWS. Wiring this up never breaks a deployment, it
  *     simply starts enforcing the moment the env is present.
  *   - FAILS OPEN. If Redis is unreachable or errors at request time we
  *     allow rather than 500. A cache outage must not take a feature down;
@@ -21,7 +21,7 @@ import "server-only";
  *   - Fixed window via INCR + EXPIRE NX: the first request in a window sets
  *     the TTL, subsequent requests only increment. The window does NOT
  *     slide forward on each hit (NX), so a steady caller isn't permanently
- *     blocked — the counter resets `window` after the first request.
+ *     blocked, the counter resets `window` after the first request.
  *
  * Operator: provision Upstash Redis (Vercel → Integrations → Upstash) and
  * add UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN to the Tasks
@@ -61,10 +61,10 @@ export function clientIp(req: Request): string {
 
 /**
  * Returns true if the request is within the limit. Allows (returns true)
- * when Upstash is unconfigured OR errors — see the gated / fail-open notes.
+ * when Upstash is unconfigured OR errors, see the gated / fail-open notes.
  *
- * @param name        logical bucket, e.g. "ai" — namespaces the keys
- * @param identifier  the caller key — a userId or an IP
+ * @param name        logical bucket, e.g. "ai", namespaces the keys
+ * @param identifier  the caller key, a userId or an IP
  * @param limit       max requests permitted per window
  * @param window      window size, e.g. "1 m"
  */
@@ -99,6 +99,6 @@ export async function allow(
     if (!Number.isFinite(count) || count <= 0) return true; // unexpected → fail open
     return count <= limit;
   } catch {
-    return true; // fail open — never let a cache outage break the feature
+    return true; // fail open, never let a cache outage break the feature
   }
 }

@@ -64,7 +64,7 @@ export function GuestAuthProvider({
 
 export function useGuestAuth(): Ctx {
   const v = useContext(GuestAuthContext);
-  // Default behaviour outside a guest context: treat as owner — this
+  // Default behaviour outside a guest context: treat as owner, this
   // makes the hook safe to call from /app/* without conditional logic.
   if (!v) return { isGuest: false, promptSignUp: () => {} };
   return v;
@@ -73,7 +73,7 @@ export function useGuestAuth(): Ctx {
 const REASON_COPY: Record<Reason, { headline: string; body: string }> = {
   edit: {
     headline: "Sign up to edit this task.",
-    body: "You're viewing a shared workspace. Make a free account to make changes — your edits sync back to the team.",
+    body: "You're viewing a shared workspace. Make a free account to make changes, your edits sync back to the team.",
   },
   comment: {
     headline: "Sign up to join the conversation.",
@@ -81,7 +81,7 @@ const REASON_COPY: Record<Reason, { headline: string; body: string }> = {
   },
   addTask: {
     headline: "Sign up to add tasks.",
-    body: "You're viewing a shared workspace. Sign up to write your own — and start your own list while you're at it.",
+    body: "You're viewing a shared workspace. Sign up to write your own, and start your own list while you're at it.",
   },
   complete: {
     headline: "Sign up to mark things done.",

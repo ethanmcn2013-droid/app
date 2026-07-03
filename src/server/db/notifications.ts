@@ -17,7 +17,7 @@ function newId(): string {
  * never insert. The digest job (see `dailyDigest.ts`) compiles broader
  * activity into a single bundle the user reads ONCE per morning.
  *
- * Server-only — never imported into client code.
+ * Server-only, never imported into client code.
  */
 export async function notify(
   userId: UserId,

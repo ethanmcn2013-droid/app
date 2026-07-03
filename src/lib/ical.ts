@@ -2,7 +2,7 @@
  * Tiny RFC 5545 calendar serializer. Pure functions, no deps.
  *
  * Scope intentionally narrow: a publishable VCALENDAR with VEVENTs.
- * No alarms, attendees, recurrence, or timezone definitions — those
+ * No alarms, attendees, recurrence, or timezone definitions, those
  * arrive when the product asks for them. All emitted timestamps are
  * UTC (the trailing-Z form), which every consumer (Apple Calendar,
  * Google Calendar, Outlook) handles natively.
@@ -113,7 +113,7 @@ function lineWithParams(
   return foldLine(`${name}${paramStr}:${value}`);
 }
 
-/** True when the date sits exactly at UTC midnight — our all-day cue. */
+/** True when the date sits exactly at UTC midnight, our all-day cue. */
 function isAllDay(d: Date): boolean {
   return (
     d.getUTCHours() === 0 &&
@@ -162,7 +162,7 @@ export function buildIcsCalendar(input: {
     lines.push(...buildVevent(ev, dtstamp));
   }
   lines.push("END:VCALENDAR");
-  // Trailing CRLF — many parsers tolerate its absence, but the spec
+  // Trailing CRLF, many parsers tolerate its absence, but the spec
   // wants every content line CRLF-terminated, including the last.
   return lines.join(CRLF) + CRLF;
 }

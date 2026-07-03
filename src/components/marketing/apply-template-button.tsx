@@ -42,7 +42,7 @@ export function ApplyTemplateButton({
     label ??
     (mode === "remix"
       ? "Remix in a new workspace"
-      : "Use this template — free, no signup");
+      : "Use this template, free, no signup");
 
   const pendingLabel = mode === "remix" ? "Spinning up…" : "Applying…";
 
@@ -109,7 +109,7 @@ function ArrowIcon() {
   );
 }
 
-/** Fork glyph — two branches diverging from a single trunk. Reads as
+/** Fork glyph, two branches diverging from a single trunk. Reads as
  *  "make your own copy" without leaning on a literal Y shape. */
 function ForkIcon() {
   return (

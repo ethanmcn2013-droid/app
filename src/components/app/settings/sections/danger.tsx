@@ -49,7 +49,7 @@ export function DangerSection({
       try {
         await deleteWorkspaceAction();
         toast("Workspace deleted", { tone: "success" });
-        // Bounce to /app — the layout will re-resolve the active
+        // Bounce to /app, the layout will re-resolve the active
         // workspace (or punt to /welcome for fresh users).
         router.push("/app/board");
         router.refresh();
@@ -87,7 +87,7 @@ export function DangerSection({
           <DangerCard
             title="Delete this workspace"
             description={
-              "Erases the workspace and everything in it — tasks, comments, members, share links, the whole shape. There is no undo."
+              "Erases the workspace and everything in it, tasks, comments, members, share links, the whole shape. There is no undo."
             }
             buttonLabel="Delete workspace"
             disabled={pending}
@@ -144,7 +144,7 @@ export function DangerSection({
         </div>
       </Dialog>
 
-      {/* Delete-workspace confirmation — type-to-confirm */}
+      {/* Delete-workspace confirmation, type-to-confirm */}
       <Dialog
         open={deleteOpen}
         onClose={() => {

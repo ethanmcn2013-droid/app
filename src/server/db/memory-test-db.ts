@@ -11,7 +11,7 @@ import * as schema from "./schema";
  *
  * Faithful to prod: replays every `drizzle/*.sql` migration in journal order,
  * after first creating the four tables that live in schema.ts but have NO
- * migration file (created on prod by `drizzle-kit push --force`) — they must
+ * migration file (created on prod by `drizzle-kit push --force`), they must
  * exist before 0005's backfill `UPDATE attachments …` runs.
  *
  * Foreign keys are OFF on purpose: tests that assert tenant deletes/reads
@@ -24,7 +24,7 @@ export async function freshMemoryDb() {
   const client = createClient({ url: ":memory:" });
   await client.execute("PRAGMA foreign_keys = OFF");
 
-  // push-only tables (no migration file) — see schema.ts.
+  // push-only tables (no migration file), see schema.ts.
   await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS attachments (
       id text PRIMARY KEY NOT NULL,

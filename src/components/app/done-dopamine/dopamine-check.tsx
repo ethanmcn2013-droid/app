@@ -76,7 +76,7 @@ export function DopamineCheck({
         transformOrigin: "center",
       }}
     >
-      {/* Checkmark — strokes in over 220ms when checked */}
+      {/* Checkmark, strokes in over 220ms when checked */}
       <motion.svg
         width="11"
         height="11"

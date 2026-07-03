@@ -8,7 +8,7 @@ import type { ErrorEvent, EventHint } from "@sentry/nextjs";
  *   - request.headers → sensitive auth/session headers redacted
  *   - breadcrumbs to clerk/stripe/svix/webhooks endpoints → dropped
  *
- * Pairs with `sendDefaultPii: false` on the init — together they keep
+ * Pairs with `sendDefaultPii: false` on the init, together they keep
  * IP, cookies, and Clerk session tokens out of Sentry payloads.
  */
 const REDACTED_HEADERS = new Set([

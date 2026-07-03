@@ -7,8 +7,8 @@
  * no schema migration required for items 3 and 4 in T·69.
  *
  * Key shapes:
- *   board:{workspaceId}:name       — plain string, ≤80 chars
- *   board:{workspaceId}:columns    — JSON: ColumnConfig (see below)
+ *   board:{workspaceId}:name      , plain string, ≤80 chars
+ *   board:{workspaceId}:columns   , JSON: ColumnConfig (see below)
  *
  * ColumnConfig shape:
  *   {
@@ -52,7 +52,7 @@ export type CustomColumn = { key: string; name: string };
  *
  * The four system lane keys are always present in the render; the `order` array
  * drives left-to-right position. System keys that fall out of `order` are
- * appended at the end (defensive — keeps board functional if config is partially
+ * appended at the end (defensive, keeps board functional if config is partially
  * corrupt).
  */
 export type ColumnConfig = {
@@ -174,7 +174,7 @@ async function writeColumnConfig(
 
 /**
  * Read the board-name override for a workspace. Returns null when no
- * override has been stored — callers fall back to the domain pack
+ * override has been stored, callers fall back to the domain pack
  * workspaceTitle. Used by the app layout server component so the value
  * is server-rendered on every load.
  */
@@ -243,7 +243,7 @@ export async function getColumnNames(
 // ─── Column mutations ─────────────────────────────────────────────────────────
 
 /**
- * Rename a column — system lane or custom column.
+ * Rename a column, system lane or custom column.
  *
  * For system lanes, the name is stored in `config.system[laneId]`.
  * For custom columns, the name is updated in `config.custom[]`.
@@ -390,7 +390,7 @@ export async function reorderColumnsAction(
 /**
  * Delete a custom column.
  *
- * System lanes (todo/doing/review/done) are NOT deletable — the action
+ * System lanes (todo/doing/review/done) are NOT deletable, the action
  * throws with a clear message.
  *
  * Non-empty column behavior: tasks whose `board_column_key` matches the
@@ -404,7 +404,7 @@ export async function reorderColumnsAction(
  *   - The directive says tasks must "survive" deletion.
  *   - Blocking on non-empty columns creates a chicken-and-egg (you have
  *     to move the cards first, which is friction with no data-safety benefit
- *     since they're still in the workspace — just in a different column).
+ *     since they're still in the workspace, just in a different column).
  *   - Clearing boardColumnKey is reversible by the user (undo isn't built,
  *     but moving to another custom column is).
  *
@@ -425,7 +425,7 @@ export async function deleteColumnAction(
   const col = existing.custom.find((c) => c.key === columnKey);
   if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
 
-  // Count tasks in this column before clearing — for the return value so
+  // Count tasks in this column before clearing, for the return value so
   // the client can surface "5 tasks moved to Moving" in a toast.
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
@@ -439,7 +439,7 @@ export async function deleteColumnAction(
   const tasksReassigned = Number(countRow?.count ?? 0);
 
   // Clear the boardColumnKey for all tasks in this column. Their `lane`
-  // is unchanged — they return to their canonical system lane column on
+  // is unchanged, they return to their canonical system lane column on
   // the board (see deleteColumnAction JSDoc above for rationale).
   if (tasksReassigned > 0) {
     await db
@@ -465,7 +465,7 @@ export async function deleteColumnAction(
 // ─── Card move ────────────────────────────────────────────────────────────────
 
 /**
- * Move a task to a board column — system lane or custom column.
+ * Move a task to a board column, system lane or custom column.
  *
  * System lane move (columnKey ∈ LANE_ORDER):
  *   - Sets `tasks.lane = columnKey`
@@ -474,7 +474,7 @@ export async function deleteColumnAction(
  *
  * Custom column move (columnKey starts with "col-"):
  *   - Sets `tasks.board_column_key = columnKey`
- *   - Does NOT change `tasks.lane` — the task keeps its semantic lane.
+ *   - Does NOT change `tasks.lane`, the task keeps its semantic lane.
  *   - In List/Timeline/Calendar/export/print/SSE, the task groups under
  *     its canonical `lane`. For custom-column tasks whose lane is "todo"
  *     or "review" or "done", they appear under that lane in structured views;
@@ -494,7 +494,7 @@ export async function moveTaskToColumnAction(
     .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return { ok: true }; // workspace guard — silent no-op for foreign ids
+  if (!row) return { ok: true }; // workspace guard, silent no-op for foreign ids
 
   if (isSystemLane) {
     const toLane = columnKey as LaneId;

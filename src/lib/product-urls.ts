@@ -25,7 +25,7 @@ export function taskUrl(path = ""): string {
   return `${TASKS_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** Marketing deep link — pre-selects onboarding segment after sign-up. */
+/** Marketing deep link, pre-selects onboarding segment after sign-up. */
 export function tasksSignUpUrl(useCase?: string | null): string {
   if (!useCase) return `${TASKS_URL}/sign-up`;
   return `${TASKS_URL}/sign-up?use=${encodeURIComponent(useCase)}`;

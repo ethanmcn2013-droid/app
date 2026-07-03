@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 
 /**
  * Cross-repo read of workspace segment + empty-state copy.
- * Notes (and other sisters) call this with the user's email — same
+ * Notes (and other sisters) call this with the user's email, same
  * bearer pattern as /api/notes-extract.
  *
  * GET ?email=user@example.com

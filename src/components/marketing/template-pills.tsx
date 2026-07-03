@@ -3,17 +3,17 @@
 import { useRouter } from "next/navigation";
 
 /**
- * TemplatePills — audience filter for /templates surfaces.
+ * TemplatePills, audience filter for /templates surfaces.
  *
  * Canonical (DESIGN.md §15, 2026-05-22). Byte-portable: this file is the
  * source of truth for the same primitive in studio + tasks. Copy
  * byte-identical, swap only the pills/current/depthLabel the parent passes.
  *
- * What it is — a quiet text-pill row that filters templates by audience.
+ * What it is, a quiet text-pill row that filters templates by audience.
  * The active pill carries the indigo 9%-wash background, a leading indigo
  * dot, and font-weight 600. Inactive pills are ink-faint, hover to ink.
  *
- * What it is NOT — a "switch wedge" device. Wedding is the default and
+ * What it is NOT, a "switch wedge" device. Wedding is the default and
  * the row sits BELOW the page hero on every surface. Strategy guardrail
  * (segment canon, 2026-05-16): pills are a templates filter, not an
  * audience-wedge switcher. Students stay out of the main pill row;
@@ -23,18 +23,18 @@ import { useRouter } from "next/navigation";
  * Freelance → Marketing. Tasks may prepend an "all" pill (defaultId="all").
  * Studio uses defaultId="wedding".
  *
- * Motion contract — the canonical SuiteSwitcher uses fade-on-active, not
+ * Motion contract, the canonical SuiteSwitcher uses fade-on-active, not
  * a sliding ink pill. We mirror that restraint here. The research had a
  * sliding-pill recommendation; we deliberately depart from it to stay
  * byte-portable + scoped-CSS + zero-library. The dot's opacity is the
  * one motion: 180ms fade. Background colour: 140ms fade. Reduced-motion
  * users get instant swap.
  *
- * Accessibility — `<nav aria-label>`, `aria-current="page"` on active,
+ * Accessibility, `<nav aria-label>`, `aria-current="page"` on active,
  * real `<a>` hrefs so the row works without JS (deep-link
  * `/templates?audience=trades` renders correct active state SSR).
  *
- * URL contract — `?audience=<id>`. The pill matching `defaultId` is the
+ * URL contract, `?audience=<id>`. The pill matching `defaultId` is the
  * canonical default and omits the param when active. On click,
  * `router.replace(href, { scroll: false })` for shallow update —
  * preserves scroll position so the grid fade is the only perceptible
@@ -150,7 +150,7 @@ export function TemplatePills({
                 router.replace(href, { scroll: false });
               }}
               className="tpills-pill"
-              aria-label={`${p.label} — ${p.count} templates`}
+              aria-label={`${p.label}, ${p.count} templates`}
             >
               {p.label}
               <span className="tpills-count" aria-hidden>

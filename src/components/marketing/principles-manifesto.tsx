@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /principles — the public refusal list. Sister page to /about.
+ * /principles, the public refusal list. Sister page to /about.
  * Where /about says what Tasks is, /principles says what it never
  * will be. The voice is confident, dry, opinionated. The visual
  * signature: rose-tinted "no" pills on the numbered items vs the
@@ -103,27 +103,27 @@ const REFUSALS: { title: string; body: string }[] = [
   {
     title: "No per-seat pricing.",
     body:
-      "Inviting a collaborator is a budget decision in most tools — every new person is another line on the bill, which is exactly why teams stop inviting people. We charge per workspace, never per seat. Add the whole study group, both moms, the DJ. Same price.",
+      "Inviting a collaborator is a budget decision in most tools, every new person is another line on the bill, which is exactly why teams stop inviting people. We charge per workspace, never per seat. Add the whole study group, both moms, the DJ. Same price.",
   },
   {
     title: "No Gantt charts.",
     body:
-      "Timeline view is the friendly cousin: a sequence you can read at a glance. Gantt charts pile on cascading dependencies, milestone diamonds, percent-complete bars — the language of consultants, not collaborators. The timeline view earns its keep by staying on the friendly side of that line.",
+      "Timeline view is the friendly cousin: a sequence you can read at a glance. Gantt charts pile on cascading dependencies, milestone diamonds, percent-complete bars, the language of consultants, not collaborators. The timeline view earns its keep by staying on the friendly side of that line.",
   },
   {
     title: "No SSO as a marketing line.",
     body:
-      "Companies that sell SSO are companies that sell fear — pay $20,000 a year or risk an audit finding. We may eventually build it quietly for teams that need it. We will not put it on the pricing page. There are enough things to be afraid of in 2026 without a productivity tool joining in.",
+      "Companies that sell SSO are companies that sell fear, pay $20,000 a year or risk an audit finding. We may eventually build it quietly for teams that need it. We will not put it on the pricing page. There are enough things to be afraid of in 2026 without a productivity tool joining in.",
   },
   {
     title: "No AI agent that runs your tasks for you.",
     body:
-      "The dopamine of crossing it off is not outsourceable. An agent that auto-completes the list trains you to dread the app — every visit becomes confirmation that the work happened without you. Signal Tasks surfaces what&rsquo;s stuck; it never closes the loop on your behalf.",
+      "The dopamine of crossing it off is not outsourceable. An agent that auto-completes the list trains you to dread the app, every visit becomes confirmation that the work happened without you. Signal Tasks surfaces what&rsquo;s stuck; it never closes the loop on your behalf.",
   },
   {
     title: "No real-time push notifications.",
     body:
-      "The daily digest is the only scheduled outbound channel. The Inbox tab inside the app is a pull surface — you visit it when you want to; it doesn&rsquo;t reach for you. No red-dot, no desktop alert, no Slack ping, no phone buzz. If a tool&rsquo;s strategy is winning more of your attention, the tool isn&rsquo;t on your side.",
+      "The daily digest is the only scheduled outbound channel. The Inbox tab inside the app is a pull surface, you visit it when you want to; it doesn&rsquo;t reach for you. No red-dot, no desktop alert, no Slack ping, no phone buzz. If a tool&rsquo;s strategy is winning more of your attention, the tool isn&rsquo;t on your side.",
   },
   {
     title: "No story points, velocity, burndown, OKR alignment.",
@@ -138,7 +138,7 @@ const REFUSALS: { title: string; body: string }[] = [
   {
     title: "No threaded comments-on-comments.",
     body:
-      "A flat conversation works for projects under ten people, which is most projects. Threading is for organizations that hold meetings about meetings. Comments aren&rsquo;t the work — the tasks are.",
+      "A flat conversation works for projects under ten people, which is most projects. Threading is for organizations that hold meetings about meetings. Comments aren&rsquo;t the work, the tasks are.",
   },
 ];
 

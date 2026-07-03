@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * Tasks hero ticker — departure-board animation.
+ * Tasks hero ticker, departure-board animation.
  *
  * A single task cycles through a split-flap (scaleY squish) flip mechanic:
  * scrambles in character-by-character, struck with an indigo spring line,
  * simultaneous scramble-clear, then out. 4 tasks, then "tasks." assembles
  * via the same mechanic and holds for 20 s desktop / 6 s mobile before
- * looping. First load has no cold-start blank — task 0 is set statically,
+ * looping. First load has no cold-start blank, task 0 is set statically,
  * sequence begins immediately at the strike.
  *
  * SAFETY CONTRACT (loader canon §13):
- *   · Fully scoped — every class and @keyframes prefixed `txr-`.
- *   · In-flow only — no position:fixed, no inset:0, no high z-index.
+ *   · Fully scoped, every class and @keyframes prefixed `txr-`.
+ *   · In-flow only, no position:fixed, no inset:0, no high z-index.
  *   · All setTimeout IDs collected; cancelled + cleared on unmount.
  *   · prefers-reduced-motion → final settled state rendered immediately,
  *     no animation, no delay.
@@ -47,7 +47,7 @@ export function TasksHeroTicker() {
     const N = TASKS.length;
     const HOLD = window.innerWidth <= 768 ? 6000 : 20000;
 
-    // ── DOM refs — all scoped within root ───────────────────────────────────
+    // ── DOM refs, all scoped within root ───────────────────────────────────
     const sectionEl  = root;
     const panelEl    = root.querySelector<HTMLElement>(".txr-panel")!;
     const ruleTopEl  = root.querySelector<HTMLElement>(".txr-rule-top")!;
@@ -95,7 +95,7 @@ export function TasksHeroTicker() {
         timers.push(id);
       });
 
-    // ── Progress dots — built once ──────────────────────────────────────────
+    // ── Progress dots, built once ──────────────────────────────────────────
     metaDotsEl.innerHTML = "";
     for (let d = 0; d < N; d++) {
       const dot = document.createElement("span");
@@ -178,7 +178,7 @@ export function TasksHeroTicker() {
     // ── Simultaneous scramble then staggered exit ───────────────────────────
     async function scrambleAndExit(cells: CharCell[]) {
       const active = cells.filter((c) => !c.isSpace);
-      // All chars squish at once — board-clearing chaos
+      // All chars squish at once, board-clearing chaos
       active.forEach((c) => {
         c.span.style.transition = "transform 20ms ease-in";
         c.span.style.transform  = "scaleY(0.04)";
@@ -239,7 +239,7 @@ export function TasksHeroTicker() {
 
       await wait(220); if (cancelled) return;
 
-      // Strike — micro-spring easing makes line feel placed not just drawn
+      // Strike, micro-spring easing makes line feel placed not just drawn
       strikeEl.classList.add("txr-on");
       await wait(520); if (cancelled) return;
       await wait(isLast ? 480 : 200); if (cancelled) return;
@@ -257,7 +257,7 @@ export function TasksHeroTicker() {
     async function revealWordmark() {
       if (cancelled) return;
 
-      // Warm tint — background shifts from #fff → #fafaf8
+      // Warm tint, background shifts from #fff → #fafaf8
       sectionEl.classList.add("txr-warm");
 
       ruleTopEl.style.transition = "opacity .3s ease";
@@ -284,7 +284,7 @@ export function TasksHeroTicker() {
       wmEl.classList.add("txr-vis");
       await wait(30); if (cancelled) return;
 
-      // 40ms stagger — larger letterforms read more deliberate at slower pace
+      // 40ms stagger, larger letterforms read more deliberate at slower pace
       let idx = 0;
       const ps = wmCells.map(({ span, char }) => {
         const d = idx++ * 40;
@@ -302,7 +302,7 @@ export function TasksHeroTicker() {
       capEl.classList.add("txr-on");
     }
 
-    // ── Idle hold — keeps the wordmark state feeling alive ──────────────────
+    // ── Idle hold, keeps the wordmark state feeling alive ──────────────────
     const idleTimers: ReturnType<typeof setTimeout>[] = [];
     function clearIdleTimers() {
       idleTimers.forEach(clearTimeout);
@@ -318,13 +318,13 @@ export function TasksHeroTicker() {
           wmdotEl.style.animation = "txr-dot-deep .8s cubic-bezier(.34,1.56,.64,1)";
           idleTimers.push(setTimeout(() => {
             if (cancelled) return;
-            // Explicitly hold opacity:1 — .txr-wmdot base has opacity:0
+            // Explicitly hold opacity:1, .txr-wmdot base has opacity:0
             wmdotEl.style.opacity   = "1";
             wmdotEl.style.animation = "txr-dot-pulse 2.6s ease-in-out infinite";
           }, 840));
         }, Math.floor(ms * 0.5)));
 
-        // Caption breath at 65% mark — signals patient system, not stalled
+        // Caption breath at 65% mark, signals patient system, not stalled
         idleTimers.push(setTimeout(() => {
           if (cancelled) return;
           capEl.style.transition = "opacity 1.2s ease";
@@ -377,7 +377,7 @@ export function TasksHeroTicker() {
         firstPlay = false;
         const task0 = TASKS[0];
 
-        // Rules drawn immediately — no transition on first paint
+        // Rules drawn immediately, no transition on first paint
         ruleTopEl.style.transform = "scaleX(1)";
         ruleBotEl.style.transform = "scaleX(1)";
 
@@ -386,7 +386,7 @@ export function TasksHeroTicker() {
         setActiveDot(0);
         metaEl.style.opacity    = "1";
 
-        // Task 0 text set without flip — chars fade in with L→R stagger
+        // Task 0 text set without flip, chars fade in with L→R stagger
         // so the "already set" state feels deliberate, not a render snap
         const cells0 = buildChars(task0.text);
         let ci = 0;
@@ -450,7 +450,7 @@ export function TasksHeroTicker() {
       className="txr-section"
       aria-label="Tasks by Signal Studio"
     >
-      {/* Animated well — board + wordmark, aria-hidden (decorative).
+      {/* Animated well, board + wordmark, aria-hidden (decorative).
           TL wordmark badge removed: the site header already carries the
           signal studio / tasks breadcrumb. */}
       <div className="txr-well" aria-hidden="true">
@@ -470,7 +470,7 @@ export function TasksHeroTicker() {
           <div className="txr-rule txr-rule-bot" />
         </div>
 
-        {/* Wordmark — hidden until board sequence completes */}
+        {/* Wordmark, hidden until board sequence completes */}
         <div className="txr-wm">
           <div className="txr-wm-panel">
             <div className="txr-wm-inner">
@@ -489,7 +489,7 @@ export function TasksHeroTicker() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Styles — fully scoped to txr- prefix
+// Styles, fully scoped to txr- prefix
 // ─────────────────────────────────────────────────────────────────────────────
 const CSS = `
 /* Section */
@@ -514,7 +514,7 @@ const CSS = `
   --txr-sans: var(--font-geist-sans,'Geist',system-ui,sans-serif);
   --txr-mono: var(--font-geist-mono,'Geist Mono',ui-monospace,monospace);
 }
-/* Hero stays genuinely white — the warm tint shifted it off-white (#fafaf8)
+/* Hero stays genuinely white, the warm tint shifted it off-white (#fafaf8)
    and broke white consistency across the suite heroes. Kept the class so the
    JS that toggles it is a harmless no-op. */
 .txr-section.txr-warm { background: #ffffff; }
@@ -537,7 +537,7 @@ const CSS = `
   width: var(--txr-pw);
 }
 
-/* Hairline rules — draw L→R via scaleX */
+/* Hairline rules, draw L→R via scaleX */
 .txr-rule {
   width: 100%;
   height: 1px;
@@ -584,7 +584,7 @@ const CSS = `
 /* Text zone */
 .txr-text-wrap { padding: 10px 0 16px; }
 
-/* Flip display — overflow:hidden clips strike spring overshoot */
+/* Flip display, overflow:hidden clips strike spring overshoot */
 .txr-flip-text {
   font-family: var(--txr-mono);
   font-size: clamp(42px,9vw,92px);
@@ -601,7 +601,7 @@ const CSS = `
 .txr-ch { display: inline-block; line-height: 1; will-change: transform; }
 .txr-sp { display: inline-block; width: .28em; }
 
-/* Strike — micro-spring easing so line feels placed, not just drawn */
+/* Strike, micro-spring easing so line feels placed, not just drawn */
 .txr-strike {
   position: absolute;
   left: 0; top: 50%;
@@ -616,7 +616,7 @@ const CSS = `
   width: 100%;
 }
 
-/* Wordmark — intrinsic-width panel, centered in viewport */
+/* Wordmark, intrinsic-width panel, centered in viewport */
 .txr-wm {
   display: none;
   flex-direction: column;
@@ -641,7 +641,7 @@ const CSS = `
 }
 .txr-wm-ch { display: inline-block; line-height: 1; will-change: transform; }
 
-/* Dot — em units inherit from .txr-wm-inner */
+/* Dot, em units inherit from .txr-wm-inner */
 .txr-wmdot {
   width: .155em; height: .155em;
   border-radius: 50%;

@@ -23,7 +23,7 @@ const VIEWS = [
   { href: "/app/calendar", label: "Calendar", icon: "calendar" },
 ];
 
-// TEAMS removed 2026-05-19: Teams was never built — the const was a
+// TEAMS removed 2026-05-19: Teams was never built, the const was a
 // placeholder that rendered non-functional "+ add team" / team-list UI.
 // Dead affordances erode trust faster than missing features. Deleted per
 // product-freeze scope (T·69).
@@ -39,7 +39,7 @@ export function AppSidebar({ active: activeProp }: { active?: string }) {
   return (
     <>
       {/*
-       * MobileSuiteBar removed — L4 SuiteChrome (suite-chrome.tsx) is now
+       * MobileSuiteBar removed, L4 SuiteChrome (suite-chrome.tsx) is now
        * the persistent top bar on all /app/* surfaces (mobile + desktop).
        * It renders above this sidebar in the layout. Content pt-9 on mobile
        * was the MobileSuiteBar clearance; now the chrome is sticky (not
@@ -63,7 +63,7 @@ function DesktopSidebar({ active }: { active: string }) {
            * anchor + 4-product switch directly above this rail. Keeping the
            * launcher here stacked a SECOND "signal studio." ~12px below the
            * first (operator-reported regression). The pills fully serve the
-           * popover's purpose (discoverability) — the sidebar header now
+           * popover's purpose (discoverability), the sidebar header now
            * carries only product context. SuiteLauncher is still retained
            * in unauthed marketing nav + Roadmap public header (no pills
            * there). See memory project-suite-switcher-pills-2026-05-19.

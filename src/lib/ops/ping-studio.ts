@@ -8,7 +8,7 @@ import "server-only";
  * ping-studio helper exactly (same shape, same allowlist, same
  * fail-silent contract). The bearer secret is only ever sent to a
  * signalstudio.ie https host; if STUDIO_CRON_PING_URL is unset or
- * points anywhere else, the ping is skipped — observability must
+ * points anywhere else, the ping is skipped, observability must
  * never break the digest, and the credential must never leak.
  *
  * Until STUDIO_CRON_PING_URL + STUDIO_CRON_PING_SECRET are set on
@@ -51,7 +51,7 @@ export async function pingStudio(payload: PingPayload): Promise<void> {
   }
   if (!isAllowedHost(url)) {
     console.error(
-      "[ping-studio] STUDIO_CRON_PING_URL is not a signalstudio.ie https host — refusing to send (credential safety).",
+      "[ping-studio] STUDIO_CRON_PING_URL is not a signalstudio.ie https host, refusing to send (credential safety).",
     );
     return;
   }
@@ -70,7 +70,7 @@ export async function pingStudio(payload: PingPayload): Promise<void> {
       signal: controller.signal,
     });
   } catch {
-    // Never throw — observability must not break the digest.
+    // Never throw, observability must not break the digest.
   } finally {
     clearTimeout(timer);
   }

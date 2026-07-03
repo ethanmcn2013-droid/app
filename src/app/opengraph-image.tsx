@@ -1,15 +1,15 @@
 import { ImageResponse } from "next/og";
 
-// nodejs runtime — see cycle-26 review note. Edge + Turbopack dev mode
+// nodejs runtime, see cycle-26 review note. Edge + Turbopack dev mode
 // + ImageResponse breaks intermittently; nodejs is reliable.
 export const runtime = "nodejs";
-export const alt = "tasks — work that moves itself forward";
+export const alt = "tasks, work that moves itself forward";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /**
  * Root OG image.
- * Wordmark-only composition — same restraint as studio. OG.
+ * Wordmark-only composition, same restraint as studio. OG.
  * Background: --bg #fafaf7 (warm-stone canvas token from globals.css)
  * Wordmark: lowercase "tasks" + brand dot
  *   - text color: #18181b (--ink-900)
@@ -47,7 +47,7 @@ export default async function OG() {
           }}
         >
           tasks
-          {/* Brand dot — matches .tasks-dot spec: 0.32em, translateY -0.38em */}
+          {/* Brand dot, matches .tasks-dot spec: 0.32em, translateY -0.38em */}
           <span
             style={{
               display: "flex",

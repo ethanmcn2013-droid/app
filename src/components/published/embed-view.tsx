@@ -5,7 +5,7 @@ import type { PublishedWorkspaceProps } from "./types";
 /**
  * Compact, lane-grouped task list for the iframe embed. Visually
  * distinct from the four full domain themes: no hero, no glow, no
- * brand chrome — just the workspace name as a chip header, lane
+ * brand chrome, just the workspace name as a chip header, lane
  * sections (capped at 6 tasks each with a "+ N more" overflow), and
  * a quiet "Made with Tasks" link in the bottom-right that opens the
  * full `/p/{slug}` page in a new tab.

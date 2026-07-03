@@ -48,7 +48,7 @@ import { useColumnConfig, usePersonalization } from "@/lib/domain-context";
 //   board_column_key IS NULL     → task belongs to its canonical `lane` column
 //
 // Custom-column tasks group under "doing" in List/Timeline/Calendar/export/
-// print/SSE — those views never read boardColumnKey; they use `lane` only.
+// print/SSE, those views never read boardColumnKey; they use `lane` only.
 // Moving a task into a custom column sets boardColumnKey but leaves `lane`
 // unchanged so those views stay coherent. Moving into a system column clears
 // boardColumnKey and updates `lane` so it is canonical again.
@@ -88,7 +88,7 @@ type BoardColumn = {
   name: string;
   /** Whether this is one of the four system lanes. Custom columns are not. */
   isSystem: boolean;
-  /** Style tokens — undefined for custom columns (uses a neutral palette). */
+  /** Style tokens, undefined for custom columns (uses a neutral palette). */
   dot: string;
   bg: string;
   ink: string;
@@ -103,7 +103,7 @@ type BoardColumn = {
  * appended after system lanes.
  */
 function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
-  // Custom column neutral palette (one shared neutral — all custom
+  // Custom column neutral palette (one shared neutral, all custom
   // columns get the same quiet stone treatment, matching DESIGN.md restraint).
   const CUSTOM_DOT = "#94a3b8";
   const CUSTOM_BG = "#f8f9fa";
@@ -195,7 +195,7 @@ export function BoardApp() {
     return () => window.clearTimeout(id);
   }, [dropMomentum]);
 
-  // Optimistic column config for add/reorder/delete — the server revalidates
+  // Optimistic column config for add/reorder/delete, the server revalidates
   // the layout on success so we hydrate from server after a beat.
   const [optimisticConfig, setOptimisticConfig] = useState<ColumnConfig | null>(
     columnConfig,
@@ -291,9 +291,9 @@ export function BoardApp() {
       const mod = e.metaKey || e.ctrlKey;
       const curColIdx = columns.findIndex((c) => c.key === curColKey);
 
-      // Single-key complete — the landing wordmark promises a one-keystroke
-      // "done" gesture; deliver it on the focused card. `x` only — no
-      // modifier — to keep parity with the composer's single-key `c` open.
+      // Single-key complete, the landing wordmark promises a one-keystroke
+      // "done" gesture; deliver it on the focused card. `x` only, no
+      // modifier, to keep parity with the composer's single-key `c` open.
       // Cmd/Ctrl+Enter is retained below as the alternate.
       if (!mod && !e.shiftKey && !e.altKey && e.key === "x") {
         e.preventDefault(); toggleComplete(id); return;
@@ -363,7 +363,7 @@ export function BoardApp() {
           const isHover = hoverColumn === col.key;
 
           // Inline add for custom columns uses lane "doing" as the canonical
-          // lane for newly created tasks — they'll visually appear in this
+          // lane for newly created tasks, they'll visually appear in this
           // custom column via their boardColumnKey, but semantically live in "doing".
           // For system lanes, the composer uses the actual lane.
           const composerLane: LaneId = col.isSystem
@@ -482,7 +482,7 @@ export function BoardApp() {
           );
         })}
 
-        {/* Add column tile — lives at the end of the lane row. */}
+        {/* Add column tile, lives at the end of the lane row. */}
         <AddColumnTile
           currentConfig={optimisticConfig}
           onOptimisticConfigChange={setOptimisticConfig}
@@ -838,7 +838,7 @@ function AddColumnTile({
     startTransition(async () => {
       try {
         await addColumnAction(trimmed);
-        // Layout revalidates — no manual cleanup needed; useEffect syncs
+        // Layout revalidates, no manual cleanup needed; useEffect syncs
         // optimisticConfig from the server-resolved columnConfig.
       } catch {
         // Revert the temp column.
@@ -1021,7 +1021,7 @@ function Card({
     };
   }, [menuOpen]);
 
-  // Completion flourish — a one-shot beat the moment a card lands in "done",
+  // Completion flourish, a one-shot beat the moment a card lands in "done",
   // whatever the trigger (keyboard `x`, drag, or the detail panel). Detecting
   // the transition here keeps it centralised and reduced-motion-safe; the
   // landing wordmark promises completion should *feel* like progress.
@@ -1030,7 +1030,7 @@ function Card({
   const [celebrate, setCelebrate] = useState(false);
   useEffect(() => {
     if (isDone && !wasDoneRef.current) {
-      // Once-ever first-completion beat — fires regardless of reduced motion
+      // Once-ever first-completion beat, fires regardless of reduced motion
       // (the moment itself honours it); the per-card flourish stays motion-gated.
       maybeFireFirstCompletion();
       if (!reduce) {

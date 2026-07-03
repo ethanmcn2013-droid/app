@@ -14,7 +14,7 @@ import { getTemplate, TEMPLATES } from "@/lib/templates";
  * Why this exists separately from `applyTemplateAction`: the redemption
  * Server Component renders the comp action synchronously during route
  * render, and the action used to delegate template-apply to
- * `applyTemplateAction`, which calls `revalidatePath` — illegal during
+ * `applyTemplateAction`, which calls `revalidatePath`, illegal during
  * render in Next 15 and the cause of the cycle-8.5 fresh-user 500. This
  * helper is the pure DB-only path; callers that need cache invalidation
  * still go through `applyTemplateAction`.

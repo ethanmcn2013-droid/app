@@ -12,7 +12,7 @@ import { AcceptInviteButton } from "./accept-button";
 export const dynamic = "force-dynamic";
 
 /**
- * `/invite/[token]` — workspace-invite landing page.
+ * `/invite/[token]`, workspace-invite landing page.
  *
  * Server-renders the invite context (workspace name + inviter name +
  * the email it was sent to). The actual accept action is gated by
@@ -127,7 +127,7 @@ export default async function InviteAcceptPage({
                 </h1>
                 <p className="mt-3 text-[14.5px] leading-[1.55] text-ink-soft">
                   Invites are good for 7 days. Ask the owner to send a new
-                  one — you&rsquo;ll get a fresh link.
+                  one, you&rsquo;ll get a fresh link.
                 </p>
                 <div className="mt-6">
                   <Link

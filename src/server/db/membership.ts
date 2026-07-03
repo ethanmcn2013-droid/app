@@ -7,10 +7,10 @@ import { TIER_RANK } from "@/lib/entitlements-shared/tiers";
 
 /**
  * The Free-tier member cap. The shape: 1 owner + 3 invited editors
- * = 4 total. The number is calibrated — a study group, a couple
+ * = 4 total. The number is calibrated, a study group, a couple
  * plus the maid of honor, two roommates and a dog-walker, a
  * freelancer plus the client point-of-contact. Beyond three
- * invitees, it's a team — that's the Workspace tier (€12 per
+ * invitees, it's a team, that's the Workspace tier (€12 per
  * workspace, flat: invite anyone, the price doesn't move).
  *
  * The /pricing FAQ "Why three?" entry is the public commitment;
@@ -19,7 +19,7 @@ import { TIER_RANK } from "@/lib/entitlements-shared/tiers";
 export const FREE_WORKSPACE_MEMBER_CAP = 4;
 
 /**
- * The workspace's tier — the highest non-expired entitlement on this
+ * The workspace's tier, the highest non-expired entitlement on this
  * workspace across any user. "Workspace tier" answers who's paying
  * for the workspace; distinct from per-user `getEffectiveTier`,
  * which answers what a given user has access to. Owner-on-Pro
@@ -88,7 +88,7 @@ export type MemberCapacity = {
 /**
  * Resolve the workspace's member capacity. Free is the only tier with
  * the 4-member cap; Event, Wedding, Workspace, Studio are all
- * unlimited (matches signalstudio.ie/pricing — Event sells "Unlimited
+ * unlimited (matches signalstudio.ie/pricing, Event sells "Unlimited
  * guests" for one event). Returns the current count and the cap so
  * the caller can render "X of N" UI in one read.
  */

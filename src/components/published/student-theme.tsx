@@ -3,12 +3,12 @@ import type { LaneId } from "@/lib/data";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
- * Student theme — marker-on-corkboard, paper-and-tape.
+ * Student theme, marker-on-corkboard, paper-and-tape.
  *
  * The whole page reads like a study group's shared bulletin board
  * photographed on a phone: legal-pad cream paper, faint blue rules,
  * highlighter underlines on the lane labels, sticky-note cards
- * rotated a hair off-square. Server component — no interactivity,
+ * rotated a hair off-square. Server component, no interactivity,
  * just the document.
  */
 
@@ -139,7 +139,7 @@ export function StudentTheme({ workspace, tasks }: PublishedWorkspaceProps) {
                   className="font-serif text-[13px] italic tabular-nums"
                   style={{ color: "#7a5a1f" }}
                 >
-                  ({list.length}) — “{lane.name.toLowerCase()}”
+                  ({list.length}), “{lane.name.toLowerCase()}”
                 </span>
               </div>
 
@@ -290,7 +290,7 @@ export function StudentTheme({ workspace, tasks }: PublishedWorkspaceProps) {
           textAlign: "center",
         }}
       >
-        — kept up by whoever opens it last —
+       , kept up by whoever opens it last —
       </p>
     </main>
   );

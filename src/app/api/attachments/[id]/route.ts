@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * Authenticated attachment download. Re-checks workspace membership
  * before streaming so a leaked id from another tenant is invisible:
  * mismatched / unknown / on-disk-missing all return 404 (not 403).
- * Opacity is the right default — the user shouldn't be able to probe
+ * Opacity is the right default, the user shouldn't be able to probe
  * for the existence of an id they have no access to.
  *
  * Streaming uses Node's `fs.createReadStream` adapted to a Web
@@ -34,7 +34,7 @@ export async function GET(
     return notFound();
   }
 
-  // Confirm the bytes actually exist before we promise a stream — a
+  // Confirm the bytes actually exist before we promise a stream, a
   // missing file (manual cleanup, partial deploy) should look like a
   // 404 to the client too, not a half-written zero-byte response.
   let size: number;
@@ -63,7 +63,7 @@ export async function GET(
       //     HTML/SVG payload can't run in the tasks origin or touch Clerk.
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'; sandbox; frame-ancestors 'none'",
-      // User content — never CDN-cache it. The `id` is opaque enough
+      // User content, never CDN-cache it. The `id` is opaque enough
       // that browser memory cache is fine; intermediaries shouldn't
       // hold copies because authorization is per-request.
       "Cache-Control": "private, no-store",

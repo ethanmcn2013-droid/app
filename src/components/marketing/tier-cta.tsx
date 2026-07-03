@@ -17,7 +17,7 @@ type Props = {
  * `createCheckoutSessionAction` and redirects to the Stripe-hosted
  * checkout. When `href` is set instead, renders a plain `<Link>`.
  *
- * Dev path (Stripe unconfigured) — the action grants the entitlement
+ * Dev path (Stripe unconfigured), the action grants the entitlement
  * locally and returns a `?upgrade=ok&dev=1` redirect so the rest of
  * the app's tier gating still exercises end-to-end.
  */

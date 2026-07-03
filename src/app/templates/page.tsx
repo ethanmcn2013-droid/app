@@ -4,11 +4,11 @@ import { TemplatesGallery } from "@/components/marketing/templates-gallery";
 import { TEMPLATES } from "@/lib/templates";
 
 export const metadata = {
-  title: "Templates — Tasks",
+  title: "Templates, Tasks",
   description:
     "Drop-in task lists and starter workspaces. Wedding planning, thesis sprints, freelance onboarding - the work, pre-written. Apply with one click.",
   openGraph: {
-    title: "Tasks templates — drop-in task lists",
+    title: "Tasks templates, drop-in task lists",
     description:
       "Pre-written task lists and starter workspaces for the moments that recur. Apply to any workspace. Free on every tier.",
     type: "website",

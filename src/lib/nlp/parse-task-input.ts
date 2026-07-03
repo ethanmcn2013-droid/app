@@ -3,18 +3,18 @@ import type { RecurrenceSpec } from "@/lib/data";
 import { extractRecurrence } from "@/lib/nlp/parse-recurrence";
 
 export type ParsedTaskInput = {
-  /** The task's clean title — date, recurrence AND #tag phrases stripped. */
+  /** The task's clean title, date, recurrence AND #tag phrases stripped. */
   title: string;
   /** Structured due date if one was found in the input. */
   dueAt?: Date;
-  /** A short human label for the due date — e.g. "Today", "Fri",
+  /** A short human label for the due date, e.g. "Today", "Fri",
    *  "Mar 14, 3pm". Designed to fit in the existing `task.due` text
    *  column and the chip on cards. */
   dueLabel?: string;
   /** Parsed recurrence spec if a supported recurrence phrase was found. */
   recurrence?: RecurrenceSpec;
   /** Inline #tags found in the input. Tags are this product's only
-   *  project primitive (tags-as-projects, SUITE.md §4) — capturing one
+   *  project primitive (tags-as-projects, SUITE.md §4), capturing one
    *  inline lets a note land in the right "project" at quick-add speed
    *  without a picker. Lowercased, de-duped, order-preserved. */
   tags?: string[];
@@ -23,7 +23,7 @@ export type ParsedTaskInput = {
 /**
  * Pull inline #tags out of a quick-add string and strip them from the
  * title. A tag is `#` followed by a letter/digit then letters, digits,
- * hyphens or underscores — matching the kebab tag style used across the
+ * hyphens or underscores, matching the kebab tag style used across the
  * workspace (e.g. `#claire-wedding`). The leading `#` and the token are
  * removed from the returned title.
  */
@@ -132,7 +132,7 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
   const { title: inputAfterTags, tags } = extractTags(input);
   const tagsOut = tags.length ? tags : undefined;
 
-  // Strip recurrence phrase next — the date parser sees a cleaner string.
+  // Strip recurrence phrase next, the date parser sees a cleaner string.
   const recurrenceResult = extractRecurrence(inputAfterTags);
   const inputAfterRecurrence = recurrenceResult?.title ?? inputAfterTags;
   const recurrence = recurrenceResult?.recurrence;
@@ -144,7 +144,7 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
     return { title: inputAfterRecurrence || input, recurrence, tags: tagsOut };
   }
 
-  // Use the LAST match — usually the trailing "by next Friday" form.
+  // Use the LAST match, usually the trailing "by next Friday" form.
   // Stripping the rightmost date keeps the leading verb phrase intact.
   const r = results[results.length - 1];
   const dueAt = r.start.date();
@@ -163,7 +163,7 @@ export function parseTaskInput(raw: string): ParsedTaskInput {
 
   let title = (cleanedLead + " " + cleanedTrail).replace(/\s+/g, " ").trim();
   // If we end up with nothing (e.g. raw was just "next Friday"), keep
-  // the original — better a date-shaped title than an empty task.
+  // the original, better a date-shaped title than an empty task.
   if (!title) title = inputAfterRecurrence || input;
 
   const dueLabel = formatDueLabel(dueAt, hasTime);

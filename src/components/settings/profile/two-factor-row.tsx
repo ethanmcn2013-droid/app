@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { TOTPResource, UserResource } from "@clerk/shared/types";
-// qrcode (~30KB) is lazy-loaded inside the TOTP setup flow — only the
+// qrcode (~30KB) is lazy-loaded inside the TOTP setup flow, only the
 // fraction of users who actually start 2FA enrollment pay for it,
 // instead of every visitor to profile settings.
 import { Dialog } from "@/components/primitives/dialog";
@@ -315,7 +315,7 @@ function TotpDisableFlow({
       </h2>
       <p className="mt-2 text-[12.5px] leading-[1.55] text-ink-soft">
         Sign-in will only need your email and a code. Your authenticator setup
-        will be discarded — you'd start fresh if you turned it back on.
+        will be discarded, you'd start fresh if you turned it back on.
       </p>
       {error ? (
         <div className="mt-3 text-[12px] text-rose-700">{error}</div>

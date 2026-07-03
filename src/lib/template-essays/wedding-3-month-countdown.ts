@@ -2,9 +2,9 @@ import type { TemplateEssay } from "./types";
 
 export const essay: TemplateEssay = {
   templateId: "wedding-3-month-countdown",
-  seoTitle: "Wedding 3-Month Checklist — Free, No Signup",
+  seoTitle: "Wedding 3-Month Checklist, Free, No Signup",
   seoDescription:
-    "The wedding planning checklist for the last 90 days. RSVPs, seating, vows, marriage license — apply the list to a free workspace and start ticking it off.",
+    "The wedding planning checklist for the last 90 days. RSVPs, seating, vows, marriage license, apply the list to a free workspace and start ticking it off.",
   heroline: "Three months out is when wedding planning gets real.",
   intro:
     "The save-the-dates went out, the venue is locked, and somewhere in the last week the tone changed. Vendors who replied in two hours now reply in two days. Family members start asking about the seating chart. The dress fitting is on the calendar but the alterations aren’t. This is the stretch where a list earns its keep.",
@@ -22,7 +22,7 @@ export const essay: TemplateEssay = {
     {
       heading: "Why drop it into Tasks, not a Pinterest PDF",
       body:
-        "Two reasons. One: every couple’s wedding is different, and a static PDF can’t move with you — the moment a vendor gets pushed back, the rest of the list ripples. In a workspace, you reorder, reassign, and the whole timeline updates. Two: the bride, groom, planner, both moms, and the maid of honor can all see the list without anyone paying for a per-seat upgrade. We charge per workspace, never per person. Three editing guests are free. Beyond that the Event tier covers the whole 12 months for €79, once.",
+        "Two reasons. One: every couple’s wedding is different, and a static PDF can’t move with you, the moment a vendor gets pushed back, the rest of the list ripples. In a workspace, you reorder, reassign, and the whole timeline updates. Two: the bride, groom, planner, both moms, and the maid of honor can all see the list without anyone paying for a per-seat upgrade. We charge per workspace, never per person. Three editing guests are free. Beyond that the Event tier covers the whole 12 months for €79, once.",
     },
   ],
   closer:

@@ -598,7 +598,7 @@ export function SuiteLauncher({
             onClick={() => setOpen(false)}
             className="sl-footer"
           >
-            <span>Design — one system behind all four</span>
+            <span>Design, one system behind all four</span>
           </a>
         </div>
       ) : null}

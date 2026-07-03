@@ -12,9 +12,9 @@ import { Dialog } from "@/components/primitives/dialog";
  * Clerk.signOut() → redirect home. Server purges Turso data first,
  * then calls Clerk admin delete. The dialog requires typing the user's
  * primary email (case-insensitive, trimmed) before the destructive
- * action enables — standard danger-confirm pattern.
+ * action enables, standard danger-confirm pattern.
  *
- * Dialog overlay-close is guarded during the pending state — a tap
+ * Dialog overlay-close is guarded during the pending state, a tap
  * outside the modal while deletion is in flight is ignored. Without
  * that guard, the user could dismiss the dialog mid-fetch and lose
  * visibility on the success / failure result while the server still
@@ -29,7 +29,7 @@ export function DangerZone({ email }: { email: string }) {
         Delete account
       </h2>
       <p className="mt-1.5 max-w-[560px] text-[12.5px] leading-[1.6] text-rose-800/80">
-        Closes your Signal account across every product — Tasks, Notes,
+        Closes your Signal account across every product, Tasks, Notes,
         Roadmap, Analytics. Workspaces you own are deleted with you, including
         anyone you've invited. There's no undo.
       </p>

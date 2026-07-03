@@ -7,20 +7,20 @@ import type { LaneId, Priority, Task, UserId } from "@/lib/data";
  * In-memory demo dataset for Signal Tasks.
  *
  * Active only in access-mode demo/review (see lib/access-mode.ts). The real
- * Turso DB is never read in that mode — getCurrentUser/getActiveWorkspace
+ * Turso DB is never read in that mode, getCurrentUser/getActiveWorkspace
  * resolve to the synthetic identity below and the read queries short-circuit
  * here. So a mis-deployed flag can leak nothing: there is no real tenant data
  * on the demo path.
  *
  * Persona (shared across the suite demo): a wedding-venue duty manager
- * coordinating real Saturdays — calm coordination for normal people, not a
+ * coordinating real Saturdays, calm coordination for normal people, not a
  * software team's sprint board.
  */
 
 export const DEMO_USER_ID: UserId = "demo-user";
 export const DEMO_WORKSPACE_ID = "demo-ws";
 export const DEMO_WORKSPACE_SLUG = "the-orchard";
-export const DEMO_WORKSPACE_NAME = "The Orchard — events";
+export const DEMO_WORKSPACE_NAME = "The Orchard, events";
 export const DEMO_PRIMARY_USE_CASE = "venue";
 export const DEMO_DOMAIN: DomainId = "wedding";
 
@@ -48,7 +48,7 @@ const SEED: Seed[] = [
     id: "demo-t-01",
     title: "Confirm marquee sides with the hire company",
     description:
-      "Maria + James, Saturday. Terrace plan if dry, marquee if not — they need the call by Thursday.",
+      "Maria + James, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
     lane: "todo",
     priority: "p1",
     due: "Thu",
@@ -59,7 +59,7 @@ const SEED: Seed[] = [
   {
     id: "demo-t-02",
     title: "Final stem count to the florist",
-    description: "Looser, wilder look — fewer roses, more foliage. Florist wants it Monday.",
+    description: "Looser, wilder look, fewer roses, more foliage. Florist wants it Monday.",
     lane: "todo",
     priority: "p2",
     due: "Mon",
@@ -115,7 +115,7 @@ const SEED: Seed[] = [
   {
     id: "demo-t-07",
     title: "Approve the final seating plan",
-    description: "Top table moved away from the speakers — check sightlines to the arch.",
+    description: "Top table moved away from the speakers, check sightlines to the arch.",
     lane: "review",
     priority: "p1",
     tags: ["maria-james"],
@@ -134,7 +134,7 @@ const SEED: Seed[] = [
   // Done
   {
     id: "demo-t-09",
-    title: "Open day — nine couples through",
+    title: "Open day, nine couples through",
     description: "Three asked for dates. Tea urn was the hero. Repeat the format in spring.",
     lane: "done",
     priority: "p2",
@@ -143,7 +143,7 @@ const SEED: Seed[] = [
   },
   {
     id: "demo-t-10",
-    title: "Deposit invoice settled — Maria + James",
+    title: "Deposit invoice settled, Maria + James",
     lane: "done",
     priority: "p1",
     tags: ["maria-james"],

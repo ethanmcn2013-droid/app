@@ -37,7 +37,7 @@ export function DemoSurface({
   const transitions = useMorphTransition();
   const view = state.view;
 
-  // Sort once for timeline view — keeps stable card-row index per task
+  // Sort once for timeline view, keeps stable card-row index per task
   const orderedTasks = useMemo(() => {
     if (view !== "timeline") return state.tasks;
     return [...state.tasks].sort(
@@ -60,7 +60,7 @@ export function DemoSurface({
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Chrome — fades on the trailing 280ms tail of the geometry tween
+   Chrome, fades on the trailing 280ms tail of the geometry tween
    ───────────────────────────────────────────────────────────────────── */
 
 function ViewWrappers({
@@ -115,7 +115,7 @@ function ViewWrappers({
 }
 
 function BoardChrome() {
-  // NOTE: no `data-lane` here — those attributes live on the card-layer
+  // NOTE: no `data-lane` here, those attributes live on the card-layer
   // columns (single source of truth so cursor / drop math doesn't see
   // duplicates from `document.querySelector`).
   return (
@@ -207,7 +207,7 @@ function TimelineChrome({
           </div>
         </div>
 
-        {/* Today line — positioned in the same coordinate space as
+        {/* Today line, positioned in the same coordinate space as
             timeline bars (relative to the day-grid track, which excludes
             the 200px gutter). */}
         <motion.div
@@ -249,7 +249,7 @@ function TimelineChrome({
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Card Layer — stable across views; cards FLIP via layoutId
+   Card Layer, stable across views; cards FLIP via layoutId
    ───────────────────────────────────────────────────────────────────── */
 
 function CardLayer({
@@ -330,7 +330,7 @@ function CardLayer({
     );
   }
 
-  // timeline — each task occupies one fixed-height row; bar is
+  // timeline, each task occupies one fixed-height row; bar is
   // positioned absolutely inside a relative `track` with a 200px
   // task-name gutter to the left.
   return (
@@ -382,7 +382,7 @@ function BoardLaneCardColumn({
 }) {
   return (
     <div data-lane={laneId} className="flex flex-col gap-2 p-2 pt-9">
-      {/* Invisible coordinate anchor — the carry scene's celebration
+      {/* Invisible coordinate anchor, the carry scene's celebration
           burst measures `[data-lane-header]` to position particles. We
           want the same y as the chrome's lane header, which sits
           ~36px above the start of the card flow. */}
@@ -407,7 +407,7 @@ function BoardLaneCardColumn({
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   The morphing card — single mount, body cross-fades on a hole
+   The morphing card, single mount, body cross-fades on a hole
    ───────────────────────────────────────────────────────────────────── */
 
 function MorphCard({
@@ -443,7 +443,7 @@ function MorphCard({
           const width = (dur / TIMELINE_DAYS) * 100;
           // Each row slot = 44px; ordered by sorted tasks index, set via
           // css var so the surface can compute it. We use grid below
-          // instead — see CardLayer timeline branch.
+          // instead, see CardLayer timeline branch.
           return {
             position: "absolute",
             left: `calc(200px + ${left}% * (100% - 200px) / 100%)`,
@@ -540,7 +540,7 @@ function timelineRowStyle(task: Task): React.CSSProperties {
 }
 
 /* ─────────────────────────────────────────────────────────────────────
-   Card body — variant-specific, with cross-fade hole
+   Card body, variant-specific, with cross-fade hole
    ───────────────────────────────────────────────────────────────────── */
 
 function CardBody({
@@ -562,15 +562,15 @@ function CardBody({
   pickedColor: string | null;
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
-  // The "soul" — title + lead avatar — is always rendered, and its
+  // The "soul", title + lead avatar, is always rendered, and its
   // opacity stays at 1 across the morph. Variant-specific chrome is
   // wrapped in AnimatePresence with the cross-fade hole.
   return (
     <>
-      {/* SOUL: title + lead avatar — always visible */}
+      {/* SOUL: title + lead avatar, always visible */}
       <SoulRow task={task} view={view} />
 
-      {/* VARIANT BODY — overlapping fade with a 120ms hole.
+      {/* VARIANT BODY, overlapping fade with a 120ms hole.
           Default mode (no `wait`/`popLayout`) lets exit + enter overlap;
           enter has a 280ms delay so the visible result is:
           0–160ms outgoing fade out · 120ms hole · 280–520ms incoming
@@ -601,7 +601,7 @@ function CardBody({
         ) : null}
       </AnimatePresence>
 
-      {/* Inline comment thread — board only */}
+      {/* Inline comment thread, board only */}
       {view === "board" && showThread ? (
         <CommentThread
           task={task}

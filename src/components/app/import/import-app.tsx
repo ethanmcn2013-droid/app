@@ -101,7 +101,7 @@ export function ImportApp({ workspaceName }: { workspaceName: string }) {
       }
       if (next.size > MAX_BYTES) {
         setParseError(
-          `That file is ${(next.size / 1024 / 1024).toFixed(1)} MB. We cap at 5 MB — split it.`,
+          `That file is ${(next.size / 1024 / 1024).toFixed(1)} MB. We cap at 5 MB, split it.`,
         );
         return;
       }
@@ -296,7 +296,7 @@ export function ImportApp({ workspaceName }: { workspaceName: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Header — anchored to the import flow only; does not touch the shared
+// Header, anchored to the import flow only; does not touch the shared
 // page-header. Mirrors its visual rhythm so the route doesn't feel orphaned.
 // ---------------------------------------------------------------------------
 
@@ -382,7 +382,7 @@ function Stepper({ current }: { current: Step }) {
 }
 
 // ---------------------------------------------------------------------------
-// Step 1 — Upload
+// Step 1, Upload
 // ---------------------------------------------------------------------------
 
 function UploadStep({
@@ -593,7 +593,7 @@ function UploadStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — Preview
+// Step 2, Preview
 // ---------------------------------------------------------------------------
 
 function PreviewStep({
@@ -778,7 +778,7 @@ function PreviewStep({
 
       {rows.length > visible.length ? (
         <div className="mt-2 text-[11.5px] text-ink-quiet">
-          {rows.length - visible.length} more rows queued — they&rsquo;ll come
+          {rows.length - visible.length} more rows queued, they&rsquo;ll come
           along on import.
         </div>
       ) : null}
@@ -924,7 +924,7 @@ function PillList({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3 — Confirm
+// Step 3, Confirm
 // ---------------------------------------------------------------------------
 
 function ConfirmStep({
@@ -958,7 +958,7 @@ function ConfirmStep({
         {counts.missing > 0
           ? `${counts.missing} dropped because they had no title. `
           : ""}
-        Comments and activity history don&rsquo;t come along — just the
+        Comments and activity history don&rsquo;t come along, just the
         tasks themselves.
       </p>
 

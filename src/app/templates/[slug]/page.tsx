@@ -6,7 +6,7 @@ import { TEMPLATES } from "@/lib/templates";
 import { getTemplateEssay } from "@/lib/template-essays";
 
 /**
- * `/templates/[slug]` — one route per template id, every slug a real
+ * `/templates/[slug]`, one route per template id, every slug a real
  * destination page. Two render modes inside `<TemplateDetail>`:
  *
  *   - Rich (template has an entry in `TEMPLATE_ESSAYS`): manifesto-
@@ -16,7 +16,7 @@ import { getTemplateEssay } from "@/lib/template-essays";
  *     working URL with the apply CTA so every template slug works.
  *
  * `generateStaticParams` enumerates every template at build time so
- * the routes prerender — important for indexing.
+ * the routes prerender, important for indexing.
  */
 
 export const dynamicParams = false;
@@ -35,7 +35,7 @@ export async function generateMetadata({
   if (!template) return {};
   const essay = getTemplateEssay(slug);
 
-  const title = essay?.seoTitle ?? `${template.name} — Tasks template`;
+  const title = essay?.seoTitle ?? `${template.name}, Tasks template`;
   const description = essay?.seoDescription ?? template.description;
 
   return {

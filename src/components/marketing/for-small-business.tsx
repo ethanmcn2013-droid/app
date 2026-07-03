@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * `/for/small-business` — long-form landing for small-business operators:
+ * `/for/small-business`, long-form landing for small-business operators:
  * restaurant owners, shop owners, clinic operators, studio owners.
  * The §2.1 archetype whose work is part operations, part people, part
  * sales, all without a status meeting or a manager to surface what is
@@ -102,11 +102,11 @@ export function ForSmallBusiness() {
         <ul className="mt-5 space-y-4">
           <Reason
             title="The work lives somewhere durable."
-            body="Group chats lose things. Whiteboards get wiped. The thing the chef said about the supplier two weeks ago needs to be findable next month — not pinned to the wall behind the bar."
+            body="Group chats lose things. Whiteboards get wiped. The thing the chef said about the supplier two weeks ago needs to be findable next month, not pinned to the wall behind the bar."
           />
           <Reason
             title="Three free guests for the people who actually show up."
-            body="The bookkeeper, the front-of-house manager, the cleaner who handles the supply order. They get magic-link access — no app to install, no login to remember. They see only what they need to see."
+            body="The bookkeeper, the front-of-house manager, the cleaner who handles the supply order. They get magic-link access, no app to install, no login to remember. They see only what they need to see."
           />
           <Reason
             title="No project-manager voice."

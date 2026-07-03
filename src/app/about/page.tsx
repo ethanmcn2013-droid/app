@@ -4,20 +4,20 @@ import { AboutManifesto } from "@/components/marketing/about-manifesto";
 import { TIMELINE_URL, STUDIO_URL } from "@/lib/product-urls";
 
 export const metadata = {
-  title: "About — Signal Tasks",
+  title: "About · Signal Tasks",
   description:
     "Execution clarity for live work. Signal Tasks cuts the vocabulary tax and keeps the work readable.",
   openGraph: {
     title: "Execution clarity for live work.",
     description:
-      "We strip out sprints, epics, tickets — the whole jargon liturgy — and leave a tool anyone can open.",
+      "We strip out sprints, epics, tickets, the whole jargon liturgy, and leave a tool anyone can open.",
     type: "article",
   },
   twitter: {
     card: "summary_large_image",
     title: "Execution clarity for live work.",
     description:
-      "We strip out sprints, epics, tickets — and leave a tool anyone can open.",
+      "We strip out sprints, epics, tickets, and leave a tool anyone can open.",
   },
 };
 
@@ -28,7 +28,7 @@ export default function AboutPage() {
       <main className="flex-1">
         <AboutManifesto />
 
-        {/* Studio attribution — Tasks is one product in the Signal Studio suite. */}
+        {/* Studio attribution, Tasks is one product in the Signal Studio suite. */}
         <section className="border-t border-line-soft/70 pb-24 pt-16">
           <div className="mx-auto w-full max-w-[820px] px-6">
             <div className="text-[10.5px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">

@@ -6,7 +6,7 @@
  *
  * The root layout already owns `<html>` and `<body>` for the whole
  * tree, so this file just tightens the wrapper styles for embed pages
- * via a scoped <style> tag — no Tailwind dependency, no global CSS.
+ * via a scoped <style> tag, no Tailwind dependency, no global CSS.
  *
  * No `X-Frame-Options` header is set anywhere on this route, so it's
  * implicitly framable. That's the contract.
@@ -17,7 +17,7 @@ export default function EmbedLayout({
   children: React.ReactNode;
 }) {
   // Scope all styles to the server-rendered `.tasks-embed-root` div
-  // instead of the body — keeps SSR/CSR markup byte-identical so
+  // instead of the body, keeps SSR/CSR markup byte-identical so
   // hydration doesn't complain. Earlier draft used a client-side
   // class-toggle script on `document.body`; that produced a
   // hydration warning because the server-rendered body className

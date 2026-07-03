@@ -11,7 +11,7 @@ import type { RecurrenceSpec } from "@/lib/data";
  *   "every first Monday of the month"   → first Monday of each month
  *
  * Everything else → null. No "every other Tuesday." No "weekdays."
- * Returning null is not an error — it means the phrase was not
+ * Returning null is not an error, it means the phrase was not
  * parseable and the caller should surface the refusal UX.
  *
  * Weekday integers follow JS Date.getDay(): 0=Sun … 6=Sat.

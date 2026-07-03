@@ -5,14 +5,14 @@ import { SYNCED_TEMPLATES } from "./templates.generated";
 /**
  * Drop-in task lists users can apply to an existing workspace.
  *
- * A template is pure declarative data — no DB writes here. The
+ * A template is pure declarative data, no DB writes here. The
  * `applyTemplateAction` server action reads this list, looks up the
  * matching template by id, and inserts each task into the active
  * workspace via the same shape `addTaskAction` accepts (additive —
  * existing tasks are NOT cleared).
  *
  * The vocabulary for `domain` matches the four `DomainPack`s in
- * `@/lib/domains` — picking the closest semantic neighbor lets the
+ * `@/lib/domains`, picking the closest semantic neighbor lets the
  * gallery group / filter templates by audience later without
  * restructuring this module.
  *
@@ -25,7 +25,7 @@ export type TemplateTaskInput = {
   title: string;
   lane: LaneId;
   priority: Priority;
-  /** Human due label — same shape as `Task.due` ("Today", "Fri", "Mar 12"). */
+  /** Human due label, same shape as `Task.due` ("Today", "Fri", "Mar 12"). */
   due?: string;
   tags?: string[];
 };
@@ -34,7 +34,7 @@ export type Template = {
   id: string;
   name: string;
   description: string;
-  /** Glyph slug — points at a stroke-SVG in `template-glyph.tsx`.
+  /** Glyph slug, points at a stroke-SVG in `template-glyph.tsx`.
    *  Replaces the old emoji-character contract; brand.md is absolute
    *  on "no emoji anywhere," and template cards are the most visible
    *  surface that used to break the rule. */
@@ -52,7 +52,7 @@ const TEMPLATES_INLINE: Template[] = [
     id: "job-application-push",
     name: "Job application push",
     description:
-      "Tailor resume, send five outreach emails, practice the answers — without the panic.",
+      "Tailor resume, send five outreach emails, practice the answers, without the panic.",
     icon: "briefcase",
     domain: "student",
     tasks: [
@@ -84,7 +84,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["interview"],
       },
       {
-        title: "Research the team — hiring manager + 2 ICs",
+        title: "Research the team, hiring manager + 2 ICs",
         lane: "todo",
         priority: "p2",
         tags: ["research"],
@@ -113,7 +113,7 @@ const TEMPLATES_INLINE: Template[] = [
     domain: "marketing",
     tasks: [
       {
-        title: "List wins this quarter — concrete, with numbers",
+        title: "List wins this quarter, concrete, with numbers",
         lane: "doing",
         priority: "p1",
         due: "Today",
@@ -126,7 +126,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["review"],
       },
       {
-        title: "Gather peer feedback — 3 quick asks",
+        title: "Gather peer feedback, 3 quick asks",
         lane: "todo",
         priority: "p2",
         due: "Wed",
@@ -189,7 +189,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["admin"],
       },
       {
-        title: "Set up utilities at new place — power, internet, water",
+        title: "Set up utilities at new place, power, internet, water",
         lane: "todo",
         priority: "p1",
         tags: ["utilities"],
@@ -201,13 +201,13 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["utilities"],
       },
       {
-        title: "Pack room by room — label every box",
+        title: "Pack room by room, label every box",
         lane: "todo",
         priority: "p2",
         tags: ["packing"],
       },
       {
-        title: "Update address — bank, DMV, employer, subscriptions",
+        title: "Update address, bank, DMV, employer, subscriptions",
         lane: "todo",
         priority: "p2",
         tags: ["admin"],
@@ -249,7 +249,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["travel"],
       },
       {
-        title: "Draft 3-day itinerary — leave room to wander",
+        title: "Draft 3-day itinerary, leave room to wander",
         lane: "todo",
         priority: "p2",
         tags: ["itinerary"],
@@ -273,7 +273,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["admin"],
       },
       {
-        title: "Pack list — checked + carry-on",
+        title: "Pack list, checked + carry-on",
         lane: "todo",
         priority: "p3",
         tags: ["packing"],
@@ -296,14 +296,14 @@ const TEMPLATES_INLINE: Template[] = [
     domain: "wedding",
     tasks: [
       {
-        title: "Send invitations — 90 days out",
+        title: "Send invitations, 90 days out",
         lane: "doing",
         priority: "p0",
         due: "Today",
         tags: ["invites"],
       },
       {
-        title: "Track RSVPs — master spreadsheet",
+        title: "Track RSVPs, master spreadsheet",
         lane: "todo",
         priority: "p1",
         tags: ["guests"],
@@ -315,13 +315,13 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["catering"],
       },
       {
-        title: "Seating chart v1 — assume 10% RSVP shifts",
+        title: "Seating chart v1, assume 10% RSVP shifts",
         lane: "todo",
         priority: "p2",
         tags: ["guests"],
       },
       {
-        title: "Vows — first draft",
+        title: "Vows, first draft",
         lane: "todo",
         priority: "p1",
         tags: ["ceremony"],
@@ -333,7 +333,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["attire"],
       },
       {
-        title: "Marriage license — file 30 days out",
+        title: "Marriage license, file 30 days out",
         lane: "todo",
         priority: "p0",
         tags: ["legal"],
@@ -356,66 +356,66 @@ const TEMPLATES_INLINE: Template[] = [
     id: "wedding-day-of-run-of-show",
     name: "Day-of run-of-show",
     description:
-      "Vendor arrivals, ceremony, reception — minute-by-minute, nothing forgotten.",
+      "Vendor arrivals, ceremony, reception, minute-by-minute, nothing forgotten.",
     icon: "clock",
     domain: "wedding",
     tasks: [
       {
-        title: "8:00 AM — hair & makeup arrives",
+        title: "8:00 AM, hair & makeup arrives",
         lane: "todo",
         priority: "p1",
         tags: ["bride"],
       },
       {
-        title: "10:00 AM — florals delivered",
+        title: "10:00 AM, florals delivered",
         lane: "todo",
         priority: "p1",
         tags: ["vendors"],
       },
       {
-        title: "11:00 AM — photographer first looks",
+        title: "11:00 AM, photographer first looks",
         lane: "todo",
         priority: "p1",
         tags: ["photo"],
       },
       {
-        title: "1:00 PM — venue setup walkthrough",
+        title: "1:00 PM, venue setup walkthrough",
         lane: "todo",
         priority: "p1",
         tags: ["venue"],
       },
       {
-        title: "2:30 PM — guests arrive · pre-ceremony drinks",
+        title: "2:30 PM, guests arrive · pre-ceremony drinks",
         lane: "todo",
         priority: "p2",
         tags: ["guests"],
       },
       {
-        title: "3:00 PM — ceremony",
+        title: "3:00 PM, ceremony",
         lane: "todo",
         priority: "p0",
         tags: ["ceremony"],
       },
       {
-        title: "3:45 PM — cocktail hour + family photos",
+        title: "3:45 PM, cocktail hour + family photos",
         lane: "todo",
         priority: "p1",
         tags: ["photo"],
       },
       {
-        title: "5:00 PM — reception dinner",
+        title: "5:00 PM, reception dinner",
         lane: "todo",
         priority: "p1",
         tags: ["reception"],
       },
       {
-        title: "7:00 PM — toasts + first dance",
+        title: "7:00 PM, toasts + first dance",
         lane: "todo",
         priority: "p1",
         tags: ["reception"],
       },
       {
-        title: "11:00 PM — sparkler send-off + getaway car",
+        title: "11:00 PM, sparkler send-off + getaway car",
         lane: "todo",
         priority: "p2",
         tags: ["reception"],
@@ -428,7 +428,7 @@ const TEMPLATES_INLINE: Template[] = [
     id: "final-paper-push",
     name: "Final paper push",
     description:
-      "Research, outline, draft, edit, submit — without the 4am panic.",
+      "Research, outline, draft, edit, submit, without the 4am panic.",
     icon: "document",
     domain: "student",
     tasks: [
@@ -440,40 +440,40 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["thesis"],
       },
       {
-        title: "Gather 8 sources — primary and secondary",
+        title: "Gather 8 sources, primary and secondary",
         lane: "todo",
         priority: "p1",
         due: "Tomorrow",
         tags: ["research"],
       },
       {
-        title: "Outline — section headings + topic sentences",
+        title: "Outline, section headings + topic sentences",
         lane: "todo",
         priority: "p1",
         due: "Wed",
         tags: ["outline"],
       },
       {
-        title: "First draft — quantity over quality",
+        title: "First draft, quantity over quality",
         lane: "todo",
         priority: "p1",
         due: "Fri",
         tags: ["writing"],
       },
       {
-        title: "Office hours — sanity-check the argument",
+        title: "Office hours, sanity-check the argument",
         lane: "todo",
         priority: "p2",
         tags: ["meeting"],
       },
       {
-        title: "Edit pass 1 — structure + flow",
+        title: "Edit pass 1, structure + flow",
         lane: "todo",
         priority: "p1",
         tags: ["editing"],
       },
       {
-        title: "Edit pass 2 — sentence-level + citations",
+        title: "Edit pass 2, sentence-level + citations",
         lane: "todo",
         priority: "p2",
         tags: ["editing"],
@@ -515,20 +515,20 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["practice"],
       },
       {
-        title: "Form study group — 2 hours, no phones",
+        title: "Form study group, 2 hours, no phones",
         lane: "todo",
         priority: "p2",
         due: "Wed",
         tags: ["group"],
       },
       {
-        title: "Office hours — bring 3 specific questions",
+        title: "Office hours, bring 3 specific questions",
         lane: "todo",
         priority: "p2",
         tags: ["meeting"],
       },
       {
-        title: "Sleep 8 hours the night before — non-negotiable",
+        title: "Sleep 8 hours the night before, non-negotiable",
         lane: "todo",
         priority: "p1",
         tags: ["health"],
@@ -552,7 +552,7 @@ const TEMPLATES_INLINE: Template[] = [
     domain: "freelance",
     tasks: [
       {
-        title: "Kickoff doc — goals, scope, success metrics",
+        title: "Kickoff doc, goals, scope, success metrics",
         lane: "doing",
         priority: "p1",
         due: "Today",
@@ -566,7 +566,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["legal"],
       },
       {
-        title: "Set up payment terms — Net 14, deposit upfront",
+        title: "Set up payment terms, Net 14, deposit upfront",
         lane: "todo",
         priority: "p1",
         tags: ["billing"],
@@ -578,13 +578,13 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["setup"],
       },
       {
-        title: "Add to Slack / Linear / Figma — name the channels",
+        title: "Add to Slack / Linear / Figma, name the channels",
         lane: "todo",
         priority: "p2",
         tags: ["setup"],
       },
       {
-        title: "Send first invoice — deposit",
+        title: "Send first invoice, deposit",
         lane: "todo",
         priority: "p1",
         due: "Fri",
@@ -620,25 +620,25 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["expenses"],
       },
       {
-        title: "Reconcile Stripe + Mercury — match books to bank",
+        title: "Reconcile Stripe + Mercury, match books to bank",
         lane: "todo",
         priority: "p1",
         tags: ["accounting"],
       },
       {
-        title: "S-corp filing — Form 1120-S",
+        title: "S-corp filing, Form 1120-S",
         lane: "todo",
         priority: "p0",
         tags: ["filing"],
       },
       {
-        title: "Personal return draft — talk to CPA",
+        title: "Personal return draft, talk to CPA",
         lane: "todo",
         priority: "p1",
         tags: ["filing"],
       },
       {
-        title: "Estimated taxes — Q1 next year",
+        title: "Estimated taxes, Q1 next year",
         lane: "todo",
         priority: "p2",
         tags: ["filing"],
@@ -657,12 +657,12 @@ const TEMPLATES_INLINE: Template[] = [
     id: "product-launch",
     name: "Product launch",
     description:
-      "Positioning, landing, email blast, post-mortem — ship the story, not just the feature.",
+      "Positioning, landing, email blast, post-mortem, ship the story, not just the feature.",
     icon: "target",
     domain: "marketing",
     tasks: [
       {
-        title: "Positioning doc — who, why, what changes",
+        title: "Positioning doc, who, why, what changes",
         lane: "doing",
         priority: "p0",
         due: "Today",
@@ -682,33 +682,33 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["assets"],
       },
       {
-        title: "Email blast — segmented for warm + cold",
+        title: "Email blast, segmented for warm + cold",
         lane: "todo",
         priority: "p1",
         due: "Thu",
         tags: ["lifecycle"],
       },
       {
-        title: "Social — Twitter thread + LinkedIn post",
+        title: "Social, Twitter thread + LinkedIn post",
         lane: "todo",
         priority: "p2",
         tags: ["social"],
       },
       {
-        title: "Press / influencer outreach — 5 targets",
+        title: "Press / influencer outreach, 5 targets",
         lane: "todo",
         priority: "p2",
         tags: ["pr"],
       },
       {
-        title: "Launch day war room — 9am to 6pm",
+        title: "Launch day war room, 9am to 6pm",
         lane: "todo",
         priority: "p0",
         due: "Mon",
         tags: ["launch"],
       },
       {
-        title: "Post-mortem — what worked, what didn't, what next",
+        title: "Post-mortem, what worked, what didn't, what next",
         lane: "todo",
         priority: "p2",
         tags: ["retro"],
@@ -731,31 +731,31 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["logistics"],
       },
       {
-        title: "Booth signage — print 4 weeks out",
+        title: "Booth signage, print 4 weeks out",
         lane: "todo",
         priority: "p1",
         tags: ["assets"],
       },
       {
-        title: "Demo flow — 90-second hook + 3-min deep-dive",
+        title: "Demo flow, 90-second hook + 3-min deep-dive",
         lane: "todo",
         priority: "p1",
         tags: ["demo"],
       },
       {
-        title: "Order swag — stickers, tees, one premium item",
+        title: "Order swag, stickers, tees, one premium item",
         lane: "todo",
         priority: "p2",
         tags: ["swag"],
       },
       {
-        title: "Lead capture flow — QR + CRM tag",
+        title: "Lead capture flow, QR + CRM tag",
         lane: "todo",
         priority: "p1",
         tags: ["leads"],
       },
       {
-        title: "Schedule booth shifts — 2 people, never solo",
+        title: "Schedule booth shifts, 2 people, never solo",
         lane: "todo",
         priority: "p2",
         tags: ["staffing"],
@@ -767,7 +767,7 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["travel"],
       },
       {
-        title: "Post-show follow-up — within 48h",
+        title: "Post-show follow-up, within 48h",
         lane: "todo",
         priority: "p1",
         tags: ["follow-up"],
@@ -785,7 +785,7 @@ const TEMPLATES_INLINE: Template[] = [
     domain: "trades",
     tasks: [
       {
-        title: "Walkthrough with the homeowner — note every callback",
+        title: "Walkthrough with the homeowner, note every callback",
         lane: "doing",
         priority: "p0",
         due: "Today",
@@ -804,37 +804,37 @@ const TEMPLATES_INLINE: Template[] = [
         tags: ["finish"],
       },
       {
-        title: "Outlet covers — replace the two missing ones in the den",
+        title: "Outlet covers, replace the two missing ones in the den",
         lane: "todo",
         priority: "p1",
         tags: ["electrical"],
       },
       {
-        title: "Door swing on the master bedroom — shave 1/4\" off the bottom",
+        title: "Door swing on the master bedroom, shave 1/4\" off the bottom",
         lane: "todo",
         priority: "p2",
         tags: ["doors"],
       },
       {
-        title: "Final cleanup — sweep, vacuum, haul off jobsite trash",
+        title: "Final cleanup, sweep, vacuum, haul off jobsite trash",
         lane: "todo",
         priority: "p1",
         tags: ["cleanup"],
       },
       {
-        title: "Photograph completed work — before/after for the portfolio",
+        title: "Photograph completed work, before/after for the portfolio",
         lane: "todo",
         priority: "p2",
         tags: ["photos"],
       },
       {
-        title: "File final inspection — schedule with the AHJ",
+        title: "File final inspection, schedule with the AHJ",
         lane: "todo",
         priority: "p0",
         tags: ["inspection"],
       },
       {
-        title: "Send final invoice — itemized, payable on completion",
+        title: "Send final invoice, itemized, payable on completion",
         lane: "todo",
         priority: "p0",
         tags: ["invoicing"],
@@ -870,7 +870,7 @@ export const TEMPLATES: Template[] = [
   ...TEMPLATES_INLINE.slice(_splicePoint),
 ];
 
-/** O(1) lookup. Throws if the id is unknown — server action validates
+/** O(1) lookup. Throws if the id is unknown, server action validates
  *  before invoking, so a thrown error is a programmer bug, not user
  *  input we need to gracefully handle. */
 export function getTemplate(id: string): Template {

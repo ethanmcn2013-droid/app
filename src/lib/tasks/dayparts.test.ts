@@ -6,7 +6,7 @@
  * The boundary contract is load-bearing: only a task due *today* at
  * 17:00 or later belongs to the evening. Un-timed quick-adds resolve
  * to midday and must stay in Today; carried items from earlier days
- * must stay in Today regardless of their original clock — the evening
+ * must stay in Today regardless of their original clock, the evening
  * section renders only what the day's own data can honestly place.
  */
 import test from "node:test";

@@ -38,7 +38,7 @@ function clearPreviewCookie() {
 }
 
 /**
- * Cross-product links — IA_COHERENCE.md §1G + §4B canon.
+ * Cross-product links, IA_COHERENCE.md §1G + §4B canon.
  *
  * Order: notes → tasks → roadmap → analytics (operator-directed 2026-05-18).
  * Labels: "Open [product]" where [product] is the lowercase wordmark name.
@@ -124,7 +124,7 @@ function EyeIcon() {
 }
 
 /**
- * Tasks-flavoured Clerk UserButton — same h-8 avatar + soft popover
+ * Tasks-flavoured Clerk UserButton, same h-8 avatar + soft popover
  * shadow as before, plus "Open <Sibling>" links (L3: deep-linking to
  * /app entries per DESIGN.md §14), and the owner-only escape hatch
  * "View public site" / "Exit preview" (L3: DESIGN.md §14).
@@ -177,7 +177,7 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
         {/* Item 4: when the user hasn't uploaded a photo, surface a direct
             "Add a photo" entry that opens the built-in Clerk profile editor.
             Clerk API: openUserProfile() from useClerk() opens <UserProfile>
-            modal — avatar upload is on the first tab. hasImage from useUser()
+            modal, avatar upload is on the first tab. hasImage from useUser()
             detects whether a custom photo has been uploaded. */}
         {!hasPhoto ? (
           <UserButton.Action
@@ -195,7 +195,7 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
             labelIcon={<ArrowIcon />}
           />
         ))}
-        {/* L3 escape hatch — DESIGN.md §14. Owner-only: sets the
+        {/* L3 escape hatch, DESIGN.md §14. Owner-only: sets the
             signal_preview_public cookie so the proxy skips M→/app
             redirect, letting the operator demo the public marketing
             site while signed in. Not linked anywhere else. */}

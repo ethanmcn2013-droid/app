@@ -18,7 +18,7 @@ import {
 /**
  * Nested checklist for a parent task's children. Lives in the detail
  * panel between the Cents section and the Conversation feed; subtasks
- * never appear in the board / list / timeline / calendar — those views
+ * never appear in the board / list / timeline / calendar, those views
  * filter on `parent_task_id IS NULL`. (One-level nesting in v1.)
  *
  * State shape: this component owns its own subtask list rather than
@@ -37,7 +37,7 @@ export function SubtasksSection({ task }: { task: Task }) {
   const [subtasks, setSubtasks] = useState<Task[] | null>(null);
   const [, startServerSync] = useTransition();
 
-  // Refresh whenever the parent task or its updatedAt changes — the
+  // Refresh whenever the parent task or its updatedAt changes, the
   // latter catches server-side reconciliations after a child mutation
   // (revalidatePath on the parent's /app layout flips updatedAt).
   const refreshKey = task.updatedAt?.getTime();
@@ -64,7 +64,7 @@ export function SubtasksSection({ task }: { task: Task }) {
   const toggle = useCallback(
     (sub: Task) => {
       const nextLane = sub.lane === "done" ? "todo" : "done";
-      // Optimistic flip — the parent updatedAt won't change until the
+      // Optimistic flip, the parent updatedAt won't change until the
       // server reconciles, so we patch the local list directly.
       setSubtasks((cur) =>
         cur
@@ -136,7 +136,7 @@ export function SubtasksSection({ task }: { task: Task }) {
     [task.id],
   );
 
-  // Loading: render nothing rather than flashing an empty header — the
+  // Loading: render nothing rather than flashing an empty header, the
   // first paint after the parent loads is fast enough that a skeleton
   // would be more distracting than helpful.
   if (subtasks === null) return null;
@@ -190,7 +190,7 @@ function SubtaskRow({
   onOpen: () => void;
 }) {
   const isDone = subtask.lane === "done";
-  // Temp (optimistic) rows aren't openable — they have no real id yet.
+  // Temp (optimistic) rows aren't openable, they have no real id yet.
   const openable = !subtask.id.startsWith("temp-");
   return (
     <li className="group flex items-center gap-2 rounded-md py-[5px]">
@@ -242,7 +242,7 @@ function CheckGlyph() {
 }
 
 /**
- * Quiet ghost-row composer — single text input, Enter to submit. Stays
+ * Quiet ghost-row composer, single text input, Enter to submit. Stays
  * focused after submit so the user can rattle off a checklist without
  * reaching for the mouse.
  */

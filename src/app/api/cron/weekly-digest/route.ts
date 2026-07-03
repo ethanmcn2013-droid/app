@@ -12,7 +12,7 @@ import { aiConfigured } from "@/server/ai";
  * `?workspace=<id>` and makes a per-call LLM narration request, so
  * fanning it out across every workspace on a cron would be an
  * uncapped Anthropic-cost footgun. The previous `vercel.json` cron
- * entry passed no workspace and returned a 400 every Sunday — it was
+ * entry passed no workspace and returned a 400 every Sunday, it was
  * removed (2026-05-15). Invoke this manually / from an operator
  * surface with the cron secret + explicit workspace when a weekly
  * narration is actually wanted.
@@ -27,7 +27,7 @@ import { aiConfigured } from "@/server/ai";
  * narration without the client having to invoke the LLM directly.
  *
  * When `ANTHROPIC_API_KEY` is unset the route returns the
- * snapshot only with `narration: null` — never crashes.
+ * snapshot only with `narration: null`, never crashes.
  */
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

@@ -2,7 +2,7 @@
  * Unit test for the tenant-scope helper (db/tenant.ts).
  *
  * The whole point of byWorkspace() is that an undefined/empty active
- * workspace can NEVER degrade into an unscoped query — it throws instead of
+ * workspace can NEVER degrade into an unscoped query, it throws instead of
  * building `WHERE workspace_id = ''`. This locks that behaviour in.
  *
  * Run: node --import tsx --test src/server/db/tenant.test.ts

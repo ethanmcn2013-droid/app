@@ -11,7 +11,7 @@ import type { LaneId, Priority } from "@/lib/data";
 import { LANE_ORDER } from "@/lib/data";
 
 /**
- * Server-side import target — the wire shape sent from the wizard.
+ * Server-side import target, the wire shape sent from the wizard.
  *
  * `dueAt` crosses the boundary as either an ISO string (when the client
  * serializes through JSON) or a Date instance (when the action is
@@ -83,7 +83,7 @@ async function laneStartPositions(
 }
 
 /**
- * Bulk-insert imported tasks. Single transaction — any row that fails
+ * Bulk-insert imported tasks. Single transaction, any row that fails
  * validation rolls the whole batch back so the user doesn't end up
  * with a half-imported workspace.
  *
@@ -143,7 +143,7 @@ export async function importCsvAction(
     }
   });
 
-  // Record activities outside the txn — they're observability, not
+  // Record activities outside the txn, they're observability, not
   // a transactional invariant. A failed activity write must not undo
   // the user's import.
   await Promise.all(
@@ -164,7 +164,7 @@ export async function importCsvAction(
   return { inserted: newIds.length, workspaceId: ws };
 }
 
-/** Read-only — the import wizard's confirm step labels the CTA with this. */
+/** Read-only, the import wizard's confirm step labels the CTA with this. */
 export async function getActiveWorkspaceNameAction(): Promise<string> {
   const ws = await getActiveWorkspace();
   const [row] = await db

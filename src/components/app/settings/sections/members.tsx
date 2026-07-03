@@ -188,7 +188,7 @@ export function MembersSection({
       <SectionHeader
         eyebrow="Members"
         title="Who's in this workspace"
-        description="Roles, tenure, and the door. The owner controls who stays — everyone else can look but not touch."
+        description="Roles, tenure, and the door. The owner controls who stays, everyone else can look but not touch."
       />
 
       {/* Invite */}
@@ -203,7 +203,7 @@ export function MembersSection({
             </div>
             <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
               Drop an email and we send them a link. They click it, sign
-              in with that address, and they&apos;re in — no setup, no
+              in with that address, and they&apos;re in, no setup, no
               tool tour. Invites are good for seven days.
             </p>
           </div>
@@ -244,7 +244,7 @@ export function MembersSection({
           </p>
         ) : isCapped ? (
           <p className="mt-3 text-[11.5px] leading-[1.55] text-ink-soft">
-            All free seats are taken — owner plus three editing guests.{" "}
+            All free seats are taken, owner plus three editing guests.{" "}
             <a
               href="https://signalstudio.ie/pricing"
               target="_blank"
@@ -482,7 +482,7 @@ export function MembersSection({
         </ul>
       </div>
 
-      {/* Recent activity — Sprint 2 cycle 10.4, plain-English prose */}
+      {/* Recent activity, Sprint 2 cycle 10.4, plain-English prose */}
       {recentActivity.length > 0 && (
         <div className="mt-6 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
           <div className="flex items-center justify-between border-b border-line-soft/70 bg-bg-sunken/30 px-5 py-2.5">

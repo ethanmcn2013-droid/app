@@ -1,6 +1,6 @@
 /**
  * Template card glyph. Replaces the emoji icons that earlier
- * versions of `Template.icon` carried — brand.md is absolute on
+ * versions of `Template.icon` carried, brand.md is absolute on
  * "no emoji anywhere," and the templates surface is the most
  * visible offender. Each slug maps to a stroke-SVG glyph in the
  * brand-soft tile shape used across the marketing surface.

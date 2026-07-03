@@ -5,7 +5,7 @@ import { DOMAINS, type DomainId } from "@/lib/domains";
 import { templateGlyphForOg } from "@/components/marketing/template-glyph";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
 
-// nodejs runtime — keeps this OG aligned with the others
+// nodejs runtime, keeps this OG aligned with the others
 // (`/p/[slug]/opengraph-image`, `/share-card/[workspaceId]/opengraph-image`).
 // Edge runtime + Turbopack dev mode + ImageResponse intermittently
 // hits "failed to pipe response" in our dev environment; nodejs
@@ -18,7 +18,7 @@ export const contentType = "image/png";
 // Note: do NOT define `generateImageMetadata` here. This route lives
 // under `[slug]`, so Next.js already generates one OG image per slug
 // via `generateStaticParams` on the parent page. A `generateImageMetadata`
-// that returns N entries here would multiply that — producing
+// that returns N entries here would multiply that, producing
 // `/templates/{slug}/opengraph-image/{otherId}` URLs per slug per id —
 // which is what cycle-26 review caught: the rendered `og:image` URL
 // for every template was pointing at `.../opengraph-image/job-application-sprint`
@@ -35,7 +35,7 @@ export default async function TemplateOG({
     TEMPLATES.find((t) => t.id === slug) ?? TEMPLATES[0];
   const essay = getTemplateEssay(template.id);
   const domain = DOMAINS[template.domain as DomainId];
-  const headline = essay?.heroline ?? `${template.name} — pre-written.`;
+  const headline = essay?.heroline ?? `${template.name}, pre-written.`;
 
   return new ImageResponse(
     (

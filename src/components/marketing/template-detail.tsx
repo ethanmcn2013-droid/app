@@ -9,7 +9,7 @@ const LANE_ORDER: LaneId[] = ["todo", "doing", "review", "done"];
 import { ApplyTemplateButton } from "./apply-template-button";
 
 /**
- * `/templates/[slug]` rendering. Server-rendered for indexing — the
+ * `/templates/[slug]` rendering. Server-rendered for indexing, the
  * apply CTA is the only client island. Two render modes:
  *
  *   - Rich (template has an entry in `TEMPLATE_ESSAYS`): renders the
@@ -30,12 +30,12 @@ export function TemplateDetail({
 }) {
   const domain = DOMAINS[template.domain as DomainId];
   const heroline =
-    essay?.heroline ?? `${template.name} — a drop-in task list.`;
+    essay?.heroline ?? `${template.name}, a drop-in task list.`;
   const intro = essay?.intro ?? template.description;
 
   return (
     <section className="relative isolate overflow-hidden pb-32 pt-12 md:pt-16">
-      {/* Soft brand glow — same idiom as /about, /students, /templates */}
+      {/* Soft brand glow, same idiom as /about, /students, /templates */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[640px] w-[1100px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
@@ -107,7 +107,7 @@ export function TemplateDetail({
             {template.tasks.length} task
             {template.tasks.length === 1 ? "" : "s"} into your active workspace.{" "}
             <span className="font-medium text-ink-soft">Remix</span> mints a
-            fresh workspace seeded with them — your personal copy to edit.
+            fresh workspace seeded with them, your personal copy to edit.
           </p>
         </div>
 

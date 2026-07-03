@@ -6,7 +6,7 @@ import { EventEmitter } from "node:events";
  * emits `"tasks-changed"`; the `/api/events` SSE route subscribes
  * and fans out to every connected tab.
  *
- * Single-process only — production with multi-replica deployment
+ * Single-process only, production with multi-replica deployment
  * needs Redis pubsub (or Liveblocks / Yjs / Supabase Realtime).
  * This is the dev-time substrate; the API surface stays the same
  * when we swap the substrate.

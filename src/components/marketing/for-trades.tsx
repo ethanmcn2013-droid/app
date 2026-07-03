@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * `/for/trades` — long-form landing for the trades audience:
+ * `/for/trades`, long-form landing for the trades audience:
  * electricians, carpenters, plumbers, HVAC techs, contractors,
  * and anyone whose work is dispatched as a list of calls and
  * finished with a signature.
@@ -155,7 +155,7 @@ export function ForTrades() {
           The honest math.
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
-          One-truck operation: the Free tier covers the route — one
+          One-truck operation: the Free tier covers the route, one
           workspace, all four products, three editing guests for a
           small crew, no card. Running more than one truck: Workspace
           is €12 a month for unlimited workspaces, one per truck if

@@ -20,7 +20,7 @@ type TierMeta = {
   features: string[];
   /** Self-serve tiers carry a paidTier so the UI shows a checkout
    *  button. Tiers without paidTier exist (Studio, Wedding) but are
-   *  granted by arrangement only — UI shows a "by arrangement" note
+   *  granted by arrangement only, UI shows a "by arrangement" note
    *  + a mailto, not a checkout button. */
   paidTier?: PaidTier;
   /** Hide from the upgrade-options grid. Currently used for tiers
@@ -53,7 +53,7 @@ const TIER_META: TierMeta[] = [
     features: [
       "Unlimited workspaces",
       "Unlimited guests and collaborators",
-      "All four products — Tasks, Roadmap, Analytics, Notes",
+      "All four products, Tasks, Roadmap, Analytics, Notes",
       "Recurring tasks, blockers, NLP dates",
     ],
     selfServe: true,
@@ -78,12 +78,12 @@ const TIER_META: TierMeta[] = [
     price: "By arrangement",
     blurb: "One subscription. Every workspace you own.",
     features: [
-      "Unlimited workspaces — one per client, one per project",
+      "Unlimited workspaces, one per client, one per project",
       "Workspace features on every workspace you own",
       "No per-seat tax inside any of them",
       "One bill, not one per workspace",
     ],
-    // No paidTier, no selfServe — only shown when the user already
+    // No paidTier, no selfServe, only shown when the user already
     // holds it (granted via Studio /api/internal/entitlements/grant).
   },
   {
@@ -93,7 +93,7 @@ const TIER_META: TierMeta[] = [
     blurb: "One workspace. One wedding. Twelve months. Reads forever.",
     features: [
       "Wedding-shaped starter pack from day one",
-      "Up to 6 collaborators — partner, planner, MOH",
+      "Up to 6 collaborators, partner, planner, MOH",
       "12 months of editing for the planner",
       "Read-only links for in-laws",
     ],
@@ -193,7 +193,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
       <SectionHeader
         eyebrow="Billing"
         title="What you're on, and what's next"
-        description="Plans aren't gates — they're shapes. Pick the one that fits, change your mind whenever."
+        description="Plans aren't gates, they're shapes. Pick the one that fits, change your mind whenever."
       />
 
       {/* Current tier strip */}
@@ -226,7 +226,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         </div>
       </div>
 
-      {/* Tier comparison — self-serve tiers (Free / Workspace / Event)
+      {/* Tier comparison, self-serve tiers (Free / Workspace / Event)
        *  + the user's CURRENT tier when it isn't already in that set
        *  (Studio + Wedding only render when the user holds them). */}
       {(() => {

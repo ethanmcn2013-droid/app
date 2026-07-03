@@ -33,7 +33,7 @@ function clampInt(value: number, min: number, max: number): number {
  * share a single endpoint without sending the field they didn't change.
  *
  * Inputs are clamped server-side ([0, 30] for start, [1, 30] for
- * duration) and rounded to integers — the grid is day-aligned, so any
+ * duration) and rounded to integers, the grid is day-aligned, so any
  * mid-day position from a noisy mousemove gets snapped here as a final
  * guardrail behind the client's own snap.
  */
@@ -64,7 +64,7 @@ export async function setTaskTimelineAction(
     );
   }
 
-  // Nothing to write — bail without touching `updatedAt` so a no-op
+  // Nothing to write, bail without touching `updatedAt` so a no-op
   // drag doesn't churn the activity feed or sort order.
   if (Object.keys(patch).length === 0) return { ok: true };
 

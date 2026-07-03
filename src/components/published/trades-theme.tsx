@@ -3,7 +3,7 @@ import type { LaneId } from "@/lib/data";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
- * Trades theme — blueprint paper, technical-drawing aesthetic.
+ * Trades theme, blueprint paper, technical-drawing aesthetic.
  *
  * The audience: electricians, carpenters, plumbers, contractors —
  * people whose work is dispatched as a list of calls and finished
@@ -38,7 +38,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
   const visibleLanes = LANE_ORDER.filter(
     (id) => (byLane.get(id) ?? []).length > 0,
   );
-  // The active lane gets the safety-orange treatment — first lane
+  // The active lane gets the safety-orange treatment, first lane
   // that has work in progress, falling back through the queue.
   const activeLane: LaneId | null =
     visibleLanes.find((id) => id === "doing") ??
@@ -72,7 +72,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
       />
 
       <div className="mx-auto w-full max-w-[920px] px-6 pb-24 pt-12 md:pt-16">
-        {/* Header — job-ticket masthead */}
+        {/* Header, job-ticket masthead */}
         <header
           className="grid gap-1 pb-8"
           style={{ borderBottom: `1px solid ${RULE}` }}
@@ -115,7 +115,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
           </p>
         </header>
 
-        {/* Body — bracketed lanes, job-ticket rows */}
+        {/* Body, bracketed lanes, job-ticket rows */}
         <div className="mt-12 space-y-12">
           {visibleLanes.map((laneId) => {
             const list = byLane.get(laneId) ?? [];
@@ -221,7 +221,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
           })}
         </div>
 
-        {/* Approved-by footer — signature-line aesthetic */}
+        {/* Approved-by footer, signature-line aesthetic */}
         <div
           className="mt-20 grid grid-cols-[1fr_auto] items-end gap-8 pt-6"
           style={{ borderTop: `1px solid ${RULE}` }}
@@ -235,7 +235,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
             className="font-mono text-[10px] uppercase tracking-[0.22em]"
             style={{ color: STEEL_INK, opacity: 0.45 }}
           >
-            — end of ticket
+           , end of ticket
           </div>
         </div>
       </div>

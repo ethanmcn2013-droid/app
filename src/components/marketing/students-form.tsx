@@ -27,7 +27,7 @@ function CodeWithCopy({ code }: { code: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch {
-        // silent — copy simply doesn't confirm
+        // silent, copy simply doesn't confirm
       }
     }
   }, [code]);

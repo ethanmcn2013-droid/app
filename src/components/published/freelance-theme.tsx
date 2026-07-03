@@ -4,7 +4,7 @@ import type { PublishedWorkspaceProps } from "./types";
 
 /**
  * Freelance domain theme. Code-on-paper, mono-typographic, spec-doc
- * aesthetic — what a thoughtful developer would hand a client as the
+ * aesthetic, what a thoughtful developer would hand a client as the
  * artifact of an engagement, not a productivity-app screenshot.
  *
  * Off-white paper background, hairline rules between sections, ASCII-
@@ -23,7 +23,7 @@ export function FreelanceTheme({ workspace, tasks }: PublishedWorkspaceProps) {
     (id) => (byLane.get(id) ?? []).length > 0,
   );
 
-  // Pick the first non-empty in-flight lane to mark "active" — the
+  // Pick the first non-empty in-flight lane to mark "active", the
   // single concession to color in this otherwise greyscale doc.
   const activeLaneId: LaneId | null =
     visibleLanes.find((id) => id === "doing") ??
@@ -40,7 +40,7 @@ export function FreelanceTheme({ workspace, tasks }: PublishedWorkspaceProps) {
       className="relative w-full"
       style={{ background: "#f8f7f4", color: "#1f2024" }}
     >
-      {/* Full-bleed paper backdrop — extends behind the footer too,
+      {/* Full-bleed paper backdrop, extends behind the footer too,
           via a sentinel pseudo-band; the wrapper itself is the page
           background since <main> spans the viewport width. */}
       <div className="mx-auto w-full max-w-[920px] px-6 pb-24 pt-16 md:pt-24">
@@ -188,7 +188,7 @@ export function FreelanceTheme({ workspace, tasks }: PublishedWorkspaceProps) {
 
       {/* ─── EOF marker ──────────────────────────────────────────── */}
       <div className="mt-20 border-t border-dashed border-[#1f2024]/15 pt-6 font-mono text-[11px] tracking-[0.18em] text-[#1f2024]/40">
-        — end of document —
+       , end of document —
       </div>
       </div>
     </main>

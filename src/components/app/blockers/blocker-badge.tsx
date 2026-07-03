@@ -15,7 +15,7 @@ type Props = {
  * Tiny chip that surfaces "this task is waiting on N other tasks."
  * Hover/click → popover lists the blockers as buttons that open
  * the detail panel for the upstream task. Color stays restrained
- * (amber, not red) — blockers are friction, not failure.
+ * (amber, not red), blockers are friction, not failure.
  */
 export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
   const [open, setOpen] = useState(false);

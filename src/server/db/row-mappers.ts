@@ -30,12 +30,12 @@ export function rowToTask(row: TaskRow): Task {
     externalContactEmail: row.externalContactEmail ?? null,
     cents: row.cents ?? null,
     parentTaskId: row.parentTaskId ?? null,
-    // RW-3b: milestone flag — coerce DB integer boolean to JS boolean.
+    // RW-3b: milestone flag, coerce DB integer boolean to JS boolean.
     // Undefined (not false) for untouched rows so the flag reads as
     // falsy without adding noise to the client type.
     isMilestone: row.isMilestone || undefined,
     // T·69 step 5: custom board column key. Null when column hasn't been
-    // applied (migration 0007 not yet run) — board-app.tsx falls back to
+    // applied (migration 0007 not yet run), board-app.tsx falls back to
     // the canonical `lane` column in that case.
     boardColumnKey: row.boardColumnKey ?? null,
     // Cross-product provenance. Set on tasks created via the Notes →

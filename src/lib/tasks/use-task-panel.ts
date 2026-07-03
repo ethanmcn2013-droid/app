@@ -1,6 +1,6 @@
 "use client";
 
-// App-only hook — do not import from /showcase or the marketing site.
+// App-only hook, do not import from /showcase or the marketing site.
 // The panel is mounted in /app/layout.tsx and reads `?task=<id>`.
 
 import { useSearchParams } from "next/navigation";
@@ -14,7 +14,7 @@ export function useTaskPanel() {
     (id: string) => {
       const params = new URLSearchParams(sp?.toString() ?? "");
       params.set("task", id);
-      // pushState — back-button closes the panel, which is the intent.
+      // pushState, back-button closes the panel, which is the intent.
       window.history.pushState(
         null,
         "",
@@ -32,7 +32,7 @@ export function useTaskPanel() {
     const params = new URLSearchParams(sp?.toString() ?? "");
     params.delete("task");
     const qs = params.toString();
-    // replaceState — close shouldn't add a history entry.
+    // replaceState, close shouldn't add a history entry.
     window.history.replaceState(
       null,
       "",

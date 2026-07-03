@@ -20,7 +20,7 @@ import {
  *
  * `interval=annual` selects the yearly price where one exists
  * (Workspace €120/yr today). It degrades to monthly if the annual
- * Stripe price isn't provisioned yet — never a dead button.
+ * Stripe price isn't provisioned yet, never a dead button.
  *
  * Flow:
  *   1. Validate the tier query param.
@@ -58,7 +58,7 @@ export async function GET(req: Request) {
   // SAFETY: in production, if Stripe isn't configured,
   // createCheckoutSessionAction silently grants the tier locally via
   // the dev-fallback path. That would let any clicker walk away with
-  // a paid tier without paying. Fail loudly instead — redirect to
+  // a paid tier without paying. Fail loudly instead, redirect to
   // /pricing with a state marker the umbrella can render as
   // "Checkout temporarily offline". Dev environments keep the
   // fallback path so local testing is unblocked.
@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     );
     return NextResponse.redirect(stripeUrl);
   } catch (err) {
-    // The most likely cause is "no active workspace" — first-run
+    // The most likely cause is "no active workspace", first-run
     // hasn't run yet. Hand off to /welcome which provisions a
     // workspace; user can return to /pricing afterwards.
     const msg = err instanceof Error ? err.message : "unknown";

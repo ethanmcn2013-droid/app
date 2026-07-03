@@ -9,7 +9,7 @@ export type Priority = "p0" | "p1" | "p2" | "p3";
  * meanings across 29 files for a week. Day-1 widening, one diff.
  *
  * Showcase fiction (`src/components/showcase/*`) keeps its own
- * narrow `DemoUserId` literal — that surface is a closed cinematic
+ * narrow `DemoUserId` literal, that surface is a closed cinematic
  * system, not real auth.
  */
 export type UserId = string;
@@ -24,7 +24,7 @@ export type UserMeta = {
 /** Seeded identities used by the legacy single-workspace fixture +
  *  the cinematic landing demo. Real users are minted by the Clerk
  *  webhook into the `users` DB table, then resolved at request time
- *  via `getWorkspaceMembers()` — that path doesn't go through here. */
+ *  via `getWorkspaceMembers()`, that path doesn't go through here. */
 const SEEDED: Record<string, UserMeta> = {
   chloe: {
     id: "chloe",
@@ -67,7 +67,7 @@ const SEEDED: Record<string, UserMeta> = {
  *  2. Single word → first two letters, uppercased. "Niamh" → "NI".
  *  3. Empty string → neutral glyph "·" (not ID-derived noise).
  *
- * Never uses raw Clerk id fragments — those look like real initials
+ * Never uses raw Clerk id fragments, those look like real initials
  * but carry zero meaning for a human reader (BRAND.md §2).
  */
 export function initialsFromName(name: string): string {
@@ -80,11 +80,11 @@ export function initialsFromName(name: string): string {
   return trimmed.slice(0, 2).toUpperCase();
 }
 
-/** Synthesize a `UserMeta` for ids the seeded map doesn't know — i.e.
+/** Synthesize a `UserMeta` for ids the seeded map doesn't know, i.e.
  *  every real Clerk-issued user id post-Phase-A. Initials are derived
  *  from the display name when known, falling back to a neutral glyph
  *  (never raw Clerk id characters, which look like real initials but
- *  carry no meaning — BRAND.md §2 "Plain English. No jargon.").
+ *  carry no meaning, BRAND.md §2 "Plain English. No jargon.").
  *
  *  Pass `displayName` whenever a workspace-member lookup is available.
  *  Omit it (or pass undefined) only when no name context exists.
@@ -103,14 +103,14 @@ function fallbackUserMeta(id: string, displayName?: string): UserMeta {
 
 /** C5: Returns true for the five canonical seed-persona ids (chloe /
  *  david / alex / ada / marcus). These are demo-only identities, not
- *  real workspace members — callers can use this to show a "(sample)"
+ *  real workspace members, callers can use this to show a "(sample)"
  *  label so seeded content doesn't read as real colleague activity. */
 export function isSeedUser(id: string): boolean {
   return Object.prototype.hasOwnProperty.call(SEEDED, id);
 }
 
 /**
- * resolveUser — name-aware user resolution.
+ * resolveUser, name-aware user resolution.
  *
  * Use this in any context where you have the member's display name
  * (e.g. getWorkspaceMembers() response). The USERS proxy is for the
@@ -120,7 +120,7 @@ export function isSeedUser(id: string): boolean {
  * Color is the seed color for known personas; neutral grey for unknowns.
  */
 export function resolveUser(id: string, displayName?: string): UserMeta {
-  // Known seed persona — return canonical row but override initials from
+  // Known seed persona, return canonical row but override initials from
   // name if the caller provides a better one.
   if (Object.prototype.hasOwnProperty.call(SEEDED, id)) {
     const seed = SEEDED[id]!;
@@ -218,11 +218,11 @@ export type Task = {
   position?: number;
   /** Optional parent task id. Null on every top-level task; non-null
    *  marks the row as a subtask of the referenced parent. v1 caps
-   *  nesting at one level — subtasks don't themselves have subtasks.
+   *  nesting at one level, subtasks don't themselves have subtasks.
    *  The detail panel surfaces children inline; `getTasks` filters
    *  parented rows out of the main board / list / timeline / calendar. */
   parentTaskId: string | null;
-  /** Optional outside person attached to the task — wedding vendor,
+  /** Optional outside person attached to the task, wedding vendor,
    *  freelance client invoice contact, anyone outside the workspace
    *  the work involves. Both nullable; the panel renders whichever
    *  are present. */
@@ -238,7 +238,7 @@ export type Task = {
    *  Drives the Roadmap sync read query (ARCH_SPEC §1.1). Optional/falsy
    *  for all legacy tasks; the schema column defaults to 0. */
   isMilestone?: boolean;
-  /** T·69 step 5 — custom board column key. NULL = "use `lane` as the
+  /** T·69 step 5, custom board column key. NULL = "use `lane` as the
    *  canonical board column." Non-null = task belongs to a custom column
    *  whose key is stored in meta `board:{wsId}:columns`. Effective board
    *  column = COALESCE(boardColumnKey, lane). See schema.ts:101 +
@@ -257,13 +257,13 @@ export type Task = {
 };
 
 /**
- * Natural-language recurrence spec. Three patterns only — no RRULE,
+ * Natural-language recurrence spec. Three patterns only, no RRULE,
  * no exception editor. Parsed from quick-add input by
  * `parseRecurrence()` in `src/lib/nlp/parse-recurrence.ts`.
  *
- *   weekly            — "every Tuesday"
- *   monthly-day       — "first of the month", "15th of the month"
- *   monthly-first-weekday — "every first Monday of the month"
+ *   weekly           , "every Tuesday"
+ *   monthly-day      , "first of the month", "15th of the month"
+ *   monthly-first-weekday, "every first Monday of the month"
  *
  * If the user wants something outside these three, `parseRecurrence`
  * returns null and they make a copy. Restraint is the feature.
@@ -339,7 +339,7 @@ const _seedTaskInputs: Omit<
   },
   {
     id: "t-105",
-    title: "Customer success — quarterly stories",
+    title: "Customer success, quarterly stories",
     lane: "todo",
     priority: "p2",
     assignees: ["ada"],
@@ -364,7 +364,7 @@ const _seedTaskInputs: Omit<
   },
   {
     id: "t-202",
-    title: "Launch demo video — final cut",
+    title: "Launch demo video, final cut",
     lane: "doing",
     priority: "p0",
     assignees: ["david"],
@@ -521,7 +521,7 @@ export type Comment = {
 
 /**
  * One uploaded file bound to a task. Bytes live on disk under
- * `<repo>/.data/uploads/...` (outside `public/` — never served by the
+ * `<repo>/.data/uploads/...` (outside `public/`, never served by the
  * static handler); this metadata row is what the panel renders and
  * what the authenticated `/api/attachments/[id]` route consults
  * before streaming the file. `storedPath` is server-private and is
@@ -646,14 +646,14 @@ export type Notification = {
 /**
  * The five tiers, in capability order:
  *
- *   - `free`    — 1 workspace, all four views, daily digest, 3 editors
- *   - `pro`     — unlimited workspaces (per-user)
- *   - `team`    — full feature set + unlimited members (per-workspace)
- *   - `studio`  — Team-equivalent across every workspace the user owns
+ *   - `free`   , 1 workspace, all four views, daily digest, 3 editors
+ *   - `pro`    , unlimited workspaces (per-user)
+ *   - `team`   , full feature set + unlimited members (per-workspace)
+ *   - `studio` , Team-equivalent across every workspace the user owns
  *                 (per-user; Phase 4)
- *   - `wedding` — Team-equivalent for one workspace, lifetime, $79 once
+ *   - `wedding`, Team-equivalent for one workspace, lifetime, $79 once
  *
- * For tier-rank gating, `studio` ranks equal to `team` — they unlock
+ * For tier-rank gating, `studio` ranks equal to `team`, they unlock
  * the same feature set, just with different scope (per-user vs
  * per-workspace).
  */
@@ -662,7 +662,7 @@ export type Notification = {
  * surface (signalstudio.ie/pricing). Renamed 2026-05-14 in E-3.1 of
  * the entitlements sprint: `pro` and `team` collapsed into
  * `workspace`; `event` added for the one-workspace-one-event tier.
- * No data migration needed — Tasks had no pro/team rows in the wild.
+ * No data migration needed, Tasks had no pro/team rows in the wild.
  */
 export type EntitlementTier =
   | "free"
@@ -686,13 +686,13 @@ export type Entitlement = {
   startedAt: Date;
   /** When it lapses. Null = perpetual (default-free, lifetime wedding). */
   expiresAt: Date | null;
-  /** Free-form note — e.g. the comp code id, the .edu domain. */
+  /** Free-form note, e.g. the comp code id, the .edu domain. */
   notes: string | null;
   /** First time the user reached /app/board after this entitlement
    *  activated. Null until they actually land. Powers the Venue
    *  Editions "did the next person finish?" signal on /hq/partners
    *  without a separate event-log table. Set idempotently from the
-   *  board page render — see markVenueEntitlementReached. */
+   *  board page render, see markVenueEntitlementReached. */
   reachedBoardAt: Date | null;
 };
 
@@ -718,11 +718,11 @@ export type CompCode = {
  *  in voice (BRAND.md §3): declarative, plain, no jargon, no emoji,
  *  true whether you plan weddings, wire houses, shoot galleries, or
  *  sit exams. The old set was tech-team dogfood ("Pinged finance",
- *  "Bumped this to P1") — the §2.2 vocabulary alienation this product
+ *  "Bumped this to P1"), the §2.2 vocabulary alienation this product
  *  refuses to ship into a first run. */
 export const SEED_COMMENT_BODIES: string[] = [
   "Looks good. Moving this forward today.",
-  "Asked them — they'll have an answer by end of week.",
+  "Asked them, they'll have an answer by end of week.",
   "Bumped this up. It needs doing first.",
   "Linked the details. Say if anything's unclear.",
   "Everything's in. It just needs a final look.",

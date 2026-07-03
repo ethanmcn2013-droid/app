@@ -17,7 +17,7 @@ export function CallToAction() {
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.55] text-ink-soft">
             Tasks runs entirely on your team&rsquo;s rhythm. No setup, no
-            imports — just open a board and start moving cards. Everything
+            imports, just open a board and start moving cards. Everything
             else assembles around the work.
           </p>
           <div className="mt-8 flex flex-wrap items-start gap-3">

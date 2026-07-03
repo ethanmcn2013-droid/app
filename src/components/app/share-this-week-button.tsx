@@ -7,7 +7,7 @@ import { useToast } from "@/components/primitives/toast";
  * "Share this week" button.
  *
  * Lives next to the daily-digest header in the inbox. Copies the
- * share-card PNG URL — `${origin}/share-card/{workspaceId}/opengraph-image` —
+ * share-card PNG URL, `${origin}/share-card/{workspaceId}/opengraph-image` —
  * to the clipboard so the user can paste it straight into Slack or
  * Twitter; the unfurl does the celebrating.
  *
@@ -15,7 +15,7 @@ import { useToast } from "@/components/primitives/toast";
  *   - Renders nothing when `closedThisWeek <= 0`. There's nothing to
  *     celebrate, so the button doesn't audition for relevance.
  *   - On click, writes the URL to the clipboard and pops a toast.
- *   - The route itself is reachable regardless — sometimes you want
+ *   - The route itself is reachable regardless, sometimes you want
  *     a placeholder card. The button is the celebratory affordance.
  */
 export function ShareThisWeekButton({
@@ -34,7 +34,7 @@ export function ShareThisWeekButton({
     const finish = () => {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1400);
-      toast("Link copied — drop it in Slack", {
+      toast("Link copied, drop it in Slack", {
         tone: "success",
         body:
           closedThisWeek === 1

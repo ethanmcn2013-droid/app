@@ -9,7 +9,7 @@ import { parseTaskInput } from "@/lib/nlp/parse-task-input";
  * Cross-repo Notes -> Tasks extract endpoint (Cycle 9.4b second half,
  * 2026-05-12). Notes calls this from its server action when a user
  * presses "Send to Tasks" on a drafted extract. The body is the
- * creator-authored extract wording — never the raw note body.
+ * creator-authored extract wording, never the raw note body.
  *
  * Auth: shared bearer secret + userId in body. First-party service-
  * to-service pattern; the Notes server is the only legitimate caller.
@@ -22,7 +22,7 @@ import { parseTaskInput } from "@/lib/nlp/parse-task-input";
  * the existing task; never creates a duplicate. Notes can retry safely.
  *
  * Workspace selection: the user's first membership wins. If the user
- * has none, return 404 with venue-operator English — Notes renders the
+ * has none, return 404 with venue-operator English, Notes renders the
  * `error` string to the user verbatim, so the prose has to read in the
  * suite's voice (BRAND.md §3) rather than in PM-tool register.
  */
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
 
   if (!member) {
     // The user might exist in the users table but have no workspaces
-    // — handle that as a separate case from "user doesn't exist at
+    //, handle that as a separate case from "user doesn't exist at
     // all" for nicer error surfacing.
     const [userRow] = await db
       .select({ id: users.id })
@@ -137,11 +137,11 @@ export async function POST(req: Request) {
 
   const taskId = `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
 
-  // No static description — the `↩ From Notes` chip in the detail-panel
+  // No static description, the `↩ From Notes` chip in the detail-panel
   // header (rendered when `sourceNoteId` is set) carries the provenance.
   // Prior decorative prose was duplicative chrome dressed as content.
   // Run the creator's extract wording through the same quick-add parser
-  // Tasks uses everywhere — so a Notes extract that includes a date or a
+  // Tasks uses everywhere, so a Notes extract that includes a date or a
   // #tag ("call florist friday #claire-wedding") lands as a properly dated,
   // tagged task instead of a flat title. Keeps Notes free of date/tag
   // pickers (its anti-configuration brand) while still setting them inline.

@@ -11,7 +11,7 @@ import { isDemoMode } from "@/lib/access-mode";
  * instrumentation.ts `register()`.
  */
 
-// Tasks is fully auth-gated — it cannot serve anyone without these.
+// Tasks is fully auth-gated, it cannot serve anyone without these.
 const REQUIRED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   ["TASKS_DATABASE_URL", "tasks database"],
   ["TASKS_AUTH_TOKEN", "tasks database auth token"],
@@ -42,7 +42,7 @@ export function validateEnv(): void {
   if (missingRecommended.length > 0) {
     console.warn(
       "[env] missing recommended production variables (features degraded):\n" +
-        missingRecommended.map(([k, why]) => `  - ${k} — ${why}`).join("\n"),
+        missingRecommended.map(([k, why]) => `  - ${k}, ${why}`).join("\n"),
     );
   }
 
@@ -51,12 +51,12 @@ export function validateEnv(): void {
   );
   if (missingRequired.length > 0) {
     const detail = missingRequired
-      .map(([k, why]) => `  - ${k} — ${why}`)
+      .map(([k, why]) => `  - ${k}, ${why}`)
       .join("\n");
     throw new Error(
       `[env] FATAL: missing required production environment variables:\n${detail}\n\n` +
         "Set them in the Vercel project (or run in demo/review mode). Refusing to " +
-        "boot a half-configured production environment — this would otherwise 500 " +
+        "boot a half-configured production environment, this would otherwise 500 " +
         "every authenticated request at runtime instead of failing here, visibly.",
     );
   }

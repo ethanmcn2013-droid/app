@@ -2,10 +2,10 @@ import "server-only";
 import { getCurrentUser } from "@/server/auth";
 
 /**
- * Operator/admin gate — the single source of truth for "is this caller the
+ * Operator/admin gate, the single source of truth for "is this caller the
  * operator?". `ADMIN_USER_IDS` is a comma-separated list of Clerk user ids,
  * set in production. When unset (dev) only the legacy seed user "david"
- * passes — i.e. no Clerk session = no admin. Fail-closed by construction.
+ * passes, i.e. no Clerk session = no admin. Fail-closed by construction.
  *
  * Used by the comp-code minter (actions/comp.ts) and the GTM-roadmap
  * actions (actions/roadmap.ts), which mutate shared operator/marketing

@@ -12,7 +12,7 @@ function siteUrl(): string {
 /**
  * Create a Stripe Customer Portal session for the current user.
  * Returns the redirect URL. Looks up the Stripe customer by the
- * user's primary email — we don't currently store stripe_customer_id
+ * user's primary email, we don't currently store stripe_customer_id
  * on the users table, and the portal needs it. Email lookup is
  * adequate for v1; a stored id is a Plan 9.2 follow-up if we ever
  * have multiple Stripe customers per email.

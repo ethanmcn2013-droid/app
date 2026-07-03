@@ -16,11 +16,11 @@ type DomainCtx = {
   workspaceId: string;
   workspaceSlug: string;
   /** Per-workspace board name override from the meta table.
-   *  Null when no override has been set — consumers fall back to
+   *  Null when no override has been set, consumers fall back to
    *  `shortenTitle(pack.workspaceTitle)` in that case. */
   boardName: string | null;
   /** Full column config: system overrides + custom columns + render order.
-   *  Null when no config has been stored — consumers fall back to LANES
+   *  Null when no config has been stored, consumers fall back to LANES
    *  defaults and LANE_ORDER. */
   columnConfig: ColumnConfig | null;
   /** Segment-aware copy for empty states and chrome. */
@@ -49,7 +49,7 @@ export function DomainProvider({
   boardName?: string | null;
   /** Full column config resolved by getColumnConfig() in the layout. */
   columnConfig?: ColumnConfig | null;
-  /** @deprecated Legacy prop — use columnConfig. */
+  /** @deprecated Legacy prop, use columnConfig. */
   columnNames?: Partial<Record<LaneId, string>> | null;
   children: ReactNode;
 }) {
@@ -83,7 +83,7 @@ export function useDomain(): DomainPack & {
 } {
   const v = useContext(DomainContext);
   if (!v) {
-    // Fall back to wedding rather than throwing — callers may render
+    // Fall back to wedding rather than throwing, callers may render
     // outside the app shell (e.g. marketing pages embed components).
     // Wedding (not marketing) so an out-of-shell render still shows a
     // real 80% audience, never the tech-company dogfood board.
@@ -93,7 +93,7 @@ export function useDomain(): DomainPack & {
 }
 
 /** Active workspace metadata. Returns null when called outside the
- *  app shell — callers should branch and skip workspace-specific UI
+ *  app shell, callers should branch and skip workspace-specific UI
  *  (export menu, iCal subscribe URL) in that case. */
 export function useActiveWorkspace(): {
   id: string;
@@ -105,7 +105,7 @@ export function useActiveWorkspace(): {
 }
 
 /** Full column config for the active workspace. Returns null outside
- *  the app shell — consumers fall back to LANES defaults and LANE_ORDER. */
+ *  the app shell, consumers fall back to LANES defaults and LANE_ORDER. */
 export function useColumnConfig(): ColumnConfig | null {
   const v = useContext(DomainContext);
   return v?.columnConfig ?? null;
@@ -122,7 +122,7 @@ export function useColumnNames(): Partial<Record<LaneId, string>> | null {
   return v?.columnConfig?.system ?? null;
 }
 
-/** Segment-aware workspace copy — empty states, examples, titles. */
+/** Segment-aware workspace copy, empty states, examples, titles. */
 export function usePersonalization(): WorkspacePersonalization {
   const v = useContext(DomainContext);
   if (!v) {

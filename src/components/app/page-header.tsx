@@ -63,7 +63,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
     : isInbox
       ? "Inbox"
       : shortenTitle(pack.workspaceTitle);
-  // Inbox + My Tasks aren't workspace views — hide Share + lane tabs.
+  // Inbox + My Tasks aren't workspace views, hide Share + lane tabs.
   // My Tasks is a personal filtered view; sharing it is meaningless.
   // "New task" becomes the sole primary CTA on My Tasks (M2).
   const showWorkspaceTabs = !isInbox && !isMyTasks;
@@ -109,7 +109,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
           </button>
 
           {/* M4: Export + Print demoted from primary toolbar → overflow menu.
-              Share stays primary — it's an active collaboration gesture.
+              Share stays primary, it's an active collaboration gesture.
               Export/Print are utility actions used infrequently. */}
           {showShare ? (
             <span className="hidden md:inline-flex">
@@ -173,7 +173,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
 }
 
 /**
- * Secondary actions menu — collapses Export/Print (always) and
+ * Secondary actions menu, collapses Export/Print (always) and
  * Search/Share (mobile-only) into a single ··· popover.
  *
  * M4 (2026-05-28): Export + Print demoted from primary toolbar here.
@@ -193,7 +193,7 @@ function OverflowMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
-  // Export hooks — only active when workspace is available.
+  // Export hooks, only active when workspace is available.
   const { toast } = useToast();
   const { state } = useTasks();
   const pack = useDomain();
@@ -324,7 +324,7 @@ function OverflowMenu({
             {ws ? <div className="my-1 border-t border-line-soft" /> : null}
           </div>
 
-          {/* Export section — shown when workspace is active */}
+          {/* Export section, shown when workspace is active */}
           {ws ? (
             <>
               <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">

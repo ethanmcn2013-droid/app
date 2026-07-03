@@ -7,11 +7,11 @@ import { CallToAction } from "@/components/marketing/cta";
 import { SuiteArrows } from "@/components/suite-arrows";
 
 /**
- * Tasks marketing homepage — structure:
- *   1. TasksHeroTicker  — departure-board animation (flip mechanic → tasks· wordmark)
- *   2. Hero             — product intro text + animated live demo
- *   3. Anatomy          — task card anatomy breakdown
- *   4. CallToAction     — confident close
+ * Tasks marketing homepage, structure:
+ *   1. TasksHeroTicker , departure-board animation (flip mechanic → tasks· wordmark)
+ *   2. Hero            , product intro text + animated live demo
+ *   3. Anatomy         , task card anatomy breakdown
+ *   4. CallToAction    , confident close
  */
 export default function Home() {
   return (

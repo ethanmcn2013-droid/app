@@ -13,12 +13,12 @@ import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 /**
  * Auth resolution. Two layers:
  *
- * 1. `getCurrentUser()` — returns the internal user id (which equals
+ * 1. `getCurrentUser()`, returns the internal user id (which equals
  *    the Clerk id post-Phase-A). Falls back to `david` in dev when
  *    Clerk env vars aren't set so the app keeps running before
  *    deploy-time keys are provisioned.
  *
- * 2. `getActiveWorkspace()` — returns the workspace id the user is
+ * 2. `getActiveWorkspace()`, returns the workspace id the user is
  *    currently looking at. Reads the `tasks_active_ws` cookie if
  *    present and the user is a member; otherwise falls back to the
  *    user's first membership; otherwise `ws-legacy` (dev fallback).
@@ -31,7 +31,7 @@ const ACTIVE_WORKSPACE_COOKIE = "tasks_active_ws";
 
 const DEV_FALLBACK_USER: UserId = "david";
 
-/** True when Clerk env is missing — dev / preview before keys land. */
+/** True when Clerk env is missing, dev / preview before keys land. */
 function clerkConfigured(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
@@ -81,7 +81,7 @@ export async function getCurrentUser(): Promise<UserId> {
     // arrives via the shared Clerk session (cross-product hop) before the
     // `user.created` webhook fires will have a users row so Analytics
     // `listForUser` can resolve via clerk_id. ensureUserProvisioned uses
-    // INSERT OR IGNORE — safe to call on every request; DB round-trip is
+    // INSERT OR IGNORE, safe to call on every request; DB round-trip is
     // cheap relative to the auth() call already above.
     //
     // B6 (Phase 3.6): pass email so ensureUserProvisioned can backfill
@@ -114,7 +114,7 @@ export async function getCurrentUser(): Promise<UserId> {
       .where(eq(users.clerkId, clerkId));
     if (row) return row.id;
 
-    // Webhook hasn't fired yet — return the Clerk id directly so
+    // Webhook hasn't fired yet, return the Clerk id directly so
     // anything queryable by user id still works. Subsequent requests
     // pick up the row once it's persisted.
     return clerkId;
@@ -188,7 +188,7 @@ export async function listMyWorkspaces(): Promise<
     return [
       {
         id: DEMO_WORKSPACE_ID,
-        name: "The Orchard — events",
+        name: "The Orchard, events",
         slug: "the-orchard",
         role: "owner",
       },

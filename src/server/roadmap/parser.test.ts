@@ -6,7 +6,7 @@
  *
  * The `--conditions=react-server` flag is required because the
  * parser imports `server-only`, whose default entry throws on
- * import — the `react-server` condition resolves to an empty stub.
+ * import, the `react-server` condition resolves to an empty stub.
  *
  * The parser reads `docs/gtm-plan.md` from the cwd, so this file
  * assumes you run it from the project root.
@@ -93,7 +93,7 @@ test("week numbers are in 0..8", () => {
 
 test("the Show HN row (06-16, bolded) is flagged isLaunch=true", () => {
   // The plan's Week 6 calendar row for HN Show HN uses bold across
-  // the whole row — the parser should pick that up. There is also a
+  // the whole row, the parser should pick that up. There is also a
   // 14-day-Gantt row dated 2026-06-16 with a bolded date column.
   const showHn = items.filter(
     (it) =>

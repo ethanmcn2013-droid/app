@@ -30,7 +30,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Compile the next morning's digest for a given user in a given
- * workspace. Pure read function — no inserts. Designed to be called
+ * workspace. Pure read function, no inserts. Designed to be called
  * from the manual "Send digest" CLI / cron endpoint without side-
  * effects so it stays safe to preview in the UI.
  *

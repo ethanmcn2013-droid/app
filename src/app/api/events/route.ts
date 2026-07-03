@@ -1,13 +1,13 @@
 import { tasksEvents, type TasksChangedPayload } from "@/server/events";
 
 export const dynamic = "force-dynamic";
-// Node runtime — EventEmitter isn't edge-friendly, and we already
+// Node runtime, EventEmitter isn't edge-friendly, and we already
 // lean on Node modules elsewhere in /api.
 export const runtime = "nodejs";
 
 /**
  * Realtime feature flag. The in-process EventEmitter only fans out to
- * subscribers in the SAME Node process — on Vercel that means one
+ * subscribers in the SAME Node process, on Vercel that means one
  * lambda instance, so a mutation in lambda A is invisible to a
  * subscriber in lambda B. Until a real substrate lands (Upstash
  * pub/sub, Pusher, Liveblocks), the SSE stream stays off in

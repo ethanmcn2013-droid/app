@@ -82,7 +82,7 @@ export async function moveTaskAction(
 ): Promise<Task[]> {
   if (!id || !LANE_ORDER.includes(toLane)) return [];
   const ws = await getActiveWorkspace();
-  // Pre-read prior lane — workspace guard on the read so a caller who
+  // Pre-read prior lane, workspace guard on the read so a caller who
   // knows a foreign task id gets a silent no-op instead of leaking the
   // lane value (or worse, re-parking the task).
   const [row] = await db
@@ -117,7 +117,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return getTasks(ws);
 
-  // Recurring tasks that are being completed don't go to "done" — they
+  // Recurring tasks that are being completed don't go to "done", they
   // bounce back to "todo" with the due date advanced by one interval.
   if (row.recurrence && row.lane !== "done") {
     const nextDueAt = advanceDate(row.dueAt ?? new Date(), row.recurrence);
@@ -154,7 +154,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
 /** Walk `d` forward to the next day matching `weekday` (0-6). Capped
  *  at 7 iterations: a valid weekday is always reachable within a
  *  week, so a corrupt value (e.g. 8 from a bad migration row) can no
- *  longer spin the server action forever — it just stops after a
+ *  longer spin the server action forever, it just stops after a
  *  full week and returns whatever day it's on. */
 function walkToWeekday(d: Date, weekday: number): void {
   for (let i = 0; i < 7 && d.getDay() !== weekday; i++) {
@@ -183,7 +183,7 @@ function advanceDate(from: Date, r: RecurrenceSpec): Date {
   // If the computed date is already in the past, keep advancing by
   // one interval until we land in the future. Hard-capped at 600
   // iterations (~50 years of monthly steps) so a malformed spec or
-  // a clock skew can't hang the request — well past any real
+  // a clock skew can't hang the request, well past any real
   // recurrence horizon.
   const now = Date.now();
   for (let guard = 0; d.getTime() < now && guard < 600; guard++) {
@@ -262,16 +262,16 @@ function sanitizeCents(value: number | null): number | null {
  * absent and will be stripped even if the caller somehow submits them.
  *
  * Non-patchable via this action (and why):
- *   - `id`            — PK; never mutated after insert
- *   - `workspaceId`   — tenant boundary; relocating a task into a
+ *   - `id`           , PK; never mutated after insert
+ *   - `workspaceId`  , tenant boundary; relocating a task into a
  *                       foreign workspace is the P1-1 vuln
- *   - `parentTaskId`  — structural relationship; set only at creation
+ *   - `parentTaskId` , structural relationship; set only at creation
  *                       via `addTaskAction`
- *   - `sourceNoteId`  — provenance metadata; set at creation only
- *   - `isMilestone`   — has its own dedicated `setTaskMilestoneAction`
- *   - `createdAt`     — server-managed; immutable after insert
- *   - `updatedAt`     — server-managed; always written via `bump()`
- *   - `comments`      — derived count in the query layer, not a column
+ *   - `sourceNoteId` , provenance metadata; set at creation only
+ *   - `isMilestone`  , has its own dedicated `setTaskMilestoneAction`
+ *   - `createdAt`    , server-managed; immutable after insert
+ *   - `updatedAt`    , server-managed; always written via `bump()`
+ *   - `comments`     , derived count in the query layer, not a column
  */
 const PATCHABLE_TASK_COLUMNS = new Set([
   "title",
@@ -300,7 +300,7 @@ export async function updateTaskAction(
 ): Promise<Task[]> {
   const ws = await getActiveWorkspace();
   // Build the SET payload from only explicitly allowed columns.
-  // This is an action-boundary allowlist — it strips ownership /
+  // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
   // sourceNoteId, isMilestone, createdAt, updatedAt) regardless of
   // what the caller submits, and independently of the input type.
@@ -363,7 +363,7 @@ export async function addTaskAction(input: {
    *  [0, 99_999_999]; NaN / Infinity collapse to null. */
   cents?: number | null;
   /** Optional parent task id. When set, this row is created as a
-   *  subtask — it inherits its parent's workspace and stays out of
+   *  subtask, it inherits its parent's workspace and stays out of
    *  the top-level views (`getTasks` filters on parent_task_id IS
    *  NULL). One level of nesting only in v1. */
   parentTaskId?: string | null;
@@ -404,7 +404,7 @@ export async function addTaskAction(input: {
 }
 
 /**
- * Persist a drag — write the new lane and float position. When the
+ * Persist a drag, write the new lane and float position. When the
  * lane changes, also record a "move" activity row matching what
  * `moveTaskAction` writes, so the conversation feed stays consistent
  * regardless of which entry point the user took.
@@ -474,7 +474,7 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
 }
 
 /**
- * RW-3b — toggle the milestone flag on a task.
+ * RW-3b, toggle the milestone flag on a task.
  *
  * D6 contract: setting isMilestone=true fills the Roadmap's PRIVATE draft
  * only. Nothing here auto-publishes. The publish gate is separate and
@@ -482,7 +482,7 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
  *
  * Reversible: calling with `false` unsets the flag. If a Roadmap node
  * was generated from this task, the Roadmap curation overlay controls
- * visibility (hide toggle) — the node is NOT auto-deleted on unset,
+ * visibility (hide toggle), the node is NOT auto-deleted on unset,
  * preventing accidental data loss from an accidental mis-tap.
  *
  * Workspace guard: the update only fires when the row belongs to the

@@ -12,7 +12,7 @@ import { getActiveWorkspace } from "@/server/auth";
  *
  * Sweeps every uncompleted task whose due date is strictly before
  * end-of-today in server time and slides it to tomorrow. Single
- * transaction — the inbox sees one atomic flip rather than a stutter
+ * transaction, the inbox sees one atomic flip rather than a stutter
  * of moving rows.
  *
  * Overdue heuristic mirrors `cross-workspace.ts`:
@@ -73,12 +73,12 @@ export async function rollForwardIncompleteAction(): Promise<{
       }
       continue;
     }
-    // Branch 2: text-only — accept exactly ISO `YYYY-MM-DD`.
+    // Branch 2: text-only, accept exactly ISO `YYYY-MM-DD`.
     const iso = parseIsoDay(r.due);
     if (iso && iso < todayIso) {
       // Synthesize a dueAt at local midnight of the parsed date plus
       // one day, so the row gains a structured timestamp on its way
-      // forward — better data quality after one click.
+      // forward, better data quality after one click.
       const parsed = new Date(`${iso}T00:00:00`);
       const nextDueAt = addDays(parsed, 1);
       queued.push({
@@ -101,7 +101,7 @@ export async function rollForwardIncompleteAction(): Promise<{
         .set({
           dueAt: q.nextDueAt,
           // Only overwrite the human label when the row already had
-          // one — preserve "no label" rows as-is.
+          // one, preserve "no label" rows as-is.
           ...(q.nextDue !== null ? { due: q.nextDue } : {}),
           updatedAt,
         })
@@ -124,7 +124,7 @@ export async function rollForwardIncompleteAction(): Promise<{
  * Cheap pre-flight read so the inbox page can decide whether to
  * render the roll-forward button at all (zero overdue → hide).
  *
- * Same heuristic as `rollForwardIncompleteAction` — keep them in
+ * Same heuristic as `rollForwardIncompleteAction`, keep them in
  * lockstep so the rendered count matches what the action would
  * actually move.
  */
@@ -159,7 +159,7 @@ export async function getOverdueTodayCount(): Promise<number> {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Helpers — kept private to this module so the canonical heuristic
+// Helpers, kept private to this module so the canonical heuristic
 // in `cross-workspace.ts` stays the public reference.
 // ────────────────────────────────────────────────────────────────────
 
@@ -177,7 +177,7 @@ function isoDay(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-/** Accept `YYYY-MM-DD` only — return null for anything else. */
+/** Accept `YYYY-MM-DD` only, return null for anything else. */
 function parseIsoDay(value: string | null | undefined): string | null {
   if (!value) return null;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());

@@ -14,7 +14,7 @@ export type DemoState = {
       grabbing: boolean;
       reading: boolean;
       /** Brief 600ms post-arrival window during which the label is
-       *  still visible — gives the eye time to read the name on a
+       *  still visible, gives the eye time to read the name on a
        *  cursor that just popped in. */
       justArrived: boolean;
       label?: string;
@@ -27,7 +27,7 @@ export type DemoState = {
   /** The teammate's earlier note shown above the live-typed comment in
    *  the inline thread. Domain-true (drawn from the active pack), so a
    *  wedding planner watching the demo reads "RSVPs at 89%, on pace."
-   *  — their own world — not a generic placeholder. */
+   * , their own world, not a generic placeholder. */
   staticComment: string;
   openCommentTaskId: string | null;
   typingFromUser: UserId | null;

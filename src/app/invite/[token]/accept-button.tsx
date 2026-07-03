@@ -21,7 +21,7 @@ export function AcceptInviteButton({ token }: { token: string }) {
         const result = await acceptInviteAction(token);
         toast(`Joined ${result.workspaceName}`, {
           tone: "success",
-          body: "Open the board — you're in.",
+          body: "Open the board, you're in.",
         });
         router.push("/app/board?invite=accepted");
       } catch (e) {

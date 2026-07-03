@@ -6,7 +6,7 @@ import { getCurrentUserOrNull } from "@/server/auth";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Redeem — Tasks" };
+export const metadata = { title: "Redeem, Tasks" };
 
 export default async function RedeemPage({
   params,

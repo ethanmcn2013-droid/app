@@ -18,7 +18,7 @@ const NAV: { href: string; label: string; external?: boolean }[] = [
 ];
 
 /**
- * L3 — auth-aware marketing nav (DESIGN.md §14).
+ * L3, auth-aware marketing nav (DESIGN.md §14).
  * When authed: no "Sign in"; account menu replaces auth controls.
  * The isAuthed prop is set by the server wrapper (SiteNavServer) so no
  * client-side auth fetch is needed. Unauthed: identical to prior behavior.
@@ -89,7 +89,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
 
         <div className="flex items-center gap-2">
           {isAuthed ? (
-            /* L3: authed — account menu replaces auth controls (DESIGN.md §14) */
+            /* L3: authed, account menu replaces auth controls (DESIGN.md §14) */
             <div className="inline-flex items-center">
               <UserButton
                 appearance={{
@@ -108,7 +108,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
             </>
           )}
 
-          {/* Mobile menu toggle — only visible below md */}
+          {/* Mobile menu toggle, only visible below md */}
           <button
             ref={triggerRef}
             type="button"
@@ -134,7 +134,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
         </div>
       </div>
 
-      {/* Mobile dropdown — below-the-bar, hairline-separated, no shadow */}
+      {/* Mobile dropdown, below-the-bar, hairline-separated, no shadow */}
       {open && (
         <div
           id={menuId}

@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * One-tap ICS feed of the GTM roadmap — every dated post-time, press
+ * One-tap ICS feed of the GTM roadmap, every dated post-time, press
  * send, paid-spend launch, and live launch beat as a calendar event.
  *
  * Sensitive: the feed reveals launch dates and the full week-by-week

@@ -9,7 +9,7 @@ import { TASKS_DOMAIN } from "@/lib/product-urls";
  *
  * Sibling to {@link ShareThisWeekButton} on the inbox daily-digest
  * header. Where that button copies the share-card PNG URL (cycle 22),
- * this one copies a *text* summary — markdown bullets of the tasks
+ * this one copies a *text* summary, markdown bullets of the tasks
  * that closed this week, suitable for pasting into a Friday team
  * channel update.
  *
@@ -146,7 +146,7 @@ export function CopySlackSummary({
         </>
       ) : (
         <>
-          {/* Speech-bubble glyph — signals "for chat" without leaning
+          {/* Speech-bubble glyph, signals "for chat" without leaning
               on a Slack-branded mark. Stroke-based to match the
               share-this-week button's clipboard icon. */}
           <svg

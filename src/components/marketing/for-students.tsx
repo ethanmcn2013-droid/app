@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * `/for/students` — long-form vertical landing for college students.
+ * `/for/students`, long-form vertical landing for college students.
  * Sister to `/for/freelancers`. Wedding self-serve now lives on
  * studio `/weddings`; Tasks keeps the application/template surfaces.
  *
@@ -179,7 +179,7 @@ export function ForStudents() {
         <ul className="mt-5 space-y-4">
           <Reason
             title="Group projects work better when everyone can edit."
-            body="Three editing guests are free on every workspace, including yours. Your two group-project teammates drop in via magic link — no email-the-Google-doc, no dance over who has edit access. They open the link and write."
+            body="Three editing guests are free on every workspace, including yours. Your two group-project teammates drop in via magic link, no email-the-Google-doc, no dance over who has edit access. They open the link and write."
           />
           <Reason
             title="No sprints, no epics, no jargon."

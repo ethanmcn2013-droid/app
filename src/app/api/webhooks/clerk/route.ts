@@ -10,7 +10,7 @@ import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
 /**
- * .edu Pro grant — when the user's primary email ends in `.edu`,
+ * .edu Pro grant, when the user's primary email ends in `.edu`,
  * we auto-grant Pro for one academic semester (~120 days). The
  * entitlement is user-level (workspaceId = NULL) so the Phase 4
  * layered-resolution path picks it up across every workspace the
@@ -18,7 +18,7 @@ import type { WebhookEvent } from "@clerk/nextjs/server";
  *
  * Why 120 days: long enough to cover a single semester (~16 weeks)
  * plus a buffer for the post-semester wrap-up. Shorter than a year
- * so the student renews intentionally — and bumps into the manifesto
+ * so the student renews intentionally, and bumps into the manifesto
  * pricing rather than the silent auto-charge.
  */
 const EDU_PRO_DAYS = 120;
@@ -37,7 +37,7 @@ export const dynamic = "force-dynamic";
  * If Clerk sends a duplicate webhook (re-delivery, retry), all three
  * INSERTs are idempotent on UNIQUE constraints so the transaction
  * is safe to replay. Get this wrong and a user lands without a
- * workspace, which means every protected route 500s — so we lean on
+ * workspace, which means every protected route 500s, so we lean on
  * the transaction to fail-atomic.
  */
 export async function POST(req: Request) {
@@ -171,7 +171,7 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
   const initials = deriveInitials(u);
 
   // Internal user id = Clerk id. Skipping the dual-id indirection
-  // simplifies every callsite that holds a "user id" — there's only
+  // simplifies every callsite that holds a "user id", there's only
   // one. Clerk ids are URL-safe and DB-safe.
   const userId = u.id;
 
@@ -201,7 +201,7 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
     `);
   });
 
-  // .edu Pro grant. Runs OUTSIDE the transaction — the workspace
+  // .edu Pro grant. Runs OUTSIDE the transaction, the workspace
   // exists by this point, and a failure here shouldn't roll back
   // the user creation. Worst case: the entitlement is missed, the
   // student lands on Free, and they redeem manually later.

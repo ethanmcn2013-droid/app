@@ -9,19 +9,19 @@
 export type TemplateEssay = {
   /** Must match a `Template.id` in `@/lib/templates`. */
   templateId: string;
-  /** SEO `<title>` — punchier than the template name; long-tail aware. */
+  /** SEO `<title>`, punchier than the template name; long-tail aware. */
   seoTitle: string;
   /** Meta description for the page + OG card subhead. */
   seoDescription: string;
   /** H1 on the page. Manifesto-voiced. Different from template.name
    *  (which is utilitarian). */
   heroline: string;
-  /** Opening paragraph — the hook. Names the problem before pitching
+  /** Opening paragraph, the hook. Names the problem before pitching
    *  the list. */
   intro: string;
   /** Body sections in order. Each gets an `<h2>`. Aim for 3–4
    *  sections totalling ~200 words. */
   sections: Array<{ heading: string; body: string }>;
-  /** Optional closing kicker — one sentence that lands the CTA. */
+  /** Optional closing kicker, one sentence that lands the CTA. */
   closer?: string;
 };

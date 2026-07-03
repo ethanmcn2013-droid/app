@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * `/for/community` — long-form landing for public-facing professionals
+ * `/for/community`, long-form landing for public-facing professionals
  * who coordinate people who don't work for them: teachers, school
  * administrators, club coaches, parish coordinators, community
  * organisers. The §2.1 archetype whose hardest job is visibility into
@@ -86,7 +86,7 @@ export function ForCommunity() {
         <ul className="mt-5 space-y-4">
           <Reason
             title="Magic-link guests for everyone you coordinate."
-            body="Three free guests on the free tier. Each one opens the link from a phone, sees only their part of the work, and replies in the workspace — not in five different threads you have to reconcile in your head."
+            body="Three free guests on the free tier. Each one opens the link from a phone, sees only their part of the work, and replies in the workspace, not in five different threads you have to reconcile in your head."
           />
           <Reason
             title="The roadmap is the parent email."

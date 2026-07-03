@@ -19,7 +19,7 @@ import { deleteAccountForUser } from "@/server/account";
  * Order is intentional: DB purge BEFORE Clerk delete, so a transient
  * Clerk-side failure doesn't leave an orphaned Turso footprint. If
  * the Clerk delete fails after the DB purge succeeds, the user can
- * retry — the DB-purge step is idempotent.
+ * retry, the DB-purge step is idempotent.
  *
  * Errors: returns 401 on missing auth, 500 on any failure during
  * the cascade. The client-side flow surfaces the error and offers

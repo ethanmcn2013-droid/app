@@ -1,23 +1,23 @@
 import { ImageResponse } from "next/og";
 
-// nodejs runtime — see cycle-26 review note in
+// nodejs runtime, see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
 // dev mode + ImageResponse intermittently breaks with "failed to
 // pipe response"; nodejs is reliable.
 export const runtime = "nodejs";
-export const alt = "Tasks — 8 features we'll never ship";
+export const alt = "Tasks, 8 features we'll never ship";
 export const size = { width: 1200, height: 675 };
 export const contentType = "image/png";
 
 /**
- * X pinned-post image — 1200×675.
+ * X pinned-post image, 1200×675.
  *
  * Per gtm-week-1.md 9:30pm: "8 features we'll never ship. /principles
- * — the other roadmap." Black-on-cream, Geist semibold, no emojis.
+ *, the other roadmap." Black-on-cream, Geist semibold, no emojis.
  * Subtle: under the headline, four refusal captions sit as small
  * rows, each crossed out with a thin strikethrough line.
  *
- * Geist not fetched — same rationale as the other social images;
+ * Geist not fetched, same rationale as the other social images;
  * Geist heads the font-family stack but the renderer falls back to
  * its default sans. Visual concession noted.
  */
@@ -93,7 +93,7 @@ export default async function XPinnedOG() {
           </div>
         </div>
 
-        {/* Refusal preview rows — each with thin strikethrough */}
+        {/* Refusal preview rows, each with thin strikethrough */}
         <div
           style={{
             display: "flex",

@@ -46,7 +46,7 @@ export type ReconcileResult = {
  * actually inserts here.
  *
  * Runs from inside Tasks's daily digest cron (single hobby cron
- * slot — see vercel.json). Sub-second for the row volumes we
+ * slot, see vercel.json). Sub-second for the row volumes we
  * realistically expect, even years out.
  */
 export async function reconcileEntitlements(): Promise<ReconcileResult> {

@@ -9,7 +9,7 @@ import { DOMAINS, type DomainId } from "@/lib/domains";
 export function Hero() {
   // Default audience: wedding. Matches the GTM wedge (Founding Venue Programme)
   // and is the highest-empathy opener for first-time visitors. Was "marketing"
-  // pre-2026-05-13 — flagged by the post-rollout UX review.
+  // pre-2026-05-13, flagged by the post-rollout UX review.
   const [domain, setDomain] = useState<DomainId>("wedding");
   const pack = DOMAINS[domain];
 
@@ -31,17 +31,17 @@ export function Hero() {
           Demo is live
         </p>
 
-        {/* Domain toggle — proves the tool fits whatever you do.
+        {/* Domain toggle, proves the tool fits whatever you do.
             id="demo" anchors deep-links from the suite landing page. */}
         <div id="demo" className="mt-8 scroll-mt-20 md:mt-10">
           <DomainToggle domain={domain} onChange={setDomain} />
         </div>
 
-        {/* Demo — keyed by domain so swap = clean state reset.
+        {/* Demo, keyed by domain so swap = clean state reset.
          *  Desktop renders at natural fluid width (perspective +
          *  shadow intact). Below md, `.demo-fit` scales the whole
          *  proven canvas down to fit the phone instead of clipping it
-         *  to a headless sliver — the 80% are phone-first and this is
+         *  to a headless sliver, the 80% are phone-first and this is
          *  the most-seen product surface. Scale rules: globals.css. */}
         <div className="mt-6 md:mt-8">
           <AnimatePresence mode="wait" initial={false}>

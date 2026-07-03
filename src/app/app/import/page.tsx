@@ -4,11 +4,11 @@ import { getActiveWorkspace } from "@/server/auth";
 import { getActiveWorkspaceNameAction } from "@/server/actions/import";
 import { ImportApp } from "@/components/app/import/import-app";
 
-// /app/import is a runtime, DB-backed view — never prerender it.
+// /app/import is a runtime, DB-backed view, never prerender it.
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Import — Tasks",
+  title: "Import, Tasks",
 };
 
 export default async function ImportPage() {

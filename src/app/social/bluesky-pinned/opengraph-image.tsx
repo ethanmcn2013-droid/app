@@ -1,16 +1,16 @@
 import { ImageResponse } from "next/og";
 
-// nodejs runtime — see cycle-26 review note in
+// nodejs runtime, see cycle-26 review note in
 // `/templates/[slug]/opengraph-image.tsx`. Edge runtime + Turbopack
 // dev mode + ImageResponse intermittently breaks with "failed to
 // pipe response"; nodejs is reliable.
 export const runtime = "nodejs";
-export const alt = "Tasks — 8 features we'll never ship";
+export const alt = "Tasks, 8 features we'll never ship";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /**
- * Bluesky pinned-post image — 1200×630.
+ * Bluesky pinned-post image, 1200×630.
  *
  * Same content concept as `/social/x-pinned/opengraph-image` (the
  * "8 features we'll never ship" headline + four preview refusals,

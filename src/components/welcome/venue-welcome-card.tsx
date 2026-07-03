@@ -63,7 +63,7 @@ export function VenueWelcomeCard({ sponsorName, sponsorSlug }: Props) {
             Compliments of {sponsorName}
           </div>
           <p className="text-[14px] leading-[1.5] text-ink">
-            Your wedding workspace is ready. Plan without the noise — every
+            Your wedding workspace is ready. Plan without the noise, every
             view is the same items, all in plain English.
           </p>
         </div>

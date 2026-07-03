@@ -27,7 +27,7 @@ export async function sendEmail(
   args: SendArgs,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
   if (!resend) {
-    console.warn("[email] not configured — would have sent:", {
+    console.warn("[email] not configured, would have sent:", {
       to: args.to,
       subject: args.subject,
       preview: args.text?.slice(0, 120) ?? args.html.slice(0, 120),
@@ -56,7 +56,7 @@ export async function sendEmail(
 // Templates
 // ────────────────────────────────────────────────────────────────────
 
-/** Workspace invite email — sent when an owner adds a member by email
+/** Workspace invite email, sent when an owner adds a member by email
  *  through the cycle 17 / cycle 25 invite flow. The recipient clicks
  *  the link to accept and join the workspace. */
 export function inviteEmailHtml(input: {
@@ -82,7 +82,7 @@ export function inviteEmailHtml(input: {
           </p>
           <a href="${acceptUrl}" style="display:inline-block;background:#14151a;color:#ffffff;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;text-decoration:none;">Accept invite</a>
           <p style="font-size:12.5px;color:#94a3b8;margin:24px 0 0;">
-            Link expires ${escapeHtml(expiresLabel)}. If you didn&rsquo;t expect this email, you can ignore it — nothing happens until you click.
+            Link expires ${escapeHtml(expiresLabel)}. If you didn&rsquo;t expect this email, you can ignore it, nothing happens until you click.
           </p>
         </td></tr>
       </table>
@@ -132,7 +132,7 @@ export function digestEmailHtml(digest: DailyDigest, recipientName: string): str
 
     <hr style="margin:28px 0;border:0;border-top:1px solid #e5e7eb">
     <p style="margin:0;font-size:11.5px;color:#94a3b8;line-height:1.55">
-      Tasks. Anti-spam by design — this is the only scheduled email we send.
+      Tasks. Anti-spam by design, this is the only scheduled email we send.
       <a href="${TASKS_URL}/app/inbox" style="color:#4f46e5;text-decoration:none">Open inbox</a> ·
       <a href="${TASKS_URL}/app/settings" style="color:#94a3b8;text-decoration:none">Notification settings</a>
     </p>
@@ -157,7 +157,7 @@ export function studentCodeEmailHtml(code: string, redeemUrl: string): string {
 </body></html>`;
 }
 
-/** Magic-link share email — owner sends a workspace preview to a guest. */
+/** Magic-link share email, owner sends a workspace preview to a guest. */
 export function shareLinkEmailHtml(
   workspaceName: string,
   url: string,

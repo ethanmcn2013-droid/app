@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { CONTACT_EMAIL } from "@/lib/product-urls";
 
 export const metadata = {
-  title: "Terms — Tasks",
+  title: "Terms, Tasks",
   description:
     "The deal. What you can do with Tasks, what we owe you, and what either side can walk away from.",
 };
@@ -11,7 +11,7 @@ export const metadata = {
 const LAST_UPDATED = "2026-05-07";
 
 /**
- * /terms — terms of service for Tasks. Plain-prose, hand-written.
+ * /terms, terms of service for Tasks. Plain-prose, hand-written.
  * Includes the AUP inline rather than as a separate document; one
  * page is easier to actually read. The legal hooks (limitation,
  * disclaimer, governing law) sit toward the end so they don&rsquo;t
@@ -47,7 +47,7 @@ export default function TermsPage() {
                 signing up on behalf of an organization, you confirm
                 you have the authority to bind it. Using Tasks counts
                 as agreeing to these terms and to the acceptable-use
-                rules below — they&rsquo;re part of the same document.
+                rules below, they&rsquo;re part of the same document.
               </p>
             </Section>
 
@@ -77,7 +77,7 @@ export default function TermsPage() {
               </p>
               <p>
                 Refunds within fourteen days of a charge are at our
-                discretion and we&rsquo;re generous about it — email
+                discretion and we&rsquo;re generous about it, email
                 and ask. After fourteen days we don&rsquo;t prorate
                 cancellations; you keep the paid tier through the end
                 of the period you already paid for. Price changes get
@@ -151,7 +151,7 @@ export default function TermsPage() {
                 where we can.
               </p>
               <p>
-                After termination — your choice or ours — you can
+                After termination, your choice or ours, you can
                 export your data for sixty days. After that the
                 workspace is deleted and the retention rules in the{" "}
                 <Link href="/privacy">privacy notice</Link> apply.
@@ -182,8 +182,8 @@ export default function TermsPage() {
 
             <Section title="Changes">
               <p>
-                If we materially change these terms — new restriction,
-                new pricing structure, new liability cap — we&rsquo;ll
+                If we materially change these terms, new restriction,
+                new pricing structure, new liability cap, we&rsquo;ll
                 email signed-up users at least thirty days before they
                 take effect. Continuing to use Tasks after that counts
                 as agreeing to the update. The date at the top of this

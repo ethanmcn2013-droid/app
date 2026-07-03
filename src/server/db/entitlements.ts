@@ -23,7 +23,7 @@ import { TIER_RANK, tierAtLeast } from "@/lib/entitlements-shared/tiers";
  * makes the local table empty.
  *
  * `workspaceId` is accepted for signature compatibility with all
- * existing callers; the shared resolver is user-level — the
+ * existing callers; the shared resolver is user-level, the
  * argument only scopes the local-fallback path.
  *
  * Returns "free" on any DB error. Tier reads MUST NOT crash a page.
@@ -36,14 +36,14 @@ export async function getEffectiveTier(
   try {
     shared = (await resolveEntitlement(userId)).tier;
   } catch {
-    // Shared DB unreachable — local read below still stands.
+    // Shared DB unreachable, local read below still stands.
   }
 
   let local: EntitlementTier = "free";
   try {
     local = await getEffectiveTierLocal(userId, workspaceId);
   } catch {
-    // Local read failed — fall back to whatever shared resolved to.
+    // Local read failed, fall back to whatever shared resolved to.
   }
 
   return TIER_RANK[shared] >= TIER_RANK[local] ? shared : local;

@@ -32,7 +32,7 @@ import { pingStudio } from "@/lib/ops/ping-studio";
  * with a daily-digest entitlement; for now this is per-user.
  *
  * Anti-spam contract: this is the ONLY scheduled outbound channel.
- * Lane moves, status flips, comments without @mentions — none of
+ * Lane moves, status flips, comments without @mentions, none of
  * those produce a separate email. The digest is the contract.
  */
 export const dynamic = "force-dynamic";
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
       );
     }
   } else {
-    // Timing-safe comparison — prevents timing oracle on the secret.
+    // Timing-safe comparison, prevents timing oracle on the secret.
     const provided = req.headers
       .get("authorization")
       ?.replace(/^Bearer\s+/i, "") ?? "";
@@ -98,7 +98,7 @@ export async function GET(req: Request) {
 
   // Impersonal scheduled cron: Vercel's cron invocation has no session,
   // so without a ?user= override there is no resolvable user. That is
-  // the normal scheduled-run shape, not an error — `getCurrentUser()`
+  // the normal scheduled-run shape, not an error, `getCurrentUser()`
   // used to throw here and 500 the route (it never actually ran in
   // prod because CRON_SECRET was unset and the guard above 500'd
   // first). Record the cross-repo heartbeat so Signal HQ sees the job
@@ -114,7 +114,7 @@ export async function GET(req: Request) {
   }
 
   // Resolve workspace: explicit override OR the user's first
-  // workspace membership (cron is impersonal — no cookie context).
+  // workspace membership (cron is impersonal, no cookie context).
   let workspaceId: string;
   if (overrideWorkspace) {
     workspaceId = overrideWorkspace;
@@ -152,7 +152,7 @@ export async function GET(req: Request) {
 
   // E-3.3 (2026-05-14): every daily cron run also reconciles the
   // local Tasks entitlements against the shared signal-entitlements
-  // DB. Idempotent — only the rare crash-between-writes case actually
+  // DB. Idempotent, only the rare crash-between-writes case actually
   // inserts anything. Wrapped in try/catch so a reconcile failure
   // cannot break the digest email it's piggybacked on.
   let reconcile: ReconcileResult | { error: string } | null = null;
@@ -167,7 +167,7 @@ export async function GET(req: Request) {
   // 09:00 UTC job is no longer a structural blind spot. Mirrors the
   // analytics cron→Studio ping. Fail-silent: a missing env or a slow
   // network must never break the digest. ok reflects the dispatch
-  // outcome — the job ran and email (if requested) was accepted.
+  // outcome, the job ran and email (if requested) was accepted.
   const pingOk = emailResult ? emailResult.ok : true;
   await pingStudio({
     source: "tasks_digest",

@@ -18,7 +18,7 @@ export function EmailRow({ user }: { user: UserResource }) {
         hint={
           primary?.verification.status === "verified"
             ? "Verified. We send sign-in codes here."
-            : "Pending verification — check your inbox."
+            : "Pending verification, check your inbox."
         }
         control={
           <div className="flex items-center justify-between gap-3">
@@ -228,7 +228,7 @@ function EmailChangeFlow({
           <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
             Sign-in codes now go to{" "}
             <strong className="text-ink">{newEmail}</strong>. Tell us if
-            something looks wrong — the old address still works for password
+            something looks wrong, the old address still works for password
             recovery for the next 24 hours.
           </p>
           <div className="mt-5 flex justify-end">

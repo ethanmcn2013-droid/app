@@ -23,7 +23,7 @@ export const stripeConfigured = Boolean(SECRET);
  *  the dashboard. Production sets these via env; dev defaults to the
  *  template values from `.env.example`.
  *
- *  Studio is the operator tier — unlimited workspaces the user
+ *  Studio is the operator tier, unlimited workspaces the user
  *  owns as sole admin; not sold on the public /pricing surface.
  *  The Stripe subscription
  *  is at the user level; entitlement rows for Studio carry
@@ -48,11 +48,11 @@ export type PaidTier = keyof typeof PRICE_IDS;
 export type BillingInterval = "monthly" | "annual";
 
 /**
- * Annual prices are sparse — only Workspace has one today (€120/yr,
+ * Annual prices are sparse, only Workspace has one today (€120/yr,
  * ratified 2026-05-16, Studio decision venue-editions-paid-tier). Set
  * STRIPE_PRICE_WORKSPACE_ANNUAL once the Stripe Price object exists.
  * Until then `priceIdFor(tier, "annual")` degrades to the monthly
- * price so the page's annual link never 500s — the buyer simply gets
+ * price so the page's annual link never 500s, the buyer simply gets
  * the monthly plan rather than a broken checkout.
  */
 const ANNUAL_PRICE_IDS: Partial<Record<PaidTier, string>> = {
@@ -75,7 +75,7 @@ export function priceIdFor(
 
 /**
  * `undefined` when the env var is not set. Callers must null-guard
- * before passing to `stripe.webhooks.constructEvent` — an empty string
+ * before passing to `stripe.webhooks.constructEvent`, an empty string
  * default would hide the missing-secret bug from TypeScript and produce
  * a runtime signature-verification failure instead of a clear error.
  */

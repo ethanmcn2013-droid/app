@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { PrinciplesManifesto } from "@/components/marketing/principles-manifesto";
 
 export const metadata = {
-  title: "Principles — Tasks",
+  title: "Principles, Tasks",
   description:
     "The features we won't ship. No per-seat pricing, no Gantt, no AI auto-complete, no push notifications. The refusal list is the brand spine.",
   openGraph: {

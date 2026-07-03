@@ -25,7 +25,7 @@ function dayLabel(i: number) {
   return num.toString();
 }
 
-// D4: workspaceId prop removed — read from DomainProvider context directly
+// D4: workspaceId prop removed, read from DomainProvider context directly
 // so calendar/page.tsx can be a sync server component (no Suspense boundary
 // against the board-shaped parent loading.tsx).
 export function CalendarApp() {
@@ -280,7 +280,7 @@ function DayList({
  * subscription" dialog. The feed itself is read-only and refreshed
  * by the client on its own cadence.
  *
- * The URL is built lazily once the popover opens — `window.location`
+ * The URL is built lazily once the popover opens, `window.location`
  * isn't available during SSR, so we defer until the click.
  */
 function SubscribeButton({ workspaceId }: { workspaceId: string }) {

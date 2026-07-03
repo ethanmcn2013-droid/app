@@ -16,7 +16,7 @@ import { StillProvisioning } from "@/components/welcome/still-provisioning";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Welcome — Tasks",
+  title: "Welcome, Tasks",
 };
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
@@ -32,14 +32,14 @@ export default async function WelcomePage({
   const preselectedSegment = segmentFromParam(params.use);
   const me = await getCurrentUser();
   // Guarantee the user has a real workspace before any state-mutating
-  // code runs. Webhook race / missing-webhook protection — see
+  // code runs. Webhook race / missing-webhook protection, see
   // ensure-user.ts for context.
   await ensureUserProvisioned(me);
   const ws = await getActiveWorkspace();
   if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
     // We just provisioned the user; getting ws-legacy back means
     // something deeper is wrong. Don't mutate the shared fallback
-    // workspace — show a still-setting-up state instead.
+    // workspace, show a still-setting-up state instead.
     return <StillProvisioning />;
   }
   // Returning users skip the welcome (they came here from the URL bar
@@ -56,7 +56,7 @@ export default async function WelcomePage({
   // sponsor.
   const venueWelcome = await detectVenueWelcome(me);
   if (venueWelcome && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
-    // Pure DB helper instead of `applyTemplateAction` — same reason as
+    // Pure DB helper instead of `applyTemplateAction`, same reason as
     // `redeemCompCodeAction`: the action calls `revalidatePath` which
     // is illegal during route render.
     await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
@@ -74,10 +74,10 @@ export default async function WelcomePage({
     redirect(target);
   }
 
-  // T1.2 — if the workspace was created via the templates flow
+  // T1.2, if the workspace was created via the templates flow
   // (Tasks remix toast inviting a Roadmap, or any future template-led
   // signup), `templateId` is set on the workspaces row. The picker
-  // should know — otherwise we ask the user to re-pick a domain when
+  // should know, otherwise we ask the user to re-pick a domain when
   // they've already chosen a template.
   let pendingTemplate: { id: string; name: string } | null = null;
   const [row] = await db

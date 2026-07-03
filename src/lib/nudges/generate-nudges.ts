@@ -8,7 +8,7 @@ export type NudgeKind =
   | "review-pile"
   | "doing-empty"
   /**
-   * LLM-authored nudge. NOT produced by `generateNudges` — kept pure
+   * LLM-authored nudge. NOT produced by `generateNudges`, kept pure
    * rules here on purpose. The kind exists in the union so the inbox
    * (and any future renderer) can format an LLM-sourced nudge with
    * the same shape and animations as a rules-based one. AI assist
@@ -112,7 +112,7 @@ export function generateNudges(
     (t) => t.assignees.includes(currentUser) && t.lane !== "done",
   );
 
-  // Rule 1 — idle in_progress
+  // Rule 1, idle in_progress
   for (const t of myOpen.filter((t) => t.lane === "doing")) {
     const days = idleDaysFor(t, now);
     if (days >= 7) {
@@ -138,7 +138,7 @@ export function generateNudges(
     }
   }
 
-  // Rule 2 — idle in_review (any reviewer; the bottleneck shows for all)
+  // Rule 2, idle in_review (any reviewer; the bottleneck shows for all)
   for (const t of tasks.filter((t) => t.lane === "review")) {
     const days = idleDaysFor(t, now);
     if (days >= 4) {
@@ -154,7 +154,7 @@ export function generateNudges(
     }
   }
 
-  // Rule 3 — past due (mine)
+  // Rule 3, past due (mine)
   for (const t of myOpen) {
     if (!t.dueAt) continue;
     const dDays = Math.floor((now.getTime() - t.dueAt.getTime()) / DAY_MS);
@@ -183,7 +183,7 @@ export function generateNudges(
     }
   }
 
-  // Rule 4 — blocker cleared (every blocker is done, but task is still
+  // Rule 4, blocker cleared (every blocker is done, but task is still
   // todo). Only fire for tasks the current user owns.
   for (const t of myOpen.filter(
     (t) => t.lane === "todo" && t.blockedBy && t.blockedBy.length > 0,
@@ -206,7 +206,7 @@ export function generateNudges(
     });
   }
 
-  // Rule 5 — review pile (>= 4 tasks in review)
+  // Rule 5, review pile (>= 4 tasks in review)
   const reviewCount = tasks.filter((t) => t.lane === "review").length;
   if (reviewCount >= 4) {
     const tpl = pickRand(REVIEW_PILE, "review-pile-" + reviewCount);
@@ -219,7 +219,7 @@ export function generateNudges(
     });
   }
 
-  // Rule 6 — doing-empty (>= 5 todo, 0 in progress)
+  // Rule 6, doing-empty (>= 5 todo, 0 in progress)
   const todoCount = myOpen.filter((t) => t.lane === "todo").length;
   const doingCount = myOpen.filter((t) => t.lane === "doing").length;
   if (todoCount >= 5 && doingCount === 0) {

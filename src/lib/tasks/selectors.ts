@@ -14,7 +14,7 @@ export function tasksByLane(
  * System column (todo/doing/review/done):
  *   Tasks whose `lane === columnKey` AND whose `boardColumnKey` is null/empty.
  *   Rationale: a task with a non-null `boardColumnKey` is "claimed" by its
- *   custom column — it should not double-appear in the system lane column on
+ *   custom column, it should not double-appear in the system lane column on
  *   the board even though `lane` still carries its canonical semantic value.
  *
  * Custom column (key starts with "col-"):
@@ -23,7 +23,7 @@ export function tasksByLane(
  *   List/Timeline/Calendar/export/print/SSE (those views never read boardColumnKey).
  *
  * This is the single place that encodes the COALESCE(boardColumnKey, lane)
- * logic for the board — board-app.tsx delegates entirely to this function.
+ * logic for the board, board-app.tsx delegates entirely to this function.
  */
 export function tasksByColumn(
   state: TasksState,
@@ -81,7 +81,7 @@ export function laneOrder(): LaneId[] {
 }
 
 /**
- * My Week buckets — the calm editorial briefing for `/app/my-tasks`.
+ * My Week buckets, the calm editorial briefing for `/app/my-tasks`.
  *
  * Each of the caller's open + recently-done tasks lands in exactly one
  * bucket. Priority order (first match wins) keeps the surface from
@@ -94,7 +94,7 @@ export function laneOrder(): LaneId[] {
  *   5. `doneRecently`     lane === done AND updatedAt within last 7 days
  *
  * Open tasks without a due date and without idle-attention pressure
- * simply don't appear — that's the spec's restraint. They live on the
+ * simply don't appear, that's the spec's restraint. They live on the
  * board and the list; My Week is the briefing, not the inbox.
  */
 export type MyWeekBuckets = {
@@ -137,7 +137,7 @@ export function bucketMyWeek(
   const sevenDaysAgo = new Date(now.getTime() - 7 * DAY_MS);
 
   for (const t of mine) {
-    // 5 — Done recently
+    // 5, Done recently
     if (t.lane === "done") {
       if (t.updatedAt.getTime() >= sevenDaysAgo.getTime()) {
         buckets.doneRecently.push(t);
@@ -148,7 +148,7 @@ export function bucketMyWeek(
     // Open tasks (todo/doing/review) below.
     const due = t.dueAt;
 
-    // 1 — Today: overdue or due today (open only)
+    // 1, Today: overdue or due today (open only)
     if (
       (t.lane === "todo" || t.lane === "doing") &&
       due &&
@@ -158,19 +158,19 @@ export function bucketMyWeek(
       continue;
     }
 
-    // 2 — Needs attention: idle Moving lane work
+    // 2, Needs attention: idle Moving lane work
     if (t.lane === "doing" && idleDays(t, now) >= ATTENTION_IDLE_DAYS) {
       buckets.needsAttention.push(t);
       continue;
     }
 
-    // 3 — Waiting: lane === review, regardless of date
+    // 3, Waiting: lane === review, regardless of date
     if (t.lane === "review") {
       buckets.waiting.push(t);
       continue;
     }
 
-    // 4 — This week: due in (today, today+7d]
+    // 4, This week: due in (today, today+7d]
     if (
       (t.lane === "todo" || t.lane === "doing") &&
       due &&
@@ -197,7 +197,7 @@ export function bucketMyWeek(
  * Split the Today bucket into dayparts: "Today" and "This evening".
  *
  * A task belongs to the evening when its due time is *today* at 17:00
- * or later — a clock the user actually typed ("florist 6pm"); quick-add
+ * or later, a clock the user actually typed ("florist 6pm"); quick-add
  * dates without a time resolve to midday, and carried items from
  * earlier days keep their morning place in Today. Zero configuration:
  * the daypart appears only when the day's own data can honestly draw

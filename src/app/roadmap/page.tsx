@@ -4,13 +4,13 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { TIMELINE_URL } from "@/lib/product-urls";
 
 export const metadata: Metadata = {
-  title: "Roadmap — Tasks",
+  title: "Roadmap, Tasks",
   description:
-    "What's coming, what's blocked, what we said no to — done right, for everyone. Roadmap is now its own product.",
+    "What's coming, what's blocked, what we said no to, done right, for everyone. Roadmap is now its own product.",
   openGraph: {
-    title: "Roadmap — Tasks",
+    title: "Roadmap, Tasks",
     description:
-      "What's coming, what's blocked, what we said no to — done right, for everyone. Roadmap is now its own product.",
+      "What's coming, what's blocked, what we said no to, done right, for everyone. Roadmap is now its own product.",
     type: "article",
   },
 };

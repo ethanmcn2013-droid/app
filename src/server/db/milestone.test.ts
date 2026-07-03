@@ -1,5 +1,5 @@
 /**
- * RW-3b regression tests — is_milestone flag: schema, toggle, read query shape.
+ * RW-3b regression tests, is_milestone flag: schema, toggle, read query shape.
  *
  * Tests are static (no DB connection, no server-only imports). They verify:
  *   1. The Task type carries isMilestone (compile-time + runtime assertions).
@@ -14,7 +14,7 @@
  *   ./node_modules/.bin/tsx --tsconfig tsconfig.json src/server/db/milestone.test.ts
  *
  * No DB connection required. Server-only modules are NOT imported at runtime
- * — only their source text is inspected via readFileSync (same approach used
+ *, only their source text is inspected via readFileSync (same approach used
  * for the migration guard below).
  */
 
@@ -87,7 +87,7 @@ test("Task type allows isMilestone to be omitted (legacy rows)", () => {
     externalContactEmail: null,
     cents: null,
     updatedAt: new Date(),
-    // isMilestone deliberately omitted — must be valid (optional field)
+    // isMilestone deliberately omitted, must be valid (optional field)
   };
   assert.strictEqual(t.isMilestone, undefined);
   assert.strictEqual(!!t.isMilestone, false, "undefined isMilestone must be falsy");
@@ -152,7 +152,7 @@ test("MilestoneTaskRow covers all ARCH_SPEC §1.2 fields", () => {
   assert.ok(typeof row.ownerEmail === "string" || row.ownerEmail === null);
 });
 
-test("MilestoneTaskRow allows dueAt: null (Later lane — D7)", () => {
+test("MilestoneTaskRow allows dueAt: null (Later lane, D7)", () => {
   const row: MilestoneTaskRow = {
     id: "t-undated",
     title: "Backup venue confirmed",
@@ -247,7 +247,7 @@ test("getMilestoneTasks filters WHERE is_milestone=true (strategy gate)", () => 
   const content = readFileSync(queriesPath, "utf8");
   assert.ok(
     content.includes("eq(tasks.isMilestone, true)"),
-    "getMilestoneTasks must filter on is_milestone=true — strategy gate (ARCH_SPEC §1.2)",
+    "getMilestoneTasks must filter on is_milestone=true, strategy gate (ARCH_SPEC §1.2)",
   );
 });
 
@@ -275,7 +275,7 @@ test("D6: setTaskMilestoneAction does NOT call any publish action", () => {
   );
   assert.ok(
     !fnBody.includes("revalidatePath") || fnBody.includes("revalidatePath"),
-    "revalidatePath is fine — just not publish",
+    "revalidatePath is fine, just not publish",
   );
 });
 

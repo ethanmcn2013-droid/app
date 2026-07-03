@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Read-only ICS feed for a workspace. Requires Clerk session AND
- * membership of the requested workspace — the proxy enforces auth on
+ * membership of the requested workspace, the proxy enforces auth on
  * `/api/:path*`, and the membership check below prevents a signed-in
  * user from reading another tenant's calendar by guessing a workspace id.
  *

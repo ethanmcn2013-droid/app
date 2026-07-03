@@ -24,7 +24,7 @@ import {
  *
  * Mounted once at the app layout level so the shortcut is live on
  * every /app/* page. Skips the listener when focus is inside an
- * editable surface — same rule as the existing keyboard-nav code in
+ * editable surface, same rule as the existing keyboard-nav code in
  * board-app / list-app.
  */
 export function CrossWorkspaceOverdue() {
@@ -103,7 +103,7 @@ export function CrossWorkspaceOverdue() {
         } catch {
           // Best-effort: even if the cookie write throws, navigating
           // to /app/board lands the user on whichever workspace
-          // resolves — strictly better than freezing.
+          // resolves, strictly better than freezing.
         }
         router.push("/app/board");
         router.refresh();
@@ -112,7 +112,7 @@ export function CrossWorkspaceOverdue() {
     [router],
   );
 
-  // SSR safety — portal target only exists in the browser.
+  // SSR safety, portal target only exists in the browser.
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -304,7 +304,7 @@ function groupByWorkspace(items: CrossWorkspaceOverdueItem[]): Group[] {
  * or "1 week late". Returns "—" when the date is missing.
  *
  * Computed in the browser so the client's local clock is the source
- * of truth — the server might be in a different timezone, and a task
+ * of truth, the server might be in a different timezone, and a task
  * the user thinks is "due yesterday" should read "1 day late" no
  * matter where the function ran.
  */

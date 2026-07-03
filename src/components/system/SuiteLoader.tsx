@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * SuiteLoader — canonical loading boundary component for Signal Studio.
+ * SuiteLoader, canonical loading boundary component for Signal Studio.
  *
  * Canonical source for ALL five repos (studio/tasks/roadmap/analytics/notes).
  * Copy byte-identical. Do NOT diverge. Path in each repo:
@@ -14,32 +14,32 @@
  *
  *   boot  →  chrome  →  content
  *
- *   "boot"    — loading field is full-screen; dot is pulsing (or static
+ *   "boot"   , loading field is full-screen; dot is pulsing (or static
  *               under reduced-motion). Nothing else is rendered.
- *   "chrome"  — loading field fades out; persistent shell chrome mounts
+ *   "chrome" , loading field fades out; persistent shell chrome mounts
  *               simultaneously. The field's --load-fade-out (120ms) opacity
  *               transition gives chrome one frame to appear behind it.
- *   "content" — content well begins populating. Shell stays. No re-blank.
+ *   "content", content well begins populating. Shell stays. No re-blank.
  *
  * Transitions are MONOTONIC. Backward transitions (content → chrome,
  * chrome → boot) are forbidden. In development a console.error fires
  * with the attempted transition. In production the call is silently
- * ignored — never throw to the user.
+ * ignored, never throw to the user.
  *
  * ── Reduced-motion ───────────────────────────────────────────────
  *
  * When prefers-reduced-motion: reduce is active:
- *   - The dot is static (no pulse animation — handled via globals.css)
+ *   - The dot is static (no pulse animation, handled via globals.css)
  *   - The swap from boot → chrome is instant (no 120ms fade)
  *   - A min-visible floor of 0ms applies (field disappears as soon as
- *     chrome is ready — no artificial delay)
+ *     chrome is ready, no artificial delay)
  *
  * ── Visual tokens ────────────────────────────────────────────────
  *
  * All visual values come from CSS custom properties defined in globals.css.
  * The inline fallbacks (#ffffff / #4f46e5) are the same values; they exist
  * only to handle the pre-CSS parse window on first cross-origin load.
- * Never change the fallback values — they are the Layer-0 instant canvas.
+ * Never change the fallback values, they are the Layer-0 instant canvas.
  *
  * ── Usage ────────────────────────────────────────────────────────
  *
@@ -90,7 +90,7 @@ export interface SuiteLoaderProps {
   phase: LoadPhase;
   /**
    * The persistent chrome (nav, header, breadcrumb). Mounts when phase
-   * reaches "chrome". Once mounted, never unmounts — monotonic reveal.
+   * reaches "chrome". Once mounted, never unmounts, monotonic reveal.
    */
   chrome?: React.ReactNode;
   /** Page content. Mounts when phase reaches "content". */
@@ -101,7 +101,7 @@ export interface SuiteLoaderProps {
 
 export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
   const [internalPhase, setInternalPhase] = useState<LoadPhase>("boot");
-  // Track whether chrome has ever mounted — it never unmounts once true.
+  // Track whether chrome has ever mounted, it never unmounts once true.
   const chromeMountedRef = useRef(false);
 
   const reduceMotion =
@@ -125,7 +125,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
 
   return (
     <>
-      {/* Loading field — paper-white with centred indigo dot.
+      {/* Loading field, paper-white with centred indigo dot.
           Stays above everything (z-index: 9999).
           Exits via CSS opacity transition, not instant unmount,
           so chrome has one frame to appear behind it. */}
@@ -163,7 +163,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
         />
       </div>
 
-      {/* Chrome — persistent shell. Never unmounts once visible.
+      {/* Chrome, persistent shell. Never unmounts once visible.
           Fades in when chrome phase is reached. */}
       {chromeMountedRef.current && (
         <div
@@ -178,7 +178,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
         </div>
       )}
 
-      {/* Content well — mounts only at content phase. */}
+      {/* Content well, mounts only at content phase. */}
       {internalPhase === "content" && (
         <div
           style={{
@@ -198,12 +198,12 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
 // ── Static loading field export ───────────────────────────────────
 //
 // Use this as the default export from each repo's app/loading.tsx.
-// It is a Server Component — no "use client", no JS overhead.
+// It is a Server Component, no "use client", no JS overhead.
 // It paints with the RSC shell, before any client JS executes.
 //
 // Each repo's loading.tsx:
 //
-//   // app/loading.tsx — DO NOT MODIFY. Canonical: studio SuiteLoader.tsx.
+//   // app/loading.tsx, DO NOT MODIFY. Canonical: studio SuiteLoader.tsx.
 //   export { SuiteLoaderField as default } from "@/components/system/SuiteLoader";
 //
 // Note: because this file uses "use client" for SuiteLoader, the field

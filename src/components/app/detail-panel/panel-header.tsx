@@ -54,7 +54,7 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
-  // Hide if mutation just landed — avoids flashing "edited just now"
+  // Hide if mutation just landed, avoids flashing "edited just now"
   // on every render right after the user's own edit.
   const ageMs = Date.now() - updatedAt.getTime();
   if (ageMs < 5000) return null;
@@ -73,11 +73,11 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
 }
 
 /**
- * Quiet provenance chip — surfaces when a task arrived via the Notes →
+ * Quiet provenance chip, surfaces when a task arrived via the Notes →
  * Tasks extract endpoint (`task.sourceNoteId` is set). Matches the
  * TaskIdChip register: mono, 10.5px, ink-quiet, bg-sunken on hover.
  *
- * Non-interactive for now — the sourceNoteId is the `{userId}:{noteId}`
+ * Non-interactive for now, the sourceNoteId is the `{userId}:{noteId}`
  * idempotency tuple, not a public URL. When Notes ships a deep-link
  * surface for individual notes, swap the span for an anchor.
  */

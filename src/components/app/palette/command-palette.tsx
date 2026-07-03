@@ -30,7 +30,7 @@ const PaletteContext = createContext<Ctx | null>(null);
  * any future "search" affordance can call `usePalette().openPalette()`
  * to surface it without re-binding the shortcut themselves.
  *
- * The palette itself is intentionally minimal — title-substring match
+ * The palette itself is intentionally minimal, title-substring match
  * across tasks. Tags + description match are bonuses; ranking is
  * "starts-with > contains > tag/desc match" so the typed prefix
  * jumps to the most likely target.

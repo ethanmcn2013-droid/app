@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { EmbedGuide } from "@/components/marketing/embed-guide";
 
 export const metadata = {
-  title: "Embed elsewhere — Tasks",
+  title: "Embed elsewhere, Tasks",
   description:
     "Drop a published Tasks workspace into Google Sites, Notion, an indie blog, a Substack, anywhere that takes an iframe or a script tag.",
   openGraph: {

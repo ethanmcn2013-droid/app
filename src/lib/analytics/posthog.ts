@@ -2,11 +2,11 @@ import "server-only";
 
 /**
  * Server-side PostHog capture via HTTP API.
- * No posthog-node dependency — keeps the bundle lean.
+ * No posthog-node dependency, keeps the bundle lean.
  *
  * Env:
- *   POSTHOG_API_KEY — project API key
- *   NEXT_PUBLIC_POSTHOG_HOST — optional, defaults to eu.i.posthog.com
+ *   POSTHOG_API_KEY, project API key
+ *   NEXT_PUBLIC_POSTHOG_HOST, optional, defaults to eu.i.posthog.com
  */
 
 export type AnalyticsEventProps = Record<

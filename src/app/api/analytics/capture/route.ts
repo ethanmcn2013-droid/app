@@ -11,7 +11,7 @@ type Body = {
 };
 
 /**
- * First-party analytics capture — forwards authenticated client
+ * First-party analytics capture, forwards authenticated client
  * events to PostHog. Keeps the API key server-side.
  */
 export async function POST(req: Request) {

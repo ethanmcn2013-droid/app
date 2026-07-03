@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 /**
- * DevBanner — a subtle, premium "in development" marker.
+ * DevBanner, a subtle, premium "in development" marker.
  *
  * Renders only outside production (access-mode demo / review / development),
  * decided client-side from NEXT_PUBLIC_SIGNAL_ACCESS_MODE so it never ships to
@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  * bolted on.
  *
  * Copy is configurable via NEXT_PUBLIC_DEV_BANNER_TEXT; default mirrors the
- * suite line "In development — expected launch September 1st."
+ * suite line "In development, expected launch September 1st."
  */
 
 function bannerEnabled(): boolean {
@@ -35,7 +35,7 @@ export function DevBanner() {
     try {
       if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
     } catch {
-      /* sessionStorage unavailable — show anyway */
+      /* sessionStorage unavailable, show anyway */
     }
     setHidden(false);
   }, []);
@@ -44,7 +44,7 @@ export function DevBanner() {
 
   const text =
     process.env.NEXT_PUBLIC_DEV_BANNER_TEXT ??
-    "In development — expected launch September 1st.";
+    "In development, expected launch September 1st.";
 
   return (
     <div className="signal-devbanner" role="status" aria-live="polite">

@@ -4,10 +4,10 @@ import { PublishedWorkspace } from "@/components/published/published-workspace";
 import { DOMAINS } from "@/lib/domains";
 
 /**
- * `/p/[slug]` — the public read-only render of any published
+ * `/p/[slug]`, the public read-only render of any published
  * workspace. Server-rendered for indexing. Resolves through
  * `getPublishedWorkspaceBySlug`, which returns null for both
- * "unknown slug" and "exists but not published" — both 404 here.
+ * "unknown slug" and "exists but not published", both 404 here.
  *
  * The owner toggles publication via Settings → Workspace.
  */
@@ -25,22 +25,22 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const ws = await getPublishedWorkspaceBySlug(slug);
-  if (!ws) return { title: "Not found — Tasks" };
+  if (!ws) return { title: "Not found, Tasks" };
 
   const domainLabel = ws.activeDomain
     ? DOMAINS[ws.activeDomain]?.label ?? ""
     : "";
   const title = domainLabel
-    ? `${ws.name} — ${domainLabel} workspace`
+    ? `${ws.name}, ${domainLabel} workspace`
     : ws.name;
   // Human description for press, social previews, and search snippets.
   // Leads with the workspace name and what it is, ends with the brand
-  // shape — same tasks, four lenses. Falls under 160 chars in the
+  // shape, same tasks, four lenses. Falls under 160 chars in the
   // common case.
   const lensClause = "board, list, timeline, calendar.";
   const description = domainLabel
-    ? `${ws.name} — a real ${domainLabel.toLowerCase()} workspace made public on Tasks. Same items, four lenses: ${lensClause}`
-    : `${ws.name} — a real workspace made public on Tasks. Same items, four lenses: ${lensClause}`;
+    ? `${ws.name}, a real ${domainLabel.toLowerCase()} workspace made public on Tasks. Same items, four lenses: ${lensClause}`
+    : `${ws.name}, a real workspace made public on Tasks. Same items, four lenses: ${lensClause}`;
 
   return {
     title,

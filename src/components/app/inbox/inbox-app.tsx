@@ -28,12 +28,12 @@ import { RollForwardButton } from "@/components/app/inbox/roll-forward-button";
 /**
  * Inbox renders two surfaces stacked:
  *
- *   1. **Today's digest** — the plain-English summary of yesterday's
+ *   1. **Today's digest**, the plain-English summary of yesterday's
  *      completions and today's due-tasks. This is exactly what the
  *      daily email *would* send tomorrow morning. Showing it inline
  *      is the design contract: zero-spam, single source.
  *
- *   2. **Direct alerts** — instant pings (only @mentions and blocks).
+ *   2. **Direct alerts**, instant pings (only @mentions and blocks).
  *      Empty 95% of the time; loud when it isn't.
  */
 export function InboxApp({
@@ -61,11 +61,11 @@ export function InboxApp({
   /** Pass through so the streaming action can target the right
    *  workspace from the client. */
   workspaceId?: string;
-  /** Display name of the active workspace — surfaced in the
+  /** Display name of the active workspace, surfaced in the
    *  Slack-ready summary headline. Optional so legacy callers that
    *  predate the copy-slack-summary button still type-check. */
   workspaceName?: string;
-  /** URL slug of the active workspace — used to build the
+  /** URL slug of the active workspace, used to build the
    *  `tasks.signalstudio.ie/p/{slug}` link in the Slack-ready summary. */
   workspaceSlug?: string;
   /** Server-computed count of tasks overdue today. Drives whether
@@ -153,7 +153,7 @@ export function InboxApp({
                 ? "Inbox zero. Quiet here on purpose."
                 : `${notifications.length} ${notifications.length === 1 ? "alert" : "alerts"} for you.`
             }
-            subtitle="We only insert here for direct @mentions and blocks. Lane moves, status flips, simple edits — none of it. Read once, move on."
+            subtitle="We only insert here for direct @mentions and blocks. Lane moves, status flips, simple edits, none of it. Read once, move on."
           />
           {notifications.length === 0 ? (
             <EmptyAlerts />
@@ -175,7 +175,7 @@ export function InboxApp({
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Nudges — the "what's stuck" feed. Cheeky on purpose; the brand can
+// Nudges, the "what's stuck" feed. Cheeky on purpose; the brand can
 // afford a smirk because the policy underneath is restrained.
 // ────────────────────────────────────────────────────────────────────
 
@@ -543,7 +543,7 @@ function EmptyAlerts() {
         Nothing for you right now.
       </div>
       <p className="mx-auto mt-1 max-w-[40ch] text-[12.5px] leading-[1.5] text-ink-soft">
-        That&rsquo;s by design — we don&rsquo;t ping you every time a card
+        That&rsquo;s by design, we don&rsquo;t ping you every time a card
         moves. Get back to work.
       </p>
     </div>
@@ -644,7 +644,7 @@ function renderNotificationSentence(n: Notification): {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Weekly recap — the LLM-narrated Sunday digest. Hidden until the
+// Weekly recap, the LLM-narrated Sunday digest. Hidden until the
 // user explicitly asks for it. Anti-spam contract holds: nothing
 // pings, nothing auto-runs. The button is the consent.
 // ────────────────────────────────────────────────────────────────────
@@ -674,12 +674,12 @@ function writeWeeklyCache(entry: WeeklyCacheEntry) {
   try {
     localStorage.setItem(WEEKLY_CACHE_KEY, JSON.stringify(entry));
   } catch {
-    // ignore — quota / private mode
+    // ignore, quota / private mode
   }
 }
 
 /** No-op subscriber. The cache only changes from this component's
- *  own writes, which call `setState` directly — we don't need to
+ *  own writes, which call `setState` directly, we don't need to
  *  listen for storage events. The subscriber is here purely to
  *  satisfy `useSyncExternalStore`'s contract. */
 function weeklyCacheSubscribe(_onChange: () => void): () => void {
@@ -705,7 +705,7 @@ function WeeklyRecapSection({
   // Subscribe to localStorage via useSyncExternalStore so the
   // initial cached read happens during render (post-hydration) and
   // doesn't trip the no-setState-in-effect rule. The store ignores
-  // change events — the cache only changes via our own writes,
+  // change events, the cache only changes via our own writes,
   // which already setState directly.
   const cached = useSyncExternalStore(
     weeklyCacheSubscribe,
@@ -749,7 +749,7 @@ function WeeklyRecapSection({
     snapshot.closedThisWeek === 0 && snapshot.openCount === 0;
   if (isQuietWeek && !cached) return null;
 
-  // Subhead copy varies by state — keep it dry, no exclamation
+  // Subhead copy varies by state, keep it dry, no exclamation
   // points. The numbers do the talking.
   const subtitle = (() => {
     if (snapshot.closedThisWeek === 0 && snapshot.openCount > 0) {
@@ -858,7 +858,7 @@ function WeeklyRecapSection({
           </motion.p>
         )}
 
-        {/* Tiny stat strip at the bottom — the rules-based facts the
+        {/* Tiny stat strip at the bottom, the rules-based facts the
             LLM was given. Honesty about the source of truth. */}
         <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line-soft pt-3 text-[11px] text-ink-quiet">
           <Stat label="Closed" value={snapshot.closedThisWeek} />
@@ -895,7 +895,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 }
 
 function formatCacheDate(iso: string): string {
-  // iso is YYYY-MM-DD — we just want a short, friendly form.
+  // iso is YYYY-MM-DD, we just want a short, friendly form.
   const d = new Date(iso + "T00:00:00");
   if (Number.isNaN(d.getTime())) return iso;
   const today = new Date();

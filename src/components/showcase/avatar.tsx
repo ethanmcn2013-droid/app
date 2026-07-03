@@ -9,7 +9,7 @@ export function Avatar({
   className,
 }: {
   user: UserId;
-  /** Optional display name — passed when known from DB join (resolveUser).
+  /** Optional display name, passed when known from DB join (resolveUser).
    *  Omit in showcase/seeded contexts where USERS map is sufficient. */
   name?: string;
   size?: number;

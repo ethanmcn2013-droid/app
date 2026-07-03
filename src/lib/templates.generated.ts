@@ -1,4 +1,4 @@
-// AUTO-GENERATED — do not edit by hand.
+// AUTO-GENERATED, do not edit by hand.
 // Source: studio/src/lib/templates/ (canonical workspace templates).
 // Refresh: pnpm sync:templates
 // Strategy: studio/docs/TEMPLATES_STRATEGY.md (locked 2026-05-12)
@@ -176,12 +176,12 @@ export const SYNCED_TEMPLATES: Template[] = [
   {
     "id": "local-business-monthly-rhythm",
     "name": "Monthly business rhythm",
-    "description": "Month-end close, payroll, suppliers, marketing, staff one-to-ones — a cadence that holds a small operation together.",
+    "description": "Month-end close, payroll, suppliers, marketing, staff one-to-ones, a cadence that holds a small operation together.",
     "icon": "calendar",
     "domain": "marketing",
     "tasks": [
       {
-        "title": "Month-end revenue close — all takings reconciled",
+        "title": "Month-end revenue close, all takings reconciled",
         "lane": "done",
         "priority": "p1",
         "tags": [
@@ -255,7 +255,7 @@ export const SYNCED_TEMPLATES: Template[] = [
         ]
       },
       {
-        "title": "Renewal coming up — review terms before signing",
+        "title": "Renewal coming up, review terms before signing",
         "lane": "review",
         "priority": "p1",
         "tags": [

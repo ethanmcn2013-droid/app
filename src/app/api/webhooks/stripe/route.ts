@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
  * entitlement row (set to `stripe:<event-id>` or `stripe-sub:<sub-id>`).
  * `grantEntitlement` skips inserts when a row with the same notes
  * exists, so even a Stripe retry that lands while the dedup record
- * is missing — i.e. a partial-handler crash before the dedup write —
+ * is missing, i.e. a partial-handler crash before the dedup write —
  * is safe: the second retry's grant is a no-op because the entitlement
  * already lives in the table.
  *
@@ -32,7 +32,7 @@ export const dynamic = "force-dynamic";
  * harmless because grantEntitlement is idempotent on notes.
  */
 async function alreadyProcessed(eventId: string): Promise<boolean> {
-  // db.run() returns a ResultSet, not a row array — the previous
+  // db.run() returns a ResultSet, not a row array, the previous
   // `as unknown as Array<{hit:number}>` cast meant `row` was always
   // undefined and the dedup guard never fired. Use the typed select
   // path so a real `1`-or-empty result drives the boolean.
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
   // Cheap pre-check: skip the work if we've already finished this
   // event. The real idempotency guarantee lives on the entitlement
-  // row's `notes` field — see grantEntitlement. The dedup row is
+  // row's `notes` field, see grantEntitlement. The dedup row is
   // recorded only AFTER the handler succeeds, so a partial-handler
   // crash leaves the event re-runnable and the customer always ends
   // up entitled.
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
   // Mirror the dedup row to the shared signal-entitlements DB so any
   // future cross-product writer (Studio admin grants, third-party
   // billing providers) can short-circuit on the same event id.
-  // Fire-and-forget — the canonical dedup is already in the local
+  // Fire-and-forget, the canonical dedup is already in the local
   // table above.
   try {
     const eb = entitlementsDb();

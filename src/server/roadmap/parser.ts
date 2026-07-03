@@ -3,18 +3,18 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * Roadmap parser — walks `docs/gtm-plan.md` and converts the §3 asset
+ * Roadmap parser, walks `docs/gtm-plan.md` and converts the §3 asset
  * checklist, §7 8-week content calendar, and §9 14-day press Gantt
  * into a flat list of structured items. Deterministic IDs let the
  * sync layer upsert without losing user-set status.
  *
  * Sections are picked up by heading match, then their tables are read
- * row-by-row. The 8-week calendar tables sit under `### Week N — …`
+ * row-by-row. The 8-week calendar tables sit under `### Week N, …`
  * headings. Bold cells (e.g. `**06-16**` or `**Tue**`) flag launch
  * milestones; the parser strips the markup and sets `isLaunch` true
  * when any cell in the row was bolded.
  *
- * No remark dependency — the markdown structure is regular enough
+ * No remark dependency, the markdown structure is regular enough
  * that line-walking with light cell-splitting beats pulling in the
  * full unified pipeline (which Tasks doesn't already ship). The
  * shape mirrors the `roadmap_items` table column set 1:1.
@@ -77,7 +77,7 @@ function rowHasBold(cells: string[]): boolean {
 }
 
 function splitRow(line: string): string[] | null {
-  // Strict pipe-row test — must start and end with `|`.
+  // Strict pipe-row test, must start and end with `|`.
   if (!line.trim().startsWith("|") || !line.trim().endsWith("|")) return null;
   const inner = line.trim().slice(1, -1);
   if (/^[\s|:-]+$/.test(inner)) return null; // header divider
@@ -110,7 +110,7 @@ interface WeekHeading {
 }
 
 function parseWeekHeading(line: string): WeekHeading | null {
-  // ### Week 1 — Foundation (May 11–17)
+  // ### Week 1, Foundation (May 11–17)
   // dash and em-dash both possible
   const m = line.match(
     /^###\s+Week\s+(\d+)\s+[—\-–]\s+([^(]+?)\s*\(([^)]+)\)\s*$/i,
@@ -201,7 +201,7 @@ function parsePostingCalendar(md: string): ParsedItem[] {
     if (!date) continue;
 
     const isRest = /rest/i.test(format ?? "");
-    if (isRest) continue; // skip explicit REST rows — they aren't actionable
+    if (isRest) continue; // skip explicit REST rows, they aren't actionable
 
     let kind: RoadmapKind = "post";
     if (/reddit ads|ig boost|instagram boost/i.test(format ?? channel ?? "")) {
@@ -255,7 +255,7 @@ function parseAssetChecklist(md: string): ParsedItem[] {
       continue;
     }
     if (inSection && /^##\s+\d/.test(line)) {
-      // entered next ## section — bail
+      // entered next ## section, bail
       break;
     }
     if (!inSection) continue;
@@ -289,7 +289,7 @@ function parseAssetChecklist(md: string): ParsedItem[] {
     if (!asset) continue;
 
     const isShipped = /already shipped|shipped|live/i.test(status ?? "");
-    // Skip explicitly already-shipped rows from the checklist — they
+    // Skip explicitly already-shipped rows from the checklist, they
     // don't need tracking.
     if (isShipped) continue;
 

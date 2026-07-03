@@ -11,17 +11,17 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { draftReplyAction } from "@/server/actions/ai";
 
 /**
- * Draft a reply — the small AI affordance next to the composer's
+ * Draft a reply, the small AI affordance next to the composer's
  * Send hint. Click opens a popover with a tiny intent input. On
  * submit we call the streaming server action and append tokens to
  * the host composer's textarea via `onDraft`.
  *
  * Design notes:
  * - Anti-spam stance: we don't auto-suggest. Nothing happens until
- *   the user clicks. Once a draft lands, the user owns it — they
+ *   the user clicks. Once a draft lands, the user owns it, they
  *   can edit, replace, or delete before posting.
  * - Streaming: tokens arrive into the parent textarea live. No
- *   modal, no "review and accept" — the brand is opinionated about
+ *   modal, no "review and accept", the brand is opinionated about
  *   not adding ceremony.
  * - When AI isn't configured we still render the button (it's
  *   harmless) and the action returns a static "AI not configured"

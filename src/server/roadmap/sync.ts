@@ -5,11 +5,11 @@ import { roadmapItems } from "@/server/db/schema";
 import { parsePlan, type ParsedItem } from "./parser";
 
 /**
- * Roadmap sync — re-parse the plan markdown and reconcile against
+ * Roadmap sync, re-parse the plan markdown and reconcile against
  * the `roadmap_items` table. Idempotent: deterministic IDs mean
  * re-syncing without changes is a no-op. Adds new items, updates
  * shape-fields on existing items, preserves user-set `status`,
- * `note`, and `completedAt`. Removes nothing — the user might have
+ * `note`, and `completedAt`. Removes nothing, the user might have
  * marked an item completed and the parser might shift the slug
  * slightly; orphans are left in place as historical.
  *
@@ -43,7 +43,7 @@ export interface RoadmapRow {
 export async function syncAndRead(): Promise<RoadmapRow[]> {
   const { items } = parsePlan();
   if (items.length === 0) {
-    // Plan markdown missing — return whatever's already stored.
+    // Plan markdown missing, return whatever's already stored.
     return readAll();
   }
 

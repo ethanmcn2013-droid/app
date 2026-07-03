@@ -40,7 +40,7 @@ export default async function StatusPage() {
     detail: `${home.ms}ms`,
   });
 
-  // Probe the dedicated health endpoint — not the cron trigger — so
+  // Probe the dedicated health endpoint, not the cron trigger, so
   // the check doesn't require CRON_SECRET and never produces a false
   // negative when the secret is correctly configured.
   const digest = await probe(`${baseUrl}/api/health/digest`);
@@ -91,7 +91,7 @@ export default async function StatusPage() {
             </h1>
             <p className="mt-4 max-w-[58ch] text-[15px] leading-[1.55] text-ink-soft">
               Live probes against the public surface. We don&rsquo;t
-              fake green and we don&rsquo;t hide outages — when
+              fake green and we don&rsquo;t hide outages, when
               something&rsquo;s actually red, this page goes red too.
             </p>
 

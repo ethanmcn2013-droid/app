@@ -11,7 +11,7 @@ import { eraseAccountData } from "@/server/account-erasure";
  *
  * The erasure itself lives in `account-erasure.ts` as a db-injected pure
  * function so it can be exercised end-to-end against an in-memory libSQL DB
- * (see account-erasure.test.ts) — it deletes EVERY child row explicitly
+ * (see account-erasure.test.ts), it deletes EVERY child row explicitly
  * across every table rather than trusting libSQL FK cascade over Turso's
  * stateless HTTP, and unlinks the user's on-disk attachment binaries. This
  * thin wrapper just binds the production `db` singleton.

@@ -28,7 +28,7 @@ export function PanelShell({
     <AnimatePresence>
       {open ? (
         <>
-          {/* Overlay — dim only, no blur */}
+          {/* Overlay, dim only, no blur */}
           <motion.div
             key="overlay"
             initial={{ opacity: 0 }}

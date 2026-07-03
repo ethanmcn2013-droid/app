@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 
 export const metadata = {
-  title: "Not found — Tasks",
+  title: "Not found, Tasks",
 };
 
 export default function NotFound() {

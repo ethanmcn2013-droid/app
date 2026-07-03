@@ -1,7 +1,7 @@
 import type { EntitlementTier } from "./schema";
 
 /**
- * Tier vocabulary + ranking helpers. Pure — no DB access, safe to
+ * Tier vocabulary + ranking helpers. Pure, no DB access, safe to
  * import anywhere (server or client).
  *
  * Ranking is used by resolveHighestTier() to pick the right tier
@@ -18,12 +18,12 @@ export const TIER_RANK: Record<EntitlementTier, number> = {
   studio: 4,
 };
 
-/** Compare two tiers — true if `a` is at least `b`. */
+/** Compare two tiers, true if `a` is at least `b`. */
 export function tierAtLeast(a: EntitlementTier, b: EntitlementTier): boolean {
   return TIER_RANK[a] >= TIER_RANK[b];
 }
 
-/** Pretty label for a tier — used in UI messaging. */
+/** Pretty label for a tier, used in UI messaging. */
 export const TIER_LABEL: Record<EntitlementTier, string> = {
   free: "Free",
   event: "Event",

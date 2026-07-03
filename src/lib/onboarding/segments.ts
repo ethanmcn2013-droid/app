@@ -1,7 +1,7 @@
 import type { DomainId } from "@/lib/domains";
 
 /**
- * Primary coordination segments — config-driven onboarding source of truth.
+ * Primary coordination segments, config-driven onboarding source of truth.
  *
  * Strategy: SignalHQ/brand/docs/SEGMENTED_ONBOARDING.md
  *
@@ -9,7 +9,7 @@ import type { DomainId } from "@/lib/domains";
  * - existing domain packs (seed structure)
  * - workspace templates (four-layer seed)
  * - personalized copy (empty states, welcome)
- * - pricing tier hints (checkout routing — future)
+ * - pricing tier hints (checkout routing, future)
  */
 
 export type PrimaryUseCase =
@@ -31,7 +31,7 @@ export type SegmentConfig = {
   id: PrimaryUseCase;
   label: string;
   description: string;
-  /** CSS variable from brand tokens — e.g. var(--aud-wedding) */
+  /** CSS variable from brand tokens, e.g. var(--aud-wedding) */
   accent: string;
   /** Maps to tasks/src/lib/domains.ts for seed overlay */
   domainId: DomainId;
@@ -58,13 +58,13 @@ export type SegmentConfig = {
 
 export const ONBOARDING_HEADLINE = "Let's shape Signal around the way you work.";
 export const ONBOARDING_SUBHEAD =
-  "A few quiet choices now — so your workspace feels relevant from day one.";
+  "A few quiet choices now, so your workspace feels relevant from day one.";
 
 export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   venue: {
     id: "venue",
     label: "Venue operations",
-    description: "Events, couples, suppliers — one calm pipeline",
+    description: "Events, couples, suppliers, one calm pipeline",
     accent: "var(--aud-wedding)",
     domainId: "wedding",
     templateId: "wedding-planning-workspace",
@@ -85,7 +85,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where your events live.",
-      body: "Bookings, couples, suppliers, and the day's run-of-show — without another spreadsheet.",
+      body: "Bookings, couples, suppliers, and the day's run-of-show, without another spreadsheet.",
       firstTaskExample: "Confirm June tasting menu with catering",
     },
     workspaceTitle: "Venue operations",
@@ -96,7 +96,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   wedding: {
     id: "wedding",
     label: "Wedding or private event",
-    description: "Vendors, timeline, guests — the day in one place",
+    description: "Vendors, timeline, guests, the day in one place",
     accent: "var(--aud-wedding)",
     domainId: "wedding",
     templateId: "wedding-planning-workspace",
@@ -117,7 +117,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where the day comes together.",
-      body: "Vendors, run-of-show, RSVPs — every detail in one place.",
+      body: "Vendors, run-of-show, RSVPs, every detail in one place.",
       firstTaskExample: "Confirm catering tasting menu by Friday",
     },
     workspaceTitle: "Your event",
@@ -128,7 +128,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   student: {
     id: "student",
     label: "Student society / academic year",
-    description: "Committee work, events, deadlines — without the chaos",
+    description: "Committee work, events, deadlines, without the chaos",
     accent: "var(--aud-student)",
     domainId: "student",
     templateId: null,
@@ -150,7 +150,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where your semester comes together.",
-      body: "Papers, events, committee work — stop losing things at 2am.",
+      body: "Papers, events, committee work, stop losing things at 2am.",
       firstTaskExample: "Submit society budget by next Friday",
     },
     workspaceTitle: "Society · Spring term",
@@ -161,7 +161,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   "small-business": {
     id: "small-business",
     label: "Small business",
-    description: "Customers, ops, marketing — visibility without jargon",
+    description: "Customers, ops, marketing, visibility without jargon",
     accent: "var(--aud-small-business)",
     domainId: "marketing",
     templateId: "local-business-monthly-rhythm",
@@ -182,7 +182,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where the week comes together.",
-      body: "Orders, invoices, follow-ups — one calm place instead of five apps.",
+      body: "Orders, invoices, follow-ups, one calm place instead of five apps.",
       firstTaskExample: "Follow up with Tuesday's enquiry",
     },
     workspaceTitle: "Operations",
@@ -193,7 +193,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   "event-management": {
     id: "event-management",
     label: "Event management",
-    description: "Run-of-show, vendors, timelines — for any event",
+    description: "Run-of-show, vendors, timelines, for any event",
     accent: "var(--aud-wedding)",
     domainId: "wedding",
     templateId: "wedding-planning-workspace",
@@ -214,7 +214,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where the event takes shape.",
-      body: "Timelines, vendors, and the day's plan — calm visibility for everyone involved.",
+      body: "Timelines, vendors, and the day's plan, calm visibility for everyone involved.",
       firstTaskExample: "Confirm AV setup time with venue",
     },
     workspaceTitle: "Upcoming event",
@@ -225,7 +225,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   "creative-studio": {
     id: "creative-studio",
     label: "Creative studio / agency",
-    description: "Briefs, edits, deliveries — client work that ships",
+    description: "Briefs, edits, deliveries, client work that ships",
     accent: "var(--aud-freelance)",
     domainId: "freelance",
     templateId: null,
@@ -239,7 +239,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where the client work ships.",
-      body: "Briefs, edit rounds, deliveries — three clients, one inbox.",
+      body: "Briefs, edit rounds, deliveries, three clients, one inbox.",
       firstTaskExample: "Send gallery delivery by Friday at 3pm",
     },
     workspaceTitle: "Client work",
@@ -250,7 +250,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   "internal-team": {
     id: "internal-team",
     label: "Internal team",
-    description: "Projects, handoffs, visibility — without sprint theatre",
+    description: "Projects, handoffs, visibility, without sprint theatre",
     accent: "var(--aud-marketing)",
     domainId: "marketing",
     templateId: null,
@@ -264,7 +264,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
     ],
     emptyState: {
       headline: "This is where the team stays aligned.",
-      body: "Plain tasks, clear status, no jargon — coordination that respects everyone's time.",
+      body: "Plain tasks, clear status, no jargon, coordination that respects everyone's time.",
       firstTaskExample: "Review Q3 priorities with the team",
     },
     workspaceTitle: "Team workspace",
@@ -275,7 +275,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   other: {
     id: "other",
     label: "Something else",
-    description: "A calm starting point — shape it as you go",
+    description: "A calm starting point, shape it as you go",
     accent: "var(--aud-marketing)",
     domainId: "marketing",
     templateId: null,
@@ -293,7 +293,7 @@ export const SEGMENTS: Record<PrimaryUseCase, SegmentConfig> = {
   },
 };
 
-/** Card order on step 2 — venue first (commercial wedge). */
+/** Card order on step 2, venue first (commercial wedge). */
 export const SEGMENT_ORDER: PrimaryUseCase[] = [
   "venue",
   "wedding",

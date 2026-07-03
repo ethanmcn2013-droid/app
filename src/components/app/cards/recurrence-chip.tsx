@@ -3,7 +3,7 @@ import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 
 /**
  * Tiny recurrence indicator for task cards. Sits in the card meta
- * row alongside due date / tags / priority — quiet enough to not
+ * row alongside due date / tags / priority, quiet enough to not
  * fight those signals, but glanceable so the user knows at-a-card
  * which tasks repeat.
  *

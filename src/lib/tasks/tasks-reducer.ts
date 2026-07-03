@@ -59,7 +59,7 @@ export function tasksReducer(
         idleDays: undefined,
         updatedAt: new Date(),
       };
-      // Any direct move clears a stale previousLane entry — the user
+      // Any direct move clears a stale previousLane entry, the user
       // is taking explicit control, so the toggle source is invalidated.
       const previousLane = { ...state.previousLane };
       delete previousLane[action.id];
@@ -128,14 +128,14 @@ export function tasksReducer(
       // Cross-lane-aware placement: removes the task from wherever it
       // currently sits and inserts it at `toIndex` within `toLane`,
       // stamping the new lane + float position. This is the optimistic
-      // counterpart to `reorderTaskAction` — the array order matches
+      // counterpart to `reorderTaskAction`, the array order matches
       // what a fresh server hydrate (sorted by position) would produce.
       const fromIdx = state.tasks.findIndex((t) => t.id === action.id);
       if (fromIdx < 0) return state;
       const current = state.tasks[fromIdx];
 
       // Build the moved task with its new lane + position. Clearing
-      // idleDays mirrors `move` — manual placement counts as activity.
+      // idleDays mirrors `move`, manual placement counts as activity.
       const moved: Task & { position?: number } = {
         ...current,
         lane: action.toLane,
@@ -166,7 +166,7 @@ export function tasksReducer(
       const tasks = without.slice();
       tasks.splice(insertAt, 0, moved);
 
-      // Manual placement is explicit user intent — invalidate any
+      // Manual placement is explicit user intent, invalidate any
       // toggleComplete restore-target memorized for this id.
       const previousLane = { ...state.previousLane };
       delete previousLane[action.id];
@@ -187,7 +187,7 @@ export function tasksReducer(
     }
 
     case "add": {
-      // Refuse duplicate ids (defensive — id generator ensures uniqueness)
+      // Refuse duplicate ids (defensive, id generator ensures uniqueness)
       if (state.tasks.some((t) => t.id === action.task.id)) return state;
       return { ...state, tasks: [...state.tasks, action.task] };
     }

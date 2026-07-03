@@ -29,7 +29,7 @@ export function DoneTitle({ done, children, className }: Props) {
       }}
     >
       <span className="relative">{children}</span>
-      {/* Strike line — origin: left → scaleX 0 → 1 over 380ms */}
+      {/* Strike line, origin: left → scaleX 0 → 1 over 380ms */}
       <motion.span
         aria-hidden
         initial={false}

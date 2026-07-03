@@ -15,7 +15,7 @@ function targetIsEditable(el: EventTarget | null): boolean {
  * typing in an editable element, when modifier keys are held, and
  * when `enabled` is false.
  *
- * Pass an unmemoized handler — the effect closes over the latest
+ * Pass an unmemoized handler, the effect closes over the latest
  * via a stable ref pattern so the listener doesn't churn.
  */
 export function useKeyboardShortcut(
