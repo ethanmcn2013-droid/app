@@ -628,7 +628,7 @@ function MostClickedCallout({
         </svg>
       </span>
       <span className="flex-1 text-[11.5px] leading-tight text-ink-soft">
-        <span className="font-medium text-ink">{name}</span> drew the most eyes —{" "}
+        <span className="font-medium text-ink">{name}</span> drew the most eyes:{" "}
         <span className="font-medium" style={{ color: "var(--brand)" }}>
           {visits} {visits === 1 ? "visit" : "visits"}
         </span>

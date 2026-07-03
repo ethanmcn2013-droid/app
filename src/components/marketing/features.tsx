@@ -47,9 +47,9 @@ export function Features() {
           eyebrow="What's inside"
           title={
             <>
-              Six primitives.{" "}
+              Six parts.{" "}
               <span className="text-ink-soft/60">
-                Stitched into one feel.
+                One feel.
               </span>
             </>
           }

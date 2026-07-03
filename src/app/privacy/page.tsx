@@ -119,7 +119,7 @@ export default function PrivacyPage() {
 
             <Section title="How long we keep it">
               <p>
-                Live data, your tasks, your account, your billing —
+                Live data, your tasks, your account, your billing,
                 stays until you delete the workspace. Encrypted backups
                 roll off on a 30-day window after that, after which
                 there&rsquo;s nothing left to restore even if we wanted
@@ -133,8 +133,8 @@ export default function PrivacyPage() {
                 You can export every task you&rsquo;ve created (JSON or
                 CSV) from settings. You can correct the email or name
                 attached to your account from settings. You can delete
-                the whole workspace from settings, and we mean delete —
-                see the retention paragraph above. If any of that
+                the whole workspace from settings, and we mean delete.
+                See the retention paragraph above. If any of that
                 doesn&rsquo;t work or you want a human to do it for
                 you, email <Link href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</Link>{" "}
                 and we&rsquo;ll handle it within five business days.
@@ -171,8 +171,8 @@ export default function PrivacyPage() {
 
             <Section title="Changes">
               <p>
-                If we materially change this notice, new
-                subprocessor, new data category, new retention rule —
+                If we materially change this notice, a new
+                subprocessor, a new data category, a new retention rule,
                 we&rsquo;ll email signed-up users before it takes
                 effect and update the date at the top. Cosmetic edits
                 (typos, link rot, rewording for clarity) we just make.

@@ -30,7 +30,7 @@ export default function RoadmapPage() {
             </h1>
             <p className="mt-5 max-w-[52ch] text-[16.5px] leading-[1.55] text-ink-soft">
               Roadmap is now its own product. What&rsquo;s coming, what&rsquo;s
-              blocked, what we said no to&nbsp;&mdash; done right, for
+              blocked, what we said no to, done right, for
               everyone, not just us.
             </p>
             <a

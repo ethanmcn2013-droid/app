@@ -97,7 +97,7 @@ export type WeeklyDigestSnapshot = {
 //
 // Tone reference: `src/lib/nudges/generate-nudges.ts`. Dry,
 // observational, never preachy. We notice; we don't lecture. Cheeky
-// is allowed when the moment earns it. Em-dashes welcome. No emojis.
+// is allowed when the moment earns it. No em dashes. No emojis.
 // No "I hope this helps." No "As an AI, …".
 //
 // Each prompt is split into a long, stable preamble (the brand voice
@@ -111,7 +111,7 @@ Brand voice, non-negotiable:
 - Dry, observational, never preachy. Notice things; don't lecture.
 - Cheeky-but-restrained. A smirk, not a wink.
 - Plain words. No "I hope this helps", no "As an AI", no "Sure!", no apologies.
-- No emojis. No exclamation points. Em-dashes are fine.
+- No emojis. No exclamation points. No em dashes; use commas, colons, or periods.
 - Concrete over abstract. "Three tasks closed" beats "Significant progress was made".
 - Spec-tight: don't pad. If a sentence isn't pulling weight, cut it.
 - Match the user's existing tone in the thread. If they're terse, you're terse.
@@ -147,5 +147,5 @@ Constraints:
 - 4-5 sentences. No bullet lists.
 - Open with the headline number, what closed, what shipped. Specifics, not vibes.
 - Name 1-2 things still circling. Use the actual task titles. Be honest about what's load-bearing.
-- Close with a one-line vibe-check appropriate to a Sunday morning. Something restrained, not a pep talk. ("Sunday is for resets." beats "You've got this!")
+- Close with a one-line vibe-check appropriate to a Sunday morning. Something restrained, not a pep talk. ("Sunday is for resets." beats "you've got this.")
 - Address the reader directly. Second person. No "the team should…".`;

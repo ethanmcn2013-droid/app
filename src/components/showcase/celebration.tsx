@@ -70,7 +70,7 @@ export function Celebration({
             transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
             className="absolute left-0 top-0 select-none rounded-full bg-emerald-500/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-md"
           >
-            ✨ Done!
+            Done
           </motion.div>
         </div>
       ) : null}

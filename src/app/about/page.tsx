@@ -52,8 +52,7 @@ export default function AboutPage() {
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
                 Signal Timeline
-              </a>{" "}
-              &mdash; direction clarity for public plans, changes, and
+              </a>. Direction clarity for public plans, changes, and
               decisions people can read.
             </p>
           </div>
