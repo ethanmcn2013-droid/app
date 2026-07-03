@@ -7,12 +7,14 @@ import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { UserButton } from "@clerk/nextjs";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
+const UMBRELLA_DESIGN = "https://signalstudio.ie/design";
 
 const NAV: { href: string; label: string; external?: boolean }[] = [
   { href: "/#demo",        label: "Demo"    },
   { href: "/#anatomy",     label: "Anatomy" },
   { href: "/app/board",    label: "App"     },
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
+  { href: UMBRELLA_DESIGN,  label: "Design",  external: true },
 ];
 
 /**
