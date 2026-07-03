@@ -30,7 +30,7 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-32 border-t border-line-soft/70 pb-10 pt-16">
+    <footer className="mt-32 border-t border-hairline-soft pb-10 pt-16">
       <div className="mx-auto grid w-full max-w-[1240px] gap-10 px-6 sm:grid-cols-2 lg:grid-cols-[1.35fr_repeat(4,1fr)]">
         <div className="sm:col-span-2 lg:col-span-1">
           <Wordmark size="lg" />
@@ -96,7 +96,7 @@ export function SiteFooter() {
         />
       </div>
 
-      <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-line-soft/70 px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
+      <div className="mx-auto mt-12 flex w-full max-w-[1240px] flex-col items-start justify-between gap-2 border-t border-hairline-soft px-6 pt-6 text-[12px] text-ink-quiet md:flex-row md:items-center">
         <span>&copy; {year} Signal Tasks. Made by Signal Studio.</span>
         <span>Clarity, not configuration.</span>
       </div>
