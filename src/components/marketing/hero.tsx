@@ -70,7 +70,7 @@ function Eyebrow() {
       className="font-mono text-[11px] font-semibold uppercase text-ink-quiet"
       style={{ letterSpacing: "0.14em" }}
     >
-      Signal Tasks &middot; Execution clarity
+      Tasks &middot; Execution clarity
     </p>
   );
 }
