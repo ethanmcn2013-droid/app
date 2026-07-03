@@ -387,14 +387,16 @@ function suiteJump(url: string) {
     "transition:opacity 260ms var(--ease-in-out,var(--ease-out));display:flex;" +
     "align-items:center;justify-content:center;pointer-events:none";
   const dot = document.createElement("div");
+  // Quiet 10px boundary dot (loading canon, specimen 01). Was a scale(28)
+  // bloom, roughly 252px, the off-review "big dot" on every cross-product
+  // jump. The paper field bridges cross-origin latency; the destination
+  // owns arrival (loading-review specimen 03).
   dot.style.cssText =
-    `width:9px;height:9px;border-radius:50%;background:${INDIGO};` +
-    "transform:scale(1);transition:transform 360ms var(--ease-in-out,var(--ease-out))";
+    `width:10px;height:10px;border-radius:50%;background:${INDIGO}`;
   overlay.appendChild(dot);
   document.body.appendChild(overlay);
   requestAnimationFrame(() => {
     overlay.style.opacity = "1";
-    dot.style.transform = "scale(28)";
   });
   // <=120ms: the press acknowledges, the destination owns the wait.
   window.setTimeout(() => {
