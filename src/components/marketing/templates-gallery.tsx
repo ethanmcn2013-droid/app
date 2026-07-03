@@ -129,7 +129,7 @@ export function TemplatesGallery({
           The work, pre-written.
         </h1>
         <p className="mx-auto mt-5 max-w-[58ch] text-[16.5px] leading-[1.55] text-ink-soft">
-          Wedding planning workspaces, thesis sprints, freelance
+          Wedding planning workspaces, thesis deadlines, freelance
           onboarding, tax-season checklists. The recurring stuff,
           ready to drop into any workspace. Applies in one click.
           Doesn&rsquo;t touch your existing tasks.

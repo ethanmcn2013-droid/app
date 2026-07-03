@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForTrades } from "@/components/marketing/for-trades";
 
 export const metadata = {
-  title: "Tasks for Trades, Calls, Jobs, Invoices, One Binder",
+  title: "Tasks for trades · Calls, jobs, invoices, one binder",
   description:
     "A workspace for electricians, carpenters, plumbers, contractors. Calls, parts, permits, invoices, one place, no per-seat tax, no software vocabulary.",
   openGraph: {

@@ -290,7 +290,7 @@ export function StudentTheme({ workspace, tasks }: PublishedWorkspaceProps) {
           textAlign: "center",
         }}
       >
-       , kept up by whoever opens it last —
+       , kept up by whoever opens it last
       </p>
     </main>
   );

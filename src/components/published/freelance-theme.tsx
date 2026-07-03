@@ -188,7 +188,7 @@ export function FreelanceTheme({ workspace, tasks }: PublishedWorkspaceProps) {
 
       {/* ─── EOF marker ──────────────────────────────────────────── */}
       <div className="mt-20 border-t border-dashed border-[#1f2024]/15 pt-6 font-mono text-[11px] tracking-[0.18em] text-[#1f2024]/40">
-       , end of document —
+       , end of document
       </div>
       </div>
     </main>

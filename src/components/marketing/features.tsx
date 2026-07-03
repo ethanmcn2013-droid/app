@@ -16,7 +16,7 @@ const FEATURES = [
   {
     eyebrow: "Nudges",
     title: "Stuck work surfaces itself",
-    body: "Every idle card, every blocked dependency, every quiet review, surfaced as a one-tap nudge. Built on your team's actual rhythm, not generic reminders.",
+    body: "Every idle card, every blocked dependency, every quiet review, surfaced as a one-tap nudge. Built on your actual rhythm, not generic reminders.",
     glyph: "ai",
   },
   {

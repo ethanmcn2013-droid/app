@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/marketing/site-footer";
 import { ForStudents } from "@/components/marketing/for-students";
 
 export const metadata = {
-  title: "Tasks for Students: A Whole Semester in One Workspace",
+  title: "Tasks for students · A whole semester in one workspace",
   description:
     "Four classes, three group projects, two midterms, one job application, all in one workspace. The full tier at the student price: €9.99 a year, any student email.",
   openGraph: {

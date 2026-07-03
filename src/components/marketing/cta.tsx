@@ -16,7 +16,7 @@ export function CallToAction() {
             <span className="text-ink-ghost">Start moving.</span>
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.55] text-ink-soft">
-            Tasks runs entirely on your team&rsquo;s rhythm. No setup, no
+            Tasks runs on your rhythm. No setup, no
             imports, just open a board and start moving cards. Everything
             else assembles around the work.
           </p>
