@@ -20,7 +20,7 @@ export function CallToAction() {
             imports — just open a board and start moving cards. Everything
             else assembles around the work.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-wrap items-start gap-3">
             <div className="flex flex-col items-start gap-1">
               <Link
                 href="/app/board"

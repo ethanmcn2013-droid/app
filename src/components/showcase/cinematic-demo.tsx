@@ -675,14 +675,8 @@ export function CinematicDemo({
       className="relative w-full"
       onMouseMove={handleMouseMove}
     >
-      {/* Floating depth shadow */}
-      <div
-        className="pointer-events-none absolute inset-x-10 -bottom-8 h-24 rounded-[40px] opacity-60 blur-2xl"
-        style={{
-          background:
-            "radial-gradient(ellipse at center, rgba(20,21,26,0.22), transparent 65%)",
-        }}
-      />
+      {/* Floating depth shadow removed (review 04): the board's own perspective
+          elevation carries the lift; the extra bottom blob read as heavy. */}
       <motion.div
         className="relative z-10 overflow-hidden rounded-[20px] border border-line bg-bg-elevated"
         style={{
