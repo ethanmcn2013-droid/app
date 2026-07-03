@@ -591,6 +591,15 @@ export function SuiteLauncher({
           >
             <span>{isSignedIn ? "Back to Signal Studio" : "Visit signalstudio.ie"}</span>
           </a>
+          <a
+            href={`${STUDIO_URL}/design`}
+            target={isSignedIn ? undefined : "_blank"}
+            rel={isSignedIn ? undefined : "noopener noreferrer"}
+            onClick={() => setOpen(false)}
+            className="sl-footer"
+          >
+            <span>Design — one system behind all four</span>
+          </a>
         </div>
       ) : null}
     </div>
