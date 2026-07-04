@@ -25,7 +25,7 @@ import path from "node:path";
 // If SuiteHeader legitimately changes, reseal this to the new hash (the same
 // contract as the SuiteLoader seal).
 const SUITE_HEADER_SHA =
-  "99c6ae66de200ec20fad2e6de22dccf7b0d65add407bbb200678af9aa1c095e3";
+  "96b6cc15b148bff434727454dc991404f65bcf4405c51b40225823499f020dc3";
 
 const root = process.cwd();
 const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
@@ -116,11 +116,15 @@ if (isUmbrella) {
   }
 }
 
-/* App-surface chrome, where the repo has one. */
+/* App-surface chrome — the authed /app top bar. It rides the SAME shared
+   SuiteHeader shell as the marketing header (switcher lockup, no wordmark), so
+   a cross-product jump swaps only the body. Each repo's app chrome must USE
+   SuiteHeader; the geometry + hairline live in the shell (checked above). */
 const appChrome = {
   tasks: "src/components/app/suite-chrome.tsx",
-  roadmap: "src/components/roadmap/workspace-header.tsx",
+  roadmap: "src/app/app/(app)/layout.tsx",
   analytics: "src/app/app/layout.tsx",
+  notes: "src/app/app/layout.tsx",
 }[product];
 
 if (appChrome) {
@@ -129,14 +133,20 @@ if (appChrome) {
     mustContain(
       chrome.file,
       chrome.source,
-      "sticky top-0 z-40",
-      "header contract applies to app chrome too",
+      'from "@/components/chrome/suite-header"',
+      "app chrome must import the shared SuiteHeader shell",
     );
     mustContain(
       chrome.file,
       chrome.source,
-      "h-14",
-      "header contract: 56px app chrome",
+      "<SuiteHeader",
+      "app chrome must render the shared SuiteHeader, not a bespoke app header",
+    );
+    mustNotContain(
+      chrome.file,
+      chrome.source,
+      'className="suitebar"',
+      "the retired .suitebar app chrome (green-grey hairline) must not return",
     );
   }
 }

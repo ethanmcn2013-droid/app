@@ -82,7 +82,9 @@ export function SuiteHeader({
   ariaLabel = "Site navigation",
 }: {
   launcher: React.ReactNode;
-  wordmark: React.ReactNode;
+  /** Product wordmark glyph. Omit on the app chrome, where the SuiteSwitcher's
+   *  active pill is the product identity and no "/ wordmark" is drawn. */
+  wordmark?: React.ReactNode;
   nav: SuiteNavItem[];
   account?: React.ReactNode;
   breadcrumb?: React.ReactNode;
@@ -118,13 +120,21 @@ export function SuiteHeader({
       }}
     >
       <div className="mx-auto flex h-14 w-full max-w-[1240px] items-center justify-between px-6">
-        {/* Left lockup: launcher · / · wordmark · (breadcrumb) */}
+        {/* Left lockup: launcher · / · wordmark · (breadcrumb).
+            The "/" + wordmark render only when a wordmark is supplied. The
+            authed app chrome passes the SuiteSwitcher as the launcher with no
+            wordmark (the active pill IS the product), so the same shell serves
+            both the marketing header and the app chrome. */}
         <div className="flex min-w-0 items-center gap-3 whitespace-nowrap">
           <div className="inline-flex">{launcher}</div>
-          <span aria-hidden style={{ color: INK_FAINT, fontSize: 12 }}>
-            /
-          </span>
-          {wordmark}
+          {wordmark ? (
+            <>
+              <span aria-hidden style={{ color: INK_FAINT, fontSize: 12 }}>
+                /
+              </span>
+              {wordmark}
+            </>
+          ) : null}
           {breadcrumb}
         </div>
 
