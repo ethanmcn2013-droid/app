@@ -23,6 +23,7 @@ import {
   isFirstRun,
 } from "@/server/db/queries";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { requireAppAccess } from "@/server/require-app-access";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 import { isDemoMode } from "@/lib/access-mode";
 import {
@@ -47,6 +48,12 @@ export const dynamic = "force-dynamic";
  * and renders instantly, "chrome lives in layout (instant, never re-blanks)".
  */
 async function AppShell({ children }: { children: React.ReactNode }) {
+  // Closed-beta gate: only allowlisted accounts reach /app (production only;
+  // demo/dev unaffected). Runs inside this Suspense boundary so the wordmark
+  // loader paints during the check and no protected content shows before a
+  // non-allowlisted account is redirected to /waitlist.
+  await requireAppAccess();
+
   const ws = await getActiveWorkspace();
   // First-run gate: redirect to /welcome until user has a starter workspace.
   // /welcome reverse-redirects returning users so a stale bookmark can't trap.
