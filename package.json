@@ -12,8 +12,9 @@
     "db:check": "drizzle-kit check",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
     "sync:templates": "tsx --tsconfig ./tsconfig.json scripts/sync-templates.ts",
-    "test": "node scripts/check-suite-switcher-contract.mjs && node scripts/check-chrome-contract.mjs && bash scripts/check-suiteloader-identity.sh && node --test src/server/cross-tenant-isolation.test.mjs src/server/tenant-scope.test.mjs && node --import tsx --test src/lib/tasks/dayparts.test.ts src/server/account-erasure.test.ts src/server/account-export.test.ts src/server/db/tenant.test.ts src/server/db/retry.test.ts",
+    "test": "node scripts/check-suite-switcher-contract.mjs && node scripts/check-chrome-contract.mjs && node scripts/check-loading-contract.mjs && bash scripts/check-suiteloader-identity.sh && node --test src/server/cross-tenant-isolation.test.mjs src/server/tenant-scope.test.mjs && node --import tsx --test src/lib/tasks/dayparts.test.ts src/server/account-erasure.test.ts src/server/account-export.test.ts src/server/db/tenant.test.ts src/server/db/retry.test.ts",
     "check:suite-switcher": "node scripts/check-suite-switcher-contract.mjs",
+    "check:loading": "node scripts/check-loading-contract.mjs",
     "test:parser": "tsx --conditions=react-server src/server/roadmap/parser.test.ts",
     "test:smoke": "tsx e2e/marketing-golden-path.smoke.ts"
   },
