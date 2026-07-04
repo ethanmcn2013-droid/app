@@ -87,6 +87,23 @@ if (switcher.file) {
     "from \"@/lib/suite-products\"",
     "the portable switcher should not drift behind a repo-specific manifest",
   );
+  // Loading canon (2026-07-01 review, specimens 01 + 03): the cross-product
+  // jump paints a quiet 10px boundary dot on a paper field, then the
+  // destination owns arrival. It must never bloom. This guards the regression
+  // where the jump dot scaled to scale(28) (~252px) and read as a "big indigo
+  // dot" live on every cross-product click.
+  mustContain(
+    switcher.file,
+    switcher.source,
+    "width:10px;height:10px;border-radius:50%",
+    "suite-jump dot must be the canonical 10px boundary dot (loading-review specimen 01)",
+  );
+  mustNotContain(
+    switcher.file,
+    switcher.source,
+    "dot.style.transform",
+    "suite-jump dot must not scale or bloom; the destination owns arrival (loading-review specimen 03)",
+  );
 }
 
 if (!isStudio) {
@@ -155,6 +172,20 @@ if (!isStudio) {
       launcher.source,
       "}, 380);",
       "old dot-morph delay made product jumps feel broken",
+    );
+    // Same jump-dot canon as the switcher: the launcher's suiteJump must land
+    // on the quiet 10px boundary dot and never bloom (loading-review 01 + 03).
+    mustContain(
+      launcher.file,
+      launcher.source,
+      "width:10px;height:10px;border-radius:50%",
+      "suite-jump dot must be the canonical 10px boundary dot (loading-review specimen 01)",
+    );
+    mustNotContain(
+      launcher.file,
+      launcher.source,
+      "dot.style.transform",
+      "suite-jump dot must not scale or bloom; the destination owns arrival (loading-review specimen 03)",
     );
   }
 }
