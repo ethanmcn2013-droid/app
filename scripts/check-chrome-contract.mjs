@@ -17,7 +17,15 @@
  */
 
 import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
+
+// Canonical SuiteHeader identity (CR-stripped sha256). The one marketing
+// header shell, copied byte-identical across tasks/analytics/roadmap/notes.
+// If SuiteHeader legitimately changes, reseal this to the new hash (the same
+// contract as the SuiteLoader seal).
+const SUITE_HEADER_SHA =
+  "99c6ae66de200ec20fad2e6de22dccf7b0d65add407bbb200678af9aa1c095e3";
 
 const root = process.cwd();
 const pkg = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8"));
@@ -54,62 +62,57 @@ function mustNotContain(file, source, needle, reason) {
 
 const product = pkg.name;
 const isNotes = product === "notes";
+const isUmbrella = product === "studio";
 
 /* ── Header shell ──────────────────────────────────────────────── */
 
-if (isNotes) {
-  const header = readRequired("NotesHeader", [
-    "src/components/marketing/notes-header.tsx",
-  ]);
-  if (header.file) {
-    mustContain(
-      header.file,
-      header.source,
-      'className="suitebar"',
-      "notes header rides the shared .suitebar shell",
-    );
-  }
-  const globals = readRequired("globals.css", ["src/app/globals.css"]);
-  if (globals.file) {
-    for (const [needle, reason] of [
-      ["position: sticky", "header contract: chrome is sticky"],
-      ["z-index: 40", "header contract: chrome sits at z-40"],
-      ["height: 56px", "header contract: chrome is 56px"],
-      ["max-width: 1240px", "header contract: centered 1240px content grid"],
-    ]) {
-      mustContain(globals.file, globals.source, needle, reason);
-    }
-  }
-} else {
-  const nav = readRequired("site-nav", [
+if (isUmbrella) {
+  // The umbrella (signalstudio.ie) keeps its own top nav — it is the suite
+  // home, not one of the four products that must hold still. Geometry only.
+  const nav = readRequired("umbrella site-nav", [
     "src/components/layout/site-nav.tsx",
-    "src/components/marketing/site-nav.tsx",
   ]);
   if (nav.file) {
-    mustContain(
-      nav.file,
-      nav.source,
-      "sticky top-0 z-40",
-      "header contract: sticky top chrome at z-40",
-    );
-    mustContain(
-      nav.file,
-      nav.source,
-      "h-14",
-      "header contract: 56px shell height",
-    );
-    mustContain(
-      nav.file,
-      nav.source,
-      "max-w-[1240px]",
-      "header contract: centered 1240px content grid",
-    );
-    mustNotContain(
-      nav.file,
-      nav.source,
-      "z-50",
-      "the bar itself stays at z-40; only overlays float above",
-    );
+    mustContain(nav.file, nav.source, "sticky top-0 z-40", "header contract: sticky top chrome at z-40");
+    mustContain(nav.file, nav.source, "h-14", "header contract: 56px shell height");
+    mustContain(nav.file, nav.source, "max-w-[1240px]", "header contract: centered 1240px content grid");
+    mustNotContain(nav.file, nav.source, "z-50", "the bar itself stays at z-40; only overlays float above");
+  }
+} else {
+  // The four products share ONE marketing header shell:
+  // src/components/chrome/suite-header.tsx. The product's header file is a
+  // thin wrapper that must USE it, never hand-roll a bespoke header
+  // (product-header-contract.md: "may not create separate header systems").
+  const headerFile =
+    product === "notes"
+      ? "src/components/marketing/notes-header.tsx"
+      : "src/components/marketing/site-nav.tsx";
+  const wrapper = readRequired("marketing header", [headerFile]);
+  if (wrapper.file) {
+    mustContain(wrapper.file, wrapper.source, 'from "@/components/chrome/suite-header"', "product header must import the shared SuiteHeader shell");
+    mustContain(wrapper.file, wrapper.source, "<SuiteHeader", "product header must render the shared SuiteHeader, not a bespoke header");
+    mustNotContain(wrapper.file, wrapper.source, "sticky top-0", "geometry lives in SuiteHeader; the wrapper must not re-declare a header shell");
+    mustNotContain(wrapper.file, wrapper.source, "217, 221, 207", "the retired Notes green-grey hairline must not return");
+  }
+
+  // The shared shell carries the geometry and the ONE neutral suite hairline.
+  const shell = readRequired("SuiteHeader", ["src/components/chrome/suite-header.tsx"]);
+  if (shell.file) {
+    mustContain(shell.file, shell.source, "sticky top-0 z-40", "SuiteHeader: sticky top chrome at z-40");
+    mustContain(shell.file, shell.source, "h-14", "SuiteHeader: 56px shell height");
+    mustContain(shell.file, shell.source, "max-w-[1240px]", "SuiteHeader: centered 1240px content grid");
+    mustContain(shell.file, shell.source, "--suite-header-hairline", "SuiteHeader: one neutral suite hairline default");
+    mustNotContain(shell.file, shell.source, "217, 221, 207", "no green-grey hairline in the shared shell");
+
+    // Byte-identity: the shell is one component across all four products.
+    const actual = createHash("sha256")
+      .update(shell.source.replace(/\r/g, ""), "utf8")
+      .digest("hex");
+    if (actual !== SUITE_HEADER_SHA) {
+      failures.push(
+        `src/components/chrome/suite-header.tsx has drifted from canonical SuiteHeader (expected ${SUITE_HEADER_SHA}, got ${actual}). Copy it byte-identical across tasks/analytics/roadmap/notes.`,
+      );
+    }
   }
 }
 
