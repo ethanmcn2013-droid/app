@@ -49,7 +49,7 @@ export function TaskCard({
       onClick={onClick}
       data-task-id={task.id}
       className={cn(
-        "relative cursor-grab select-none rounded-[10px] border bg-white px-3 py-2.5 text-[13px] leading-snug text-ink shadow-[0_1px_2px_rgba(20,21,26,0.05),0_0_0_1px_rgba(20,21,26,0.04)] transition-shadow",
+        "relative cursor-grab select-none rounded-xl border bg-white px-3 py-2.5 text-[13px] leading-snug text-ink shadow-[0_1px_2px_-0.5px_rgba(20,21,26,0.08),0_2px_5px_-1px_rgba(20,21,26,0.05),0_0_0_1px_rgba(20,21,26,0.04)] transition-[box-shadow] duration-200 ease-out hover:shadow-[0_6px_16px_-4px_rgba(20,21,26,0.13),0_2px_6px_-1px_rgba(20,21,26,0.06),0_0_0_1px_rgba(20,21,26,0.05)]",
         variant === "list" && "rounded-md py-2",
         hidden && "pointer-events-none opacity-30",
         flash && "ring-2 ring-emerald-400",
