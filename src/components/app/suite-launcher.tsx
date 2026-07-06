@@ -15,7 +15,6 @@ type ProductGesture = "caret" | "pulse" | "sweep" | "tick";
 interface SuiteProduct {
   slug: ProductSlug;
   word: string;
-  objectLabel: string;
   clarityLine: string;
   marketingUrl: string;
   appUrl: string;
@@ -26,7 +25,6 @@ const PRODUCTS: SuiteProduct[] = [
   {
     slug: "notes",
     word: "notes",
-    objectLabel: "Notebook",
     clarityLine: "Capture clarity",
     marketingUrl: NOTES_URL,
     appUrl: `${NOTES_URL}/app`,
@@ -35,7 +33,6 @@ const PRODUCTS: SuiteProduct[] = [
   {
     slug: "tasks",
     word: "tasks",
-    objectLabel: "Workspace",
     clarityLine: "Execution clarity",
     marketingUrl: TASKS_URL,
     appUrl: `${TASKS_URL}/app`,
@@ -44,7 +41,6 @@ const PRODUCTS: SuiteProduct[] = [
   {
     slug: "roadmap",
     word: "timeline",
-    objectLabel: "Timeline",
     clarityLine: "Direction clarity",
     marketingUrl: TIMELINE_URL,
     appUrl: `${TIMELINE_URL}/app`,
@@ -53,7 +49,6 @@ const PRODUCTS: SuiteProduct[] = [
   {
     slug: "analytics",
     word: "signal",
-    objectLabel: "Briefing",
     clarityLine: "Attention clarity",
     marketingUrl: SIGNAL_URL,
     appUrl: `${SIGNAL_URL}/app`,
@@ -169,16 +164,6 @@ const SUITE_LAUNCHER_CSS = `
   font-size: 11px;
   line-height: 1.25;
 }
-.sl-system-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 1px solid color-mix(in srgb, var(--sl-indigo) 18%, transparent);
-  border-radius: 8px;
-  color: var(--sl-indigo);
-}
 .sl-list {
   display: grid;
   gap: 2px;
@@ -253,12 +238,6 @@ const SUITE_LAUNCHER_CSS = `
   font-size: 13.5px;
   font-weight: 650;
   letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-.sl-object {
-  color: var(--sl-ink-quiet);
-  font-size: 11px;
-  font-weight: 500;
   line-height: 1.1;
 }
 .sl-clarity {
@@ -537,12 +516,6 @@ export function SuiteLauncher({
               <div className="sl-title">Signal Studio</div>
               <div className="sl-system-line">Four products, one system.</div>
             </div>
-            <div className="sl-system-mark" aria-hidden>
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <circle cx="6.5" cy="6.5" r="2.5" fill="currentColor" />
-                <path d="M6.5 1.5v1.7M6.5 9.8v1.7M1.5 6.5h1.7M9.8 6.5h1.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.45" />
-              </svg>
-            </div>
           </div>
           <ul className="sl-list">
             {PRODUCTS.map((product) => {
@@ -574,7 +547,6 @@ export function SuiteLauncher({
                           {product.word}
                           <span className="sl-brand-dot">.</span>
                         </span>
-                        <span className="sl-object">{product.objectLabel}</span>
                       </span>
                       <span className="sl-clarity">{product.clarityLine}</span>
                     </span>
