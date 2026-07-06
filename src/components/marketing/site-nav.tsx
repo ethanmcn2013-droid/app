@@ -9,10 +9,10 @@ import { UserButton } from "@clerk/nextjs";
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 const UMBRELLA_DESIGN = "https://signalstudio.ie/design";
 
+// One header contract (product-header-contract.md, 2026-07-06): the marketing
+// header nav is exactly Pricing · Design, both umbrella links. Demo, Anatomy
+// and App stay reachable from the page body and footer, not the header.
 const NAV: SuiteNavItem[] = [
-  { href: "/#demo", label: "Demo" },
-  { href: "/#anatomy", label: "Anatomy" },
-  { href: "/app/board", label: "App" },
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
   { href: UMBRELLA_DESIGN, label: "Design", external: true },
 ];
