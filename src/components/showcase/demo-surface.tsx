@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import {
   LANES,
   LANE_ORDER,
+  PRIORITY_LABEL,
   USERS,
   type LaneId,
   type Task,
@@ -45,9 +46,19 @@ export function DemoSurface({
     );
   }, [state.tasks, view]);
 
+  // Live per-lane counts for the board chrome's count chips.
+  const laneCounts = useMemo(() => {
+    const counts = { todo: 0, doing: 0, review: 0, done: 0 } as Record<
+      LaneId,
+      number
+    >;
+    for (const t of state.tasks) counts[t.lane]++;
+    return counts;
+  }, [state.tasks]);
+
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <ViewWrappers view={view} transitions={transitions} />
+      <ViewWrappers view={view} transitions={transitions} laneCounts={laneCounts} />
       <CardLayer
         view={view}
         tasks={orderedTasks}
@@ -66,9 +77,11 @@ export function DemoSurface({
 function ViewWrappers({
   view,
   transitions,
+  laneCounts,
 }: {
   view: ViewMode;
   transitions: ReturnType<typeof useMorphTransition>;
+  laneCounts: Record<LaneId, number>;
 }) {
   return (
     <div className="pointer-events-none absolute inset-0">
@@ -82,7 +95,7 @@ function ViewWrappers({
             transition={transitions.chrome}
             className="absolute inset-0"
           >
-            <BoardChrome />
+            <BoardChrome laneCounts={laneCounts} />
           </motion.div>
         ) : null}
         {view === "list" ? (
@@ -114,40 +127,64 @@ function ViewWrappers({
   );
 }
 
-function BoardChrome() {
+function BoardChrome({ laneCounts }: { laneCounts: Record<LaneId, number> }) {
   // NOTE: no `data-lane` here, those attributes live on the card-layer
   // columns (single source of truth so cursor / drop math doesn't see
   // duplicates from `document.querySelector`).
-  // Canon recut (2026-07-07): paper lanes separated by hairlines, no
-  // coloured fills. Lane names are mono uppercase kickers; the dot
-  // marker carries indigo on the active/Moving lane only.
+  // The lanes wear the product's own soft palette (--lane-* tokens, the
+  // board's chrome since cycle 2): desaturated washes that let the white
+  // cards, priority marks, and presence colours do the talking. Each
+  // header carries its lane dot, its name in the lane ink, and a live
+  // count that ticks over as cards land.
   return (
-    <div className="grid h-full grid-cols-4 divide-x divide-line-soft px-5 pt-4">
+    <div className="grid h-full grid-cols-4 gap-2.5 px-5 pb-4 pt-4">
       {LANE_ORDER.map((laneId) => {
         const lane = LANES[laneId];
-        const activeLane = laneId === "doing";
         return (
-          <div key={laneId} className="flex flex-col px-2 pt-2">
+          <div
+            key={laneId}
+            className="flex flex-col rounded-xl px-2 pt-2"
+            style={{ background: lane.bg }}
+          >
             <div className="flex items-center gap-1.5 px-1.5 pb-1.5 pt-0.5">
               <span
                 className="block h-1.5 w-1.5 rounded-full"
-                style={{
-                  background: activeLane ? "var(--brand)" : "var(--ink-ghost)",
-                }}
+                style={{ background: lane.dot }}
               />
               <span
-                className={
-                  "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
-                  (activeLane ? "text-ink" : "text-ink-quiet")
-                }
+                className="text-[11.5px] font-semibold tracking-[-0.01em]"
+                style={{ color: lane.ink }}
               >
                 {lane.name}
               </span>
+              <LaneCount value={laneCounts[laneId]} ink={lane.ink} />
             </div>
           </div>
         );
       })}
     </div>
+  );
+}
+
+/** The lane's live count: the digit flips over when a card lands. */
+function LaneCount({ value, ink }: { value: number; ink: string }) {
+  return (
+    <span
+      className="ml-auto inline-flex h-4 min-w-4 items-center justify-center overflow-hidden rounded-full bg-white/70 px-1 font-mono text-[9.5px] font-semibold tabular-nums"
+      style={{ color: ink }}
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span
+          key={value}
+          initial={{ y: 7, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -7, opacity: 0 }}
+          transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {value}
+        </motion.span>
+      </AnimatePresence>
+    </span>
   );
 }
 
@@ -268,8 +305,10 @@ function CardLayer({
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
   if (view === "board") {
+    // Mirrors BoardChrome's grid exactly (gap, padding, panel inset) so
+    // the cards sit inside the tinted lane panels painted behind them.
     return (
-      <div className="relative grid h-full grid-cols-4 px-5 pt-4">
+      <div className="relative grid h-full grid-cols-4 gap-2.5 px-5 pb-4 pt-4">
         {LANE_ORDER.map((laneId) => (
           <BoardLaneCardColumn
             key={laneId}
@@ -296,22 +335,16 @@ function CardLayer({
             if (laneTasks.length === 0) return null;
             return (
               <div key={laneId} data-lane={laneId}>
-                {/* Section header row */}
+                {/* Section header row, lane dot + ink, same grammar as
+                    the board headers. */}
                 <div className="flex items-center gap-2 border-b border-line-soft bg-bg-sunken/30 px-4 py-1.5">
                   <span
                     className="block h-1.5 w-1.5 rounded-full"
-                    style={{
-                      background:
-                        laneId === "doing"
-                          ? "var(--brand)"
-                          : "var(--ink-ghost)",
-                    }}
+                    style={{ background: lane.dot }}
                   />
                   <span
-                    className={
-                      "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
-                      (laneId === "doing" ? "text-ink" : "text-ink-quiet")
-                    }
+                    className="text-[11px] font-semibold tracking-[-0.01em]"
+                    style={{ color: lane.ink }}
                   >
                     {lane.name}
                   </span>
@@ -390,7 +423,7 @@ function BoardLaneCardColumn({
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
   return (
-    <div data-lane={laneId} className="flex flex-col gap-2 px-2 pb-2 pt-9">
+    <div data-lane={laneId} className="flex flex-col gap-2 px-3.5 pb-3.5 pt-9">
       {/* Invisible coordinate anchor, the carry scene's celebration
           burst measures `[data-lane-header]` to position particles. We
           want the same y as the chrome's lane header, which sits
@@ -433,9 +466,10 @@ function MorphCard({
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
   const isPicked = state.pickedTaskId === task.id;
-  // One indigo accent for the card currently moving, whoever is
-  // carrying it. Per-user colour rings are off the ink/paper/indigo canon.
-  const pickedColor = isPicked && state.pickedBy ? "var(--brand)" : null;
+  // The moving card carries its carrier's presence colour (--user-*
+  // tokens): the ring answers "who has this", which is the information.
+  const pickedColor =
+    isPicked && state.pickedBy ? USERS[state.pickedBy].color : null;
   const isDep =
     !!state.dependencyHighlight &&
     (state.dependencyHighlight[0] === task.id ||
@@ -481,10 +515,11 @@ function MorphCard({
       layoutId={`task-${task.id}`}
       layout
       transition={transitionConfig}
+      whileHover={view === "board" ? { y: -1.5 } : undefined}
       className={[
         "relative cursor-grab select-none border bg-white text-ink",
         view === "board" &&
-          "rounded-[10px] px-3 py-2.5 shadow-[0_1px_2px_rgba(20,21,26,0.04)]",
+          "rounded-[10px] px-3 py-2.5 shadow-[0_1px_2px_rgba(20,21,26,0.05),0_2px_6px_-2px_rgba(20,21,26,0.06)] transition-shadow duration-200 ease-out hover:shadow-[0_4px_14px_-4px_rgba(20,21,26,0.14),0_2px_5px_-2px_rgba(20,21,26,0.08)]",
         view === "list" &&
           "grid items-center gap-3 border-b border-l-0 border-r-0 border-t-0 border-line-soft px-4 py-2",
         view === "timeline" && "rounded-md border-0 px-2 py-1.5",
@@ -503,30 +538,28 @@ function MorphCard({
             : view === "list"
               ? undefined
               : view === "board"
-                ? "var(--line)"
+                ? "var(--line-soft)"
                 : "transparent",
         boxShadow: pickedColor
-          ? `0 0 0 1px ${pickedColor}, 0 1px 2px rgba(20,21,26,0.05)`
+          ? `0 0 0 1.5px ${pickedColor}, 0 1px 2px rgba(20,21,26,0.05)`
           : view === "timeline"
             ? task.lane === "doing"
               ? "inset 0 0 0 1px rgba(79,70,229,0.28)"
               : "inset 0 0 0 1px var(--line-soft)"
             : undefined,
+        // Timeline bars read status at a glance: each bar wears its
+        // lane's wash and ink (the same --lane-* tokens as the board).
         background:
           view === "timeline"
             ? task.lane === "doing"
               ? "var(--brand-soft)"
-              : task.lane === "done"
-                ? "#fff"
-                : "var(--bg-sunken)"
+              : LANES[task.lane].bg
             : "#fff",
         color:
           view === "timeline"
             ? task.lane === "doing"
               ? "var(--brand-deep)"
-              : task.lane === "done"
-                ? "var(--ink-faint)"
-                : "var(--ink-soft)"
+              : LANES[task.lane].ink
             : "var(--ink)",
         opacity: isPicked ? 0 : 1,
       }}
@@ -650,12 +683,12 @@ function SoulRow({ task, view }: { task: Task; view: ViewMode }) {
   if (view === "timeline") {
     return (
       <div className="flex h-full items-center gap-1.5 overflow-hidden">
-        <Avatar user={task.assignees[0]} size={14} tone="ink" />
+        <Avatar user={task.assignees[0]} size={14} />
         <span className="truncate text-[11px] font-medium">{task.title}</span>
         {task.priority === "p0" ? (
           <span
             className="ml-auto font-mono text-[9px] font-semibold tracking-[0.08em]"
-            style={{ color: "var(--brand-deep)" }}
+            style={{ color: "var(--roadmap-red-fg)" }}
           >
             P0
           </span>
@@ -673,34 +706,88 @@ function SoulRow({ task, view }: { task: Task; view: ViewMode }) {
       <span className="line-clamp-2 text-[13px] leading-snug">
         {task.title}
       </span>
-      <div className="flex items-center gap-1.5">
-        {/* Priority reads quietly in mono; it surfaces only above P2 and
-            carries the indigo (the product's own anatomy contract). */}
-        {task.priority === "p0" || task.priority === "p1" ? (
-          <span
-            className="flex-shrink-0 pt-px font-mono text-[9.5px] font-semibold tracking-[0.08em]"
-            style={{ color: "var(--brand-deep)" }}
-            aria-label={`Priority ${task.priority.toUpperCase()}`}
-          >
-            {task.priority.toUpperCase()}
-          </span>
-        ) : null}
-      </div>
+      {/* Priority surfaces only above P2 (the anatomy contract): P0 is
+          a small urgent chip, P1 a quiet coloured mark. */}
+      {task.priority === "p0" ? (
+        <span
+          className="flex-shrink-0 rounded-md border px-1.5 py-px font-mono text-[9px] font-semibold tracking-[0.08em]"
+          style={{
+            background: "var(--roadmap-red-bg)",
+            borderColor: "var(--roadmap-red-border)",
+            color: "var(--roadmap-red-fg)",
+          }}
+          aria-label="Priority P0, urgent"
+        >
+          P0
+        </span>
+      ) : task.priority === "p1" ? (
+        <span
+          className="flex-shrink-0 pt-px font-mono text-[9.5px] font-semibold tracking-[0.08em]"
+          style={{ color: PRIORITY_LABEL.p1.color }}
+          aria-label="Priority P1, high"
+        >
+          P1
+        </span>
+      ) : null}
     </div>
   );
 }
 
 function BoardBody({ task }: { task: Task }) {
+  const dueSoon = task.due === "Today" || task.due === "Tomorrow";
   return (
     <div className="mt-2.5 flex items-center justify-between gap-2">
-      <div className="flex h-[18px] items-center">
+      <div className="flex h-[20px] items-center gap-2">
         {task.due ? (
-          <span className="font-mono text-[10px] tabular-nums text-ink-quiet">
+          <span
+            className={
+              "font-mono text-[10px] tabular-nums " +
+              (dueSoon ? "font-semibold" : "text-ink-quiet")
+            }
+            style={dueSoon ? { color: "var(--lane-doing-ink)" } : undefined}
+          >
             {task.due}
           </span>
         ) : null}
+        {task.idleDays ? (
+          <span
+            className="inline-flex items-center gap-1 font-mono text-[9.5px] font-medium"
+            style={{ color: "var(--lane-doing-ink)" }}
+            title={`Idle ${task.idleDays} days`}
+          >
+            <svg
+              width="9"
+              height="9"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              aria-hidden
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" strokeLinecap="round" />
+            </svg>
+            {task.idleDays}d
+          </span>
+        ) : null}
+        {task.comments ? (
+          <span className="inline-flex items-center gap-1 text-[10px] text-ink-quiet">
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden
+            >
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            {task.comments}
+          </span>
+        ) : null}
       </div>
-      <AvatarStack users={task.assignees} size={18} tone="ink" />
+      <AvatarStack users={task.assignees} size={20} />
     </div>
   );
 }
@@ -713,19 +800,23 @@ function ListCells({ task }: { task: Task }) {
       <div className="flex items-center gap-2 text-[12.5px]">
         <span className="truncate">{task.title}</span>
       </div>
-      <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft bg-white px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft">
+      {/* Status chip wears the lane's own wash + ink, same grammar as
+          the board's lane headers. */}
+      <span
+        className="inline-flex w-fit items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
+        style={{ background: lane.bg, color: lane.ink }}
+      >
         <span
           className="block h-1.5 w-1.5 rounded-full"
-          style={{
-            background:
-              task.lane === "doing" ? "var(--brand)" : "var(--ink-ghost)",
-          }}
+          style={{ background: lane.dot }}
         />
         {lane.name}
       </span>
       <span
         className="inline-flex items-center font-mono text-[10px] font-semibold tracking-[0.08em]"
-        style={{ color: hot ? "var(--brand-deep)" : "var(--ink-quiet)" }}
+        style={{
+          color: hot ? PRIORITY_LABEL[task.priority].color : "var(--ink-quiet)",
+        }}
       >
         {task.priority.toUpperCase()}
       </span>
@@ -733,7 +824,7 @@ function ListCells({ task }: { task: Task }) {
         {task.due ?? "·"}
       </span>
       <div className="flex justify-end">
-        <AvatarStack users={task.assignees} size={18} tone="ink" />
+        <AvatarStack users={task.assignees} size={18} />
       </div>
     </>
   );
@@ -759,7 +850,7 @@ function CommentThread({
       className="mt-3 space-y-2 overflow-hidden border-t border-line-soft pt-2.5"
     >
       <div className="flex items-start gap-2">
-        <Avatar user="alex" size={20} tone="ink" />
+        <Avatar user="alex" size={20} />
         <div className="text-[11.5px] leading-relaxed text-ink-soft">
           <span className="font-medium text-ink">Alex</span> · 2h ago
           <p>{staticComment}</p>
@@ -772,12 +863,7 @@ function CommentThread({
           animate={{ opacity: 1, y: 0 }}
           className="flex items-start gap-2"
         >
-          <Avatar
-            user={postedComment.user as keyof typeof USERS}
-            size={20}
-            tone="ink"
-            active
-          />
+          <Avatar user={postedComment.user as keyof typeof USERS} size={20} />
           <div className="text-[11.5px] leading-relaxed text-ink-soft">
             <span className="font-medium text-ink">
               {USERS[postedComment.user as keyof typeof USERS].name}
@@ -790,12 +876,7 @@ function CommentThread({
 
       {typingUser ? (
         <div className="flex items-start gap-2">
-          <Avatar
-            user={typingUser as keyof typeof USERS}
-            size={20}
-            tone="ink"
-            active
-          />
+          <Avatar user={typingUser as keyof typeof USERS} size={20} />
           <div className="flex-1 text-[11.5px] leading-relaxed text-ink-soft">
             <span className="font-medium text-ink">
               {USERS[typingUser as keyof typeof USERS].name}

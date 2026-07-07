@@ -9,7 +9,7 @@ import {
 } from "react";
 import { motion, LayoutGroup, AnimatePresence, useReducedMotion } from "motion/react";
 import { EASE_OUT_EXPO, MOTION_BASE, MOTION_MODERATE } from "@/lib/motion";
-import { LANES, SEED_TASKS, type Task, type UserId } from "@/lib/data";
+import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
 import {
   DOMAINS,
   buildDomainSeed,
@@ -691,10 +691,20 @@ export function CinematicDemo({
         <div className="flex items-center justify-between border-b border-line-soft bg-bg-elevated px-4 py-2.5">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              {/* Window dots in the paper register, hairline, not traffic-light colour */}
-              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
-              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
-              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
+              {/* Window dots: the muted take on the mac trio, drawn from
+                  the tokenised badge palette so nothing shouts. */}
+              <span
+                className="block h-2.5 w-2.5 rounded-full border border-line"
+                style={{ background: "var(--roadmap-rose-bg)" }}
+              />
+              <span
+                className="block h-2.5 w-2.5 rounded-full border border-line"
+                style={{ background: "var(--roadmap-amber-bg)" }}
+              />
+              <span
+                className="block h-2.5 w-2.5 rounded-full border border-line"
+                style={{ background: "var(--roadmap-emerald-bg)" }}
+              />
             </div>
             <div className="ml-3 flex items-center gap-1.5 rounded-md bg-bg-sunken px-2 py-0.5 text-[11px] text-ink-quiet">
               <svg
@@ -825,7 +835,7 @@ export function CinematicDemo({
               </>
             )}
           </button>
-          <span className="text-ink-soft">A self-running demo. Interact any time.</span>
+          <span className="text-ink-soft">Runs itself. Click anything to join in.</span>
       </div>
     </div>
   );
@@ -835,9 +845,9 @@ function PresenceStrip() {
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex -space-x-1.5">
-        <Avatar user="chloe" size={20} ring tone="ink" />
-        <Avatar user="david" size={20} ring tone="ink" />
-        <Avatar user="alex" size={20} ring tone="ink" />
+        <Avatar user="chloe" size={20} ring />
+        <Avatar user="david" size={20} ring />
+        <Avatar user="alex" size={20} ring />
       </div>
       <span className="text-[10.5px] text-ink-quiet">Demo workspace</span>
     </div>
@@ -1011,8 +1021,8 @@ function BoardCardWrapper({
     (state.dependencyHighlight[0] === task.id ||
       state.dependencyHighlight[1] === task.id);
   const showThread = state.openCommentTaskId === task.id;
-  // One indigo accent for the card being carried (canon: never per-user colour).
-  const pickedColor = isPicked && state.pickedBy ? "var(--brand)" : null;
+  // The carried card wears its carrier's presence colour (--user-* tokens).
+  const pickedColor = isPicked && state.pickedBy ? USERS[state.pickedBy].color : null;
 
   return (
     <TaskCard

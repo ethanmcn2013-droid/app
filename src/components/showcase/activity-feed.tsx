@@ -15,18 +15,18 @@ export function ActivityFeed({
         {items.slice(-4).map((item) => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, y: 14, scale: 0.96 }}
+            initial={{ opacity: 0, y: 16, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{
               opacity: 0,
               y: -8,
               transition: { duration: 0.25 },
             }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ type: "spring", stiffness: 420, damping: 30, mass: 0.9 }}
             className="rounded-[10px] border border-line bg-white p-2.5 shadow-[0_4px_12px_rgba(20,21,26,0.06),0_1px_3px_rgba(20,21,26,0.04)]"
           >
             <div className="flex items-start gap-2">
-              <Avatar user={item.user} size={18} tone="ink" />
+              <Avatar user={item.user} size={18} />
               <div className="text-[11.5px] leading-snug text-ink-soft">
                 <span className="font-medium text-ink">
                   {USERS[item.user].name}

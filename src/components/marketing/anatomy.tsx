@@ -343,8 +343,12 @@ function DemoCard({
               variants={itemVariants}
               animate={spotlightAnim("priority", active)}
               transition={SPOT_TWEEN}
-              className="rounded-md border border-line bg-white px-1.5 py-px font-mono text-[10px] font-semibold tracking-[0.08em] outline-none cursor-pointer"
-              style={{ color: "var(--brand-deep)" }}
+              className="rounded-md border px-1.5 py-px font-mono text-[10px] font-semibold tracking-[0.08em] outline-none cursor-pointer"
+              style={{
+                background: "var(--roadmap-red-bg)",
+                borderColor: "var(--roadmap-red-border)",
+                color: "var(--roadmap-red-fg)",
+              }}
             >
               P0
             </motion.span>
@@ -411,14 +415,15 @@ function DemoCard({
               </AnimatePresence>
 
               <div className="flex -space-x-1.5">
-                {/* DV, neutral ink-tone initials; gets a secondary squash
-                    when EM joins. EM alone carries the indigo, the one
-                    actively in the card. */}
+                {/* DV wears David's presence colour (--user-* tokens, same
+                    as the board); it squashes in reaction when EM joins.
+                    EM, the one actively in the card, arrives in the
+                    indigo. */}
                 <motion.span
-                  className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-ink-soft ring-2 ring-white"
+                  className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-white ring-2 ring-white"
                   style={{
-                    background: "var(--bg-sunken)",
-                    boxShadow: "inset 0 0 0 1px var(--line)",
+                    background: "var(--user-david)",
+                    boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.2)",
                     zIndex: 2,
                   }}
                   animate={{
@@ -506,7 +511,12 @@ function DemoCard({
                       duration: 0.4,
                       ease: EASE.inOut,
                     }}
-                    className="inline-flex items-center gap-1 rounded border border-line bg-white px-1.5 py-[2px] text-[10px] font-medium text-ink-soft"
+                    className="inline-flex items-center gap-1 rounded border px-1.5 py-[2px] text-[10px] font-medium"
+                    style={{
+                      background: "var(--roadmap-amber-bg)",
+                      borderColor: "transparent",
+                      color: "var(--roadmap-amber-fg)",
+                    }}
                   >
                     <motion.svg
                       width="9"
