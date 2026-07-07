@@ -138,40 +138,40 @@ export function SuiteHeader({
           {breadcrumb}
         </div>
 
-        {/* Desktop nav */}
-        <nav
-          className="hidden items-center gap-7 md:flex"
-          style={{ fontSize: 13, color: INK_SOFT }}
-        >
-          {nav.map((item) =>
-            item.external ? (
-              <a
-                key={item.href}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="suite-header-link"
-                style={{ color: INK_SOFT, textDecoration: "none", transition: "color 140ms ease" }}
-              >
-                {item.label}
-              </a>
-            ) : (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="suite-header-link"
-                style={{ color: INK_SOFT, textDecoration: "none", transition: "color 140ms ease" }}
-              >
-                {item.label}
-              </Link>
-            ),
-          )}
-        </nav>
-
-        {/* Right cluster: account slot + mobile toggle (only when there is
-            nav to collapse; products with no marketing nav, e.g. Notes, show
-            no dead hamburger) */}
+        {/* Right cluster: nav links ride at the right edge beside the
+            account slot (2026-07-07: they used to sit centered, orphaned
+            between the lockup and Sign in), then the mobile toggle (only
+            when there is nav to collapse; products with no marketing nav,
+            e.g. Notes, show no dead hamburger) */}
         <div className="flex items-center gap-2">
+          <nav
+            className="mr-4 hidden items-center gap-7 md:flex"
+            style={{ fontSize: 13, color: INK_SOFT }}
+          >
+            {nav.map((item) =>
+              item.external ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="suite-header-link"
+                  style={{ color: INK_SOFT, textDecoration: "none", transition: "color 140ms ease" }}
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="suite-header-link"
+                  style={{ color: INK_SOFT, textDecoration: "none", transition: "color 140ms ease" }}
+                >
+                  {item.label}
+                </Link>
+              ),
+            )}
+          </nav>
           {account}
           {nav.length > 0 && (
           <button
