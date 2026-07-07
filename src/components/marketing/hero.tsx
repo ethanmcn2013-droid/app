@@ -27,7 +27,7 @@ export function Hero() {
         </p>
 
         <p className="mt-7 inline-flex items-center gap-2 text-[12.5px] text-ink-faint">
-          <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+          <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
           Demo is live
         </p>
 

@@ -26,11 +26,7 @@ export function AiNudge({
           <div className="flex items-start gap-3">
             <div
               className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg"
-              style={{
-                background:
-                  "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
-                boxShadow: "0 6px 14px rgba(79, 70, 229, 0.35)",
-              }}
+              style={{ background: "var(--brand)" }}
             >
               <svg
                 width="14"
@@ -46,7 +42,7 @@ export function AiNudge({
               </svg>
             </div>
             <div className="flex-1">
-              <div className="text-[10.5px] font-semibold uppercase tracking-wider text-brand">
+              <div className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-deep">
                 Signal nudge
               </div>
               <div className="mt-1 text-[12.5px] leading-snug text-ink">

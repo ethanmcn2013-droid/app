@@ -20,9 +20,13 @@ const EASE = {
   outExpo: [0.16, 1, 0.3, 1] as const,
   inOut: [0.65, 0, 0.35, 1] as const,
   backOut: [0.34, 1.56, 0.64, 1] as const,
+  out: [0.22, 0.61, 0.36, 1] as const,
 };
 const SPRING_SNAP = { type: "spring" as const, stiffness: 360, damping: 26 };
 const SPRING_SOFT = { type: "spring" as const, stiffness: 220, damping: 24 };
+// Hover spotlight: a quick, quiet tween. 140ms ease-out, per the
+// hairline register, no spring theatrics on a hover state.
+const SPOT_TWEEN = { duration: 0.14, ease: EASE.out };
 
 type Slot =
   | "title"
@@ -214,10 +218,11 @@ function spotlightAnim(slot: Slot, active: Slot | null) {
   const on = active === slot;
   const off = !!active && active !== slot;
   return {
+    // Indigo hairline ring, no glow. The rest of the card dims slightly.
     boxShadow: on
-      ? "0 0 0 2px rgba(79,70,229,0.22), 0 8px 20px -8px rgba(79,70,229,0.45)"
-      : "0 0 0 0px rgba(79,70,229,0), 0 0px 0px 0px rgba(79,70,229,0)",
-    opacity: off ? 0.4 : 1,
+      ? "0 0 0 1px rgba(79,70,229,0.55)"
+      : "0 0 0 0px rgba(79,70,229,0)",
+    opacity: off ? 0.45 : 1,
     y: on ? -1 : 0,
   };
 }
@@ -265,21 +270,9 @@ function DemoCard({
   return (
     <div
       ref={wrapRef}
-      className="relative flex items-center justify-center rounded-3xl border border-line-soft bg-gradient-to-b from-bg-elevated to-bg-sunken/60 px-6 py-20"
+      className="relative flex items-center justify-center rounded-3xl border border-line-soft bg-bg-sunken/40 px-6 py-20"
       onMouseLeave={() => setActive(null)}
     >
-      {/* Ambient ground glow, intensifies on focus + on "active" beats */}
-      <motion.div
-        aria-hidden
-        className="absolute inset-0 -z-10 rounded-3xl"
-        style={{
-          background:
-            "radial-gradient(ellipse at top, rgba(79,70,229,0.10), transparent 60%)",
-        }}
-        animate={{ opacity: active || stage.lock ? 1 : 0.55 }}
-        transition={{ duration: 0.7, ease: EASE.inOut }}
-      />
-
       <motion.div
         className="relative w-[300px] rounded-[12px] border bg-white p-3.5"
         animate={{
@@ -329,28 +322,6 @@ function DemoCard({
           />
         </svg>
 
-        {/* Lock bloom, one-shot inset flash when the outline lands */}
-        <AnimatePresence>
-          {stage.lock && (
-            <motion.div
-              key={`bloom-${stage.lockBloom}`}
-              aria-hidden
-              className="pointer-events-none absolute inset-0 rounded-[12px]"
-              initial={{ opacity: 0, boxShadow: "inset 0 0 0px rgba(79,70,229,0)" }}
-              animate={{
-                opacity: [0, 0.9, 0],
-                boxShadow: [
-                  "inset 0 0 0px rgba(79,70,229,0)",
-                  "inset 0 0 22px rgba(79,70,229,0.32)",
-                  "inset 0 0 0px rgba(79,70,229,0)",
-                ],
-              }}
-              transition={{ duration: 1.2, ease: EASE.outExpo, delay: 0.85 }}
-              exit={{ opacity: 0 }}
-            />
-          )}
-        </AnimatePresence>
-
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -362,7 +333,7 @@ function DemoCard({
               {...hoverProps("title")}
               variants={itemVariants}
               animate={spotlightAnim("title", active)}
-              transition={SPRING_SNAP}
+              transition={SPOT_TWEEN}
               className="rounded-[5px] -mx-1 px-1 text-[14px] font-medium leading-snug text-ink outline-none cursor-pointer"
             >
               Finalise run-of-show · ceremony to reception
@@ -371,8 +342,9 @@ function DemoCard({
               {...hoverProps("priority")}
               variants={itemVariants}
               animate={spotlightAnim("priority", active)}
-              transition={SPRING_SNAP}
-              className="rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wider text-red-600 outline-none cursor-pointer"
+              transition={SPOT_TWEEN}
+              className="rounded-md border border-line bg-white px-1.5 py-px font-mono text-[10px] font-semibold tracking-[0.08em] outline-none cursor-pointer"
+              style={{ color: "var(--brand-deep)" }}
             >
               P0
             </motion.span>
@@ -384,7 +356,7 @@ function DemoCard({
               {...hoverProps("due")}
               variants={itemVariants}
               animate={spotlightAnim("due", active)}
-              transition={SPRING_SNAP}
+              transition={SPOT_TWEEN}
               className="-mx-1 flex items-center gap-1.5 rounded-md px-1 outline-none cursor-pointer"
             >
               <span className="rounded-md bg-bg-sunken px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft">
@@ -413,31 +385,11 @@ function DemoCard({
               {...hoverProps("assignee")}
               variants={itemVariants}
               animate={spotlightAnim("assignee", active)}
-              transition={SPRING_SNAP}
+              transition={SPOT_TWEEN}
               className="relative flex items-center rounded-full outline-none cursor-pointer"
             >
-              {/* Slow ambient presence halo (only when EM is present) */}
-              <motion.span
-                aria-hidden
-                className="pointer-events-none absolute"
-                style={{
-                  inset: "-4px -4px -4px auto",
-                  width: 26,
-                  borderRadius: 9999,
-                  background:
-                    "radial-gradient(closest-side, rgba(79,70,229,0.55), rgba(79,70,229,0) 70%)",
-                }}
-                animate={{
-                  opacity: stage.presence ? [0.5, 1, 0.5] : 0,
-                  scale: stage.presence ? [0.95, 1.12, 0.95] : 0.9,
-                }}
-                transition={{
-                  duration: 2.6,
-                  ease: "easeInOut",
-                  repeat: stage.presence ? Infinity : 0,
-                }}
-              />
-              {/* One-shot ripple ring on the moment EM joins */}
+              {/* One-shot ripple ring on the moment EM joins, a hairline,
+                  not a glow */}
               <AnimatePresence>
                 {stage.presence && (
                   <motion.span
@@ -459,10 +411,16 @@ function DemoCard({
               </AnimatePresence>
 
               <div className="flex -space-x-1.5">
-                {/* DV, gets a secondary squash when EM joins */}
+                {/* DV, neutral ink-tone initials; gets a secondary squash
+                    when EM joins. EM alone carries the indigo, the one
+                    actively in the card. */}
                 <motion.span
-                  className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-white ring-2 ring-white"
-                  style={{ background: "var(--user-david)", zIndex: 2 }}
+                  className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-semibold uppercase text-ink-soft ring-2 ring-white"
+                  style={{
+                    background: "var(--bg-sunken)",
+                    boxShadow: "inset 0 0 0 1px var(--line)",
+                    zIndex: 2,
+                  }}
                   animate={{
                     scale: stage.presence ? [1, 0.93, 1.04, 1] : 1,
                   }}
@@ -499,7 +457,7 @@ function DemoCard({
               {...hoverProps("idle")}
               variants={itemVariants}
               animate={spotlightAnim("idle", active)}
-              transition={SPRING_SNAP}
+              transition={SPOT_TWEEN}
               className="relative inline-flex items-center rounded outline-none cursor-pointer"
               layout
             >
@@ -517,14 +475,14 @@ function DemoCard({
                     }}
                     className="inline-flex items-center gap-1 rounded border px-1.5 py-[2px] text-[10px] font-medium"
                     style={{
-                      borderColor: "rgba(46, 160, 110, 0.35)",
-                      background: "rgba(46, 160, 110, 0.10)",
-                      color: "rgb(36, 120, 84)",
+                      borderColor: "rgba(79, 70, 229, 0.30)",
+                      background: "var(--brand-soft)",
+                      color: "var(--brand-deep)",
                     }}
                   >
                     <motion.span
                       className="inline-block h-1.5 w-1.5 rounded-full"
-                      style={{ background: "rgb(46, 160, 110)" }}
+                      style={{ background: "var(--brand)" }}
                       animate={{
                         scale: [0.9, 1.2, 0.9],
                         opacity: [0.65, 1, 0.65],
@@ -548,7 +506,7 @@ function DemoCard({
                       duration: 0.4,
                       ease: EASE.inOut,
                     }}
-                    className="inline-flex items-center gap-1 rounded border border-amber-200/70 bg-amber-50 px-1.5 py-[2px] text-[10px] font-medium text-amber-700"
+                    className="inline-flex items-center gap-1 rounded border border-line bg-white px-1.5 py-[2px] text-[10px] font-medium text-ink-soft"
                   >
                     <motion.svg
                       width="9"
@@ -577,7 +535,7 @@ function DemoCard({
               {...hoverProps("comments")}
               variants={itemVariants}
               animate={spotlightAnim("comments", active)}
-              transition={SPRING_SNAP}
+              transition={SPOT_TWEEN}
               className="-mx-1 inline-flex items-center gap-1 rounded px-1 text-[10.5px] text-ink-quiet outline-none cursor-pointer"
             >
               <svg
@@ -694,8 +652,13 @@ function Annotations({
   active: Slot | null;
   setActive: (s: Slot | null) => void;
 }) {
+  const listRef = useRef<HTMLOListElement>(null);
+  // Once-per-scroll-in: the mono numerals set in one by one (60ms
+  // stagger), then stay set. `once` keeps it a single quiet beat.
+  const numbersIn = useInView(listRef, { amount: 0.3, once: true });
+
   return (
-    <ol className="space-y-1">
+    <ol ref={listRef} className="space-y-1">
       {ANN.map((a, i) => {
         const isOn = active === a.slot;
         const isOff = !!active && active !== a.slot;
@@ -713,22 +676,33 @@ function Annotations({
                   : "rgba(79,70,229,0)",
                 opacity: isOff ? 0.5 : 1,
               }}
-              transition={{ duration: 0.2, ease: EASE.inOut }}
+              transition={SPOT_TWEEN}
               className="group grid w-full grid-cols-[auto_1fr] items-start gap-3 rounded-xl px-3 py-3 text-left outline-none"
             >
               <motion.span
-                className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-semibold"
-                animate={{
-                  borderColor: isOn
-                    ? "rgba(79,70,229,0.6)"
-                    : "rgba(20,21,26,0.12)",
-                  backgroundColor: isOn ? "rgba(79,70,229,0.95)" : "#fff",
-                  color: isOn ? "#fff" : "#535560",
-                  scale: isOn ? 1.06 : 1,
+                className="mt-0.5 inline-flex"
+                initial={{ opacity: 0, y: 6 }}
+                animate={numbersIn ? { opacity: 1, y: 0 } : {}}
+                transition={{
+                  duration: 0.4,
+                  delay: 0.1 + i * 0.06,
+                  ease: EASE.outExpo,
                 }}
-                transition={SPRING_SNAP}
               >
-                {i + 1}
+                <motion.span
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-full border font-mono text-[11px] font-semibold tabular-nums"
+                  animate={{
+                    borderColor: isOn
+                      ? "rgba(79,70,229,0.6)"
+                      : "rgba(20,21,26,0.12)",
+                    backgroundColor: isOn ? "rgba(79,70,229,0.95)" : "#fff",
+                    color: isOn ? "#fff" : "#535560",
+                    scale: isOn ? 1.06 : 1,
+                  }}
+                  transition={SPOT_TWEEN}
+                >
+                  {i + 1}
+                </motion.span>
               </motion.span>
               <div>
                 <div className="text-[13.5px] font-medium text-ink">

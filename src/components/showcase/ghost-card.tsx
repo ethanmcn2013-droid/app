@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { USERS, type Task, type UserId } from "@/lib/data";
+import { type Task, type UserId } from "@/lib/data";
 import { AvatarStack } from "./avatar";
 
 export function GhostCard({
@@ -22,15 +22,15 @@ export function GhostCard({
       {visible && task && user ? (
         <motion.div
           key={task.id}
-          initial={{ opacity: 0, scale: 0.96, rotate: 0 }}
+          initial={{ opacity: 0, scale: 0.98, rotate: 0 }}
           animate={{
             opacity: 1,
-            scale: 1.04,
-            rotate: 3,
+            scale: 1.02,
+            rotate: 1.5,
             x,
             y,
           }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          exit={{ opacity: 0, scale: 0.98 }}
           transition={{
             x: { type: "spring", stiffness: 180, damping: 22, mass: 0.8 },
             y: { type: "spring", stiffness: 180, damping: 22, mass: 0.8 },
@@ -40,16 +40,28 @@ export function GhostCard({
           }}
           className="pointer-events-none absolute left-0 top-0 z-[55] w-[230px] rounded-[10px] border bg-white px-3 py-2.5 text-[13px] leading-snug text-ink"
           style={{
-            borderColor: USERS[user].color,
-            boxShadow: `0 0 0 1.5px ${USERS[user].color}, 0 22px 44px -16px rgba(20,21,26,0.32)`,
+            // The lifted card carries the single indigo accent: a 1px
+            // indigo ring over a hairline border, with a deep soft
+            // shadow that reads as height, not glow.
+            borderColor: "var(--line)",
+            boxShadow:
+              "0 0 0 1px var(--brand), 0 24px 60px -20px rgba(20,21,26,0.22), 0 8px 24px -8px rgba(20,21,26,0.10)",
           }}
         >
           <span className="line-clamp-2">{task.title}</span>
           <div className="mt-2 flex items-center justify-between">
-            <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium text-ink-soft">
+            <span
+              className="font-mono text-[10px] font-semibold tracking-[0.08em]"
+              style={{
+                color:
+                  task.priority === "p0" || task.priority === "p1"
+                    ? "var(--brand-deep)"
+                    : "var(--ink-quiet)",
+              }}
+            >
               {task.priority.toUpperCase()}
             </span>
-            <AvatarStack users={task.assignees} size={16} />
+            <AvatarStack users={task.assignees} size={16} tone="ink" />
           </div>
         </motion.div>
       ) : null}

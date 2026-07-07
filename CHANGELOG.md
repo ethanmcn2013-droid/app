@@ -4,6 +4,10 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-07 · T·91 · tightens · the demo joins the canon, and the anatomy learns to point
+
+**The self-running board demo drops its template-kanban skin for the suite's own: paper lanes separated by hairlines, mono uppercase lane kickers with one indigo dot on the moving lane, calm cards with quiet mono priorities, and neutral ink initials with indigo reserved for the one person actually working.** The pastel lane fills, the multicoloured chips and avatars, the per-user pink and teal rings, and the glowing confetti are gone; done now answers with two expanding indigo hairline rings and a mono "Done" chip. Every scene, timing, cursor path, and view morph is unchanged. The anatomy section tightens in step: the ambient glow and circled badges leave, the numerals set in one by one on scroll-in, and hovering either side of the exhibit highlights the other with a 140ms hairline ring. The closing button now reads "Request access" and opens mail, matching the suite's pre-launch door, and the stale "Free to start" caption under it is gone.
+
 ## 2026-07-02 · T·90 · tightens · the product switcher cannot regress
 
 **Tasks keeps the new switcher split: signed-in app chrome shows the always-visible product pills, while the marketing dropdown keeps the richer gesture-led panel.** The launcher copy is aligned to the suite canon and a new suite-switcher contract check runs before the test suite, blocking any future return to the hidden authed dropdown.

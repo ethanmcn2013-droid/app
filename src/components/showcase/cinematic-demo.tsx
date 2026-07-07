@@ -9,7 +9,7 @@ import {
 } from "react";
 import { motion, LayoutGroup, AnimatePresence, useReducedMotion } from "motion/react";
 import { EASE_OUT_EXPO, MOTION_BASE, MOTION_MODERATE } from "@/lib/motion";
-import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
+import { LANES, SEED_TASKS, type Task, type UserId } from "@/lib/data";
 import {
   DOMAINS,
   buildDomainSeed,
@@ -691,9 +691,10 @@ export function CinematicDemo({
         <div className="flex items-center justify-between border-b border-line-soft bg-bg-elevated px-4 py-2.5">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <span className="block h-2.5 w-2.5 rounded-full bg-[#fc615b]" />
-              <span className="block h-2.5 w-2.5 rounded-full bg-[#fcc12c]" />
-              <span className="block h-2.5 w-2.5 rounded-full bg-[#34c84a]" />
+              {/* Window dots in the paper register, hairline, not traffic-light colour */}
+              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
+              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
+              <span className="block h-2.5 w-2.5 rounded-full border border-line bg-bg-sunken" />
             </div>
             <div className="ml-3 flex items-center gap-1.5 rounded-md bg-bg-sunken px-2 py-0.5 text-[11px] text-ink-quiet">
               <svg
@@ -749,15 +750,15 @@ export function CinematicDemo({
         {/* Surface */}
         <div
           ref={surfaceRef}
-          className="relative h-[500px] overflow-hidden bg-gradient-to-b from-white to-bg-sunken/40"
+          className="relative h-[500px] overflow-hidden bg-white"
         >
           <LayoutGroup>
             <DemoSurface state={state} cardRefs={cardRefs} />
           </LayoutGroup>
 
           {/* Sparkline open-work overlay */}
-          <div className="pointer-events-none absolute right-5 top-3 z-[40] flex items-center gap-2 rounded-lg border border-line-soft bg-white/90 px-2.5 py-1.5 shadow-sm backdrop-blur">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-ink-quiet">
+          <div className="pointer-events-none absolute right-5 top-3 z-[40] flex items-center gap-2 rounded-lg border border-line bg-white px-2.5 py-1.5 shadow-sm">
+            <div className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-ink-quiet">
               Open work
             </div>
             <Sparkline values={state.burndown} />
@@ -791,7 +792,7 @@ export function CinematicDemo({
         {/* Status bar */}
         <div className="flex items-center justify-between border-t border-line-soft bg-white px-4 py-1.5 text-[10.5px] text-ink-quiet">
           <span className="flex items-center gap-1.5">
-            <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
             Demo
           </span>
           <span aria-hidden data-debug-scene={state.scene} />
@@ -834,9 +835,9 @@ function PresenceStrip() {
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex -space-x-1.5">
-        <Avatar user="chloe" size={20} ring />
-        <Avatar user="david" size={20} ring />
-        <Avatar user="alex" size={20} ring />
+        <Avatar user="chloe" size={20} ring tone="ink" />
+        <Avatar user="david" size={20} ring tone="ink" />
+        <Avatar user="alex" size={20} ring tone="ink" />
       </div>
       <span className="text-[10.5px] text-ink-quiet">Demo workspace</span>
     </div>
@@ -920,7 +921,7 @@ function BoardSurface({
   cardRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
 }) {
   return (
-    <div className="grid h-full grid-cols-4 gap-3 px-5 pt-4">
+    <div className="grid h-full grid-cols-4 divide-x divide-line-soft px-5 pt-4">
       {(["todo", "doing", "review", "done"] as const).map((laneId, idx) => {
         const lane = LANES[laneId];
         const laneTasks = state.tasks.filter((t) => t.lane === laneId);
@@ -935,8 +936,7 @@ function BoardSurface({
               delay: idx * 0.06,
               ease: EASE_OUT_EXPO,
             }}
-            className="flex flex-col gap-2 overflow-hidden rounded-xl p-2"
-            style={{ background: lane.bg }}
+            className="flex flex-col gap-2 overflow-hidden px-2 pt-2"
           >
             <div
               data-lane-header
@@ -944,16 +944,23 @@ function BoardSurface({
             >
               <div className="flex items-center gap-1.5">
                 <span
-                  className="block h-2 w-2 rounded-full"
-                  style={{ background: lane.dot }}
+                  className="block h-1.5 w-1.5 rounded-full"
+                  style={{
+                    background:
+                      laneId === "doing"
+                        ? "var(--brand)"
+                        : "var(--ink-ghost)",
+                  }}
                 />
                 <span
-                  className="text-[11.5px] font-medium"
-                  style={{ color: lane.ink }}
+                  className={
+                    "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
+                    (laneId === "doing" ? "text-ink" : "text-ink-quiet")
+                  }
                 >
                   {lane.name}
                 </span>
-                <span className="text-[11px] text-ink-quiet">
+                <span className="font-mono text-[10px] tabular-nums text-ink-quiet">
                   {laneTasks.length}
                 </span>
               </div>
@@ -1004,8 +1011,8 @@ function BoardCardWrapper({
     (state.dependencyHighlight[0] === task.id ||
       state.dependencyHighlight[1] === task.id);
   const showThread = state.openCommentTaskId === task.id;
-  const pickedColor =
-    isPicked && state.pickedBy ? USERS[state.pickedBy].color : null;
+  // One indigo accent for the card being carried (canon: never per-user colour).
+  const pickedColor = isPicked && state.pickedBy ? "var(--brand)" : null;
 
   return (
     <TaskCard

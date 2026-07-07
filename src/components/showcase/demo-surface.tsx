@@ -118,29 +118,31 @@ function BoardChrome() {
   // NOTE: no `data-lane` here, those attributes live on the card-layer
   // columns (single source of truth so cursor / drop math doesn't see
   // duplicates from `document.querySelector`).
+  // Canon recut (2026-07-07): paper lanes separated by hairlines, no
+  // coloured fills. Lane names are mono uppercase kickers; the dot
+  // marker carries indigo on the active/Moving lane only.
   return (
-    <div className="grid h-full grid-cols-4 gap-3 px-5 pt-4">
+    <div className="grid h-full grid-cols-4 divide-x divide-line-soft px-5 pt-4">
       {LANE_ORDER.map((laneId) => {
         const lane = LANES[laneId];
+        const activeLane = laneId === "doing";
         return (
-          <div
-            key={laneId}
-            className="flex flex-col rounded-xl p-2"
-            style={{ background: lane.bg }}
-          >
-            <div className="flex items-center justify-between px-1.5 pb-1 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="block h-2 w-2 rounded-full"
-                  style={{ background: lane.dot }}
-                />
-                <span
-                  className="text-[11.5px] font-medium"
-                  style={{ color: lane.ink }}
-                >
-                  {lane.name}
-                </span>
-              </div>
+          <div key={laneId} className="flex flex-col px-2 pt-2">
+            <div className="flex items-center gap-1.5 px-1.5 pb-1.5 pt-0.5">
+              <span
+                className="block h-1.5 w-1.5 rounded-full"
+                style={{
+                  background: activeLane ? "var(--brand)" : "var(--ink-ghost)",
+                }}
+              />
+              <span
+                className={
+                  "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
+                  (activeLane ? "text-ink" : "text-ink-quiet")
+                }
+              >
+                {lane.name}
+              </span>
             </div>
           </div>
         );
@@ -154,7 +156,7 @@ function ListChrome() {
     <div className="px-5 pt-4">
       <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
         <div
-          className={`grid grid-cols-${LIST_GRID_COLS} items-center gap-3 border-b border-line-soft bg-bg-sunken/60 px-4 py-2 text-[10.5px] font-medium uppercase tracking-wider text-ink-quiet`}
+          className={`grid grid-cols-${LIST_GRID_COLS} items-center gap-3 border-b border-line-soft bg-bg-sunken/60 px-4 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.12em] text-ink-quiet`}
           style={{
             gridTemplateColumns: "1.6fr 0.7fr 0.6fr 0.6fr 0.5fr",
           }}
@@ -267,7 +269,7 @@ function CardLayer({
 }) {
   if (view === "board") {
     return (
-      <div className="relative grid h-full grid-cols-4 gap-3 px-5 pt-4">
+      <div className="relative grid h-full grid-cols-4 px-5 pt-4">
         {LANE_ORDER.map((laneId) => (
           <BoardLaneCardColumn
             key={laneId}
@@ -298,15 +300,22 @@ function CardLayer({
                 <div className="flex items-center gap-2 border-b border-line-soft bg-bg-sunken/30 px-4 py-1.5">
                   <span
                     className="block h-1.5 w-1.5 rounded-full"
-                    style={{ background: lane.dot }}
+                    style={{
+                      background:
+                        laneId === "doing"
+                          ? "var(--brand)"
+                          : "var(--ink-ghost)",
+                    }}
                   />
                   <span
-                    className="text-[10.5px] font-semibold uppercase tracking-wider"
-                    style={{ color: lane.ink }}
+                    className={
+                      "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
+                      (laneId === "doing" ? "text-ink" : "text-ink-quiet")
+                    }
                   >
                     {lane.name}
                   </span>
-                  <span className="text-[10.5px] text-ink-quiet">
+                  <span className="font-mono text-[10px] tabular-nums text-ink-quiet">
                     {laneTasks.length}
                   </span>
                 </div>
@@ -381,7 +390,7 @@ function BoardLaneCardColumn({
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
   return (
-    <div data-lane={laneId} className="flex flex-col gap-2 p-2 pt-9">
+    <div data-lane={laneId} className="flex flex-col gap-2 px-2 pb-2 pt-9">
       {/* Invisible coordinate anchor, the carry scene's celebration
           burst measures `[data-lane-header]` to position particles. We
           want the same y as the chrome's lane header, which sits
@@ -424,8 +433,9 @@ function MorphCard({
   transitions: ReturnType<typeof useMorphTransition>;
 }) {
   const isPicked = state.pickedTaskId === task.id;
-  const pickedColor =
-    isPicked && state.pickedBy ? USERS[state.pickedBy].color : null;
+  // One indigo accent for the card currently moving, whoever is
+  // carrying it. Per-user colour rings are off the ink/paper/indigo canon.
+  const pickedColor = isPicked && state.pickedBy ? "var(--brand)" : null;
   const isDep =
     !!state.dependencyHighlight &&
     (state.dependencyHighlight[0] === task.id ||
@@ -472,8 +482,9 @@ function MorphCard({
       layout
       transition={transitionConfig}
       className={[
-        "relative cursor-grab select-none border bg-white text-ink shadow-[0_1px_2px_rgba(20,21,26,0.05),0_0_0_1px_rgba(20,21,26,0.04)]",
-        view === "board" && "rounded-[10px] px-3 py-2.5",
+        "relative cursor-grab select-none border bg-white text-ink",
+        view === "board" &&
+          "rounded-[10px] px-3 py-2.5 shadow-[0_1px_2px_rgba(20,21,26,0.04)]",
         view === "list" &&
           "grid items-center gap-3 border-b border-l-0 border-r-0 border-t-0 border-line-soft px-4 py-2",
         view === "timeline" && "rounded-md border-0 px-2 py-1.5",
@@ -491,20 +502,32 @@ function MorphCard({
             ? pickedColor
             : view === "list"
               ? undefined
-              : "transparent",
+              : view === "board"
+                ? "var(--line)"
+                : "transparent",
         boxShadow: pickedColor
-          ? `0 0 0 1.5px ${pickedColor}, 0 1px 2px rgba(20,21,26,0.05)`
+          ? `0 0 0 1px ${pickedColor}, 0 1px 2px rgba(20,21,26,0.05)`
           : view === "timeline"
-            ? "none"
+            ? task.lane === "doing"
+              ? "inset 0 0 0 1px rgba(79,70,229,0.28)"
+              : "inset 0 0 0 1px var(--line-soft)"
             : undefined,
         background:
           view === "timeline"
-            ? task.lane === "done"
-              ? "#fff"
-              : LANES[task.lane].bg
+            ? task.lane === "doing"
+              ? "var(--brand-soft)"
+              : task.lane === "done"
+                ? "#fff"
+                : "var(--bg-sunken)"
             : "#fff",
         color:
-          view === "timeline" ? LANES[task.lane].ink : "var(--ink)",
+          view === "timeline"
+            ? task.lane === "doing"
+              ? "var(--brand-deep)"
+              : task.lane === "done"
+                ? "var(--ink-faint)"
+                : "var(--ink-soft)"
+            : "var(--ink)",
         opacity: isPicked ? 0 : 1,
       }}
     >
@@ -627,10 +650,13 @@ function SoulRow({ task, view }: { task: Task; view: ViewMode }) {
   if (view === "timeline") {
     return (
       <div className="flex h-full items-center gap-1.5 overflow-hidden">
-        <Avatar user={task.assignees[0]} size={14} />
+        <Avatar user={task.assignees[0]} size={14} tone="ink" />
         <span className="truncate text-[11px] font-medium">{task.title}</span>
         {task.priority === "p0" ? (
-          <span className="ml-auto rounded bg-red-100 px-1 text-[9px] font-bold uppercase tracking-wider text-red-600">
+          <span
+            className="ml-auto font-mono text-[9px] font-semibold tracking-[0.08em]"
+            style={{ color: "var(--brand-deep)" }}
+          >
             P0
           </span>
         ) : null}
@@ -648,9 +674,15 @@ function SoulRow({ task, view }: { task: Task; view: ViewMode }) {
         {task.title}
       </span>
       <div className="flex items-center gap-1.5">
-        {task.priority === "p0" ? (
-          <span className="flex-shrink-0 rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wider text-red-600">
-            P0
+        {/* Priority reads quietly in mono; it surfaces only above P2 and
+            carries the indigo (the product's own anatomy contract). */}
+        {task.priority === "p0" || task.priority === "p1" ? (
+          <span
+            className="flex-shrink-0 pt-px font-mono text-[9.5px] font-semibold tracking-[0.08em]"
+            style={{ color: "var(--brand-deep)" }}
+            aria-label={`Priority ${task.priority.toUpperCase()}`}
+          >
+            {task.priority.toUpperCase()}
           </span>
         ) : null}
       </div>
@@ -661,58 +693,47 @@ function SoulRow({ task, view }: { task: Task; view: ViewMode }) {
 function BoardBody({ task }: { task: Task }) {
   return (
     <div className="mt-2.5 flex items-center justify-between gap-2">
-      <div className="flex items-center gap-1.5">
-        <span
-          className="block h-1.5 w-1.5 rounded-full"
-          style={{ background: LANES[task.lane].dot }}
-        />
+      <div className="flex h-[18px] items-center">
         {task.due ? (
-          <span className="text-[10.5px] text-ink-quiet">{task.due}</span>
+          <span className="font-mono text-[10px] tabular-nums text-ink-quiet">
+            {task.due}
+          </span>
         ) : null}
       </div>
-      <AvatarStack users={task.assignees} size={18} />
+      <AvatarStack users={task.assignees} size={18} tone="ink" />
     </div>
   );
 }
 
 function ListCells({ task }: { task: Task }) {
   const lane = LANES[task.lane];
+  const hot = task.priority === "p0" || task.priority === "p1";
   return (
     <>
       <div className="flex items-center gap-2 text-[12.5px]">
         <span className="truncate">{task.title}</span>
       </div>
-      <span
-        className="inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium"
-        style={{ color: lane.ink, background: lane.bg }}
-      >
-        <span
-          className="block h-1.5 w-1.5 rounded-full"
-          style={{ background: lane.dot }}
-        />
-        {lane.name}
-      </span>
-      <span className="inline-flex items-center gap-1 text-[11px] text-ink-soft">
+      <span className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft bg-white px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft">
         <span
           className="block h-1.5 w-1.5 rounded-full"
           style={{
             background:
-              task.priority === "p0"
-                ? "#dc2626"
-                : task.priority === "p1"
-                  ? "#ea580c"
-                  : task.priority === "p2"
-                    ? "#0284c7"
-                    : "#64748b",
+              task.lane === "doing" ? "var(--brand)" : "var(--ink-ghost)",
           }}
         />
+        {lane.name}
+      </span>
+      <span
+        className="inline-flex items-center font-mono text-[10px] font-semibold tracking-[0.08em]"
+        style={{ color: hot ? "var(--brand-deep)" : "var(--ink-quiet)" }}
+      >
         {task.priority.toUpperCase()}
       </span>
-      <span className="text-[11.5px] tabular-nums text-ink-quiet">
-        {task.due ?? "—"}
+      <span className="font-mono text-[10.5px] tabular-nums text-ink-quiet">
+        {task.due ?? "·"}
       </span>
       <div className="flex justify-end">
-        <AvatarStack users={task.assignees} size={18} />
+        <AvatarStack users={task.assignees} size={18} tone="ink" />
       </div>
     </>
   );
@@ -738,7 +759,7 @@ function CommentThread({
       className="mt-3 space-y-2 overflow-hidden border-t border-line-soft pt-2.5"
     >
       <div className="flex items-start gap-2">
-        <Avatar user="alex" size={20} />
+        <Avatar user="alex" size={20} tone="ink" />
         <div className="text-[11.5px] leading-relaxed text-ink-soft">
           <span className="font-medium text-ink">Alex</span> · 2h ago
           <p>{staticComment}</p>
@@ -754,6 +775,8 @@ function CommentThread({
           <Avatar
             user={postedComment.user as keyof typeof USERS}
             size={20}
+            tone="ink"
+            active
           />
           <div className="text-[11.5px] leading-relaxed text-ink-soft">
             <span className="font-medium text-ink">
@@ -767,7 +790,12 @@ function CommentThread({
 
       {typingUser ? (
         <div className="flex items-start gap-2">
-          <Avatar user={typingUser as keyof typeof USERS} size={20} />
+          <Avatar
+            user={typingUser as keyof typeof USERS}
+            size={20}
+            tone="ink"
+            active
+          />
           <div className="flex-1 text-[11.5px] leading-relaxed text-ink-soft">
             <span className="font-medium text-ink">
               {USERS[typingUser as keyof typeof USERS].name}

@@ -23,10 +23,10 @@ export function ActivityFeed({
               transition: { duration: 0.25 },
             }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-lg border border-line-soft bg-white/95 p-2.5 shadow-[0_8px_30px_rgba(20,21,26,0.10)] backdrop-blur"
+            className="rounded-[10px] border border-line bg-white p-2.5 shadow-[0_4px_12px_rgba(20,21,26,0.06),0_1px_3px_rgba(20,21,26,0.04)]"
           >
             <div className="flex items-start gap-2">
-              <Avatar user={item.user} size={18} />
+              <Avatar user={item.user} size={18} tone="ink" />
               <div className="text-[11.5px] leading-snug text-ink-soft">
                 <span className="font-medium text-ink">
                   {USERS[item.user].name}

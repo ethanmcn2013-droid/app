@@ -24,6 +24,11 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
         // reading, or just-arrived. Otherwise the cursor is a quiet arrow.
         const labelVisible =
           c.visible && (c.grabbing || c.reading || c.justArrived);
+        // Ink-tone cursors; the one actively working (grabbing or
+        // reading) carries the single indigo. Canon: ink / paper / one
+        // indigo, never per-user colour.
+        const acting = c.grabbing || c.reading;
+        const cursorColor = acting ? "var(--brand)" : "var(--ink-soft)";
         return (
           <motion.div
             key={id}
@@ -50,7 +55,7 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
               transition={{ type: "spring", stiffness: 300, damping: 18 }}
               className="origin-top-left"
             >
-              <CursorSvg color={user.color} />
+              <CursorSvg color={cursorColor} />
             </motion.div>
             <motion.div
               initial={false}
@@ -66,8 +71,8 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
                   : LABEL_FADE_OFFSET_MS[id] / 1000,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="ml-3 mt-1 inline-flex select-none rounded-full px-2 py-0.5 text-[11px] font-semibold text-white shadow-md"
-              style={{ background: user.color }}
+              className="ml-3 mt-1 inline-flex select-none rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow-sm"
+              style={{ background: acting ? "var(--brand)" : "var(--ink)" }}
             >
               {c.label ?? user.name}
             </motion.div>
