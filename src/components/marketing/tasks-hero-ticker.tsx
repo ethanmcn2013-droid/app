@@ -413,9 +413,13 @@ export function TasksHeroTicker() {
         await scrambleAndExit(cells0);
         if (cancelled) return;
 
-        // First visit resolves quickly into the product mark. Later loops can
-        // show the full board cycle, but the first hero pass should not make
-        // the page wait through every sample row before the identity rests.
+        // Two more flips before the identity rests (operator note,
+        // 2026-07-07: a single word read as a jump cut, not a departure
+        // board). The full four-row cycle still belongs to loops 2+.
+        for (let i = 1; i <= 2; i++) {
+          await showTask(TASKS[i], i);
+          if (cancelled) return;
+        }
       } else {
         // Loops 2+: brief pause then full flip sequence
         await wait(80); if (cancelled) return;
