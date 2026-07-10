@@ -68,12 +68,13 @@ export function OptionDone() {
     <section className="dn" aria-labelledby="dn-title" aria-describedby="dn-deck">
       <div className="dn-wrap">
         <header className="dn-intro">
-          <p className="dn-eyebrow">Signal Tasks · today</p>
+          <p className="dn-eyebrow">Signal Tasks · working set</p>
           <h1 className="dn-title" id="dn-title">
-            Open to done.
+            Keep every commitment moving.
           </h1>
           <p className="dn-deck" id="dn-deck">
-            Owners, due moments and the next move, held in one live list.
+            Tasks holds the owner, the due moment, and the next move in one
+            working view.
           </p>
         </header>
 
@@ -81,12 +82,12 @@ export function OptionDone() {
           <div className="dn-board-rule" aria-hidden="true" />
           <div className="dn-board-head">
             <h2 className="dn-board-title" id="dn-board-title">
-              Today
+              Today · working set
             </h2>
             <p className="dn-board-count">
               <span>5 commitments</span>
               <span aria-hidden="true"> · </span>
-              <span>2 done</span>
+              <span>2 cleared</span>
             </p>
           </div>
 
@@ -151,9 +152,18 @@ export function OptionDone() {
           </ol>
         </div>
 
+        <aside className="dn-next" aria-label="Next move">
+          <div className="dn-next-label">Next move</div>
+          <div className="dn-next-main">
+            <span>Send the supplier the final count</span>
+            <span className="dn-next-meta">Today · You · Needs you</span>
+          </div>
+          <span className="dn-next-arrow" aria-hidden="true">→</span>
+        </aside>
+
         <footer className="dn-close">
           <p className="dn-receipt">
-            <span className="dn-receipt-strong">Five</span> commitments. <span className="dn-receipt-strong">Two</span> cleared. <span className="dn-receipt-strong">One</span> needs you.
+            <span className="dn-receipt-strong">Five</span> commitments. <span className="dn-receipt-strong">Two</span> cleared. <span className="dn-receipt-strong">One</span> next move.
           </p>
           <span className="dn-wordmark">
             <span className="dn-sr">Tasks</span>
@@ -241,6 +251,13 @@ const CSS = `
 .dn-done .dn-item,.dn-done .dn-cell{color:var(--dn-faint)}
 .dn-done .dn-status-value{border-color:transparent;padding-inline:0}
 
+.dn-next{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;margin-top:18px;padding:14px 2px 14px 14px;border-left:3px solid var(--dn-accent);background:var(--dn-accent-wash)}
+.dn-next-label{font-family:var(--font-geist-mono,monospace);font-size:9px;font-weight:650;letter-spacing:.13em;text-transform:uppercase;color:var(--dn-accent);white-space:nowrap}
+.dn-next-main{display:flex;align-items:baseline;justify-content:space-between;gap:16px;min-width:0;font-size:13.5px;font-weight:560;letter-spacing:-.01em}
+.dn-next-main>span:first-child{min-width:0;overflow-wrap:anywhere}
+.dn-next-meta{flex:0 0 auto;font-family:var(--font-geist-mono,monospace);font-size:9.5px;font-weight:500;letter-spacing:.03em;color:var(--dn-faint);white-space:nowrap}
+.dn-next-arrow{padding-right:12px;color:var(--dn-accent);font-size:18px;line-height:1}
+
 .dn-close{display:flex;align-items:flex-end;justify-content:space-between;gap:18px 32px;padding-top:18px}
 .dn-receipt{margin:0;font-size:12.5px;line-height:1.5;color:var(--dn-faint)}
 .dn-receipt-strong{color:var(--dn-soft);font-variant-numeric:tabular-nums}
@@ -264,6 +281,10 @@ const CSS = `
   .dn-row{grid-template-columns:28px minmax(0,1fr);column-gap:12px;row-gap:9px;min-height:78px;padding:13px 2px}
   .dn-item{align-self:center}
   .dn-cell{grid-row:2;display:flex;align-items:baseline;gap:5px;white-space:nowrap}
+  .dn-next{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}
+  .dn-next-label{grid-column:1/-1}
+  .dn-next-main{display:grid;gap:4px}
+  .dn-next-meta{white-space:normal}
   .dn-owner{grid-column:2;justify-self:start}
   .dn-due{grid-column:2;justify-self:center}
   .dn-status{grid-column:2;justify-self:end}
@@ -279,6 +300,7 @@ const CSS = `
   .dn-owner{margin-top:1px}
   .dn-due,.dn-status{margin-left:0}
   .dn-close{align-items:flex-start;flex-direction:column-reverse;gap:12px}
+  .dn-next{margin-top:16px}
   .dn-actions{align-items:stretch;flex-direction:column}
   .dn-action{width:100%}
 }
@@ -293,6 +315,8 @@ const CSS = `
   .dn-done .dn-item,.dn-done .dn-cell{animation:dn-row-mute .42s var(--dn-ease) calc(1.18s + var(--dn-seq) * .38s) both}
   .dn-live .dn-live-core{opacity:0;transform:scale(.35);animation:dn-live-in .42s var(--ease-in-out) 2.02s both,dn-pulse 2.6s ease-in-out 2.66s infinite}
   .dn-receipt{animation:dn-receipt-in .5s var(--dn-ease) 1.95s both}
+  .dn-next{opacity:0;animation:dn-next-in .55s var(--dn-ease) 2.28s both}
+  .dn-next-arrow{animation:dn-next-arrow .55s var(--dn-ease) 2.48s both}
 }
 @keyframes dn-rule-in{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes dn-owner-before{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-4px)}}
@@ -304,6 +328,8 @@ const CSS = `
 @keyframes dn-live-in{0%{opacity:0;transform:scale(.35)}65%{opacity:1;transform:scale(1.24)}100%{opacity:1;transform:scale(1)}}
 @keyframes dn-pulse{0%,30%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(79,70,229,.10)}15%{transform:scale(1.2);box-shadow:0 0 0 7px rgba(79,70,229,.06)}22%{transform:scale(.95);box-shadow:0 0 0 3px rgba(79,70,229,.09)}}
 @keyframes dn-receipt-in{from{opacity:.36;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes dn-next-in{from{opacity:0;transform:translateX(-9px)}to{opacity:1;transform:none}}
+@keyframes dn-next-arrow{from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
 
 @media (prefers-reduced-motion:reduce){
   .dn *,.dn *::before,.dn *::after{animation:none!important;transition:none!important}
