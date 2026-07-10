@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { LabSwitcher } from "@/components/lab/switcher";
+import { LabStage } from "@/components/lab/switcher";
 import { OPTIONS } from "@/components/lab/registry";
 
 export const metadata = {
@@ -21,9 +21,10 @@ export default async function LabOptionPage({
   if (!option) notFound();
   const Hero = option.Component;
   return (
-    <main style={{ minHeight: "100svh", background: "#fff" }}>
-      <LabSwitcher activeSlug={slug} />
-      <Hero />
+    <main style={{ minHeight: "100svh", background: "var(--paper)" }}>
+      <LabStage activeSlug={slug}>
+        <Hero />
+      </LabStage>
     </main>
   );
 }

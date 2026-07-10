@@ -152,12 +152,12 @@ export function OptionWhatsNext() {
 }
 
 const CSS = `
-.wn{--ink:#111;--soft:#3f3f46;--faint:#71717a;--accent:#4f46e5;--paper:#fff;
+.wn{--ink:var(--zinc-950);--soft:var(--zinc-700);--faint:var(--zinc-500);--accent:var(--indigo-600);--paper:var(--ink-0);
   --hair:rgba(17,17,17,.12);--hair-soft:rgba(17,17,17,.07);
-  --ease-rack:cubic-bezier(0.22,0.61,0.18,1);
-  --ease-soft:cubic-bezier(0.16,1,0.3,1);
-  --ease-draw:cubic-bezier(0.22,0.61,0.36,1);
-  --ease-pencil:cubic-bezier(0.7,0,0.3,1);
+  --ease-rack:var(--ease-out);
+  --ease-soft:var(--ease-out);
+  --ease-draw:var(--ease-out);
+  --ease-pencil:var(--ease-in-out);
   position:relative;min-height:92svh;display:flex;align-items:flex-start;
   background:var(--paper);color:var(--ink);overflow:hidden;
   font-family:var(--font-geist-sans,system-ui,sans-serif);

@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { OptionDone } from "./option-done";
+import { OptionOwned } from "./option-owned";
 import { OptionWhatsNext } from "./option-whats-next";
 
 /**
@@ -11,13 +12,13 @@ import { OptionWhatsNext } from "./option-whats-next";
  * `@media (prefers-reduced-motion: no-preference)` only, so SSR, no-JS,
  * and reduced-motion all render the finished frame.
  *
- * Both directions follow the Signal Hero Playbook: a three-line spoken
- * thesis, one seed-word transmutation, and a rest on the `tasks·` wordmark
- * with the pulse gesture (the one allowed idle loop). Done. is the flagship
- * (open to done, the tick draws through the word). What's Next is the
- * execution-clarity counterpoint (a pile collapses to the three that matter).
+ * Active directions follow the Signal proof-first playbook without borrowing
+ * its attention-clarity mechanism. The artifact is visible from frame one,
+ * the product gesture is the pulse, and the work settles quickly. What's Next
+ * remains addressable as archived research, but is no longer an active
+ * candidate because its distillation concept belongs to Signal.
  */
-export type OptionRole = "flagship" | "counterpoint";
+export type OptionRole = "flagship" | "counterpoint" | "archived";
 
 export type LabOption = {
   slug: string;
@@ -29,28 +30,43 @@ export type LabOption = {
   Component: ComponentType;
 };
 
-export const OPTIONS: LabOption[] = [
+export const ACTIVE_OPTIONS: LabOption[] = [
   {
     slug: "done",
     name: "Done.",
     role: "flagship",
-    lens: "Momentum · open to done",
-    headline: "Everything's open until it gets done.",
+    lens: "Momentum · commitment to completion",
+    headline: "The work is visible while it moves.",
     blurb:
-      "The feeling of moving work from open to done. Three plain lines set the tension, then an indigo tick draws through the word done and the live board resolves out of it. A calm Now, Next, Done list with real task lines, two ticked and settled, one carrying the only colour. It rests on the tasks· pulse and one honest tally: six things moved today, two are done, this is next.",
+      "A real Today ledger is present from frame one. One owner locks in, two commitments complete with drawn ticks, and the live item takes the single Tasks pulse. Five visible commitments earn the closing receipt: two cleared, one needs you.",
     Component: OptionDone,
   },
   {
+    slug: "owned",
+    name: "Owned.",
+    role: "counterpoint",
+    lens: "Ownership clarity · no ambiguous handoff",
+    headline: "Every commitment says who has it.",
+    blurb:
+      "An ownership ledger begins with three unclear handoffs and resolves each one to a named person, a due moment and a ready state. The final live commitment carries the pulse. Five commitments, five owners, nothing unclear.",
+    Component: OptionOwned,
+  },
+];
+
+export const ARCHIVED_OPTIONS: LabOption[] = [
+  {
     slug: "whats-next",
     name: "What's Next",
-    role: "counterpoint",
-    lens: "Execution clarity · what matters today",
+    role: "archived",
+    lens: "Archived research · Signal-like distillation",
     headline: "Twelve things are open. Three matter today.",
     blurb:
-      "The real promise of Tasks, brought to the Signal standard. A pile of open task chips materialises out of the word next, a sweep reads it, and the ones that can wait dim and collapse aside. The three that matter lift, gain an indigo marker, and settle into a focused Today list. Nine could wait. These three couldn't. It rests on the tasks· pulse.",
+      "Kept for comparison only. The pile-to-three mechanism is legible, but it duplicates Signal's attention-clarity job instead of proving accountable movement inside Tasks.",
     Component: OptionWhatsNext,
   },
 ];
+
+export const OPTIONS: LabOption[] = [...ACTIVE_OPTIONS, ...ARCHIVED_OPTIONS];
 
 export function getOption(slug: string): LabOption | undefined {
   return OPTIONS.find((o) => o.slug === slug);
