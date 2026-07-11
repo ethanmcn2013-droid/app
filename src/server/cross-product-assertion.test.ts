@@ -4,7 +4,7 @@ import { createHmac } from "node:crypto";
 import { verifyNotesAssertion } from "./cross-product-assertion";
 
 function token(sub: string, noteId: string, secret: string, now = 1_000) {
-  const claims = { v: 1, iss: "signal-notes", aud: "signal-tasks.notes-extract", sub, noteId, iat: now, exp: now + 300, jti: "jti", traceId: "trace" };
+  const claims = { v: 1, iss: "signal-notes", aud: "signal-tasks.notes-extract", sub, noteId, workspaceId: "ws_a", iat: now, exp: now + 300, jti: `jti-${sub}-${noteId}`, traceId: "trace" };
   const encoded = Buffer.from(JSON.stringify(claims)).toString("base64url");
   return `${encoded}.${createHmac("sha256", secret).update(encoded).digest("base64url")}`;
 }

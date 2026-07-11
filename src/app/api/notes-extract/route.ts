@@ -32,6 +32,7 @@ export const runtime = "nodejs";
 type ExtractPayload = {
   noteId: string;
   body: string;
+  workspaceId: string;
 };
 
 function bad(error: string, status = 400) {
@@ -67,9 +68,11 @@ export async function POST(req: Request) {
 
   const noteId = typeof payload.noteId === "string" ? payload.noteId.trim() : "";
   const body = typeof payload.body === "string" ? payload.body.trim() : "";
+  const requestedWorkspaceId = typeof payload.workspaceId === "string" ? payload.workspaceId.trim() : "";
 
   if (!noteId) return bad("Missing required field: noteId");
   if (!body) return bad("Missing required field: body");
+  if (!requestedWorkspaceId) return bad("Missing required field: workspaceId");
   if (body.length > 280) return bad("body is longer than 280 characters");
 
   let assertion: ReturnType<typeof verifyNotesAssertion>;
@@ -79,6 +82,7 @@ export async function POST(req: Request) {
     return bad("Unauthorized", 401);
   }
   if (assertion.noteId !== noteId) return bad("Unauthorized", 401);
+  if (assertion.workspaceId !== requestedWorkspaceId) return bad("Unauthorized", 401);
   const userId = assertion.sub;
 
   const sourceNoteId = `${userId}:${noteId}`;
@@ -94,6 +98,9 @@ export async function POST(req: Request) {
     .limit(1);
 
   if (existing) {
+    if (existing.workspaceId !== requestedWorkspaceId) {
+      return bad("This note was already sent to another Tasks workspace", 409);
+    }
     const ws = await loadWorkspaceMeta(existing.workspaceId);
     return NextResponse.json({
       taskId: existing.id,
@@ -104,15 +111,17 @@ export async function POST(req: Request) {
     });
   }
 
-  // First workspace membership wins. If the user is brand-new and the
-  // Clerk webhook hasn't provisioned a workspace yet, fail with a
-  // surfaced reason so Notes can tell the user what to do.
+  // The signed destination workspace is explicit; membership is checked
+  // against the immutable subject before any task is created.
   const [member] = await db
     .select({
       workspaceId: workspaceMembers.workspaceId,
     })
     .from(workspaceMembers)
-    .where(eq(workspaceMembers.userId, userId))
+    .where(and(
+      eq(workspaceMembers.userId, userId),
+      eq(workspaceMembers.workspaceId, requestedWorkspaceId),
+    ))
     .limit(1);
 
   if (!member) {

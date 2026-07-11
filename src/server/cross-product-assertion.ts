@@ -6,6 +6,7 @@ export type CrossProductAssertion = {
   aud: "signal-tasks.notes-extract";
   sub: string;
   noteId: string;
+  workspaceId: string;
   iat: number;
   exp: number;
   jti: string;
@@ -43,6 +44,7 @@ export function verifyNotesAssertion(
   if (
     claims.v !== 1 || claims.iss !== "signal-notes" || claims.aud !== "signal-tasks.notes-extract" ||
     typeof claims.sub !== "string" || typeof claims.noteId !== "string" ||
+    typeof claims.workspaceId !== "string" ||
     typeof claims.iat !== "number" || typeof claims.exp !== "number" ||
     typeof claims.jti !== "string" || typeof claims.traceId !== "string" ||
     claims.exp <= now || claims.iat > now + 30 || claims.exp - claims.iat > MAX_TTL_SECONDS
