@@ -47,14 +47,22 @@ function readRawMode(): AccessMode | null {
 
 export function getAccessMode(): AccessMode {
   const explicit = readRawMode();
-  if (explicit) return explicit;
+  if (explicit) return explicit === "demo" || explicit === "review"
+    ? (isProductionDeployment() ? "production" : explicit)
+    : explicit;
 
   const legacyDemo =
     process.env.NEXT_PUBLIC_DEMO_MODE === "true" ||
     process.env.DEMO_MODE === "true";
-  if (legacyDemo) return "demo";
+  if (legacyDemo) return isProductionDeployment() ? "production" : "demo";
 
   return process.env.NODE_ENV === "production" ? "production" : "development";
+}
+
+/** Production deployments never accept the public demo/review posture. */
+function isProductionDeployment(): boolean {
+  return process.env.VERCEL_ENV === "production" ||
+    (process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV);
 }
 
 /** demo OR review, i.e. the public, seed-data, no-login-wall posture. */
