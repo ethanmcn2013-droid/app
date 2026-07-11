@@ -616,7 +616,7 @@ export async function resolveShareLink(
  *   - Top-level tasks only (parent_task_id IS NULL), subtask milestones
  *     are not surfaced; the roadmap spine is flat in v1.
  *   - WHERE is_milestone = 1, additive filter, never a task dump.
- *   - Email-keyed (the only cross-product key between Clerk apps; D2).
+ *   - Immutable suite-subject keyed; email is returned for display only.
  *   - Ordered by workspace then due date for stable pagination.
  *   - Hard LIMIT 200, same safety cap as getTasks.
  *
@@ -635,13 +635,13 @@ export type MilestoneTaskRow = {
 };
 
 export async function getMilestoneTasks(
-  ownerEmail: string,
+  clerkId: string,
 ): Promise<MilestoneTaskRow[]> {
-  // 1. Resolve the user row by email.
+  // 1. Resolve the user row by immutable suite subject.
   const [user] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.email, ownerEmail))
+    .where(eq(users.clerkId, clerkId))
     .limit(1);
   if (!user) return [];
 
