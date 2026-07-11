@@ -257,6 +257,17 @@ export type Task = {
 };
 
 /**
+ * Deliberately small projection used by unauthenticated published and
+ * share-link views. Public pages must never serialize the authenticated Task
+ * shape: it carries workspace ids, assignee identities, private descriptions,
+ * provenance, financial/contact fields, and internal workflow metadata.
+ */
+export type PublicTask = Pick<
+  Task,
+  "id" | "title" | "lane" | "priority" | "due" | "tags"
+>;
+
+/**
  * Natural-language recurrence spec. Three patterns only, no RRULE,
  * no exception editor. Parsed from quick-add input by
  * `parseRecurrence()` in `src/lib/nlp/parse-recurrence.ts`.

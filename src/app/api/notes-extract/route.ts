@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
 import { parseTaskInput } from "@/lib/nlp/parse-task-input";
+import { verifyNotesAssertion } from "@/server/cross-product-assertion";
 
 /**
  * Cross-repo Notes -> Tasks extract endpoint (Cycle 9.4b second half,
@@ -11,11 +12,9 @@ import { parseTaskInput } from "@/lib/nlp/parse-task-input";
  * presses "Send to Tasks" on a drafted extract. The body is the
  * creator-authored extract wording, never the raw note body.
  *
- * Auth: shared bearer secret + userId in body. First-party service-
- * to-service pattern; the Notes server is the only legitimate caller.
- * If the deploy environment later supports Clerk session forwarding
- * across origins, swap this for Clerk's authenticateRequest() and
- * drop the userId-from-body trust.
+ * Auth: a short-lived, audience-bound HMAC assertion minted by Notes.
+ * The assertion binds the immutable Clerk subject and note id, so neither
+ * identity can be replaced by a caller-controlled request body.
  *
  * Idempotency: the (ownerUserId, noteId) tuple is unique per task via
  * tasks.source_note_id. A repeat call with the same noteId returns
@@ -31,7 +30,6 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 type ExtractPayload = {
-  userId: string;
   noteId: string;
   body: string;
 };
@@ -56,7 +54,7 @@ export async function POST(req: Request) {
 
   const authHeader = req.headers.get("authorization") ?? "";
   const match = /^Bearer\s+(.+)$/i.exec(authHeader);
-  if (!match || match[1] !== expected) {
+  if (!match) {
     return bad("Unauthorized", 401);
   }
 
@@ -67,14 +65,21 @@ export async function POST(req: Request) {
     return bad("Invalid JSON body");
   }
 
-  const userId = typeof payload.userId === "string" ? payload.userId.trim() : "";
   const noteId = typeof payload.noteId === "string" ? payload.noteId.trim() : "";
   const body = typeof payload.body === "string" ? payload.body.trim() : "";
 
-  if (!userId) return bad("Missing required field: userId");
   if (!noteId) return bad("Missing required field: noteId");
   if (!body) return bad("Missing required field: body");
   if (body.length > 280) return bad("body is longer than 280 characters");
+
+  let assertion: ReturnType<typeof verifyNotesAssertion>;
+  try {
+    assertion = verifyNotesAssertion(match[1]!, expected);
+  } catch {
+    return bad("Unauthorized", 401);
+  }
+  if (assertion.noteId !== noteId) return bad("Unauthorized", 401);
+  const userId = assertion.sub;
 
   const sourceNoteId = `${userId}:${noteId}`;
 

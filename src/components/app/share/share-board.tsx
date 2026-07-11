@@ -5,9 +5,8 @@ import {
   LANES,
   LANE_ORDER,
   PRIORITY_LABEL,
-  type Task,
+  type PublicTask,
 } from "@/lib/data";
-import { AvatarStack } from "@/components/showcase/avatar";
 import { useGuestAuth } from "@/components/app/guest/guest-auth-context";
 
 /**
@@ -15,7 +14,7 @@ import { useGuestAuth } from "@/components/app/guest/guest-auth-context";
  * but every interactive surface raises the progressive auth modal
  * instead of mutating. Drag is disabled.
  */
-export function ShareBoard({ tasks }: { tasks: Task[] }) {
+export function ShareBoard({ tasks }: { tasks: PublicTask[] }) {
   const { promptSignUp } = useGuestAuth();
   return (
     <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
@@ -90,7 +89,7 @@ function ReadCard({
   task,
   onClick,
 }: {
-  task: Task;
+  task: PublicTask;
   onClick: () => void;
 }) {
   const prio = PRIORITY_LABEL[task.priority];
@@ -128,7 +127,6 @@ function ReadCard({
             <span className="text-[10.5px] text-ink-quiet">{task.due}</span>
           ) : null}
         </div>
-        <AvatarStack users={task.assignees} size={18} />
       </div>
     </motion.div>
   );

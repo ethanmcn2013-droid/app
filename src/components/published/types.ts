@@ -1,4 +1,4 @@
-import type { Task } from "@/lib/data";
+import type { PublicTask } from "@/lib/data";
 import type { DomainId } from "@/lib/domains";
 
 /**
@@ -19,5 +19,5 @@ export type PublishedWorkspaceProps = {
     activeDomain: DomainId | null;
     publishedAt: Date;
   };
-  tasks: Task[];
+  tasks: PublicTask[];
 };

@@ -105,7 +105,7 @@ export async function addCommentAction(
     kind: "commentAdd",
     commentId,
     snippet: snippetOf(trimmed),
-  });
+  }, { workspaceId });
 
   // Anti-notification policy: ONLY direct @mentions create instant
   // inbox items. Plain comments produce no notification, they live
@@ -167,7 +167,7 @@ export async function removeCommentAction(
   await recordActivity(row.taskId, {
     kind: "commentRemove",
     commentId,
-  });
+  }, { workspaceId: ws });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "comments" });
   return getCommentsForTask(row.taskId);
