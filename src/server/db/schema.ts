@@ -63,7 +63,7 @@ export const tasks = sqliteTable("tasks", {
   /** Optional parent task. NULL on every top-level task; non-null
    *  rows are subtasks (one level of nesting in v1, subtasks don't
    *  themselves nest further). The detail panel loads children via
-   *  `getSubtasks(parentId)`; `getTasks` filters to `parent_task_id
+   *  `getSubtasks(parentId, workspaceId)`; `getTasks` filters to `parent_task_id
    *  IS NULL` so subtasks stay out of board / list / timeline /
    *  calendar in this cycle and live exclusively under their parent. */
   parentTaskId: text("parent_task_id"),

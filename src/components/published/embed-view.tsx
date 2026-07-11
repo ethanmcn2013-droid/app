@@ -1,5 +1,5 @@
 import { LANE_ORDER, LANES, PRIORITY_LABEL } from "@/lib/data";
-import type { LaneId, Task } from "@/lib/data";
+import type { LaneId, PublicTask } from "@/lib/data";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
@@ -17,7 +17,7 @@ import type { PublishedWorkspaceProps } from "./types";
 const TASKS_PER_LANE = 6;
 
 export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
-  const byLane = new Map<LaneId, Task[]>();
+  const byLane = new Map<LaneId, PublicTask[]>();
   for (const id of LANE_ORDER) byLane.set(id, []);
   for (const t of tasks) {
     const arr = byLane.get(t.lane);

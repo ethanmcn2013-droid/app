@@ -160,7 +160,7 @@ export async function duplicateTaskAction(
   //    so we walk these outside the txn.
   await Promise.all(
     newIds.map((id) =>
-      recordActivity(id, { kind: "taskAdd", lane: source.lane }),
+      recordActivity(id, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws }),
     ),
   );
 

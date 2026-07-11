@@ -148,7 +148,7 @@ export async function importCsvAction(
   // the user's import.
   await Promise.all(
     newIds.map((id) =>
-      recordActivity(id, { kind: "taskAdd", lane: "todo" }).catch((err) => {
+      recordActivity(id, { kind: "taskAdd", lane: "todo" }, { workspaceId: ws }).catch((err) => {
         // recordActivity already swallows its own DB errors with a
         // warn; this outer catch only fires on something unexpected
         // escaping it. Surface rather than silently drop so a

@@ -5,7 +5,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  isNotNull,
   isNull,
   like,
   sql,
@@ -25,7 +24,7 @@ import {
 } from "./schema";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
-import type { Notification, NotificationPayload } from "@/lib/data";
+import type { Notification, NotificationPayload, PublicTask } from "@/lib/data";
 import type {
   Activity,
   ActivityKind,
@@ -37,6 +36,7 @@ import type {
 } from "@/lib/data";
 
 import { rowToTask } from "./row-mappers";
+import { toPublicTask } from "@/lib/public-task";
 import { byWorkspace } from "./tenant";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
@@ -94,11 +94,20 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
  * top-level views never accidentally surface subtasks alongside their
  * parents.
  */
-export async function getSubtasks(parentTaskId: string): Promise<Task[]> {
+export async function getSubtasks(
+  parentTaskId: string,
+  workspaceId: string,
+): Promise<Task[]> {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(eq(tasks.parentTaskId, parentTaskId))
+    .where(
+      byWorkspace(
+        tasks.workspaceId,
+        workspaceId,
+        eq(tasks.parentTaskId, parentTaskId),
+      ),
+    )
     .orderBy(asc(tasks.createdAt))
     // Bound the detail-panel subtask list. One level of nesting only; a
     // task with hundreds of subtasks is already pathological, cap so a
@@ -119,7 +128,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
       name: string;
       activeDomain: DomainId | null;
       publishedAt: Date;
-      tasks: Task[];
+      tasks: PublicTask[];
     }
   | null
 > {
@@ -134,7 +143,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
     .from(workspaces)
     .where(eq(workspaces.slug, slug));
   if (!ws || !ws.publishedAt) return null;
-  const taskList = await getTasks(ws.id);
+  const taskList = (await getTasks(ws.id)).map(toPublicTask);
   return {
     id: ws.id,
     slug: ws.slug,
@@ -396,7 +405,7 @@ export type ShareView = "board" | "list" | "timeline" | "calendar";
 export type ShareData = {
   token: string;
   view: ShareView;
-  tasks: Task[];
+  tasks: PublicTask[];
   workspaceTitle: string;
   workspaceCrumb: string;
   domainId: DomainId;
@@ -581,7 +590,7 @@ export async function resolveShareLink(
   return {
     token,
     view: row.view,
-    tasks: taskList,
+    tasks: taskList.map(toPublicTask),
     workspaceTitle: pack.workspaceTitle,
     workspaceCrumb: pack.workspaceCrumb,
     domainId,
