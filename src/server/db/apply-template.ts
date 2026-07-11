@@ -55,6 +55,6 @@ export async function applyTemplateToWorkspace(
       position,
       updatedAt: now,
     });
-    await recordActivity(id, { kind: "taskAdd", lane: t.lane });
+    await recordActivity(id, { kind: "taskAdd", lane: t.lane }, { workspaceId });
   }
 }

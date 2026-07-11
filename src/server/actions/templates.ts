@@ -108,7 +108,7 @@ export async function remixTemplateAction(
       position,
       updatedAt: now,
     });
-    await recordActivity(id, { kind: "taskAdd", lane: t.lane });
+    await recordActivity(id, { kind: "taskAdd", lane: t.lane }, { workspaceId });
   }
 
   // ─── Flip the active-workspace cookie ────────────────────────────

@@ -1,5 +1,5 @@
 import "server-only";
-import { timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
@@ -10,35 +10,62 @@ import type { DomainId } from "@/lib/domains";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const seenJtis = new Map<string, number>();
+
 /**
  * Cross-repo read of workspace segment + empty-state copy.
- * Notes (and other sisters) call this with the user's email, same
- * bearer pattern as /api/notes-extract.
+ * Notes calls this with a short-lived audience-bound assertion. Email is
+ * never accepted as an authorization key.
  *
- * GET ?email=user@example.com
+ * GET (Authorization: Bearer <signed assertion>)
  * Auth: Bearer NOTES_TO_TASKS_SECRET
  */
 export async function GET(req: Request) {
   const expected = process.env.NOTES_TO_TASKS_SECRET ?? "";
   const auth = req.headers.get("authorization") ?? "";
-  const bearer = `Bearer ${expected}`;
-  if (
-    !expected ||
-    auth.length !== bearer.length ||
-    !timingSafeEqual(Buffer.from(auth), Buffer.from(bearer))
-  ) {
+  if (!expected || !auth.startsWith("Bearer ")) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const email = new URL(req.url).searchParams.get("email")?.trim().toLowerCase() ?? "";
-  if (!email) {
-    return NextResponse.json({ ok: false, error: "missing_email" }, { status: 400 });
+  const presented = auth.slice("Bearer ".length).trim();
+  const [encoded, signature] = presented.split(".");
+  if (!encoded || !signature) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
+  let claims: { v?: number; iss?: string; aud?: string; sub?: string; iat?: number; exp?: number; jti?: string; traceId?: string };
+  try {
+    const expectedSignature = createHmac("sha256", expected).update(encoded).digest();
+    const receivedSignature = Buffer.from(signature, "base64url");
+    if (receivedSignature.length !== expectedSignature.length || !timingSafeEqual(expectedSignature, receivedSignature)) {
+      throw new Error("invalid signature");
+    }
+    claims = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8")) as typeof claims;
+  } catch {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (
+    claims.v !== 1 || claims.iss !== "signal-notes" ||
+    claims.aud !== "signal-tasks.workspace-personalization" ||
+    typeof claims.sub !== "string" || !claims.sub ||
+    typeof claims.iat !== "number" || typeof claims.exp !== "number" ||
+    typeof claims.jti !== "string" || typeof claims.traceId !== "string" ||
+    claims.exp <= now || claims.iat > now + 30 || claims.exp - claims.iat > 300
+  ) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  for (const [jti, expiry] of seenJtis) {
+    if (expiry <= now) seenJtis.delete(jti);
+  }
+  if (seenJtis.has(claims.jti)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  seenJtis.set(claims.jti, claims.exp);
 
   const [userRow] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.email, email))
+    .where(eq(users.clerkId, claims.sub))
     .limit(1);
 
   if (!userRow) {

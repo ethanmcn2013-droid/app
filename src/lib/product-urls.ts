@@ -1,17 +1,21 @@
+import suiteContracts from "./suite-contracts.v1.json";
+
+const suiteProducts = suiteContracts.products;
+
 export const TASKS_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://tasks.signalstudio.ie";
+  process.env.NEXT_PUBLIC_SITE_URL ?? suiteProducts.tasks.canonicalUrl;
 
 export const STUDIO_URL =
-  process.env.NEXT_PUBLIC_STUDIO_URL ?? "https://signalstudio.ie";
+  process.env.NEXT_PUBLIC_STUDIO_URL ?? suiteProducts.studio.canonicalUrl;
 
 export const TIMELINE_URL =
-  process.env.NEXT_PUBLIC_TIMELINE_URL ?? "https://timeline.signalstudio.ie";
+  process.env.NEXT_PUBLIC_TIMELINE_URL ?? suiteProducts.timeline.canonicalUrl;
 
 export const SIGNAL_URL =
-  process.env.NEXT_PUBLIC_SIGNAL_URL ?? "https://signal.signalstudio.ie";
+  process.env.NEXT_PUBLIC_SIGNAL_URL ?? suiteProducts.signal.canonicalUrl;
 
 export const NOTES_URL =
-  process.env.NEXT_PUBLIC_NOTES_URL ?? "https://notes.signalstudio.ie";
+  process.env.NEXT_PUBLIC_NOTES_URL ?? suiteProducts.notes.canonicalUrl;
 
 export const IOS_APP_URL =
   process.env.NEXT_PUBLIC_IOS_APP_URL ?? "https://signalstudio.ie/ios";

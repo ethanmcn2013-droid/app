@@ -6,6 +6,7 @@ import {
   real,
   primaryKey,
   index,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import type {
   Activity,
@@ -63,7 +64,7 @@ export const tasks = sqliteTable("tasks", {
   /** Optional parent task. NULL on every top-level task; non-null
    *  rows are subtasks (one level of nesting in v1, subtasks don't
    *  themselves nest further). The detail panel loads children via
-   *  `getSubtasks(parentId)`; `getTasks` filters to `parent_task_id
+   *  `getSubtasks(parentId, workspaceId)`; `getTasks` filters to `parent_task_id
    *  IS NULL` so subtasks stay out of board / list / timeline /
    *  calendar in this cycle and live exclusively under their parent. */
   parentTaskId: text("parent_task_id"),
@@ -127,6 +128,7 @@ export const tasks = sqliteTable("tasks", {
   // NEW (0009): roadmap sync reads WHERE is_milestone=1 per workspace.
   // The only hot path 0003 missed.
   index("idx_tasks_ws_milestone").on(t.workspaceId, t.isMilestone),
+  uniqueIndex("idx_tasks_source_note_id").on(t.sourceNoteId),
 ]);
 
 export const users = sqliteTable("users", {
@@ -146,6 +148,27 @@ export const users = sqliteTable("users", {
   color: text("color").notNull(),
   initials: text("initials").notNull(),
 });
+
+/** Durable cross-product propagation queue. Tasks owns execution events; the
+ * scheduled worker delivers them idempotently to Timeline/Signal consumers. */
+export const suiteOutbox = sqliteTable("suite_outbox", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  version: integer("version").notNull().default(1),
+  type: text("type").notNull(),
+  actorUserId: text("actor_user_id"),
+  workspaceId: text("workspace_id"),
+  objectRef: text("object_ref"),
+  payload: text("payload").notNull(),
+  traceId: text("trace_id").notNull(),
+  occurredAt: integer("occurred_at").notNull(),
+  deliveredAt: integer("delivered_at"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+}, (t) => [
+  index("idx_suite_outbox_pending").on(t.deliveredAt, t.occurredAt),
+  index("idx_suite_outbox_workspace").on(t.workspaceId, t.occurredAt),
+]);
 
 /**
  * Workspaces are the per-tenant boundary. Pricing, members, and

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
@@ -46,7 +46,7 @@ export async function getSubtasksAction(
     .from(tasks)
     .where(and(eq(tasks.id, parentTaskId), eq(tasks.workspaceId, ws)));
   if (!parent) return [];
-  return getSubtasks(parentTaskId);
+  return getSubtasks(parentTaskId, ws);
 }
 
 function nowSeconds(): number {
@@ -101,7 +101,7 @@ export async function moveTaskAction(
     kind: "move",
     from: row.lane,
     to: toLane,
-  });
+  }, { workspaceId: ws });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -131,7 +131,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
         ...bump(),
       })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-    await recordActivity(id, { kind: "toggleComplete", to: "done" });
+    await recordActivity(id, { kind: "toggleComplete", to: "done" }, { workspaceId: ws });
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
     return getTasks(ws);
@@ -145,7 +145,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
   await recordActivity(id, {
     kind: "toggleComplete",
     to: target === "done" ? "done" : "open",
-  });
+  }, { workspaceId: ws });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -299,6 +299,14 @@ export async function updateTaskAction(
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   const ws = await getActiveWorkspace();
+  // Resolve the target through the caller's tenant before doing any
+  // side-effects. Without this read, a foreign id is a no-op update but
+  // still emits activity against the foreign task.
+  const [ownedTask] = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  if (!ownedTask) return getTasks(ws);
   // Build the SET payload from only explicitly allowed columns.
   // This is an action-boundary allowlist, it strips ownership /
   // structural / identity columns (workspaceId, parentTaskId,
@@ -330,7 +338,7 @@ export async function updateTaskAction(
   );
   await Promise.all(
     trackedKeys.map((field) =>
-      recordActivity(id, { kind: "update", field }),
+      recordActivity(id, { kind: "update", field }, { workspaceId: ws }),
     ),
   );
 
@@ -373,6 +381,26 @@ export async function addTaskAction(input: {
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
   const lane = input.lane ?? "todo";
+  if (input.parentTaskId) {
+    // A subtask inherits its parent's tenant. Require a top-level parent in
+    // the active workspace; this rejects both foreign-parent injection and
+    // unsupported deeper nesting before any child row is inserted.
+    const [parent] = await db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.id, input.parentTaskId),
+          eq(tasks.workspaceId, ws),
+          isNull(tasks.parentTaskId),
+        ),
+      );
+    if (!parent) {
+      throw new Error(
+        "addTaskAction: parent task is not in the active workspace",
+      );
+    }
+  }
   const position = await nextPositionForLane(lane, ws);
   await db.insert(tasks).values({
     id,
@@ -397,7 +425,7 @@ export async function addTaskAction(input: {
   await recordActivity(id, {
     kind: "taskAdd",
     lane: input.lane ?? "todo",
-  });
+  }, { workspaceId: ws });
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -453,7 +481,7 @@ export async function reorderTaskAction(
       kind: "move",
       from: row.lane,
       to: lane,
-    });
+    }, { workspaceId: ws });
   }
 
   revalidatePath("/app", "layout");

@@ -5,7 +5,6 @@ import {
   desc,
   eq,
   getTableColumns,
-  isNotNull,
   isNull,
   like,
   sql,
@@ -25,7 +24,7 @@ import {
 } from "./schema";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
-import type { Notification, NotificationPayload } from "@/lib/data";
+import type { Notification, NotificationPayload, PublicTask } from "@/lib/data";
 import type {
   Activity,
   ActivityKind,
@@ -37,6 +36,7 @@ import type {
 } from "@/lib/data";
 
 import { rowToTask } from "./row-mappers";
+import { toPublicTask } from "@/lib/public-task";
 import { byWorkspace } from "./tenant";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
@@ -94,11 +94,20 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
  * top-level views never accidentally surface subtasks alongside their
  * parents.
  */
-export async function getSubtasks(parentTaskId: string): Promise<Task[]> {
+export async function getSubtasks(
+  parentTaskId: string,
+  workspaceId: string,
+): Promise<Task[]> {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(eq(tasks.parentTaskId, parentTaskId))
+    .where(
+      byWorkspace(
+        tasks.workspaceId,
+        workspaceId,
+        eq(tasks.parentTaskId, parentTaskId),
+      ),
+    )
     .orderBy(asc(tasks.createdAt))
     // Bound the detail-panel subtask list. One level of nesting only; a
     // task with hundreds of subtasks is already pathological, cap so a
@@ -119,7 +128,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
       name: string;
       activeDomain: DomainId | null;
       publishedAt: Date;
-      tasks: Task[];
+      tasks: PublicTask[];
     }
   | null
 > {
@@ -134,7 +143,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
     .from(workspaces)
     .where(eq(workspaces.slug, slug));
   if (!ws || !ws.publishedAt) return null;
-  const taskList = await getTasks(ws.id);
+  const taskList = (await getTasks(ws.id)).map(toPublicTask);
   return {
     id: ws.id,
     slug: ws.slug,
@@ -396,7 +405,7 @@ export type ShareView = "board" | "list" | "timeline" | "calendar";
 export type ShareData = {
   token: string;
   view: ShareView;
-  tasks: Task[];
+  tasks: PublicTask[];
   workspaceTitle: string;
   workspaceCrumb: string;
   domainId: DomainId;
@@ -581,7 +590,7 @@ export async function resolveShareLink(
   return {
     token,
     view: row.view,
-    tasks: taskList,
+    tasks: taskList.map(toPublicTask),
     workspaceTitle: pack.workspaceTitle,
     workspaceCrumb: pack.workspaceCrumb,
     domainId,
@@ -607,7 +616,7 @@ export async function resolveShareLink(
  *   - Top-level tasks only (parent_task_id IS NULL), subtask milestones
  *     are not surfaced; the roadmap spine is flat in v1.
  *   - WHERE is_milestone = 1, additive filter, never a task dump.
- *   - Email-keyed (the only cross-product key between Clerk apps; D2).
+ *   - Immutable suite-subject keyed; email is returned for display only.
  *   - Ordered by workspace then due date for stable pagination.
  *   - Hard LIMIT 200, same safety cap as getTasks.
  *
@@ -626,13 +635,13 @@ export type MilestoneTaskRow = {
 };
 
 export async function getMilestoneTasks(
-  ownerEmail: string,
+  clerkId: string,
 ): Promise<MilestoneTaskRow[]> {
-  // 1. Resolve the user row by email.
+  // 1. Resolve the user row by immutable suite subject.
   const [user] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.email, ownerEmail))
+    .where(eq(users.clerkId, clerkId))
     .limit(1);
   if (!user) return [];
 

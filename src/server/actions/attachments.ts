@@ -165,7 +165,7 @@ export async function uploadAttachmentAction(
     attachmentId,
     filename,
     sizeBytes: file.size,
-  });
+  }, { workspaceId: ws });
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "attachments" });
@@ -223,7 +223,7 @@ export async function deleteAttachmentAction(
     kind: "detach",
     attachmentId,
     filename: row.filename,
-  });
+  }, { workspaceId: ws });
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "attachments" });

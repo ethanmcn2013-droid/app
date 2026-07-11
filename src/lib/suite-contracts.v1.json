@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "products": {
+    "studio": { "name": "Signal Studio", "canonicalUrl": "https://signalstudio.ie", "surface": "umbrella", "access": "public-first" },
+    "tasks": { "name": "Signal Tasks", "canonicalUrl": "https://tasks.signalstudio.ie", "surface": "execution", "access": "collaboration-first" },
+    "timeline": { "name": "Signal Timeline", "canonicalUrl": "https://timeline.signalstudio.ie", "surface": "direction", "access": "public-first" },
+    "signal": { "name": "Signal", "canonicalUrl": "https://signal.signalstudio.ie", "surface": "attention", "access": "derived" },
+    "notes": { "name": "Signal Notes", "canonicalUrl": "https://notes.signalstudio.ie", "surface": "capture", "access": "private-first" }
+  },
+  "roles": ["owner", "admin", "member", "guest"],
+  "permissions": ["workspace.read", "workspace.write", "workspace.manage", "object.read", "object.write", "object.share"],
+  "objectRef": { "version": 1, "required": ["product", "type", "id", "canonicalUrl"], "optional": ["workspaceId", "sourceRef"] },
+  "context": { "version": 1, "required": ["sourceProduct"], "optional": ["workspaceId", "projectId", "objectRef", "returnUrl"] }
+}

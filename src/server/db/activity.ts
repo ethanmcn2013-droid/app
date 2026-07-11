@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./index";
 import { activities, tasks } from "./schema";
 import { getCurrentUser } from "@/server/auth";
@@ -23,20 +23,26 @@ function newActivityId(): string {
 export async function recordActivity(
   taskId: string,
   payload: ActivityPayload,
-  opts?: { userId?: UserId },
+  opts: { workspaceId: string; userId?: UserId },
 ): Promise<void> {
   try {
-    // Inherit workspace from the parent task. If the task has been
-    // deleted in a race, fall through silently, activity logging
-    // is observability, not transactional.
+    // The caller's already-authorized workspace is part of the write
+    // contract. Never infer it from taskId: a caller who knows a foreign
+    // task id must not be able to create an activity row in that tenant.
+    if (!opts.workspaceId) return;
     const [parent] = await db
       .select({ workspaceId: tasks.workspaceId })
       .from(tasks)
-      .where(eq(tasks.id, taskId));
+      .where(
+        and(
+          eq(tasks.id, taskId),
+          eq(tasks.workspaceId, opts.workspaceId),
+        ),
+      );
     if (!parent) return;
     await db.insert(activities).values({
       id: newActivityId(),
-      workspaceId: parent.workspaceId,
+      workspaceId: opts.workspaceId,
       taskId,
       userId: opts?.userId ?? (await getCurrentUser()),
       kind: payload.kind,
@@ -44,7 +50,6 @@ export async function recordActivity(
       createdAt: new Date(),
     });
   } catch (err) {
-    // eslint-disable-next-line no-console
     console.warn("activity: record failed", err);
   }
 }
