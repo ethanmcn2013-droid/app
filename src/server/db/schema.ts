@@ -149,6 +149,27 @@ export const users = sqliteTable("users", {
   initials: text("initials").notNull(),
 });
 
+/** Durable cross-product propagation queue. Tasks owns execution events; the
+ * scheduled worker delivers them idempotently to Timeline/Signal consumers. */
+export const suiteOutbox = sqliteTable("suite_outbox", {
+  id: text("id").primaryKey(),
+  eventId: text("event_id").notNull().unique(),
+  version: integer("version").notNull().default(1),
+  type: text("type").notNull(),
+  actorUserId: text("actor_user_id"),
+  workspaceId: text("workspace_id"),
+  objectRef: text("object_ref"),
+  payload: text("payload").notNull(),
+  traceId: text("trace_id").notNull(),
+  occurredAt: integer("occurred_at").notNull(),
+  deliveredAt: integer("delivered_at"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+}, (t) => [
+  index("idx_suite_outbox_pending").on(t.deliveredAt, t.occurredAt),
+  index("idx_suite_outbox_workspace").on(t.workspaceId, t.occurredAt),
+]);
+
 /**
  * Workspaces are the per-tenant boundary. Pricing, members, and
  * domain-flavored chrome all key off this. One user → many workspaces;
