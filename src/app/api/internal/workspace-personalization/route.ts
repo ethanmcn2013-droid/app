@@ -10,6 +10,8 @@ import type { DomainId } from "@/lib/domains";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const seenJtis = new Map<string, number>();
+
 /**
  * Cross-repo read of workspace segment + empty-state copy.
  * Notes calls this with a short-lived audience-bound assertion. Email is
@@ -52,6 +54,13 @@ export async function GET(req: Request) {
   ) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
+  for (const [jti, expiry] of seenJtis) {
+    if (expiry <= now) seenJtis.delete(jti);
+  }
+  if (seenJtis.has(claims.jti)) {
+    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  seenJtis.set(claims.jti, claims.exp);
 
   const [userRow] = await db
     .select({ id: users.id })

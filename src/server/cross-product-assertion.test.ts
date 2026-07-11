@@ -18,3 +18,9 @@ test("Notes assertion rejects wrong secret, audience, and expiry", () => {
   assert.throws(() => verifyNotesAssertion(value, "wrong", 1_001));
   assert.throws(() => verifyNotesAssertion(value, "secret", 1_301));
 });
+
+test("Notes assertion rejects replay of the same jti", () => {
+  const value = token("user_replay", "note_replay", "secret", 2_000);
+  assert.equal(verifyNotesAssertion(value, "secret", 2_001).sub, "user_replay");
+  assert.throws(() => verifyNotesAssertion(value, "secret", 2_001), /replayed/);
+});

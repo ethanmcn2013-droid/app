@@ -13,6 +13,15 @@ export type CrossProductAssertion = {
 };
 
 const MAX_TTL_SECONDS = 300;
+const seenJtis = new Map<string, number>();
+
+function consumeJti(jti: string, exp: number, now: number): void {
+  for (const [key, expiry] of seenJtis) {
+    if (expiry <= now) seenJtis.delete(key);
+  }
+  if (seenJtis.has(jti)) throw new Error("replayed assertion");
+  seenJtis.set(jti, exp);
+}
 
 /** Verify a Notes assertion before using its subject for any database query. */
 export function verifyNotesAssertion(
@@ -38,5 +47,6 @@ export function verifyNotesAssertion(
     typeof claims.jti !== "string" || typeof claims.traceId !== "string" ||
     claims.exp <= now || claims.iat > now + 30 || claims.exp - claims.iat > MAX_TTL_SECONDS
   ) throw new Error("invalid assertion");
+  consumeJti(claims.jti, claims.exp, now);
   return claims as CrossProductAssertion;
 }
