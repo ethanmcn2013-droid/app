@@ -6,6 +6,7 @@ import {
   real,
   primaryKey,
   index,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import type {
   Activity,
@@ -127,6 +128,7 @@ export const tasks = sqliteTable("tasks", {
   // NEW (0009): roadmap sync reads WHERE is_milestone=1 per workspace.
   // The only hot path 0003 missed.
   index("idx_tasks_ws_milestone").on(t.workspaceId, t.isMilestone),
+  uniqueIndex("idx_tasks_source_note_id").on(t.sourceNoteId),
 ]);
 
 export const users = sqliteTable("users", {
