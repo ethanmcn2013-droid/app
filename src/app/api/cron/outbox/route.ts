@@ -45,17 +45,24 @@ export async function POST(req: Request) {
   let delivered = 0;
   let failed = 0;
   for (const row of pending) {
-    const envelope = {
-      version: row.version,
-      eventId: row.eventId,
-      type: row.type,
-      occurredAt: new Date(row.occurredAt).toISOString(),
-      actorUserId: row.actorUserId ?? undefined,
-      workspaceId: row.workspaceId ?? undefined,
-      objectRef: row.objectRef ? JSON.parse(row.objectRef) : undefined,
-      traceId: row.traceId,
-      payload: JSON.parse(row.payload),
-    };
+    let envelope: Record<string, unknown>;
+    try {
+      envelope = {
+        version: row.version,
+        eventId: row.eventId,
+        type: row.type,
+        occurredAt: new Date(row.occurredAt).toISOString(),
+        actorUserId: row.actorUserId ?? undefined,
+        workspaceId: row.workspaceId ?? undefined,
+        objectRef: row.objectRef ? JSON.parse(row.objectRef) : undefined,
+        traceId: row.traceId,
+        payload: JSON.parse(row.payload),
+      };
+    } catch (error) {
+      await markOutboxFailed(row.eventId, `invalid outbox payload: ${String(error)}`);
+      failed += 1;
+      continue;
+    }
     const body = JSON.stringify(envelope);
     const signature = createHmac("sha256", secret).update(body).digest("base64url");
     try {
