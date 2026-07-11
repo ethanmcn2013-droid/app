@@ -90,11 +90,11 @@ const TIER_META: TierMeta[] = [
     id: "wedding",
     label: "Wedding",
     price: "Via venue partner",
-    blurb: "One workspace. One wedding. Twelve months. Reads forever.",
+    blurb: "One workspace. One wedding. Eighteen months. Reads forever.",
     features: [
       "Wedding-shaped starter pack from day one",
       "Up to 6 collaborators, partner, planner, MOH",
-      "12 months of editing for the planner",
+      "18 months of editing for the planner",
       "Read-only links for in-laws",
     ],
     // Granted via comp-code (LAMBSHIL flow). Not self-serve.

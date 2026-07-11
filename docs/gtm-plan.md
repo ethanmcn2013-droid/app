@@ -2,7 +2,7 @@
 
 **Status:** Superseded by the Signal Studio year-one organic plan.
 **Current source of truth:** `studio/docs/MARKETING_PLAN_6MO.md` and `studio/signal-growth/`.
-**Updated:** 2026-05-17.
+**Updated:** 2026-07-11.
 
 The old eight-week Tasks-only GTM plan included Product Hunt, Show HN, Reddit Ads, Instagram boosts, USD pricing, and Tasks-first launch mechanics. That is no longer the operating plan.
 
@@ -35,7 +35,7 @@ Priority surfaces:
 - Student: EUR0 with verified .edu.
 - Workspace: EUR12/month or EUR120/year.
 - Event: EUR79 one-time for 12 months.
-- Venue Edition: EUR1,500-EUR4,000/year, paid by the venue through Signal Studio.
+- Venue Edition: €1,500 per venue per year, prepaid and paid by the venue through Signal Studio.
 
 ## Asset References
 

@@ -2,7 +2,7 @@
 
 **Status:** Superseded.
 **Current source of truth:** `studio/signal-growth/outbound/venue-edition-outreach.md`.
-**Updated:** 2026-05-17.
+**Updated:** 2026-07-11.
 
 The old Tasks-era venue outreach doc offered free bulk wedding-tier codes, USD pricing, no contract, and no paid venue relationship. That model is no longer true.
 
@@ -11,9 +11,9 @@ Do not send from this file.
 ## Current Venue Edition Model
 
 - The venue pays Signal Studio once a year.
-- EUR1,500-EUR4,000/year, prepaid, by venue size.
-- First fifteen venues lock EUR1,500 for as long as they stay.
-- Every couple the venue sends gets twelve months of Signal Studio.
+- €1,500 per venue per year, prepaid. There are no venue-size tiers.
+- Founding venues lock the same €1,500 annual price for as long as they stay.
+- Every couple the venue sends gets 18 months of Signal Studio access.
 - The couple never sees a price.
 - Tasks is one layer of the full suite: Notes captures, Tasks runs, Roadmap explains, Analytics briefs.
 
