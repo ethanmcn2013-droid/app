@@ -4,6 +4,17 @@ Tasks is the runtime authority for Planning Period, Workspace, and membership.
 The Studio contract mirrors this catalog; product content remains owned by its
 product. This document describes the Tasks v2 boundary.
 
+## External v2 catalog
+
+Notes and other suite consumers may read the signed server-to-server catalog at
+`GET /api/internal/workspaces?contractVersion=2` using a short-lived
+`signal-tasks.workspace-list` assertion signed with `NOTES_TO_TASKS_SECRET`.
+The response contains only current-member, non-archived Workspaces. Planning
+Period groups and dates are returned only for periods owned by the requesting
+subject; shared Workspaces remain selectable without leaking another owner's
+period metadata. The endpoint is private/no-store and fails closed on missing,
+expired, replayed, or malformed assertions.
+
 ## Shape
 
 ```text
