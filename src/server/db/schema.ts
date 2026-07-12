@@ -27,6 +27,10 @@ import type {
   Task,
   UserId,
 } from "@/lib/data";
+import type {
+  PlanningPeriodContext,
+  WorkspaceContext,
+} from "@/lib/planning/context";
 
 export const tasks = sqliteTable("tasks", {
   id: text("id").primaryKey(),
@@ -171,6 +175,41 @@ export const suiteOutbox = sqliteTable("suite_outbox", {
 ]);
 
 /**
+ * Tasks is the suite's runtime authority for finite operating horizons.
+ * Calendar dates remain YYYY-MM-DD strings; timezone gives those dates their
+ * user meaning without coercing them through a UTC timestamp.
+ */
+export const planningPeriods = sqliteTable("planning_periods", {
+  id: text("id").primaryKey(),
+  ownerUserId: text("owner_user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  contextType: text("context_type")
+    .$type<PlanningPeriodContext>()
+    .notNull()
+    .default("general"),
+  startDate: text("start_date"),
+  endDate: text("end_date"),
+  timezone: text("timezone").notNull().default("UTC"),
+  archivedAt: integer("archived_at", { mode: "timestamp" }),
+  position: real("position").notNull().default(1000),
+  revision: integer("revision").notNull().default(1),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (t) => [
+  index("idx_planning_periods_owner_position").on(
+    t.ownerUserId,
+    t.archivedAt,
+    t.position,
+  ),
+]);
+
+/**
  * Workspaces are the per-tenant boundary. Pricing, members, and
  * domain-flavored chrome all key off this. One user → many workspaces;
  * each workspace has exactly one owner and many members via
@@ -188,6 +227,21 @@ export const workspaces = sqliteTable("workspaces", {
   /** Nullable so the schema push doesn't fail on the legacy backfill;
    *  tightened to NOT NULL after the user webhook lands real owners. */
   ownerUserId: text("owner_user_id").references(() => users.id),
+  /** Nullable during the reversible legacy grouping migration. */
+  planningPeriodId: text("planning_period_id").references(
+    () => planningPeriods.id,
+    { onDelete: "set null" },
+  ),
+  contextType: text("context_type")
+    .$type<WorkspaceContext>()
+    .notNull()
+    .default("project"),
+  /** Calendar date, never an instant. */
+  primaryDate: text("primary_date"),
+  primaryDateLabel: text("primary_date_label"),
+  position: real("position").notNull().default(1000),
+  archivedAt: integer("archived_at", { mode: "timestamp" }),
+  revision: integer("revision").notNull().default(1),
   /** Replaces meta.activeDomain. Marketing / Student / Freelance / Wedding. */
   activeDomain: text("active_domain"),
   /** Segmented onboarding, primary coordination use case
@@ -212,7 +266,101 @@ export const workspaces = sqliteTable("workspaces", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
-});
+  /** Nullable in the physical legacy table until the additive backfill runs. */
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .default(sql`(unixepoch())`),
+}, (t) => [
+  index("idx_workspaces_period_position").on(
+    t.planningPeriodId,
+    t.archivedAt,
+    t.position,
+  ),
+]);
+
+export type ConsentedActivationMetadata = Readonly<{
+  activationLabel?: string;
+  primaryDate?: string;
+}>;
+
+/**
+ * Commercial sponsorship is deliberately orthogonal to content access.
+ * Nothing in this row grants membership, and private content must never be
+ * copied into `consentedMetadata`.
+ */
+export const workspaceSponsorships = sqliteTable("workspace_sponsorships", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id")
+    .notNull()
+    .references(() => workspaces.id, { onDelete: "cascade" }),
+  sponsorId: text("sponsor_id").notNull(),
+  sponsorRef: text("sponsor_ref"),
+  entitlementRef: text("entitlement_ref"),
+  status: text("status")
+    .$type<"active" | "revoked" | "expired">()
+    .notNull()
+    .default("active"),
+  consentedMetadata: text("consented_metadata", { mode: "json" })
+    .$type<ConsentedActivationMetadata>()
+    .notNull()
+    .default(sql`'{}'`),
+  metadataVersion: integer("metadata_version").notNull().default(1),
+  consentReceiptId: text("consent_receipt_id").notNull(),
+  consentedAt: integer("consented_at", { mode: "timestamp" }).notNull(),
+  revokedAt: integer("revoked_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (t) => [
+  index("idx_workspace_sponsorships_workspace").on(t.workspaceId, t.status),
+  index("idx_workspace_sponsorships_sponsor").on(t.sponsorId, t.status),
+]);
+
+export type PlanningOnboardingState = Readonly<{
+  step: "context" | "period" | "workspaces" | "review";
+  periodName?: string;
+  startDate?: string;
+  endDate?: string;
+  timezone?: string;
+  workspaceNames?: readonly string[];
+  primaryDate?: string;
+  primaryDateLabel?: string;
+}>;
+
+/** Resumable drafts are private to their creator and expire naturally. */
+export const planningOnboardingSessions = sqliteTable(
+  "planning_onboarding_sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    contextType: text("context_type")
+      .$type<PlanningPeriodContext>()
+      .notNull(),
+    state: text("state", { mode: "json" })
+      .$type<PlanningOnboardingState>()
+      .notNull(),
+    status: text("status")
+      .$type<"in_progress" | "completed" | "abandoned">()
+      .notNull()
+      .default("in_progress"),
+    revision: integer("revision").notNull().default(1),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [
+    index("idx_planning_onboarding_user_status").on(t.userId, t.status),
+  ],
+);
 
 /**
  * Workspace membership join table. Composite PK so a user can't be

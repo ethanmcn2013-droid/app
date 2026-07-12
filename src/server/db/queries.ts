@@ -572,20 +572,33 @@ export async function resolveShareLink(
   token: string,
 ): Promise<ShareData | null> {
   const [row] = await db
-    .select()
+    .select({
+      token: shareLinks.token,
+      view: shareLinks.view,
+      revokedAt: shareLinks.revokedAt,
+      expiresAt: shareLinks.expiresAt,
+      workspaceId: workspaces.id,
+      activeDomain: workspaces.activeDomain,
+    })
     .from(shareLinks)
-    .where(eq(shareLinks.token, token));
+    .innerJoin(workspaces, eq(workspaces.id, shareLinks.workspaceId))
+    .where(
+      and(
+        eq(shareLinks.token, token),
+        isNull(workspaces.archivedAt),
+      ),
+    );
   if (!row || row.revokedAt) return null;
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
 
-  // Share-link rows minted before Phase A may have a null
-  // workspaceId; fall back to the legacy workspace so dev links
-  // keep resolving.
-  const wsId = row.workspaceId ?? "ws-legacy";
-  const [taskList, domainId] = await Promise.all([
-    getTasks(wsId),
-    getActiveDomain(wsId),
-  ]);
+  // The INNER JOIN above is deliberate: a share row never revives an
+  // absent Workspace, and archived work is private until restored.
+  const wsId = row.workspaceId;
+  const taskList = await getTasks(wsId);
+  const candidateDomain = row.activeDomain as DomainId | null;
+  const domainId = candidateDomain && candidateDomain in DOMAINS
+    ? candidateDomain
+    : "marketing";
   const pack = DOMAINS[domainId];
   return {
     token,

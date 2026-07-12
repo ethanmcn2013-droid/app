@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createCheckoutSessionAction } from "@/server/actions/billing";
 import {
+  MissingStripePriceError,
   stripeConfigured,
   type BillingInterval,
   type PaidTier,
@@ -18,9 +19,9 @@ import {
  *
  *   GET /api/checkout?tier=workspace[&interval=annual][&return=https://signalstudio.ie/post-checkout]
  *
- * `interval=annual` selects the yearly price where one exists
- * (Workspace €120/yr today). It degrades to monthly if the annual
- * Stripe price isn't provisioned yet, never a dead button.
+ * `interval=annual` selects the yearly price where one exists. It fails
+ * explicitly when the annual Stripe Price is absent and never substitutes
+ * a monthly checkout.
  *
  * Flow:
  *   1. Validate the tier query param.
@@ -84,6 +85,16 @@ export async function GET(req: Request) {
     );
     return NextResponse.redirect(stripeUrl);
   } catch (err) {
+    if (err instanceof MissingStripePriceError) {
+      return NextResponse.json(
+        {
+          error: "The requested checkout interval is not configured.",
+          tier: err.tier,
+          interval: err.interval,
+        },
+        { status: 503 },
+      );
+    }
     // The most likely cause is "no active workspace", first-run
     // hasn't run yet. Hand off to /welcome which provisions a
     // workspace; user can return to /pricing afterwards.

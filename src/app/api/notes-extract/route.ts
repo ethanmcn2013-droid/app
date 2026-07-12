@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import { tasks, users, workspaceMembers, workspaces } from "@/server/db/schema";
+import { tasks, workspaces } from "@/server/db/schema";
 import { parseTaskInput } from "@/lib/nlp/parse-task-input";
 import { verifyNotesAssertion } from "@/server/cross-product-assertion";
+import { resolveNotesExtractAccess } from "@/server/notes-extract-access";
 
 /**
  * Cross-repo Notes -> Tasks extract endpoint (Cycle 9.4b second half,
@@ -20,10 +21,9 @@ import { verifyNotesAssertion } from "@/server/cross-product-assertion";
  * tasks.source_note_id. A repeat call with the same noteId returns
  * the existing task; never creates a duplicate. Notes can retry safely.
  *
- * Workspace selection: the user's first membership wins. If the user
- * has none, return 404 with venue-operator English, Notes renders the
- * `error` string to the user verbatim, so the prose has to read in the
- * suite's voice (BRAND.md §3) rather than in PM-tool register.
+ * Workspace selection: the assertion binds an explicit destination. Current
+ * membership is required before either an idempotent task or workspace
+ * metadata can be returned; absent membership receives an opaque 401.
  */
 
 export const dynamic = "force-dynamic";
@@ -87,16 +87,16 @@ export async function POST(req: Request) {
 
   const sourceNoteId = `${userId}:${noteId}`;
 
-  // Idempotency: existing task for this (userId, noteId)?
-  const [existing] = await db
-    .select({
-      id: tasks.id,
-      workspaceId: tasks.workspaceId,
-    })
-    .from(tasks)
-    .where(eq(tasks.sourceNoteId, sourceNoteId))
-    .limit(1);
+  const access = await resolveNotesExtractAccess(db, {
+    userId,
+    requestedWorkspaceId,
+    sourceNoteId,
+  });
+  if (access.kind === "denied") {
+    return bad("Unauthorized", 401);
+  }
 
+  const existing = access.existing;
   if (existing) {
     if (existing.workspaceId !== requestedWorkspaceId) {
       return bad("This note was already sent to another Tasks workspace", 409);
@@ -111,35 +111,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // The signed destination workspace is explicit; membership is checked
-  // against the immutable subject before any task is created.
-  const [member] = await db
-    .select({
-      workspaceId: workspaceMembers.workspaceId,
-    })
-    .from(workspaceMembers)
-    .where(and(
-      eq(workspaceMembers.userId, userId),
-      eq(workspaceMembers.workspaceId, requestedWorkspaceId),
-    ))
-    .limit(1);
-
-  if (!member) {
-    // The user might exist in the users table but have no workspaces
-    //, handle that as a separate case from "user doesn't exist at
-    // all" for nicer error surfacing.
-    const [userRow] = await db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    if (!userRow) {
-      return bad("Sign in to Signal Tasks once, then try again.", 404);
-    }
-    return bad("Open Signal Tasks once to set up your space, then try again.", 404);
-  }
-
-  const workspaceId = member.workspaceId;
+  const workspaceId = access.workspaceId;
   const ws = await loadWorkspaceMeta(workspaceId);
 
   // Next position in the default "todo" lane.

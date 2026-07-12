@@ -4,6 +4,14 @@ Where each kind of data lives, why it lives there, and what changes when the use
 
 Last revised: 2026-06-13. (Persistence migrated to Turso/libSQL — durability section below corrected; the prior SQLite-on-Vercel-ephemeral warning is retired.)
 
+## Planning Period catalog
+
+Tasks owns the suite runtime catalog for `planning_periods`, the additive
+Planning Period fields on `workspaces`, resumable
+`planning_onboarding_sessions`, and the access-orthogonal
+`workspace_sponsorships` association. The full authorization, migration,
+recovery, flag, and acceptance contract is in `docs/planning-periods.md`.
+
 ## What we store and where
 
 | Kind of data | Where it lives | Why there |

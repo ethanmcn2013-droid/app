@@ -113,7 +113,7 @@ export function ForCommunity() {
           unlimited workspaces, and inviting the whole staff, the
           parents&rsquo; rep, and every volunteer never moves the
           price. There is no per-seat surcharge at any size. A
-          one-off, a fundraiser, a show, a season: Event is €79 once
+          one-off, a fundraiser, a show, a season: Event is €89 once
           and the workspace keeps reading for twelve months after.
         </p>
 

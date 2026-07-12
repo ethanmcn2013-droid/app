@@ -94,6 +94,7 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
  *  caller's active workspace so a token owned by another tenant
  *  can't be revoked through this surface. */
 export async function revokeShareLinkAction(token: string): Promise<void> {
+  if (!/^[A-Za-z0-9_-]{8,256}$/.test(token)) return;
   const ws = await getActiveWorkspace();
   await db
     .update(shareLinks)
@@ -102,6 +103,7 @@ export async function revokeShareLinkAction(token: string): Promise<void> {
       and(eq(shareLinks.token, token), eq(shareLinks.workspaceId, ws)),
     );
   revalidatePath("/app", "layout");
+  revalidatePath(`/share/${encodeURIComponent(token)}`);
 }
 
 /**

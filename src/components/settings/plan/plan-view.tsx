@@ -79,8 +79,8 @@ function CompWeddingView({
         </p>
         <p className="mt-3 max-w-[520px] text-[12.5px] leading-[1.65] text-ink-soft">
           When the year is up, the workspace stays. Tasks, notes, and the
-          timeline are yours, you'll just be moved to the Free tier, which
-          has everything most couples need after the wedding's done.
+          timeline are yours, you&apos;ll just be moved to the Free tier, which
+          has everything most couples need after the wedding&apos;s done.
         </p>
       </div>
 
@@ -184,7 +184,7 @@ function labelForTier(t: PlanSummary["tier"]): string {
 
 function priceForTier(t: PlanSummary["tier"]): string {
   if (t === "workspace") return "€12 per month";
-  if (t === "event") return "€79 · one-time";
+  if (t === "event") return "€89 · one-time";
   if (t === "studio") return "€14.95 per month";
   if (t === "wedding") return "€79 · one-time";
   return "€0";

@@ -12,6 +12,7 @@ import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { OnboardingFlow } from "@/components/welcome/onboarding-flow";
 import { segmentFromParam } from "@/lib/onboarding/segments";
 import { StillProvisioning } from "@/components/welcome/still-provisioning";
+import { resolvePlanningFeatureFlags } from "@/lib/planning/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,16 @@ export default async function WelcomePage({
   // the board with a query param so the welcome card can name the
   // sponsor.
   const venueWelcome = await detectVenueWelcome(me);
+  const planningFlags = resolvePlanningFeatureFlags();
+  if (planningFlags.contextualOnboarding) {
+    if (venueWelcome) redirect("/welcome/plan?context=wedding_season");
+    if (preselectedSegment === "student") {
+      redirect("/welcome/plan?context=semester");
+    }
+    if (preselectedSegment === "wedding") {
+      redirect("/welcome/plan?context=wedding_season");
+    }
+  }
   if (venueWelcome && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
     // Pure DB helper instead of `applyTemplateAction`, same reason as
     // `redeemCompCodeAction`: the action calls `revalidatePath` which

@@ -17,7 +17,14 @@ import * as schema from "./schema";
  * Foreign keys are OFF on purpose: tests that assert tenant deletes/reads
  * must prove the EXPLICIT predicates do the work, never a cascade.
  */
-export async function freshMemoryDb() {
+export type MemoryTestDbOptions = Readonly<{
+  beforeMigration?: (
+    filename: string,
+    client: ReturnType<typeof createClient>,
+  ) => Promise<void>;
+}>;
+
+export async function freshMemoryDb(options: MemoryTestDbOptions = {}) {
   const here = dirname(fileURLToPath(import.meta.url)); // src/server/db
   const drizzleDir = join(here, "..", "..", "..", "drizzle");
 
@@ -83,6 +90,7 @@ export async function freshMemoryDb() {
     .filter((f) => f.endsWith(".sql"))
     .sort();
   for (const f of files) {
+    await options.beforeMigration?.(f, client);
     await client.executeMultiple(readFileSync(join(drizzleDir, f), "utf8"));
   }
 

@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import {
+  SUITE_CONTEXT_EVENT,
+  SUITE_CONTEXT_STORAGE_KEY,
+} from "@/components/app/suite-context-publisher";
+import {
+  isSuiteContextId,
+  withSuiteContext,
+  type SuiteContextV2,
+} from "@/lib/suite-context";
 
 /**
  * SuiteSwitcher, canonical always-visible 4-product pill switcher.
@@ -132,6 +141,10 @@ const SCOPED_CSS = `
  background:color-mix(in srgb,var(--ink,#111111) 5%,transparent)}
 .suitesw-pill--current{font-weight:600;color:var(--ink,#111111);
  background:color-mix(in srgb,${INDIGO} 9%,transparent);cursor:default}
+@media(max-width:520px){
+ .suitesw-anchor,.suitesw-sep{display:none}
+ .suitesw-pill{padding:4px 7px;font-size:12px}
+}
 `;
 
 export function SuiteSwitcher({
@@ -146,6 +159,38 @@ export function SuiteSwitcher({
   current?: ProductSlug;
   showUmbrella?: boolean;
 }) {
+  const [suiteContext, setSuiteContext] = useState<SuiteContextV2 | null>(null);
+
+  useEffect(() => {
+    const readStored = () => {
+      try {
+        const parsed = JSON.parse(
+          window.localStorage.getItem(SUITE_CONTEXT_STORAGE_KEY) ?? "null",
+        ) as Partial<SuiteContextV2> | null;
+        setSuiteContext(
+          parsed?.version === 2 &&
+            isSuiteContextId(parsed.planningPeriodId) &&
+            isSuiteContextId(parsed.workspaceId)
+            ? {
+                version: 2,
+                planningPeriodId: parsed.planningPeriodId,
+                workspaceId: parsed.workspaceId,
+              }
+            : null,
+        );
+      } catch {
+        setSuiteContext(null);
+      }
+    };
+    const onContext = (event: Event) => {
+      const detail = (event as CustomEvent<SuiteContextV2 | null>).detail;
+      setSuiteContext(detail);
+    };
+    readStored();
+    window.addEventListener(SUITE_CONTEXT_EVENT, onContext);
+    return () => window.removeEventListener(SUITE_CONTEXT_EVENT, onContext);
+  }, []);
+
   // Phase 3 (instant-jump): preconnect every sibling origin on mount so
   // the first cross-product hop has a warm TLS connection ready. The
   // pills are always visible, warm eagerly, there is no "on open".
@@ -186,6 +231,7 @@ export function SuiteSwitcher({
 
       {PRODUCTS.map((p) => {
         const isCurrent = p.slug === current;
+        const contextualAppUrl = withSuiteContext(p.appUrl, suiteContext);
         if (isCurrent) {
           return (
             <span
@@ -203,9 +249,9 @@ export function SuiteSwitcher({
         return (
           <a
             key={p.slug}
-            href={p.appUrl}
-            onMouseEnter={() => prefetchProduct(p.appUrl)}
-            onFocus={() => prefetchProduct(p.appUrl)}
+            href={contextualAppUrl}
+            onMouseEnter={() => prefetchProduct(contextualAppUrl)}
+            onFocus={() => prefetchProduct(contextualAppUrl)}
             onClick={(e) => {
               if (
                 e.metaKey ||
@@ -216,7 +262,7 @@ export function SuiteSwitcher({
               )
                 return;
               e.preventDefault();
-              suiteJump(p.appUrl);
+              suiteJump(contextualAppUrl);
             }}
             className="suitesw-pill suitesw-pill--link"
           >

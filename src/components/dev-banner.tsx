@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
  * bolted on.
  *
  * Copy is configurable via NEXT_PUBLIC_DEV_BANNER_TEXT; default mirrors the
- * suite line "In development, expected launch September 1st."
+ * suite line "In development, private preview with staged access."
  */
 
 function bannerEnabled(): boolean {
@@ -37,14 +37,15 @@ export function DevBanner() {
     } catch {
       /* sessionStorage unavailable, show anyway */
     }
-    setHidden(false);
+    const timeoutId = window.setTimeout(() => setHidden(false), 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   if (hidden) return null;
 
   const text =
     process.env.NEXT_PUBLIC_DEV_BANNER_TEXT ??
-    "In development, expected launch September 1st.";
+    "In development, private preview with staged access.";
 
   return (
     <div className="signal-devbanner" role="status" aria-live="polite">

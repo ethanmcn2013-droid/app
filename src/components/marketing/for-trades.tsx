@@ -163,7 +163,7 @@ export function ForTrades() {
           moves the price, so the whole site, the GC and the
           inspector cost the same as just you. A single big job that
           runs for months, a full fit-out, a site that lasts a
-          season: Event is €79 once, and the workspace keeps reading
+          season: Event is €89 once, and the workspace keeps reading
           for twelve months after it&rsquo;s done.
         </p>
 

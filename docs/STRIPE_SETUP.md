@@ -23,7 +23,7 @@ In <https://dashboard.stripe.com>, create products + prices:
 | Product       | Type           | Recurring | Currency | Amount   | Env var                            |
 |---------------|----------------|-----------|----------|----------|------------------------------------|
 | Workspace     | Subscription   | Monthly   | EUR      | €12.00   | `STRIPE_PRICE_WORKSPACE_MONTHLY`   |
-| Event         | One-time       | —         | EUR      | €79.00   | `STRIPE_PRICE_EVENT_ONETIME`       |
+| Event         | One-time       | —         | EUR      | €89.00   | `STRIPE_PRICE_EVENT_ONETIME`       |
 
 (`STRIPE_PRICE_PRO_MONTHLY` is a legacy alias in code for
 `STRIPE_PRICE_WORKSPACE_MONTHLY` — set the new name; the alias only

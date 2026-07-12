@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "currency": "EUR",
+  "accessState": "waitlist_first",
+  "broadLaunchDate": null,
+  "plans": {
+    "free": {
+      "publicName": "Free",
+      "amountCents": 0,
+      "cadence": "forever",
+      "workspaceLimit": 1,
+      "editingGuestLimit": 3,
+      "status": "verified"
+    },
+    "student": {
+      "publicName": "Student",
+      "amountCents": 999,
+      "cadence": "year",
+      "workspaceLimit": null,
+      "editingGuestLimit": null,
+      "status": "price_verified_payment_unverified"
+    },
+    "pro": {
+      "publicName": "Pro",
+      "internalEntitlement": "workspace",
+      "monthlyAmountCents": 1200,
+      "annualAmountCents": null,
+      "annualCandidatesCents": [10000, 12000],
+      "workspaceLimit": null,
+      "editingGuestLimit": null,
+      "status": "monthly_verified_annual_unresolved"
+    },
+    "event": {
+      "publicName": "Event",
+      "amountCents": 8900,
+      "cadence": "one_time",
+      "activeWindowMonths": 12,
+      "postWindow": "read_only",
+      "status": "verified_price_retention_wording_pending"
+    },
+    "venue": {
+      "publicName": "Venue Edition",
+      "annualAmountCents": 150000,
+      "coupleAccessMonths": 18,
+      "operationalAccessDays": 548,
+      "foundingCohortSize": 15,
+      "activationAllowance": null,
+      "status": "verified_price_duration_allowance_unresolved"
+    }
+  },
+  "unresolved": [
+    "pro_annual_amount",
+    "pro_workspace_limit",
+    "student_workspace_limit",
+    "student_verification_and_payment",
+    "committee_offer",
+    "editing_guest_semantics",
+    "event_retention_promise",
+    "venue_activation_allowance",
+    "venue_calendar_month_semantics",
+    "school_pricing_and_seats",
+    "broad_launch_date"
+  ]
+}

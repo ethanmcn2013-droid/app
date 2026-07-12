@@ -129,7 +129,7 @@ export function ForSmallBusiness() {
           €12 a month for unlimited workspaces, and inviting the
           staff, the suppliers, and the accountant never moves the
           price. There is no per-seat surcharge at any size. A
-          one-off, a launch, a fit-out, a move: Event is €79 once
+          one-off, a launch, a fit-out, a move: Event is €89 once
           and that workspace keeps reading for twelve months after.
         </p>
 

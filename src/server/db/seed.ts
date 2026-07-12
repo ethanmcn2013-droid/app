@@ -71,8 +71,24 @@ export async function seedIfEmpty(db: DbType): Promise<void> {
       // Legacy workspace, owned by `david`. Idempotent INSERT so a
       // re-seed against an already-seeded DB doesn't double up.
       await tx.run(sql`
-        INSERT OR IGNORE INTO workspaces (id, slug, name, owner_user_id, active_domain)
-        VALUES (${LEGACY_WORKSPACE_ID}, 'legacy', 'Legacy workspace', ${LEGACY_OWNER_USER_ID}, NULL)
+        INSERT OR IGNORE INTO planning_periods (
+          id, owner_user_id, name, context_type, start_date, end_date,
+          timezone, position, revision
+        )
+        VALUES (
+          'planning-legacy-david', ${LEGACY_OWNER_USER_ID}, 'Active work', 'general',
+          date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
+        )
+      `);
+      await tx.run(sql`
+        INSERT OR IGNORE INTO workspaces (
+          id, slug, name, owner_user_id, active_domain,
+          planning_period_id, context_type, position, updated_at
+        )
+        VALUES (
+          ${LEGACY_WORKSPACE_ID}, 'legacy', 'Legacy workspace', ${LEGACY_OWNER_USER_ID}, NULL,
+          'planning-legacy-david', 'project', 1000, unixepoch()
+        )
       `);
 
       // All seeded users are members of the legacy workspace, with

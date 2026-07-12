@@ -170,9 +170,17 @@ export function OnboardingFlow({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>(() => {
+    if (preselectedSegment) {
+      const cfg = SEGMENTS[preselectedSegment];
+      return cfg.contextQuestion && cfg.contextOptions.length > 0
+        ? "context"
+        : "starter";
+    }
+    return pendingTemplate ? "starter" : "welcome";
+  });
   const [segment, setSegment] = useState<PrimaryUseCase | null>(
-    preselectedSegment,
+    preselectedSegment ?? (pendingTemplate ? "wedding" : null),
   );
   const [context, setContext] = useState<string | null>(null);
 
@@ -181,22 +189,6 @@ export function OnboardingFlow({
       source: preselectedSegment ?? undefined,
     });
   }, [preselectedSegment]);
-
-  useEffect(() => {
-    if (preselectedSegment) {
-      const cfg = SEGMENTS[preselectedSegment];
-      setStep(
-        cfg.contextQuestion && cfg.contextOptions.length > 0
-          ? "context"
-          : "starter",
-      );
-      return;
-    }
-    if (pendingTemplate) {
-      setStep("starter");
-      setSegment((prev) => prev ?? "wedding");
-    }
-  }, [preselectedSegment, pendingTemplate]);
 
   useEffect(() => {
     trackOnboardingEvent("onboarding_step_viewed", { step });
@@ -312,6 +304,12 @@ export function OnboardingFlow({
                     <path d="M5 12h14M13 5l7 7-7 7" />
                   </svg>
                 </button>
+                <a
+                  href="/welcome/plan"
+                  className="mx-auto mt-4 block w-fit rounded-lg px-3 py-2 text-[13px] text-ink-soft outline-none transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/30"
+                >
+                  Set up classes, modules, or a wedding
+                </a>
               </motion.div>
             )}
 

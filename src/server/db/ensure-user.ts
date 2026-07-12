@@ -33,6 +33,7 @@ export async function ensureUserProvisioned(
   const handle = shortTail || clerkUserId.slice(0, 8).toLowerCase();
   const color = deriveColor(clerkUserId);
   const workspaceId = `ws-${tail}`;
+  const planningPeriodId = `planning-${workspaceId}`;
   const slug = `personal-${shortTail}`;
 
   // C2: derive name + initials from Clerk firstName/lastName when available
@@ -76,8 +77,32 @@ export async function ensureUserProvisioned(
     }
 
     await tx.run(sql`
-      INSERT OR IGNORE INTO workspaces (id, slug, name, owner_user_id, active_domain)
-      VALUES (${workspaceId}, ${slug}, 'Personal', ${clerkUserId}, NULL)
+      INSERT OR IGNORE INTO planning_periods (
+        id, owner_user_id, name, context_type, start_date, end_date,
+        timezone, position, revision
+      )
+      VALUES (
+        ${planningPeriodId}, ${clerkUserId}, 'Active work', 'general',
+        date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
+      )
+    `);
+
+    await tx.run(sql`
+      INSERT OR IGNORE INTO workspaces (
+        id, slug, name, owner_user_id, active_domain,
+        planning_period_id, context_type, position, updated_at
+      )
+      VALUES (
+        ${workspaceId}, ${slug}, 'Personal', ${clerkUserId}, NULL,
+        ${planningPeriodId}, 'project', 1000, unixepoch()
+      )
+    `);
+    await tx.run(sql`
+      UPDATE workspaces
+      SET planning_period_id = COALESCE(planning_period_id, ${planningPeriodId}),
+          context_type = COALESCE(context_type, 'project'),
+          updated_at = COALESCE(updated_at, unixepoch())
+      WHERE id = ${workspaceId}
     `);
     await tx.run(sql`
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)

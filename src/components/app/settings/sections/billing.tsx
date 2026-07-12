@@ -61,7 +61,7 @@ const TIER_META: TierMeta[] = [
   {
     id: "event",
     label: "Event",
-    price: "€79 once",
+    price: "€89 once",
     blurb: "One workspace for one event. 12 months active, reads forever.",
     paidTier: "event",
     features: [

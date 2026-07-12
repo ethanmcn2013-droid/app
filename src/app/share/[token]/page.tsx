@@ -4,7 +4,12 @@ import { ShareBoard } from "@/components/app/share/share-board";
 import { GuestAuthProvider } from "@/components/app/guest/guest-auth-context";
 import { Wordmark } from "@/components/brand/wordmark";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export const metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function SharePage({
   params,
