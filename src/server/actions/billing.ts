@@ -5,6 +5,7 @@ import { db } from "@/server/db";
 import { entitlements } from "@/server/db/schema";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import {
+  MissingStripePriceError,
   priceIdFor,
   stripe,
   type BillingInterval,
@@ -71,6 +72,11 @@ export async function createCheckoutSessionAction(
   // sees the right scope.
   const scopedWorkspaceId: string | null = tier === "studio" ? null : ws;
 
+  const configuredPriceId = priceIdFor(tier, interval);
+  if (interval === "annual" && !configuredPriceId) {
+    throw new MissingStripePriceError(tier, interval);
+  }
+
   if (!stripe) {
     // Dev path: short-circuit, grant the entitlement locally.
     await grantEntitlement({
@@ -85,9 +91,9 @@ export async function createCheckoutSessionAction(
     return { url: `${siteUrl()}/app/board?upgrade=ok&dev=1` };
   }
 
-  const priceId = priceIdFor(tier, interval);
+  const priceId = configuredPriceId;
   if (!priceId) {
-    throw new Error(`No Stripe price id for tier "${tier}"`);
+    throw new MissingStripePriceError(tier, interval);
   }
 
   // Stripe metadata must be string-valued; we encode user-level

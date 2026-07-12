@@ -11,6 +11,8 @@ import { PaletteRoot } from "@/components/app/palette/command-palette";
 import { CrossWorkspaceOverdue } from "@/components/app/cross-workspace-overdue";
 import { CrossWorkspaceSearch } from "@/components/app/cross-workspace-search";
 import { FocusMode } from "@/components/app/focus-mode";
+import { WorkspaceContextBar } from "@/components/app/workspace-context-bar";
+import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
 import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
 import { DomainProvider } from "@/lib/domain-context";
 import { CurrentUserProvider } from "@/lib/auth-context";
@@ -22,7 +24,11 @@ import {
   getActiveDomain,
   isFirstRun,
 } from "@/server/db/queries";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import {
+  getActiveWorkspace,
+  getCurrentUser,
+  listMyWorkspaces,
+} from "@/server/auth";
 import { requireAppAccess } from "@/server/require-app-access";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 import { isDemoMode } from "@/lib/access-mode";
@@ -60,7 +66,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -69,15 +75,18 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       ? Promise.resolve({
           slug: DEMO_WORKSPACE_SLUG,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
+          planningPeriodId: "demo-planning-period",
         })
       : db
           .select({
             slug: workspaces.slug,
             primaryUseCase: workspaces.primaryUseCase,
+            planningPeriodId: workspaces.planningPeriodId,
           })
           .from(workspaces)
           .where(eq(workspaces.id, ws))
           .then((rows) => rows[0]),
+    listMyWorkspaces(),
   ]);
   const slug = wsRow?.slug ?? ws;
   const personalization = getWorkspacePersonalization({
@@ -94,10 +103,18 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       >
         <TasksProvider initialTasks={tasks}>
           <ToastRoot>
+            <SuiteContextPublisher
+              planningPeriodId={wsRow?.planningPeriodId ?? null}
+              workspaceId={ws}
+            />
             <AddTaskRoot>
               <PaletteRoot>
                 <AppSidebar />
                 <div className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">
+                  <WorkspaceContextBar
+                    activeWorkspaceId={ws}
+                    workspaces={myWorkspaces}
+                  />
                   {children}
                 </div>
                 <TaskDetailPanel />

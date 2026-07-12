@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
-import { users, workspaces, workspaceMembers } from "@/server/db/schema";
+import { users } from "@/server/db/schema";
 import { grantEntitlement } from "@/server/actions/billing";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
@@ -179,6 +179,7 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
   // by construction.
   const slug = `personal-${u.id.replace(/^user_/, "").slice(0, 8).toLowerCase()}`;
   const workspaceId = `ws-${u.id.replace(/^user_/, "").slice(0, 12).toLowerCase()}`;
+  const planningPeriodId = `planning-${workspaceId}`;
 
   // All three writes inside one BEGIN…COMMIT so a crash mid-flight
   // can't leave a user without a workspace.
@@ -192,8 +193,31 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
         name = excluded.name
     `);
     await tx.run(sql`
-      INSERT OR IGNORE INTO workspaces (id, slug, name, owner_user_id, active_domain)
-      VALUES (${workspaceId}, ${slug}, ${name ?? "Personal"}, ${userId}, NULL)
+      INSERT OR IGNORE INTO planning_periods (
+        id, owner_user_id, name, context_type, start_date, end_date,
+        timezone, position, revision
+      )
+      VALUES (
+        ${planningPeriodId}, ${userId}, 'Active work', 'general',
+        date('now'), date('now', '+1 year', '-1 day'), 'UTC', 1000, 1
+      )
+    `);
+    await tx.run(sql`
+      INSERT OR IGNORE INTO workspaces (
+        id, slug, name, owner_user_id, active_domain,
+        planning_period_id, context_type, position, updated_at
+      )
+      VALUES (
+        ${workspaceId}, ${slug}, ${name ?? "Personal"}, ${userId}, NULL,
+        ${planningPeriodId}, 'project', 1000, unixepoch()
+      )
+    `);
+    await tx.run(sql`
+      UPDATE workspaces
+      SET planning_period_id = COALESCE(planning_period_id, ${planningPeriodId}),
+          context_type = COALESCE(context_type, 'project'),
+          updated_at = COALESCE(updated_at, unixepoch())
+      WHERE id = ${workspaceId}
     `);
     await tx.run(sql`
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)

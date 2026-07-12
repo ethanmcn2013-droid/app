@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
@@ -8,6 +8,8 @@ import {
   activities,
   notificationPrefs,
   pendingInvites,
+  shareLinks,
+  shareLinkVisits,
   tasks,
   users,
   workspaceMembers,
@@ -591,12 +593,24 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
   if (role !== "owner") {
     throw new Error("Only the owner can delete this workspace.");
   }
-  // Workspace deletion cascades to tasks (FK ON DELETE CASCADE on
-  // workspace_id was added in Phase A), members (cascade), and
-  // entitlements via the workspace_id reference. Notifications +
-  // activities are scoped via workspaceId column but no FK; we
-  // best-effort wipe them here.
-  await db.delete(workspaces).where(eq(workspaces.id, ws));
+  // The physical legacy tasks/share tables did not consistently carry
+  // workspace FKs. Delete public capabilities and task roots explicitly so a
+  // Workspace deletion cannot leave a resolvable share or invisible orphan.
+  await db.transaction(async (tx) => {
+    const linkRows = await tx
+      .select({ token: shareLinks.token })
+      .from(shareLinks)
+      .where(eq(shareLinks.workspaceId, ws));
+    const tokens = linkRows.map((row) => row.token);
+    if (tokens.length > 0) {
+      await tx
+        .delete(shareLinkVisits)
+        .where(inArray(shareLinkVisits.token, tokens));
+    }
+    await tx.delete(shareLinks).where(eq(shareLinks.workspaceId, ws));
+    await tx.delete(tasks).where(eq(tasks.workspaceId, ws));
+    await tx.delete(workspaces).where(eq(workspaces.id, ws));
+  });
   // Clear the cookie pointing at the now-dead workspace.
   const c = await cookies();
   c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);

@@ -1,0 +1,63 @@
+{
+  "version": 2,
+  "accepts": [1, 2],
+  "authorities": {
+    "planningPeriod": "tasks",
+    "workspace": "tasks",
+    "membership": "tasks",
+    "entitlementPolicy": "studio",
+    "sponsorshipPolicy": "studio",
+    "notes": "notes",
+    "tasks": "tasks",
+    "timelinePublication": "timeline",
+    "signal": "signal"
+  },
+  "planningPeriod": {
+    "contexts": ["school_year", "semester", "wedding_season", "general"],
+    "required": ["id", "ownerUserId", "name", "contextType", "startDate", "endDate", "timezone", "position", "revision", "createdAt", "updatedAt"],
+    "optional": ["archivedAt"],
+    "calendarDateFields": ["startDate", "endDate"],
+    "instantFields": ["archivedAt", "createdAt", "updatedAt"]
+  },
+  "workspace": {
+    "contexts": ["class", "module", "wedding", "project"],
+    "required": ["id", "ownerUserId", "name", "planningPeriodId", "contextType", "position", "revision", "createdAt", "updatedAt"],
+    "optional": ["primaryDate", "primaryDateLabel", "archivedAt"],
+    "calendarDateFields": ["primaryDate"],
+    "instantFields": ["archivedAt", "createdAt", "updatedAt"]
+  },
+  "context": {
+    "version": 2,
+    "required": ["sourceProduct"],
+    "optional": ["planningPeriodId", "workspaceId", "projectId", "objectRef", "returnUrl"]
+  },
+  "roles": ["owner", "admin", "member", "guest"],
+  "actors": ["owner", "collaborator", "sponsor", "audience"],
+  "permissions": ["workspace.read", "workspace.write", "workspace.manage", "object.read", "object.write", "object.share"],
+  "sponsorship": {
+    "createsMembership": false,
+    "grantsContentRead": false,
+    "permittedByDefault": ["activationId", "activationStatus", "invitationState", "entitlementTier", "entitlementValidFrom", "entitlementValidUntil", "sponsoringOrganizationId", "sponsorReference", "consentReceiptVersion", "consentedAt"],
+    "requiresFieldConsent": ["workspaceId", "workspaceLabel", "primaryDate", "ceremonyInformation"],
+    "forbidden": ["notes", "tasks", "privateTimeline", "comments", "attachments", "collaborators"]
+  },
+  "timelinePublication": {
+    "sourceEditsPropagate": false,
+    "defaultCopiedFields": ["title", "date", "completionState"],
+    "publicDto": {
+      "required": ["version", "audienceKind", "publicationId", "label", "lastUpdatedAt", "today", "sections"],
+      "optional": ["ownerDisplayLabel", "primaryDate"],
+      "forbidden": ["workspaceId", "userId", "sourceId", "sourceRef", "ownerEmail", "sponsor", "membership", "description", "attachments", "comments", "notes", "audit"]
+    },
+    "shareTokenBytes": 32,
+    "tokenStorage": "sha256",
+    "cachePolicy": "private-no-store",
+    "robots": "noindex-nofollow"
+  },
+  "transport": {
+    "commands": "audience-bound-signed-api-with-idempotency",
+    "currentReads": "authoritative-api-or-least-privilege-read-contract",
+    "events": "invalidation-hints-only",
+    "authorization": "reauthorize-current-membership-at-read-time"
+  }
+}
