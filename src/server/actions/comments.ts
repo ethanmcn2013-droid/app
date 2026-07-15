@@ -9,7 +9,9 @@ import { recordActivity } from "@/server/db/activity";
 import { notify } from "@/server/db/notifications";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
 import { USERS, type Comment, type UserId } from "@/lib/data";
+import { DEMO_USER_ID } from "@/server/demo/tasks-demo";
 
 function snippetOf(body: string): string {
   const trimmed = body.trim();
@@ -67,6 +69,7 @@ async function resolveCallerTaskWorkspace(
 export async function getCommentsForTaskAction(
   taskId: string,
 ): Promise<Comment[]> {
+  if (isDemoMode()) return [];
   // Cross-tenant read guard: only return the thread if the caller's
   // active workspace owns the parent task. Strangers asking for a
   // foreign task id get an empty list, indistinguishable from a task
@@ -82,6 +85,22 @@ export async function addCommentAction(
 ): Promise<Comment[]> {
   const trimmed = body.trim();
   if (!trimmed) return [];
+
+  // Demo/review is intentionally read-only. Echo the submitted copy back to
+  // the optimistic composer so the review interaction completes without
+  // authenticating, reading a tenant, or persisting anything.
+  if (isDemoMode()) {
+    return [
+      {
+        id: `demo-comment-${taskId}`,
+        taskId,
+        userId: DEMO_USER_ID,
+        authorName: USERS[DEMO_USER_ID].name,
+        body: trimmed,
+        createdAt: new Date(),
+      },
+    ];
+  }
 
   const me = await getCurrentUser();
   // Workspace-membership guard: the parent task must belong to the
@@ -141,6 +160,7 @@ export async function addCommentAction(
 export async function removeCommentAction(
   commentId: string,
 ): Promise<Comment[]> {
+  if (isDemoMode()) return [];
   // Scope the delete to (active workspace, author === caller). The
   // workspace join via the parent task closes the cross-tenant hole
   // (you can't delete comments on tasks outside your workspace); the

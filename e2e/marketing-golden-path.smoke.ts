@@ -108,23 +108,23 @@ async function check(c: Check): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  // eslint-disable-next-line no-console
+
   console.log(`smoke: base=${BASE}\n`);
   let failed = 0;
   for (const c of checks) {
     try {
       await check(c);
-      // eslint-disable-next-line no-console
+
       console.log(`ok  - ${c.label}`);
     } catch (err) {
       failed += 1;
-      // eslint-disable-next-line no-console
+
       console.error(`FAIL - ${c.label}`);
-      // eslint-disable-next-line no-console
+
       console.error(`       ${err instanceof Error ? err.message : err}`);
     }
   }
-  // eslint-disable-next-line no-console
+
   console.log(`\n${checks.length - failed}/${checks.length} passing`);
   if (failed > 0) process.exit(1);
 }

@@ -8,6 +8,8 @@ import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
+import { demoTasks } from "@/server/demo/tasks-demo";
 import {
   LANE_ORDER,
   type LaneId,
@@ -24,6 +26,7 @@ import {
  * Resolves the active workspace from the session cookie.
  */
 export async function getTasksAction(): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   return getTasks(ws);
 }
@@ -40,6 +43,7 @@ export async function getTasksAction(): Promise<Task[]> {
 export async function getSubtasksAction(
   parentTaskId: string,
 ): Promise<Task[]> {
+  if (isDemoMode()) return [];
   const ws = await getActiveWorkspace();
   const [parent] = await db
     .select({ id: tasks.id })
@@ -81,6 +85,7 @@ export async function moveTaskAction(
   toLane: LaneId,
 ): Promise<Task[]> {
   if (!id || !LANE_ORDER.includes(toLane)) return [];
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   // Pre-read prior lane, workspace guard on the read so a caller who
   // knows a foreign task id gets a silent no-op instead of leaking the
@@ -108,6 +113,7 @@ export async function moveTaskAction(
 }
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   // Workspace guard on the read: scope to the caller's workspace so a
   // foreign task id is a silent no-op rather than a cross-tenant toggle.
@@ -298,6 +304,7 @@ export async function updateTaskAction(
   id: string,
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   // Resolve the target through the caller's tenant before doing any
   // side-effects. Without this read, a foreign id is a no-op update but
@@ -376,6 +383,7 @@ export async function addTaskAction(input: {
    *  NULL). One level of nesting only in v1. */
   parentTaskId?: string | null;
 }): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   const id =
     input.id ??
@@ -455,6 +463,7 @@ export async function reorderTaskAction(
   if (!LANE_ORDER.includes(lane)) {
     throw new Error(`reorderTaskAction: unknown lane "${lane}"`);
   }
+  if (isDemoMode()) return demoTasks();
 
   const ws = await getActiveWorkspace();
   // Workspace guard on the read so a caller with a foreign task id
@@ -490,6 +499,7 @@ export async function reorderTaskAction(
 }
 
 export async function removeTaskAction(id: string): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   // Workspace guard: deletes only fire when the row belongs to the
   // caller's active workspace. FK cascade drops activities for the row.
@@ -520,6 +530,7 @@ export async function setTaskMilestoneAction(
   id: string,
   isMilestone: boolean,
 ): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   await db
     .update(tasks)

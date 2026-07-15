@@ -10,6 +10,8 @@ import {
   getShareLinkVisitAnalytics,
   recordShareLinkVisit,
 } from "@/server/db/queries";
+import { isDemoMode } from "@/lib/access-mode";
+import { DEMO_SHARE_TOKEN } from "@/server/demo/tasks-demo";
 
 export type ShareView = "board" | "list" | "timeline" | "calendar";
 export type ShareMode = "view" | "comment" | "edit";
@@ -49,6 +51,7 @@ export async function createShareLinkAction(input: {
   expiresInDays?: number | null;
   label?: string;
 }): Promise<{ token: string }> {
+  if (isDemoMode()) return { token: DEMO_SHARE_TOKEN };
   const ws = await getActiveWorkspace();
   const token = newToken();
   const expiresAt =
@@ -70,6 +73,20 @@ export async function createShareLinkAction(input: {
  *  links popover. Scoped to the caller's active workspace, the
  *  earlier global query leaked tokens across tenants. */
 export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
+  if (isDemoMode()) {
+    return [
+      {
+        token: DEMO_SHARE_TOKEN,
+        view: "board",
+        mode: "view",
+        label: "Review link",
+        createdAt: "2026-07-15T09:00:00.000Z",
+        expiresAt: null,
+        revokedAt: null,
+        visits: 3,
+      },
+    ];
+  }
   const ws = await getActiveWorkspace();
   const rows = await db
     .select()
@@ -94,6 +111,7 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
  *  caller's active workspace so a token owned by another tenant
  *  can't be revoked through this surface. */
 export async function revokeShareLinkAction(token: string): Promise<void> {
+  if (isDemoMode()) return;
   const ws = await getActiveWorkspace();
   await db
     .update(shareLinks)
@@ -117,6 +135,7 @@ export async function bumpShareLinkVisitAction(
   token: string,
   userAgent?: string | null,
 ): Promise<void> {
+  if (isDemoMode()) return;
   await db.run(sql`
     UPDATE share_links SET visits = visits + 1 WHERE token = ${token}
   `);
@@ -153,6 +172,16 @@ export type ShareLinkAnalyticsSummary = {
 export async function listShareLinkAnalyticsAction(): Promise<
   ShareLinkAnalyticsSummary[]
 > {
+  if (isDemoMode()) {
+    return [
+      {
+        token: DEMO_SHARE_TOKEN,
+        total: 3,
+        last7: [0, 1, 0, 0, 1, 0, 1],
+        lastVisitedAt: "2026-07-15T08:30:00.000Z",
+      },
+    ];
+  }
   const ws = await getActiveWorkspace();
   const rows = await db
     .select({
@@ -188,6 +217,7 @@ export async function emailShareLinkAction(input: {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
     return { ok: false, error: "invalid-email" };
   }
+  if (isDemoMode()) return { ok: true };
 
   const [link] = await db
     .select()

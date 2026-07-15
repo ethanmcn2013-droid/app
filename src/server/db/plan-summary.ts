@@ -1,5 +1,5 @@
 import "server-only";
-import { and, desc, eq, gt, isNull, like, or } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { db } from "./index";
 import { compCodes, entitlements } from "./schema";
 import { getEffectiveTier } from "./entitlements";

@@ -213,7 +213,7 @@ export function useToast(): Ctx {
     // Safe fallback, log if no provider mounted.
     return {
       toast: (title, opts) => {
-        // eslint-disable-next-line no-console
+
         console.warn("[toast]", title, opts);
       },
     };

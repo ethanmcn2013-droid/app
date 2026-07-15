@@ -47,7 +47,7 @@ export function FreelanceTheme({ workspace, tasks }: PublishedWorkspaceProps) {
       {/* ─── Hero / spec header ──────────────────────────────────── */}
       <header className="border-b border-dashed border-[#1f2024]/15 pb-10">
         <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#1f2024]/55">
-          // project · spec
+          {"// project · spec"}
         </div>
         <h1 className="mt-5 font-mono text-[clamp(1.6rem,1.05rem+2.4vw,2.55rem)] font-medium leading-[1.15] tracking-[-0.01em] text-[#1f2024]">
           <span className="text-[#1f2024]/40">{"// "}</span>

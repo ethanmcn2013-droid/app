@@ -7,6 +7,7 @@ import {
   type BillingInterval,
   type PaidTier,
 } from "@/server/stripe";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Cross-product checkout entry point (E-7, 2026-05-14).
@@ -54,6 +55,12 @@ export async function GET(req: Request) {
   const interval: BillingInterval =
     url.searchParams.get("interval") === "annual" ? "annual" : "monthly";
   const intervalQS = interval === "annual" ? "&interval=annual" : "";
+
+  if (isDemoMode()) {
+    return NextResponse.redirect(
+      new URL(`/app/board?checkout=review&tier=${tier}`, req.url),
+    );
+  }
 
   // SAFETY: in production, if Stripe isn't configured,
   // createCheckoutSessionAction silently grants the tier locally via

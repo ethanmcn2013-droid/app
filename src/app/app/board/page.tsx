@@ -8,6 +8,11 @@ import {
   markVenueEntitlementReached,
 } from "@/server/db/venue-welcome";
 import { getCurrentUser } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_SPONSOR_NAME,
+  DEMO_WORKSPACE_SLUG,
+} from "@/server/demo/tasks-demo";
 
 export default async function BoardPage({
   searchParams,
@@ -17,14 +22,21 @@ export default async function BoardPage({
   const sp = await searchParams;
   let venue: { sponsorName: string; sponsorSlug: string } | null = null;
   if (sp.welcome === "venue") {
-    const me = await getCurrentUser();
-    venue = await detectVenueWelcome(me);
-    if (venue) {
-      // Stamp the entitlement's reached_board_at on first venue-welcome
-      // render. Idempotent, subsequent visits leave the original
-      // timestamp in place. Fires the /hq/partners "Reached board"
-      // signal without an event-log table.
-      await markVenueEntitlementReached(me);
+    if (isDemoMode()) {
+      venue = {
+        sponsorName: DEMO_SPONSOR_NAME,
+        sponsorSlug: DEMO_WORKSPACE_SLUG,
+      };
+    } else {
+      const me = await getCurrentUser();
+      venue = await detectVenueWelcome(me);
+      if (venue) {
+        // Stamp the entitlement's reached_board_at on first venue-welcome
+        // render. Idempotent, subsequent visits leave the original
+        // timestamp in place. Fires the /hq/partners "Reached board"
+        // signal without an event-log table.
+        await markVenueEntitlementReached(me);
+      }
     }
   }
   return (

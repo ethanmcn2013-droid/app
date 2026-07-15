@@ -19,6 +19,12 @@ import {
   type Task,
 } from "@/lib/data";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 /**
  * Apply a template to the active workspace.
@@ -34,6 +40,7 @@ import { getTemplate, TEMPLATES } from "@/lib/templates";
 export async function applyTemplateAction(
   templateId: string,
 ): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
   await applyTemplateToWorkspace(templateId, ws);
   revalidatePath("/app", "layout");
@@ -58,6 +65,13 @@ export async function remixTemplateAction(
   // Validate up-front, same as applyTemplateAction.
   if (!TEMPLATES.some((t) => t.id === templateId)) {
     throw new Error(`Unknown template id: ${templateId}`);
+  }
+  if (isDemoMode()) {
+    return {
+      ok: true,
+      workspaceId: DEMO_WORKSPACE_ID,
+      slug: DEMO_WORKSPACE_SLUG,
+    };
   }
   const template = getTemplate(templateId);
   const me = await getCurrentUser();

@@ -96,7 +96,7 @@ export function RedeemResultCard({
             {result.notes}
           </p>
         ) : null}
-        <div className="mt-2 font-mono text-[10.5px] tabular-nums text-ink-quiet">
+        <div className="mt-2 font-mono text-[10.5px] tabular-nums text-ink-soft">
           {code}
         </div>
         <Link

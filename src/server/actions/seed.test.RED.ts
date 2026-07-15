@@ -6,7 +6,7 @@
  */
 
 import { strict as assert } from "node:assert";
-import { DOMAIN_ORDER, DOMAINS, type DomainId } from "../../lib/domains.js";
+import { DOMAIN_ORDER, type DomainId } from "../../lib/domains.js";
 
 // BUGGY values, as they existed before the fix:
 const VALID_DOMAINS_BUGGY = new Set<DomainId>([

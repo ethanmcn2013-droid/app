@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Link from "next/link";
 import { Popover } from "@/components/app/detail-panel/popover";
 import { useToast } from "@/components/primitives/toast";
 import { useTasks } from "@/lib/tasks/tasks-context";
@@ -28,7 +29,6 @@ import {
  * destination, without Tasks ever asking for an OAuth scope.
  */
 export function ExportMenu() {
-  const { toast } = useToast();
   const { state } = useTasks();
   const pack = useDomain();
   const ws = useActiveWorkspace();
@@ -197,7 +197,7 @@ function ExportMenuItems({
         }
       />
       <div className="mt-1 border-t border-line-soft pt-1">
-        <a
+        <Link
           href="/embed/guide"
           className="flex items-center gap-2 rounded-md px-2.5 py-2 text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken/60 hover:text-ink"
         >
@@ -209,7 +209,7 @@ function ExportMenuItems({
           <span className="ml-auto font-mono text-[10px] text-ink-quiet">
             guide
           </span>
-        </a>
+        </Link>
       </div>
     </div>
   );

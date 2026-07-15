@@ -22,6 +22,19 @@ type PendingTemplate = { id: string; name: string };
 
 type Step = "welcome" | "segment" | "context" | "starter";
 
+function initialStep(
+  preselectedSegment: PrimaryUseCase | null,
+  pendingTemplate: PendingTemplate | null,
+): Step {
+  if (preselectedSegment) {
+    const config = SEGMENTS[preselectedSegment];
+    return config.contextQuestion && config.contextOptions.length > 0
+      ? "context"
+      : "starter";
+  }
+  return pendingTemplate ? "starter" : "welcome";
+}
+
 const STEP_INDEX: Record<Step, number> = {
   welcome: 0,
   segment: 1,
@@ -170,9 +183,11 @@ export function OnboardingFlow({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [step, setStep] = useState<Step>("welcome");
+  const [step, setStep] = useState<Step>(() =>
+    initialStep(preselectedSegment, pendingTemplate),
+  );
   const [segment, setSegment] = useState<PrimaryUseCase | null>(
-    preselectedSegment,
+    preselectedSegment ?? (pendingTemplate ? "wedding" : null),
   );
   const [context, setContext] = useState<string | null>(null);
 
@@ -181,22 +196,6 @@ export function OnboardingFlow({
       source: preselectedSegment ?? undefined,
     });
   }, [preselectedSegment]);
-
-  useEffect(() => {
-    if (preselectedSegment) {
-      const cfg = SEGMENTS[preselectedSegment];
-      setStep(
-        cfg.contextQuestion && cfg.contextOptions.length > 0
-          ? "context"
-          : "starter",
-      );
-      return;
-    }
-    if (pendingTemplate) {
-      setStep("starter");
-      setSegment((prev) => prev ?? "wedding");
-    }
-  }, [preselectedSegment, pendingTemplate]);
 
   useEffect(() => {
     trackOnboardingEvent("onboarding_step_viewed", { step });

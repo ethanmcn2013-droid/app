@@ -157,7 +157,7 @@ function TotpSetupFlow({
             {totp?.secret ? (
               <details className="w-full text-[12px]">
                 <summary className="cursor-pointer text-ink-quiet transition-colors hover:text-ink">
-                  Can't scan? Enter the key manually
+                  Can&apos;t scan? Enter the key manually
                 </summary>
                 <div className="mt-2 select-all break-all rounded bg-white px-3 py-2 font-mono text-[12px] text-ink">
                   {totp.secret}
@@ -182,7 +182,7 @@ function TotpSetupFlow({
               onClick={() => setStep("verify")}
               className="rounded-md bg-ink px-3 py-1.5 text-[12.5px] font-medium text-white transition-colors hover:bg-ink-soft disabled:opacity-50"
             >
-              I've scanned it
+              I&apos;ve scanned it
             </button>
           </div>
         </>
@@ -264,7 +264,7 @@ function TotpSetupFlow({
               onChange={(e) => setAcknowledged(e.target.checked)}
               className="h-4 w-4 rounded border-line text-brand focus:ring-brand"
             />
-            I've saved these.
+            I&apos;ve saved these.
           </label>
           <div className="mt-5 flex justify-end">
             <button
@@ -315,7 +315,7 @@ function TotpDisableFlow({
       </h2>
       <p className="mt-2 text-[12.5px] leading-[1.55] text-ink-soft">
         Sign-in will only need your email and a code. Your authenticator setup
-        will be discarded, you'd start fresh if you turned it back on.
+        will be discarded, you&apos;d start fresh if you turned it back on.
       </p>
       {error ? (
         <div className="mt-3 text-[12px] text-rose-700">{error}</div>

@@ -13,6 +13,7 @@ import type { EntitlementTier } from "@/lib/data";
 import { TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+import { isDemoMode } from "@/lib/access-mode";
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
@@ -129,6 +130,24 @@ export async function redeemCompCodeAction(
 ): Promise<RedeemResult> {
   const code = rawCode.trim().toUpperCase();
   if (!code) return { ok: false, reason: "not-found" };
+  if (isDemoMode()) {
+    switch (code) {
+      case "REVIEW-SUCCESS":
+        return {
+          ok: true,
+          tier: "wedding",
+          expiresAt: "2027-12-31T23:59:59.000Z",
+          notes: "Review fixture only. No entitlement or customer record was changed.",
+          sponsorSlug: "the-orchard",
+        };
+      case "REVIEW-EXPIRED":
+        return { ok: false, reason: "expired" };
+      case "REVIEW-USED":
+        return { ok: false, reason: "already-redeemed" };
+      default:
+        return { ok: false, reason: "not-found" };
+    }
+  }
   try {
     return await redeemCompCodeImpl(code);
   } catch (err) {
@@ -274,6 +293,14 @@ export async function requestStudentCodeAction(
   const trimmed = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
     return { ok: false, reason: "invalid-email" };
+  }
+  if (isDemoMode()) {
+    return {
+      ok: true,
+      code: "STUDENT-REVIEW",
+      tier: "workspace",
+      durationDays: 365,
+    };
   }
   const domain = trimmed.split("@")[1];
 

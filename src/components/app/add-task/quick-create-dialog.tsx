@@ -145,7 +145,7 @@ export function QuickCreateDialog({
                     </span>
                   ) : null}
                   {recurrenceDetected && parsed.recurrence ? (
-                    <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-quiet">
+                    <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-soft">
                       <span aria-hidden="true">{"↻"}</span>
                       {formatRecurrenceLabel(parsed.recurrence)}
                     </span>
@@ -154,7 +154,7 @@ export function QuickCreateDialog({
                     ? parsed.tags!.map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-quiet"
+                          className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[11px] font-medium text-ink-soft"
                         >
                           <span aria-hidden="true">#</span>
                           {tag}

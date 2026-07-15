@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.settings-profile",
+  "source": "tasks/src/app/settings/profile/page.tsx",
+  "materialityHash": "a24a1b85fe91dad0",
+  "reviewedAt": "2026-07-15",
+  "reviewer": "Codex release closeout",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f0cb78a2057a7c82c4ebb308-68acb365c23e63ec.json",
+    "attestationSha256": "967295ceb5414c7d5eb929d3283256c109636b42be163409d4208622b51560c2",
+    "runId": "tasks-playwright-f0cb78a2057a7c82c4ebb308",
+    "canonicalEvidenceSha256": "f0cb78a2057a7c82c4ebb308529a6cc1ae1178baadfa1b42768b397ac24b5214",
+    "rawArtifactSha256": "68acb365c23e63ecca66978b7b42bcb4f6b7624f2588b40c9f9c5e8a2c43a32a",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Review mode resolves a deterministic read-only identity before the authenticated profile panel; production retains the authenticated panel.",
+  "decision": "Accepted after source review, isolation tests, and the representative production-build browser run; this non-critical route is not claimed as directly rendered evidence."
+}

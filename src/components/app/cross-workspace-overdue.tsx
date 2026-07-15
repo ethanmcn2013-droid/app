@@ -71,8 +71,8 @@ export function CrossWorkspaceOverdue() {
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setLoadError(null);
     void (async () => {
+      setLoadError(null);
       try {
         const fresh = await getOverdueAcrossWorkspacesAction();
         if (!cancelled) setItems(fresh);

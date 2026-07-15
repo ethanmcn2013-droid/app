@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
-import { getTasks, isFirstRun } from "@/server/db/queries";
+import { isFirstRun } from "@/server/db/queries";
 import { getActiveWorkspace } from "@/server/auth";
-import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
-import { workspaces } from "@/server/db/schema";
 
 // Print routes read the DB at request time, no static pre-render.
 export const dynamic = "force-dynamic";

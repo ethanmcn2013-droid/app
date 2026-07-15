@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { LANES, PRIORITY_LABEL, USERS, type Task } from "@/lib/data";
+import { PRIORITY_LABEL, USERS, type Task } from "@/lib/data";
 import { AvatarStack } from "./avatar";
 import { cn } from "@/lib/utils";
 
@@ -12,11 +12,9 @@ export function TaskCard({
   pickedBy,
   highlightDependency,
   flash,
-  showComments,
   showInlineThread,
   staticComment,
   typingUser,
-  typingProgress,
   postedComment,
   forwardRef,
   onClick,
@@ -28,17 +26,14 @@ export function TaskCard({
   pickedBy?: string | null;
   highlightDependency?: boolean;
   flash?: boolean;
-  showComments?: boolean;
   showInlineThread?: boolean;
   staticComment?: string;
   typingUser?: string | null;
-  typingProgress?: number;
   postedComment?: { user: string; text: string } | null;
   forwardRef?: (el: HTMLDivElement | null) => void;
   onClick?: () => void;
   variant?: "board" | "list";
 }) {
-  const lane = LANES[task.lane];
   const prio = PRIORITY_LABEL[task.priority];
   const isUrgent = task.priority === "p0";
 

@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import Link from "next/link";
 import { UserButton, useUser, useClerk } from "@clerk/nextjs";
+import { isDemoMode } from "@/lib/access-mode";
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   SIGNAL_URL,
   NOTES_URL,
@@ -133,8 +136,22 @@ function EyeIcon() {
  * same-site cookie + sessionStorage mirror so the proxy allows an
  * authed user to view the marketing site without being redirected.
  */
-export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
-  const [isPreview, setIsPreview] = useState(false);
+function DemoUserButton() {
+  return (
+    <Link
+      href="/"
+      aria-label="Demo workspace. Open the public Tasks site"
+      className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-ink font-mono text-[11px] font-semibold text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+    >
+      DE
+    </Link>
+  );
+}
+
+function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
+  const hydrated = useHydrated();
+  const [previewCookie] = useState(readPreviewCookie);
+  const isPreview = hydrated && previewCookie;
   const { user } = useUser();
   const { openUserProfile } = useClerk();
   // hasImage is true once the user has uploaded a custom avatar. When false
@@ -143,10 +160,6 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
   // Clerk API: user.hasImage (boolean, @clerk/nextjs useUser hook).
   // openUserProfile() from useClerk() opens the <UserProfile> modal.
   const hasPhoto = user?.hasImage ?? true; // default true so no flicker on load
-
-  useEffect(() => {
-    setIsPreview(readPreviewCookie());
-  }, []);
 
   function handleViewPublic() {
     setPreviewCookie();
@@ -207,4 +220,9 @@ export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
       </UserButton.MenuItems>
     </UserButton>
   );
+}
+
+export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
+  if (isDemoMode()) return <DemoUserButton />;
+  return <ClerkUserButtonWithSuite current={current} />;
 }

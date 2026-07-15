@@ -2,6 +2,7 @@
 
 import {
   startTransition,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -97,13 +98,17 @@ export function TimelineApp() {
   // Imperative ref so the global pointermove listener doesn't have to
   // be re-registered on every state change.
   const dragRef = useRef<DragState | null>(null);
-  dragRef.current = drag;
+  const updateDrag = useCallback((next: DragState | null) => {
+    dragRef.current = next;
+    setDrag(next);
+  }, []);
+  const isDragging = drag !== null;
 
   // Global pointermove / pointerup. Registered once when a drag is
   // active so the gesture survives the cursor leaving the bar, which
   // happens immediately on a fast horizontal flick.
   useEffect(() => {
-    if (!drag) return;
+    if (!isDragging) return;
 
     function clamp(v: number, lo: number, hi: number) {
       return Math.max(lo, Math.min(hi, v));
@@ -123,7 +128,7 @@ export function TimelineApp() {
         const max = 30 - current.durationDays;
         const next = clamp(current.startDay + dayDelta, 0, max);
         if (next !== current.ghostStartDay) {
-          setDrag({ ...current, ghostStartDay: next });
+          updateDrag({ ...current, ghostStartDay: next });
         }
       } else {
         // Right-edge resize: grow/shrink durationDays. Pointer x in
@@ -132,7 +137,7 @@ export function TimelineApp() {
         // hasn't moved.
         const next = clamp(current.durationDays + dayDelta, 1, 30);
         if (next !== current.ghostDurationDays) {
-          setDrag({ ...current, ghostDurationDays: next });
+          updateDrag({ ...current, ghostDurationDays: next });
         }
       }
     }
@@ -169,7 +174,7 @@ export function TimelineApp() {
           });
         }
       }
-      setDrag(null);
+      updateDrag(null);
     }
 
     window.addEventListener("pointermove", handleMove);
@@ -180,9 +185,7 @@ export function TimelineApp() {
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("pointercancel", handleUp);
     };
-    // `dispatch` is stable from the provider's useMemo with empty deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag !== null]);
+  }, [dispatch, isDragging, updateDrag]);
 
   if (state.tasks.length === 0) {
     return (
@@ -212,7 +215,7 @@ export function TimelineApp() {
     e.stopPropagation();
     const startDay = task.startDay ?? 0;
     const durationDays = task.durationDays ?? 1;
-    setDrag({
+    updateDrag({
       mode,
       taskId: task.id,
       startDay,

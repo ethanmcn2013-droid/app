@@ -245,7 +245,7 @@ function main(): void {
     );
   }
   if (parts.length > 0) {
-    // eslint-disable-next-line no-console
+
     console.log(parts.join(" · "));
   }
 }

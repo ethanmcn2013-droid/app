@@ -50,7 +50,7 @@ export function SubtasksSection({ task }: { task: Task }) {
       })
       .catch((err) => {
         if (!ignore) {
-          // eslint-disable-next-line no-console
+
           console.warn("subtasks: fetch failed", err);
           setSubtasks([]);
         }
@@ -58,7 +58,7 @@ export function SubtasksSection({ task }: { task: Task }) {
     return () => {
       ignore = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [task.id, refreshKey]);
 
   const toggle = useCallback(
@@ -79,7 +79,7 @@ export function SubtasksSection({ task }: { task: Task }) {
         try {
           await updateTaskAction(sub.id, { lane: nextLane });
         } catch (err) {
-          // eslint-disable-next-line no-console
+
           console.warn("subtasks: toggle failed; reverting", err);
           setSubtasks((cur) =>
             cur
@@ -125,7 +125,7 @@ export function SubtasksSection({ task }: { task: Task }) {
           const fresh = await getSubtasksAction(task.id);
           setSubtasks(fresh);
         } catch (err) {
-          // eslint-disable-next-line no-console
+
           console.warn("subtasks: add failed; reverting", err);
           setSubtasks((cur) =>
             cur ? cur.filter((s) => s.id !== tempId) : cur,

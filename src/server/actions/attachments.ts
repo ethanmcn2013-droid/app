@@ -11,6 +11,7 @@ import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import type { Attachment } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Local-disk file attachments. Bytes go to
@@ -106,6 +107,9 @@ export async function uploadAttachmentAction(
   taskId: string,
   formData: FormData,
 ): Promise<Attachment> {
+  if (isDemoMode()) {
+    throw new Error("Attachments are read-only in demo and review mode");
+  }
   const file = formData.get("file");
   if (!(file instanceof File)) {
     throw new Error("uploadAttachmentAction: no file provided");
@@ -192,6 +196,7 @@ export async function uploadAttachmentAction(
 export async function deleteAttachmentAction(
   attachmentId: string,
 ): Promise<void> {
+  if (isDemoMode()) return;
   const ws = await getActiveWorkspace();
 
   const [row] = await db
@@ -237,6 +242,7 @@ export async function deleteAttachmentAction(
 export async function listAttachmentsForTaskAction(
   taskId: string,
 ): Promise<Attachment[]> {
+  if (isDemoMode()) return [];
   const ws = await getActiveWorkspace();
   const [parent] = await db
     .select({ workspaceId: tasks.workspaceId })

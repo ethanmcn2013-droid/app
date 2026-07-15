@@ -13,10 +13,54 @@ import { getOverdueTodayCount } from "@/server/actions/roll-forward";
 import { db } from "@/server/db";
 import { users, workspaces } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_USER_ID,
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
+import { USERS } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
+  if (isDemoMode()) {
+    const tasks = demoTasks();
+    const completed = tasks.filter((task) => task.lane === "done");
+    const open = tasks.filter((task) => task.lane !== "done");
+
+    return (
+      <>
+        <AppPageHeader />
+        <InboxApp
+          notifications={[]}
+          digest={{
+            forDate: new Date().toISOString().slice(0, 10),
+            user: DEMO_USER_ID,
+            completedYesterday: completed,
+            dueToday: open.filter((task) => task.due).slice(0, 2),
+            mentions: [],
+          }}
+          nudges={generateNudges(tasks, DEMO_USER_ID)}
+          weeklySnapshot={{
+            closedThisWeek: completed.length,
+            closedTitles: completed.map((task) => task.title),
+            stillCirclingTitles: [],
+            openCount: open.length,
+          }}
+          weeklyEnabled={false}
+          workspaceId={DEMO_WORKSPACE_ID}
+          workspaceName={DEMO_WORKSPACE_NAME}
+          workspaceSlug={DEMO_WORKSPACE_SLUG}
+          overdueCount={0}
+          userName={USERS[DEMO_USER_ID].name}
+        />
+      </>
+    );
+  }
+
   const [me, ws] = await Promise.all([
     getCurrentUser(),
     getActiveWorkspace(),

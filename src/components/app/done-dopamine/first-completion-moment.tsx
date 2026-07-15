@@ -45,8 +45,14 @@ export function FirstCompletionMoment() {
     window.addEventListener(EVENT, onFire);
     // Preview hook so the once-ever moment is reviewable on a seeded demo.
     const params = new URLSearchParams(window.location.search);
-    if (params.get("firstcompletion") === "preview") setShow(true);
-    return () => window.removeEventListener(EVENT, onFire);
+    const previewTimer =
+      params.get("firstcompletion") === "preview"
+        ? window.setTimeout(onFire, 0)
+        : undefined;
+    return () => {
+      window.removeEventListener(EVENT, onFire);
+      if (previewTimer) window.clearTimeout(previewTimer);
+    };
   }, []);
 
   useEffect(() => {

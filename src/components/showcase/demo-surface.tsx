@@ -476,27 +476,6 @@ function MorphCard({
       state.dependencyHighlight[1] === task.id);
   const showThread = state.openCommentTaskId === task.id;
 
-  // Timeline-specific positioning: convert startDay / durationDays into
-  // an absolute placement inside the timeline body.
-  const timelineStyle: React.CSSProperties =
-    view === "timeline"
-      ? (() => {
-          const start = task.startDay ?? 0;
-          const dur = task.durationDays ?? 1;
-          const left = (start / TIMELINE_DAYS) * 100;
-          const width = (dur / TIMELINE_DAYS) * 100;
-          // Each row slot = 44px; ordered by sorted tasks index, set via
-          // css var so the surface can compute it. We use grid below
-          // instead, see CardLayer timeline branch.
-          return {
-            position: "absolute",
-            left: `calc(200px + ${left}% * (100% - 200px) / 100%)`,
-            width: `calc(${width}% * (100% - 200px) / 100%)`,
-            // Better: compute via row offset
-          };
-        })()
-      : {};
-
   // For timeline, we use a row container approach instead of absolute
   // positioning so that the FLIP can interpolate cleanly. Each card sits
   // in a 44px-tall row and uses padding-left to push to its startDay.
@@ -660,7 +639,6 @@ function CardBody({
       {/* Inline comment thread, board only */}
       {view === "board" && showThread ? (
         <CommentThread
-          task={task}
           staticComment={staticComment}
           typingUser={typingUser}
           postedComment={postedComment}
@@ -831,12 +809,10 @@ function ListCells({ task }: { task: Task }) {
 }
 
 function CommentThread({
-  task,
   staticComment,
   typingUser,
   postedComment,
 }: {
-  task: Task;
   staticComment: string;
   typingUser: string | null;
   postedComment: { user: string; text: string } | null;

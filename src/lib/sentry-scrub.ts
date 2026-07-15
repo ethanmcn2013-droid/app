@@ -1,4 +1,4 @@
-import type { ErrorEvent, EventHint } from "@sentry/nextjs";
+import type { ErrorEvent } from "@sentry/nextjs";
 
 /**
  * Strip PII from a Sentry event before it leaves the browser/server.
@@ -30,10 +30,7 @@ function isSensitiveBreadcrumbUrl(url: string): boolean {
   );
 }
 
-export function scrubEvent(
-  event: ErrorEvent,
-  _hint: EventHint,
-): ErrorEvent | null {
+export function scrubEvent(event: ErrorEvent): ErrorEvent | null {
   if (event.user) {
     event.user = event.user.id ? { id: event.user.id } : undefined;
   }

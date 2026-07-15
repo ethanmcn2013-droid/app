@@ -40,7 +40,14 @@ import { toPublicTask } from "@/lib/public-task";
 import { byWorkspace } from "./tenant";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
-import { DEMO_DOMAIN, demoTasks } from "@/server/demo/tasks-demo";
+import {
+  DEMO_DOMAIN,
+  DEMO_SHARE_TOKEN,
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 const taskColumnsWithCount = {
   ...getTableColumns(tasks),
@@ -132,6 +139,18 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
     }
   | null
 > {
+  if (isDemoMode()) {
+    if (slug !== DEMO_WORKSPACE_SLUG) return null;
+    return {
+      id: DEMO_WORKSPACE_ID,
+      slug: DEMO_WORKSPACE_SLUG,
+      name: DEMO_WORKSPACE_NAME,
+      activeDomain: DEMO_DOMAIN,
+      publishedAt: new Date("2026-01-01T00:00:00.000Z"),
+      tasks: demoTasks().map(toPublicTask),
+    };
+  }
+
   const [ws] = await db
     .select({
       id: workspaces.id,
@@ -170,6 +189,16 @@ export async function getWorkspacePublishState(
   if (!row)
     throw new Error(`Workspace ${workspaceId} not found.`);
   return { slug: row.slug, publishedAt: row.publishedAt };
+}
+
+/** Shared workspace-name lookup for print/export surfaces. */
+export async function getWorkspaceName(workspaceId: string): Promise<string> {
+  if (isDemoMode()) return DEMO_WORKSPACE_NAME;
+  const [row] = await db
+    .select({ name: workspaces.name })
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceId));
+  return row?.name ?? "Tasks";
 }
 
 export async function getTaskById(id: string): Promise<Task | null> {
@@ -571,6 +600,18 @@ export async function getShareLinkVisitAnalytics(
 export async function resolveShareLink(
   token: string,
 ): Promise<ShareData | null> {
+  if (isDemoMode()) {
+    if (token !== DEMO_SHARE_TOKEN) return null;
+    const pack = DOMAINS[DEMO_DOMAIN];
+    return {
+      token,
+      view: "board",
+      tasks: demoTasks().map(toPublicTask),
+      workspaceTitle: pack.workspaceTitle,
+      workspaceCrumb: pack.workspaceCrumb,
+      domainId: DEMO_DOMAIN,
+    };
+  }
   const [row] = await db
     .select()
     .from(shareLinks)

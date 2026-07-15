@@ -37,7 +37,15 @@ const PaletteContext = createContext<Ctx | null>(null);
  */
 export function PaletteRoot({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const openPalette = useCallback(() => setOpen(true), []);
+  const [query, setQuery] = useState("");
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const openPalette = useCallback(() => {
+    // Reset the search in the same event batch that opens the dialog so
+    // stale results can never flash during the entrance animation.
+    setQuery("");
+    setActiveTaskId(null);
+    setOpen(true);
+  }, []);
   const closePalette = useCallback(() => setOpen(false), []);
 
   useEffect(() => {
@@ -50,12 +58,13 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
       // quick-switcher.
       if (meta && e.key.toLowerCase() === "p") {
         e.preventDefault();
-        setOpen((o) => !o);
+        if (open) closePalette();
+        else openPalette();
       }
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, []);
+  }, [closePalette, open, openPalette]);
 
   const value = useMemo(() => ({ open, openPalette, closePalette }), [
     open,
@@ -66,7 +75,14 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
   return (
     <PaletteContext.Provider value={value}>
       {children}
-      <Palette open={open} onClose={closePalette} />
+      <Palette
+        open={open}
+        onClose={closePalette}
+        query={query}
+        onQueryChange={setQuery}
+        activeTaskId={activeTaskId}
+        onActiveTaskChange={setActiveTaskId}
+      />
     </PaletteContext.Provider>
   );
 }
@@ -81,19 +97,30 @@ export function usePalette(): Ctx {
 // Palette UI
 // ────────────────────────────────────────────────────────────────────
 
-function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
+function Palette({
+  open,
+  onClose,
+  query,
+  onQueryChange,
+  activeTaskId,
+  onActiveTaskChange,
+}: {
+  open: boolean;
+  onClose: () => void;
+  query: string;
+  onQueryChange: (query: string) => void;
+  activeTaskId: string | null;
+  onActiveTaskChange: (taskId: string | null) => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState("");
-  const [activeIdx, setActiveIdx] = useState(0);
   const state = useTasksState();
   const { openTask } = useTaskPanel();
 
-  // Reset on each open.
+  // Query/selection are reset by PaletteRoot in the same event batch as
+  // `open`. Focus may follow after commit without exposing stale content.
   useEffect(() => {
     if (!open) return;
-    setQuery("");
-    setActiveIdx(0);
-    requestAnimationFrame(() => inputRef.current?.focus());
+    inputRef.current?.focus();
   }, [open]);
 
   // Esc handler + backdrop click handled by the wrapper.
@@ -114,21 +141,25 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
     query,
   ]);
 
-  // Clamp activeIdx to result length.
-  useEffect(() => {
-    if (activeIdx > Math.max(results.length - 1, 0)) setActiveIdx(0);
-  }, [results.length, activeIdx]);
+  // Store selection by identity, not a positional index. When results
+  // shrink, expand, or reorder, the effective index is always valid and
+  // falls back to the first result if the selected task disappeared.
+  const selectedResultIdx = activeTaskId
+    ? results.findIndex((task) => task.id === activeTaskId)
+    : -1;
+  const activeIdx = selectedResultIdx >= 0 ? selectedResultIdx : 0;
 
   const onArrow = useCallback(
     (dir: 1 | -1) => {
-      setActiveIdx((i) => {
-        const n = results.length;
-        if (n === 0) return 0;
-        const next = (i + dir + n) % n;
-        return next;
-      });
+      const n = results.length;
+      if (n === 0) {
+        onActiveTaskChange(null);
+        return;
+      }
+      const next = (activeIdx + dir + n) % n;
+      onActiveTaskChange(results[next].id);
     },
-    [results.length],
+    [activeIdx, onActiveTaskChange, results],
   );
 
   const commit = useCallback(
@@ -181,7 +212,10 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  onQueryChange(e.target.value);
+                  onActiveTaskChange(null);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault();
@@ -215,7 +249,7 @@ function Palette({ open, onClose }: { open: boolean; onClose: () => void }) {
                       task={task}
                       query={query}
                       active={idx === activeIdx}
-                      onHover={() => setActiveIdx(idx)}
+                      onHover={() => onActiveTaskChange(task.id)}
                       onClick={() => commit(task.id)}
                     />
                   ))}

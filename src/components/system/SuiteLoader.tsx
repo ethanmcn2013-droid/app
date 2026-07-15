@@ -57,7 +57,7 @@
  *
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 // ── Phase type ────────────────────────────────────────────────────
 
@@ -101,8 +101,6 @@ export interface SuiteLoaderProps {
 
 export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
   const [internalPhase, setInternalPhase] = useState<LoadPhase>("boot");
-  // Track whether chrome has ever mounted, it never unmounts once true.
-  const chromeMountedRef = useRef(false);
 
   const reduceMotion =
     typeof window !== "undefined"
@@ -110,15 +108,17 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
       : false;
 
   useEffect(() => {
-    if (phase === internalPhase) return;
-    if (!assertMonotonic(internalPhase, phase)) return;
-    setInternalPhase(phase);
-  }, [phase, internalPhase]);
-
-  // Once chrome phase is reached, it stays mounted.
-  if (internalPhase !== "boot") {
-    chromeMountedRef.current = true;
-  }
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setInternalPhase((current) =>
+        phase === current || !assertMonotonic(current, phase) ? current : phase,
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [phase]);
 
   // Loading field visible during boot; fades out on transition to chrome.
   const fieldVisible = internalPhase === "boot";
@@ -165,10 +165,10 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
 
       {/* Chrome, persistent shell. Never unmounts once visible.
           Fades in when chrome phase is reached. */}
-      {chromeMountedRef.current && (
+      {internalPhase !== "boot" && (
         <div
           style={{
-            opacity: internalPhase !== "boot" ? 1 : 0,
+            opacity: 1,
             transition: reduceMotion
               ? "none"
               : "opacity var(--shell-fade-in, 160ms) var(--shell-fade-easing, ease-out)",

@@ -150,7 +150,7 @@ function Strikethroughs() {
         We cut the jargon
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] font-medium text-ink-quiet">
-        {STRIKES.map((s, i) => (
+        {STRIKES.map((s) => (
           // Static, not a scroll-reveal. The struck words are content
           // and the strike line is semantically load-bearing, it is
           // what marks the jargon as rejected. A whileInView opacity:0

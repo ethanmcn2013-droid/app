@@ -4,7 +4,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import {
-  activities,
   comments,
   tasks,
   workspaces,
