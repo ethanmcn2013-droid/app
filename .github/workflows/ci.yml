@@ -4,9 +4,8 @@ name: ci
 # Rewritten 2026-06-18 (production-readiness audit): the previous version
 # used `npm ci` / package-lock.json, but this repo is pnpm-only now
 # (pnpm-lock.yaml) — the old workflow could not install. Required gates:
-# typecheck + test (both green). The parser smoke and lint run as
-# informational steps: the parser test is date-sensitive (Show HN beat)
-# and the e2e smoke needs a running dev server (see deploy.yml).
+# lint + typecheck + design-system drift + tests (all blocking). The parser
+# test remains informational because it is date-sensitive (Show HN beat).
 
 on:
   push:
@@ -31,6 +30,8 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
@@ -42,7 +43,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: pnpm typecheck
 
       # SDS 2.0 drift gate — banned colours, system-token redefinition,
       # non-Geist fonts hard-fail; hex/easing debt ratchets via
@@ -57,6 +58,5 @@ jobs:
         run: pnpm run test:parser
         continue-on-error: true
 
-      - name: Lint (informational — does not block)
+      - name: Lint
         run: pnpm run lint
-        continue-on-error: true

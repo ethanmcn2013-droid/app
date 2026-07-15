@@ -3,6 +3,7 @@
 import {
   createContext,
   startTransition,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -19,7 +20,11 @@ import {
   type Task,
   type UserId,
 } from "@/lib/data";
-import { tasksReducer, type TasksState } from "./tasks-reducer";
+import {
+  tasksReducer,
+  type TasksAction,
+  type TasksState,
+} from "./tasks-reducer";
 import {
   addTaskAction,
   moveTaskAction,
@@ -108,6 +113,13 @@ export type TasksDispatchers = {
 const TasksStateContext = createContext<TasksState | null>(null);
 const TasksDispatchContext = createContext<TasksDispatchers | null>(null);
 
+function commitTasksState(
+  _currentState: TasksState,
+  nextState: TasksState,
+): TasksState {
+  return nextState;
+}
+
 export function TasksProvider({
   children,
   initialTasks,
@@ -117,16 +129,25 @@ export function TasksProvider({
   initialTasks?: Task[];
   initialPreviousLane?: Record<string, LaneId>;
 }) {
-  const [state, dispatch] = useReducer(tasksReducer, {
+  const [state, commitState] = useReducer(commitTasksState, {
     tasks: (initialTasks ?? SEED_TASKS).map((t) => ({ ...t })),
     previousLane: initialPreviousLane ?? {},
   });
 
   // Track latest state so dispatchers can capture pre-mutation
   // snapshots for revert without becoming stale closures or being
-  // recreated on every state change.
+  // recreated on every state change. Reduce each action exactly once, then
+  // commit that same state object to both the synchronous ref and React.
+  // This keeps timestamped optimistic updates identical in both places.
   const stateRef = useRef(state);
-  stateRef.current = state;
+  const dispatch = useCallback(
+    (action: TasksAction) => {
+      const nextState = tasksReducer(stateRef.current, action);
+      stateRef.current = nextState;
+      commitState(nextState);
+    },
+    [commitState],
+  );
 
   // Realtime cross-tab sync: subscribe to SSE peer-mutation events
   // and replace local state with the server's authoritative result.
@@ -146,30 +167,30 @@ export function TasksProvider({
     if (initialTasks === lastInitialRef.current) return;
     lastInitialRef.current = initialTasks;
     dispatch({ type: "hydrate", tasks: initialTasks });
-  }, [initialTasks]);
+  }, [dispatch, initialTasks]);
 
   /** Run an optimistic action: dispatch locally for snappy UI, then
    *  reconcile with the server's authoritative result. Revert on
    *  failure. */
-  function withServerSync(
-    optimistic: () => void,
-    server: () => Promise<Task[]>,
-  ) {
-    const prior = stateRef.current.tasks;
-    optimistic();
-    startTransition(async () => {
-      try {
-        const fresh = await server();
-        dispatch({ type: "hydrate", tasks: fresh });
-      } catch (err) {
-        // Revert. Console-warn for dev visibility; toast UX arrives
-        // when the toast primitive ships.
-        // eslint-disable-next-line no-console
-        console.warn("tasks: server action failed; reverting", err);
-        dispatch({ type: "hydrate", tasks: prior });
-      }
-    });
-  }
+  const withServerSync = useCallback(
+    (optimistic: () => void, server: () => Promise<Task[]>) => {
+      const prior = stateRef.current.tasks;
+      optimistic();
+      startTransition(async () => {
+        try {
+          const fresh = await server();
+          dispatch({ type: "hydrate", tasks: fresh });
+        } catch (err) {
+          // Revert. Console-warn for dev visibility; toast UX arrives
+          // when the toast primitive ships.
+
+          console.warn("tasks: server action failed; reverting", err);
+          dispatch({ type: "hydrate", tasks: prior });
+        }
+      });
+    },
+    [dispatch],
+  );
 
   // Stable dispatcher object. None of these read render-scoped
   // state, so the empty deps are correct.
@@ -182,17 +203,17 @@ export function TasksProvider({
         ),
       moveTaskToColumn: (id, columnKey) => {
         const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
+        const prior = stateRef.current.tasks;
         // Optimistic: update local state immediately.
         dispatch({ type: "moveToColumn", id, columnKey, isSystemLane });
         // Server sync: fire and reconcile via getTasksAction after completion.
         startTransition(async () => {
-          const prior = stateRef.current.tasks;
           try {
             await moveTaskToColumnAction(id, columnKey);
             const fresh = await (await import("@/server/actions/tasks")).getTasksAction();
             dispatch({ type: "hydrate", tasks: fresh });
           } catch (err) {
-            // eslint-disable-next-line no-console
+
             console.warn("tasks: moveTaskToColumn failed; reverting", err);
             dispatch({ type: "hydrate", tasks: prior });
           }
@@ -258,8 +279,8 @@ export function TasksProvider({
           () => toggleCompleteAction(id),
         ),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+
+    [dispatch, withServerSync],
   );
 
   return (

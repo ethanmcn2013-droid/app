@@ -13,7 +13,6 @@ export function BoardView({
   flashTaskId,
   openCommentTaskId,
   typingUser,
-  typingProgress,
   postedComment,
 }: {
   tasks: Task[];
@@ -24,7 +23,6 @@ export function BoardView({
   flashTaskId: string | null;
   openCommentTaskId: string | null;
   typingUser: string | null;
-  typingProgress: number;
   postedComment: { user: string; text: string } | null;
 }) {
   return (
@@ -94,9 +92,6 @@ export function BoardView({
                   showInlineThread={openCommentTaskId === task.id}
                   typingUser={
                     openCommentTaskId === task.id ? typingUser : null
-                  }
-                  typingProgress={
-                    openCommentTaskId === task.id ? typingProgress : 0
                   }
                   postedComment={
                     openCommentTaskId === task.id ? postedComment : null

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vercel build output — exclude so lint doesn't flood on deploy artifacts.
     ".vercel/**",
+    // Deterministic browser evidence is generated locally and in CI.
+    "experience/output/**",
   ]),
 ]);
 

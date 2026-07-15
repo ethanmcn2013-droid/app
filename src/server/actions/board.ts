@@ -32,6 +32,7 @@ import { db } from "@/server/db";
 import { meta, tasks } from "@/server/db/schema";
 import { getActiveWorkspace } from "@/server/auth";
 import { LANE_ORDER, type LaneId } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
 
 const MAX_NAME_LEN = 80;
 /** Max custom columns per workspace. Guards against runaway configs. */
@@ -181,6 +182,7 @@ async function writeColumnConfig(
 export async function getBoardName(
   workspaceId: string,
 ): Promise<string | null> {
+  if (isDemoMode()) return null;
   const key = boardNameKey(workspaceId);
   const [row] = await db
     .select({ value: meta.value })
@@ -194,9 +196,10 @@ export async function getBoardName(
  * Trims, rejects empty, clamps to MAX_NAME_LEN.
  */
 export async function renameBoardAction(name: string): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Board name can't be empty.");
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
   const key = boardNameKey(ws);
   await db.run(sql`
@@ -219,6 +222,7 @@ export async function renameBoardAction(name: string): Promise<{ ok: true }> {
 export async function getColumnConfig(
   workspaceId: string,
 ): Promise<ColumnConfig | null> {
+  if (isDemoMode()) return null;
   return readColumnConfig(workspaceId);
 }
 
@@ -234,6 +238,7 @@ export async function getColumnConfig(
 export async function getColumnNames(
   workspaceId: string,
 ): Promise<Partial<Record<LaneId, string>> | null> {
+  if (isDemoMode()) return null;
   const config = await readColumnConfig(workspaceId);
   if (!config) return null;
   const hasAny = LANE_ORDER.some((id) => typeof config.system[id] === "string");
@@ -252,9 +257,10 @@ export async function renameColumnAction(
   columnKey: string,
   name: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can't be empty.");
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
 
   const existing = (await readColumnConfig(ws)) ?? {
@@ -292,10 +298,19 @@ export async function renameColumnAction(
 export async function addColumnAction(
   name: string,
 ): Promise<{ ok: true; key: string }> {
-  const ws = await getActiveWorkspace();
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can't be empty.");
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
+
+  if (isDemoMode()) {
+    const slug = clamped
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 20);
+    return { ok: true, key: `col-${slug || "column"}-demo` };
+  }
+  const ws = await getActiveWorkspace();
 
   const existing = (await readColumnConfig(ws)) ?? {
     system: {},
@@ -348,6 +363,7 @@ export async function addColumnAction(
 export async function reorderColumnsAction(
   newOrder: string[],
 ): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
   const existing = (await readColumnConfig(ws)) ?? {
     system: {},
@@ -418,6 +434,8 @@ export async function deleteColumnAction(
     throw new Error("System lanes cannot be deleted.");
   }
 
+  if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
+
   const ws = await getActiveWorkspace();
   const existing = await readColumnConfig(ws);
   if (!existing) throw new Error("No column config found.");
@@ -487,6 +505,7 @@ export async function moveTaskToColumnAction(
   id: string,
   columnKey: string,
 ): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
   const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
 

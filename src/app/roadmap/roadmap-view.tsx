@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Wordmark } from "@/components/brand/wordmark";
@@ -259,21 +258,19 @@ export function RoadmapView({
     return () => document.removeEventListener("keydown", onKey);
   }, [drawer]);
 
-  // Keep drawer state synced when the underlying entity changes
-  // (status toggle from inside the drawer, note save, etc).
-  useEffect(() => {
-    if (!drawer) return;
+  // Resolve the stored drawer identity against the latest row data so
+  // in-drawer mutations render immediately without mirroring props in state.
+  const currentDrawer = useMemo<DrawerEntity | null>(() => {
+    if (!drawer) return null;
     if (drawer.kind === "item") {
       const next = items.find((x) => x.id === drawer.data.id);
-      if (next && next !== drawer.data) setDrawer({ kind: "item", data: next });
+      return next ? { kind: "item", data: next } : drawer;
     } else if (drawer.kind === "blocker") {
       const next = blockerRows.find((x) => x.id === drawer.data.id);
-      if (next && next !== drawer.data)
-        setDrawer({ kind: "blocker", data: next });
+      return next ? { kind: "blocker", data: next } : drawer;
     } else {
       const next = actionRows.find((x) => x.id === drawer.data.id);
-      if (next && next !== drawer.data)
-        setDrawer({ kind: "action", data: next });
+      return next ? { kind: "action", data: next } : drawer;
     }
   }, [items, blockerRows, actionRows, drawer]);
 
@@ -512,13 +509,10 @@ export function RoadmapView({
         }}
       >
         <div className="mx-auto max-w-[1240px] px-8 py-5 flex items-center gap-6">
-          <Link
-            href="/"
-            className="flex items-center transition-opacity hover:opacity-80"
-            aria-label="Tasks home"
-          >
-            <Wordmark size="md" />
-          </Link>
+          <Wordmark
+            size="md"
+            className="transition-opacity hover:opacity-80"
+          />
           <div
             className="text-[13px]"
             style={{ color: "var(--text-muted)" }}
@@ -910,7 +904,7 @@ export function RoadmapView({
 
       {/* ─── Drill-down drawer ─────────────────────────────────── */}
       <DetailDrawer
-        entity={drawer}
+        entity={currentDrawer}
         blockers={blockerRows}
         onClose={() => setDrawer(null)}
         onCycleItem={toggle}
@@ -1025,6 +1019,7 @@ function DrawerBody({
     const sourceFile = sourceFileFor(r);
     return (
       <DrawerShell
+        key={`item:${r.id}`}
         title={r.body || r.format || r.channel || "—"}
         subtitle={`${r.kind === "post" ? "Post" : r.kind === "press" ? "Press" : r.kind === "launch" ? "Launch" : r.kind === "kpi" ? "KPI" : r.kind === "paid" ? "Paid" : "Asset"} · Week ${r.week === 0 ? "Index" : r.week}${r.date ? ` · ${r.date}` : ""}${r.day ? ` (${r.day})` : ""}`}
         onClose={onClose}
@@ -1050,6 +1045,7 @@ function DrawerBody({
     const b = entity.data;
     return (
       <DrawerShell
+        key={`blocker:${b.id}`}
         title={b.title}
         subtitle={`Blocker · ${b.kind}${b.targetDate ? ` · target ${b.targetDate}` : ""}`}
         onClose={onClose}
@@ -1074,6 +1070,7 @@ function DrawerBody({
   const blocker = a.blockerId ? blockerById.get(a.blockerId) ?? null : null;
   return (
     <DrawerShell
+      key={`action:${a.id}`}
       title={a.title}
       subtitle={`Action item · ${a.category} · ${a.priority}`}
       onClose={onClose}
@@ -1120,8 +1117,6 @@ function DrawerShell({
   onSaveNote: (n: string) => void;
 }) {
   const [noteVal, setNoteVal] = useState(note);
-  // Sync local note state if drawer entity changes underneath
-  useEffect(() => setNoteVal(note), [note]);
 
   return (
     <div className="px-7 py-7">

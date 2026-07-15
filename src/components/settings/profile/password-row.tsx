@@ -94,7 +94,7 @@ function PasswordChangeFlow({
           Password updated.
         </h2>
         <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-          Other devices were signed out. They'll need the new password (or a
+          Other devices were signed out. They&apos;ll need the new password (or a
           fresh sign-in code) to come back in.
         </p>
         <div className="mt-5 flex justify-end">

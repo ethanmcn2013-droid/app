@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import { DOMAINS, DOMAIN_ORDER, type DomainId } from "@/lib/domains";
 import {
@@ -241,7 +242,7 @@ export function WelcomePicker({
             <span className="text-ink-faint" aria-hidden>
               ·
             </span>
-            <a
+            <Link
               href="/templates"
               className="inline-flex items-center gap-1 text-[13px] text-ink-quiet underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
             >
@@ -258,7 +259,7 @@ export function WelcomePicker({
               >
                 <path d="M5 12h14M13 5l7 7-7 7" />
               </svg>
-            </a>
+            </Link>
           </motion.div>
 
         </div>

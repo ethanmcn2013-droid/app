@@ -14,30 +14,27 @@ import type { PublishedWorkspaceProps } from "./types";
  * always renders after, regardless of theme.
  */
 export function PublishedWorkspace(props: PublishedWorkspaceProps) {
-  const Theme = pickTheme(props.workspace.activeDomain);
   return (
     <>
-      <Theme {...props} />
+      {renderTheme(props)}
       <PublishedFooter domain={props.workspace.activeDomain} />
     </>
   );
 }
 
-function pickTheme(
-  domain: PublishedWorkspaceProps["workspace"]["activeDomain"],
-) {
-  switch (domain) {
+function renderTheme(props: PublishedWorkspaceProps) {
+  switch (props.workspace.activeDomain) {
     case "wedding":
-      return WeddingTheme;
+      return <WeddingTheme {...props} />;
     case "freelance":
-      return FreelanceTheme;
+      return <FreelanceTheme {...props} />;
     case "student":
-      return StudentTheme;
+      return <StudentTheme {...props} />;
     case "marketing":
-      return MarketingTheme;
+      return <MarketingTheme {...props} />;
     case "trades":
-      return TradesTheme;
+      return <TradesTheme {...props} />;
     default:
-      return DefaultTheme;
+      return <DefaultTheme {...props} />;
   }
 }

@@ -57,11 +57,6 @@ export function ConversationFeed({ taskId, initialItems }: Props) {
   const [pending, setPending] = useState(false);
   const me = useCurrentUser();
 
-  // Re-sync if initial set changes (e.g. taskId switch + parent refetch).
-  useEffect(() => {
-    setItems(initialItems);
-  }, [initialItems]);
-
   const handleAdd = useCallback(
     (body: string) => {
       const trimmed = body.trim();
@@ -117,7 +112,7 @@ export function ConversationFeed({ taskId, initialItems }: Props) {
         }
       });
     },
-    [taskId],
+    [taskId, me],
   );
 
   const handleRemove = useCallback(

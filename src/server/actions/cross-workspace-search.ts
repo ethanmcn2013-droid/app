@@ -5,6 +5,13 @@ import { db } from "@/server/db";
 import { tasks, workspaceMembers, workspaces } from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth";
 import type { LaneId } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 /**
  * Flat row shape for the ⌘K cross-workspace search popover. One entry
@@ -45,6 +52,31 @@ export async function searchAcrossWorkspacesAction(
 ): Promise<CrossWorkspaceSearchItem[]> {
   const trimmed = query.trim();
   if (trimmed.length < MIN_QUERY_LENGTH) return [];
+
+  if (isDemoMode()) {
+    const queryLower = trimmed.toLowerCase();
+    return demoTasks()
+      .filter((task) => task.title.toLowerCase().includes(queryLower))
+      .sort((a, b) => {
+        const aTitle = a.title.toLowerCase();
+        const bTitle = b.title.toLowerCase();
+        const aTier = aTitle.startsWith(queryLower) ? 0 : 1;
+        const bTier = bTitle.startsWith(queryLower) ? 0 : 1;
+        return aTier === bTier
+          ? aTitle.localeCompare(bTitle)
+          : aTier - bTier;
+      })
+      .slice(0, RESULT_LIMIT)
+      .map((task) => ({
+        workspaceId: DEMO_WORKSPACE_ID,
+        workspaceSlug: DEMO_WORKSPACE_SLUG,
+        workspaceName: DEMO_WORKSPACE_NAME,
+        taskId: task.id,
+        title: task.title,
+        lane: task.lane,
+        due: task.due ?? null,
+      }));
+  }
 
   const me = await getCurrentUser();
 
@@ -130,7 +162,10 @@ export async function searchAcrossWorkspacesAction(
 
   return out
     .slice(0, RESULT_LIMIT)
-    .map(({ sortKey: _sortKey, ...rest }) => rest);
+    .map(({ sortKey, ...rest }) => {
+      void sortKey;
+      return rest;
+    });
 }
 
 /**

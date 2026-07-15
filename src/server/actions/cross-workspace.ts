@@ -8,6 +8,7 @@ import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
   getCurrentUser,
 } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Flat row shape for the cross-workspace overdue popover. One entry
@@ -49,6 +50,7 @@ export type CrossWorkspaceOverdueItem = {
 export async function getOverdueAcrossWorkspacesAction(): Promise<
   CrossWorkspaceOverdueItem[]
 > {
+  if (isDemoMode()) return [];
   const me = await getCurrentUser();
 
   // Resolve the user's workspaces in one shot, name + slug come from
@@ -158,7 +160,10 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
   // Most overdue first, smallest timestamp is furthest in the past.
   out.sort((a, b) => a.sortKey - b.sortKey);
 
-  return out.map(({ sortKey: _sortKey, ...rest }) => rest);
+  return out.map(({ sortKey, ...rest }) => {
+    void sortKey;
+    return rest;
+  });
 }
 
 /**
@@ -172,6 +177,7 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
 export async function selectWorkspaceAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
   const me = await getCurrentUser();
   const [membership] = await db
     .select({ id: workspaceMembers.workspaceId })

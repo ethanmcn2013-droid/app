@@ -56,6 +56,12 @@ const SEEDED: Record<string, UserMeta> = {
     color: "#10b981",
     initials: "MR",
   },
+  "demo-user": {
+    id: "demo-user",
+    name: "Orla",
+    color: "var(--brand)",
+    initials: "OR",
+  },
 };
 
 /**
@@ -101,8 +107,8 @@ function fallbackUserMeta(id: string, displayName?: string): UserMeta {
   };
 }
 
-/** C5: Returns true for the five canonical seed-persona ids (chloe /
- *  david / alex / ada / marcus). These are demo-only identities, not
+/** C5: Returns true for the canonical seed-persona ids (chloe / david /
+ *  alex / ada / marcus / demo-user). These are demo-only identities, not
  *  real workspace members, callers can use this to show a "(sample)"
  *  label so seeded content doesn't read as real colleague activity. */
 export function isSeedUser(id: string): boolean {

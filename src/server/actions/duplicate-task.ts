@@ -8,6 +8,7 @@ import { tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * "Repeat this task", clone the source task N times, each copy shifted
@@ -87,6 +88,10 @@ export async function duplicateTaskAction(
   // 1. Clamp inputs server-side. Don't trust the form.
   const safeCount = clamp(count, MIN_COUNT, MAX_COUNT);
   const safeStep = clamp(dayStep, MIN_DAY_STEP, MAX_DAY_STEP);
+
+  // Let the review interaction resolve normally, but never resolve auth or
+  // touch persistence. The board remains the canonical read-only fixture.
+  if (isDemoMode()) return { ok: true, created: safeCount };
 
   // 2. Resolve tenant boundary.
   const ws = await getActiveWorkspace();

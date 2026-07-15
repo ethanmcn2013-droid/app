@@ -1,0 +1,102 @@
+name: Design quality
+
+on:
+  pull_request:
+    paths:
+      - "src/app/**"
+      - "src/components/**"
+      - "src/ds/**"
+      - "src/lib/**"
+      - "src/server/**"
+      - "src/proxy.ts"
+      - "src/env.ts"
+      - "src/instrumentation*.ts"
+      - "src/preview/**"
+      - "public/**"
+      - "next.config.*"
+      - ".ds-grandfather.json"
+      - "experience/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "scripts/ds/**"
+      - "scripts/experience/**"
+      - ".github/workflows/design-quality.yml"
+      - ".github/pull_request_template.md"
+  push:
+    branches: [main]
+    paths:
+      - "src/app/**"
+      - "src/components/**"
+      - "src/ds/**"
+      - "src/lib/**"
+      - "src/server/**"
+      - "src/proxy.ts"
+      - "src/env.ts"
+      - "src/instrumentation*.ts"
+      - "src/preview/**"
+      - "public/**"
+      - "next.config.*"
+      - ".ds-grandfather.json"
+      - "experience/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "scripts/ds/**"
+      - "scripts/experience/**"
+      - ".github/workflows/design-quality.yml"
+      - ".github/pull_request_template.md"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: design-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  registry-and-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prove the evidence gates reject drift
+        run: pnpm experience:self-test
+
+      - name: Validate the Tasks experience registry
+        run: pnpm experience:validate
+
+      - name: Validate critical fixture coverage
+        run: pnpm experience:fixtures
+
+      - name: Enforce design-system drift ratchet
+        run: pnpm ds:check
+
+      - name: Install the deterministic browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Capture critical rendered evidence
+        run: pnpm experience:test
+
+      - name: Upload rendered evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tasks-critical-experience-evidence
+          path: |
+            experience/output/critical-evidence.json
+            experience/output/evidence-attestation.json
+            experience/output/playwright-report
+            experience/output/playwright-results
+          if-no-files-found: ignore
+          retention-days: 14

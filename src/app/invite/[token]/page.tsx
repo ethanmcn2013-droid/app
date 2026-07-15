@@ -8,6 +8,7 @@ import { SiteNav } from "@/components/marketing/site-nav";
 // L3: pass isAuthed derived from getCurrentUserOrNull (already called below)
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AcceptInviteButton } from "./accept-button";
+import { isDemoMode } from "@/lib/access-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,20 @@ type InvitePreview =
   | { state: "accepted" };
 
 async function loadInvitePreview(token: string): Promise<InvitePreview> {
+  if (isDemoMode()) {
+    if (token === "review-valid") {
+      return {
+        state: "ok",
+        workspaceName: "The Orchard, events",
+        inviterName: "Niamh O’Connell",
+        email: "orla@theorchard.ie",
+        expiresLabel: "July 22, 2026",
+      };
+    }
+    if (token === "review-expired") return { state: "expired" };
+    if (token === "review-accepted") return { state: "accepted" };
+    return { state: "missing" };
+  }
   const [invite] = await db
     .select({
       token: pendingInvites.token,
@@ -75,6 +90,7 @@ export default async function InviteAcceptPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
+  const demoMode = isDemoMode();
   const preview = await loadInvitePreview(token);
 
   // If the invite is already accepted, send the user straight to the app.
@@ -83,13 +99,16 @@ export default async function InviteAcceptPage({
   }
 
   const me = await getCurrentUserOrNull();
-  const [user] = me
-    ? await db
+  let myEmail: string | null = null;
+  if (demoMode) {
+    myEmail = "orla@theorchard.ie";
+  } else if (me) {
+    const [user] = await db
         .select({ email: users.email })
         .from(users)
-        .where(eq(users.id, me))
-    : [];
-  const myEmail = user?.email ?? null;
+        .where(eq(users.id, me));
+    myEmail = user?.email ?? null;
+  }
 
   return (
     <>
@@ -162,7 +181,22 @@ export default async function InviteAcceptPage({
                 {myEmail &&
                 myEmail.toLowerCase() === preview.email.toLowerCase() ? (
                   <div className="mt-7">
-                    <AcceptInviteButton token={token} />
+                    {demoMode ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-[14px] font-medium text-white opacity-55"
+                        >
+                          Accept invite
+                        </button>
+                        <p className="mt-3 text-[12px] text-ink-quiet">
+                          Disabled in review mode. No workspace will be changed.
+                        </p>
+                      </>
+                    ) : (
+                      <AcceptInviteButton token={token} />
+                    )}
                   </div>
                 ) : myEmail ? (
                   <p className="mt-7 rounded-xl border border-amber-200 bg-amber-50/40 px-4 py-3 text-[13px] leading-[1.55] text-amber-800">

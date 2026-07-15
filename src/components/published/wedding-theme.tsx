@@ -29,7 +29,7 @@ export function WeddingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
 
           <p
             className="mt-8 font-serif text-[12.5px] italic tracking-[0.32em]"
-            style={{ color: "#a87f7d" }}
+            style={{ color: "#75504f" }}
           >
             {laneLabel(workspace.publishedAt)}
           </p>
@@ -82,7 +82,7 @@ export function WeddingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
                   />
                   <span
                     className="font-serif text-[12px] italic tabular-nums"
-                    style={{ color: "#a87f7d" }}
+                    style={{ color: "#75504f" }}
                   >
                     {list.length}
                   </span>
@@ -143,7 +143,7 @@ export function WeddingTheme({ workspace, tasks }: PublishedWorkspaceProps) {
                                     className="rounded-full px-2.5 py-0.5 font-serif text-[11px] italic"
                                     style={{
                                       background: "#f5e8e6",
-                                      color: "#a06664",
+                                      color: "#754b49",
                                     }}
                                   >
                                     {tag}

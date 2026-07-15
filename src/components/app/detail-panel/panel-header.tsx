@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { formatRelativeTime } from "@/lib/utils";
+import { useHydrated } from "@/lib/use-hydrated";
 
 export function PanelHeader({
   task,
@@ -50,13 +51,27 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
   // formatted tooltip both differ between server and client (server
   // clock != client clock; locale defaults can differ). Render
   // nothing on the server, hydrate to actual content on the client.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  const hydrated = useHydrated();
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const revealAt = updatedAt.getTime() + 5000;
+    const revealTimer = window.setTimeout(
+      () => setNow(Date.now()),
+      Math.max(0, revealAt - Date.now()),
+    );
+    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => {
+      window.clearTimeout(revealTimer);
+      window.clearInterval(clock);
+    };
+  }, [updatedAt]);
+
+  if (!hydrated || now === null) return null;
 
   // Hide if mutation just landed, avoids flashing "edited just now"
   // on every render right after the user's own edit.
-  const ageMs = Date.now() - updatedAt.getTime();
+  const ageMs = now - updatedAt.getTime();
   if (ageMs < 5000) return null;
 
   return (
@@ -120,13 +135,15 @@ function TaskIdChip({ id }: { id: string }) {
 function TitleEditor({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const [draft, setDraft] = useState(task.title);
+  const [previousTitle, setPreviousTitle] = useState(task.title);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync external title changes (e.g. another client edits it; today
   // there's only one client but the pattern holds).
-  useEffect(() => {
+  if (previousTitle !== task.title) {
+    setPreviousTitle(task.title);
     setDraft(task.title);
-  }, [task.title]);
+  }
 
   function commit() {
     const trimmed = draft.trim();

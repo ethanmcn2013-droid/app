@@ -74,9 +74,9 @@ export default async function SharePage({
             </div>
           </div>
         </header>
-        <div className="min-h-0 flex-1">
+        <main className="min-h-0 flex-1">
           <ShareBoard tasks={data.tasks} />
-        </div>
+        </main>
       </div>
     </GuestAuthProvider>
   );

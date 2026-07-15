@@ -9,6 +9,11 @@ import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace } from "@/server/auth";
 import type { LaneId, Priority } from "@/lib/data";
 import { LANE_ORDER } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+} from "@/server/demo/tasks-demo";
 
 /**
  * Server-side import target, the wire shape sent from the wizard.
@@ -94,12 +99,20 @@ export async function importCsvAction(
   inputs: ImportTaskInput[],
 ): Promise<{ inserted: number; workspaceId: string }> {
   if (!Array.isArray(inputs) || inputs.length === 0) {
-    return { inserted: 0, workspaceId: await getActiveWorkspace() };
+    return {
+      inserted: 0,
+      workspaceId: isDemoMode()
+        ? DEMO_WORKSPACE_ID
+        : await getActiveWorkspace(),
+    };
   }
   if (inputs.length > MAX_ROWS) {
     throw new Error(
       `importCsvAction: ${inputs.length} rows exceeds the ${MAX_ROWS}-row import cap. Split into smaller batches.`,
     );
+  }
+  if (isDemoMode()) {
+    return { inserted: inputs.length, workspaceId: DEMO_WORKSPACE_ID };
   }
   const ws = await getActiveWorkspace();
 
@@ -166,6 +179,7 @@ export async function importCsvAction(
 
 /** Read-only, the import wizard's confirm step labels the CTA with this. */
 export async function getActiveWorkspaceNameAction(): Promise<string> {
+  if (isDemoMode()) return DEMO_WORKSPACE_NAME;
   const ws = await getActiveWorkspace();
   const [row] = await db
     .select({ name: workspaces.name })

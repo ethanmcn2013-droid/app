@@ -121,7 +121,7 @@ function EmailChangeFlow({
       {step === "input" ? (
         <>
           <p className="mt-2 text-[12.5px] leading-[1.55] text-ink-soft">
-            We'll send a six-digit code to confirm you own the new address.
+            We&apos;ll send a six-digit code to confirm you own the new address.
             Your sign-in keeps working at the old address until you confirm.
           </p>
           <div className="mt-4">

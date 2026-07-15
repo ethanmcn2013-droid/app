@@ -136,17 +136,17 @@ async function run(): Promise<void> {
   for (const t of tests) {
     try {
       await t.fn();
-      // eslint-disable-next-line no-console
+
       console.log(`ok  - ${t.name}`);
     } catch (err) {
       failed += 1;
-      // eslint-disable-next-line no-console
+
       console.error(`FAIL - ${t.name}`);
-      // eslint-disable-next-line no-console
+
       console.error(err instanceof Error ? err.message : String(err));
     }
   }
-  // eslint-disable-next-line no-console
+
   console.log(
     `\n${tests.length - failed}/${tests.length} passing` +
       ` (${items.length} parsed items)`,

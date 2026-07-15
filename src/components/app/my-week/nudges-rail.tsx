@@ -1,8 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Nudge } from "@/lib/nudges/generate-nudges";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * What's stuck, a low-density nudges rail for My Week.
@@ -22,6 +23,16 @@ import type { Nudge } from "@/lib/nudges/generate-nudges";
 const DISMISSED_KEY = "tasks_dismissed_nudges";
 const MAX_VISIBLE = 3;
 
+function readDismissedNudges(): Set<string> {
+  if (typeof localStorage === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(DISMISSED_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 export function NudgesRail({
   nudges,
   onOpen,
@@ -30,18 +41,8 @@ export function NudgesRail({
   onOpen: (taskId: string) => void;
 }) {
   const reduce = useReducedMotion();
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const raw = localStorage.getItem(DISMISSED_KEY);
-      if (raw) setDismissed(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      // ignore, a corrupt list just means nothing is pre-dismissed.
-    }
-  }, []);
+  const [dismissed, setDismissed] = useState(readDismissedNudges);
+  const mounted = useHydrated();
 
   const dismiss = (id: string) => {
     setDismissed((prev) => {

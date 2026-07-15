@@ -7,6 +7,7 @@ import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
 import { getActiveWorkspace } from "@/server/auth";
 import { emitTasksChanged } from "@/server/events";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Bounds for the timeline grid. The view renders a 14-day window today,
@@ -41,6 +42,7 @@ export async function setTaskTimelineAction(
   taskId: string,
   input: { startDay?: number; durationDays?: number },
 ): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
 
   // Verify the task belongs to the active workspace before mutating.

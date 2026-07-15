@@ -26,7 +26,7 @@
 
 set -euo pipefail
 
-CANONICAL_SHA="95e28dc4d049e0a215c3e9b820e9ceb6460440c8c3a65d2627bf99eb9649f185"
+CANONICAL_SHA="c7a6ed22018cbe337abc8ad63d2aba4d0fa977a6853247ec22b47e675b7f3b6c"
 FILE="src/components/system/SuiteLoader.tsx"
 
 if [ ! -f "$FILE" ]; then

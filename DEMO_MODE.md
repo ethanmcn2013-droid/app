@@ -44,14 +44,19 @@ session and no Turso DB. To restore production auth, set both back to
 - `/app` → `/app/board` (seeded venue board)
 - `/app/list`, `/app/timeline`, `/app/calendar`, `/app/inbox` — same seed
 - `/` marketing homepage; `/for/*` audience pages (already public)
+- `/sign-in` and `/sign-up`, inert auth review cards; no Clerk session
+- `/invite/review-valid`, `/invite/review-expired`, invite states
+- `/redeem/REVIEW-SUCCESS`, `/redeem/REVIEW-EXPIRED`, redemption states
+- `/share/review-the-orchard`, read-only shared board
 
 Suite hub: `https://signalstudio.ie/review`.
 
-## Remaining technical debt
+## Read-only behavior
 
-- Write actions (create/move/complete) still target the DB via `requireUser`.
-  In demo the board is read-focused; interactive demo writes would need the
-  write actions branched to an in-memory store. Out of scope for review cycles.
-- Secondary surfaces that lazily call server actions on interaction
-  (cross-workspace search/overdue) are inert in demo — they return empty,
-  which is correct (nothing to surface), not broken.
+- Task mutations return a fresh copy of the deterministic demo board without
+  querying or changing Turso. Subtasks, conversations, attachments, and overdue
+  work return empty fixtures.
+- Cross-workspace search filters the in-memory demo board. Workspace selection
+  is an inert success, and attachments never write to local disk.
+- The venue-redemption success route renders its sponsor welcome from the demo
+  fixture, without reading or stamping entitlement records.

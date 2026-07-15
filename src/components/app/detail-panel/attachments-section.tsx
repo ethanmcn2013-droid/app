@@ -219,6 +219,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
         ref={inputRef}
         id={inputId}
         type="file"
+        aria-label="Files to attach"
         multiple
         className="sr-only"
         onChange={(e) => {

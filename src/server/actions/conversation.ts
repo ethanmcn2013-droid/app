@@ -8,6 +8,7 @@ import {
   type ConversationItem,
 } from "@/server/db/queries";
 import { getActiveWorkspace } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
 
 /**
  * Server-action wrapper used by the panel's client-driven fetch.
@@ -18,6 +19,7 @@ import { getActiveWorkspace } from "@/server/auth";
 export async function getTaskConversationAction(
   taskId: string,
 ): Promise<ConversationItem[]> {
+  if (isDemoMode()) return [];
   const ws = await getActiveWorkspace();
   const [row] = await db
     .select({ id: tasks.id })

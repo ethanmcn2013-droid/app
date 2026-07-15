@@ -11,7 +11,7 @@ export function CallToAction() {
           </p>
           <h2 className="mt-4 text-balance text-[clamp(2rem,1.5rem+2.6vw,3.75rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-ink">
             Stop reading.{" "}
-            <span className="text-ink-ghost">Start moving.</span>
+            <span className="text-ink-faint">Start moving.</span>
           </h2>
           <p className="mt-5 text-[16.5px] leading-[1.55] text-ink-soft">
             Tasks runs on your rhythm. No setup, no

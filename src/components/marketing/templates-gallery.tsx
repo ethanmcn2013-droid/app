@@ -155,8 +155,8 @@ export function TemplatesGallery({
               No templates for this filter yet.
             </div>
           ) : (
-            filtered.map((t, i) => (
-              <TemplateCard key={t.id} template={t} index={i} />
+            filtered.map((t) => (
+              <TemplateCard key={t.id} template={t} />
             ))
           )}
         </div>
@@ -193,7 +193,7 @@ export function TemplatesGallery({
   );
 }
 
-function TemplateCard({ template, index }: { template: Template; index: number }) {
+function TemplateCard({ template }: { template: Template }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);

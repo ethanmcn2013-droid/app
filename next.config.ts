@@ -60,6 +60,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  env: {
+    // Build-time, non-secret deployment posture used by shared server/client
+    // access-mode code. Vercel preview and production builds receive the same
+    // literal on both sides of hydration; an unset production build still
+    // fails closed inside access-mode.ts.
+    NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: process.env.VERCEL_ENV ?? "",
+  },
   experimental: {
     // Tree-shake heavy barrel imports — Clerk is used in 17 files across
     // the app + marketing; the full barrel ships ~6× what we actually call.

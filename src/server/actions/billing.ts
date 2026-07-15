@@ -17,6 +17,7 @@ import {
   writeSharedEntitlement,
 } from "@/lib/entitlements-shared/writes";
 import type { EntitlementSource as SharedSource } from "@/lib/entitlements-shared/schema";
+import { isDemoMode } from "@/lib/access-mode";
 
 /** Translate Tasks's local source vocab to canonical shared vocab.
  *  Tier-aware: a "purchase" of a one-time tier (wedding/event) maps
@@ -64,6 +65,9 @@ export async function createCheckoutSessionAction(
   tier: PaidTier,
   interval: BillingInterval = "monthly",
 ): Promise<{ url: string }> {
+  if (isDemoMode()) {
+    return { url: `${siteUrl()}/app/board?checkout=review&tier=${tier}` };
+  }
   const me = await getCurrentUser();
   const ws = await getActiveWorkspace();
 

@@ -1,6 +1,8 @@
 import { SignUp } from "@clerk/nextjs";
 import { Wordmark } from "@/components/brand/wordmark";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+import { DemoAuthCard } from "@/components/auth/demo-auth-card";
+import { isDemoMode } from "@/lib/access-mode";
 import {
   buildWelcomeUrl,
   getSegment,
@@ -17,8 +19,9 @@ export default async function SignUpPage({
   searchParams: Promise<{ redirect_url?: string; use?: string }>;
 }) {
   const sp = await searchParams;
+  const demoMode = isDemoMode();
   let sponsor: { name: string; code: string } | null = null;
-  if (sp.redirect_url) {
+  if (!demoMode && sp.redirect_url) {
     const match = REDEEM_PATH.exec(sp.redirect_url);
     if (match) {
       const code = match[1].toUpperCase();
@@ -39,7 +42,9 @@ export default async function SignUpPage({
         <Wordmark size="md" />
       </div>
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-16">
-        {sponsor ? (
+        {demoMode ? (
+          <DemoAuthCard mode="sign-up" />
+        ) : sponsor ? (
           <div className="mb-7 flex w-full max-w-[420px] flex-col items-center text-center">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-quiet">
               {sponsor.name}
@@ -62,10 +67,12 @@ export default async function SignUpPage({
             </p>
           </div>
         ) : null}
-        <SignUp
-          fallbackRedirectUrl={welcomeUrl}
-          forceRedirectUrl={welcomeUrl}
-        />
+        {demoMode ? null : (
+          <SignUp
+            fallbackRedirectUrl={welcomeUrl}
+            forceRedirectUrl={welcomeUrl}
+          />
+        )}
       </main>
     </div>
   );
