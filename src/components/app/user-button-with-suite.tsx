@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { UserButton, useUser, useClerk } from "@clerk/nextjs";
+import { useState } from "react";
 import Link from "next/link";
+import { UserButton, useUser, useClerk } from "@clerk/nextjs";
 import { isDemoMode } from "@/lib/access-mode";
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   SIGNAL_URL,
   NOTES_URL,
@@ -173,7 +174,9 @@ function DemoUserButtonWithSuite({ current }: { current: ProductSlug }) {
 }
 
 function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
-  const [isPreview, setIsPreview] = useState(false);
+  const hydrated = useHydrated();
+  const [previewCookie] = useState(readPreviewCookie);
+  const isPreview = hydrated && previewCookie;
   const { user } = useUser();
   const { openUserProfile } = useClerk();
   // hasImage is true once the user has uploaded a custom avatar. When false
@@ -182,13 +185,6 @@ function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
   // Clerk API: user.hasImage (boolean, @clerk/nextjs useUser hook).
   // openUserProfile() from useClerk() opens the <UserProfile> modal.
   const hasPhoto = user?.hasImage ?? true; // default true so no flicker on load
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setIsPreview(readPreviewCookie());
-    }, 0);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
 
   function handleViewPublic() {
     setPreviewCookie();

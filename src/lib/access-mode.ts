@@ -61,8 +61,12 @@ export function getAccessMode(): AccessMode {
 
 /** Production deployments never accept the public demo/review posture. */
 function isProductionDeployment(): boolean {
-  return process.env.VERCEL_ENV === "production" ||
-    (process.env.NODE_ENV === "production" && !process.env.VERCEL_ENV);
+  // This value is injected by next.config.ts at build time so server and
+  // browser make the same decision during hydration. It contains no secret.
+  // When absent from a production build, fail closed.
+  const deploymentEnv = process.env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV;
+  return deploymentEnv === "production" ||
+    (process.env.NODE_ENV === "production" && !deploymentEnv);
 }
 
 /** demo OR review, i.e. the public, seed-data, no-login-wall posture. */

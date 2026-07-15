@@ -101,8 +101,8 @@
   --lane-done-dot:  #8fd5a8;
 
   /* ── User presence (cinematic demo + real users) ──────────── */
-  --user-chloe: #e4356d;
-  --user-david: #00a3b8;
+  --user-chloe: color-mix(in srgb, #e4356d 85%, var(--ink));
+  --user-david: color-mix(in srgb, #00a3b8 62%, var(--ink));
   --user-alex:  #7c3aed;
 
   /* Legacy motion — v1 contract had five steps; 2.0 has four.

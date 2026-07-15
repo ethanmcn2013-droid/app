@@ -3,6 +3,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { tasks, workspaces } from "@/server/db/schema";
 import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 // nodejs runtime, reads from the libSQL/Turso-backed Drizzle client.
 //
@@ -31,28 +38,43 @@ export default async function ShareCardOG({
 }) {
   const { workspaceId } = await params;
 
-  const [ws] = await db
-    .select({
-      id: workspaces.id,
-      slug: workspaces.slug,
-      name: workspaces.name,
-    })
-    .from(workspaces)
-    .where(eq(workspaces.id, workspaceId));
-
+  let ws: { id: string; slug: string; name: string } | undefined;
   let closedCount = 0;
-  if (ws) {
-    const rows = await db
+  if (isDemoMode()) {
+    if (workspaceId === DEMO_WORKSPACE_ID) {
+      ws = {
+        id: DEMO_WORKSPACE_ID,
+        slug: DEMO_WORKSPACE_SLUG,
+        name: DEMO_WORKSPACE_NAME,
+      };
+      const cutoff = Date.now() - WEEK_MS;
+      closedCount = demoTasks().filter(
+        (task) => task.lane === "done" && task.updatedAt.getTime() >= cutoff,
+      ).length;
+    }
+  } else {
+    [ws] = await db
       .select({
-        lane: tasks.lane,
-        updatedAt: tasks.updatedAt,
+        id: workspaces.id,
+        slug: workspaces.slug,
+        name: workspaces.name,
       })
-      .from(tasks)
-      .where(eq(tasks.workspaceId, ws.id));
-    const cutoff = Date.now() - WEEK_MS;
-    closedCount = rows.filter(
-      (r) => r.lane === "done" && r.updatedAt.getTime() >= cutoff,
-    ).length;
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId));
+
+    if (ws) {
+      const rows = await db
+        .select({
+          lane: tasks.lane,
+          updatedAt: tasks.updatedAt,
+        })
+        .from(tasks)
+        .where(eq(tasks.workspaceId, ws.id));
+      const cutoff = Date.now() - WEEK_MS;
+      closedCount = rows.filter(
+        (row) => row.lane === "done" && row.updatedAt.getTime() >= cutoff,
+      ).length;
+    }
   }
 
   if (!ws) {

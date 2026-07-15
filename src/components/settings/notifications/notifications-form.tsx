@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { SettingsRow } from "@/components/settings/section";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import type {
@@ -34,23 +34,43 @@ export function NotificationsForm({
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const detectionTimerRef = useRef<number | null>(null);
+  const userSelectedTimeZoneRef = useRef(false);
+  const autoTimeZoneWriteRef = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
-    if (!initial.timeZone) {
+    if (initial.timeZone) return;
+    const timer = window.setTimeout(() => {
+      detectionTimerRef.current = null;
+      if (userSelectedTimeZoneRef.current) return;
       const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
       setTz(detected);
-      save({ timeZone: detected }, "timeZone");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      autoTimeZoneWriteRef.current = updateUserPreferencesAction({
+        timeZone: detected,
+      }).catch((cause) => {
+        if (!userSelectedTimeZoneRef.current) {
+          setError(cause instanceof Error ? cause.message : "Couldn't save");
+        }
+      });
+    }, 0);
+    detectionTimerRef.current = timer;
+    return () => {
+      window.clearTimeout(timer);
+      if (detectionTimerRef.current === timer) {
+        detectionTimerRef.current = null;
+      }
+    };
+  }, [initial.timeZone]);
 
   function save(
     patch: Parameters<typeof updateUserPreferencesAction>[0],
     key: string,
+    waitFor?: Promise<void>,
   ) {
     setError(null);
     startTransition(async () => {
       try {
+        await waitFor;
         await updateUserPreferencesAction(patch);
         setSavedKey(key);
         setTimeout(() => setSavedKey((k) => (k === key ? null : k)), 1600);
@@ -69,7 +89,6 @@ export function NotificationsForm({
         hint="One quiet briefing per morning: the few things needing your eyes today. Skip the days you don't want it."
         control={
           <RadioGroup
-            name="cadence"
             options={CADENCE_OPTIONS}
             value={cadence}
             onChange={(v) => {
@@ -86,7 +105,6 @@ export function NotificationsForm({
         hint="Monday-morning view of last week and this week. Shipped on Mondays only, there's no daily-roundup-as-weekly trick."
         control={
           <RadioGroup
-            name="summary"
             options={SUMMARY_OPTIONS}
             value={summary}
             onChange={(v) => {
@@ -106,15 +124,27 @@ export function NotificationsForm({
             <select
               value={tz}
               onChange={(e) => {
-                setTz(e.target.value);
+                const value = e.target.value;
+                userSelectedTimeZoneRef.current = true;
+                if (detectionTimerRef.current !== null) {
+                  window.clearTimeout(detectionTimerRef.current);
+                  detectionTimerRef.current = null;
+                }
+                setTz(value);
                 save(
-                  { timeZone: e.target.value || null },
+                  { timeZone: value || null },
                   "timeZone",
+                  autoTimeZoneWriteRef.current,
                 );
               }}
               disabled={pending}
               className="w-full max-w-[260px] rounded-md border border-line bg-white px-2.5 py-1.5 text-[13px] text-ink outline-none transition-colors focus:border-ink-soft/40"
             >
+              {!tz ? (
+                <option value="" disabled>
+                  Detecting…
+                </option>
+              ) : null}
               {COMMON_TIMEZONES.map((z) => (
                 <option key={z} value={z}>
                   {z}
@@ -147,14 +177,12 @@ export function NotificationsForm({
 }
 
 function RadioGroup<T extends string>({
-  name,
   options,
   value,
   onChange,
   saved,
   disabled,
 }: {
-  name: string;
   options: { value: T; label: string }[];
   value: T;
   onChange: (v: T) => void;

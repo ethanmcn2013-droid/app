@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 
 type Props = {
   sponsorName: string;
@@ -17,21 +18,15 @@ const DISMISS_PREFIX = "venue-welcome-dismissed:";
  * venue boundary.
  */
 export function VenueWelcomeCard({ sponsorName, sponsorSlug }: Props) {
-  const [mounted, setMounted] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (typeof window === "undefined") return;
+  const mounted = useHydrated();
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof localStorage === "undefined") return false;
     try {
-      const flag = window.localStorage.getItem(
-        `${DISMISS_PREFIX}${sponsorSlug}`,
-      );
-      setDismissed(flag === "1");
+      return localStorage.getItem(`${DISMISS_PREFIX}${sponsorSlug}`) === "1";
     } catch {
-      // localStorage may be unavailable in private mode; treat as not dismissed.
+      return false;
     }
-  }, [sponsorSlug]);
+  });
 
   const dismiss = () => {
     setDismissed(true);

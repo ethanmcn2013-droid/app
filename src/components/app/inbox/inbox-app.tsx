@@ -2,7 +2,6 @@
 
 import {
   useCallback,
-  useEffect,
   useState,
   useSyncExternalStore,
   useTransition,
@@ -24,6 +23,7 @@ import { weeklyDigestNarrationAction } from "@/server/actions/ai";
 import { ShareThisWeekButton } from "@/components/app/share-this-week-button";
 import { CopySlackSummary } from "@/components/app/copy-slack-summary";
 import { RollForwardButton } from "@/components/app/inbox/roll-forward-button";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * Inbox renders two surfaces stacked:
@@ -86,10 +86,7 @@ export function InboxApp({
         <NudgesSection nudges={nudges} onOpen={openTask} />
 
         {weeklySnapshot && weeklyEnabled ? (
-          <WeeklyRecapSection
-            snapshot={weeklySnapshot}
-            workspaceId={workspaceId}
-          />
+          <WeeklyRecapSection snapshot={weeklySnapshot} />
         ) : null}
 
         {/* Today's digest */}
@@ -181,6 +178,16 @@ export function InboxApp({
 
 const DISMISSED_KEY = "tasks_dismissed_nudges";
 
+function readDismissedNudges(): Set<string> {
+  if (typeof localStorage === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(DISMISSED_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
 function NudgesSection({
   nudges,
   onOpen,
@@ -188,18 +195,8 @@ function NudgesSection({
   nudges: Nudge[];
   onOpen: (id: string) => void;
 }) {
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const raw = localStorage.getItem(DISMISSED_KEY);
-      if (raw) setDismissed(new Set(JSON.parse(raw) as string[]));
-    } catch {
-      // ignore
-    }
-  }, []);
+  const [dismissed, setDismissed] = useState(readDismissedNudges);
+  const mounted = useHydrated();
 
   const dismiss = (id: string) => {
     setDismissed((prev) => {
@@ -452,7 +449,7 @@ function DigestCard({
                   {t.title}
                 </span>
                 {t.due ? (
-                  <span className="flex-shrink-0 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] text-ink-quiet">
+                  <span className="flex-shrink-0 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] text-ink-soft">
                     {t.due}
                   </span>
                 ) : null}
@@ -696,10 +693,8 @@ function weeklyCacheServerSnapshot(): WeeklyCacheEntry | null {
 
 function WeeklyRecapSection({
   snapshot,
-  workspaceId,
 }: {
   snapshot: WeeklyDigestSnapshot;
-  workspaceId?: string;
 }) {
   const reduce = useReducedMotion();
   // Subscribe to localStorage via useSyncExternalStore so the
@@ -740,7 +735,7 @@ function WeeklyRecapSection({
         setText("Couldn't write the recap. Try again in a moment.");
       }
     });
-  }, [workspaceId, isStreaming]);
+  }, [isStreaming]);
 
   // Empty-state guard: if literally nothing happened this week and
   // there's no cached recap, hide the section entirely. The brand

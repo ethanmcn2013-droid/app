@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.print-list",
+  "source": "tasks/src/app/print/list/page.tsx",
+  "materialityHash": "a544e0ffbc8d363e",
+  "reviewedAt": "2026-07-15",
+  "reviewer": "Codex release closeout",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-f0cb78a2057a7c82c4ebb308-47af311c783a1921.json",
+    "attestationSha256": "86bb5eb102696d66908acf65403613540cd645f1a42809648dce8fb9e1487904",
+    "runId": "tasks-playwright-f0cb78a2057a7c82c4ebb308",
+    "canonicalEvidenceSha256": "f0cb78a2057a7c82c4ebb308529a6cc1ae1178baadfa1b42768b397ac24b5214",
+    "rawArtifactSha256": "47af311c783a1921ef0a28fa8a46dd3082a45227bb1a48f49dee5a4348566b7f",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "List print uses the workspace-scoped name query abstraction instead of direct table access, preserving output and review-mode isolation.",
+  "decision": "Accepted after source review, tenant-isolation tests, and the representative production-build browser run; this non-critical route is not claimed as directly rendered evidence."
+}

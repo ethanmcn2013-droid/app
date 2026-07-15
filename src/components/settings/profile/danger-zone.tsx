@@ -31,7 +31,7 @@ export function DangerZone({ email }: { email: string }) {
       <p className="mt-1.5 max-w-[560px] text-[12.5px] leading-[1.6] text-rose-800/80">
         Closes your Signal account across every product, Tasks, Notes,
         Roadmap, Analytics. Workspaces you own are deleted with you, including
-        anyone you've invited. There's no undo.
+        anyone you&apos;ve invited. There&apos;s no undo.
       </p>
       <div className="mt-3">
         <button
@@ -110,8 +110,8 @@ function DeleteFlow({
       </h2>
       <p className="mt-2 text-[12.5px] leading-[1.55] text-ink-soft">
         This deletes your Signal account immediately and irreversibly.
-        Workspaces you own are removed, along with everyone you've invited.
-        We can't bring it back.
+        Workspaces you own are removed, along with everyone you&apos;ve invited.
+        We can&apos;t bring it back.
       </p>
       <div className="mt-4">
         <label

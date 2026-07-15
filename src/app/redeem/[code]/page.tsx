@@ -1,12 +1,35 @@
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/brand/wordmark";
-import { redeemCompCodeAction } from "@/server/actions/comp";
+import {
+  redeemCompCodeAction,
+  type RedeemResult,
+} from "@/server/actions/comp";
 import { RedeemResultCard } from "@/components/redeem/redeem-result-card";
 import { getCurrentUserOrNull } from "@/server/auth";
+import { isDemoMode } from "@/lib/access-mode";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Redeem, Tasks" };
+
+function reviewResult(code: string): RedeemResult {
+  switch (code.toUpperCase()) {
+    case "REVIEW-SUCCESS":
+      return {
+        ok: true,
+        tier: "wedding",
+        expiresAt: "2027-12-31T23:59:59.000Z",
+        notes: "Review fixture only. No entitlement or customer record was changed.",
+        sponsorSlug: "the-orchard",
+      };
+    case "REVIEW-EXPIRED":
+      return { ok: false, reason: "expired" };
+    case "REVIEW-USED":
+      return { ok: false, reason: "already-redeemed" };
+    default:
+      return { ok: false, reason: "not-found" };
+  }
+}
 
 export default async function RedeemPage({
   params,
@@ -26,7 +49,9 @@ export default async function RedeemPage({
     redirect(`/sign-up?redirect_url=${encodeURIComponent(back)}`);
   }
 
-  const result = await redeemCompCodeAction(code);
+  const result = isDemoMode()
+    ? reviewResult(code)
+    : await redeemCompCodeAction(code);
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <div className="px-6 pt-6">

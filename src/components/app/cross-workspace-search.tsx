@@ -45,6 +45,16 @@ export function CrossWorkspaceSearch() {
     setOpen(false);
   }, []);
 
+  const openSearch = useCallback(() => {
+    setQuery("");
+    setDebounced("");
+    setItems(null);
+    setLoading(false);
+    setLoadError(null);
+    setOpen(true);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
+
   // Global keyboard listener. Honors the same "skip when typing"
   // rule as cross-workspace-overdue, except the popover's own input
   // is whitelisted so ⌘K still toggles the popover closed from
@@ -69,7 +79,8 @@ export function CrossWorkspaceSearch() {
         // genuinely wants the search overlay regardless of what's
         // focused. Mirrors VSCode / Linear behavior.
         e.preventDefault();
-        setOpen((o) => !o);
+        if (open) close();
+        else openSearch();
         return;
       }
       if (e.key === "Escape" && open) {
@@ -83,17 +94,7 @@ export function CrossWorkspaceSearch() {
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
-
-  // Reset transient state on each open + auto-focus the input.
-  useEffect(() => {
-    if (!open) return;
-    setQuery("");
-    setDebounced("");
-    setItems(null);
-    setLoadError(null);
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }, [open]);
+  }, [open, close, openSearch]);
 
   // Debounce the query at 180ms, same cadence as the typeahead in
   // the import flow. Avoids hitting the action on every keystroke.
@@ -111,16 +112,11 @@ export function CrossWorkspaceSearch() {
   useEffect(() => {
     if (!open) return;
     const trimmed = debounced.trim();
-    if (trimmed.length < 2) {
-      setItems(null);
-      setLoading(false);
-      setLoadError(null);
-      return;
-    }
+    if (trimmed.length < 2) return;
     const mySeq = ++seqRef.current;
-    setLoading(true);
-    setLoadError(null);
     void (async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
         const fresh = await searchAcrossWorkspacesAction(trimmed);
         if (mySeq !== seqRef.current) return; // a newer query already raced ahead.
@@ -135,6 +131,15 @@ export function CrossWorkspaceSearch() {
       }
     })();
   }, [debounced, open]);
+
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    if (value.trim().length >= 2) return;
+    seqRef.current += 1;
+    setItems(null);
+    setLoading(false);
+    setLoadError(null);
+  }
 
   const grouped = useMemo(() => groupByWorkspace(items ?? []), [items]);
 
@@ -225,7 +230,7 @@ export function CrossWorkspaceSearch() {
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => handleQueryChange(e.target.value)}
                 placeholder="Search tasks across workspaces…"
                 autoComplete="off"
                 spellCheck={false}

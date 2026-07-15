@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "signal-experience-browser/1",
+  "determinism": {
+    "accessMode": "demo",
+    "deploymentEnvironment": "preview",
+    "locale": "en-GB",
+    "timezoneId": "Europe/London",
+    "colorScheme": "light",
+    "reducedMotion": "reduce",
+    "animationPolicy": "disabled"
+  },
+  "projects": [
+    {
+      "name": "mobile",
+      "viewport": { "width": 390, "height": 844 }
+    },
+    {
+      "name": "desktop",
+      "viewport": { "width": 1280, "height": 900 }
+    }
+  ]
+}

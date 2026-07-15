@@ -7,16 +7,16 @@ import {
   useRef,
   useState,
 } from "react";
-import { motion, LayoutGroup, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, LayoutGroup, useReducedMotion } from "motion/react";
 import { EASE_OUT_EXPO, MOTION_BASE, MOTION_MODERATE } from "@/lib/motion";
-import { LANES, SEED_TASKS, USERS, type Task, type UserId } from "@/lib/data";
+import { SEED_TASKS, type Task, type UserId } from "@/lib/data";
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   DOMAINS,
   buildDomainSeed,
   shorten,
   type DomainId,
 } from "@/lib/domains";
-import { TaskCard } from "./task-card";
 import { DemoSurface } from "./demo-surface";
 import { CursorsLayer } from "./cursors-layer";
 import { GhostCard } from "./ghost-card";
@@ -41,7 +41,6 @@ const initialCursor = (x: number, y: number) => ({
 function makeId() {
   return Math.random().toString(36).slice(2, 8);
 }
-
 export function CinematicDemo({
   domain = "wedding",
 }: {
@@ -51,7 +50,7 @@ export function CinematicDemo({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef(new Map<string, HTMLDivElement>());
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [paused, setPaused] = useState(false);
   const prefersReducedMotion = useReducedMotion();
   const pausedRef = useRef(false);
@@ -96,8 +95,6 @@ export function CinematicDemo({
     visible: boolean;
     origin: { x: number; y: number } | null;
   }>({ visible: false, origin: null });
-
-  useEffect(() => setMounted(true), []);
 
   // --- Helpers operating on state ---
 
@@ -629,6 +626,8 @@ export function CinematicDemo({
     };
   }, [
     mounted,
+    pack.demoCommentText,
+    prefersReducedMotion,
     paused,
     moveCursor,
     moveCursorToCard,
@@ -706,7 +705,7 @@ export function CinematicDemo({
                 style={{ background: "var(--roadmap-emerald-bg)" }}
               />
             </div>
-            <div className="ml-3 flex items-center gap-1.5 rounded-md bg-bg-sunken px-2 py-0.5 text-[11px] text-ink-quiet">
+            <div className="ml-3 flex items-center gap-1.5 rounded-md bg-bg-sunken px-2 py-0.5 text-[11px] text-ink-soft">
               <svg
                 width="11"
                 height="11"
@@ -840,7 +839,6 @@ export function CinematicDemo({
     </div>
   );
 }
-
 function PresenceStrip() {
   return (
     <div className="flex items-center gap-1.5">
@@ -903,7 +901,7 @@ function ViewTabs({ view }: { view: ViewMode }) {
             "relative inline-flex select-none items-center gap-1 rounded-md px-2.5 py-1 text-[11.5px] font-medium transition-colors " +
             (view === item.id
               ? "text-ink"
-              : "text-ink-quiet hover:text-ink-soft")
+              : "text-ink-soft hover:text-ink")
           }
         >
           {view === item.id ? (
@@ -920,125 +918,5 @@ function ViewTabs({ view }: { view: ViewMode }) {
         </div>
       ))}
     </div>
-  );
-}
-
-function BoardSurface({
-  state,
-  cardRefs,
-}: {
-  state: DemoState;
-  cardRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
-}) {
-  return (
-    <div className="grid h-full grid-cols-4 divide-x divide-line-soft px-5 pt-4">
-      {(["todo", "doing", "review", "done"] as const).map((laneId, idx) => {
-        const lane = LANES[laneId];
-        const laneTasks = state.tasks.filter((t) => t.lane === laneId);
-        return (
-          <motion.div
-            key={laneId}
-            data-lane={laneId}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: MOTION_MODERATE,
-              delay: idx * 0.06,
-              ease: EASE_OUT_EXPO,
-            }}
-            className="flex flex-col gap-2 overflow-hidden px-2 pt-2"
-          >
-            <div
-              data-lane-header
-              className="flex items-center justify-between px-1.5 pb-1 pt-0.5"
-            >
-              <div className="flex items-center gap-1.5">
-                <span
-                  className="block h-1.5 w-1.5 rounded-full"
-                  style={{
-                    background:
-                      laneId === "doing"
-                        ? "var(--brand)"
-                        : "var(--ink-ghost)",
-                  }}
-                />
-                <span
-                  className={
-                    "font-mono text-[10px] font-semibold uppercase tracking-[0.14em] " +
-                    (laneId === "doing" ? "text-ink" : "text-ink-quiet")
-                  }
-                >
-                  {lane.name}
-                </span>
-                <span className="font-mono text-[10px] tabular-nums text-ink-quiet">
-                  {laneTasks.length}
-                </span>
-              </div>
-              <button type="button" aria-hidden="true" tabIndex={-1} className="rounded p-0.5 text-ink-quiet hover:bg-white/60 hover:text-ink-soft">
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              {laneTasks.map((task) => (
-                <BoardCardWrapper
-                  key={task.id}
-                  task={task}
-                  state={state}
-                  cardRefs={cardRefs}
-                />
-              ))}
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-}
-
-function BoardCardWrapper({
-  task,
-  state,
-  cardRefs,
-}: {
-  task: Task;
-  state: DemoState;
-  cardRefs: React.MutableRefObject<Map<string, HTMLDivElement>>;
-}) {
-  const isPicked = state.pickedTaskId === task.id;
-  const isDep =
-    !!state.dependencyHighlight &&
-    (state.dependencyHighlight[0] === task.id ||
-      state.dependencyHighlight[1] === task.id);
-  const showThread = state.openCommentTaskId === task.id;
-  // The carried card wears its carrier's presence colour (--user-* tokens).
-  const pickedColor = isPicked && state.pickedBy ? USERS[state.pickedBy].color : null;
-
-  return (
-    <TaskCard
-      task={task}
-      picked={isPicked}
-      pickedBy={pickedColor}
-      highlightDependency={isDep}
-      showInlineThread={showThread}
-      staticComment={state.staticComment}
-      typingUser={showThread ? state.typingFromUser : null}
-      typingProgress={showThread ? state.typingProgress : 0}
-      postedComment={showThread ? state.postedComment : null}
-      forwardRef={(el) => {
-        if (el) cardRefs.current.set(task.id, el);
-        else cardRefs.current.delete(task.id);
-      }}
-    />
   );
 }

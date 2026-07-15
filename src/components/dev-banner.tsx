@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * DevBanner, a subtle, premium "in development" marker.
@@ -28,20 +29,17 @@ function bannerEnabled(): boolean {
 const DISMISS_KEY = "signal_devbanner_dismissed";
 
 export function DevBanner() {
-  const [hidden, setHidden] = useState(true);
-
-  useEffect(() => {
-    if (!bannerEnabled()) return;
+  const hydrated = useHydrated();
+  const [hidden, setHidden] = useState(() => {
+    if (!bannerEnabled() || typeof sessionStorage === "undefined") return true;
     try {
-      if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
+      return sessionStorage.getItem(DISMISS_KEY) === "1";
     } catch {
-      /* sessionStorage unavailable, show anyway */
+      return false;
     }
-    const timeoutId = window.setTimeout(() => setHidden(false), 0);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
+  });
 
-  if (hidden) return null;
+  if (!hydrated || hidden) return null;
 
   const text =
     process.env.NEXT_PUBLIC_DEV_BANNER_TEXT ??
@@ -64,7 +62,7 @@ export function DevBanner() {
           setHidden(true);
         }}
       >
-        ×
+        &times;
       </button>
       <style>{CSS}</style>
     </div>
@@ -89,7 +87,8 @@ const CSS = `
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1;
-  color: color-mix(in srgb, var(--ink, #14110b) 78%, transparent);
+  pointer-events: none;
+  color: var(--ink-soft, #52525b);
   background: color-mix(in srgb, var(--bg, #fff) 86%, transparent);
   border: 1px solid color-mix(in srgb, var(--ink, #14110b) 12%, transparent);
   box-shadow: 0 6px 24px rgba(20, 17, 11, 0.10), 0 1px 2px rgba(20, 17, 11, 0.05);
@@ -116,12 +115,13 @@ const CSS = `
   border: 0;
   background: transparent;
   cursor: pointer;
+  pointer-events: auto;
   font-size: 16px;
   line-height: 1;
   padding: 2px 4px;
   margin-left: 2px;
   border-radius: 6px;
-  color: color-mix(in srgb, var(--ink, #14110b) 45%, transparent);
+  color: var(--ink-faint, #71717a);
   transition: color 160ms ease, background 160ms ease;
 }
 .signal-devbanner__close:hover {

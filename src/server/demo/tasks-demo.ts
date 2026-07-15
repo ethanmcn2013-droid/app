@@ -21,8 +21,10 @@ export const DEMO_USER_ID: UserId = "demo-user";
 export const DEMO_WORKSPACE_ID = "demo-ws";
 export const DEMO_WORKSPACE_SLUG = "the-orchard";
 export const DEMO_WORKSPACE_NAME = "The Orchard, events";
+export const DEMO_SPONSOR_NAME = "The Orchard";
 export const DEMO_PRIMARY_USE_CASE = "venue";
 export const DEMO_DOMAIN: DomainId = "wedding";
+export const DEMO_SHARE_TOKEN = "review-the-orchard";
 
 const HOUR = 60 * 60 * 1000;
 const now = () => Date.now();

@@ -11,14 +11,18 @@ export function DescriptionEditor({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(task.description ?? "");
+  const [previousDescription, setPreviousDescription] = useState(
+    task.description,
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // External description updates (e.g. server hydrate after own edit,
   // or another path mutates description) sync into draft only when
   // not editing, never overwrite user's in-progress text.
-  useEffect(() => {
-    if (!editing) setDraft(task.description ?? "");
-  }, [task.description, editing]);
+  if (!editing && previousDescription !== task.description) {
+    setPreviousDescription(task.description);
+    setDraft(task.description ?? "");
+  }
 
   // Autoresize the textarea while editing.
   useEffect(() => {

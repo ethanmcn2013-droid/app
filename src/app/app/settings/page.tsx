@@ -42,42 +42,50 @@ export default async function SettingsPage() {
     return (
       <>
         <AppPageHeader />
-        <SettingsApp
-          currentUserId={DEMO_USER_ID}
-          myRole="owner"
-          workspace={{
-            id: DEMO_WORKSPACE_ID,
-            slug: DEMO_WORKSPACE_SLUG,
-            name: DEMO_WORKSPACE_NAME,
-            activeDomain: "wedding",
-            primaryUseCase: "venue",
-            secondaryContext: null,
-            createdAt: nowIso,
-            ownerUserId: DEMO_USER_ID,
-            publishedAt: null,
-          }}
-          members={[
-            {
-              userId: DEMO_USER_ID,
-              role: "owner",
-              joinedAt: nowIso,
-              name: "You",
-              email: "you@theorchard.example",
-              handle: "you",
-              color: null,
-              initials: "YO",
-            },
-          ]}
-          tier="free"
-          memberCapacity={{ current: 1, max: 3, tier: "free" }}
-          notificationPrefs={{
-            dailyDigest: true,
-            mentions: true,
-            commentReplies: true,
-          }}
-          pendingInvites={[]}
-          recentActivity={[]}
-        />
+        <p
+          role="status"
+          className="border-b border-line-soft bg-brand-soft px-4 py-2 text-center text-xs font-medium text-brand"
+        >
+          Review preview, settings are read-only.
+        </p>
+        <div inert aria-disabled="true">
+          <SettingsApp
+            currentUserId={DEMO_USER_ID}
+            myRole="owner"
+            workspace={{
+              id: DEMO_WORKSPACE_ID,
+              slug: DEMO_WORKSPACE_SLUG,
+              name: DEMO_WORKSPACE_NAME,
+              activeDomain: "wedding",
+              primaryUseCase: "venue",
+              secondaryContext: null,
+              createdAt: nowIso,
+              ownerUserId: DEMO_USER_ID,
+              publishedAt: null,
+            }}
+            members={[
+              {
+                userId: DEMO_USER_ID,
+                role: "owner",
+                joinedAt: nowIso,
+                name: "You",
+                email: "you@theorchard.example",
+                handle: "you",
+                color: null,
+                initials: "YO",
+              },
+            ]}
+            tier="free"
+            memberCapacity={{ current: 1, max: 3, tier: "free" }}
+            notificationPrefs={{
+              dailyDigest: true,
+              mentions: true,
+              commentReplies: true,
+            }}
+            pendingInvites={[]}
+            recentActivity={[]}
+          />
+        </div>
       </>
     );
   }

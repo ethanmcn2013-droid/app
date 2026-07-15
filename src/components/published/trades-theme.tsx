@@ -81,7 +81,7 @@ export function TradesTheme({ workspace, tasks }: PublishedWorkspaceProps) {
             className="font-mono text-[11px] uppercase tracking-[0.22em]"
             style={{ color: STEEL_INK, opacity: 0.5 }}
           >
-            // job ticket · binder
+            {"// job ticket · binder"}
           </div>
           <h1
             className="mt-3 text-[clamp(1.7rem,1.1rem+2.4vw,2.6rem)] font-semibold leading-[1.1] tracking-[-0.02em]"

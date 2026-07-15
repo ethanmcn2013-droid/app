@@ -1,0 +1,387 @@
+{
+  "schemaVersion": "signal-experience-fixtures/1",
+  "generatedAt": "2026-07-15",
+  "product": "tasks",
+  "determinism": {
+    "accessMode": "demo",
+    "deploymentEnvironment": "preview",
+    "locale": "en-GB",
+    "timezoneId": "Europe/London",
+    "colorScheme": "light",
+    "reducedMotion": "reduce",
+    "animationPolicy": "disabled"
+  },
+  "breakpoints": ["mobile", "desktop"],
+  "experiences": [
+    {
+      "id": "tasks.page.app",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "populated demo workspace",
+          "path": "/app",
+          "states": ["populated", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "url", "pathname": "/app/board", "proves": ["populated"] },
+            { "kind": "role", "role": "heading", "name": "Hartwell Wedding", "proves": ["populated"] }
+          ]
+        }
+      ],
+      "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted", "dense", "long-content"]
+    },
+    {
+      "id": "tasks.page.app-inbox",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "demo digest with empty direct alerts",
+          "path": "/app/inbox",
+          "states": ["empty", "populated", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Inbox", "proves": ["populated"] },
+            { "kind": "role", "role": "heading", "name": "Good morning, Orla.", "proves": ["populated"] },
+            { "kind": "role", "role": "heading", "name": "Inbox zero. Quiet here on purpose.", "proves": ["empty"] }
+          ]
+        }
+      ],
+      "remainingStates": ["first-use", "loading", "partial-failure", "error", "restricted", "dense", "long-content"]
+    },
+    {
+      "id": "tasks.page.app-import",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "empty CSV import start",
+          "path": "/app/import",
+          "states": ["default", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Bring your tasks in from somewhere else", "proves": ["default"] },
+            { "kind": "text", "text": "Drop a CSV here, or click to choose", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved", "long-content"]
+    },
+    {
+      "id": "tasks.page.invite-by-token",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "valid invite without mutation",
+          "path": "/invite/review-valid",
+          "states": ["default", "disabled", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Niamh O’Connell added you to The Orchard, events.", "proves": ["default"] },
+            { "kind": "role", "role": "button", "name": "Accept invite", "disabled": true, "proves": ["disabled"] },
+            { "kind": "text", "text": "Disabled in review mode. No workspace will be changed.", "proves": ["disabled"] }
+          ]
+        },
+        {
+          "name": "expired invite",
+          "path": "/invite/review-expired",
+          "states": ["error"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "This invite has expired.", "proves": ["error"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "success"]
+    },
+    {
+      "id": "tasks.page.privacy",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "published privacy notice",
+          "path": "/privacy",
+          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "What we collect, and why.", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.p-by-slug",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "published demo workspace",
+          "path": "/p/the-orchard",
+          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["default"] },
+            { "kind": "text", "text": "10 things in motion, gathered with care", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.redeem-by-code",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "successful wedding entitlement",
+          "path": "/redeem/REVIEW-SUCCESS",
+          "states": ["default", "success", "keyboard-only"],
+          "assertions": [
+            { "kind": "text", "text": "Redeemed", "proves": ["default", "success"] },
+            { "kind": "role", "role": "link", "name": "Open the workspace", "href": "/app/board?welcome=venue&v=the-orchard", "proves": ["success"] }
+          ]
+        },
+        {
+          "name": "expired code",
+          "path": "/redeem/REVIEW-EXPIRED",
+          "states": ["error"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "This code has expired.", "proves": ["error"] }
+          ]
+        },
+        {
+          "name": "already used code",
+          "path": "/redeem/REVIEW-USED",
+          "states": ["disabled"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "You've already redeemed this one.", "proves": ["disabled"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading"]
+    },
+    {
+      "id": "tasks.page.root",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "customer-facing homepage",
+          "path": "/",
+          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Execution clarity for live work.", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.security",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "published security notice",
+          "path": "/security",
+          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "How the thing is built.", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.share-by-token",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "read-only shared board",
+          "path": "/share/review-the-orchard",
+          "states": ["default", "read-only", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "text", "text": "Read-only · Shared link", "proves": ["default", "read-only"] },
+            { "kind": "role", "role": "link", "name": "Make this yours", "href": "/app/board", "proves": ["read-only"] },
+            { "kind": "role", "role": "button", "name": "New task", "count": 0, "proves": ["read-only"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.share-target",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "captured page and link",
+          "path": "/share-target?title=Saturday%20supplier%20brief&url=https%3A%2F%2Fexample.com%2Fbrief",
+          "states": ["default", "long-content", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Save what you saw.", "proves": ["default"] },
+            { "kind": "role", "role": "textbox", "name": "Task", "value": "Saturday supplier brief, https://example.com/brief", "proves": ["default"] }
+          ]
+        },
+        {
+          "name": "empty share payload",
+          "path": "/share-target",
+          "states": ["default", "reduced-motion"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Save what you saw.", "proves": ["default"] },
+            { "kind": "role", "role": "textbox", "name": "Task", "value": "", "proves": ["default"] },
+            { "kind": "role", "role": "button", "name": "Save", "disabled": true, "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.page.sign-in-by-sign-in",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "review-mode sign in",
+          "path": "/sign-in",
+          "states": ["default", "disabled", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "You’re already signed in here.", "proves": ["default", "disabled"] },
+            { "kind": "role", "role": "textbox", "count": 0, "proves": ["disabled"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "error", "success"]
+    },
+    {
+      "id": "tasks.page.sign-up-by-sign-up",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "review-mode sign up",
+          "path": "/sign-up?use=wedding",
+          "states": ["default", "disabled", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "No account is needed here.", "proves": ["default", "disabled"] },
+            { "kind": "role", "role": "textbox", "count": 0, "proves": ["disabled"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "error", "success"]
+    },
+    {
+      "id": "tasks.page.terms",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "published terms",
+          "path": "/terms",
+          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "The deal, in plain words.", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.state.app-error",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "friendly recovery copy", "contains": "The workspace took a wrong turn." },
+        { "label": "retry action", "contains": "Try again" },
+        { "label": "board escape", "contains": "href=\"/app/board\"" },
+        { "label": "Sentry capture", "contains": "Sentry.captureException(error)" }
+      ],
+      "remainingStates": ["error", "keyboard-only"]
+    },
+    {
+      "id": "tasks.state.app-loading",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "stable product identity", "contains": "[\"t\", \"a\", \"s\", \"k\", \"s\"].map" },
+        { "label": "reduced-motion fallback", "contains": "@media (prefers-reduced-motion: reduce)" },
+        { "label": "live status semantics", "contains": "<LongWaitStatus line=\"Opening the workspace\" />" }
+      ],
+      "remainingStates": ["loading", "slow-loading", "reduced-motion"]
+    },
+    {
+      "id": "tasks.state.root-not-found",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "unknown route",
+          "path": "/review-route-that-does-not-exist",
+          "states": ["error", "keyboard-only"],
+          "expectedStatus": 404,
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Couldn’t find that one. The link, the task, or both.", "proves": ["error"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.state.share-by-token-not-found",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "unknown share token",
+          "path": "/share/review-missing",
+          "states": ["error", "keyboard-only"],
+          "expectedStatus": 404,
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "This share link doesn’t exist.", "proves": ["error"] }
+          ]
+        }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.state.share-error",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "plain failure copy", "contains": "Something with this link isn&rsquo;t right." },
+        { "label": "retry action", "contains": "Try again" },
+        { "label": "home escape", "contains": "href=\"/\"" },
+        { "label": "Sentry capture", "contains": "Sentry.captureException(error)" }
+      ],
+      "remainingStates": ["error", "keyboard-only"]
+    },
+    {
+      "id": "tasks.surface.command-palette",
+      "evidence": "rendered",
+      "interaction": "command-palette",
+      "caseName": "keyboard search",
+      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+      "assertions": [
+        { "kind": "role", "role": "dialog", "name": "Command palette", "proves": ["default"] },
+        { "kind": "role", "role": "textbox", "name": "Search tasks by title, tag, or description", "value": "recommended suppliers", "proves": ["default"] }
+      ],
+      "remainingStates": []
+    },
+    {
+      "id": "tasks.surface.empty-workspace",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "first-use default action", "contains": "primaryLabel = \"Add your first task\"" },
+        { "label": "keyboard shortcut hint", "contains": "<kbd className=" },
+        { "label": "starter-pack recovery copy", "contains": "That didn&rsquo;t take, check your connection and try again." }
+      ],
+      "remainingStates": ["default", "error", "success", "restricted", "reduced-motion", "keyboard-only"]
+    },
+    {
+      "id": "tasks.surface.quick-create",
+      "evidence": "rendered",
+      "interaction": "quick-create",
+      "caseName": "long natural-language task",
+      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+      "assertions": [
+        { "kind": "role", "role": "textbox", "name": "Name a task, try: Confirm catering tasting menu by Friday", "value": "Confirm the final supplier arrival plan with every Saturday contact next Thursday #maria-james", "proves": ["default"] }
+      ],
+      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved"]
+    },
+    {
+      "id": "tasks.surface.task-detail-panel",
+      "evidence": "rendered",
+      "interaction": "task-detail-panel",
+      "caseName": "populated task",
+      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+      "assertions": [
+        { "kind": "role", "role": "dialog", "name": "Confirm marquee sides with the hire company", "proves": ["default"] }
+      ],
+      "remainingStates": []
+    }
+  ],
+  "operatorBlocked": [
+    "Production Clerk sign-in and sign-up states require a real review identity and provider email flows.",
+    "Production invite acceptance and redemption mutations require an isolated review tenant and expendable codes.",
+    "Visual baseline approval remains founder-owned; generated screenshots are evidence, not approval."
+  ]
+}

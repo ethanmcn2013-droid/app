@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { Dialog } from "@/components/primitives/dialog";
 import {
@@ -50,6 +50,7 @@ export function WorkspaceSection({
   // the name-save transition also uses. Cleared on success or error.
   const [reseedingDomain, setReseedingDomain] = useState<DomainId | null>(null);
   const [name, setName] = useState(workspace?.name ?? "");
+  const [previousName, setPreviousName] = useState(workspace?.name);
   const [domainConfirm, setDomainConfirm] = useState<DomainId | null>(null);
   const [segmentConfirm, setSegmentConfirm] = useState<PrimaryUseCase | null>(
     null,
@@ -65,11 +66,11 @@ export function WorkspaceSection({
       ? workspace.primaryUseCase
       : null;
 
-  // Keep local input in sync if the workspace prop changes (e.g.
-  // after a re-seed kicks off a server-side revalidate).
-  useEffect(() => {
+  // Keep local input in sync if a server revalidation changes the workspace.
+  if (previousName !== workspace?.name) {
+    setPreviousName(workspace?.name);
     setName(workspace?.name ?? "");
-  }, [workspace?.name]);
+  }
 
   function commitName() {
     if (!workspace) return;

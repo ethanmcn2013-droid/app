@@ -200,10 +200,12 @@ export function BoardApp() {
   const [optimisticConfig, setOptimisticConfig] = useState<ColumnConfig | null>(
     columnConfig,
   );
-  // Sync when server config changes (layout revalidate).
-  useEffect(() => {
+  const [previousColumnConfig, setPreviousColumnConfig] = useState(columnConfig);
+  // Adjust during render when a server revalidation supplies a new config.
+  if (previousColumnConfig !== columnConfig) {
+    setPreviousColumnConfig(columnConfig);
     setOptimisticConfig(columnConfig);
-  }, [columnConfig]);
+  }
 
   const boardColumns = useMemo(
     () => buildBoardColumns(optimisticConfig),
@@ -532,13 +534,17 @@ function LaneHeader({
 }) {
   const [editing, setEditing] = useState(false);
   const [optimisticName, setOptimisticName] = useState(columnName);
+  const [previousColumnName, setPreviousColumnName] = useState(columnName);
   const [draft, setDraft] = useState(columnName);
   const inputRef = useRef<HTMLInputElement>(null);
   const [, startTransition] = useTransition();
   const [overflowOpen, setOverflowOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => { setOptimisticName(columnName); }, [columnName]);
+  if (previousColumnName !== columnName) {
+    setPreviousColumnName(columnName);
+    setOptimisticName(columnName);
+  }
 
   // Close overflow on outside click.
   useEffect(() => {
@@ -1034,10 +1040,16 @@ function Card({
       // (the moment itself honours it); the per-card flourish stays motion-gated.
       maybeFireFirstCompletion();
       if (!reduce) {
-        setCelebrate(true);
-        const t = setTimeout(() => setCelebrate(false), 720);
+        let stopTimer: ReturnType<typeof setTimeout> | undefined;
+        const startTimer = setTimeout(() => {
+          setCelebrate(true);
+          stopTimer = setTimeout(() => setCelebrate(false), 720);
+        }, 0);
         wasDoneRef.current = isDone;
-        return () => clearTimeout(t);
+        return () => {
+          clearTimeout(startTimer);
+          if (stopTimer) clearTimeout(stopTimer);
+        };
       }
     }
     wasDoneRef.current = isDone;

@@ -3,7 +3,6 @@ import { DOMAINS } from "@/lib/domains";
 import {
   getSegment,
   isPrimaryUseCase,
-  type PrimaryUseCase,
 } from "./segments";
 
 export type WorkspacePersonalization = {

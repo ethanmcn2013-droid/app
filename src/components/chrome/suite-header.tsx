@@ -47,10 +47,10 @@ import Link from "next/link";
 export type SuiteNavItem = { href: string; label: string; external?: boolean };
 
 const HAIRLINE = "var(--suite-header-hairline, rgba(17, 17, 17, 0.08))";
-const BG = "color-mix(in srgb, var(--bg, #ffffff) 88%, transparent)";
-const INK = "var(--ink, #14151a)";
-const INK_SOFT = "var(--ink-soft, #52525b)";
-const INK_FAINT = "var(--ink-faint, #a1a1aa)";
+const BG = "color-mix(in srgb, var(--bg) 88%, transparent)";
+const INK = "var(--ink)";
+const INK_SOFT = "var(--ink-soft)";
+const INK_FAINT = "var(--ink-faint)";
 
 function ExternalGlyph() {
   return (

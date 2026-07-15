@@ -126,7 +126,7 @@ async function main(): Promise<void> {
       .where(eq(tasks.workspaceId, wsId))
   ).length;
 
-  // eslint-disable-next-line no-console
+
   console.log(
     `seed-published-wedding: ok · slug=${PUBLISHED_SLUG} · seededThisRun=${seededCount} · totalTasks=${finalCount} · url=/p/${PUBLISHED_SLUG}`,
   );
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
 main().then(
   () => process.exit(0),
   (err) => {
-    // eslint-disable-next-line no-console
+
     console.error("seed-published-wedding: failed", err);
     process.exit(1);
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "@clerk/nextjs";
 import type {
   SessionWithActivitiesResource,
@@ -16,7 +16,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setPending(true);
     setError(null);
     try {
@@ -31,12 +31,12 @@ export function SessionsRow({ user }: { user: UserResource }) {
     } finally {
       setPending(false);
     }
-  }
+  }, [user]);
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.id]);
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   async function revoke(s: SessionWithActivitiesResource) {
     try {

@@ -21,7 +21,13 @@ import {
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { allow } from "@/lib/ratelimit";
 import { USERS } from "@/lib/data";
+import { isDemoMode } from "@/lib/access-mode";
 import type { ConversationItem } from "@/server/db/queries";
+
+const DEMO_DRAFT_REPLY =
+  "Thanks — I’ll confirm this and update the task here.";
+const DEMO_THREAD_SUMMARY =
+  "The plan is agreed and the remaining action is clearly assigned. The next update belongs in this task once the work is confirmed.";
 
 /**
  * AI server actions. All three return a `ReadableStream<string>` of
@@ -87,6 +93,7 @@ export async function draftReplyAction(
   taskId: string,
   intent?: string,
 ): Promise<ReadableStream<string>> {
+  if (isDemoMode()) return staticStream(DEMO_DRAFT_REPLY);
   if (!aiConfigured()) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
@@ -161,6 +168,7 @@ export async function draftReplyAction(
 export async function summarizeConversationAction(
   taskId: string,
 ): Promise<ReadableStream<string>> {
+  if (isDemoMode()) return staticStream(DEMO_THREAD_SUMMARY);
   if (!aiConfigured()) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);

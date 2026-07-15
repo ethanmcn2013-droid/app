@@ -24,7 +24,9 @@ type Options = {
  */
 export function useRealtimeSync({ onChange, clientId }: Options) {
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -49,7 +51,7 @@ export function useRealtimeSync({ onChange, clientId }: Options) {
         const fresh = await getTasksAction();
         onChangeRef.current(fresh);
       } catch (e) {
-        // eslint-disable-next-line no-console
+
         console.warn("realtime: refetch failed", e);
       } finally {
         // Tiny gap so a follow-up mutation 50ms later doesn't get

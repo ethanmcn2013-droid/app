@@ -5,6 +5,11 @@ import { getTasks } from "@/server/db/queries";
 import { getCurrentUserOrNull } from "@/server/auth";
 import { LANES } from "@/lib/data";
 import { buildIcsCalendar, type ICalEvent } from "@/lib/ical";
+import { isDemoMode } from "@/lib/access-mode";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+} from "@/server/demo/tasks-demo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,31 +31,40 @@ export async function GET(
 ) {
   const { workspaceId } = await params;
 
-  const me = await getCurrentUserOrNull();
-  if (!me) return new Response("Unauthorized", { status: 401 });
+  let workspaceName: string;
+  if (isDemoMode()) {
+    if (workspaceId !== DEMO_WORKSPACE_ID) {
+      return new Response("Workspace not found", { status: 404 });
+    }
+    workspaceName = DEMO_WORKSPACE_NAME;
+  } else {
+    const me = await getCurrentUserOrNull();
+    if (!me) return new Response("Unauthorized", { status: 401 });
 
-  const [membership] = await db
-    .select({ workspaceId: workspaceMembers.workspaceId })
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.userId, me),
-        eq(workspaceMembers.workspaceId, workspaceId),
-      ),
-    )
-    .limit(1);
+    const [membership] = await db
+      .select({ workspaceId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.userId, me),
+          eq(workspaceMembers.workspaceId, workspaceId),
+        ),
+      )
+      .limit(1);
 
-  if (!membership) {
-    return new Response("Workspace not found", { status: 404 });
-  }
+    if (!membership) {
+      return new Response("Workspace not found", { status: 404 });
+    }
 
-  const [ws] = await db
-    .select({ id: workspaces.id, name: workspaces.name })
-    .from(workspaces)
-    .where(eq(workspaces.id, workspaceId));
+    const [ws] = await db
+      .select({ id: workspaces.id, name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId));
 
-  if (!ws) {
-    return new Response("Workspace not found", { status: 404 });
+    if (!ws) {
+      return new Response("Workspace not found", { status: 404 });
+    }
+    workspaceName = ws.name;
   }
 
   const all = await getTasks(workspaceId);
@@ -72,7 +86,7 @@ export async function GET(
       };
     });
 
-  const body = buildIcsCalendar({ workspaceName: ws.name, events });
+  const body = buildIcsCalendar({ workspaceName, events });
 
   return new Response(body, {
     status: 200,

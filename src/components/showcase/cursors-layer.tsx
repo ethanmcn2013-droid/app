@@ -15,7 +15,7 @@ const LABEL_FADE_OFFSET_MS: Record<UserId, number> = {
 
 export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-[60]">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[60]">
       {(Object.keys(cursors) as UserId[]).map((id) => {
         const c = cursors[id];
         if (!c) return null;
@@ -65,7 +65,7 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
                 scale: labelVisible ? 1 : 0.94,
               }}
               transition={{
-                duration: labelVisible ? 0.32 : 0.32,
+                duration: 0.32,
                 delay: labelVisible
                   ? 0
                   : LABEL_FADE_OFFSET_MS[id] / 1000,

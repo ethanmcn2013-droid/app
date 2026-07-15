@@ -19,7 +19,7 @@ export default function WaitlistPage() {
         justifyContent: "center",
         padding: 24,
         textAlign: "center",
-        background: "var(--bg, #ffffff)",
+        background: "var(--bg)",
       }}
     >
       <div style={{ maxWidth: 460 }}>
@@ -30,7 +30,7 @@ export default function WaitlistPage() {
             fontSize: 11,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
-            color: "var(--ink-faint, #a1a1aa)",
+            color: "var(--ink-faint)",
           }}
         >
           Invite only
@@ -42,7 +42,7 @@ export default function WaitlistPage() {
             fontWeight: 600,
             letterSpacing: "-0.03em",
             lineHeight: 1.15,
-            color: "var(--ink, #14151a)",
+            color: "var(--ink)",
           }}
         >
           Signal Studio is in private preview.
@@ -52,7 +52,7 @@ export default function WaitlistPage() {
             marginTop: 14,
             fontSize: 16,
             lineHeight: 1.55,
-            color: "var(--ink-soft, #52525b)",
+            color: "var(--ink-soft)",
           }}
         >
           You&rsquo;re signed in, but your account isn&rsquo;t open yet. We let
@@ -65,7 +65,7 @@ export default function WaitlistPage() {
             marginTop: 22,
             fontSize: 14,
             fontWeight: 500,
-            color: "var(--ink, #14151a)",
+            color: "var(--ink)",
             textDecoration: "underline",
             textUnderlineOffset: 3,
           }}

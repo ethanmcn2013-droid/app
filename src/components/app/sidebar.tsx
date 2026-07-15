@@ -45,7 +45,7 @@ export function AppSidebar({ active: activeProp }: { active?: string }) {
        * was the MobileSuiteBar clearance; now the chrome is sticky (not
        * fixed) so that padding is gone from /app/layout.tsx.
        */}
-      <MobileTabBar active={active} />
+      <MobileTabBar key={active} active={active} />
       <DesktopSidebar active={active} />
     </>
   );
@@ -299,11 +299,6 @@ function MobileTabBar({ active }: { active: string }) {
       document.removeEventListener("keydown", onKey);
     };
   }, [viewsOpen]);
-
-  // Close the views menu when route changes.
-  useEffect(() => {
-    setViewsOpen(false);
-  }, [active]);
 
   const isViewActive = VIEWS.some((v) => active === v.href);
   const activeView = VIEWS.find((v) => active === v.href);

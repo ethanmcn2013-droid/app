@@ -54,7 +54,7 @@ export function TaskDetailPanel() {
           if (!signal.ignored) {
             const isTimeout =
               err instanceof Error && err.message === "timeout";
-            // eslint-disable-next-line no-console
+
             console.warn("conversation: fetch failed", err);
             setItems([]);
             if (isTimeout) setTimedOut(true);
@@ -69,18 +69,23 @@ export function TaskDetailPanel() {
           }
         });
     },
-    [],
+    [setItems, setLoading, setTimedOut],
   );
 
+  const conversationTaskId = task?.id;
+
   useEffect(() => {
-    if (!task) return;
+    if (!conversationTaskId) return;
     const signal = { ignored: false };
-    fetchConversation(task.id, signal);
+    const timer = window.setTimeout(
+      () => fetchConversation(conversationTaskId, signal),
+      0,
+    );
     return () => {
       signal.ignored = true;
+      window.clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task?.id, refreshKey]);
+  }, [conversationTaskId, refreshKey, fetchConversation]);
 
   // Stale id (e.g. task was deleted), clear the param after a beat
   // so a deep-link to a no-longer-existing task degrades gracefully.
@@ -172,7 +177,7 @@ function ConversationSkeleton() {
 function ConversationTimeout({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="py-1">
-      <div className="text-[13px] text-ink-quiet">Couldn't load conversation.</div>
+      <div className="text-[13px] text-ink-quiet">Couldn&apos;t load conversation.</div>
       <div className="mt-1 text-[12px] text-ink-faint">
         Took too long to load.{" "}
         <button

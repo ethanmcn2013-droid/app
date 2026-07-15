@@ -5,6 +5,7 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { SuiteHeader, type SuiteNavItem } from "@/components/chrome/suite-header";
 import { UserButton } from "@clerk/nextjs";
+import { isDemoMode } from "@/lib/access-mode";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 const UMBRELLA_DESIGN = "https://signalstudio.ie/design";
@@ -24,13 +25,23 @@ const NAV: SuiteNavItem[] = [
  * "Sign in" with the account menu.
  */
 export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
+  const demoMode = isDemoMode();
   return (
     <SuiteHeader
-      launcher={<SuiteLauncher current="tasks" isAuthed={isAuthed} />}
+      launcher={
+        <SuiteLauncher current="tasks" isAuthed={isAuthed || demoMode} />
+      }
       wordmark={<Wordmark size="md" />}
       nav={NAV}
       account={
-        isAuthed ? (
+        demoMode ? (
+          <Link
+            href="/app/board"
+            className="inline-flex min-h-8 items-center rounded-full bg-ink px-3.5 text-[12px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            Demo workspace
+          </Link>
+        ) : isAuthed ? (
           <UserButton
             appearance={{ elements: { avatarBox: "h-8 w-8 rounded-full" } }}
           />
