@@ -45,6 +45,22 @@ function mustNotContain(file, source, needle, reason) {
   }
 }
 
+function balancedCssBlock(source, marker) {
+  const markerIndex = source.lastIndexOf(marker);
+  if (markerIndex === -1) return "";
+  const openingBrace = source.indexOf("{", markerIndex + marker.length);
+  if (openingBrace === -1) return "";
+  let depth = 0;
+  for (let index = openingBrace; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(openingBrace + 1, index);
+    }
+  }
+  return "";
+}
+
 // Per-product boot-loader contract. `render` is the visible-wordmark tell,
 // `waitLine` is the canon long-wait line (product identity), `banned` is the
 // internal repo name that must never surface as the loader word (canon law 4).
@@ -106,6 +122,34 @@ if (contract) {
       );
     }
   }
+}
+
+if (pkg.name === "tasks") {
+  const globalsPath = path.join(root, "src", "app", "globals.css");
+  const source = readFileSync(globalsPath, "utf8");
+  const reducedMotion = balancedCssBlock(
+    source,
+    "@media (prefers-reduced-motion: reduce)",
+  );
+  const frozenTasksDot = balancedCssBlock(reducedMotion, ".tasks-dot");
+  mustContain(
+    globalsPath,
+    reducedMotion,
+    ".tasks-dot {",
+    "reduced-motion captures must explicitly freeze the animated brand dot",
+  );
+  mustContain(
+    globalsPath,
+    frozenTasksDot,
+    "animation: none !important;",
+    "the tasks dot must not retain a one-frame pulse under reduced motion",
+  );
+  mustContain(
+    globalsPath,
+    frozenTasksDot,
+    "transform: translateY(-0.38em) scale(1) !important;",
+    "the frozen tasks dot must paint the canonical deterministic resting frame",
+  );
 }
 
 if (failures.length > 0) {
