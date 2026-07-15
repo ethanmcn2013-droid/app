@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import type { RedeemResult } from "@/server/actions/comp";
+import { formatRedeemExpiryDate } from "./redeem-expiry-date";
 
 const FAILURE_COPY: Record<
   Exclude<RedeemResult, { ok: true }>["reason"],
@@ -47,11 +48,7 @@ export function RedeemResultCard({
 }) {
   if (result.ok) {
     const expiresLabel = result.expiresAt
-      ? new Date(result.expiresAt).toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })
+      ? formatRedeemExpiryDate(result.expiresAt)
       : "for life";
     // Venue-edition success: deep-link past /welcome direct to the
     // board with the sponsor banner. The template + workspace flag

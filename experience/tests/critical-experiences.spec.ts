@@ -2,6 +2,14 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type TestInfo } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import {
+  isIntentionalEventSourceDisableResponse,
+  normalizeUrl,
+  runtimeFailures,
+  type MainDocumentAllowance,
+  type RuntimeIssue,
+  type RuntimeWatch,
+} from "../runtime-policy";
 
 type FixtureCase = {
   name: string;
@@ -48,17 +56,9 @@ const routeCases = manifest.experiences.flatMap((entry) =>
   (entry.cases ?? []).map((fixture) => ({ experienceId: entry.id, ...fixture })),
 );
 
-type RuntimeIssue =
-  | { kind: "pageerror"; message: string }
-  | { kind: "console"; message: string; url: string }
-  | { kind: "http"; status: number; resourceType: string; url: string }
-  | { kind: "requestfailed"; message: string; resourceType: string; url: string };
-
-type RuntimeWatch = { issues: RuntimeIssue[] };
-type MainDocumentAllowance = { status: number; url: string } | null;
-
 function watchRuntime(page: Page): RuntimeWatch {
   const issues: RuntimeIssue[] = [];
+  const intentionalEventSourceTeardowns = new Set<string>();
   page.on("pageerror", (error) => issues.push({ kind: "pageerror", message: error.message }));
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -70,11 +70,25 @@ function watchRuntime(page: Page): RuntimeWatch {
     }
   });
   page.on("response", (response) => {
+    const request = response.request();
+    if (
+      isIntentionalEventSourceDisableResponse(
+        {
+          headers: response.headers(),
+          resourceType: request.resourceType(),
+          status: response.status(),
+          url: response.url(),
+        },
+        page.url(),
+      )
+    ) {
+      intentionalEventSourceTeardowns.add(normalizeUrl(response.url()));
+    }
     if (response.status() >= 400) {
       issues.push({
         kind: "http",
         status: response.status(),
-        resourceType: response.request().resourceType(),
+        resourceType: request.resourceType(),
         url: response.url(),
       });
     }
@@ -87,74 +101,7 @@ function watchRuntime(page: Page): RuntimeWatch {
       url: request.url(),
     });
   });
-  return { issues };
-}
-
-function normalizeUrl(url: string) {
-  try {
-    const parsed = new URL(url);
-    parsed.hash = "";
-    return parsed.href;
-  } catch {
-    return url;
-  }
-}
-
-function runtimeFailures(
-  runtime: RuntimeWatch,
-  allowance: MainDocumentAllowance,
-  currentPageUrl: string,
-) {
-  const mainUrl = allowance ? normalizeUrl(allowance.url) : null;
-  const allowedConsolePattern = allowance
-    ? new RegExp(
-        `^Failed to load resource: the server responded with a status of ${allowance.status}(?: \\([^)]*\\))?$`,
-      )
-    : null;
-
-  return runtime.issues
-    .filter((issue) => {
-      if (
-        issue.kind === "requestfailed" &&
-        issue.resourceType === "fetch" &&
-        issue.message === "net::ERR_ABORTED"
-      ) {
-        try {
-          const requestUrl = new URL(issue.url);
-          const pageUrl = new URL(currentPageUrl);
-          if (requestUrl.origin === pageUrl.origin && requestUrl.searchParams.has("_rsc")) {
-            return false;
-          }
-        } catch {
-          // Malformed URLs remain fatal below.
-        }
-      }
-      if (!allowance || !mainUrl) return true;
-      if (
-        issue.kind === "http" &&
-        issue.status === allowance.status &&
-        issue.resourceType === "document" &&
-        normalizeUrl(issue.url) === mainUrl
-      ) {
-        return false;
-      }
-      if (
-        issue.kind === "console" &&
-        normalizeUrl(issue.url) === mainUrl &&
-        allowedConsolePattern?.test(issue.message)
-      ) {
-        return false;
-      }
-      return true;
-    })
-    .map((issue) => {
-      if (issue.kind === "pageerror") return `pageerror: ${issue.message}`;
-      if (issue.kind === "console") return `console: ${issue.message} (${issue.url})`;
-      if (issue.kind === "http") {
-        return `http ${issue.status}: ${issue.resourceType} ${issue.url}`;
-      }
-      return `requestfailed: ${issue.resourceType} ${issue.url} (${issue.message})`;
-    });
+  return { issues, intentionalEventSourceTeardowns };
 }
 
 async function expectNoBlockingAccessibilityIssues(page: Page) {

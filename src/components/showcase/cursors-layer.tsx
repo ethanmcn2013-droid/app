@@ -36,7 +36,6 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
             animate={{
               x: c.x,
               y: c.y,
-              opacity: c.visible ? 1 : 0,
               scale: c.grabbing ? 0.9 : 1,
             }}
             transition={{
@@ -44,15 +43,20 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
               stiffness: 220,
               damping: 24,
               mass: 0.55,
-              opacity: { duration: 0.4 },
             }}
             style={{ zIndex: c.grabbing ? 80 : 60 }}
           >
             <motion.div
               animate={{
                 rotate: c.grabbing ? -22 : c.reading ? -10 : -14,
+                opacity: c.visible ? 1 : 0,
               }}
-              transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 18,
+                opacity: { duration: 0.4 },
+              }}
               className="origin-top-left"
             >
               <CursorSvg color={cursorColor} />
@@ -60,7 +64,6 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
             <motion.div
               initial={false}
               animate={{
-                opacity: labelVisible ? 1 : 0,
                 y: labelVisible ? 0 : 4,
                 scale: labelVisible ? 1 : 0.94,
               }}
@@ -71,7 +74,7 @@ export function CursorsLayer({ cursors }: { cursors: DemoState["cursors"] }) {
                   : LABEL_FADE_OFFSET_MS[id] / 1000,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="ml-3 mt-1 inline-flex select-none rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow-sm"
+              className={`ml-3 mt-1 inline-flex select-none rounded-full px-2 py-0.5 text-[11px] font-medium text-white shadow-sm ${labelVisible ? "visible" : "invisible"}`}
               style={{ background: acting ? "var(--brand)" : "var(--ink)" }}
             >
               {c.label ?? user.name}
