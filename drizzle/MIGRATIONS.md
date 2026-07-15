@@ -1,33 +1,86 @@
 # Tasks database migrations
 
-Normal development and delivery use the reviewed SQL migrations in this
-directory:
+`drizzle/migration-ledger.json` is the migration authority. It binds every SQL
+file to an order, canonical LF SHA-256, execution policy, Drizzle journal entry,
+content-addressed review receipt and snapshot, rollback plan, and
+machine-verifiable postconditions.
+
+The database keeps an exact row per supported runtime migration in
+`signal_schema_migrations`. Drizzle's `__drizzle_migrations` table is maintained
+only as a compatible high-water mirror. The Tasks runner verifies every exact
+row and hash; it never trusts only the greatest timestamp.
+
+## Frozen legacy chain
+
+`0000` through `0013` reached production through a mixture of migration SQL and
+historical schema pushes. They are registered as `legacy-adopt-only` evidence.
+They must never be replayed against an existing database.
+
+`0014_current_schema_baseline.sql` is the supported fresh-database baseline. It
+contains all 24 application tables, 27 named indexes, the two parent/workspace
+guard triggers, and the schema constraints represented in `schema.ts`. Normal
+fresh databases apply this baseline directly; they do not replay 0000-0013.
+
+Do not run `drizzle-kit migrate` directly. Its pinned LibSQL runner checks only
+the latest timestamp and does not validate historical hashes. Use the Tasks
+runner:
 
 ```text
+pnpm db:status
 pnpm db:migrate
-```
-
-Fresh disposable local databases can be bootstrapped with:
-
-```text
 pnpm db:bootstrap
 ```
 
-`db:push:unsafe` is retained only for an explicitly approved local recovery or
-schema-forensics operation. It is not part of `dev`, CI, preview, or production
-delivery. Production migrations require a backup receipt, a dry-run against an
-isolated copy, reviewed SQL, post-migration invariant checks, and a rollback
-plan in the remediation ledger.
+An existing unledgered database fails closed with `adoption-required`. Adopt it
+only with a target-bound production receipt after backup, isolated-copy dry
+run, schema fingerprint, integrity check, foreign-key check, and every declared
+postcondition passes:
 
-## 0013 Planning Periods
+```text
+pnpm db:adopt -- \
+  --environment=production \
+  --confirm-production=tasks \
+  --receipt=drizzle/receipts/production-adoption-2026-07-15.json
+```
 
-`0013_planning_periods.sql` is the additive Planning Period catalog and legacy
-Workspace grouping migration. Read `docs/planning-periods.md` before applying
-it. In particular:
+Adoption never executes 0000-0013 or the full baseline SQL. It verifies the
+existing schema and then atomically records `0014` as `adopted_legacy` in the
+exact ledger plus the compatible Drizzle high-water row. Re-running adoption or
+migration is a strict no-op.
 
-- automatic grouping requires exactly one owner membership;
-- ambiguous rows are reported and left unchanged;
-- every exposed v2 period receives a deterministic finite date horizon;
-- no Workspace ID, slug, content row, or share token is rewritten;
-- sponsorship rows never grant membership;
-- rollback starts by disabling the new production flags, not by dropping data.
+## Creating the next migration
+
+1. Change `src/server/db/schema.ts`.
+2. Run `pnpm drizzle-kit generate --name <clear_name>`. The checked-in
+   `0014_snapshot.json` is the current generation base.
+3. Review the SQL and assign it the `forward` policy in
+   `drizzle/migration-ledger.json` with its canonical LF SHA-256.
+4. Add a `tasks-migration-receipt/1` review receipt containing the exact hash,
+   reviewer, authorization, risk, rollback plan, and read-only SQL proofs.
+5. Run `pnpm db:contract`. CI rejects extra files, missing files, hash changes,
+   journal gaps, missing snapshots, and missing receipts.
+6. Before production, create a `tasks-migration-execution/1` receipt with a
+   verified backup hash, passed isolated-copy dry run, the exact target database
+   identity, environment, ledger hash, and pending migration ids/hashes. Every
+   remote database uses this safety path even if an environment flag is omitted
+   or misspelled; unknown environment labels fail closed.
+7. Run `pnpm db:migrate -- --environment=production
+   --confirm-production=tasks --receipt=<execution-receipt>`.
+
+The runner applies each forward migration, its proof guards, and both ledger
+rows in one write transaction. If any proof fails, SQL and ledger writes roll
+back together.
+
+`db:push:unsafe` remains available only for disposable local schema forensics.
+It is not part of development startup, CI, preview, production, or recovery.
+
+## Production evidence retained on 2026-07-15
+
+- 0013 planning-period backup and dry-run receipt.
+- 0008-0012 atomic chain backup, dry-run, invariant, integrity, and FK receipt.
+- Stable counts after repair: 11 users, 7 workspaces, 11 memberships, 131 tasks.
+- Six data invariants at zero, `PRAGMA integrity_check = ok`, foreign-key
+  violations = 0.
+
+The committed adoption receipt stores only content hashes and non-secret proof
+results. Database credentials and backup bytes stay outside the repository.

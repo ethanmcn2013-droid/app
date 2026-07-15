@@ -47,7 +47,7 @@ SENTRY_ENVIRONMENT=production
 
 # Database (Turso / libSQL)
 TASKS_DATABASE_URL=libsql://...
-TASKS_DATABASE_AUTH_TOKEN=...
+TASKS_AUTH_TOKEN=...
 
 # PostHog (onboarding funnel + signup_completed)
 POSTHOG_API_KEY=phc_...
@@ -107,16 +107,38 @@ Sentry → Create Project → Next.js. Copy the DSN into both
 `SENTRY_ENVIRONMENT=production`. Optionally set
 `SENTRY_AUTH_TOKEN` to enable source-map upload during deploy.
 
-## 8b. Onboarding schema migration
+## 8b. Database release gate
 
-After deploy, apply the segment onboarding columns on Turso:
+Never paste an individual `drizzle/*.sql` file into production and never run
+`drizzle-kit migrate` directly. The historical 0000-0013 chain contains
+already-applied, non-idempotent SQL.
+
+Before application deploy, verify the source contract and target status:
 
 ```bash
-turso db shell <your-db> < drizzle/0008_onboarding_segment.sql
+pnpm db:contract
+pnpm db:status -- \
+  --environment=production \
+  --confirm-production=tasks
 ```
 
-Or run the SQL in the Turso dashboard. Adds `primary_use_case`,
-`secondary_context`, `onboarding_completed_at` on `workspaces`.
+For a normal forward migration, first take a verified backup and pass an
+isolated-copy dry run. Put those hashes and the exact pending migration hashes
+in a `tasks-migration-execution/1` receipt together with the target database
+identity, environment, and current ledger hash, then run:
+
+```bash
+pnpm db:migrate -- \
+  --environment=production \
+  --confirm-production=tasks \
+  --receipt=<execution-receipt.json>
+```
+
+For the one-time legacy production registration, use the checked-in
+`drizzle/receipts/production-adoption-2026-07-15.json` with `pnpm db:adopt`.
+Adoption verifies the existing schema and records the baseline; it does not
+re-run historical SQL. A second run must report `no-op` before the database
+gate is considered complete. See `drizzle/MIGRATIONS.md` for the full contract.
 
 ## 9. Smoke test (production, from a phone in incognito)
 

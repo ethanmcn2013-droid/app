@@ -42,6 +42,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Migration ledger contract
+        run: pnpm db:contract
+
       - name: Typecheck
         run: pnpm typecheck
 

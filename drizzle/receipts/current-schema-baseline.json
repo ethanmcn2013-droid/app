@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "tasks-current-schema-baseline-2026-07-15",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Codex, delegated implementation",
+  "authorizationSource": "Codex task 019f6587-1f62-7f71-a699-0cd05385f518",
+  "migrations": [
+    {
+      "id": "0014_current_schema_baseline",
+      "sha256": "8cc96bf8357d820e8e4bc99e5fd829a177645bd0c52579755bb4e21a9d8171ea",
+      "reviewedAt": "2026-07-15T23:30:00.000Z",
+      "risk": "canonical-fresh-database-baseline",
+      "rollbackPlan": "Fresh databases can be discarded; legacy databases adopt only after a verified backup and all receipt postconditions pass.",
+      "postconditions": ["24-required-tables", "27-required-indexes", "source-note-partial-unique-index-definition", "2-parent-guard-trigger-definitions", "required-columns", "integrity-ok", "foreign-keys-clean"],
+      "proofs": [
+        { "id": "required-tables", "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name IN ('action_items','activities','attachments','blockers','comments','comp_codes','entitlements','meta','notification_prefs','notifications','pending_invites','planning_onboarding_sessions','planning_periods','processed_webhooks','roadmap_items','share_link_visits','share_links','suite_outbox','tasks','user_preferences','users','workspace_members','workspace_sponsorships','workspaces')", "expected": 24 },
+        { "id": "required-indexes", "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'index' AND name IN ('idx_activities_task_created','idx_activities_ws_created','idx_comments_task_id','idx_comments_user_id','idx_entitlements_user_workspace','idx_notifications_task_id','idx_notifications_user_created','idx_planning_onboarding_user_status','idx_planning_periods_owner_position','idx_share_link_visits_token_at','idx_share_links_workspace_id','idx_suite_outbox_pending','idx_suite_outbox_workspace','idx_tasks_due_at','idx_tasks_parent_task_id','idx_tasks_source_note_id','idx_tasks_workspace_id','idx_tasks_ws_lane','idx_tasks_ws_milestone','idx_workspace_members_user_id','idx_workspace_sponsorships_sponsor','idx_workspace_sponsorships_workspace','idx_workspaces_period_position','users_clerk_id_unique','users_handle_unique','workspaces_slug_unique')", "expected": 26 },
+        { "id": "source-note-partial-unique", "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('tasks') AS indexes JOIN sqlite_schema AS schema ON schema.type = 'index' AND schema.name = indexes.name AND schema.tbl_name = 'tasks' WHERE indexes.name = 'idx_tasks_source_note_id' AND indexes.\"unique\" = 1 AND indexes.partial = 1 AND (SELECT COUNT(*) FROM pragma_index_info(indexes.name)) = 1 AND EXISTS (SELECT 1 FROM pragma_index_info(indexes.name) AS columns WHERE columns.seqno = 0 AND columns.name = 'source_note_id') AND lower(replace(replace(schema.sql, '`', ''), '\"', '')) LIKE '%where%source_note_id%is%not%null%'", "expected": 1 },
+        { "id": "suite-outbox-event-unique", "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('suite_outbox') AS indexes WHERE indexes.\"unique\" = 1 AND EXISTS (SELECT 1 FROM pragma_index_info(indexes.name) AS columns WHERE columns.name = 'event_id')", "expected": 1 },
+        { "id": "parent-guard-triggers", "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'trigger' AND name IN ('tasks_parent_workspace_guard_insert','tasks_parent_workspace_guard_update')", "expected": 2 },
+        { "id": "parent-guard-insert-definition", "sql": "SELECT COUNT(*) AS value FROM (SELECT lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ' '), char(10), ' '), '`', ''), '\"', '')) AS definition FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'tasks' AND name = 'tasks_parent_workspace_guard_insert') WHERE definition LIKE '%before%insert%on%tasks%' AND definition LIKE '%when%new.parent_task_id%is%not%null%' AND definition LIKE '%not%exists%' AND definition LIKE '%parent.id%=%new.parent_task_id%' AND definition LIKE '%parent.workspace_id%=%new.workspace_id%' AND definition LIKE '%parent.parent_task_id%is%null%' AND definition LIKE '%raise%abort%parent task must be a top-level task in the same workspace%'", "expected": 1 },
+        { "id": "parent-guard-update-definition", "sql": "SELECT COUNT(*) AS value FROM (SELECT lower(replace(replace(replace(replace(COALESCE(sql, ''), char(9), ' '), char(10), ' '), '`', ''), '\"', '')) AS definition FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'tasks' AND name = 'tasks_parent_workspace_guard_update') WHERE definition LIKE '%before%update%of%parent_task_id%workspace_id%on%tasks%' AND definition LIKE '%when%new.parent_task_id%is%not%null%' AND definition LIKE '%not%exists%' AND definition LIKE '%parent.id%=%new.parent_task_id%' AND definition LIKE '%parent.workspace_id%=%new.workspace_id%' AND definition LIKE '%parent.parent_task_id%is%null%' AND definition LIKE '%raise%abort%parent task must be a top-level task in the same workspace%'", "expected": 1 },
+        { "id": "tasks-columns", "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name IN ('source_note_id','board_column_key','is_milestone','workspace_id','parent_task_id')", "expected": 5 },
+        { "id": "workspace-columns", "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name IN ('planning_period_id','context_type','primary_date','primary_date_label','position','archived_at','revision','primary_use_case','secondary_context','onboarding_completed_at','template_id','updated_at')", "expected": 12 },
+        { "id": "entitlement-column", "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('entitlements') WHERE name = 'reached_board_at'", "expected": 1 },
+        { "id": "integrity", "sql": "SELECT integrity_check AS value FROM pragma_integrity_check", "expected": "ok" },
+        { "id": "foreign-keys", "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check", "expected": 0 }
+      ]
+    }
+  ]
+}

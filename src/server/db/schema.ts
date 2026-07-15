@@ -7,6 +7,7 @@ import {
   primaryKey,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/sqlite-core";
 import type {
   Activity,
@@ -132,7 +133,9 @@ export const tasks = sqliteTable("tasks", {
   // NEW (0009): roadmap sync reads WHERE is_milestone=1 per workspace.
   // The only hot path 0003 missed.
   index("idx_tasks_ws_milestone").on(t.workspaceId, t.isMilestone),
-  uniqueIndex("idx_tasks_source_note_id").on(t.sourceNoteId),
+  uniqueIndex("idx_tasks_source_note_id")
+    .on(t.sourceNoteId)
+    .where(sql`${t.sourceNoteId} IS NOT NULL`),
 ]);
 
 export const users = sqliteTable("users", {
@@ -206,6 +209,22 @@ export const planningPeriods = sqliteTable("planning_periods", {
     t.ownerUserId,
     t.archivedAt,
     t.position,
+  ),
+  check(
+    "planning_periods_context_type_check",
+    sql`${t.contextType} IN ('school_year', 'semester', 'wedding_season', 'general')`,
+  ),
+  check(
+    "planning_periods_start_date_check",
+    sql`${t.startDate} IS NULL OR ${t.startDate} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
+  ),
+  check(
+    "planning_periods_end_date_check",
+    sql`${t.endDate} IS NULL OR ${t.endDate} GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'`,
+  ),
+  check(
+    "planning_periods_date_order_check",
+    sql`${t.startDate} IS NULL OR ${t.endDate} IS NULL OR ${t.startDate} <= ${t.endDate}`,
   ),
 ]);
 
@@ -316,6 +335,14 @@ export const workspaceSponsorships = sqliteTable("workspace_sponsorships", {
 }, (t) => [
   index("idx_workspace_sponsorships_workspace").on(t.workspaceId, t.status),
   index("idx_workspace_sponsorships_sponsor").on(t.sponsorId, t.status),
+  check(
+    "workspace_sponsorships_status_check",
+    sql`${t.status} IN ('active', 'revoked', 'expired')`,
+  ),
+  check(
+    "workspace_sponsorships_metadata_json_check",
+    sql`json_valid(${t.consentedMetadata})`,
+  ),
 ]);
 
 export type PlanningOnboardingState = Readonly<{
@@ -359,6 +386,18 @@ export const planningOnboardingSessions = sqliteTable(
   },
   (t) => [
     index("idx_planning_onboarding_user_status").on(t.userId, t.status),
+    check(
+      "planning_onboarding_context_type_check",
+      sql`${t.contextType} IN ('school_year', 'semester', 'wedding_season', 'general')`,
+    ),
+    check(
+      "planning_onboarding_state_json_check",
+      sql`json_valid(${t.state})`,
+    ),
+    check(
+      "planning_onboarding_status_check",
+      sql`${t.status} IN ('in_progress', 'completed', 'abandoned')`,
+    ),
   ],
 );
 

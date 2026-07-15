@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "tasks-production-adoption/1",
+  "id": "tasks-production-adoption-2026-07-15",
+  "environment": "production",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Codex, delegated implementation",
+  "authorizationSource": "Codex task 019f6587-1f62-7f71-a699-0cd05385f518",
+  "reviewedAt": "2026-07-15T23:49:06.809Z",
+  "databaseIdentitySha256": "21770c6896d168bc92a5f54a147c128d64a0a308bf3a9d88d65d5c1c63d489e2",
+  "schemaFingerprintSha256": "861d710a3c92b1521a4b281d14b8b5e1a8edfdc9d9e865ff24461136600855c4",
+  "ledgerSha256": "01fe0d2c6db3dc2bc5f36fc1fada18d8a119af52b6016a904bbf5b226ff641ca",
+  "baseline": {
+    "id": "0014_current_schema_baseline",
+    "sha256": "8cc96bf8357d820e8e4bc99e5fd829a177645bd0c52579755bb4e21a9d8171ea"
+  },
+  "operatorEvidence": [
+    {
+      "id": "tasks-pre-0008-0012-20260715T225216Z",
+      "receiptFile": "tasks-pre-0008-0012-20260715T225216Z.db.receipt.json",
+      "receiptSha256": "05232f45cb32b84234b0c506f926d3d8e76e3f59a3b7cb11aa2519d7b32c70b4",
+      "backupFile": "tasks-pre-0008-0012-20260715T225216Z.db.gz",
+      "backupSha256": "9e8245ac7e1a5fa6711e11481e18194c38d72eabe2551b062924e6d3385c7e23"
+    },
+    {
+      "id": "tasks-pre-0013-20260715T221441Z",
+      "receiptFile": "tasks-pre-0013-20260715T221441Z.receipt.json",
+      "receiptSha256": "b7c41599b1e68202a22d367917f69e19b5822ccc443e5f5f7bd140a3498031ef",
+      "backupFile": "tasks-pre-0013-20260715T221441Z.db.gz",
+      "backupSha256": "9630387d6d2664cfc0c1dbe9f0f84f551e43f34d1bdae341480ccca1f7d4a3b3"
+    }
+  ],
+  "observedState": {
+    "schemaObjectCount": 53,
+    "users": 11,
+    "workspaces": 7,
+    "workspaceMemberships": 11,
+    "tasks": 131,
+    "integrity": "ok",
+    "foreignKeyViolations": 0
+  },
+  "proofs": [
+    {
+      "id": "invalid-parent-workspace-rows",
+      "sql": "SELECT COUNT(*) AS value FROM tasks AS child JOIN tasks AS parent ON parent.id = child.parent_task_id WHERE child.parent_task_id IS NOT NULL AND (parent.workspace_id <> child.workspace_id OR parent.parent_task_id IS NOT NULL)",
+      "expected": 0
+    },
+    {
+      "id": "duplicate-source-note-id-groups",
+      "sql": "SELECT COUNT(*) AS value FROM (SELECT source_note_id FROM tasks WHERE source_note_id IS NOT NULL GROUP BY source_note_id HAVING COUNT(*) > 1)",
+      "expected": 0
+    },
+    {
+      "id": "planning-non-grouped-workspaces",
+      "sql": "SELECT COUNT(*) AS value FROM workspaces WHERE planning_period_id IS NULL",
+      "expected": 0
+    },
+    {
+      "id": "planning-orphaned-periods",
+      "sql": "SELECT COUNT(*) AS value FROM workspaces AS workspace LEFT JOIN planning_periods AS period ON period.id = workspace.planning_period_id WHERE workspace.planning_period_id IS NOT NULL AND period.id IS NULL",
+      "expected": 0
+    },
+    {
+      "id": "planning-invalid-period-dates",
+      "sql": "SELECT COUNT(*) AS value FROM planning_periods WHERE (start_date IS NOT NULL AND start_date NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]') OR (end_date IS NOT NULL AND end_date NOT GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]') OR (start_date IS NOT NULL AND end_date IS NOT NULL AND start_date > end_date)",
+      "expected": 0
+    },
+    {
+      "id": "sponsor-membership-overlap",
+      "sql": "SELECT COUNT(*) AS value FROM workspace_sponsorships AS sponsorship JOIN workspace_members AS membership ON membership.workspace_id = sponsorship.workspace_id AND membership.user_id = sponsorship.sponsor_id WHERE sponsorship.status = 'active'",
+      "expected": 0
+    }
+  ]
+}
