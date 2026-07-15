@@ -554,6 +554,10 @@ body::after { content: none; }
     translate: none !important;
     animation: none !important;
   }
+  .tasks-dot {
+    animation: none !important;
+    transform: translateY(-0.38em) scale(1) !important;
+  }
   *,
   *::before,
   *::after {
