@@ -3,7 +3,7 @@ name: Verify Tasks
 on:
   pull_request:
   push:
-    branches: [main, feat/tasks-hero-lab]
+    branches: [main]
 
 concurrency:
   group: tasks-verify-${{ github.ref }}
@@ -24,6 +24,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:contract
+      - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
