@@ -11,4 +11,6 @@ test("tasks lab opens only for explicit development review mode", () => {
 test("production fails closed even when the lab flag is maliciously enabled", () => {
   assert.equal(isTasksDesignLabEnabled({ nodeEnv: "production", flag: "true", reviewMode: true }), false);
   assert.equal(isTasksDesignLabEnabled({ nodeEnv: "production", flag: "true", reviewMode: false }), false);
+  assert.equal(isTasksDesignLabEnabled({ nodeEnv: "production", vercelEnv: "preview", flag: "true", reviewMode: true }), true);
+  assert.equal(isTasksDesignLabEnabled({ nodeEnv: "production", vercelEnv: "production", flag: "true", reviewMode: true }), false);
 });

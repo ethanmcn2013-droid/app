@@ -18,6 +18,7 @@ type PageProps = {
 export default async function TasksDesignLabPage({ searchParams }: PageProps) {
   if (!isTasksDesignLabEnabled({
     nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
     flag: process.env.SIGNAL_TASKS_DESIGN_LAB,
     reviewMode: isReviewMode(),
   })) {
