@@ -54,3 +54,37 @@ test("attachment server actions return a safe projection without storedPath", ()
   assert.match(actions, /return toPublicAttachment\(/);
   assert.match(actions, /map\(toPublicAttachment\)/);
 });
+
+test("workspace onboarding and segment changes require the owner boundary", () => {
+  const onboarding = read("src\\server\\actions\\onboarding.ts");
+  for (const action of [
+    "completeOnboardingAction",
+    "skipOnboardingAction",
+    "updateSegmentAction",
+  ]) {
+    assert.match(
+      onboarding,
+      new RegExp(`export async function ${action}[\\s\\S]*?requireActiveWorkspaceOwner`),
+    );
+  }
+});
+
+test("digest cron binds user and workspace selectors to a fresh membership", () => {
+  const route = read("src\\app\\api\\cron\\digest\\route.ts");
+  const membership = route.indexOf("const [membership]");
+  const compile = route.indexOf("compileDailyDigest(userParam, workspaceId)");
+  assert.ok(membership >= 0 && membership < compile);
+  assert.match(route, /eq\(workspaceMembers\.userId, userParam\)/);
+  assert.match(route, /eq\(workspaceMembers\.workspaceId, workspaceId\)/);
+  assert.doesNotMatch(route, /first\?\.workspaceId \?\? "ws-legacy"/);
+});
+
+test("weekly digest cron requires a current user/workspace membership tuple", () => {
+  const route = read("src\\app\\api\\cron\\weekly-digest\\route.ts");
+  const membership = route.indexOf("const [membership]");
+  const snapshot = route.indexOf("buildWeeklySnapshotFor(overrideWorkspace)");
+  assert.ok(membership >= 0 && membership < snapshot);
+  assert.match(route, /eq\(workspaceMembers\.userId, overrideUser\)/);
+  assert.match(route, /eq\(workspaceMembers\.workspaceId, overrideWorkspace\)/);
+  assert.match(route, /!overrideWorkspace \|\| !overrideUser/);
+});

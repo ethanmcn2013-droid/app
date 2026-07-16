@@ -1,20 +1,24 @@
 import { NextResponse } from "next/server";
+import { and, eq } from "drizzle-orm";
 import {
   buildWeeklySnapshotFor,
   weeklyDigestNarrationFor,
 } from "@/server/digest-narration";
 import { aiConfigured } from "@/server/ai";
+import { db } from "@/server/db";
+import { workspaceMembers } from "@/server/db/schema";
 
 /**
  * Weekly LLM-narrated digest endpoint.
  *
  * NOT auto-scheduled. This route requires an explicit
- * `?workspace=<id>` and makes a per-call LLM narration request, so
+ * current `?user=<id>&workspace=<id>` membership tuple and makes a
+ * per-call LLM narration request, so
  * fanning it out across every workspace on a cron would be an
  * uncapped Anthropic-cost footgun. The previous `vercel.json` cron
  * entry passed no workspace and returned a 400 every Sunday, it was
  * removed (2026-05-15). Invoke this manually / from an operator
- * surface with the cron secret + explicit workspace when a weekly
+ * surface with the cron secret + explicit member/workspace tuple when a weekly
  * narration is actually wanted.
  *
  * Mode: GET. Returns JSON with the snapshot + the narrated text.
@@ -59,10 +63,28 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const overrideWorkspace = searchParams.get("workspace");
-  if (!overrideWorkspace) {
+  const overrideUser = searchParams.get("user");
+  if (!overrideWorkspace || !overrideUser) {
     return NextResponse.json(
-      { ok: false, error: "workspace-id-required" },
+      { ok: false, error: "digest-target-required" },
       { status: 400 },
+    );
+  }
+
+  const [membership] = await db
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, overrideUser),
+        eq(workspaceMembers.workspaceId, overrideWorkspace),
+      ),
+    )
+    .limit(1);
+  if (!membership) {
+    return NextResponse.json(
+      { ok: false, error: "digest-target-not-found" },
+      { status: 404 },
     );
   }
 

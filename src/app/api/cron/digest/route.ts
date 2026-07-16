@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { compileDailyDigest } from "@/server/db/daily-digest";
 import { db } from "@/server/db";
 import { users, workspaceMembers } from "@/server/db/schema";
@@ -124,7 +124,33 @@ export async function GET(req: Request) {
       .from(workspaceMembers)
       .where(eq(workspaceMembers.userId, userParam))
       .limit(1);
-    workspaceId = first?.workspaceId ?? "ws-legacy";
+    if (!first) {
+      return NextResponse.json(
+        { ok: false, error: "digest-target-not-found" },
+        { status: 404 },
+      );
+    }
+    workspaceId = first.workspaceId;
+  }
+
+  // Bind scheduler-provided selectors to one current membership tuple.
+  // A cron credential authenticates the job; it does not authorize an
+  // arbitrary user/workspace pairing or a stale membership.
+  const [membership] = await db
+    .select({ userId: workspaceMembers.userId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, userParam),
+        eq(workspaceMembers.workspaceId, workspaceId),
+      ),
+    )
+    .limit(1);
+  if (!membership) {
+    return NextResponse.json(
+      { ok: false, error: "digest-target-not-found" },
+      { status: 404 },
+    );
   }
 
   const digest = await compileDailyDigest(userParam, workspaceId);

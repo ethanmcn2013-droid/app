@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { requireActiveWorkspaceOwner } from "@/server/auth";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
 import { TEMPLATES } from "@/lib/templates";
@@ -14,7 +14,6 @@ import {
   type PrimaryUseCase,
 } from "@/lib/onboarding/segments";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
-import { getCurrentUser } from "@/server/auth";
 import { seedDomainAction } from "./seed";
 
 export type CompleteOnboardingInput = {
@@ -36,10 +35,7 @@ export async function completeOnboardingAction(
   }
 
   const segment = getSegment(input.primaryUseCase);
-  const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
-    getCurrentUser(),
-  ]);
+  const { workspaceId: ws, userId } = await requireActiveWorkspaceOwner();
   const now = new Date();
 
   if (input.seedMode === "starter") {
@@ -108,10 +104,7 @@ export async function completeOnboardingAction(
 
 /** Skip onboarding entirely, blank workspace, segment unknown. */
 export async function skipOnboardingAction(): Promise<void> {
-  const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
-    getCurrentUser(),
-  ]);
+  const { workspaceId: ws, userId } = await requireActiveWorkspaceOwner();
   const now = new Date();
 
   await db
@@ -156,10 +149,7 @@ export async function updateSegmentAction(
   }
 
   const segment = getSegment(input.primaryUseCase);
-  const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
-    getCurrentUser(),
-  ]);
+  const { workspaceId: ws, userId } = await requireActiveWorkspaceOwner();
   const now = new Date();
 
   if (input.reseed) {
