@@ -80,7 +80,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   return (
     <header className="px-4 pb-3 pt-3 md:px-8 md:pt-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           {/* Redundant Tasks-logo glyph box removed 2026-05-18: SuiteChrome
               already carries product identity (signal studio. + tasks·);
               repeating the brand mark next to every workspace title read
@@ -90,13 +90,14 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
           </h1>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
-          {/* ≥md: full chip row */}
+          {/* ≥lg: full chip row. Tablet keeps these actions in overflow so
+              workspace identity is never sacrificed. */}
           {/* C6: Filter affordance removed from DOM while inactive.
               Restore this disabled chip when filtering ships. */}
           <button
             type="button"
             onClick={openPalette}
-            className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink md:inline-flex"
+            className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink lg:inline-flex"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" />
@@ -112,13 +113,13 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
               Share stays primary, it's an active collaboration gesture.
               Export/Print are utility actions used infrequently. */}
           {showShare ? (
-            <span className="hidden md:inline-flex">
+            <span className="hidden lg:inline-flex">
               <ShareButton view={shareView} />
             </span>
           ) : null}
 
           {/* Overflow: visible on all screen sizes (M4).
-              Mobile: Search + Share + Export/Print.
+              Mobile/tablet: Search + Share + Export/Print.
               Desktop: Export/Print (Search + Share already in toolbar). */}
           <OverflowMenu
             onSearch={openPalette}
@@ -174,7 +175,7 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
 
 /**
  * Secondary actions menu, collapses Export/Print (always) and
- * Search/Share (mobile-only) into a single ··· popover.
+ * Search/Share (mobile/tablet) into a single ··· popover.
  *
  * M4 (2026-05-28): Export + Print demoted from primary toolbar here.
  * Visible on all screen sizes; desktop shows ··· for utility actions.
@@ -298,8 +299,8 @@ function OverflowMenu({
           role="menu"
           className="absolute right-0 top-full z-30 mt-1.5 w-52 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
         >
-          {/* Mobile-only: Search + Share */}
-          <div className="md:hidden">
+          {/* Mobile/tablet: Search + Share */}
+          <div className="lg:hidden">
             {/* C6: Filter affordance removed. Restore when filtering ships. */}
             <button
               type="button"
