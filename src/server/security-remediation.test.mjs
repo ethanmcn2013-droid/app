@@ -44,3 +44,13 @@ test("share-card OG route does not enumerate private workspaces by ID", () => {
   assert.match(route, /Raw workspace IDs are not public authorization/);
   assert.match(route, /ws = undefined/);
 });
+
+test("attachment server actions return a safe projection without storedPath", () => {
+  const actions = read("src\\server\\actions\\attachments.ts");
+  assert.match(actions, /PublicAttachment = Pick</);
+  const projection = actions.match(/function toPublicAttachment[\s\S]*?\r?\n}\r?\n/)?.[0] ?? "";
+  assert.ok(projection, "safe attachment projection must remain explicit");
+  assert.doesNotMatch(projection, /workspaceId|taskId|storedPath/);
+  assert.match(actions, /return toPublicAttachment\(/);
+  assert.match(actions, /map\(toPublicAttachment\)/);
+});

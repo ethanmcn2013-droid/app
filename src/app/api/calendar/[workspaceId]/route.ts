@@ -93,9 +93,8 @@ export async function GET(
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": "inline; filename=workspace.ics",
-      // Calendar clients refresh on their own cadence; a generous
-      // cache window cuts redundant load without making changes
-      // feel any slower than the spec's own poll interval.
+      // This feed is authenticated workspace content. Never allow a
+      // browser, CDN, or shared intermediary to reuse it for another actor.
       "Cache-Control": "private, no-store",
     },
   });

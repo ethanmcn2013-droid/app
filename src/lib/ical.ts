@@ -125,14 +125,14 @@ function isAllDay(d: Date): boolean {
 
 function buildVevent(ev: ICalEvent, dtstamp: string): string[] {
   const lines: string[] = ["BEGIN:VEVENT"];
-  lines.push(line("UID", ev.uid));
+  lines.push(line("UID", escapeText(ev.uid)));
   lines.push(line("DTSTAMP", dtstamp));
   lines.push(line("SUMMARY", escapeText(ev.summary)));
   if (ev.description) {
     lines.push(line("DESCRIPTION", escapeText(ev.description)));
   }
   if (ev.url) {
-    lines.push(line("URL", ev.url));
+    lines.push(line("URL", ev.url.replace(/\r\n|\r|\n/g, "")));
   }
   if (isAllDay(ev.start) && !ev.end) {
     lines.push(lineWithParams("DTSTART", { VALUE: "DATE" }, formatDate(ev.start)));

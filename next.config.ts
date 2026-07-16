@@ -60,6 +60,11 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  typescript: {
+    // Unit and security regression tests are checked by `pnpm typecheck` and
+    // `pnpm test`; the production build checks only shipped application code.
+    tsconfigPath: "./tsconfig.build.json",
+  },
   env: {
     // Build-time, non-secret deployment posture used by shared server/client
     // access-mode code. Vercel preview and production builds receive the same
@@ -68,6 +73,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: process.env.VERCEL_ENV ?? "",
   },
   experimental: {
+    // Keep production builds inside the memory envelope of local and CI
+    // runners. This affects build parallelism only, never request handling.
+    cpus: 1,
     // Tree-shake heavy barrel imports — Clerk is used in 17 files across
     // the app + marketing; the full barrel ships ~6× what we actually call.
     // Roadmap's next.config carries the same shape (Phase 6.2).

@@ -292,7 +292,12 @@ type PendingRow = {
 
 type AttachmentRow = RealRow | PendingRow;
 
-function toRealRow(att: Attachment): RealRow {
+function toRealRow(
+  att: Pick<
+    Attachment,
+    "id" | "uploaderUserId" | "filename" | "mimeType" | "sizeBytes" | "createdAt"
+  >,
+): RealRow {
   return {
     kind: "real",
     id: att.id,

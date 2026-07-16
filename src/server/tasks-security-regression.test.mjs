@@ -471,11 +471,12 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   const shareCardGuard = shareCardBody.indexOf("isDemoMode()");
   const shareCardRead = shareCardBody.indexOf("await db");
   assert.ok(shareCardGuard >= 0, "share card must explicitly guard demo/review mode");
-  assert.ok(shareCardRead >= 0, "share card must retain its production database read");
-  assert.ok(
-    shareCardGuard < shareCardRead,
-    "share card must resolve the demo fixture before database access",
+  assert.equal(
+    shareCardRead,
+    -1,
+    "raw workspace share cards must not read production tenant data",
   );
+  assert.match(shareCardBody, /ws = undefined/);
   assert.match(
     settingsPage,
     /Review preview, settings are read-only\./,

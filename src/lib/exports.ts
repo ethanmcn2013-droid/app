@@ -26,10 +26,14 @@ const CSV_COLS = [
  *  quote, CR, or LF. Doubled quotes inside cells. */
 function csvCell(s: string): string {
   if (s === "") return "";
-  if (/[",\r\n]/.test(s)) {
-    return '"' + s.replace(/"/g, '""') + '"';
+  // Spreadsheet applications interpret these prefixes as formulas even in
+  // quoted CSV cells. Prefix with an apostrophe so exported customer text is
+  // treated as text rather than executable spreadsheet syntax.
+  const safe = /^[\t\r\n \uFEFF]*[=+\-@]/.test(s) ? `'${s}` : s;
+  if (/[",\r\n]/.test(safe)) {
+    return '"' + safe.replace(/"/g, '""') + '"';
   }
-  return s;
+  return safe;
 }
 
 /** CSV with header row. Compatible with Google Sheets, Excel,

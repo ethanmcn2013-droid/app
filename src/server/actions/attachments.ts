@@ -12,6 +12,28 @@ import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
+import { buildAttachmentStoragePath } from "@/server/attachments/storage-path";
+
+export type PublicAttachment = Pick<
+  Attachment,
+  | "id"
+  | "uploaderUserId"
+  | "filename"
+  | "mimeType"
+  | "sizeBytes"
+  | "createdAt"
+>;
+
+function toPublicAttachment(attachment: Attachment): PublicAttachment {
+  return {
+    id: attachment.id,
+    uploaderUserId: attachment.uploaderUserId,
+    filename: attachment.filename,
+    mimeType: attachment.mimeType,
+    sizeBytes: attachment.sizeBytes,
+    createdAt: attachment.createdAt,
+  };
+}
 
 /**
  * Local-disk file attachments. Bytes go to
@@ -84,12 +106,13 @@ function buildStoredPath(
   attachmentId: string,
   filename: string,
 ): string {
-  return join(
-    uploadsRoot(),
+  return buildAttachmentStoragePath({
+    root: uploadsRoot(),
     workspaceId,
     taskId,
-    `${attachmentId}-${filename}`,
-  );
+    attachmentId,
+    filename,
+  });
 }
 
 /**
@@ -106,7 +129,7 @@ function buildStoredPath(
 export async function uploadAttachmentAction(
   taskId: string,
   formData: FormData,
-): Promise<Attachment> {
+): Promise<PublicAttachment> {
   if (isDemoMode()) {
     throw new Error("Attachments are read-only in demo and review mode");
   }
@@ -174,7 +197,7 @@ export async function uploadAttachmentAction(
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "attachments" });
 
-  return {
+  return toPublicAttachment({
     id: attachmentId,
     workspaceId: ws,
     taskId,
@@ -184,7 +207,7 @@ export async function uploadAttachmentAction(
     mimeType,
     sizeBytes: file.size,
     createdAt,
-  };
+  });
 }
 
 /**
@@ -241,7 +264,7 @@ export async function deleteAttachmentAction(
  */
 export async function listAttachmentsForTaskAction(
   taskId: string,
-): Promise<Attachment[]> {
+): Promise<PublicAttachment[]> {
   if (isDemoMode()) return [];
   const ws = await getActiveWorkspace();
   const [parent] = await db
@@ -249,6 +272,6 @@ export async function listAttachmentsForTaskAction(
     .from(tasks)
     .where(eq(tasks.id, taskId));
   if (!parent || parent.workspaceId !== ws) return [];
-  return getAttachmentsForTask(taskId);
+  return (await getAttachmentsForTask(taskId)).map(toPublicAttachment);
 }
 
