@@ -48,6 +48,7 @@ export function EmptyStateOverlay({
     <div className="relative h-full">
       {/* Faded structural ghost, communicates the shape of the view */}
       <div
+        aria-hidden="true"
         className={
           "pointer-events-none absolute inset-0 select-none " +
           (ghostMode === "structural" ? "opacity-100" : "opacity-[0.42]")
