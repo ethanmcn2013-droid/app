@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import type { SuiteContextV2 } from "@/lib/suite-context";
+import { useSearchParams } from "next/navigation";
+import { isSuiteContextId, type SuiteContextV2 } from "@/lib/suite-context";
 
 export const SUITE_CONTEXT_STORAGE_KEY = "signal_suite_context_v2";
 export const SUITE_CONTEXT_EVENT = "signal-suite-context-v2";
@@ -13,19 +14,19 @@ export function SuiteContextPublisher({
   planningPeriodId: string | null;
   workspaceId: string;
 }) {
+  const searchParams = useSearchParams();
+  const projectHint = searchParams.get("projectId");
+  const projectId = isSuiteContextId(projectHint) ? projectHint : undefined;
+
   useEffect(() => {
-    if (!planningPeriodId) {
-      window.localStorage.removeItem(SUITE_CONTEXT_STORAGE_KEY);
-      window.dispatchEvent(new CustomEvent(SUITE_CONTEXT_EVENT, { detail: null }));
-      return;
-    }
     const context: SuiteContextV2 = {
       version: 2,
-      planningPeriodId,
       workspaceId,
+      ...(planningPeriodId ? { planningPeriodId } : {}),
+      ...(projectId ? { projectId } : {}),
     };
     window.localStorage.setItem(SUITE_CONTEXT_STORAGE_KEY, JSON.stringify(context));
     window.dispatchEvent(new CustomEvent(SUITE_CONTEXT_EVENT, { detail: context }));
-  }, [planningPeriodId, workspaceId]);
+  }, [planningPeriodId, projectId, workspaceId]);
   return null;
 }

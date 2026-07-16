@@ -55,6 +55,7 @@ const switcher = readRequired("SuiteSwitcher", [
   "src/components/app/suite-switcher-pills.tsx",
   "src/components/suite-switcher-pills.tsx",
 ]);
+const suiteContext = readRequired("Suite context", ["src/lib/suite-context.ts"]);
 
 if (switcher.file) {
   mustContain(
@@ -103,6 +104,15 @@ if (switcher.file) {
     switcher.source,
     "dot.style.transform",
     "suite-jump dot must not scale or bloom; the destination owns arrival (loading-review specimen 03)",
+  );
+}
+
+if (suiteContext.file) {
+  mustContain(
+    suiteContext.file,
+    suiteContext.source,
+    "sourceProduct",
+    "suite links must identify Tasks so Signal can normalize authorized context",
   );
 }
 
