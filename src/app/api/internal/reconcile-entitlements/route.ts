@@ -50,10 +50,11 @@ export async function POST(req: Request) {
     const result = await reconcileEntitlements();
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
+    void err;
     return NextResponse.json(
       {
         ok: false,
-        error: err instanceof Error ? err.message : "unknown",
+        error: "reconcile-failed",
       },
       { status: 500 },
     );

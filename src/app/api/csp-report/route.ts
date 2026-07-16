@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  readBoundedRequestText,
+  safeCspDirective,
+  safeCspUri,
+} from "@/server/security/csp-report";
 
 /**
  * CSP violation collector.
@@ -15,6 +20,8 @@ import { NextResponse } from "next/server";
  * (an array of `{ type, body }`).
  */
 export const runtime = "nodejs";
+const MAX_REPORT_BYTES = 16 * 1024;
+const MAX_REPORTS_PER_REQUEST = 20;
 
 type CspReportBody = {
   "document-uri"?: string;
@@ -25,22 +32,27 @@ type CspReportBody = {
 
 function logViolation(r: CspReportBody | undefined): void {
   if (!r) return;
-  const directive =
-    r["effective-directive"] || r["violated-directive"] || "?";
+  const directive = safeCspDirective(
+    r["effective-directive"] || r["violated-directive"],
+  );
   console.warn(
-    `[csp-report] blocked=${r["blocked-uri"] ?? "?"} ` +
-      `directive=${directive} doc=${r["document-uri"] ?? "?"}`,
+    `[csp-report] blocked=${safeCspUri(r["blocked-uri"])} ` +
+      `directive=${directive} doc=${safeCspUri(r["document-uri"])}`,
   );
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
-    const text = await req.text();
+    const contentLength = Number(req.headers.get("content-length") ?? "0");
+    if (Number.isFinite(contentLength) && contentLength > MAX_REPORT_BYTES) {
+      return new NextResponse(null, { status: 204 });
+    }
+    const text = await readBoundedRequestText(req, MAX_REPORT_BYTES);
     if (text) {
       const json: unknown = JSON.parse(text);
       if (Array.isArray(json)) {
         // Reporting API (report-to): array of { type, body }.
-        for (const rep of json) {
+        for (const rep of json.slice(0, MAX_REPORTS_PER_REQUEST)) {
           const r = rep as { type?: string; body?: CspReportBody };
           if (r && r.type === "csp-violation") logViolation(r.body);
         }

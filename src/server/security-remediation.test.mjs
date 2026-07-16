@@ -88,3 +88,20 @@ test("weekly digest cron requires a current user/workspace membership tuple", ()
   assert.match(route, /eq\(workspaceMembers\.workspaceId, overrideWorkspace\)/);
   assert.match(route, /!overrideWorkspace \|\| !overrideUser/);
 });
+
+test("comp-code failures never attach the bearer value to Sentry", () => {
+  const comp = read("src\\server\\actions\\comp.ts");
+  const capture = comp.match(/Sentry\.captureException\([\s\S]*?\);/)?.[0] ?? "";
+  assert.ok(capture, "missing comp-code error capture");
+  assert.match(capture, /action: "redeem-comp-code"/);
+  assert.doesNotMatch(capture, /code:/);
+});
+
+test("error routes return stable codes without raw exception messages", () => {
+  const deletion = read("src\\app\\api\\account\\delete\\route.ts");
+  const reconcile = read("src\\app\\api\\internal\\reconcile-entitlements\\route.ts");
+  assert.doesNotMatch(deletion, /message\s*}/);
+  assert.match(deletion, /{ error: "delete_failed" }/);
+  assert.doesNotMatch(reconcile, /err instanceof Error \? err\.message/);
+  assert.match(reconcile, /error: "reconcile-failed"/);
+});

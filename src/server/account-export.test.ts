@@ -35,6 +35,16 @@ test("export captures owned content + footprint, scoped to the caller", async ()
         ('c-b1','ws-b','task-b1','u-bystander','theirs');
       INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes) VALUES
         ('att-a1','ws-a','task-a1','u-target','f.png','.data/uploads/SECRET-PATH.png','image/png',3);
+      INSERT INTO notifications (id, workspace_id, user_id, kind, payload) VALUES
+        ('n-target','ws-a','u-target','mention','{}'),
+        ('n-bystander','ws-a','u-bystander','mention','{}');
+      INSERT INTO entitlements (id, workspace_id, user_id, tier, source) VALUES
+        ('e-target','ws-a','u-target','free','default'),
+        ('e-bystander','ws-a','u-bystander','pro','purchase');
+      INSERT INTO share_links (token, workspace_id, view) VALUES
+        ('SHARE-BEARER-SECRET','ws-a','board');
+      INSERT INTO pending_invites (token, workspace_id, email, invited_by_user_id, expires_at) VALUES
+        ('INVITE-BEARER-SECRET','ws-a','invitee@example.com','u-target',unixepoch() + 3600);
       INSERT INTO notification_prefs (user_id) VALUES ('u-target');
       INSERT INTO user_preferences (user_id) VALUES ('u-target');
       INSERT INTO meta (key, value) VALUES ('board:ws-a:name','A board'), ('board:ws-b:name','B board');
@@ -52,6 +62,16 @@ test("export captures owned content + footprint, scoped to the caller", async ()
     assert.equal(data.ownedWorkspaces!.tasks[0]!.id, "task-a1");
     assert.equal(data.ownedWorkspaces!.attachments.length, 1);
     assert.equal(data.ownedWorkspaces!.boardMeta.length, 1); // board:ws-a:* only
+    assert.deepEqual(
+      data.ownedWorkspaces!.notifications.map((n) => n.userId),
+      ["u-target"],
+      "co-tenant notifications leaked into personal export",
+    );
+    assert.deepEqual(
+      data.ownedWorkspaces!.entitlements.map((e) => e.userId),
+      ["u-target"],
+      "co-tenant entitlements leaked into personal export",
+    );
 
     // Footprint elsewhere: the comment the target authored in ws-b.
     assert.ok(
@@ -71,6 +91,8 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       !JSON.stringify(data).includes("SECRET-PATH"),
       "attachment storedPath leaked into the export",
     );
+    assert.ok(!JSON.stringify(data).includes("SHARE-BEARER-SECRET"));
+    assert.ok(!JSON.stringify(data).includes("INVITE-BEARER-SECRET"));
   } finally {
     client.close();
   }

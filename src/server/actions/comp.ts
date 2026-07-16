@@ -152,7 +152,7 @@ export async function redeemCompCodeAction(
     return await redeemCompCodeImpl(code);
   } catch (err) {
     Sentry.captureException(err, {
-      tags: { action: "redeem-comp-code", code: code.slice(0, 32) },
+      tags: { action: "redeem-comp-code" },
     });
     throw err;
   }

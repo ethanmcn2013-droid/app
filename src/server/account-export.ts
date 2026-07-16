@@ -1,4 +1,4 @@
-import { eq, inArray, like, or } from "drizzle-orm";
+import { and, eq, inArray, like, or } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   activities,
@@ -31,6 +31,29 @@ const attachmentMeta = {
   mimeType: attachments.mimeType,
   sizeBytes: attachments.sizeBytes,
   createdAt: attachments.createdAt,
+};
+
+/** Link and invite credentials are deliberately excluded from portability
+ * output. The owner receives lifecycle metadata, never a reusable bearer. */
+const shareLinkMeta = {
+  workspaceId: shareLinks.workspaceId,
+  view: shareLinks.view,
+  mode: shareLinks.mode,
+  label: shareLinks.label,
+  createdAt: shareLinks.createdAt,
+  revokedAt: shareLinks.revokedAt,
+  expiresAt: shareLinks.expiresAt,
+  visits: shareLinks.visits,
+};
+
+const pendingInviteMeta = {
+  workspaceId: pendingInvites.workspaceId,
+  email: pendingInvites.email,
+  invitedByUserId: pendingInvites.invitedByUserId,
+  createdAt: pendingInvites.createdAt,
+  expiresAt: pendingInvites.expiresAt,
+  acceptedAt: pendingInvites.acceptedAt,
+  acceptedByUserId: pendingInvites.acceptedByUserId,
 };
 
 /**
@@ -85,10 +108,10 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(activities).where(inArray(activities.workspaceId, slugs)) : [],
     slugs.length ? database.select(attachmentMeta).from(attachments).where(inArray(attachments.workspaceId, slugs)) : [],
-    slugs.length ? database.select().from(notifications).where(inArray(notifications.workspaceId, slugs)) : [],
-    slugs.length ? database.select().from(entitlements).where(inArray(entitlements.workspaceId, slugs)) : [],
-    slugs.length ? database.select().from(shareLinks).where(inArray(shareLinks.workspaceId, slugs)) : [],
-    slugs.length ? database.select().from(pendingInvites).where(inArray(pendingInvites.workspaceId, slugs)) : [],
+    slugs.length ? database.select().from(notifications).where(and(inArray(notifications.workspaceId, slugs), eq(notifications.userId, userId))) : [],
+    slugs.length ? database.select().from(entitlements).where(and(inArray(entitlements.workspaceId, slugs), eq(entitlements.userId, userId))) : [],
+    slugs.length ? database.select(shareLinkMeta).from(shareLinks).where(inArray(shareLinks.workspaceId, slugs)) : [],
+    slugs.length ? database.select(pendingInviteMeta).from(pendingInvites).where(inArray(pendingInvites.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(workspaceMembers).where(inArray(workspaceMembers.workspaceId, slugs)) : [],
     slugs.length
       ? database.select().from(meta).where(or(...slugs.map((s) => like(meta.key, `board:${s}:%`))))

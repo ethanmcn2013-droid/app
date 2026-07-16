@@ -39,9 +39,9 @@ export async function POST() {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    void err;
     return NextResponse.json(
-      { error: "delete_failed", message },
+      { error: "delete_failed" },
       { status: 500 },
     );
   }
