@@ -15,6 +15,97 @@
       "when": 1779235200000,
       "tag": "0001_add_reached_board_at",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780487433002,
+      "tag": "0002_user_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1780487433003,
+      "tag": "0003_hot_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1780487433004,
+      "tag": "0004_add_source_note_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1780487433005,
+      "tag": "0005_workspace_id_backfill",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1780487433006,
+      "tag": "0006_add_is_milestone",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1780487433007,
+      "tag": "0007_add_board_column_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1781377738000,
+      "tag": "0008_onboarding_segment",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1782236414000,
+      "tag": "0009_tasks_milestone_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1783810410010,
+      "tag": "0010_parent_workspace_invariant",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1783810410011,
+      "tag": "0011_source_note_id_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1783810410012,
+      "tag": "0012_suite_outbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1783899362000,
+      "tag": "0013_planning_periods",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1784156994451,
+      "tag": "0014_current_schema_baseline",
+      "breakpoints": true
     }
   ]
 }

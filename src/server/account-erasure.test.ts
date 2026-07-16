@@ -3,7 +3,7 @@
  * App Store 5.1.1(v) guard.
  *
  * Runs the REAL `eraseAccountData` against a real in-memory libSQL database
- * built from the actual production migrations (drizzle/0000…0009), so it
+ * built from the canonical current-schema baseline, so it
  * proves erasure end-to-end, not by source inspection.
  *
  * Two invariants, both load-bearing for the GDPR finding:
@@ -37,95 +37,9 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
-import { readFileSync, readdirSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { createClient, type Client } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
-import * as schema from "./db/schema";
+import type { Client } from "@libsql/client";
 import { eraseAccountData } from "./account-erasure";
-
-const here = dirname(fileURLToPath(import.meta.url)); // src/server
-const drizzleDir = join(here, "..", "..", "drizzle");
-
-/** Apply every prod migration, in journal order, to a fresh in-memory DB. */
-async function freshDb() {
-  const client = createClient({ url: ":memory:" });
-  // Prove the EXPLICIT deletes do all the work, no cascade safety net.
-  await client.execute("PRAGMA foreign_keys = OFF");
-
-  // `attachments`, `roadmap_items`, `blockers`, `action_items` live in
-  // src/server/db/schema.ts but have NO migration file, they were created
-  // on prod by `drizzle-kit push --force` (this repo's dev/db:push flow),
-  // which the migration replay can't reproduce. These CREATE statements
-  // mirror schema.ts so the in-memory DB matches prod. They run BEFORE the
-  // migrations because 0005's backfill does `UPDATE attachments …`. (Only
-  // `attachments` is touched by erasure; the other three exist so the test
-  // can assert erasure leaves non-tenant global tables untouched.)
-  await client.executeMultiple(`
-    CREATE TABLE IF NOT EXISTS attachments (
-      id text PRIMARY KEY NOT NULL,
-      workspace_id text,
-      task_id text NOT NULL,
-      uploader_user_id text NOT NULL,
-      filename text NOT NULL,
-      stored_path text NOT NULL,
-      mime_type text NOT NULL,
-      size_bytes integer NOT NULL,
-      created_at integer DEFAULT (unixepoch()) NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS roadmap_items (
-      id text PRIMARY KEY NOT NULL,
-      week integer NOT NULL,
-      week_theme text, week_range text, date text, day text,
-      kind text NOT NULL,
-      channel text, format text, source text, cta text, posting_time text, body text,
-      status text DEFAULT 'pending' NOT NULL,
-      is_launch integer DEFAULT false NOT NULL,
-      note text, blocker_id text,
-      ord integer DEFAULT 0 NOT NULL,
-      created_at integer DEFAULT (unixepoch()) NOT NULL,
-      updated_at integer DEFAULT (unixepoch()) NOT NULL,
-      completed_at integer
-    );
-    CREATE TABLE IF NOT EXISTS blockers (
-      id text PRIMARY KEY NOT NULL,
-      title text NOT NULL,
-      kind text NOT NULL,
-      target_date text,
-      description text NOT NULL,
-      note text,
-      resolved_at integer,
-      ord integer DEFAULT 0 NOT NULL,
-      created_at integer DEFAULT (unixepoch()) NOT NULL,
-      updated_at integer DEFAULT (unixepoch()) NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS action_items (
-      id text PRIMARY KEY NOT NULL,
-      category text NOT NULL,
-      title text NOT NULL,
-      description text,
-      status text DEFAULT 'pending' NOT NULL,
-      blocker_id text,
-      note text,
-      priority text DEFAULT 'P1' NOT NULL,
-      ord integer DEFAULT 0 NOT NULL,
-      created_at integer DEFAULT (unixepoch()) NOT NULL,
-      updated_at integer DEFAULT (unixepoch()) NOT NULL,
-      completed_at integer
-    );
-  `);
-
-  const files = readdirSync(drizzleDir)
-    .filter((f) => f.endsWith(".sql"))
-    .sort(); // 0000…0009 sort lexicographically = journal order
-  for (const f of files) {
-    await client.executeMultiple(readFileSync(join(drizzleDir, f), "utf8"));
-  }
-
-  const db = drizzle(client, { schema });
-  return { client, db };
-}
+import { freshMemoryDb as freshDb } from "./db/memory-test-db";
 
 async function count(client: Client, where: string): Promise<number> {
   const rs = await client.execute(`SELECT COUNT(*) AS c FROM ${where}`);
