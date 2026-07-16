@@ -17,6 +17,7 @@ import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
   getActiveWorkspace,
   getCurrentUser,
+  requireActiveWorkspaceOwner,
 } from "@/server/auth";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
@@ -69,7 +70,7 @@ export async function updateWorkspaceAction(input: {
   name?: string;
   domain?: DomainId;
 }): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
   if (input.name !== undefined) {
     const trimmed = input.name.trim();
     if (!trimmed) {
@@ -449,7 +450,6 @@ export async function acceptInviteAction(token: string): Promise<{
  * Scopes to invites that are unaccepted AND unexpired.
  */
 export type PendingInviteRead = {
-  token: string;
   email: string;
   createdAt: string;
   expiresAt: string;
@@ -457,11 +457,10 @@ export type PendingInviteRead = {
 };
 
 export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
-  const ws = await getActiveWorkspace();
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
   const now = new Date();
   const rows = await db
     .select({
-      token: pendingInvites.token,
       email: pendingInvites.email,
       createdAt: pendingInvites.createdAt,
       expiresAt: pendingInvites.expiresAt,
@@ -474,7 +473,6 @@ export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
     .filter((r) => !r.acceptedAt && r.expiresAt > now)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .map((r) => ({
-      token: r.token,
       email: r.email,
       createdAt: r.createdAt.toISOString(),
       expiresAt: r.expiresAt.toISOString(),
@@ -488,23 +486,19 @@ export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
  * accepters who click a revoked link see the expired-state copy.
  */
 export async function revokePendingInviteAction(
-  token: string,
-): Promise<{ ok: true; token: string }> {
-  const ws = await getActiveWorkspace();
-  const myRole = await getMyRoleInActiveWorkspace();
-  if (myRole !== "owner") {
-    throw new Error("Only the workspace owner can revoke invites.");
-  }
+  email: string,
+): Promise<{ ok: true }> {
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
   const result = await db
     .update(pendingInvites)
     .set({ expiresAt: new Date() })
-    .where(and(eq(pendingInvites.token, token), eq(pendingInvites.workspaceId, ws)))
+    .where(and(eq(pendingInvites.email, email.trim().toLowerCase()), eq(pendingInvites.workspaceId, ws)))
     .returning({ token: pendingInvites.token });
   if (result.length === 0) {
     throw new Error("That invite was already accepted or has been revoked.");
   }
   revalidatePath("/app/settings");
-  return { ok: true, token };
+  return { ok: true };
 }
 
 /** Cap check by workspace id (not active workspace). Used by accept

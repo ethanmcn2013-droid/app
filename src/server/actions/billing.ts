@@ -76,7 +76,10 @@ export async function createCheckoutSessionAction(
   const scopedWorkspaceId: string | null = tier === "studio" ? null : ws;
 
   if (!stripe) {
-    // Dev path: short-circuit, grant the entitlement locally.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Billing is unavailable until Stripe is configured.");
+    }
+    // Development-only path: short-circuit, grant the entitlement locally.
     await grantEntitlement({
       userId: me,
       workspaceId: scopedWorkspaceId,

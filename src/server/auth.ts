@@ -179,6 +179,31 @@ export async function getActiveWorkspace(): Promise<string> {
   return LEGACY_WORKSPACE_ID;
 }
 
+/** Require the authenticated actor to be the owner of the active workspace.
+ * This is intentionally server-side and independent of UI visibility. */
+export async function requireActiveWorkspaceOwner(): Promise<{
+  userId: UserId;
+  workspaceId: string;
+}> {
+  const userId = await getCurrentUser();
+  const workspaceId = await getActiveWorkspace();
+  if (isDemoMode()) return { userId, workspaceId };
+  const [membership] = await db
+    .select({ role: workspaceMembers.role })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, workspaceId),
+        eq(workspaceMembers.userId, userId),
+      ),
+    )
+    .limit(1);
+  if (membership?.role !== "owner") {
+    throw new Error("Only a workspace owner may perform this action.");
+  }
+  return { userId, workspaceId };
+}
+
 /** List workspaces the current user is a member of. Used by the
  *  sidebar workspace-switcher popover. */
 export async function listMyWorkspaces(): Promise<

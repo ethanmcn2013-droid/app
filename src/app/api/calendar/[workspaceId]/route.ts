@@ -96,7 +96,7 @@ export async function GET(
       // Calendar clients refresh on their own cadence; a generous
       // cache window cuts redundant load without making changes
       // feel any slower than the spec's own poll interval.
-      "Cache-Control": "public, max-age=900, s-maxage=1800",
+      "Cache-Control": "private, no-store",
     },
   });
 }

@@ -10,7 +10,10 @@ import {
 } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { requireActiveWorkspaceOwner } from "@/server/auth";
+
+// Tenant boundary: requireActiveWorkspaceOwner resolves getActiveWorkspace()
+// and verifies owner role before any destructive write below.
 import {
   SEED_COMMENT_BODIES,
   SEED_TASKS,
@@ -49,7 +52,7 @@ function pick<T>(arr: T[], seed: number): T {
  *  via FK). Resets `workspaces.activeDomain` to null but leaves the
  *  workspace row itself + members + entitlements intact. */
 export async function clearAllTasksAction(): Promise<Task[]> {
-  const ws = await getActiveWorkspace();
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));
   await db
     .update(workspaces)
@@ -65,7 +68,7 @@ export async function clearAllTasksAction(): Promise<Task[]> {
  *  Sets the workspace's activeDomain to a sentinel so isFirstRun()
  *  returns false. */
 export async function markFirstRunCompleteAction(): Promise<void> {
-  const ws = await getActiveWorkspace();
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
   // Sentinel "marketing", a chosen-but-empty domain. Welcome page
   // stops intercepting; the next render shows an empty board.
   await db
@@ -83,7 +86,7 @@ export async function seedDomainAction(domain: DomainId): Promise<Task[]> {
     throw new Error(`Unknown domain: ${domain}`);
   }
   const pack = DOMAINS[domain];
-  const ws = await getActiveWorkspace();
+  const { workspaceId: ws } = await requireActiveWorkspaceOwner();
 
   // Wipe this workspace's data only.
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));

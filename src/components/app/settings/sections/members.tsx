@@ -34,7 +34,6 @@ function displayName(m: SettingsMember): string {
 }
 
 type PendingInvite = {
-  token: string;
   email: string;
   createdAt: string;
   expiresAt: string;
@@ -155,7 +154,7 @@ export function MembersSection({
   function handleRevoke(invite: PendingInvite) {
     startTransition(async () => {
       try {
-        await revokePendingInviteAction(invite.token);
+        await revokePendingInviteAction(invite.email);
         toast(`Invite to ${invite.email} revoked`, { tone: "success" });
       } catch (err) {
         toast("Couldn't revoke", {
@@ -286,7 +285,7 @@ export function MembersSection({
           <ul>
             {pendingInvites.map((invite) => (
               <li
-                key={invite.token}
+                key={`${invite.email}:${invite.createdAt}`}
                 className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-b border-line-soft/60 px-5 py-3 last:border-b-0"
               >
                 <div className="min-w-0">

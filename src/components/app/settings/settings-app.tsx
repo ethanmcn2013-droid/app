@@ -84,7 +84,6 @@ export function SettingsApp({
     commentReplies: boolean;
   };
   pendingInvites: Array<{
-    token: string;
     email: string;
     createdAt: string;
     expiresAt: string;
