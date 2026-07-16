@@ -1,5 +1,5 @@
-import { getCurrentUserOrNull } from "@/server/auth";
 import { exportRoadmapIcs } from "@/server/roadmap/ics-export";
+import { requireAdmin } from "@/server/admin";
 
 // libSQL client + ics-export are node-only, and the feed updates whenever roadmap_items does.
 export const runtime = "nodejs";
@@ -16,8 +16,9 @@ export const dynamic = "force-dynamic";
  * if the proxy ever misroutes.
  */
 export async function GET(): Promise<Response> {
-  const me = await getCurrentUserOrNull();
-  if (!me) {
+  try {
+    await requireAdmin();
+  } catch {
     return new Response("Not found", { status: 404 });
   }
 

@@ -32,3 +32,9 @@ test("private calendar responses cannot be shared through a CDN", () => {
   assert.match(calendar, /Cache-Control.*private, no-store/);
   assert.doesNotMatch(calendar, /Cache-Control.*public/);
 });
+
+test("operator roadmap feed uses the operator principal, not authentication alone", () => {
+  const route = read("src\\app\\api\\roadmap.ics\\route.ts");
+  assert.match(route, /requireAdmin/);
+  assert.doesNotMatch(route, /getCurrentUserOrNull/);
+});
