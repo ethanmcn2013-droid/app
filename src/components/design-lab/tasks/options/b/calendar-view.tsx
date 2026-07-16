@@ -1,0 +1,339 @@
+"use client";
+
+import { useMemo, useState, type DragEvent, type KeyboardEvent } from "react";
+import {
+  addDays,
+  asCalendarDate,
+  differenceInDays,
+  eachDate,
+  formatDate,
+  formatDateLong,
+  LAB_TODAY,
+  monthTitle,
+  scheduleIncludes,
+  scheduleStart,
+  startOfMonthGrid,
+  startOfWeek,
+} from "../../dates";
+import { useLabStore } from "../../store";
+import type { CalendarDate, LabTask, TaskSchedule } from "../../types";
+import { Icon } from "../../shared/icons";
+import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
+import { AvatarStack, ScheduleText, TaskOpenButton, TaskSelection, TaskSignals } from "../../shared/task-ui";
+import { UnscheduledTray } from "./schedule-tray";
+import styles from "./option-b.module.css";
+
+type CalendarMode = "month" | "week" | "agenda";
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function shiftMonth(value: CalendarDate, amount: number): CalendarDate {
+  const date = new Date(`${value}T12:00:00.000Z`);
+  date.setUTCDate(1);
+  date.setUTCMonth(date.getUTCMonth() + amount);
+  return date.toISOString().slice(0, 10) as CalendarDate;
+}
+
+function tasksForDate(tasks: LabTask[], date: CalendarDate): LabTask[] {
+  const order: Record<TaskSchedule["kind"], number> = { milestone: 0, due: 1, range: 2, unscheduled: 3 };
+  return tasks
+    .filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, date))
+    .sort((a, b) => order[a.schedule.kind] - order[b.schedule.kind] || a.order - b.order);
+}
+
+function focusCalendarDate(date: CalendarDate) {
+  window.setTimeout(() => document.querySelector<HTMLElement>(`[data-option="b"] td[data-date="${date}"] [data-date-select="true"]`)?.focus(), 0);
+}
+
+function CalendarTaskChip({
+  task,
+  date,
+  visibleIds,
+  onOpenMenu,
+}: {
+  task: LabTask;
+  date: CalendarDate;
+  visibleIds: string[];
+  onOpenMenu: ReturnType<typeof useTaskContextMenu>["openMenuAt"];
+}) {
+  const store = useLabStore();
+  if (task.schedule.kind === "unscheduled") return null;
+  const rangeSchedule = task.schedule.kind === "range" ? task.schedule : null;
+  const rangeStart = rangeSchedule?.startOn === date;
+  const rangeEnd = rangeSchedule?.dueOn === date;
+  const selected = store.selectedIds.includes(task.id);
+
+  const moveByKeyboard = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (event.shiftKey && event.key === "F10") {
+      event.preventDefault();
+      onOpenMenu(task.id, event.currentTarget);
+      return;
+    }
+    if (event.key === " ") {
+      event.preventDefault();
+      store.toggleSelected(task.id, visibleIds, event.shiftKey);
+      return;
+    }
+    if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      if (store.readOnly) return;
+      const amount = event.key === "ArrowLeft" ? -1 : 1;
+      if (event.shiftKey && task.schedule.kind === "range") store.resizeScheduleByDays(task.id, amount);
+      else store.moveScheduleByDays(task.id, amount);
+    }
+  };
+
+  return (
+    <div
+      className={styles.calendarTaskWrap}
+      data-active={store.activeId === task.id || undefined}
+      data-kind={task.schedule.kind}
+      data-range-end={rangeEnd || undefined}
+      data-range-start={rangeStart || undefined}
+      data-scheduled-task-id={task.id}
+      data-selected={selected || undefined}
+      data-task-id={task.id}
+      draggable={!store.readOnly}
+      onContextMenu={(event) => { event.preventDefault(); onOpenMenu(task.id, event.currentTarget); }}
+      onDragEnd={() => store.setDrag(null)}
+      onDragStart={(event) => {
+        if (store.readOnly) return;
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/x-signal-task", task.id);
+        event.dataTransfer.setData("application/x-signal-schedule-operation", "move");
+        store.setDrag({ kind: "schedule", taskId: task.id, source: "calendar", targetDate: date });
+      }}
+      onFocusCapture={() => { store.setActive(task.id); store.setPreview(task.id); }}
+      onMouseEnter={() => store.setPreview(task.id)}
+    >
+      <button
+        aria-label={`${task.title}. ${task.schedule.kind === "milestone" ? "Milestone" : task.schedule.kind === "due" ? "Due date" : "Date range"}. ${formatDateLong(date)}`}
+        className={styles.calendarTaskChip}
+        onClick={() => store.openTask(task.id)}
+        onKeyDown={moveByKeyboard}
+        type="button"
+      >
+        {task.schedule.kind === "milestone" ? <Icon name="milestone" size={11} /> : null}
+        <span>{task.title}</span>
+      </button>
+      {rangeEnd ? (
+        <button
+          aria-label={`Extend ${task.title} by one day`}
+          className={styles.calendarExtendButton}
+          disabled={store.readOnly}
+          onClick={() => store.resizeScheduleByDays(task.id, 1)}
+          title="Extend range by one day"
+          type="button"
+        ><Icon name="arrow-right" size={11} /></button>
+      ) : null}
+    </div>
+  );
+}
+
+function CalendarDateEditor({ task }: { task: LabTask }) {
+  const store = useLabStore();
+  const schedule = task.schedule;
+  if (schedule.kind === "unscheduled") return null;
+  if (schedule.kind === "range") return (
+    <div className={styles.agendaDateEditor}>
+      <label><span>Starts</span><input disabled={store.readOnly} max={schedule.dueOn} onChange={(event) => store.scheduleTask(task.id, { ...schedule, startOn: asCalendarDate(event.target.value) })} type="date" value={schedule.startOn} /></label>
+      <label><span>Range end</span><input disabled={store.readOnly} min={schedule.startOn} onChange={(event) => store.scheduleTask(task.id, { ...schedule, dueOn: asCalendarDate(event.target.value) })} type="date" value={schedule.dueOn} /></label>
+    </div>
+  );
+  const date = schedule.kind === "due" ? schedule.dueOn : schedule.on;
+  return (
+    <label className={styles.agendaSingleDate}><span>{schedule.kind === "due" ? "Due" : "Milestone date"}</span><input disabled={store.readOnly} onChange={(event) => store.scheduleTask(task.id, schedule.kind === "due" ? { kind: "due", dueOn: asCalendarDate(event.target.value) } : { kind: "milestone", on: asCalendarDate(event.target.value) })} type="date" value={date} /></label>
+  );
+}
+
+function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; tasks: LabTask[]; visibleIds: string[] }) {
+  const store = useLabStore();
+  const previewTask = store.previewId ? store.taskById(store.previewId) : undefined;
+  const milestones = tasks.filter((task) => task.schedule.kind === "milestone").length;
+  const waiting = tasks.filter((task) => task.status === "waiting" || task.blockedByIds.length > 0).length;
+  return (
+    <aside aria-label={`Agenda for ${formatDateLong(date)}`} className={styles.selectedAgenda}>
+      <header>
+        <span>Selected day</span>
+        <h2>{formatDate(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
+        <p>{tasks.length} task{tasks.length === 1 ? "" : "s"}{milestones > 0 ? `, ${milestones} milestone${milestones === 1 ? "" : "s"}` : ""}{waiting > 0 ? `, ${waiting} waiting` : ""}</p>
+        <button disabled={store.readOnly} onClick={() => store.addTask("queued", { kind: "due", dueOn: date })} type="button"><Icon name="add" size={14} />Create on this date</button>
+      </header>
+
+      {previewTask ? (
+        <section aria-label={`Preview of ${previewTask.title}`} className={styles.calendarPreview} data-task-id={previewTask.id}>
+          <div><span>Preview</span><button aria-label="Close task preview" onClick={() => store.setPreview(null)} type="button"><Icon name="close" size={13} /></button></div>
+          <strong>{previewTask.title}</strong>
+          <p>{previewTask.description}</p>
+          <footer><ScheduleText task={previewTask} /><AvatarStack limit={3} task={previewTask} /></footer>
+        </section>
+      ) : null}
+
+      {tasks.length === 0 ? (
+        <div className={styles.agendaEmpty}><Icon name="calendar" size={18} /><strong>The day is open</strong><p>Create a dated task here, or drag one in from Unscheduled.</p></div>
+      ) : (
+        <ol className={styles.selectedAgendaList}>
+          {tasks.map((task) => (
+            <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}>
+              <article>
+                <div className={styles.agendaTaskLead}>
+                  <TaskSelection disabled={store.readOnly} orderedIds={visibleIds} task={task} />
+                  <div><TaskOpenButton className={styles.agendaTaskTitle} task={task} /><ScheduleText task={task} /></div>
+                  <button aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.title}`} disabled={store.readOnly} onClick={() => store.toggleComplete(task.id)} type="button"><Icon name="check" size={14} /></button>
+                </div>
+                <p>{task.description}</p>
+                <div className={styles.agendaTaskPeople}><AvatarStack limit={4} task={task} /><TaskSignals task={task} /></div>
+                {task.blockedByIds.length > 0 ? <div className={styles.agendaBlocker}><Icon name="dependency" size={13} />Waiting on {task.blockedByIds.length} named dependency</div> : null}
+                <CalendarDateEditor task={task} />
+              </article>
+            </li>
+          ))}
+        </ol>
+      )}
+    </aside>
+  );
+}
+
+function OverflowPopover({ date, tasks, onClose }: { date: CalendarDate; tasks: LabTask[]; onClose: () => void }) {
+  return (
+    <section aria-label={`All tasks on ${formatDateLong(date)}`} className={styles.calendarOverflowPopover} onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}>
+      <header><div><span>Day agenda</span><strong>{formatDate(date, { weekday: "long", day: "numeric", month: "long" })}</strong></div><button aria-label="Close day agenda" onClick={onClose} type="button"><Icon name="close" size={15} /></button></header>
+      <ul>{tasks.map((task) => <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}><TaskOpenButton task={task} /><ScheduleText compact task={task} /></li>)}</ul>
+    </section>
+  );
+}
+
+function AgendaLedger({ dates, tasks, selectedDate, onSelect }: { dates: CalendarDate[]; tasks: LabTask[]; selectedDate: CalendarDate; onSelect: (date: CalendarDate) => void }) {
+  const groups = dates.map((date) => ({ date, tasks: tasksForDate(tasks, date) })).filter((group) => group.tasks.length > 0);
+  return (
+    <div aria-label="Calendar agenda view" className={styles.agendaLedger}>
+      {groups.length === 0 ? <div className={styles.calendarSurfaceEmpty}><Icon name="agenda" size={20} /><strong>No dated work in this agenda window</strong><span>Unscheduled tasks stay in their tray below.</span></div> : groups.map((group) => (
+        <section data-date={group.date} data-selected={group.date === selectedDate || undefined} key={group.date}>
+          <button aria-label={`Select ${formatDateLong(group.date)}`} onClick={() => onSelect(group.date)} type="button"><span>{formatDate(group.date, { weekday: "short" })}</span><strong>{formatDate(group.date, { day: "numeric", month: "short" })}</strong></button>
+          <ol>{group.tasks.map((task) => <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}><TaskOpenButton task={task} /><ScheduleText task={task} /><AvatarStack limit={2} task={task} /></li>)}</ol>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+export function CalendarView({ tasks }: { tasks: LabTask[] }) {
+  const store = useLabStore();
+  const contextMenu = useTaskContextMenu();
+  const [mode, setMode] = useState<CalendarMode>("month");
+  const [anchorDate, setAnchorDate] = useState<CalendarDate>(LAB_TODAY);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate>(LAB_TODAY);
+  const [overflowDate, setOverflowDate] = useState<CalendarDate | null>(null);
+  const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
+  const visibleIds = tasks.map((task) => task.id);
+  const monthStart = startOfMonthGrid(anchorDate);
+  const monthDates = useMemo(() => eachDate(monthStart, addDays(monthStart, 41)), [monthStart]);
+  const weekStart = startOfWeek(anchorDate);
+  const weekDates = useMemo(() => eachDate(weekStart, addDays(weekStart, 6)), [weekStart]);
+  const agendaDates = useMemo(() => eachDate(anchorDate, addDays(anchorDate, 20)), [anchorDate]);
+  const selectedTasks = tasksForDate(tasks, selectedDate);
+  const displayedDates = mode === "month" ? monthDates : mode === "week" ? weekDates : agendaDates;
+  const overflowTasks = overflowDate ? tasksForDate(tasks, overflowDate) : [];
+  const title = mode === "month" ? monthTitle(anchorDate)
+    : mode === "week" ? `${formatDate(weekDates[0], { day: "numeric", month: "short" })} to ${formatDate(weekDates[6], { day: "numeric", month: "short", year: "numeric" })}`
+      : `Agenda from ${formatDate(anchorDate, { day: "numeric", month: "long", year: "numeric" })}`;
+
+  const navigate = (direction: -1 | 1) => {
+    if (mode === "month") setAnchorDate((current) => shiftMonth(current, direction));
+    else setAnchorDate((current) => addDays(current, direction * (mode === "week" ? 7 : 21)));
+    setOverflowDate(null);
+  };
+
+  const dropOnDate = (event: DragEvent<HTMLElement>, date: CalendarDate) => {
+    event.preventDefault();
+    if (store.readOnly) return;
+    const taskId = event.dataTransfer.getData("text/x-signal-task") || (store.drag?.kind === "schedule" ? store.drag.taskId : "");
+    const operation = event.dataTransfer.getData("application/x-signal-schedule-operation") || "move";
+    const task = store.taskById(taskId);
+    if (!task) return;
+    if (task.schedule.kind === "unscheduled" || operation === "schedule") store.scheduleOn(task.id, date);
+    else {
+      const currentStart = scheduleStart(task.schedule);
+      if (currentStart) store.moveScheduleByDays(task.id, differenceInDays(currentStart, date));
+    }
+    store.setDrag(null);
+    setSelectedDate(date);
+  };
+
+  const dateKeyboard = (event: KeyboardEvent<HTMLButtonElement>, date: CalendarDate) => {
+    const movement: Partial<Record<string, number>> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+    const amount = movement[event.key];
+    if (amount === undefined) return;
+    event.preventDefault();
+    const next = addDays(date, amount);
+    setSelectedDate(next);
+    if (!displayedDates.includes(next)) setAnchorDate(next);
+    focusCalendarDate(next);
+  };
+
+  const renderCalendarTable = (dates: CalendarDate[]) => {
+    const rows = Array.from({ length: dates.length / 7 }, (_, index) => dates.slice(index * 7, index * 7 + 7));
+    const maxVisible = mode === "week" ? 8 : 3;
+    return (
+      <table className={`${styles.calendarTable} ${mode === "week" ? styles.calendarWeekTable : ""}`}>
+        <caption>{mode === "week" ? "Week calendar" : `Month calendar for ${monthTitle(anchorDate)}`}. Use arrow keys on day numbers to move between dates.</caption>
+        <thead><tr>{WEEKDAYS.map((day) => <th key={day} scope="col"><span>{day}</span></th>)}</tr></thead>
+        <tbody>{rows.map((row) => <tr key={row[0]}>{row.map((date) => {
+          const dayTasks = tasksForDate(tasks, date);
+          const outside = mode === "month" && date.slice(0, 7) !== anchorDate.slice(0, 7);
+          const visible = dayTasks.slice(0, maxVisible);
+          return (
+            <td
+              className={styles.calendarCell}
+              data-date={date}
+              data-drop-target={store.drag?.kind === "schedule" && store.drag.targetDate === date || undefined}
+              data-outside={outside || undefined}
+              data-selected={selectedDate === date || undefined}
+              data-today={date === LAB_TODAY || undefined}
+              key={date}
+              onDragEnter={() => { if (store.drag?.kind === "schedule") store.setDrag({ ...store.drag, targetDate: date }); }}
+              onDragOver={(event) => { if (!store.readOnly) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } }}
+              onDrop={(event) => dropOnDate(event, date)}
+            >
+              <div className={styles.calendarDayHeader}>
+                <button aria-label={`Select ${formatDateLong(date)}`} data-date-select="true" onClick={() => setSelectedDate(date)} onKeyDown={(event) => dateKeyboard(event, date)} type="button">{formatDate(date, { day: "numeric" })}</button>
+                <button aria-label={`Create task due ${formatDateLong(date)}`} disabled={store.readOnly} onClick={() => { store.addTask("queued", { kind: "due", dueOn: date }); setSelectedDate(date); }} type="button"><Icon name="add" size={12} /></button>
+              </div>
+              <div className={styles.calendarItems}>
+                {visible.map((task) => <CalendarTaskChip date={date} key={task.id} onOpenMenu={contextMenu.openMenuAt} task={task} visibleIds={visibleIds} />)}
+                {dayTasks.length > maxVisible ? <button aria-label={`Show ${dayTasks.length - maxVisible} more tasks on ${formatDateLong(date)}`} className={styles.calendarMoreButton} onClick={() => { setOverflowDate(date); setSelectedDate(date); }} type="button">+{dayTasks.length - maxVisible} more</button> : null}
+              </div>
+            </td>
+          );
+        })}</tr>)}</tbody>
+      </table>
+    );
+  };
+
+  return (
+    <section aria-label="Workspace Calendar" className={styles.calendarView}>
+      <header className={styles.calendarToolbar}>
+        <div className={styles.calendarNavigation}>
+          <button aria-label="Previous calendar range" onClick={() => navigate(-1)} type="button"><Icon name="arrow-left" size={14} />Previous</button>
+          <button aria-label="Next calendar range" onClick={() => navigate(1)} type="button">Next<Icon name="arrow-right" size={14} /></button>
+          <button onClick={() => { setAnchorDate(LAB_TODAY); setSelectedDate(LAB_TODAY); }} type="button">Today</button>
+        </div>
+        <h2>{title}</h2>
+        <div aria-label="Calendar view" className={styles.calendarModeSwitch} role="group">
+          {(["month", "week", "agenda"] as CalendarMode[]).map((value) => <button aria-pressed={mode === value} key={value} onClick={() => setMode(value)} type="button">{value[0].toUpperCase() + value.slice(1)}</button>)}
+        </div>
+      </header>
+
+      <div className={styles.calendarWorkspace}>
+        <div className={styles.calendarPrimary}>
+          {mode === "agenda" ? <AgendaLedger dates={agendaDates} onSelect={setSelectedDate} selectedDate={selectedDate} tasks={tasks} /> : renderCalendarTable(mode === "week" ? weekDates : monthDates)}
+          {overflowDate ? <OverflowPopover date={overflowDate} onClose={() => setOverflowDate(null)} tasks={overflowTasks} /> : null}
+        </div>
+        <SelectedDayAgenda date={selectedDate} tasks={selectedTasks} visibleIds={visibleIds} />
+      </div>
+
+      <UnscheduledTray compact source="calendar" tasks={unscheduled} />
+      <p className={styles.calendarKeyboardNote}>Keyboard: arrows move between day controls. Alt + Left/Right moves a focused task. Add Shift to change a range end.</p>
+      <TaskContextMenu menu={contextMenu.menu} onClose={contextMenu.closeMenu} />
+    </section>
+  );
+}

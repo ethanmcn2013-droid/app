@@ -1,0 +1,128 @@
+.labRoot {
+  --x-task-canvas: var(--paper-deep);
+  --x-task-surface: var(--paper-soft);
+  --x-task-raised: var(--paper);
+  --x-task-selected: var(--accent-tint);
+  --x-task-hover: var(--paper-deep);
+  --x-task-overlay: var(--paper);
+  --x-task-border: var(--hairline);
+  --x-task-border-strong: var(--ink-ghost);
+  --x-task-text: var(--ink);
+  --x-task-text-secondary: var(--ink-soft);
+  --x-task-text-muted: color-mix(in srgb, var(--ink-faint) 90%, var(--ink));
+  --x-task-accent: var(--accent);
+  --x-task-accent-soft: var(--accent-tint);
+  --x-task-focus: var(--accent-hover);
+  --x-task-success: color-mix(in srgb, var(--status-done) 60%, var(--ink));
+  --x-task-success-soft: var(--status-done-bg);
+  --x-task-waiting: color-mix(in srgb, var(--status-flight) 52%, var(--ink));
+  --x-task-waiting-soft: var(--status-flight-bg);
+  --x-task-warning: color-mix(in srgb, var(--status-flight) 60%, var(--ink));
+  --x-task-danger: color-mix(in srgb, var(--status-blocked) 72%, var(--ink));
+  --x-task-danger-soft: var(--status-blocked-bg);
+  --x-task-review: color-mix(in srgb, var(--status-review) 55%, var(--ink));
+  --x-task-review-soft: color-mix(in srgb, var(--status-review) 10%, var(--paper));
+  --x-task-shadow: var(--shadow-modal);
+  background: var(--x-task-canvas);
+  color: var(--x-task-text);
+  font-family: var(--font-geist-sans), var(--font-sans), sans-serif;
+  min-height: 100vh;
+  min-width: 1024px;
+  position: relative;
+}
+
+.optionStage {
+  height: calc(100vh - 52px);
+  min-height: 680px;
+  overflow: hidden;
+}
+
+.stateOverlay {
+  align-items: center;
+  background: color-mix(in srgb, var(--x-task-canvas) 78%, transparent);
+  display: flex;
+  inset: 52px 0 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 70;
+}
+
+.loadingCard,
+.errorCard {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  box-shadow: var(--x-task-shadow);
+  color: var(--x-task-text-secondary);
+  padding: 28px;
+  width: 360px;
+}
+
+.loadingCard > span {
+  animation: pulse 1.3s ease-in-out infinite;
+  background: var(--x-task-hover);
+  display: block;
+  height: 12px;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.loadingCard > span:nth-child(2) { width: 76%; }
+.loadingCard > span:nth-child(3) { width: 54%; }
+.loadingCard p { font-size: 13px; margin: 22px 0 0; }
+
+.errorCard svg { color: var(--x-task-danger); }
+.errorCard h2 { color: var(--x-task-text); font-size: 18px; letter-spacing: -0.02em; margin: 14px 0 7px; }
+.errorCard p { font-size: 13px; line-height: 1.55; margin: 0 0 18px; }
+.errorCard button {
+  background: var(--x-task-text);
+  border: 0;
+  border-radius: 7px;
+  color: var(--x-task-raised);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  min-height: 36px;
+  padding: 0 14px;
+}
+
+.undoToast {
+  align-items: center;
+  background: var(--x-task-text);
+  border: 1px solid color-mix(in srgb, var(--x-task-raised) 18%, transparent);
+  border-radius: 8px;
+  bottom: 22px;
+  box-shadow: var(--x-task-shadow);
+  color: var(--x-task-raised);
+  display: flex;
+  font-size: 12px;
+  gap: 18px;
+  left: 50%;
+  max-width: 560px;
+  padding: 9px 10px 9px 14px;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 95;
+}
+
+.undoToast span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undoToast button { align-items: center; background: transparent; border: 0; color: var(--paper); cursor: pointer; display: flex; font: inherit; font-weight: 650; gap: 5px; min-height: 30px; }
+
+.srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+:global(body):has(.labRoot) :global(.signal-devbanner) {
+  display: none;
+}
+
+@keyframes pulse { 50% { opacity: 0.42; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .loadingCard > span { animation: none; }
+}
