@@ -38,3 +38,9 @@ test("operator roadmap feed uses the operator principal, not authentication alon
   assert.match(route, /requireAdmin/);
   assert.doesNotMatch(route, /getCurrentUserOrNull/);
 });
+
+test("share-card OG route does not enumerate private workspaces by ID", () => {
+  const route = read("src\\app\\share-card\\[workspaceId]\\opengraph-image.tsx");
+  assert.match(route, /Raw workspace IDs are not public authorization/);
+  assert.match(route, /ws = undefined/);
+});
