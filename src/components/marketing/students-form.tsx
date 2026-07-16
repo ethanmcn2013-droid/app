@@ -1,66 +1,8 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
-import Link from "next/link";
+import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-function CodeWithCopy({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const copy = useCallback(() => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(code).then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      });
-    } else {
-      // Graceful fallback for browsers without clipboard API
-      try {
-        const el = document.createElement("textarea");
-        el.value = code;
-        el.style.position = "fixed";
-        el.style.opacity = "0";
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand("copy");
-        document.body.removeChild(el);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // silent, copy simply doesn't confirm
-      }
-    }
-  }, [code]);
-
-  return (
-    <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-soft bg-white pl-3 pr-2 py-1.5">
-      <span className="font-mono text-[12.5px] tabular-nums text-ink">{code}</span>
-      <button
-        type="button"
-        onClick={copy}
-        aria-label={copied ? "Copied" : "Copy code"}
-        className="inline-flex items-center gap-1 rounded-full bg-bg-sunken px-2.5 py-1 text-[11px] font-medium text-ink-soft transition-colors hover:bg-line-soft hover:text-ink"
-      >
-        {copied ? (
-          <>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            Copied
-          </>
-        ) : (
-          <>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-            </svg>
-            Copy
-          </>
-        )}
-      </button>
-    </div>
-  );
-}
 import {
   requestStudentCodeAction,
   type StudentVerifyResult,
@@ -71,6 +13,8 @@ const FAILURE_COPY: Record<
   string
 > = {
   "invalid-email": "That doesn't look like an email. Try again?",
+  "rate-limited": "Too many requests. Wait an hour, then try again.",
+  "delivery-failed": "We couldn't send the email. Try again shortly.",
 };
 
 export function StudentsForm() {
@@ -132,7 +76,7 @@ export function StudentsForm() {
 
         <AnimatePresence mode="wait">
           {result?.ok ? (
-            <SuccessCard key="success" code={result.code} />
+            <SuccessCard key="success" />
           ) : (
             <motion.form
               key="form"
@@ -183,7 +127,7 @@ export function StudentsForm() {
   );
 }
 
-function SuccessCard({ code }: { code: string }) {
+function SuccessCard() {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -207,36 +151,15 @@ function SuccessCard({ code }: { code: string }) {
         </svg>
       </div>
       <div className="mt-3 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-        Code minted
+        Email sent
       </div>
       <h2 className="mt-1.5 text-[20px] font-semibold tracking-[-0.005em] text-ink">
-        Your student code is ready.
+        Check your inbox.
       </h2>
       <p className="mx-auto mt-3 max-w-[40ch] text-[13.5px] leading-[1.55] text-ink-soft">
-        Here&rsquo;s your code. Redeem it below to unlock the student rate
-        for the year.
+        We sent a one-time redemption link to the address you entered. The
+        code is never shown in the browser.
       </p>
-      <CodeWithCopy code={code} />
-      <div className="mt-5">
-        <Link
-          href={`/redeem/${code}`}
-          className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[13.5px] font-medium text-white transition-transform hover:-translate-y-px"
-        >
-          Redeem now
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
-        </Link>
-      </div>
     </motion.div>
   );
 }

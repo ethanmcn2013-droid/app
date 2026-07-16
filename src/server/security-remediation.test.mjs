@@ -105,3 +105,31 @@ test("error routes return stable codes without raw exception messages", () => {
   assert.doesNotMatch(reconcile, /err instanceof Error \? err\.message/);
   assert.match(reconcile, /error: "reconcile-failed"/);
 });
+
+test("cost-bearing rate limits fail closed in production", () => {
+  const limiter = read("src\\lib\\ratelimit.ts");
+  assert.match(limiter, /unavailableDecision = process\.env\.NODE_ENV !== "production"/);
+  assert.doesNotMatch(limiter, /if \(!url \|\| !token\) return true/);
+  assert.doesNotMatch(limiter, /catch \{\s*return true/);
+});
+
+test("analytics capture is bounded, allowlisted and rate limited", () => {
+  const route = read("src\\app\\api\\analytics\\capture\\route.ts");
+  assert.match(route, /MAX_BODY_BYTES = 8 \* 1024/);
+  assert.match(route, /allow\("analytics", limiterId, 60, "1 m"\)/);
+  assert.match(route, /ALLOWED_EVENTS\.has\(event\)/);
+  assert.match(route, /ALLOWED_PROPERTIES\.has\(k\)/);
+  assert.doesNotMatch(route, /props\[k\] = String\(v\)/);
+  assert.doesNotMatch(route, /"workspace_id"/);
+  assert.doesNotMatch(route, /"secondary_context"/);
+});
+
+test("student-code issuance is throttled and proves mailbox control", () => {
+  const comp = read("src\\server\\actions\\comp.ts");
+  const start = comp.indexOf("export async function requestStudentCodeAction");
+  const action = comp.slice(start);
+  assert.match(action, /allow\("student-code", emailKey, 3, "1 h"\)/);
+  assert.match(action, /const delivery = await sendEmail/);
+  assert.match(action, /if \(!delivery\.ok\)/);
+  assert.doesNotMatch(action, /return \{ ok: true, code/);
+});

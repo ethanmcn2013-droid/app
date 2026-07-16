@@ -10,14 +10,10 @@ import "server-only";
  * and the contract here is identical, so we avoid adding a dependency just
  * to call a one-line REST endpoint.
  *
- * Design decisions (mirrors analytics):
- *   - GATED. When `UPSTASH_REDIS_REST_URL` / `_TOKEN` are unset (dev,
- *     preview, or before the operator provisions Upstash) the limiter is a
- *     no-op that ALLOWS. Wiring this up never breaks a deployment, it
- *     simply starts enforcing the moment the env is present.
- *   - FAILS OPEN. If Redis is unreachable or errors at request time we
- *     allow rather than 500. A cache outage must not take a feature down;
- *     abuse protection is best-effort by nature.
+ * Production fails closed when the remote limiter is missing or unhealthy.
+ * These buckets protect cost-bearing or abuse-prone operations, so temporary
+ * feature unavailability is safer than unbounded provider spend. Local
+ * development remains usable without external infrastructure.
  *   - Fixed window via INCR + EXPIRE NX: the first request in a window sets
  *     the TTL, subsequent requests only increment. The window does NOT
  *     slide forward on each hit (NX), so a steady caller isn't permanently
@@ -74,7 +70,8 @@ export async function allow(
   limit: number,
   window: Duration,
 ): Promise<boolean> {
-  if (!url || !token) return true; // not configured → allow
+  const unavailableDecision = process.env.NODE_ENV !== "production";
+  if (!url || !token) return unavailableDecision;
 
   const key = `signal:rl:${name}:${identifier}`;
   const ttl = windowSeconds(window);
@@ -93,12 +90,12 @@ export async function allow(
       ]),
       cache: "no-store",
     });
-    if (!res.ok) return true; // fail open
+    if (!res.ok) return unavailableDecision;
     const data = (await res.json()) as Array<{ result?: unknown }>;
     const count = Number(data?.[0]?.result ?? 0);
-    if (!Number.isFinite(count) || count <= 0) return true; // unexpected → fail open
+    if (!Number.isFinite(count) || count <= 0) return unavailableDecision;
     return count <= limit;
   } catch {
-    return true; // fail open, never let a cache outage break the feature
+    return unavailableDecision;
   }
 }

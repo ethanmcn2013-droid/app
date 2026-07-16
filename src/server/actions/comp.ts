@@ -1,6 +1,7 @@
 "use server";
 
 import { eq, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { compCodes, entitlements } from "@/server/db/schema";
@@ -14,6 +15,7 @@ import { TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 import { isDemoMode } from "@/lib/access-mode";
+import { allow } from "@/lib/ratelimit";
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
@@ -277,8 +279,8 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
 }
 
 export type StudentVerifyResult =
-  | { ok: true; code: string; tier: EntitlementTier; durationDays: number }
-  | { ok: false; reason: "invalid-email" };
+  | { ok: true; tier: EntitlementTier; durationDays: number }
+  | { ok: false; reason: "invalid-email" | "rate-limited" | "delivery-failed" };
 
 /**
  * Student-rate verification. Students get the full Workspace tier at
@@ -297,10 +299,13 @@ export async function requestStudentCodeAction(
   if (isDemoMode()) {
     return {
       ok: true,
-      code: "STUDENT-REVIEW",
       tier: "workspace",
       durationDays: 365,
     };
+  }
+  const emailKey = createHash("sha256").update(trimmed).digest("hex");
+  if (!(await allow("student-code", emailKey, 3, "1 h"))) {
+    return { ok: false, reason: "rate-limited" };
   }
   const domain = trimmed.split("@")[1];
 
@@ -321,11 +326,14 @@ export async function requestStudentCodeAction(
   // the marketing form can fall back gracefully.
   const baseUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
-  await sendEmail({
+  const delivery = await sendEmail({
     to: trimmed,
     subject: "Your Tasks Workspace student code",
     html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
   });
+  if (!delivery.ok) {
+    return { ok: false, reason: "delivery-failed" };
+  }
 
-  return { ok: true, code, tier: "workspace", durationDays: 365 };
+  return { ok: true, tier: "workspace", durationDays: 365 };
 }
