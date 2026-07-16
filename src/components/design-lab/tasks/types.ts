@@ -1,4 +1,4 @@
-export const LAB_OPTIONS = ["a", "b", "c"] as const;
+export const LAB_OPTIONS = ["a", "b", "c", "hybrid"] as const;
 export const LAB_VIEWS = ["board", "list", "timeline", "calendar"] as const;
 export const LAB_DATASETS = ["sparse", "normal", "dense", "edge"] as const;
 export const LAB_DENSITIES = ["compact", "comfortable"] as const;
@@ -121,6 +121,7 @@ export const OPTION_LABELS: Record<LabOption, string> = {
   a: "Quiet Command",
   b: "Editorial Project Room",
   c: "Signal Spatial",
+  hybrid: "Recommended hybrid",
 };
 
 export const VIEW_LABELS: Record<LabView, string> = {

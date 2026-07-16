@@ -79,7 +79,7 @@ function RoomToolPanel({
   );
 }
 
-function WorkspaceBrief({ tasks }: { tasks: LabTask[] }) {
+export function WorkspaceBrief({ tasks }: { tasks: LabTask[] }) {
   const store = useLabStore();
   const completed = store.tasks.filter((task) => task.completed).length;
   const overdue = store.tasks.filter(isTaskOverdue).length;

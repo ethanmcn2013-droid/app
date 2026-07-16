@@ -8,6 +8,7 @@ import type { LabRouteState } from "./types";
 import { OptionA } from "./options/a/option-a";
 import { OptionB } from "./options/b/option-b";
 import { OptionC } from "./options/c/option-c";
+import { OptionHybrid } from "./options/hybrid/option-hybrid";
 import { BulkToolbar } from "./shared/bulk-toolbar";
 import { CommandPalette } from "./shared/command-palette";
 import { LabRibbon } from "./shared/lab-chrome";
@@ -47,7 +48,8 @@ function LabExperience({ route, onRouteChange }: { route: LabRouteState; onRoute
 
   const option = route.option === "a" ? <OptionA onRouteChange={onRouteChange} route={route} />
     : route.option === "b" ? <OptionB onRouteChange={onRouteChange} route={route} />
-      : <OptionC onRouteChange={onRouteChange} route={route} />;
+      : route.option === "c" ? <OptionC onRouteChange={onRouteChange} route={route} />
+        : <OptionHybrid onRouteChange={onRouteChange} route={route} />;
 
   return (
     <main className={styles.labRoot} data-density={route.density} data-mode={route.mode} data-task-count={store.tasks.length} ref={markHydrated}>
