@@ -14,6 +14,8 @@ type Props = {
   body: string;
   /** Optional override for the primary CTA verb. */
   primaryLabel?: string;
+  /** Keep structural headers legible while the view body recedes behind the CTA. */
+  ghostMode?: "subtle" | "structural";
 };
 
 export function EmptyStateOverlay({
@@ -21,6 +23,7 @@ export function EmptyStateOverlay({
   headline,
   body,
   primaryLabel = "Add your first task",
+  ghostMode = "subtle",
 }: Props) {
   const { openDialog } = useAddTask();
   const [pending, startTransition] = useTransition();
@@ -44,7 +47,12 @@ export function EmptyStateOverlay({
   return (
     <div className="relative h-full">
       {/* Faded structural ghost, communicates the shape of the view */}
-      <div className="pointer-events-none absolute inset-0 select-none opacity-[0.42]">
+      <div
+        className={
+          "pointer-events-none absolute inset-0 select-none " +
+          (ghostMode === "structural" ? "opacity-100" : "opacity-[0.42]")
+        }
+      >
         {ghost}
       </div>
 
@@ -55,7 +63,9 @@ export function EmptyStateOverlay({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.92) 45%, rgba(255,255,255,0.95) 100%)",
+            ghostMode === "structural"
+              ? "linear-gradient(to bottom, rgba(255,255,255,0) 0, rgba(255,255,255,0) 56px, rgba(255,255,255,0.86) 180px, rgba(255,255,255,0.95) 100%)"
+              : "radial-gradient(ellipse at center, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.92) 45%, rgba(255,255,255,0.95) 100%)",
         }}
       />
 

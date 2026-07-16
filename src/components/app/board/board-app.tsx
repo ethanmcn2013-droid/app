@@ -351,6 +351,7 @@ export function BoardApp() {
     return (
       <EmptyStateOverlay
         ghost={<BoardGhost />}
+        ghostMode="structural"
         headline={personalization.headline}
         body={personalization.body}
       />
