@@ -7,9 +7,11 @@ import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
 import { PRIORITY_LABELS, TASK_PRIORITIES, type LabTask, type TaskPriority } from "../../types";
 import { Icon } from "../../shared/icons";
-import { SuiteRail, ViewTabs, ViewTools } from "../../shared/lab-chrome";
+import { ViewTabs, ViewTools } from "../../shared/lab-chrome";
 import { TaskOpenButton } from "../../shared/task-ui";
 import { BoardView } from "./board-view";
+import { ProjectsSidebar } from "./projects-sidebar";
+import { SignalProductRail } from "./signal-product-rail";
 import { CalendarView } from "./calendar-view";
 import { DEFAULT_LIST_FIELDS, ListView, type ListFieldConfig } from "./list-view";
 import { sortRoomTasks } from "./option-b-utils";
@@ -160,7 +162,12 @@ export function OptionB({ route, onRouteChange }: TasksOptionProps) {
   };
   return (
     <div className={styles.optionB} data-option="b" data-read-only={store.readOnly || undefined}>
-      <SuiteRail />
+      <SignalProductRail
+        onSearchRequest={() => {
+          document.querySelector<HTMLInputElement>('[data-option="b"] input[aria-label="Search this view"]')?.focus();
+        }}
+      />
+      <ProjectsSidebar />
       <section className={styles.projectRoom}>
         <WorkspaceBrief tasks={visibleTasks} />
         <div className={styles.roomViewBar}>
