@@ -342,7 +342,7 @@
       "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
       "assertions": [
         { "kind": "role", "role": "dialog", "name": "Command palette", "proves": ["default"] },
-        { "kind": "role", "role": "textbox", "name": "Search tasks by title, tag, or description", "value": "recommended suppliers", "proves": ["default"] }
+        { "kind": "role", "role": "textbox", "name": "Search, jump or create…", "value": "recommended suppliers", "proves": ["default"] }
       ],
       "remainingStates": []
     },

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useDomain } from "@/lib/domain-context";
 import { useActiveWorkspace } from "@/lib/domain-context";
 import { ShareButton } from "@/components/app/share/share-button";
@@ -57,7 +56,6 @@ export function AppPageHeader({
 }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
-  const { openDialog } = useAddTask();
   const { openPalette } = usePalette();
   const pack = useDomain();
 
@@ -87,11 +85,11 @@ export function AppPageHeader({
   // (its scroll border); a second border here was the "two header rows" /
   // amateur tell.
   return (
-    <header className="px-4 pb-3 pt-3 md:px-8 md:pt-4">
+    <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">
       <div
         className={
           "flex items-center gap-3 " +
-          (brief ? "justify-end pb-3" : "justify-between")
+          (brief ? "justify-end pb-2.5" : "justify-between")
         }
       >
         {brief ? null : (
@@ -106,28 +104,10 @@ export function AppPageHeader({
           </div>
         )}
         <div className="flex flex-shrink-0 items-center gap-2">
-          {/* ≥lg: full chip row. Tablet keeps these actions in overflow so
-              workspace identity is never sacrificed. */}
-          {/* C6: Filter affordance removed from DOM while inactive.
-              Restore this disabled chip when filtering ships. */}
-          <button
-            type="button"
-            onClick={openPalette}
-            className="hidden items-center gap-1.5 rounded-md border border-line bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink lg:inline-flex"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            Search
-            <kbd className="ml-1 inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
-              ⌘P
-            </kbd>
-          </button>
-
-          {/* M4: Export + Print demoted from primary toolbar → overflow menu.
-              Share stays primary, it's an active collaboration gesture.
-              Export/Print are utility actions used infrequently. */}
+          {/* T·94: Search + New task moved up into the Studio Bar (the
+              universal ⌘K field and the contextual create control). The
+              page header keeps only view-local actions: Share and the
+              Export/Print overflow. */}
           {showShare ? (
             <span className="hidden lg:inline-flex">
               <ShareButton view={shareView} />
@@ -136,24 +116,13 @@ export function AppPageHeader({
 
           {/* Overflow: visible on all screen sizes (M4).
               Mobile/tablet: Search + Share + Export/Print.
-              Desktop: Export/Print (Search + Share already in toolbar). */}
+              Desktop: Export/Print (Share already in toolbar). */}
           <OverflowMenu
             onSearch={openPalette}
             showShare={showShare}
             shareView={shareView}
             printPath={printPath}
           />
-
-          <button
-            type="button"
-            onClick={openDialog}
-            className="inline-flex items-center gap-2 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-ink-soft"
-          >
-            New task
-            <kbd className="hidden h-[16px] items-center rounded border border-white/15 bg-white/10 px-1 font-mono text-[10px] text-white/70 md:inline-flex">
-              C
-            </kbd>
-          </button>
         </div>
       </div>
 

@@ -465,13 +465,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "bd8813991120b530",
       "materialityReview": {
         "materialityHash": "bd8813991120b530",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.app-settings-2026-07-15.json"
       }
     },
@@ -570,13 +570,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "228b5218db1a7d92",
       "materialityReview": {
         "materialityHash": "228b5218db1a7d92",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-15.json"
       }
     },
@@ -1234,13 +1234,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9154b894aeb46365",
       "materialityReview": {
         "materialityHash": "9154b894aeb46365",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.print-board-2026-07-15.json"
       }
     },
@@ -1282,13 +1282,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "b9f94c73108490b0",
       "materialityReview": {
         "materialityHash": "b9f94c73108490b0",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-15.json"
       }
     },
@@ -1337,13 +1337,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a544e0ffbc8d363e",
       "materialityReview": {
         "materialityHash": "a544e0ffbc8d363e",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.print-list-2026-07-15.json"
       }
     },
@@ -1385,13 +1385,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d90764270932869e",
       "materialityReview": {
         "materialityHash": "d90764270932869e",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-15.json"
       }
     },
@@ -1695,13 +1695,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ee2b4660f7b40532",
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-15.json"
       }
     },
@@ -1744,13 +1744,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "c2599ecd3d094b3d",
       "materialityReview": {
         "materialityHash": "c2599ecd3d094b3d",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-15.json"
       }
     },
@@ -1793,13 +1793,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a24a1b85fe91dad0",
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-15.json"
       }
     },
@@ -2289,13 +2289,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "24580b7e362ba327",
       "materialityReview": {
         "materialityHash": "24580b7e362ba327",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.welcome-2026-07-15.json"
       }
     },
@@ -2340,13 +2340,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f532c7ecbb8ab980",
       "materialityReview": {
         "materialityHash": "f532c7ecbb8ab980",
-        "reviewedAt": "2026-07-15",
+        "reviewedAt": "2026-07-17",
         "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-15.json"
       }
     },
@@ -2604,7 +2604,7 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6df8e12a1cea1645"
+      "materialityHash": "49177db2d36d5d8c"
     },
     {
       "id": "tasks.surface.empty-workspace",
