@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useDomain } from "@/lib/domain-context";
 import { useActiveWorkspace } from "@/lib/domain-context";
 import { ShareButton } from "@/components/app/share/share-button";
+import { RoomViewBar } from "@/components/app/room/room-view-bar";
 import { usePalette } from "@/components/app/palette/command-palette";
 import { useTasks } from "@/lib/tasks/tasks-context";
 import { useToast } from "@/components/primitives/toast";
@@ -79,45 +80,36 @@ export function AppPageHeader({
   const shareView = inferShareView(pathname ?? "/app/board");
   const printPath = inferPrintPath(pathname ?? "/app/board");
 
-  // De-stacked 2026-05-18: no border-b and lighter top padding so this
-  // reads as one continuous header region beneath the sticky SuiteChrome
-  // switcher, not a second stacked bar. SuiteChrome owns the only hairline
-  // (its scroll border); a second border here was the "two header rows" /
-  // amateur tell.
+  // T·95 lab parity: workspace views render the Editorial Project Room
+  // header — the full-bleed brief band, then the 52px room view bar
+  // carrying tabs + working tools (the lab composition, exactly).
+  // Inbox / My week / Settings keep the simple title header below.
+  if (brief) {
+    return (
+      <>
+        {brief}
+        <RoomViewBar />
+      </>
+    );
+  }
+
   return (
     <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">
-      <div
-        className={
-          "flex items-center gap-3 " +
-          (brief ? "justify-end pb-2.5" : "justify-between")
-        }
-      >
-        {brief ? null : (
-          <div className="min-w-0 flex-1">
-            {/* Redundant Tasks-logo glyph box removed 2026-05-18: SuiteChrome
-                already carries product identity (signal studio. + tasks·);
-                repeating the brand mark next to every workspace title read
-                as duplicated branding. Title now stands on its own. */}
-            <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
-              <span className="block truncate">{title}</span>
-            </h1>
-          </div>
-        )}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
+            <span className="block truncate">{title}</span>
+          </h1>
+        </div>
         <div className="flex flex-shrink-0 items-center gap-2">
-          {/* T·94: Search + New task moved up into the Studio Bar (the
-              universal ⌘K field and the contextual create control). The
-              page header keeps only view-local actions: Share and the
-              Export/Print overflow. */}
+          {/* T·94: Search + New task live in the Studio Bar. The page
+              header keeps only view-local actions. */}
           {showShare ? (
             <span className="hidden lg:inline-flex">
               <ShareButton view={shareView} />
             </span>
           ) : null}
-
-          {/* Overflow: visible on all screen sizes (M4).
-              Mobile/tablet: Search + Share + Export/Print.
-              Desktop: Export/Print (Share already in toolbar). */}
-          <OverflowMenu
+          <PageActionsOverflow
             onSearch={openPalette}
             showShare={showShare}
             shareView={shareView}
@@ -126,15 +118,8 @@ export function AppPageHeader({
         </div>
       </div>
 
-      {brief}
-
-      <div className={(brief ? "mt-3" : "mt-4") + " flex items-center justify-between"}>
-        <nav
-          className={
-            "flex items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll " +
-            (showWorkspaceTabs ? "" : "hidden")
-          }
-        >
+      <div className={"mt-4 items-center justify-between " + (showWorkspaceTabs ? "flex" : "hidden")}>
+        <nav className="flex items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll">
           {TABS.map((t) => (
             <Link
               key={t.href}
@@ -150,11 +135,6 @@ export function AppPageHeader({
             </Link>
           ))}
         </nav>
-
-        <div className="hidden items-center gap-1.5 text-[11.5px] text-ink-quiet sm:flex">
-          <span className="block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          <span>Live</span>
-        </div>
       </div>
     </header>
   );
@@ -166,14 +146,17 @@ export function AppPageHeader({
  *
  * M4 (2026-05-28): Export + Print demoted from primary toolbar here.
  * Visible on all screen sizes; desktop shows ··· for utility actions.
+ * Exported since T·95: the room view bar (lab parity) hosts the same
+ * overflow beside its tools. `onSearch` optional there — the bar has
+ * the universal field.
  */
-function OverflowMenu({
+export function PageActionsOverflow({
   onSearch,
   showShare,
   shareView,
   printPath,
 }: {
-  onSearch: () => void;
+  onSearch?: () => void;
   showShare: boolean;
   shareView: ShareView;
   printPath: string;
@@ -288,22 +271,23 @@ function OverflowMenu({
         >
           {/* Mobile/tablet: Search + Share */}
           <div className="lg:hidden">
-            {/* C6: Filter affordance removed. Restore when filtering ships. */}
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false);
-                onSearch();
-              }}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              Search
-            </button>
+            {onSearch ? (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  onSearch();
+                }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                Search
+              </button>
+            ) : null}
             {showShare ? (
               <div className="[&>button]:!w-full [&>button]:!justify-start [&>button]:!rounded [&>button]:!border-0 [&>button]:!bg-transparent [&>button]:!px-2 [&>button]:!py-1.5 [&>button]:!text-[12.5px] [&>button]:!text-ink-soft hover:[&>button]:!bg-bg-sunken">
                 <ShareButton view={shareView} />

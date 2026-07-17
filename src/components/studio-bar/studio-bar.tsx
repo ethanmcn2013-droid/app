@@ -391,7 +391,9 @@ export function StudioBar() {
           </svg>
           <span className="hidden sm:block">New task</span>
         </button>
-        <span className="flex flex-none items-center rounded-full ring-1 ring-white/[0.18]">
+        {/* Quiet raised ring, the rail-account-chip register: the Clerk
+            avatar keeps its menu; the chrome supplies the frame. */}
+        <span className="flex flex-none items-center rounded-full bg-white/[0.06] p-px ring-1 ring-white/[0.12]">
           <UserButtonWithSuite current="tasks" />
         </span>
       </div>

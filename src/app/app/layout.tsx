@@ -22,7 +22,9 @@ import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
 import { DomainProvider } from "@/lib/domain-context";
 import { CurrentUserProvider } from "@/lib/auth-context";
 import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
+import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { getRoomBriefData } from "@/server/actions/room";
+import { getProjectsTreeData } from "@/server/actions/projects-tree";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
@@ -74,7 +76,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -99,6 +101,8 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     // period name, owner. Fetched here per DECISIONS.md D4 so the view
     // pages stay synchronous and never re-suspend against loading.tsx.
     getRoomBriefData(),
+    // Projects sidebar tree (T·95 lab parity): periods → workspaces → counts.
+    getProjectsTreeData(),
   ]);
   const slug = wsRow?.slug ?? ws;
   const personalization = getWorkspacePersonalization({
@@ -132,10 +136,13 @@ async function AppShell({ children }: { children: React.ReactNode }) {
                   periodName={roomBrief?.periodName ?? null}
                 />
                 <StudioChromeBridge />
-                <AppSidebar />
-                <main className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">
-                  {children}
-                </main>
+                <RoomToolsProvider>
+                  <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
+                  {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
+                  <main className="flex min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
+                    {children}
+                  </main>
+                </RoomToolsProvider>
                 <TaskDetailPanel />
                 <CrossWorkspaceOverdue />
                 <CrossWorkspaceSearch />

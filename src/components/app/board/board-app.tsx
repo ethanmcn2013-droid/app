@@ -3,7 +3,6 @@
 import {
   useEffect,
   useMemo,
-  useOptimistic,
   useRef,
   useState,
   useTransition,
@@ -13,12 +12,20 @@ import { EASE_OUT_EXPO, MOTION_MODERATE } from "@/lib/motion";
 import {
   LANES,
   LANE_ORDER,
-  PRIORITY_LABEL,
   type LaneId,
   type Task,
 } from "@/lib/data";
-import { AvatarStack } from "@/components/showcase/avatar";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
+import { Icon } from "@/components/app/room/room-icons";
+import {
+  LabelList,
+  RoomAvatarStack,
+  ScheduleText,
+  TaskCompleteBox,
+  TaskSignals,
+} from "@/components/app/room/room-task-ui";
+import { useRoomVisibleTasks } from "@/components/app/room/room-tools-context";
+import roomStyles from "@/components/app/room/option-b.module.css";
 import {
   useTasksDispatch,
   useTasksState,
@@ -28,10 +35,6 @@ import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { InlineComposer } from "@/components/app/add-task/inline-composer";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { BoardGhost } from "@/components/app/empty-state/ghost-views";
-import { BlockerBadge } from "@/components/app/blockers/blocker-badge";
-import { Popover } from "@/components/app/detail-panel/popover";
-import { RecurrenceChip } from "@/components/app/cards/recurrence-chip";
-import { setTaskMilestoneAction } from "@/server/actions/tasks";
 import {
   renameColumnAction,
   addColumnAction,
@@ -238,10 +241,26 @@ export function BoardApp() {
   // Memoize column → tasks map to avoid re-walking on every keystroke.
   // Only system lanes matter for keyboard nav (custom columns don't have
   // keyboard cross-lane shortcuts in this version).
+  //
+  // T·95: the room tools (search / filter / sort) scope what the board
+  // shows — lanes render the visible subset, the lane count reads
+  // "visible/total" when they differ, the lab's exact contract.
+  const visibleTasks = useRoomVisibleTasks();
+  const visibleIds = useMemo(
+    () => new Set(visibleTasks.map((t) => t.id)),
+    [visibleTasks],
+  );
   const tasksByColumnMap = useMemo(() => {
     const map: Record<string, Task[]> = {};
     for (const col of boardColumns) {
-      map[col.key] = tasksByColumn(state, col.key);
+      map[col.key] = tasksByColumn(state, col.key).filter((t) => visibleIds.has(t.id));
+    }
+    return map;
+  }, [state, boardColumns, visibleIds]);
+  const totalsByColumn = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const col of boardColumns) {
+      map[col.key] = tasksByColumn(state, col.key).length;
     }
     return map;
   }, [state, boardColumns]);
@@ -359,8 +378,15 @@ export function BoardApp() {
   }
 
   return (
-    <div className="relative flex h-full flex-1 flex-col">
-      <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
+    <section aria-label="Workspace Board" className={roomStyles.boardView}>
+      <div className={`${roomStyles.boardScroller} thin-scroll`}>
+        <div
+          className={roomStyles.boardGrid}
+          style={{
+            gridTemplateColumns: `repeat(${boardColumns.length + 1}, minmax(252px, 1fr))`,
+            minWidth: (boardColumns.length + 1) * 266,
+          }}
+        >
         {boardColumns.map((col, idx) => {
           const colTasks = tasksByColumnMap[col.key] ?? [];
           const isHover = hoverColumn === col.key;
@@ -385,14 +411,9 @@ export function BoardApp() {
                 delay: idx * 0.05,
                 ease: EASE_OUT_EXPO,
               }}
-              className="flex w-[85vw] max-w-[298px] flex-shrink-0 flex-col rounded-xl p-2.5 transition-colors sm:w-[298px]"
-              style={{
-                background: isHover ? col.bg : `${col.bg}E6`,
-                outline: isHover
-                  ? `2px dashed ${col.dot}`
-                  : "2px dashed transparent",
-                outlineOffset: -4,
-              }}
+              className={roomStyles.boardLane}
+              data-status={LANE_TONE[col.key]}
+              data-drop={isHover || undefined}
               onDragOver={(e) => { e.preventDefault(); setHoverColumn(col.key); }}
               onDragLeave={() => setHoverColumn(null)}
               onDrop={(e) => {
@@ -413,9 +434,8 @@ export function BoardApp() {
                 columnKey={col.key}
                 columnName={col.name}
                 isSystem={col.isSystem}
-                dot={col.dot}
-                ink={col.ink}
                 count={colTasks.length}
+                total={totalsByColumn[col.key] ?? colTasks.length}
                 columnIndex={idx}
                 totalColumns={boardColumns.length}
                 allColumnKeys={boardColumns.map((c) => c.key)}
@@ -424,7 +444,7 @@ export function BoardApp() {
                 currentConfig={optimisticConfig}
               />
 
-              <div className="flex flex-col gap-2 overflow-y-auto pr-0.5 thin-scroll">
+              <div className={roomStyles.boardTaskList}>
                 <AnimatePresence initial={false}>
                   {colTasks.map((task) => (
                     <Card
@@ -462,25 +482,35 @@ export function BoardApp() {
                   ))}
                 </AnimatePresence>
 
+                {colTasks.length === 0 && composerColumn !== col.key ? (
+                  <div className={roomStyles.emptyLane} data-drop-active={isHover || undefined}>
+                    <strong>
+                      {(totalsByColumn[col.key] ?? 0) === 0 ? "A clear lane" : "No matching work"}
+                    </strong>
+                    <span>
+                      {(totalsByColumn[col.key] ?? 0) === 0
+                        ? "Add the next useful task when it is ready."
+                        : "Adjust the room filters to bring work back."}
+                    </span>
+                  </div>
+                ) : null}
                 {composerColumn === col.key ? (
                   <InlineComposer
                     lane={composerLane}
                     onClose={() => setComposerColumn(null)}
                   />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setComposerColumn(col.key)}
-                    className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-quiet transition-colors hover:bg-white/60 hover:text-ink-soft"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add task
-                  </button>
-                )}
+                ) : null}
               </div>
+              {composerColumn === col.key ? null : (
+                <button
+                  className={roomStyles.laneAddButton}
+                  onClick={() => setComposerColumn(col.key)}
+                  type="button"
+                >
+                  <Icon name="add" size={14} />
+                  Add task
+                </button>
+              )}
             </motion.div>
           );
         })}
@@ -490,11 +520,20 @@ export function BoardApp() {
           currentConfig={optimisticConfig}
           onOptimisticConfigChange={setOptimisticConfig}
         />
+        </div>
       </div>
-      <ShortcutHint />
-    </div>
+    </section>
   );
 }
+
+/** Lane tone → the lab's per-status dot/wash grammar. Production system
+ *  lanes map onto the lab statuses; custom columns stay neutral. */
+const LANE_TONE: Record<string, string | undefined> = {
+  todo: undefined,
+  doing: "active",
+  review: "waiting",
+  done: "done",
+};
 
 // ─── LaneHeader ───────────────────────────────────────────────────────────────
 
@@ -520,9 +559,8 @@ function LaneHeader({
   columnKey,
   columnName,
   isSystem,
-  dot,
-  ink,
   count,
+  total,
   columnIndex,
   totalColumns,
   allColumnKeys,
@@ -533,9 +571,8 @@ function LaneHeader({
   columnKey: string;
   columnName: string;
   isSystem: boolean;
-  dot: string;
-  ink: string;
   count: number;
+  total: number;
   columnIndex: number;
   totalColumns: number;
   allColumnKeys: string[];
@@ -667,12 +704,11 @@ function LaneHeader({
   const laneNote = isSystem ? LANE_NOTES[columnKey] : undefined;
 
   return (
-    <>
-    <div className="group/colhdr flex items-center justify-between px-1.5 pb-2 pt-0.5">
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+    <header className={`${roomStyles.laneHeader} group/colhdr`}>
+      <div>
         <span
-          className="block h-2 w-2 flex-shrink-0 rounded-full"
-          style={{ background: dot }}
+          className={roomStyles.laneStatusMark}
+          data-status={LANE_TONE[columnKey]}
         />
         {editing ? (
           <input
@@ -689,47 +725,22 @@ function LaneHeader({
             maxLength={80}
             onClick={(e) => e.stopPropagation()}
             aria-label="Column name"
-            className="w-full max-w-[140px] rounded border border-[var(--brand)] bg-transparent px-1 py-0 text-[12px] font-semibold outline-none ring-1 ring-[var(--brand)]"
-            style={{ color: ink }}
+            className="w-full max-w-[140px] rounded border border-[var(--x-task-focus)] bg-transparent px-1 py-0 text-[12px] font-semibold text-ink outline-none"
           />
         ) : (
-          <button
-            type="button"
-            aria-label={`Rename column ${optimisticName}`}
-            title="Double-click to rename"
+          <h2
             onDoubleClick={startEdit}
-            className="group/lh flex min-w-0 cursor-default items-center gap-1"
+            title="Double-click to rename"
           >
-            <span
-              className="truncate text-[12px] font-semibold"
-              style={{ color: ink }}
-            >
-              {optimisticName}
-            </span>
-            <svg
-              aria-hidden="true"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              onClick={startEdit}
-              className="flex-shrink-0 cursor-pointer text-ink-quiet opacity-0 transition-opacity group-hover/lh:opacity-100"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </button>
+            {optimisticName}
+          </h2>
         )}
-        <span className="flex-shrink-0 text-[11.5px] text-ink-quiet">
-          {count}
+        <span className={roomStyles.laneCount}>
+          {count === total ? total : `${count}/${total}`}
         </span>
       </div>
 
-      <div className="flex flex-shrink-0 items-center gap-0.5">
+      <div className={roomStyles.laneHeaderActions}>
         {/* Overflow menu: move left/right + delete (custom) */}
         {showOverflow ? (
           <div ref={overflowRef} className="relative">
@@ -797,7 +808,7 @@ function LaneHeader({
           type="button"
           aria-label={`Add task to ${optimisticName}`}
           onClick={(e) => { e.stopPropagation(); onAddTask(); }}
-          className="rounded p-1 text-ink-quiet hover:bg-white/60 hover:text-ink-soft"
+          className="rounded p-1 text-[var(--x-task-text-muted)] hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)]"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
             <line x1="12" y1="5" x2="12" y2="19" />
@@ -805,13 +816,8 @@ function LaneHeader({
           </svg>
         </button>
       </div>
-    </div>
-    {laneNote ? (
-      <p className="-mt-1 px-1.5 pb-2 text-[10.5px] leading-snug text-ink-quiet">
-        {laneNote}
-      </p>
-    ) : null}
-    </>
+      {laneNote ? <p>{laneNote}</p> : null}
+    </header>
   );
 }
 
@@ -879,10 +885,7 @@ function AddColumnTile({
 
   return (
     <div
-      className={[
-        "flex w-[85vw] max-w-[298px] flex-shrink-0 items-center rounded-xl border border-dashed border-line-soft sm:w-[298px]",
-        adding ? "p-2.5 transition-colors" : "cursor-pointer px-4 py-3 transition-colors hover:border-line hover:bg-bg-sunken/60",
-      ].join(" ")}
+      className={roomStyles.addColumnTile}
       onClick={!adding ? startAdd : undefined}
       role={!adding ? "button" : undefined}
       tabIndex={!adding ? 0 : undefined}
@@ -890,103 +893,29 @@ function AddColumnTile({
       onKeyDown={!adding ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startAdd(); } } : undefined}
     >
       {adding ? (
-        <div className="flex w-full items-center gap-1.5">
-          <span className="block h-2 w-2 flex-shrink-0 rounded-full bg-line-soft" />
-          <input
-            ref={inputRef}
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === "Enter") { e.preventDefault(); commit(); }
-              if (e.key === "Escape") { e.preventDefault(); cancel(); }
-            }}
-            maxLength={80}
-            placeholder="Column name"
-            aria-label="New column name"
-            className="w-full max-w-[180px] rounded border border-[var(--brand)] bg-transparent px-1 py-0 text-[12px] font-semibold text-ink outline-none ring-1 ring-[var(--brand)] placeholder:text-ink-quiet"
-          />
-        </div>
+        <input
+          ref={inputRef}
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Escape") { e.preventDefault(); cancel(); }
+          }}
+          maxLength={80}
+          placeholder="Column name"
+          aria-label="New column name"
+          className="w-full max-w-[180px] rounded border border-[var(--x-task-focus)] bg-transparent px-1 py-0 text-[12px] font-semibold text-ink outline-none"
+        />
       ) : (
-        <div className="flex items-center gap-2 text-[12px] font-medium text-ink-quiet">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add column
-        </div>
+        <>
+          <strong>Add column</strong>
+          <span>A custom lane for this workspace.</span>
+        </>
       )}
     </div>
-  );
-}
-
-// ─── ShortcutHint ─────────────────────────────────────────────────────────────
-
-function ShortcutHint() {
-  return (
-    <div className="pointer-events-none absolute bottom-4 right-4 z-10">
-      <div className="pointer-events-auto">
-        <Popover
-          align="end"
-          width={232}
-          aria-label="Keyboard shortcuts"
-          trigger={({ onClick, "aria-expanded": expanded, ref }) => (
-            <button
-              ref={ref}
-              type="button"
-              onClick={onClick}
-              aria-expanded={expanded}
-              aria-label="Keyboard shortcuts"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-line-soft bg-white/80 text-[11.5px] font-semibold text-ink-quiet shadow-[0_2px_8px_-2px_rgba(20,21,26,0.08)] backdrop-blur transition-colors hover:border-line hover:text-ink-soft"
-            >
-              /
-            </button>
-          )}
-        >
-          {() => (
-            <div className="flex flex-col gap-1.5 px-2 py-2 text-[12px] leading-relaxed text-ink-soft">
-              <div className="flex items-center gap-2">
-                <Keys keys={["↑", "↓"]} />
-                <span className="text-ink-quiet">within column</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Keys keys={["←", "→"]} />
-                <span className="text-ink-quiet">across columns</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Keys keys={["⏎"]} />
-                <span className="text-ink-quiet">open</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Keys keys={["X"]} />
-                <span className="text-ink-quiet">mark done</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Keys keys={["⌘←", "⌘→"]} />
-                <span className="text-ink-quiet">move</span>
-              </div>
-            </div>
-          )}
-        </Popover>
-      </div>
-    </div>
-  );
-}
-
-function Keys({ keys }: { keys: string[] }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      {keys.map((k, i) => (
-        <kbd
-          key={i}
-          className="inline-flex min-w-[20px] items-center justify-center rounded border border-line-soft bg-bg-sunken px-1 py-px text-[11px] font-medium text-ink-soft"
-        >
-          {k}
-        </kbd>
-      ))}
-    </span>
   );
 }
 
@@ -1021,11 +950,12 @@ function Card({
   onDrag: (e: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
-  const prio = PRIORITY_LABEL[task.priority];
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const reduce = useReducedMotion();
   const cardRef = useRef<HTMLDivElement | null>(null);
+  // Mount-stable clock for the overdue receipt (Compiler-safe).
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
     if (!isFocused) return;
@@ -1080,12 +1010,8 @@ function Card({
     ? ({ draggable: true, onDragStart, onDrag, onDragEnd } as unknown as Record<string, unknown>)
     : ({} as Record<string, unknown>);
 
-  const outline = isFocused
-    ? "2px solid var(--brand)"
-    : isSelected
-      ? "1.5px solid var(--brand)"
-      : "none";
-  const focusScale = isFocused && !reduce ? 1.04 : 1;
+  const outline = isFocused ? "2px solid var(--x-task-focus)" : "none";
+  const focusScale = isFocused && !reduce ? 1.02 : 1;
 
   const initialX = momentum && !reduce ? momentum.dx : 0;
   const initialY = momentum && !reduce ? momentum.dy : 0;
@@ -1116,10 +1042,9 @@ function Card({
       data-task-id={task.id}
       data-task-title={task.title}
       data-task-focused={isFocused ? "true" : undefined}
-      className={[
-        "group relative cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-[outline,box-shadow] hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]",
-        task.isMilestone ? "border-l-[2px] border-l-[var(--brand)]" : "",
-      ].join(" ")}
+      data-selected={isSelected || undefined}
+      data-dragging={isDragging || undefined}
+      className={`group ${roomStyles.boardCard}`}
     >
       <AnimatePresence>
         {celebrate ? (
@@ -1157,151 +1082,72 @@ function Card({
           </motion.span>
         ) : null}
       </AnimatePresence>
-      <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-2 flex-1">
-          {task.isMilestone ? (
-            <span className="mr-1 inline-block text-[10px] text-[var(--brand)]" aria-hidden>◇</span>
-          ) : null}
-          {task.title}
-        </span>
-        <div className="flex flex-shrink-0 items-center gap-1.5">
-          {task.priority === "p0" ? (
-            <span className="rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wider text-red-600">P0</span>
-          ) : null}
-          <MilestoneQuickToggle task={task} />
-          <div ref={menuRef} className="relative">
-            <button
-              type="button"
-              aria-label="Move to column"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-              className="inline-flex h-5 w-5 items-center justify-center rounded text-ink-quiet opacity-100 transition-colors hover:bg-bg-sunken hover:text-ink-soft md:opacity-0 md:group-hover:opacity-100"
+      {/* Lab card anatomy (board-view.tsx): lead (complete-box · title ·
+          menu) → purpose → labels → schedule row → signal footer. */}
+      <div className={roomStyles.cardLead}>
+        <TaskCompleteBox task={task} />
+        <span className={roomStyles.taskTitleButton}>{task.title}</span>
+        <div ref={menuRef} className="relative">
+          <button
+            type="button"
+            aria-label={`More actions for ${task.title}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+            className={roomStyles.cardMenuButton}
+          >
+            <Icon name="more" size={16} />
+          </button>
+          {menuOpen ? (
+            <div
+              role="menu"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="1.6" />
-                <circle cx="12" cy="12" r="1.6" />
-                <circle cx="19" cy="12" r="1.6" />
-              </svg>
-            </button>
-            {menuOpen ? (
-              <div
-                role="menu"
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
-              >
-                <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
-                  Move to
-                </div>
-                {boardColumns
-                  .filter((c) => c.key !== currentColumnKey)
-                  .map((col) => (
-                    <button
-                      key={col.key}
-                      type="button"
-                      role="menuitem"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        onMoveToColumn(col.key);
-                      }}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-                    >
-                      <span className="block h-1.5 w-1.5 rounded-full" style={{ background: col.dot }} />
-                      {col.name}
-                    </button>
-                  ))}
+              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
+                Move to
               </div>
-            ) : null}
-          </div>
+              {boardColumns
+                .filter((c) => c.key !== currentColumnKey)
+                .map((col) => (
+                  <button
+                    key={col.key}
+                    type="button"
+                    role="menuitem"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onMoveToColumn(col.key);
+                    }}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
+                  >
+                    <span className="block h-1.5 w-1.5 rounded-full" style={{ background: col.dot }} />
+                    {col.name}
+                  </button>
+                ))}
+            </div>
+          ) : null}
         </div>
       </div>
-      {/* Editorial Project Room (Option B): task purpose stays visible on
-          the card so intent reads at a glance without opening the panel. */}
       {task.description ? (
-        <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-ink-quiet">
-          {task.description}
-        </p>
+        <p className={roomStyles.cardPurpose}>{task.description}</p>
       ) : null}
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft" title={prio.label}>
-            <span className="block h-1.5 w-1.5 rounded-full" style={{ background: prio.color }} />
-            {task.priority.toUpperCase()}
-          </span>
-          {task.due ? (
-            <span className="text-[10.5px] text-ink-quiet">{task.due}</span>
-          ) : null}
-          <RecurrenceChip recurrence={task.recurrence} />
-        </div>
-        <AvatarStack users={task.assignees} size={18} />
+      <div className={roomStyles.cardLabels}>
+        <LabelList limit={2} task={task} />
       </div>
-      {task.idleDays || task.comments || task.blockedBy?.length ? (
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-          {task.idleDays ? (
-            <span className="inline-flex items-center gap-1 rounded border border-amber-200/70 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-              Idle {task.idleDays}d
-            </span>
-          ) : null}
-          {task.blockedBy && task.blockedBy.length > 0 ? (
-            <BlockerBadge blockedBy={task.blockedBy} />
-          ) : null}
-          {task.comments ? (
-            <span className="inline-flex items-center gap-1 text-[10.5px] text-ink-quiet">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-              {task.comments}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
+      <div className={roomStyles.cardScheduleRow}>
+        <ScheduleText now={now} task={task} />
+        <RoomAvatarStack limit={3} task={task} />
+      </div>
+      <footer className={roomStyles.cardFooter}>
+        <TaskSignals task={task} />
+        {task.blockedBy && task.blockedBy.length > 0 ? (
+          <span className={roomStyles.waitingReason}>
+            Waiting on {task.blockedBy.length} task{task.blockedBy.length === 1 ? "" : "s"}
+          </span>
+        ) : null}
+      </footer>
     </motion.div>
   );
 }
 
-// ─── MilestoneQuickToggle ─────────────────────────────────────────────────────
-
-function MilestoneQuickToggle({ task }: { task: Task }) {
-  const [isPending, startTransition] = useTransition();
-  const [optimistic, setOptimistic] = useOptimistic(!!task.isMilestone);
-
-  function handleClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    const next = !optimistic;
-    startTransition(async () => {
-      setOptimistic(next);
-      await setTaskMilestoneAction(task.id, next);
-    });
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={isPending}
-      aria-pressed={optimistic}
-      aria-label={optimistic ? "Remove milestone" : "Mark as milestone"}
-      title={optimistic ? "Remove milestone" : "Mark as milestone"}
-      className={[
-        "inline-flex h-5 w-5 items-center justify-center rounded transition-colors",
-        "opacity-100 md:opacity-0 md:group-hover:opacity-100",
-        optimistic ? "text-[var(--brand)]" : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
-      ].join(" ")}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill={optimistic ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden
-      >
-        <path d="M12 2 L22 12 L12 22 L2 12 Z" />
-      </svg>
-    </button>
-  );
-}

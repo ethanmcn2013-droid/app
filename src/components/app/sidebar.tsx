@@ -7,13 +7,8 @@ import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { useCurrentUser } from "@/lib/auth-context";
 import { usePalette } from "@/components/app/palette/command-palette";
-
-const NAV_TOP = [
-  { href: "/app/inbox", label: "Inbox", icon: "inbox" },
-  { href: "/app/my-tasks", label: "My week", icon: "user" },
-  { href: "/app/your-work", label: "Your work", icon: "views" },
-  { href: undefined, label: "Search", icon: "search" },
-];
+import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
+import type { ProjectsTreeGroup } from "@/server/actions/projects-tree";
 
 const VIEWS = [
   { href: "/app/board", label: "Board", icon: "board" },
@@ -27,121 +22,24 @@ const VIEWS = [
 // Dead affordances erode trust faster than missing features. Deleted per
 // product-freeze scope (T·69).
 
-const NAV_BOTTOM = [
-  { href: "/app/import", label: "Import", icon: "import" },
-  { href: "/app/settings", label: "Settings", icon: "settings" },
-];
-
-export function AppSidebar({ active: activeProp }: { active?: string }) {
+export function AppSidebar({
+  active: activeProp,
+  tree,
+  activeWorkspaceId,
+}: {
+  active?: string;
+  tree: readonly ProjectsTreeGroup[];
+  activeWorkspaceId: string;
+}) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   return (
     <>
-      {/*
-       * MobileSuiteBar removed, L4 SuiteChrome (suite-chrome.tsx) is now
-       * the persistent top bar on all /app/* surfaces (mobile + desktop).
-       * It renders above this sidebar in the layout. Content pt-9 on mobile
-       * was the MobileSuiteBar clearance; now the chrome is sticky (not
-       * fixed) so that padding is gone from /app/layout.tsx.
-       */}
+      {/* T·95 lab parity: the desktop rail is the lab's Projects sidebar
+          (planning-period tree, real counts). Mobile keeps the tab bar. */}
       <MobileTabBar key={active} active={active} />
-      <DesktopSidebar active={active} />
+      <ProjectsSidebar activeWorkspaceId={activeWorkspaceId} tree={tree} />
     </>
-  );
-}
-
-function DesktopSidebar({ active }: { active: string }) {
-  return (
-    /* T·94: 248px, aligned under the Studio Bar's workspace-switcher cell.
-       The wordmark header row is gone — product identity lives in the rail
-       and the bar; the sidebar carries only Tasks-local navigation. */
-    <aside className="hidden h-full w-[248px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
-      <div className="flex-1 overflow-y-auto px-2 py-3">
-        <Group items={NAV_TOP} active={active} />
-
-        <div className="mt-4 px-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-          Views
-        </div>
-        <div className="mt-1">
-          <Group items={VIEWS} active={active} />
-        </div>
-
-        <div className="mt-5 border-t border-line-soft/70 pt-3">
-          <Group items={NAV_BOTTOM} active={active} />
-        </div>
-      </div>
-
-      {/* Account row removed (T·94): the avatar lives on the Studio Bar. */}
-    </aside>
-  );
-}
-
-function Group({
-  items,
-  active,
-}: {
-  items: { href?: string; label: string; icon: string }[];
-  active: string;
-}) {
-  // The sidebar lives inside <TasksProvider> for /app routes; this
-  // hook will throw on routes that don't mount the provider. Today
-  // the sidebar is only used in the /app shell, so this is safe.
-  const tasks = useTasksState();
-  const me = useCurrentUser();
-  const { openPalette } = usePalette();
-  const inboxCount = openTaskCount(tasks);
-  const myCount = openTaskCount(tasks, { user: me });
-
-  return (
-    <ul className="space-y-px">
-      {items.map((it) => {
-        const isActive = it.href !== undefined && active === it.href;
-        const count =
-          it.icon === "inbox"
-            ? inboxCount
-            : it.icon === "user"
-              ? myCount
-              : null;
-        const isSearch = it.icon === "search";
-        const className =
-          "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] transition-colors " +
-          (isActive
-            ? "bg-white text-ink shadow-sm ring-1 ring-line-soft"
-            : "text-ink-soft hover:bg-line-soft/60 hover:text-ink");
-        const inner = (
-          <>
-            <NavIcon kind={it.icon} />
-            <span className="flex-1">{it.label}</span>
-            {isSearch ? (
-              <kbd className="inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
-                ⌘K
-              </kbd>
-            ) : count !== null ? (
-              <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-quiet">
-                {count}
-              </span>
-            ) : null}
-          </>
-        );
-        return (
-          <li key={it.href ?? it.label}>
-            {isSearch ? (
-              <button
-                type="button"
-                onClick={openPalette}
-                className={className + " w-full"}
-              >
-                {inner}
-              </button>
-            ) : it.href ? (
-              <Link href={it.href} className={className}>
-                {inner}
-              </Link>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
   );
 }
 
