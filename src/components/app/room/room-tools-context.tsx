@@ -49,6 +49,9 @@ type RoomToolsState = {
   sort: RoomSortMode;
   density: RoomDensity;
   savedViews: readonly SavedRoomView[];
+  /** List-view field configurator visibility (the Fields tool). */
+  fieldsOpen: boolean;
+  setFieldsOpen: (v: boolean) => void;
   setQuery: (v: string) => void;
   setPriority: (v: "all" | Priority) => void;
   setOwner: (v: RoomOwnerFilter) => void;
@@ -86,6 +89,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
   const [owner, setOwner] = useState<RoomOwnerFilter>("all");
   const [sort, setSort] = useState<RoomSortMode>("manual");
   const [density, setDensity] = useState<RoomDensity>("compact");
+  const [fieldsOpen, setFieldsOpen] = useState(false);
   const [savedViews, setSavedViews] = useState<readonly SavedRoomView[]>([]);
 
   useEffect(() => {
@@ -157,6 +161,8 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       sort,
       density,
       savedViews,
+      fieldsOpen,
+      setFieldsOpen,
       setQuery,
       setPriority,
       setOwner,
@@ -175,6 +181,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       sort,
       density,
       savedViews,
+      fieldsOpen,
       clearFilters,
       activeFilterCount,
       saveCurrentView,

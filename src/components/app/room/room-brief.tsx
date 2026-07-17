@@ -1,14 +1,14 @@
 "use client";
 
-// Editorial Project Room brief — the Option B port (selected 2026-07-17).
+// Editorial Project Room brief — the lab band, 1:1 (T·95 lab parity).
 //
-// The workspace is a purposeful room, not a neutral container: purpose,
-// date window, ownership, and progress receipts stay visible above the
-// execution surface on every view. Live numbers come from the tasks
-// store; workspace facts arrive as server props from getRoomBriefData().
-// Purpose is operator-editable inline and persists via the meta KV (no
-// schema change). Scope breadcrumb + milestones panel retired 2026-07-17
-// (T·94): scope reads in the Studio Bar capsule.
+// The Option B lab's workspaceBrief: a full-bleed surface band with a
+// hairline base, 27px workspace title, the operator-editable purpose
+// line, the meta row with hairline separators, and the mono progress
+// column. Breadcrumb and milestones stayed retired (founder order,
+// T·94): scope reads in the Studio Bar capsule. Live numbers come from
+// the tasks store; workspace facts from getRoomBriefData(); purpose
+// persists via the meta KV.
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { useTasks } from "@/lib/tasks/tasks-context";
 import { useRoomBrief } from "@/components/app/room/room-brief-context";
 import { setWorkspacePurposeAction } from "@/server/actions/room";
 import type { Task } from "@/lib/data";
+import styles from "./option-b.module.css";
 
 /** Pull the part of the workspace title before " · " for the H1. */
 function shortenTitle(t: string): string {
@@ -46,85 +47,51 @@ export function RoomBrief() {
   const undated = tasks.filter((t) => !t.dueAt && t.lane !== "done").length;
   const progress = total === 0 ? 0 : Math.round((complete / total) * 100);
 
-  /* T·94: breadcrumb + milestones panel removed. Project scope now reads
-     in the Studio Bar's capsule; the brief keeps only title, purpose,
-     owner/date metadata, and the compact progress summary, so the header
-     stays low and the views start sooner. */
   return (
-    <section
-      aria-label="Workspace brief"
-      className="grid grid-cols-1 gap-5 rounded-xl border border-line-soft bg-white px-5 py-3.5 lg:grid-cols-[minmax(280px,1fr)_220px]"
-    >
-      {/* Identity */}
-      <div className="min-w-0">
-        <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-ink md:text-[24px]">
-          <span className="block truncate">{shortenTitle(pack.workspaceTitle)}</span>
-        </h1>
+    <header aria-label="Workspace brief" className={styles.workspaceBrief} data-milestones="off">
+      <div className={styles.workspaceIdentity}>
+        <h1>{shortenTitle(pack.workspaceTitle)}</h1>
         <PurposeLine purpose={data.purpose} />
-        <div className="mt-3 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-ink-quiet">
+        <div className={styles.workspaceMeta}>
           {data.dateWindow ? <span>{data.dateWindow}</span> : null}
-          {data.ownerName ? (
-            <span className="border-l border-line-soft pl-3.5 first:border-0 first:pl-0">
-              {data.ownerName}, workspace owner
-            </span>
-          ) : null}
+          {data.ownerName ? <span>{data.ownerName}, workspace owner</span> : null}
         </div>
       </div>
-
-      {/* Progress */}
-      <div className="flex flex-col justify-center border-line-soft lg:border-l lg:pl-5">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[10px] uppercase tracking-[0.08em] text-ink-quiet">
-            Progress
-          </span>
-          <strong className="font-mono text-[20px] font-medium tracking-tight text-ink">
-            {progress}%
-          </strong>
+      <section aria-label="Workspace progress" className={styles.workspaceProgress}>
+        <div>
+          <span>Progress</span>
+          <strong>{progress}%</strong>
         </div>
-        <div
+        <progress
           aria-label={`${complete} of ${total} tasks complete`}
-          className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-bg-sunken"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={Math.max(1, total)}
-          aria-valuenow={complete}
-        >
-          <div
-            className="h-full rounded-full bg-brand transition-[width] duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <dl className="mt-3 grid gap-1">
-          <div className="flex items-baseline justify-between">
-            <dt className="text-[10.5px] text-ink-quiet">Complete</dt>
-            <dd className="font-mono text-[11px] text-ink-soft">
+          max={Math.max(1, total)}
+          value={complete}
+        />
+        <dl>
+          <div>
+            <dt>Complete</dt>
+            <dd>
               {complete}/{total}
             </dd>
           </div>
-          <div className="flex items-baseline justify-between">
-            <dt className="text-[10.5px] text-ink-quiet">Overdue</dt>
-            <dd
-              className={
-                "font-mono text-[11px] " +
-                (overdue > 0 ? "font-semibold text-rose-700" : "text-ink-soft")
-              }
-            >
-              {overdue}
-            </dd>
+          <div>
+            <dt>Overdue</dt>
+            <dd data-alert={overdue > 0 || undefined}>{overdue}</dd>
           </div>
-          <div className="flex items-baseline justify-between">
-            <dt className="text-[10.5px] text-ink-quiet">No date</dt>
-            <dd className="font-mono text-[11px] text-ink-soft">{undated}</dd>
+          <div>
+            <dt>No date</dt>
+            <dd>{undated}</dd>
           </div>
         </dl>
-      </div>
-    </section>
+      </section>
+    </header>
   );
 }
 
 /**
  * The purpose sentence — click to edit, Enter or blur saves, Escape
- * cancels. Falls back to invitation copy until one is written.
+ * cancels. Falls back to invitation copy until one is written. Renders
+ * with the lab's identity-paragraph type via .purposeLine.
  */
 function PurposeLine({ purpose }: { purpose: string | null }) {
   const router = useRouter();
@@ -169,7 +136,8 @@ function PurposeLine({ purpose }: { purpose: string | null }) {
           }
         }}
         aria-label="Workspace purpose"
-        className="mt-1.5 w-full max-w-[60ch] resize-none rounded-md border border-line bg-white px-2 py-1 text-[12.5px] leading-relaxed text-ink-soft outline-none focus:border-brand"
+        className={styles.purposeLine}
+        data-editing="true"
       />
     );
   }
@@ -182,10 +150,8 @@ function PurposeLine({ purpose }: { purpose: string | null }) {
         setEditing(true);
       }}
       title="Edit workspace purpose"
-      className={
-        "mt-1.5 block max-w-[60ch] rounded text-left text-[12.5px] leading-relaxed transition-colors hover:text-ink " +
-        (purpose ? "text-ink-soft" : "text-ink-quiet italic")
-      }
+      className={styles.purposeLine}
+      data-empty={purpose ? undefined : "true"}
     >
       {purpose ??
         "What is this workspace for? Write the one-line purpose everyone plans against."}

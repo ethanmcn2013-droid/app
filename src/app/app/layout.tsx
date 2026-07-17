@@ -138,7 +138,8 @@ async function AppShell({ children }: { children: React.ReactNode }) {
                 <StudioChromeBridge />
                 <RoomToolsProvider>
                   <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
-                  <main className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">
+                  {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
+                  <main className="flex min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
                     {children}
                   </main>
                 </RoomToolsProvider>
