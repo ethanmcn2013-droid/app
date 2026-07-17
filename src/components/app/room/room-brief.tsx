@@ -155,7 +155,6 @@ function WorkspaceTitle({ title }: { title: string }) {
             setEditing(true);
           }}
           title="Rename workspace"
-          aria-label="Workspace title"
           className={`${styles.titleButton} group/wt`}
         >
           <span>{title}</span>
