@@ -356,8 +356,9 @@ export function ListApp() {
     return () => document.removeEventListener("keydown", onKey);
   }, [selected.size]);
 
-  const onRowClick = useCallback(
-    (taskId: string, e: React.MouseEvent) => {
+  // Plain function on purpose: the React Compiler memoizes it, and the
+  // manual dep list (selected.size vs the captured set) fought it.
+  const onRowClick = (taskId: string, e: React.MouseEvent) => {
       // Plain click → open detail panel; only modifiers select.
       const isShift = e.shiftKey;
       const isMeta = e.metaKey || e.ctrlKey;
@@ -396,9 +397,7 @@ export function ListApp() {
         for (let i = lo; i <= hi; i++) next.add(flatOrder[i]);
         return next;
       });
-    },
-    [flatOrder, openTask, selected.size],
-  );
+  };
 
   const onRowKeyDown = useCallback(
     (taskId: string, e: React.KeyboardEvent<HTMLTableRowElement>) => {

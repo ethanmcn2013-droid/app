@@ -1,28 +1,52 @@
 "use client";
 
+// Calendar — the Option B lab grammar on production machinery (T·95 lab
+// parity). Month table with lab cells and task chips, paired with the
+// lab's selected-day agenda pane. Production's schedule model is
+// startDay offsets over a fixed five-week window, so the lab's
+// month/week/agenda navigation and per-day create (which need real
+// calendar dates) are deliberately absent — no dead controls. Mobile
+// keeps the day-list below md; the lab specifies desktop only.
+
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "motion/react";
 import { LANES, type Task } from "@/lib/data";
-import { Avatar, AvatarStack } from "@/components/showcase/avatar";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useActiveWorkspace, usePersonalization } from "@/lib/domain-context";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { CalendarGhost } from "@/components/app/empty-state/ghost-views";
 import { useToast } from "@/components/primitives/toast";
+import { Icon } from "@/components/app/room/room-icons";
+import {
+  RoomAvatarStack,
+  ScheduleText,
+  TaskCompleteBox,
+  TaskSignals,
+} from "@/components/app/room/room-task-ui";
+import { useRoomVisibleTasks } from "@/components/app/room/room-tools-context";
+import styles from "@/components/app/room/option-b.module.css";
 
-const DAYS_OF_WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAY_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 // Build a 5-week grid (35 cells). Today is row 1, col 2 (Wed).
 const TODAY_INDEX = 9; // 0-indexed cell of "today"
 const MONTH_DAYS = 35;
 
 function dayLabel(i: number) {
-  // Days 1..31 mapped, with -, day, etc
   const num = i - 2; // offset so we land on Mon-1 etc
-  if (num < 1) return ["Aug", 31 + num].join(" "); // prev-month tail
+  if (num < 1) return ["Aug", 31 + num].join(" ");
   if (num > 31) return ["Oct", num - 31].join(" ");
   return num.toString();
+}
+
+type Cell = { i: number; tasks: Task[] };
+
+/** Chip kind in the lab grammar: milestone > range > due. */
+function chipKind(task: Task): "milestone" | "range" | "due" {
+  if (task.isMilestone) return "milestone";
+  if ((task.durationDays ?? 1) > 1) return "range";
+  return "due";
 }
 
 // D4: workspaceId prop removed, read from DomainProvider context directly
@@ -33,9 +57,8 @@ export function CalendarApp() {
   const ws = useActiveWorkspace();
   const workspaceId = ws?.id ?? "";
   const state = useTasksState();
+  const visibleTasks = useRoomVisibleTasks();
   const { taskId: openTaskId, openTask } = useTaskPanel();
-  // Editorial Project Room (Option B): the month grid pairs with a
-  // selected-day agenda so a dense day never hides work behind "+N more".
   const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 
   if (state.tasks.length === 0) {
@@ -49,12 +72,9 @@ export function CalendarApp() {
     );
   }
 
-  // Map tasks to days based on startDay
-  const cells: { i: number; tasks: Task[] }[] = Array.from(
-    { length: MONTH_DAYS },
-    (_, i) => ({ i, tasks: [] }),
-  );
-  for (const t of state.tasks) {
+  // Map room-visible tasks to days based on startDay.
+  const cells: Cell[] = Array.from({ length: MONTH_DAYS }, (_, i) => ({ i, tasks: [] }));
+  for (const t of visibleTasks) {
     const start = (t.startDay ?? 0) + TODAY_INDEX;
     const dur = t.durationDays ?? 1;
     for (let d = 0; d < dur; d++) {
@@ -64,144 +84,151 @@ export function CalendarApp() {
       }
     }
   }
+  const rows = Array.from({ length: 5 }, (_, r) => cells.slice(r * 7, r * 7 + 7));
+  const maxVisible = 3;
 
   return (
-    <div className="thin-scroll flex-1 overflow-auto px-4 py-4 md:px-8 md:py-5">
-      <div className="mb-3 flex items-center justify-end">
+    <section aria-label="Workspace Calendar" className={`${styles.calendarView} thin-scroll`}>
+      <header className={styles.calendarToolbar}>
+        <div className={styles.calendarNavigation}>
+          <button
+            onClick={() => setSelectedDay(TODAY_INDEX)}
+            type="button"
+          >
+            Today
+          </button>
+        </div>
+        <h2>This five-week window</h2>
         <SubscribeButton workspaceId={workspaceId} />
-      </div>
+      </header>
 
       {/* <md: 1-col day-list (today + next 6) */}
       <div className="md:hidden">
         <DayList cells={cells} openTaskId={openTaskId} openTask={openTask} />
       </div>
 
-      {/* ≥md: full 7-col month grid, paired with the selected-day agenda */}
-      <div className="hidden gap-4 md:grid lg:grid-cols-[minmax(0,1fr)_260px]">
-      <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
-        <div className="grid grid-cols-7 border-b border-line-soft bg-bg-sunken/40 text-[11px] font-semibold uppercase tracking-wider text-ink-quiet">
-          {DAYS_OF_WEEK.map((d) => (
-            <div
-              key={d}
-              className={
-                "border-r border-line-soft/60 px-3 py-2 last:border-r-0 " +
-                (d === "Sat" || d === "Sun" ? "text-ink-quiet" : "")
-              }
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 grid-rows-5">
-          {cells.map((cell, i) => {
-            const isToday = i === TODAY_INDEX;
-            const isSelected = i === selectedDay;
-            const isWeekend = i % 7 === 5 || i % 7 === 6;
-            const isOutsideMonth = i < 2 || i > 32;
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: (i % 7) * 0.02 }}
-                onClick={() => setSelectedDay(i)}
-                className={
-                  "min-h-[120px] cursor-pointer border-b border-r border-line-soft/60 p-1.5 last:border-r-0 " +
-                  (isWeekend ? "bg-bg-sunken/30 " : "") +
-                  (isOutsideMonth ? "opacity-50 " : "")
-                }
-                style={{
-                  background: isToday ? "var(--brand-soft)" : undefined,
-                  outline: isToday
-                    ? "1.5px solid var(--brand)"
-                    : isSelected
-                      ? "1.5px dashed var(--brand)"
-                      : undefined,
-                  outlineOffset: -1.5,
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className={
-                      "text-[11.5px] font-medium " +
-                      (isToday
-                        ? "text-brand"
-                        : isOutsideMonth
-                          ? "text-ink-faint"
-                          : "text-ink-soft")
-                    }
-                  >
-                    {dayLabel(i)}
-                  </span>
-                  {isToday ? (
-                    <span className="rounded bg-brand px-1.5 py-0.5 text-[9px] font-semibold uppercase text-white">
-                      Today
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-1 flex flex-col gap-1">
-                  {cell.tasks.slice(0, 3).map((task) => {
-                    const lane = LANES[task.lane];
-                    const isOpen = openTaskId === task.id;
+      {/* ≥md: lab month table paired with the selected-day agenda */}
+      <div className={`${styles.calendarWorkspace} hidden md:grid`}>
+        <div className={styles.calendarPrimary}>
+          <table className={styles.calendarTable}>
+            <caption>
+              Five-week calendar. Click a day number to read its agenda.
+            </caption>
+            <thead>
+              <tr>
+                {WEEKDAYS.map((day) => (
+                  <th key={day} scope="col">
+                    <span>{day}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row[0].i}>
+                  {row.map((cell) => {
+                    const i = cell.i;
+                    const isToday = i === TODAY_INDEX;
+                    const isSelected = i === selectedDay;
+                    const isOutsideMonth = i < 2 || i > 32;
+                    const visible = cell.tasks.slice(0, maxVisible);
                     return (
-                      <button
-                        key={task.id}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedDay(i);
-                          openTask(task.id);
-                        }}
-                        className="flex min-h-[24px] cursor-pointer items-center gap-1 truncate rounded border-l-[2.5px] bg-white/90 px-1.5 py-1 text-left text-[10.5px] transition-colors hover:bg-white"
-                        style={{
-                          borderLeftColor: lane.dot,
-                          outline: isOpen
-                            ? "1.5px solid var(--brand)"
-                            : "none",
-                          outlineOffset: -1,
-                          background: isOpen
-                            ? "var(--brand-soft)"
-                            : undefined,
-                        }}
+                      <td
+                        className={styles.calendarCell}
+                        data-outside={isOutsideMonth || undefined}
+                        data-selected={isSelected || undefined}
+                        data-today={isToday || undefined}
+                        key={i}
+                        onClick={() => setSelectedDay(i)}
                       >
-                        <Avatar user={task.assignees[0]} size={11} />
-                        <span className="truncate">{task.title}</span>
-                      </button>
+                        <div className={styles.calendarDayHeader}>
+                          <button
+                            aria-label={`Select day ${dayLabel(i)}`}
+                            data-date-select="true"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDay(i);
+                            }}
+                            type="button"
+                          >
+                            {dayLabel(i)}
+                          </button>
+                          {isToday ? (
+                            <button aria-hidden="true" tabIndex={-1} type="button">
+                              Today
+                            </button>
+                          ) : null}
+                        </div>
+                        <div className={styles.calendarItems}>
+                          {visible.map((task) => {
+                            const kind = chipKind(task);
+                            const start = (task.startDay ?? 0) + TODAY_INDEX;
+                            const end = start + (task.durationDays ?? 1) - 1;
+                            return (
+                              <div
+                                className={styles.calendarTaskWrap}
+                                data-kind={kind}
+                                data-range-end={kind === "range" && i === end ? "" : undefined}
+                                data-range-start={kind === "range" && i === start ? "" : undefined}
+                                data-selected={openTaskId === task.id || undefined}
+                                data-task-id={task.id}
+                                key={task.id}
+                              >
+                                <button
+                                  aria-label={`${task.title}. ${kind === "milestone" ? "Milestone" : kind === "range" ? "Date range" : "Due"}.`}
+                                  className={styles.calendarTaskChip}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDay(i);
+                                    openTask(task.id);
+                                  }}
+                                  type="button"
+                                >
+                                  {kind === "milestone" ? <Icon name="milestone" size={11} /> : null}
+                                  <span>{task.title}</span>
+                                </button>
+                              </div>
+                            );
+                          })}
+                          {cell.tasks.length > maxVisible ? (
+                            <button
+                              aria-label={`Show ${cell.tasks.length - maxVisible} more tasks in the day agenda`}
+                              className={styles.calendarMoreButton}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedDay(i);
+                              }}
+                              type="button"
+                            >
+                              +{cell.tasks.length - maxVisible} more
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
                     );
                   })}
-                  {cell.tasks.length > 3 ? (
-                    <span className="px-1.5 text-[10px] text-ink-quiet">
-                      +{cell.tasks.length - 3} more
-                    </span>
-                  ) : null}
-                </div>
-              </motion.div>
-            );
-          })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </div>
 
-      {/* Selected-day editorial agenda (Option B): the full day, no
-          overflow truncation, plus the day's context in plain words. */}
-      <DayAgenda
-        cell={cells[selectedDay]}
-        isToday={selectedDay === TODAY_INDEX}
-        label={dayLabel(selectedDay)}
-        openTask={openTask}
-        openTaskId={openTaskId}
-      />
+        <DayAgenda
+          cell={cells[selectedDay]}
+          isToday={selectedDay === TODAY_INDEX}
+          label={dayLabel(selectedDay)}
+          openTask={openTask}
+          openTaskId={openTaskId}
+        />
       </div>
-    </div>
+    </section>
   );
 }
 
 /**
- * The selected day as an editorial agenda beside the month grid. Dense
- * days list everything the grid truncates behind "+N more"; empty days
- * say so plainly. Desktop-wide only (lg:), the mobile day-list already
- * plays this role below md.
+ * The selected day as the lab's agenda pane beside the month table.
+ * Dense days list everything the grid truncates behind "+N more";
+ * empty days say so plainly.
  */
 function DayAgenda({
   cell,
@@ -210,178 +237,148 @@ function DayAgenda({
   openTask,
   openTaskId,
 }: {
-  cell: { i: number; tasks: Task[] } | undefined;
+  cell: Cell | undefined;
   isToday: boolean;
   label: string;
   openTask: (id: string) => void;
   openTaskId: string | null;
 }) {
   const tasks = cell?.tasks ?? [];
-  const done = tasks.filter((t) => t.lane === "done").length;
+  const milestones = tasks.filter((t) => t.isMilestone).length;
+  const waiting = tasks.filter((t) => t.lane === "review" || (t.blockedBy?.length ?? 0) > 0).length;
+  // Mount-stable clock for schedule receipts.
+  const [now] = useState(() => Date.now());
   return (
     <aside
       aria-label="Selected day agenda"
-      className="hidden h-fit rounded-xl border border-line-soft bg-white p-4 lg:block"
+      className={`${styles.selectedAgenda} hidden lg:block`}
     >
-      <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
-          {isToday ? "Today" : "Selected day"}
-        </span>
-        <span className="font-mono text-[11px] text-ink-quiet">{label}</span>
-      </div>
-      {tasks.length === 0 ? (
-        <p className="mt-3 text-[12px] leading-relaxed text-ink-quiet">
-          Nothing scheduled. Click a day on the grid to read its agenda.
+      <header>
+        <span>{isToday ? "Today" : "Selected day"}</span>
+        <h2>{isToday ? "Today" : `Day ${label}`}</h2>
+        <p>
+          {tasks.length} task{tasks.length === 1 ? "" : "s"}
+          {milestones > 0 ? `, ${milestones} milestone${milestones === 1 ? "" : "s"}` : ""}
+          {waiting > 0 ? `, ${waiting} waiting` : ""}
         </p>
+      </header>
+      {tasks.length === 0 ? (
+        <div className={styles.agendaEmpty}>
+          <Icon name="calendar" size={18} />
+          <strong>The day is open</strong>
+          <p>Click a day on the grid to read its agenda.</p>
+        </div>
       ) : (
-        <>
-          <p className="mt-1.5 text-[11px] text-ink-quiet">
-            {tasks.length} task{tasks.length === 1 ? "" : "s"}
-            {done > 0 ? ` · ${done} done` : ""}
-          </p>
-          <ol className="mt-2.5 flex flex-col gap-1">
-            {tasks.map((task) => {
-              const lane = LANES[task.lane];
-              const isOpen = openTaskId === task.id;
-              return (
-                <li key={task.id}>
-                  <button
-                    type="button"
-                    onClick={() => openTask(task.id)}
-                    className="flex w-full items-start gap-2 rounded-md border-l-[2.5px] px-2 py-1.5 text-left transition-colors hover:bg-bg-sunken/50"
-                    style={{
-                      borderLeftColor: lane.dot,
-                      background: isOpen ? "var(--brand-soft)" : undefined,
-                    }}
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span
-                        className={
-                          "block truncate text-[12px] font-medium " +
-                          (task.lane === "done"
-                            ? "text-ink-quiet line-through"
-                            : "text-ink")
-                        }
-                      >
-                        {task.title}
-                      </span>
-                      {task.description && task.lane !== "done" ? (
-                        <span className="mt-0.5 block truncate text-[10.5px] text-ink-quiet">
-                          {task.description}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span
-                      className="mt-0.5 flex-shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase"
-                      style={{ color: lane.ink, background: lane.bg }}
+        <ol className={styles.selectedAgendaList}>
+          {tasks.map((task) => (
+            <li data-task-id={task.id} key={task.id}>
+              <article>
+                <div className={styles.agendaTaskLead}>
+                  <TaskCompleteBox task={task} />
+                  <div>
+                    <button
+                      className={styles.agendaTaskTitle}
+                      data-selected={openTaskId === task.id || undefined}
+                      onClick={() => openTask(task.id)}
+                      type="button"
                     >
-                      {lane.name}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        </>
+                      {task.title}
+                    </button>
+                    <ScheduleText now={now} task={task} />
+                  </div>
+                  <span
+                    className={styles.labels}
+                    style={{ color: LANES[task.lane].ink }}
+                  >
+                    <span>{LANES[task.lane].name}</span>
+                  </span>
+                </div>
+                {task.description && task.lane !== "done" ? <p>{task.description}</p> : null}
+                <div className={styles.agendaTaskPeople}>
+                  <RoomAvatarStack limit={4} task={task} />
+                  <TaskSignals task={task} />
+                </div>
+                {task.blockedBy && task.blockedBy.length > 0 ? (
+                  <div className={styles.agendaBlocker}>
+                    <Icon name="dependency" size={13} />
+                    Waiting on {task.blockedBy.length} named dependenc{task.blockedBy.length === 1 ? "y" : "ies"}
+                  </div>
+                ) : null}
+              </article>
+            </li>
+          ))}
+        </ol>
       )}
     </aside>
   );
 }
 
 /**
- * Mobile day-list: today + next 6, vertically scrollable. Each day card
- * shows label + tasks (or a quiet "Nothing scheduled."). Today gets the
- * brand accent; days with zero tasks dim down so the grid still has rhythm.
+ * Mobile day-list: today + next 6, vertically scrollable, on the room
+ * tokens. The lab specifies desktop; this keeps the mobile behavior
+ * production already had, dressed in the room's quiet grammar.
  */
 function DayList({
   cells,
   openTaskId,
   openTask,
 }: {
-  cells: { i: number; tasks: Task[] }[];
+  cells: Cell[];
   openTaskId: string | null;
   openTask: (id: string) => void;
 }) {
-  // Today is at TODAY_INDEX (=9). Show today + next 6.
   const window = cells.slice(TODAY_INDEX, TODAY_INDEX + 7);
-  const dayShortNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
   return (
     <ul className="space-y-2">
       {window.map((cell, idx) => {
         const isToday = idx === 0;
-        const dow = dayShortNames[cell.i % 7];
+        const dow = DAY_SHORT[cell.i % 7];
         return (
-          <motion.li
+          <li
             key={cell.i}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.32,
-              delay: idx * 0.03,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className={
-              "overflow-hidden rounded-xl border bg-white " +
-              (isToday ? "border-brand/40" : "border-line-soft")
-            }
-            style={
-              isToday ? { background: "var(--brand-soft)" } : undefined
-            }
+            className="overflow-hidden rounded-lg border border-[var(--x-task-border)] bg-[var(--x-task-raised)]"
           >
-            <div className="flex items-center justify-between border-b border-line-soft/60 px-3 py-2">
+            <div className="flex items-center justify-between border-b border-[var(--x-task-border)] px-3 py-2">
               <div className="flex items-baseline gap-2">
-                <span
-                  className={
-                    "text-[12.5px] font-semibold uppercase tracking-wider " +
-                    (isToday ? "text-brand" : "text-ink-soft")
-                  }
-                >
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--x-task-text-secondary)]">
                   {isToday ? "Today" : dow}
                 </span>
-                <span className="text-[12px] text-ink-quiet">
+                <span className="text-[11px] text-[var(--x-task-text-muted)]">
                   {dayLabel(cell.i)}
                 </span>
               </div>
-              <span className="text-[11px] tabular-nums text-ink-quiet">
+              <span className="font-mono text-[10px] tabular-nums text-[var(--x-task-text-muted)]">
                 {cell.tasks.length === 0
                   ? "Empty"
                   : `${cell.tasks.length} ${cell.tasks.length === 1 ? "task" : "tasks"}`}
               </span>
             </div>
             {cell.tasks.length === 0 ? (
-              <div className="px-3 py-2.5 text-[12px] italic text-ink-faint">
-                Nothing scheduled. Lovely.
+              <div className="px-3 py-2.5 text-[11.5px] italic text-[var(--x-task-text-muted)]">
+                Nothing scheduled.
               </div>
             ) : (
-              <ul className="divide-y divide-line-soft/60">
-                {cell.tasks.map((task) => {
-                  const lane = LANES[task.lane];
-                  const isOpen = openTaskId === task.id;
-                  return (
-                    <li key={task.id}>
-                      <button
-                        type="button"
-                        onClick={() => openTask(task.id)}
-                        className="flex w-full items-center gap-2 border-l-[3px] bg-white/85 px-3 py-2 text-left text-[13px] transition-colors hover:bg-white"
-                        style={{
-                          borderLeftColor: lane.dot,
-                          background: isOpen
-                            ? "var(--brand-soft)"
-                            : undefined,
-                        }}
-                      >
-                        <span className="line-clamp-1 flex-1 text-ink">
-                          {task.title}
-                        </span>
-                        <AvatarStack users={task.assignees} size={16} />
-                      </button>
-                    </li>
-                  );
-                })}
+              <ul className="divide-y divide-[var(--x-task-border)]">
+                {cell.tasks.map((task) => (
+                  <li key={task.id}>
+                    <button
+                      type="button"
+                      onClick={() => openTask(task.id)}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] transition-colors hover:bg-[var(--x-task-hover)]"
+                      style={{
+                        background: openTaskId === task.id ? "var(--x-task-selected)" : undefined,
+                      }}
+                    >
+                      <span className="line-clamp-1 flex-1 text-[var(--x-task-text)]">
+                        {task.title}
+                      </span>
+                      <RoomAvatarStack limit={2} showUnassigned={false} task={task} />
+                    </button>
+                  </li>
+                ))}
               </ul>
             )}
-          </motion.li>
+          </li>
         );
       })}
     </ul>
@@ -393,9 +390,6 @@ function DayList({
  * pastes into Apple Calendar, Google Calendar, or Outlook's "Add
  * subscription" dialog. The feed itself is read-only and refreshed
  * by the client on its own cadence.
- *
- * The URL is built lazily once the popover opens, `window.location`
- * isn't available during SSR, so we defer until the click.
  */
 function SubscribeButton({ workspaceId }: { workspaceId: string }) {
   const { toast } = useToast();
@@ -439,23 +433,7 @@ function SubscribeButton({ workspaceId }: { workspaceId: string }) {
         body: "Paste into Calendar's ‘Add subscription’ dialog.",
       });
     };
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url).then(finish, () => {
-        try {
-          const ta = document.createElement("textarea");
-          ta.value = url;
-          ta.style.position = "fixed";
-          ta.style.opacity = "0";
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand("copy");
-          document.body.removeChild(ta);
-          finish();
-        } catch {
-          toast("Couldn't copy the link", { tone: "warn" });
-        }
-      });
-    } else {
+    const fallbackCopy = () => {
       try {
         const ta = document.createElement("textarea");
         ta.value = url;
@@ -469,60 +447,51 @@ function SubscribeButton({ workspaceId }: { workspaceId: string }) {
       } catch {
         toast("Couldn't copy the link", { tone: "warn" });
       }
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(finish, fallbackCopy);
+    } else {
+      fallbackCopy();
     }
   }, [url, toast]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" style={{ justifySelf: "end" }}>
       <button
         type="button"
         onClick={onToggle}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-md border border-line-soft bg-white px-2.5 py-1.5 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
       >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M4 11a9 9 0 0 1 9 9" />
-          <path d="M4 4a16 16 0 0 1 16 16" />
-          <circle cx="5" cy="19" r="1" />
-        </svg>
+        <Icon name="dependency" size={12} />
         Sync to calendar
       </button>
       {open ? (
         <div
           role="dialog"
           aria-label="Calendar subscription URL"
-          className="absolute right-0 top-full z-30 mt-1.5 w-[340px] overflow-hidden rounded-lg border border-line-soft bg-white p-3 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
+          className="absolute right-0 top-full z-30 mt-1.5 w-[340px] overflow-hidden rounded-lg border border-[var(--x-task-border)] bg-[var(--x-task-overlay)] p-3"
+          style={{ boxShadow: "var(--x-task-shadow)" }}
         >
-          <div className="text-[12.5px] font-semibold text-ink">
+          <div className="text-[12.5px] font-semibold text-[var(--x-task-text)]">
             Subscribe in your calendar
           </div>
-          <div className="mt-0.5 text-[11.5px] text-ink-quiet">
+          <div className="mt-0.5 text-[11.5px] text-[var(--x-task-text-muted)]">
             A live, read-only feed of every task with a due date.
           </div>
           <div className="mt-2.5 flex items-stretch gap-1.5">
-            <code className="flex-1 truncate rounded border border-line-soft bg-bg-sunken/60 px-2 py-1.5 font-mono text-[11px] text-ink-soft">
+            <code className="flex-1 truncate rounded border border-[var(--x-task-border)] bg-[var(--x-task-hover)] px-2 py-1.5 font-mono text-[11px] text-[var(--x-task-text-secondary)]">
               {url}
             </code>
             <button
               type="button"
               onClick={onCopy}
-              className="inline-flex items-center gap-1 rounded border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+              className="inline-flex items-center gap-1 rounded border border-[var(--x-task-border)] bg-[var(--x-task-raised)] px-2 py-1 text-[11.5px] font-medium text-[var(--x-task-text-secondary)] transition-colors hover:text-[var(--x-task-text)]"
             >
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <div className="mt-2 text-[11px] text-ink-quiet">
+          <div className="mt-2 text-[11px] text-[var(--x-task-text-muted)]">
             Apple Calendar, Google Calendar, Outlook all support
             webcal:// subscriptions.
           </div>
