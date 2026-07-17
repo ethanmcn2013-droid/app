@@ -76,6 +76,52 @@ function isAccentElement(shape: RailPrimitive): boolean {
   return ("a" in shape && shape.a === 1) || shape.t === "d";
 }
 
+// Shell furniture drawn in the same grammar (1.75 stroke, round joins).
+// Chrome glyphs, not members of the canonical product set.
+export function ShellGlyph({ name, size = 14 }: { name: "panel" | "lock" | "chevron"; size?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height={size}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={RAIL_ICON_STROKE}
+      style={{ display: "block", flex: "none" }}
+      viewBox="0 0 24 24"
+      width={size}
+    >
+      {name === "panel" ? <><rect height={14.5} rx={2.5} width={14.5} x={4.75} y={4.75} /><path d="M9.75 4.75V19.25" /></> : null}
+      {name === "lock" ? <><rect height={7.5} rx={1.5} width={10.5} x={6.75} y={11} /><path d="M9 11V8.25a3 3 0 0 1 6 0V11" /></> : null}
+      {name === "chevron" ? <path d="m9.5 6.75 5.5 5.25-5.5 5.25" /> : null}
+    </svg>
+  );
+}
+
+// Sidebar nav glyphs from the lab's shared icon set (2 stroke grammar there;
+// kept at 1.75 here so the sidebar reads one family with the rail).
+export function SidebarGlyph({ name, size = 16 }: { name: "agenda" | "people" | "focus"; size?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height={size}
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={1.75}
+      style={{ display: "block", flex: "none" }}
+      viewBox="0 0 24 24"
+      width={size}
+    >
+      {name === "agenda" ? <><path d="M6 5h12M6 12h12M6 19h12" /><path d="M3 5h.01M3 12h.01M3 19h.01" /></> : null}
+      {name === "people" ? <><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M18 14a6 6 0 0 1 4 6" /></> : null}
+      {name === "focus" ? <><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" /><circle cx="12" cy="12" r="3" /></> : null}
+    </svg>
+  );
+}
+
 export function RailIcon({
   name,
   size = 20,
