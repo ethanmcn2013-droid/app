@@ -71,15 +71,8 @@ function Monogram() {
 export function StudioRail() {
   return (
     <aside aria-label="Signal Studio products" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
-      <a
-        aria-label="Signal Studio Home"
-        className={styles.railHome}
-        data-tip="Signal Studio Home"
-        href={STUDIO_URL}
-      >
-        <span aria-hidden="true" className={styles.railHomeTile}><span className={styles.railHomeDot} /></span>
-      </a>
-      <span aria-hidden="true" className={styles.railDivider} />
+      {/* The Signal Studio home mark lives once, in the Studio Bar's
+          top-left cell directly above this rail — no second dot here. */}
       <nav aria-label="Products" className={styles.railProducts}>
         {CORE_PRODUCTS.map((product) =>
           product.href ? (

@@ -40,8 +40,14 @@ import {
   addColumnAction,
   reorderColumnsAction,
   deleteColumnAction,
+  setColumnColorAction,
   type ColumnConfig,
 } from "@/server/actions/board";
+import {
+  COLUMN_COLORS,
+  COLUMN_COLOR_KEYS,
+  type ColumnColorKey,
+} from "@/lib/board-colors";
 import { useColumnConfig, usePersonalization } from "@/lib/domain-context";
 
 // ─── ARCH NOTE: Custom columns and the canonical lane ─────────────────────────
@@ -95,6 +101,8 @@ type BoardColumn = {
   dot: string;
   bg: string;
   ink: string;
+  /** Owner-chosen soft colour (T·96). "neutral" = no tint. */
+  color: ColumnColorKey;
 };
 
 /**
@@ -120,11 +128,14 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
       dot: LANES[id].dot,
       bg: LANES[id].bg,
       ink: LANES[id].ink,
+      color: "neutral" as ColumnColorKey,
     }));
   }
 
   const order = config.order.length > 0 ? config.order : [...LANE_ORDER];
   const customByKey = Object.fromEntries(config.custom.map((c) => [c.key, c]));
+  const colorOf = (key: string): ColumnColorKey =>
+    config.colors?.[key] ?? "neutral";
 
   // Collect columns in order.
   const seen = new Set<string>();
@@ -142,6 +153,7 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: LANES[laneId].dot,
         bg: LANES[laneId].bg,
         ink: LANES[laneId].ink,
+        color: colorOf(key),
       });
     } else if (customByKey[key]) {
       cols.push({
@@ -151,6 +163,7 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: CUSTOM_DOT,
         bg: CUSTOM_BG,
         ink: CUSTOM_INK,
+        color: colorOf(key),
       });
     }
     // Unknown key in order → silently skip (defensive).
@@ -166,6 +179,7 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: LANES[id].dot,
         bg: LANES[id].bg,
         ink: LANES[id].ink,
+        color: colorOf(id),
       });
       seen.add(id);
     }
@@ -390,6 +404,7 @@ export function BoardApp() {
         {boardColumns.map((col, idx) => {
           const colTasks = tasksByColumnMap[col.key] ?? [];
           const isHover = hoverColumn === col.key;
+          const accentVar = COLUMN_COLORS[col.color].var;
 
           // Inline add for custom columns uses lane "doing" as the canonical
           // lane for newly created tasks, they'll visually appear in this
@@ -414,6 +429,8 @@ export function BoardApp() {
               className={roomStyles.boardLane}
               data-status={LANE_TONE[col.key]}
               data-drop={isHover || undefined}
+              data-tinted={accentVar ? "" : undefined}
+              style={accentVar ? ({ "--lane-accent": accentVar } as React.CSSProperties) : undefined}
               onDragOver={(e) => { e.preventDefault(); setHoverColumn(col.key); }}
               onDragLeave={() => setHoverColumn(null)}
               onDrop={(e) => {
@@ -434,6 +451,7 @@ export function BoardApp() {
                 columnKey={col.key}
                 columnName={col.name}
                 isSystem={col.isSystem}
+                color={col.color}
                 count={colTasks.length}
                 total={totalsByColumn[col.key] ?? colTasks.length}
                 columnIndex={idx}
@@ -559,6 +577,7 @@ function LaneHeader({
   columnKey,
   columnName,
   isSystem,
+  color,
   count,
   total,
   columnIndex,
@@ -571,6 +590,7 @@ function LaneHeader({
   columnKey: string;
   columnName: string;
   isSystem: boolean;
+  color: ColumnColorKey;
   count: number;
   total: number;
   columnIndex: number;
@@ -698,9 +718,34 @@ function LaneHeader({
     });
   }
 
+  function setColumnColor(next: ColumnColorKey) {
+    setOverflowOpen(false);
+    // A workspace with no saved config yet (incl. demo) has currentConfig
+    // null — synthesize a base from the columns on screen so the tint
+    // still applies optimistically.
+    const base: ColumnConfig = currentConfig ?? {
+      system: {},
+      custom: [],
+      order: [...allColumnKeys],
+      colors: {},
+    };
+    const colors = { ...(base.colors ?? {}) };
+    if (next === "neutral") delete colors[columnKey];
+    else colors[columnKey] = next;
+    onOptimisticConfigChange({ ...base, colors });
+    startTransition(async () => {
+      try {
+        await setColumnColorAction(columnKey, next);
+      } catch {
+        onOptimisticConfigChange(currentConfig);
+      }
+    });
+  }
+
   const canMoveLeft = columnIndex > 0;
   const canMoveRight = columnIndex < totalColumns - 1;
-  const showOverflow = canMoveLeft || canMoveRight || !isSystem;
+  // Every column now offers rename + colour, so the overflow always shows.
+  const showOverflow = true;
   const laneNote = isSystem ? LANE_NOTES[columnKey] : undefined;
 
   return (
@@ -728,12 +773,30 @@ function LaneHeader({
             className="w-full max-w-[140px] rounded border border-[var(--x-task-focus)] bg-transparent px-1 py-0 text-[12px] font-semibold text-ink outline-none"
           />
         ) : (
-          <h2
-            onDoubleClick={startEdit}
-            title="Double-click to rename"
+          <button
+            type="button"
+            className={`${roomStyles.laneRenameButton} group/lh`}
+            onClick={startEdit}
+            title="Rename column"
+            aria-label={`Rename ${optimisticName}`}
           >
-            {optimisticName}
-          </h2>
+            <span>{optimisticName}</span>
+            <svg
+              aria-hidden="true"
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="opacity-0 transition-opacity group-hover/lh:opacity-100"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
         )}
         <span className={roomStyles.laneCount}>
           {count === total ? total : `${count}/${total}`}
@@ -762,28 +825,68 @@ function LaneHeader({
               <div
                 role="menu"
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full z-20 mt-1 w-40 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
+                className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
               >
                 <button
                   type="button"
                   role="menuitem"
-                  disabled={!canMoveLeft}
-                  onClick={moveLeft}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  onClick={(e) => { setOverflowOpen(false); startEdit(e); }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
-                  Move left
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                  Rename
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={!canMoveRight}
-                  onClick={moveRight}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                  Move right
-                </button>
+
+                <div className="my-1 border-t border-line-soft" />
+                <div className="px-2 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
+                  Colour
+                </div>
+                <div className={roomStyles.laneColorRow} role="group" aria-label="Column colour">
+                  {COLUMN_COLOR_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-label={COLUMN_COLORS[key].label}
+                      aria-pressed={color === key}
+                      title={COLUMN_COLORS[key].label}
+                      data-color={key}
+                      data-selected={color === key ? "" : undefined}
+                      onClick={() => setColumnColor(key)}
+                      className={roomStyles.laneColorSwatch}
+                      style={
+                        COLUMN_COLORS[key].var
+                          ? { background: COLUMN_COLORS[key].var as string, borderColor: COLUMN_COLORS[key].var as string }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </div>
+
+                {canMoveLeft || canMoveRight ? (
+                  <>
+                    <div className="my-1 border-t border-line-soft" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={!canMoveLeft}
+                      onClick={moveLeft}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
+                      Move left
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={!canMoveRight}
+                      onClick={moveRight}
+                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                      Move right
+                    </button>
+                  </>
+                ) : null}
                 {!isSystem ? (
                   <>
                     <div className="my-1 border-t border-line-soft" />
@@ -859,7 +962,7 @@ function AddColumnTile({
     // Optimistic: add a placeholder column with a temp key until the
     // server round-trip completes and the layout revalidates.
     const tempKey = `col-temp-${Date.now()}`;
-    const base = currentConfig ?? { system: {}, custom: [], order: [...LANE_ORDER] };
+    const base = currentConfig ?? { system: {}, custom: [], order: [...LANE_ORDER], colors: {} };
     onOptimisticConfigChange({
       ...base,
       custom: [...base.custom, { key: tempKey, name: trimmed }],

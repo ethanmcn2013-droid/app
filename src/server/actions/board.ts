@@ -32,6 +32,10 @@ import { db } from "@/server/db";
 import { meta, tasks } from "@/server/db/schema";
 import { getActiveWorkspace } from "@/server/auth";
 import { LANE_ORDER, type LaneId } from "@/lib/data";
+import {
+  isColumnColorKey,
+  type ColumnColorKey,
+} from "@/lib/board-colors";
 import { isDemoMode } from "@/lib/access-mode";
 
 const MAX_NAME_LEN = 80;
@@ -60,6 +64,9 @@ export type ColumnConfig = {
   system: Partial<Record<LaneId, string>>;
   custom: CustomColumn[];
   order: string[];
+  /** Per-column colour by column key (system or custom). Absent key =
+   *  "neutral" (no tint). T·96. */
+  colors: Partial<Record<string, ColumnColorKey>>;
 };
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
@@ -89,8 +96,8 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
     }
     const obj = parsed as Record<string, unknown>;
 
-    // New format: has at least one of `system`, `custom`, or `order`.
-    if ("system" in obj || "custom" in obj || "order" in obj) {
+    // New format: has at least one of `system`, `custom`, `order`, `colors`.
+    if ("system" in obj || "custom" in obj || "order" in obj || "colors" in obj) {
       const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
       const custom = Array.isArray(obj.custom)
         ? (obj.custom as CustomColumn[]).filter(
@@ -101,7 +108,7 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
       const order = Array.isArray(obj.order)
         ? (obj.order as string[]).filter((k) => typeof k === "string")
         : buildDefaultOrder(custom);
-      return { system, custom, order };
+      return { system, custom, order, colors: parseColors(obj.colors) };
     }
 
     // Legacy format: flat Record<string, string> with lane keys.
@@ -111,10 +118,20 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
     for (const id of LANE_ORDER) {
       if (typeof obj[id] === "string") system[id] = obj[id] as string;
     }
-    return { system, custom: [], order: [...LANE_ORDER] };
+    return { system, custom: [], order: [...LANE_ORDER], colors: {} };
   } catch {
     return null;
   }
+}
+
+/** Parse the stored colours map, keeping only recognised colour keys. */
+function parseColors(raw: unknown): Partial<Record<string, ColumnColorKey>> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const out: Partial<Record<string, ColumnColorKey>> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (isColumnColorKey(value) && value !== "neutral") out[key] = value;
+  }
+  return out;
 }
 
 /**
@@ -141,6 +158,7 @@ function serializeColumnConfig(config: ColumnConfig): string {
     system: config.system,
     custom: config.custom,
     order: normaliseOrder(config),
+    colors: config.colors ?? {},
   });
 }
 
@@ -267,6 +285,7 @@ export async function renameColumnAction(
     system: {},
     custom: [],
     order: [...LANE_ORDER],
+    colors: {},
   };
 
   if ((LANE_ORDER as string[]).includes(columnKey)) {
@@ -283,6 +302,36 @@ export async function renameColumnAction(
       c.key === columnKey ? { ...c, name: clamped } : c,
     );
   }
+
+  await writeColumnConfig(ws, existing);
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set (or clear) a column's colour. Works for system lanes and custom
+ * columns alike. `neutral` clears any stored colour (back to no tint).
+ * T·96.
+ */
+export async function setColumnColorAction(
+  columnKey: string,
+  color: ColumnColorKey,
+): Promise<{ ok: true }> {
+  if (!isColumnColorKey(color)) throw new Error("Unknown column colour.");
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
+
+  const existing = (await readColumnConfig(ws)) ?? {
+    system: {},
+    custom: [],
+    order: [...LANE_ORDER],
+    colors: {},
+  };
+
+  const colors = { ...existing.colors };
+  if (color === "neutral") delete colors[columnKey];
+  else colors[columnKey] = color;
+  existing.colors = colors;
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
@@ -316,6 +365,7 @@ export async function addColumnAction(
     system: {},
     custom: [],
     order: [...LANE_ORDER],
+    colors: {},
   };
 
   if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
@@ -369,6 +419,7 @@ export async function reorderColumnsAction(
     system: {},
     custom: [],
     order: [...LANE_ORDER],
+    colors: {},
   };
 
   const allKeys = new Set([
