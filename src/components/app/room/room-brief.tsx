@@ -42,9 +42,12 @@ export function RoomBrief() {
   const pack = useDomain();
   const { openTask } = useTaskPanel();
 
+  // Mount-stable clock: the React Compiler forbids impure calls in render,
+  // and overdue receipts don't need sub-navigation freshness.
+  const [now] = useState(() => Date.now());
+
   if (!data) return null;
 
-  const now = Date.now();
   const tasks = state.tasks;
   const total = tasks.length;
   const complete = tasks.filter((t) => t.lane === "done").length;
