@@ -4,13 +4,13 @@
   "source": "tasks/src/app/settings/plan/page.tsx",
   "materialityHash": "c2599ecd3d094b3d",
   "reviewedAt": "2026-07-17",
-  "reviewer": "Claude, lab parity",
+  "reviewer": "Claude, chrome + board colours",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-167b94d787958c1e.json",
-    "attestationSha256": "21c11ae068b7b172a0cbe98aeba318d2456d8b466b0b6726959c43995809e806",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-1c1c9761da649f04.json",
+    "attestationSha256": "d1db771b7b2675751d787d31c1452af26a446b54ed455dc35d31eb4fbcef6ff6",
     "runId": "tasks-playwright-e55027582c759d40842b0f40",
     "canonicalEvidenceSha256": "e55027582c759d40842b0f40fae443015f8c9a2b38ee990f043516f511798899",
-    "rawArtifactSha256": "167b94d787958c1e47da2e22f4d66acf75fa9be50dd2c8497a1c6606d2520080",
+    "rawArtifactSha256": "1c1c9761da649f047b10fdf0c437d74e6f2957b1ad06d3d6e6623e482e705ee4",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -20,5 +20,5 @@
     ]
   },
   "reviewedChange": "Review mode resolves a deterministic wedding entitlement before authentication; production retains authenticated plan loading.",
-  "decision": "Re-attested for the T-95 lab-parity cycle; surface unchanged."
+  "decision": "Re-attested for the T-96 cycle; surface unchanged in this pass."
 }
