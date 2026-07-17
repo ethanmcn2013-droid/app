@@ -601,3 +601,56 @@ textarea.purposeLine {
    pins at 42px here or it overlays the first scrolling field. */
 .taskTable[data-no-expand] .listFrozenHeader,
 .taskTable[data-no-expand] .listFrozenTask { left: 42px; }
+
+/* Per-column colour (T·96): a whisper of the chosen hue on the lane and
+   its header band, plus a coloured status dot. Never a block — the tint
+   percentages stay low so a scan reads the board by hue without the
+   colour shouting. Cards stay neutral so titles keep their contrast.
+   The hue arrives as an inline --lane-accent custom property. */
+.boardLane[data-tinted] {
+  background: color-mix(in srgb, var(--lane-accent) 5%, color-mix(in srgb, var(--x-task-surface) 76%, var(--x-task-canvas)));
+  border-color: color-mix(in srgb, var(--lane-accent) 22%, var(--x-task-border));
+}
+.boardLane[data-tinted] .laneHeader {
+  background: color-mix(in srgb, var(--lane-accent) 9%, color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)));
+  border-bottom-color: color-mix(in srgb, var(--lane-accent) 18%, var(--x-task-border));
+}
+.boardLane[data-tinted] .laneStatusMark { background: var(--lane-accent); }
+
+/* Colour picker (lane header overflow): a soft swatch row. */
+.laneColorRow {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  padding: 6px 8px 4px;
+}
+.laneColorSwatch {
+  border: 1.5px solid var(--x-task-border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  height: 18px;
+  padding: 0;
+  width: 18px;
+}
+.laneColorSwatch[data-selected] { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
+.laneColorSwatch[data-color="neutral"] { background: var(--x-task-hover); }
+
+/* Editable column name (T·96): the lane title is a button that opens the
+   inline editor; a quiet pencil fades in on hover. Matches the lab h2. */
+.laneRenameButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 680;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+.laneRenameButton > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laneRenameButton svg { color: var(--x-task-text-muted); flex: none; }

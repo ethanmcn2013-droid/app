@@ -145,6 +145,17 @@
   --x-task-review-soft: color-mix(in srgb, var(--status-review) 10%, var(--paper));
   --x-task-shadow: var(--shadow-modal);
 
+  /* ── Per-column board colours (T·96) — the pickable hues for kanban
+     lanes. Each rides an existing system token so nothing new enters
+     the palette; the board mixes them down to a whisper. "neutral" has
+     no var (no tint). See src/lib/board-colors.ts. */
+  --x-col-indigo:  var(--accent);
+  --x-col-rose:    var(--status-blocked);
+  --x-col-amber:   var(--status-flight);
+  --x-col-emerald: var(--status-done);
+  --x-col-sky:     var(--status-review);
+  --x-col-violet:  var(--user-alex);
+
   /* ── User presence (cinematic demo + real users) ──────────── */
   --user-chloe: color-mix(in srgb, #e4356d 85%, var(--ink));
   --user-david: color-mix(in srgb, #00a3b8 62%, var(--ink));

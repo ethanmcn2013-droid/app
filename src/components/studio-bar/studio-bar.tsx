@@ -177,14 +177,10 @@ function WorkspaceSwitcher({
           disabled={pending}
           onClick={() => setOpen((v) => !v)}
           className="flex h-full w-full items-center gap-2 px-4 text-left outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05] disabled:cursor-wait disabled:opacity-60"
+          title="Switch workspace"
         >
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="text-[8.5px] font-semibold uppercase leading-none tracking-[0.1em] text-[var(--x-studio-ink-quiet)]">
-              Workspace
-            </span>
-            <span className="mt-1 truncate text-[12.5px] font-medium leading-none text-[var(--x-studio-ink-mid)]">
-              {active?.name ?? "Workspace"}
-            </span>
+          <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium leading-none text-[var(--x-studio-ink-mid)]">
+            {active?.name ?? "Workspace"}
           </span>
           <span className="flex-none text-[var(--x-studio-ink-quiet)]">
             <ChevronDown />
@@ -294,7 +290,7 @@ export function StudioBar() {
   return (
     <header
       role="banner"
-      className="relative z-40 flex h-12 w-full flex-none items-stretch bg-[var(--x-studio-chrome)]"
+      className="relative z-40 flex h-10 w-full flex-none items-stretch bg-[var(--x-studio-chrome)]"
     >
       {markCell()}
 
