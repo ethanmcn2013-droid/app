@@ -16,9 +16,9 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -69,14 +69,21 @@ const RoomToolsContext = createContext<RoomToolsState | null>(null);
 const storageKey = (workspaceId: string) =>
   `signal-tasks:saved-views:${workspaceId}`;
 
-function readSaved(workspaceId: string): SavedRoomView[] {
+/* localStorage as an external store (lint-safe, hydration-safe): the
+   server snapshot is the empty list; writes notify subscribers. */
+const savedViewListeners = new Set<() => void>();
+function subscribeSavedViews(onChange: () => void) {
+  savedViewListeners.add(onChange);
+  return () => savedViewListeners.delete(onChange);
+}
+function notifySavedViews() {
+  for (const listener of savedViewListeners) listener();
+}
+function readSavedRaw(workspaceId: string): string {
   try {
-    const raw = window.localStorage.getItem(storageKey(workspaceId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return window.localStorage.getItem(storageKey(workspaceId)) ?? "[]";
   } catch {
-    return [];
+    return "[]";
   }
 }
 
@@ -90,22 +97,30 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
   const [sort, setSort] = useState<RoomSortMode>("manual");
   const [density, setDensity] = useState<RoomDensity>("compact");
   const [fieldsOpen, setFieldsOpen] = useState(false);
-  const [savedViews, setSavedViews] = useState<readonly SavedRoomView[]>([]);
 
-  useEffect(() => {
-    if (!wsId) return;
-    setSavedViews(readSaved(wsId));
-  }, [wsId]);
+  const savedRaw = useSyncExternalStore(
+    subscribeSavedViews,
+    () => (wsId ? readSavedRaw(wsId) : "[]"),
+    () => "[]",
+  );
+  const savedViews = useMemo<readonly SavedRoomView[]>(() => {
+    try {
+      const parsed = JSON.parse(savedRaw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [savedRaw]);
 
   const persist = useCallback(
     (next: readonly SavedRoomView[]) => {
-      setSavedViews(next);
       if (!wsId) return;
       try {
         window.localStorage.setItem(storageKey(wsId), JSON.stringify(next));
       } catch {
-        /* storage full/blocked: the in-memory list still works this session */
+        /* storage full/blocked: the write is lost, nothing else breaks */
       }
+      notifySavedViews();
     },
     [wsId],
   );

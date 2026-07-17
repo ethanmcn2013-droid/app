@@ -10,7 +10,7 @@
  * leaf receipts. One grouped count query — no N+1.
  */
 
-import { count, eq, inArray } from "drizzle-orm";
+import { count, inArray } from "drizzle-orm";
 import { db } from "@/server/db";
 import { planningPeriods, tasks, workspaces } from "@/server/db/schema";
 import { listMyWorkspaces } from "@/server/auth";

@@ -20,7 +20,6 @@
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { isDemoMode } from "@/lib/access-mode";
-import { useHydrated } from "@/lib/use-hydrated";
 import {
   NOTES_URL,
   SIGNAL_URL,

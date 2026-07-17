@@ -560,3 +560,38 @@ textarea.purposeLine {
 
 .workspaceBrief[data-milestones="off"] { min-height: 0; }
 .workspaceBrief[data-milestones="off"] .workspaceIdentity h1 { margin-top: 0; }
+
+/* Production board furniture (T·95): the header's overflow + add
+   cluster replaces the lab's single collapse button in the same
+   top-right position; drop-hover strengthens the lane border the way
+   the lab's insertion grammar signals a live target. */
+.laneHeaderActions {
+  align-items: center;
+  display: flex;
+  gap: 2px;
+  position: absolute;
+  right: 7px;
+  top: 7px;
+}
+.boardLane[data-drop] { border-color: var(--x-task-accent); }
+
+/* Add-column tile: the lab's quiet dashed grammar at lane width. */
+.addColumnTile {
+  align-items: flex-start;
+  background: transparent;
+  border: 1px dashed var(--x-task-border-strong);
+  border-radius: 8px;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  font: inherit;
+  font-size: 10px;
+  gap: 4px;
+  justify-content: flex-start;
+  min-height: 116px;
+  padding: 14px;
+  text-align: left;
+}
+.addColumnTile:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.addColumnTile strong { color: var(--x-task-text-secondary); font-size: 10px; }
