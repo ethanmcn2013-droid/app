@@ -234,44 +234,6 @@ function WorkspaceSwitcher({
   );
 }
 
-/**
- * The one off-white element on the bar: the active scope capsule.
- * Planning period › workspace. High contrast against the charcoal is the
- * point — it is where you are.
- */
-function ScopeCapsule({
-  periodName,
-  workspaceTitle,
-}: {
-  periodName: string | null;
-  workspaceTitle: string;
-}) {
-  return (
-    <span
-      title={
-        periodName ? `${periodName} › ${workspaceTitle}` : workspaceTitle
-      }
-      className="flex h-7 min-w-0 max-w-[300px] flex-none items-center gap-1.5 rounded-md bg-[var(--x-studio-capsule)] px-3 text-[12px]"
-    >
-      {/* zinc-600 (not ink-faint): 12px text on the off-white capsule needs
-          ≥4.5:1 — the experience gate's Axe audit enforces it. */}
-      {periodName ? (
-        <>
-          <span className="hidden truncate text-[var(--zinc-600)] sm:block">
-            {periodName}
-          </span>
-          <span aria-hidden="true" className="hidden text-[var(--zinc-600)] sm:block">
-            ›
-          </span>
-        </>
-      ) : null}
-      <span className="truncate font-semibold tracking-[-0.01em] text-ink">
-        {workspaceTitle}
-      </span>
-    </span>
-  );
-}
-
 /** ⌘K on Apple platforms, Ctrl K elsewhere. Server renders ⌘K; the
  *  client snapshot corrects it during hydration without a set-state. */
 const subscribeNever = () => () => {};
@@ -309,24 +271,16 @@ export function StudioBar() {
       )}
 
       <div className="flex min-w-0 flex-1 items-center gap-3 px-3 md:px-4">
+        {/* Scope capsule retired (T·97): the workspace name reads in the
+            switcher cell and the brief's title; the capsule was redundant.
+            The compact switcher stays as the mobile workspace control. */}
         {data ? (
-          <>
-            <ScopeCapsule
-              periodName={data.periodName}
-              workspaceTitle={data.workspaceTitle}
-            />
-            <WorkspaceSwitcher
-              compact
-              workspaces={data.workspaces}
-              activeWorkspaceId={data.activeWorkspaceId}
-            />
-          </>
-        ) : (
-          <span
-            aria-hidden="true"
-            className="h-7 w-36 flex-none animate-pulse rounded-md bg-white/[0.08]"
+          <WorkspaceSwitcher
+            compact
+            workspaces={data.workspaces}
+            activeWorkspaceId={data.activeWorkspaceId}
           />
-        )}
+        ) : null}
 
         <button
           type="button"

@@ -25,6 +25,7 @@ import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
 import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getProjectsTreeData } from "@/server/actions/projects-tree";
+import { getBoardName } from "@/server/actions/board";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
@@ -76,7 +77,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -103,6 +104,9 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     getRoomBriefData(),
     // Projects sidebar tree (T·95 lab parity): periods → workspaces → counts.
     getProjectsTreeData(),
+    // Editable workspace title (T·97): per-workspace name override from meta
+    // KV. Null when unset; the brief falls back to shortenTitle(workspaceTitle).
+    getBoardName(ws),
   ]);
   const slug = wsRow?.slug ?? ws;
   const personalization = getWorkspacePersonalization({
@@ -115,6 +119,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         domain={domain}
         workspaceId={ws}
         workspaceSlug={slug}
+        boardName={boardName}
         personalization={personalization}
       >
         <TasksProvider initialTasks={tasks}>

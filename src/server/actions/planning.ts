@@ -52,6 +52,7 @@ import { trackPlanningEvent } from "@/server/planning/analytics-server";
 import { detectVenueWelcome } from "@/server/db/venue-welcome";
 import { requirePlanningFeature } from "@/server/planning/flags";
 import { planDuplicatedTasks } from "@/lib/planning/duplication";
+import { isDemoMode } from "@/lib/access-mode";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -279,6 +280,102 @@ export async function bulkCreateWorkspacesAction(
     source: "your_work",
   });
   return { created, skipped, inputDuplicates: duplicates };
+}
+
+/**
+ * Create a single workspace ("project") directly from the Projects
+ * sidebar and return its id so the caller can switch to it.
+ *
+ * This mirrors the single-workspace path of `insertWorkspaces`
+ * exactly (same columns, slug shape, ordering, owner membership row)
+ * but supports a standalone/periodless project by allowing a null
+ * `planningPeriodId`. When a period is passed we validate ownership
+ * and inherit its context so the row shows under that period in the
+ * tree; when null the workspace is a top-level periodless project
+ * with the schema-default `"project"` context.
+ */
+export async function createProjectAction(
+  name: string,
+  planningPeriodId?: string | null,
+): Promise<{ ok: true; id: string }> {
+  const cleanName = cleanPlainText(name, "Name", 80);
+
+  // Demo/review: synthesize an id without writing so the preview can
+  // optimistically show the new project. The real DB is never touched.
+  if (isDemoMode()) {
+    return { ok: true, id: `ws-${randomUUID()}` };
+  }
+
+  const actorUserId = await getCurrentUser();
+
+  // Resolve the target period (if any). Owner-check mirrors the guard
+  // bulkCreateWorkspacesAction applies before inserting into a period.
+  let periodContext: PlanningPeriodContext = "general";
+  let contextType: WorkspaceContext = "project";
+  const targetPeriodId =
+    planningPeriodId == null || planningPeriodId === "" ? null : planningPeriodId;
+  if (targetPeriodId) {
+    const period = await requirePlanningPeriodOwner(actorUserId, targetPeriodId);
+    if (period.archivedAt) throw new Error("Restore this planning period first.");
+    periodContext = period.contextType;
+    contextType = normalizeWorkspaceContext(undefined, period.contextType);
+    if (!isCompatibleWorkspaceContext(period.contextType, contextType)) {
+      throw new Error("This workspace type does not match the planning period.");
+    }
+  }
+
+  const id = `ws-${randomUUID()}`;
+  const slug = `${slugify(cleanName)}-${randomUUID().slice(0, 8)}`;
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    // Order the new project after the user's existing siblings in the
+    // same group (a specific period, or the periodless bucket).
+    const [last] = await tx
+      .select({ position: workspaces.position })
+      .from(workspaceMembers)
+      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+      .where(
+        and(
+          eq(workspaceMembers.userId, actorUserId),
+          targetPeriodId
+            ? eq(workspaces.planningPeriodId, targetPeriodId)
+            : sql`${workspaces.planningPeriodId} IS NULL`,
+        ),
+      )
+      .orderBy(desc(workspaces.position))
+      .limit(1);
+    const position = (last?.position ?? 0) + 1000;
+
+    await tx.insert(workspaces).values({
+      id,
+      slug,
+      name: cleanName,
+      ownerUserId: actorUserId,
+      planningPeriodId: targetPeriodId,
+      contextType,
+      position,
+      activeDomain: ACTIVE_DOMAIN[periodContext],
+      primaryUseCase: PRIMARY_USE_CASE[periodContext],
+      onboardingCompletedAt: now,
+      updatedAt: now,
+    });
+    await tx.insert(workspaceMembers).values({
+      workspaceId: id,
+      userId: actorUserId,
+      role: "owner",
+    });
+  });
+
+  await selectWorkspaceCookie(id);
+  revalidatePath("/app", "layout");
+  await trackPlanningEvent(actorUserId, "workspace_bulk_created", {
+    planning_period_context: periodContext,
+    workspace_context: contextType,
+    workspace_count: 1,
+    source: "your_work",
+  });
+  return { ok: true, id };
 }
 
 export async function moveWorkspaceAction(input: {

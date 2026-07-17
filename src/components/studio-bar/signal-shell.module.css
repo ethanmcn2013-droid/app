@@ -548,3 +548,21 @@
   .projectsDrawer [data-tip]::after,
   .sidebarStrip [data-tip]::after { transition: none; }
 }
+
+/* ── Add project inline input (T·97) ──────────────────────────────────── */
+
+.addProjectInput {
+  background: transparent;
+  border: 1px solid var(--x-task-focus);
+  border-radius: 6px;
+  color: var(--x-task-text);
+  flex: 1;
+  font: inherit;
+  font-size: 11.5px;
+  min-width: 0;
+  outline: none;
+  padding: 4px 6px;
+  width: 100%;
+}
+
+.addProjectInput::placeholder { color: var(--x-task-text-muted); }

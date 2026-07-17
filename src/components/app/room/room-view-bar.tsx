@@ -2,26 +2,25 @@
 
 /**
  * Room view bar — the Option B lab's 52px raised control band, live in
- * production (T·95 lab parity). Icon view tabs on the left; on the
- * right the working tools: search-this-view ("/"), Filter, Sort,
- * Fields (list), density, the mono result count, Save view, and the
- * production-only Share/overflow cluster with the Live dot. Every
- * control operates on the real task store via RoomToolsProvider —
- * nothing here is decorative.
+ * production (T·95 lab parity; T·97 cleanup). Icon view tabs on the
+ * left; on the right the working tools: Filter, Sort, Fields (list),
+ * density, Save view, and the Share/overflow cluster — all styled as
+ * one consistent lab tool-button set. The redundant search-this-view,
+ * the mono result count, and the Live dot were retired (the Studio Bar
+ * owns universal search). Every control operates on the real task
+ * store via RoomToolsProvider — nothing here is decorative.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PRIORITY_LABEL, type Priority } from "@/lib/data";
-import { useTasksState } from "@/lib/tasks/tasks-context";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
 import { Icon } from "./room-icons";
 import {
   useRoomTools,
-  useRoomVisibleTasks,
   type RoomOwnerFilter,
   type RoomSortMode,
   type RoomView,
@@ -37,6 +36,22 @@ const TABS: Array<{ href: string; view: RoomView; label: string; purpose: string
 ];
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
+
+// T·97: arbitrary-variant overrides that repaint the wrapped production
+// trigger button in the lab tool-button style — same 32px height, raised
+// fill, hairline border, 6px radius, 11px text, and hover as
+// `.viewTools > button`. Targets `> div > button` so only the trigger is
+// restyled, never the popover/menu buttons inside it.
+const labButtonWrap =
+  "[&>div>button]:!h-8 [&>div>button]:!min-h-8 [&>div>button]:!rounded-md " +
+  "[&>div>button]:!border [&>div>button]:!border-[var(--x-task-border)] " +
+  "[&>div>button]:!bg-[var(--x-task-raised)] " +
+  "[&>div>button]:!text-[var(--x-task-text-secondary)] " +
+  "[&>div>button]:!text-[11px] [&>div>button]:!font-normal " +
+  "[&>div>button]:!px-2 [&>div>button]:!gap-1.5 " +
+  "hover:[&>div>button]:!border-[var(--x-task-border-strong)] " +
+  "hover:[&>div>button]:!text-[var(--x-task-text)] " +
+  "hover:[&>div>button]:!bg-[var(--x-task-raised)]";
 
 type ToolPanel = "filter" | "sort" | "save" | null;
 
@@ -93,16 +108,12 @@ function ToolPanelShell({
 export function RoomViewBar() {
   const pathname = usePathname() ?? "/app/board";
   const view = currentView(pathname);
-  const tasksState = useTasksState();
-  const visible = useRoomVisibleTasks();
   const {
-    query,
     priority,
     owner,
     sort,
     density,
     activeFilterCount,
-    setQuery,
     setPriority,
     setOwner,
     setSort,
@@ -114,23 +125,6 @@ export function RoomViewBar() {
   } = useRoomTools();
   const [panel, setPanel] = useState<ToolPanel>(null);
   const [saveName, setSaveName] = useState("");
-  const searchRef = useRef<HTMLInputElement | null>(null);
-
-  // "/" focuses search-this-view, exactly the lab's shortcut.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      const editing = target.matches(
-        "input, textarea, select, [contenteditable='true']",
-      );
-      if (!editing && event.key === "/" && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   const togglePanel = (next: Exclude<ToolPanel, null>) => {
     setPanel((value) => (value === next ? null : next));
@@ -153,19 +147,6 @@ export function RoomViewBar() {
         ))}
       </nav>
       <div className={shared.viewTools}>
-        <label className={shared.searchBox}>
-          <Icon name="search" size={15} />
-          <span className={shared.srOnly}>Search this view</span>
-          <input
-            aria-label="Search this view"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search"
-            ref={searchRef}
-            type="search"
-            value={query}
-          />
-          <kbd>/</kbd>
-        </label>
         <button
           onClick={() => togglePanel("filter")}
           title="Filter this view"
@@ -202,10 +183,6 @@ export function RoomViewBar() {
             <option value="comfortable">Comfortable</option>
           </select>
         </label>
-        <span className={styles.roomResultCount}>
-          {visible.length}/{tasksState.tasks.length}
-          <span> shown</span>
-        </span>
         {activeFilterCount > 0 ? (
           <button
             className={styles.activeFilterButton}
@@ -218,30 +195,19 @@ export function RoomViewBar() {
         <button onClick={() => togglePanel("save")} title="Save this view" type="button">
           Save view
         </button>
-        <span className="hidden lg:inline-flex">
+        {/* T·97: wrap the production Share/overflow triggers so they read as
+            lab tool buttons. The trigger is the direct child button of each
+            component's `.relative` wrapper, so [&>div>button] targets it
+            without touching the nested popover/menu buttons. */}
+        <span className={`hidden lg:inline-flex ${labButtonWrap}`}>
           <ShareButton view={inferShareView(pathname)} />
         </span>
-        <PageActionsOverflow
-          printPath={inferPrintPath(pathname)}
-          shareView={inferShareView(pathname)}
-          showShare
-        />
-        <span
-          aria-label="Live updates active"
-          className={styles.roomResultCount}
-          style={{ alignItems: "center", display: "inline-flex", gap: 5 }}
-        >
-          <span
-            aria-hidden="true"
-            style={{
-              background: "var(--x-task-success)",
-              borderRadius: "50%",
-              display: "inline-block",
-              height: 6,
-              width: 6,
-            }}
+        <span className={`inline-flex ${labButtonWrap}`}>
+          <PageActionsOverflow
+            printPath={inferPrintPath(pathname)}
+            shareView={inferShareView(pathname)}
+            showShare
           />
-          Live
         </span>
       </div>
 

@@ -16,6 +16,7 @@ import { useDomain } from "@/lib/domain-context";
 import { useTasks } from "@/lib/tasks/tasks-context";
 import { useRoomBrief } from "@/components/app/room/room-brief-context";
 import { setWorkspacePurposeAction } from "@/server/actions/room";
+import { renameBoardAction } from "@/server/actions/board";
 import type { Task } from "@/lib/data";
 import styles from "./option-b.module.css";
 
@@ -50,7 +51,7 @@ export function RoomBrief() {
   return (
     <header aria-label="Workspace brief" className={styles.workspaceBrief} data-milestones="off">
       <div className={styles.workspaceIdentity}>
-        <h1>{shortenTitle(pack.workspaceTitle)}</h1>
+        <WorkspaceTitle title={pack.boardName ?? shortenTitle(pack.workspaceTitle)} />
         <PurposeLine purpose={data.purpose} />
         <div className={styles.workspaceMeta}>
           {data.dateWindow ? <span>{data.dateWindow}</span> : null}
@@ -85,6 +86,96 @@ export function RoomBrief() {
         </dl>
       </section>
     </header>
+  );
+}
+
+/**
+ * The workspace title — the big H1 in the brief, click to edit (T·97).
+ * At rest a button carrying the title with a quiet pencil on hover;
+ * clicking swaps to an input prefilled with the current title. Enter or
+ * blur commits via renameBoardAction; Escape cancels; an empty input is
+ * treated as cancel (never clears the name). The override persists in the
+ * meta KV and re-renders through pack.boardName; when none is set the
+ * title falls back to shortenTitle(workspaceTitle). Both display and
+ * input wear the .workspaceIdentity h1 type via the h1 wrapper.
+ */
+function WorkspaceTitle({ title }: { title: string }) {
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const [isPending, startTransition] = useTransition();
+  const cancelled = useRef(false);
+
+  function commit() {
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
+    const next = draft.trim();
+    setEditing(false);
+    // Empty input = cancel (don't clear); no-op when unchanged.
+    if (!next || next === title) return;
+    startTransition(async () => {
+      await renameBoardAction(next);
+      router.refresh();
+    });
+  }
+
+  return (
+    <h1>
+      {editing ? (
+        <input
+          autoFocus
+          type="text"
+          maxLength={80}
+          value={draft}
+          disabled={isPending}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+            if (e.key === "Escape") {
+              cancelled.current = true;
+              setDraft(title);
+              setEditing(false);
+            }
+          }}
+          aria-label="Workspace title"
+          className={styles.titleInput}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setDraft(title);
+            setEditing(true);
+          }}
+          title="Rename workspace"
+          className={`${styles.titleButton} group/wt`}
+        >
+          <span>{title}</span>
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="opacity-0 transition-opacity group-hover/wt:opacity-100"
+          >
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+          </svg>
+        </button>
+      )}
+    </h1>
   );
 }
 

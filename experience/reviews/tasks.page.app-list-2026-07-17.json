@@ -4,13 +4,13 @@
   "source": "tasks/src/app/app/list/page.tsx",
   "materialityHash": "63411042447c5c21",
   "reviewedAt": "2026-07-17",
-  "reviewer": "Claude, chrome + board colours",
+  "reviewer": "Claude, room refinements",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-1c1c9761da649f04.json",
-    "attestationSha256": "d1db771b7b2675751d787d31c1452af26a446b54ed455dc35d31eb4fbcef6ff6",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-5a2db2c8ae5da0fa.json",
+    "attestationSha256": "a549217849c2f1e545dd7883799960d591009df9274b944c8ddd115630600fe5",
     "runId": "tasks-playwright-e55027582c759d40842b0f40",
     "canonicalEvidenceSha256": "e55027582c759d40842b0f40fae443015f8c9a2b38ee990f043516f511798899",
-    "rawArtifactSha256": "1c1c9761da649f047b10fdf0c437d74e6f2957b1ad06d3d6e6623e482e705ee4",
+    "rawArtifactSha256": "5a2db2c8ae5da0fa71e6f5a7fe2b7b486b99a325d437b25290171a31e2495c3c",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -19,6 +19,6 @@
       "desktop"
     ]
   },
-  "reviewedChange": "Lab parity (T-95): production adopted the Option B lab 1:1 — charcoal rail with home/products/utilities/account, Projects sidebar with the planning-period tree, full-bleed brief band, 52px room view bar with working search/filter/sort/fields/density/save-view, and the lab card, table, timeline, and calendar grammar on production machinery. The Studio Bar remains the one production-only element.",
-  "decision": "Re-attested for the T-96 cycle; surface unchanged in this pass."
+  "reviewedChange": "Room refinements (T-97): scope capsule retired from the Studio Bar; the room view bar drops the redundant second search, the result count, and the Live dot, and its right-side Share/overflow buttons now match the lab tool-button style; the workspace title is editable inline (renameBoardAction); a new Add project control in the Projects sidebar creates a workspace and switches to it.",
+  "decision": "Accepted after review; 46/46 production-build browser evidence at both breakpoints, Axe clean."
 }

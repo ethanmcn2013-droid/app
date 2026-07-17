@@ -22,6 +22,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
+import { createProjectAction } from "@/server/actions/planning";
 import type { ProjectsTreeGroup } from "@/server/actions/projects-tree";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { RailIcon, ShellGlyph, SidebarGlyph } from "./rail-icons";
@@ -135,6 +136,108 @@ function SavedViewsRow() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Quiet "Add project" row at the foot of the Projects tree (T·97).
+ * At rest it reads like a nav row with a "+" glyph. Clicking reveals
+ * an inline input (mirrors the board's Add-column pattern): Enter
+ * creates the project via `createProjectAction`, switches to it, and
+ * refreshes; Escape or an empty blur cancels.
+ */
+function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
+  const router = useRouter();
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding) inputRef.current?.focus();
+  }, [adding]);
+
+  function cancel() {
+    setAdding(false);
+    setDraft("");
+  }
+
+  function commit() {
+    const trimmed = draft.trim();
+    if (!trimmed) {
+      cancel();
+      return;
+    }
+    startTransition(async () => {
+      try {
+        const result = await createProjectAction(trimmed, null);
+        await selectWorkspaceAction(result.id);
+        setAdding(false);
+        setDraft("");
+        onCreated?.();
+        router.refresh();
+      } catch {
+        // Keep the draft so the founder can retry or amend the name.
+      }
+    });
+  }
+
+  if (adding) {
+    return (
+      <li>
+        <div className={styles.projectParent}>
+          <span aria-hidden="true" className={styles.disclosureGhost} />
+          <input
+            aria-label="New project name"
+            className={styles.addProjectInput}
+            disabled={pending}
+            onBlur={() => {
+              if (!draft.trim()) cancel();
+            }}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commit();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                cancel();
+              }
+            }}
+            placeholder="Project name"
+            ref={inputRef}
+            value={draft}
+          />
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <button
+        className={styles.projectParent}
+        onClick={() => setAdding(true)}
+        type="button"
+      >
+        <span aria-hidden="true" className={styles.disclosureGhost}>
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height={13}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth={1.75}
+            style={{ display: "block" }}
+            viewBox="0 0 24 24"
+            width={13}
+          >
+            <path d="M12 5.75v12.5M5.75 12h12.5" />
+          </svg>
+        </span>
+        <span className={styles.projectName}>Add project</span>
+      </button>
+    </li>
   );
 }
 
@@ -273,6 +376,7 @@ function SidebarBody({
               </li>
             ));
           })}
+          <AddProjectRow onCreated={onNavigate} />
         </ul>
       </nav>
     </div>
