@@ -36,6 +36,8 @@
   padding: 18px 20px 16px;
 }
 
+.workspaceBrief[data-milestones="off"] { grid-template-columns: minmax(300px, 1fr) 200px; }
+
 .workspaceIdentity { min-width: 0; }
 .workspacePath { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 9px; gap: 5px; letter-spacing: .035em; }
 .workspacePath strong { color: var(--x-task-text-secondary); font-weight: 630; }

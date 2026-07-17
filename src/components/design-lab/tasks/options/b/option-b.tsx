@@ -81,7 +81,7 @@ function RoomToolPanel({
   );
 }
 
-export function WorkspaceBrief({ tasks }: { tasks: LabTask[] }) {
+export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTask[]; showMilestones?: boolean }) {
   const store = useLabStore();
   const completed = store.tasks.filter((task) => task.completed).length;
   const overdue = store.tasks.filter(isTaskOverdue).length;
@@ -93,7 +93,7 @@ export function WorkspaceBrief({ tasks }: { tasks: LabTask[] }) {
   }).slice(0, 3);
   const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
   return (
-    <header className={styles.workspaceBrief}>
+    <header className={styles.workspaceBrief} data-milestones={showMilestones ? undefined : "off"}>
       <div className={styles.workspaceIdentity}>
         <div className={styles.workspacePath}><span>Planning period</span><Icon name="chevron-right" size={12} /><strong>Public launch</strong><Icon name="chevron-right" size={12} /><span>Workspace</span></div>
         <h1>Launch workspace</h1>
@@ -109,14 +109,14 @@ export function WorkspaceBrief({ tasks }: { tasks: LabTask[] }) {
           <div><dt>No date</dt><dd>{unscheduled}</dd></div>
         </dl>
       </section>
-      <section aria-label="Planning period milestones" className={styles.workspaceMilestones}>
+      {showMilestones ? <section aria-label="Planning period milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>
         <ol>
           {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? task.schedule.on.slice(5).replace("-", "/") : ""}</time><TaskOpenButton task={task} /></li>)}
           {milestones.length === 0 ? <li><time>No date</time><strong>No milestones in this fixture</strong></li> : null}
         </ol>
         {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current room view</small> : <small>Purpose, progress, and commitments stay in view.</small>}
-      </section>
+      </section> : null}
     </header>
   );
 }
@@ -169,7 +169,7 @@ export function OptionB({ route, onRouteChange }: TasksOptionProps) {
       />
       <ProjectsSidebar />
       <section className={styles.projectRoom}>
-        <WorkspaceBrief tasks={visibleTasks} />
+        <WorkspaceBrief showMilestones={false} tasks={visibleTasks} />
         <div className={styles.roomViewBar}>
           <ViewTabs onRouteChange={changeViewRoute} route={route} />
           <ViewTools
