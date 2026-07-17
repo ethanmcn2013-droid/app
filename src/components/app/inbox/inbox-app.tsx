@@ -81,7 +81,11 @@ export function InboxApp({
   const displayName = userName ?? me.name;
 
   return (
-    <div className="thin-scroll flex-1 overflow-auto px-4 py-5 md:px-8 md:py-6">
+    /* bg-bg: the inbox reads on white — its quiet uppercase kickers sit
+       directly on the page ground, and the room wash (T·95) puts them a
+       hair under the 4.5:1 Axe bar. The lab specifies the room views,
+       not the inbox; white stays its ground. */
+    <div className="thin-scroll flex-1 overflow-auto bg-bg px-4 py-5 md:px-8 md:py-6">
       <div className="mx-auto max-w-[820px] space-y-8">
         <NudgesSection nudges={nudges} onOpen={openTask} />
 
