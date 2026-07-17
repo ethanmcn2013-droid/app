@@ -654,3 +654,36 @@ textarea.purposeLine {
 }
 .laneRenameButton > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .laneRenameButton svg { color: var(--x-task-text-muted); flex: none; }
+
+/* Editable workspace title (T·97): the brief H1 is a click-to-edit
+   control. The button and input inherit the .workspaceIdentity h1 type
+   (size/weight/tracking) so display and edit read at the same scale; a
+   quiet pencil fades in on hover, mirroring the lane-rename grammar. */
+.titleButton {
+  align-items: baseline;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  margin: 0;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+.titleButton > span { min-width: 0; text-wrap: balance; }
+.titleButton svg { align-self: center; color: var(--x-task-text-muted); flex: none; }
+.titleInput {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-focus);
+  border-radius: 6px;
+  color: inherit;
+  font: inherit;
+  margin: -2px -6px;
+  max-width: 100%;
+  padding: 2px 6px;
+  width: 100%;
+}
