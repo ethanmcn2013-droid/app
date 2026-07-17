@@ -595,3 +595,9 @@ textarea.purposeLine {
 }
 .addColumnTile:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .addColumnTile strong { color: var(--x-task-text-secondary); font-size: 10px; }
+
+/* Production list geometry (T·95): the complete-box column is 42px
+   (the lab's selection column was 76px), so the frozen title column
+   pins at 42px here or it overlays the first scrolling field. */
+.taskTable[data-no-expand] .listFrozenHeader,
+.taskTable[data-no-expand] .listFrozenTask { left: 42px; }
