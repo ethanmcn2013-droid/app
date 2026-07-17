@@ -159,14 +159,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-15",
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f8f0a0720926e34c",
+      "materialityHash": "fb96deba39019651",
       "materialityReview": {
-        "materialityHash": "f8f0a0720926e34c",
-        "reviewedAt": "2026-07-15",
-        "evidence": "experience/reviews/tasks.page.app-board-2026-07-15.json"
+        "materialityHash": "fb96deba39019651",
+        "reviewedAt": "2026-07-17",
+        "evidence": "experience/reviews/tasks.page.app-board-2026-07-17.json"
       }
     },
     {
@@ -208,10 +208,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "78b9a2c1ed3cf0e4"
+      "materialityHash": "8ed6f55d93032f96",
+      "materialityReview": {
+        "materialityHash": "8ed6f55d93032f96",
+        "reviewedAt": "2026-07-17",
+        "evidence": "experience/reviews/tasks.page.app-calendar-2026-07-17.json"
+      }
     },
     {
       "id": "tasks.page.app-import",
@@ -360,10 +365,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "5aebb6ab0728e0c2"
+      "materialityHash": "63411042447c5c21",
+      "materialityReview": {
+        "materialityHash": "63411042447c5c21",
+        "reviewedAt": "2026-07-17",
+        "evidence": "experience/reviews/tasks.page.app-list-2026-07-17.json"
+      }
     },
     {
       "id": "tasks.page.app-my-tasks",
@@ -504,10 +514,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-17",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "aa32f36289be3f11"
+      "materialityHash": "bfb780f46a91b844",
+      "materialityReview": {
+        "materialityHash": "bfb780f46a91b844",
+        "reviewedAt": "2026-07-17",
+        "evidence": "experience/reviews/tasks.page.app-timeline-2026-07-17.json"
+      }
     },
     {
       "id": "tasks.page.app-your-work",

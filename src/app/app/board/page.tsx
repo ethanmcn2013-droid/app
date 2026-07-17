@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { AppPageHeader } from "@/components/app/page-header";
+import { RoomBrief } from "@/components/app/room/room-brief";
 import { BoardApp } from "@/components/app/board/board-app";
 import { TemplatedToast } from "@/components/app/templated-toast";
 import { VenueWelcomeCard } from "@/components/welcome/venue-welcome-card";
@@ -41,7 +42,7 @@ export default async function BoardPage({
   }
   return (
     <>
-      <AppPageHeader />
+      <AppPageHeader brief={<RoomBrief />} />
       <BoardApp />
       <Suspense fallback={null}>
         <TemplatedToast />

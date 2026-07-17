@@ -23,6 +23,15 @@ import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 import { BlockerBadge } from "@/components/app/blockers/blocker-badge";
 import { RecurrenceChip } from "@/components/app/cards/recurrence-chip";
 
+/** Editorial Project Room (Option B): status groups narrate themselves so
+ *  the list reads as an annotated table, not four bare headers. */
+const GROUP_NOTES: Record<LaneId, string> = {
+  todo: "Agreed and ready to start.",
+  doing: "In motion right now.",
+  review: "Held by a reply, a delivery, or a decision.",
+  done: "Finished work stays visible.",
+};
+
 export function ListApp() {
   const personalization = usePersonalization();
   const state = useTasksState();
@@ -162,6 +171,14 @@ export function ListApp() {
                 <span className="text-[10.5px] text-ink-quiet">
                   {grouped[laneId].length}
                 </span>
+                <span className="hidden text-[10.5px] text-ink-quiet md:inline">
+                  · {GROUP_NOTES[laneId]}
+                </span>
+                {laneId !== "done" ? (
+                  <span className="ml-auto hidden font-mono text-[10px] text-ink-quiet md:inline">
+                    {grouped[laneId].filter((t) => t.due).length}/{grouped[laneId].length} dated
+                  </span>
+                ) : null}
               </div>
               {grouped[laneId].map((task, i) => {
                 const prio = PRIORITY_LABEL[task.priority];
@@ -200,18 +217,28 @@ export function ListApp() {
                         onToggle={() => toggleComplete(task.id)}
                         title={task.title}
                       />
-                      <DoneTitle done={isDone} className="line-clamp-1 min-w-0 flex-1">
-                        {task.title}
-                      </DoneTitle>
-                      {task.blockedBy && task.blockedBy.length > 0 ? (
-                        <BlockerBadge blockedBy={task.blockedBy} />
-                      ) : null}
-                      {task.tags?.[0] ? (
-                        <span className="hidden rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10px] font-medium text-ink-quiet md:inline-flex">
-                          {task.tags[0]}
-                        </span>
-                      ) : null}
-                      <RecurrenceChip recurrence={task.recurrence} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <DoneTitle done={isDone} className="line-clamp-1 min-w-0 flex-1">
+                            {task.title}
+                          </DoneTitle>
+                          {task.blockedBy && task.blockedBy.length > 0 ? (
+                            <BlockerBadge blockedBy={task.blockedBy} />
+                          ) : null}
+                          {task.tags?.[0] ? (
+                            <span className="hidden rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10px] font-medium text-ink-quiet md:inline-flex">
+                              {task.tags[0]}
+                            </span>
+                          ) : null}
+                          <RecurrenceChip recurrence={task.recurrence} />
+                        </div>
+                        {/* Option B: purpose stays visible in the table anchor. */}
+                        {task.description && !isDone ? (
+                          <p className="mt-0.5 hidden truncate text-[11px] leading-snug text-ink-quiet md:block">
+                            {task.description}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                     {/* <md: dot only */}
                     <span

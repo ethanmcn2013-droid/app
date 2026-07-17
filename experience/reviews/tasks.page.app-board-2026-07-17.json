@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-board",
+  "source": "tasks/src/app/app/board/page.tsx",
+  "materialityHash": "fb96deba39019651",
+  "reviewedAt": "2026-07-17",
+  "reviewer": "Claude, Option B production port",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-ea416e4578d716e8a331bcd3-6bbe55c1f65aaf74.json",
+    "attestationSha256": "8c1d100cfe0898da6be1f9db277d6eb7da64056db39f265ab373c97fb046824b",
+    "runId": "tasks-playwright-ea416e4578d716e8a331bcd3",
+    "canonicalEvidenceSha256": "ea416e4578d716e8a331bcd36910db8f196b319ef63d1beeeb9f484eddc48ede",
+    "rawArtifactSha256": "6bbe55c1f65aaf747778d25fe2b6dd3af1092bb0551164c89a5602963543e3c6",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Editorial Project Room shell: workspace brief above the board, lane narration on system lanes, task purpose visible on cards; drag, custom columns, and optimistic sync untouched.",
+  "decision": "Accepted after source review; 46/46 production-build browser evidence passed at both breakpoints (run tasks-playwright-ea416e4578d716e8a331bcd3)."
+}
