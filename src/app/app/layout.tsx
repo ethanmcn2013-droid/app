@@ -2,7 +2,13 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import AppLoading from "./loading";
 import { AppSidebar } from "@/components/app/sidebar";
-import { SuiteChrome } from "@/components/app/suite-chrome";
+import { StudioBar } from "@/components/studio-bar/studio-bar";
+import { StudioRail } from "@/components/studio-bar/studio-rail";
+import {
+  StudioChromeBridge,
+  StudioChromeProvider,
+  StudioChromePublisher,
+} from "@/components/studio-bar/studio-chrome-context";
 import { FirstCompletionMoment } from "@/components/app/done-dopamine/first-completion-moment";
 import { TasksProvider } from "@/lib/tasks/tasks-context";
 import { TaskDetailPanel } from "@/components/app/detail-panel/task-detail-panel";
@@ -11,7 +17,6 @@ import { PaletteRoot } from "@/components/app/palette/command-palette";
 import { CrossWorkspaceOverdue } from "@/components/app/cross-workspace-overdue";
 import { CrossWorkspaceSearch } from "@/components/app/cross-workspace-search";
 import { FocusMode } from "@/components/app/focus-mode";
-import { WorkspaceContextBar } from "@/components/app/workspace-context-bar";
 import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
 import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
 import { DomainProvider } from "@/lib/domain-context";
@@ -52,8 +57,9 @@ export const dynamic = "force-dynamic";
  * loading.tsx from painting (Next 16.2 fact: a layout awaiting runtime
  * data blocks the segment loading boundary entirely).
  *
- * SuiteChrome (no auth deps, client component) stays at layout level
- * and renders instantly, "chrome lives in layout (instant, never re-blanks)".
+ * StudioBar + StudioRail (no auth deps, client components) stay at layout
+ * level and render instantly, "chrome lives in layout (instant, never
+ * re-blanks)". Their auth-dependent cells hydrate via StudioChromePublisher.
  */
 async function AppShell({ children }: { children: React.ReactNode }) {
   // Closed-beta gate: only allowlisted accounts reach /app (production only;
@@ -116,12 +122,18 @@ async function AppShell({ children }: { children: React.ReactNode }) {
             />
             <AddTaskRoot>
               <PaletteRoot>
+                {/* T·94: workspace switching + scope moved up into the
+                    Studio Bar (layout level). Publisher fills the bar's
+                    cells; Bridge routes its command-field / create events
+                    into PaletteRoot + AddTaskRoot. */}
+                <StudioChromePublisher
+                  workspaces={myWorkspaces}
+                  activeWorkspaceId={ws}
+                  periodName={roomBrief?.periodName ?? null}
+                />
+                <StudioChromeBridge />
                 <AppSidebar />
                 <main className="flex min-w-0 flex-1 flex-col pb-[60px] md:pb-0">
-                  <WorkspaceContextBar
-                    activeWorkspaceId={ws}
-                    workspaces={myWorkspaces}
-                  />
                   {children}
                 </main>
                 <TaskDetailPanel />
@@ -142,9 +154,10 @@ async function AppShell({ children }: { children: React.ReactNode }) {
 /**
  * AppLayout, the /app segment layout.
  *
- * SuiteChrome renders synchronously at this level (client component,
- * no auth deps) so it is always painted and never re-blanks, the
- * monotonic reveal contract from LOADING_SYSTEM.md §4.
+ * The Studio Bar and product rail render synchronously at this level
+ * (client components, no auth deps) so the black L-frame is always
+ * painted and never re-blanks, the monotonic reveal contract from
+ * LOADING_SYSTEM.md §4.
  *
  * AppShell (auth + DB reads) wraps in Suspense so loading.tsx paints
  * while data resolves. Board mounts exactly once: Suspense resolves into
@@ -157,13 +170,14 @@ export default function AppLayout({
 }) {
   return (
     /*
-     * L4, persistent top chrome (DESIGN.md §14).
-     * SuiteChrome is sticky h-14; gives all /app routes the cross-product
-     * breadcrumb. Layout restructured: flex-col wraps chrome + flex-row
-     * (sidebar + content). overflow-hidden on the inner row so the chrome
-     * scrolls with the page (sticky) while the content area clips correctly.
+     * L4, persistent top chrome (DESIGN.md §14, amended by the Studio Bar
+     * contract 2026-07-17). The 48px Studio Bar spans the top; the 60px
+     * product rail runs down the left; together they draw the Signal
+     * Studio L-frame around the white canvas. flex-col wraps bar +
+     * flex-row (rail + sidebar + content); overflow-hidden on the inner
+     * row so the content area clips correctly under the fixed-height bar.
      *
-     * P1-2/P1-4 fix (DECISIONS.md D5): SuiteChrome rendered at this
+     * P1-2/P1-4 fix (DECISIONS.md D5): chrome rendered at this
      * synchronous layout level; auth/data moved into <AppShell> under
      * <Suspense> so loading.tsx boundary can paint. Board mounts once.
      *
@@ -174,14 +188,22 @@ export default function AppLayout({
      * Sharing the loader with the segment-level boundary means the
      * same wordmark holds the moment either way, no re-blank.
      */
-    <div className="flex h-screen w-full flex-col bg-bg">
-      <SuiteChrome />
-      <FirstCompletionMoment />
-      <div className="flex min-w-0 flex-1 overflow-hidden">
-        <Suspense fallback={<AppLoading />}>
-          <AppShell>{children}</AppShell>
-        </Suspense>
+    <StudioChromeProvider>
+      <div className="flex h-screen w-full flex-col bg-bg">
+        {/* T·94: the 48px Studio Bar replaces SuiteChrome + the
+            WorkspaceContextBar row. Bar (top) + rail (left) render at
+            this synchronous level so the black L-frame paints instantly
+            and never re-blanks; the bar's live cells hydrate from
+            <StudioChromePublisher> once AppShell resolves. */}
+        <StudioBar />
+        <FirstCompletionMoment />
+        <div className="flex min-w-0 flex-1 overflow-hidden">
+          <StudioRail />
+          <Suspense fallback={<AppLoading />}>
+            <AppShell>{children}</AppShell>
+          </Suspense>
+        </div>
       </div>
-    </div>
+    </StudioChromeProvider>
   );
 }

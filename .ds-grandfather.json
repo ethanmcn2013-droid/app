@@ -16,7 +16,7 @@
     "ease": 0
   },
   "src/app/globals.css": {
-    "hex": 90,
+    "hex": 96,
     "ease": 2
   },
   "src/app/layout.tsx": {

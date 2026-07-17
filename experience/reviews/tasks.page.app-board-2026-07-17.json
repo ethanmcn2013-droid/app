@@ -4,13 +4,13 @@
   "source": "tasks/src/app/app/board/page.tsx",
   "materialityHash": "fb96deba39019651",
   "reviewedAt": "2026-07-17",
-  "reviewer": "Claude, Option B production port",
+  "reviewer": "Claude, Studio Bar production chrome",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-ea416e4578d716e8a331bcd3-6bbe55c1f65aaf74.json",
-    "attestationSha256": "8c1d100cfe0898da6be1f9db277d6eb7da64056db39f265ab373c97fb046824b",
-    "runId": "tasks-playwright-ea416e4578d716e8a331bcd3",
-    "canonicalEvidenceSha256": "ea416e4578d716e8a331bcd36910db8f196b319ef63d1beeeb9f484eddc48ede",
-    "rawArtifactSha256": "6bbe55c1f65aaf747778d25fe2b6dd3af1092bb0551164c89a5602963543e3c6",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-7e0fd05a5588119b.json",
+    "attestationSha256": "76e00f9c12f15ec07da0ea56a79f994849e53838633f438febf8b6557de45a87",
+    "runId": "tasks-playwright-e55027582c759d40842b0f40",
+    "canonicalEvidenceSha256": "e55027582c759d40842b0f40fae443015f8c9a2b38ee990f043516f511798899",
+    "rawArtifactSha256": "7e0fd05a5588119b508917e9236293658ebb22c3d6ce94e91b7ff36266a197ef",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -19,6 +19,6 @@
       "desktop"
     ]
   },
-  "reviewedChange": "Editorial Project Room shell: workspace brief above the board, lane narration on system lanes, task purpose visible on cards; drag, custom columns, and optimistic sync untouched.",
-  "decision": "Accepted after source review; 46/46 production-build browser evidence passed at both breakpoints (run tasks-playwright-ea416e4578d716e8a331bcd3)."
+  "reviewedChange": "Studio Bar production chrome (T-94): 48px charcoal bar with workspace switcher, scope capsule, universal Ctrl/Cmd+K field, and contextual create, plus the 60px product rail, replace SuiteChrome and the workspace context bar; the room brief drops its breadcrumb and milestones panel; the working views themselves are untouched.",
+  "decision": "Accepted after source review; 46/46 production-build browser evidence passed at both breakpoints (run tasks-playwright-e55027582c759d40842b0f40)."
 }

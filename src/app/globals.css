@@ -100,6 +100,20 @@
   --lane-done-ink:  #1f7a45;
   --lane-done-dot:  #8fd5a8;
 
+  /* ── Studio Bar chrome (T·94) — the charcoal L-frame. The greys are
+     the canonical rail icon-system values (60px rail · 34×34 r10 tiles);
+     indigo rides the system ramp; the capsule + strong ink reuse zinc. */
+  --x-studio-chrome:        #17171a;
+  --x-studio-chrome-raised: #26262c;
+  --x-studio-accent:        var(--indigo-500);
+  --x-studio-capsule:       var(--zinc-100);
+  --x-studio-ink-strong:    var(--zinc-100);
+  --x-studio-ink:           #f0f0f2;
+  --x-studio-ink-mid:       var(--zinc-200);
+  --x-studio-ink-soft:      #a2a2ab;
+  --x-studio-ink-hover:     #b9b9c2;
+  --x-studio-ink-quiet:     #84848d;
+
   /* ── User presence (cinematic demo + real users) ──────────── */
   --user-chloe: color-mix(in srgb, #e4356d 85%, var(--ink));
   --user-david: color-mix(in srgb, #00a3b8 62%, var(--ink));

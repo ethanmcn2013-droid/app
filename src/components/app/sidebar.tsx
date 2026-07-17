@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wordmark } from "@/components/brand/wordmark";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { useCurrentUser } from "@/lib/auth-context";
-import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { usePalette } from "@/components/app/palette/command-palette";
 
 const NAV_TOP = [
   { href: "/app/inbox", label: "Inbox", icon: "inbox" },
   { href: "/app/my-tasks", label: "My week", icon: "user" },
+  { href: "/app/your-work", label: "Your work", icon: "views" },
   { href: undefined, label: "Search", icon: "search" },
 ];
 
@@ -53,25 +52,10 @@ export function AppSidebar({ active: activeProp }: { active?: string }) {
 
 function DesktopSidebar({ active }: { active: string }) {
   return (
-    <aside className="hidden h-full w-[252px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
-      <div className="flex h-12 items-center justify-between border-b border-line-soft/70 px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          {/*
-           * SuiteLauncher + "/" umbrella breadcrumb removed 2026-05-19:
-           * the always-visible SuiteSwitcher pills row (suite-chrome.tsx,
-           * shipped S·63/T·68) now renders the "signal studio." umbrella
-           * anchor + 4-product switch directly above this rail. Keeping the
-           * launcher here stacked a SECOND "signal studio." ~12px below the
-           * first (operator-reported regression). The pills fully serve the
-           * popover's purpose (discoverability), the sidebar header now
-           * carries only product context. SuiteLauncher is still retained
-           * in unauthed marketing nav + Roadmap public header (no pills
-           * there). See memory project-suite-switcher-pills-2026-05-19.
-           */}
-          <Wordmark size="md" />
-        </div>
-      </div>
-
+    /* T·94: 248px, aligned under the Studio Bar's workspace-switcher cell.
+       The wordmark header row is gone — product identity lives in the rail
+       and the bar; the sidebar carries only Tasks-local navigation. */
+    <aside className="hidden h-full w-[248px] flex-shrink-0 flex-col border-r border-line-soft bg-bg-sunken/40 md:flex">
       <div className="flex-1 overflow-y-auto px-2 py-3">
         <Group items={NAV_TOP} active={active} />
 
@@ -87,10 +71,7 @@ function DesktopSidebar({ active }: { active: string }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-line-soft/70 p-3">
-        <UserButtonWithSuite current="tasks" />
-        <span className="text-[12px] text-ink-quiet">Account</span>
-      </div>
+      {/* Account row removed (T·94): the avatar lives on the Studio Bar. */}
     </aside>
   );
 }
@@ -133,7 +114,7 @@ function Group({
             <span className="flex-1">{it.label}</span>
             {isSearch ? (
               <kbd className="inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
-                ⌘P
+                ⌘K
               </kbd>
             ) : count !== null ? (
               <span className="rounded bg-bg-sunken px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-ink-quiet">

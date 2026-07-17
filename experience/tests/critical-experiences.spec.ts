@@ -292,13 +292,15 @@ test("tasks.surface.command-palette / keyboard search", async ({ page }, testInf
   });
 
   await test.step("open the palette with the keyboard shortcut", async () => {
-    await page.keyboard.press("Control+P");
+    // ⌘K/Ctrl+K is the canonical universal-field shortcut since the
+    // Studio Bar (T·94); ⌘P survives as the legacy alias.
+    await page.keyboard.press("Control+K");
   });
 
   const dialog = page.getByRole("dialog", { name: "Command palette" });
   await test.step("enter a representative search query", async () => {
     await expect(dialog).toBeVisible();
-    const search = dialog.getByPlaceholder("Search tasks by title, tag, or description");
+    const search = dialog.getByPlaceholder("Search, jump or create…");
     await expect(search).toBeFocused();
     await page.keyboard.type("recommended suppliers");
     await expect(search).toHaveValue("recommended suppliers");

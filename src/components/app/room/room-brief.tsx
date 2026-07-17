@@ -3,17 +3,17 @@
 // Editorial Project Room brief — the Option B port (selected 2026-07-17).
 //
 // The workspace is a purposeful room, not a neutral container: purpose,
-// date window, ownership, progress receipts, and the next milestones stay
-// visible above the execution surface on every view. Live numbers come
-// from the tasks store; workspace facts arrive as server props from
-// getRoomBriefData(). Purpose is operator-editable inline and persists
-// via the meta KV (no schema change).
+// date window, ownership, and progress receipts stay visible above the
+// execution surface on every view. Live numbers come from the tasks
+// store; workspace facts arrive as server props from getRoomBriefData().
+// Purpose is operator-editable inline and persists via the meta KV (no
+// schema change). Scope breadcrumb + milestones panel retired 2026-07-17
+// (T·94): scope reads in the Studio Bar capsule.
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useDomain } from "@/lib/domain-context";
 import { useTasks } from "@/lib/tasks/tasks-context";
-import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useRoomBrief } from "@/components/app/room/room-brief-context";
 import { setWorkspacePurposeAction } from "@/server/actions/room";
 import type { Task } from "@/lib/data";
@@ -28,19 +28,10 @@ function isOverdue(task: Task, now: number): boolean {
   return Boolean(task.dueAt && task.dueAt.getTime() < now && task.lane !== "done");
 }
 
-function milestoneDateLabel(task: Task): string {
-  if (!task.dueAt) return "No date";
-  return task.dueAt.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-  });
-}
-
 export function RoomBrief() {
   const data = useRoomBrief();
   const { state } = useTasks();
   const pack = useDomain();
-  const { openTask } = useTaskPanel();
 
   // Mount-stable clock: the React Compiler forbids impure calls in render,
   // and overdue receipts don't need sub-navigation freshness.
@@ -55,34 +46,18 @@ export function RoomBrief() {
   const undated = tasks.filter((t) => !t.dueAt && t.lane !== "done").length;
   const progress = total === 0 ? 0 : Math.round((complete / total) * 100);
 
-  const milestones = tasks
-    .filter((t) => t.isMilestone && t.lane !== "done")
-    .sort((a, b) => {
-      const ad = a.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      const bd = b.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return ad - bd;
-    })
-    .slice(0, 3);
-
+  /* T·94: breadcrumb + milestones panel removed. Project scope now reads
+     in the Studio Bar's capsule; the brief keeps only title, purpose,
+     owner/date metadata, and the compact progress summary, so the header
+     stays low and the views start sooner. */
   return (
     <section
       aria-label="Workspace brief"
-      className="grid grid-cols-1 gap-5 rounded-xl border border-line-soft bg-white px-5 py-4 lg:grid-cols-[minmax(280px,1fr)_180px_230px]"
+      className="grid grid-cols-1 gap-5 rounded-xl border border-line-soft bg-white px-5 py-3.5 lg:grid-cols-[minmax(280px,1fr)_220px]"
     >
       {/* Identity */}
       <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.08em] text-ink-quiet">
-          <span>{data.periodName ? "Planning period" : "Workspace"}</span>
-          {data.periodName ? (
-            <>
-              <span aria-hidden="true">›</span>
-              <strong className="font-semibold text-ink-soft normal-case tracking-normal text-[11px]">
-                {data.periodName}
-              </strong>
-            </>
-          ) : null}
-        </div>
-        <h1 className="mt-1.5 text-[22px] font-semibold leading-tight tracking-tight text-ink md:text-[26px]">
+        <h1 className="text-[22px] font-semibold leading-tight tracking-tight text-ink md:text-[24px]">
           <span className="block truncate">{shortenTitle(pack.workspaceTitle)}</span>
         </h1>
         <PurposeLine purpose={data.purpose} />
@@ -142,42 +117,6 @@ export function RoomBrief() {
             <dd className="font-mono text-[11px] text-ink-soft">{undated}</dd>
           </div>
         </dl>
-      </div>
-
-      {/* Milestones */}
-      <div className="hidden min-w-0 flex-col justify-center border-line-soft lg:flex lg:border-l lg:pl-5">
-        <span className="text-[10px] uppercase tracking-[0.08em] text-ink-quiet">
-          Milestones
-        </span>
-        {milestones.length > 0 ? (
-          <ol className="mt-2 flex flex-col">
-            {milestones.map((task) => (
-              <li
-                key={task.id}
-                className="grid min-w-0 grid-cols-[44px_1fr] items-center gap-2 border-b border-line-soft py-1.5 last:border-0"
-              >
-                <time className="font-mono text-[9.5px] text-ink-quiet">
-                  {milestoneDateLabel(task)}
-                </time>
-                <button
-                  type="button"
-                  onClick={() => openTask(task.id)}
-                  className="truncate text-left text-[11.5px] font-medium text-ink transition-colors hover:text-brand"
-                >
-                  {task.title}
-                </button>
-              </li>
-            ))}
-          </ol>
-        ) : (
-          <p className="mt-2 text-[10.5px] leading-relaxed text-ink-quiet">
-            No open milestones. Mark a task as a milestone in its panel and it
-            anchors here.
-          </p>
-        )}
-        <small className="mt-1.5 text-[9.5px] text-ink-quiet">
-          Purpose, progress, and commitments stay in view.
-        </small>
       </div>
     </section>
   );

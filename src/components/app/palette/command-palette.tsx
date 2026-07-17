@@ -12,6 +12,7 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LANES, type Task } from "@/lib/data";
+import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
@@ -51,11 +52,16 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       const meta = e.metaKey || e.ctrlKey;
-      // ⌘P opens the workspace-local command palette (file-open
-      // convention). ⌘K is reserved for the cross-workspace search
-      // popover (cycle 24 / Phase 7), which follows the cross-app
-      // convention (Slack, Notion, Linear) where ⌘K is the global
-      // quick-switcher.
+      // ⌘K is the universal "Search, jump or create" field (Studio Bar,
+      // T·94) — the cross-app convention (Slack, Notion, Linear) where
+      // ⌘K is the quick-switcher. ⌘⇧K opens the cross-workspace search
+      // popover; ⌘P stays as the legacy file-open alias.
+      if (meta && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (open) closePalette();
+        else openPalette();
+        return;
+      }
       if (meta && e.key.toLowerCase() === "p") {
         e.preventDefault();
         if (open) closePalette();
@@ -115,6 +121,13 @@ function Palette({
   const inputRef = useRef<HTMLInputElement>(null);
   const state = useTasksState();
   const { openTask } = useTaskPanel();
+  // "…or create": the palette is the Studio Bar's universal field (T·94),
+  // so creating is a first-class exit. AddTaskRoot wraps PaletteRoot.
+  const { openDialog } = useAddTask();
+  const createTask = useCallback(() => {
+    onClose();
+    openDialog();
+  }, [onClose, openDialog]);
 
   // Query/selection are reset by PaletteRoot in the same event batch as
   // `open`. Focus may follow after commit without exposing stale content.
@@ -228,7 +241,7 @@ function Palette({
                     commit();
                   }
                 }}
-                placeholder="Search tasks by title, tag, or description"
+                placeholder="Search, jump or create…"
                 autoComplete="off"
                 spellCheck={false}
                 className="block w-full bg-transparent text-[15px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
@@ -240,7 +253,7 @@ function Palette({
 
             <div className="thin-scroll max-h-[60vh] overflow-y-auto py-1">
               {results.length === 0 ? (
-                <Empty query={query} />
+                <Empty query={query} onCreate={createTask} />
               ) : (
                 <ul role="listbox">
                   {results.map((task, idx) => (
@@ -274,7 +287,28 @@ function Palette({
   );
 }
 
-function Empty({ query }: { query: string }) {
+function CreateRow({ onCreate }: { onCreate: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onCreate}
+      className="mx-1 flex w-[calc(100%-8px)] items-center gap-2.5 rounded-md px-3 py-2 text-left transition-colors hover:bg-bg-sunken/50"
+    >
+      <span className="flex h-5 w-5 flex-none items-center justify-center rounded border border-line-soft text-ink-quiet">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+      </span>
+      <span className="flex-1 text-[13px] text-ink">New task</span>
+      <kbd className="inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
+        C
+      </kbd>
+    </button>
+  );
+}
+
+function Empty({ query, onCreate }: { query: string; onCreate: () => void }) {
   const q = query.trim();
   if (!q) {
     return (
@@ -286,6 +320,9 @@ function Empty({ query }: { query: string }) {
           Searches title, tags, and description across every task in the
           workspace.
         </div>
+        <div className="mt-2 border-t border-line-soft/70 pt-1.5">
+          <CreateRow onCreate={onCreate} />
+        </div>
         <SuiteJumps />
       </div>
     );
@@ -294,7 +331,7 @@ function Empty({ query }: { query: string }) {
     j.word.toLowerCase().startsWith(q.toLowerCase()),
   );
   return (
-    <div className="px-4 py-10 text-center">
+    <div className="px-4 py-8 text-center">
       <div className="text-[13.5px] font-medium text-ink-soft">
         No tasks match.
       </div>
@@ -302,6 +339,13 @@ function Empty({ query }: { query: string }) {
         Searches title, tags, and description across every task in the
         workspace.
       </div>
+      <button
+        type="button"
+        onClick={onCreate}
+        className="mt-4 inline-flex items-center gap-2 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-ink-soft"
+      >
+        New task
+      </button>
       {matches.length > 0 ? (
         <div className="mx-auto mt-4 max-w-[300px] text-left">
           <SuiteJumps only={matches} />

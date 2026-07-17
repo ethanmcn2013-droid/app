@@ -19,7 +19,7 @@ import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
 import type { LaneId } from "@/lib/data";
 
 /**
- * Global ⌘K (Cmd+K on macOS, Ctrl+K elsewhere) toggles a search
+ * Global ⌘⇧K (Cmd+Shift+K on macOS, Ctrl+Shift+K elsewhere) toggles a search
  * popover that hits every workspace the user belongs to. Clicking a
  * result sets that workspace as active, navigates to /app/board, and
  * opens the task in the detail panel via `?task=<id>`.
@@ -74,10 +74,13 @@ export function CrossWorkspaceSearch() {
           target.isContentEditable);
 
       const meta = e.metaKey || e.ctrlKey;
-      if (meta && e.key.toLowerCase() === "k") {
-        // ⌘K is allowed even from inside another input, the user
-        // genuinely wants the search overlay regardless of what's
-        // focused. Mirrors VSCode / Linear behavior.
+      // ⌘⇧K since T·94: plain ⌘K now belongs to the Studio Bar's
+      // universal "Search, jump or create" palette. Shift widens the
+      // gesture to "across workspaces", same key family.
+      if (meta && e.shiftKey && e.key.toLowerCase() === "k") {
+        // Allowed even from inside another input, the user genuinely
+        // wants the search overlay regardless of what's focused.
+        // Mirrors VSCode / Linear behavior.
         e.preventDefault();
         if (open) close();
         else openSearch();
@@ -312,7 +315,7 @@ export function CrossWorkspaceSearch() {
             <footer className="flex items-center justify-between border-t border-line-soft/70 px-4 py-2 text-[10.5px] text-ink-quiet">
               <span>
                 <kbd className="inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
-                  ⌘K
+                  ⌘⇧K
                 </kbd>{" "}
                 to toggle
               </span>

@@ -3,14 +3,14 @@
   "experienceId": "tasks.page.welcome",
   "source": "tasks/src/app/welcome/page.tsx",
   "materialityHash": "24580b7e362ba327",
-  "reviewedAt": "2026-07-15",
-  "reviewer": "Codex release closeout",
+  "reviewedAt": "2026-07-17",
+  "reviewer": "Claude, Studio Bar production chrome",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-ea416e4578d716e8a331bcd3-3af4ddef93a796fb.json",
-    "attestationSha256": "5ac65ce202c054896acaf892adca2c6a1bb6b62a8fe03d81af87037a887cfab3",
-    "runId": "tasks-playwright-ea416e4578d716e8a331bcd3",
-    "canonicalEvidenceSha256": "ea416e4578d716e8a331bcd36910db8f196b319ef63d1beeeb9f484eddc48ede",
-    "rawArtifactSha256": "3af4ddef93a796fb653ca10b1f8d1447a73554eb0dae81cb2ede5a5a6d813b7c",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-7e0fd05a5588119b.json",
+    "attestationSha256": "76e00f9c12f15ec07da0ea56a79f994849e53838633f438febf8b6557de45a87",
+    "runId": "tasks-playwright-e55027582c759d40842b0f40",
+    "canonicalEvidenceSha256": "e55027582c759d40842b0f40fae443015f8c9a2b38ee990f043516f511798899",
+    "rawArtifactSha256": "7e0fd05a5588119b508917e9236293658ebb22c3d6ce94e91b7ff36266a197ef",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.sign-up-by-sign-up",
     "caseName": "review-mode sign up",
@@ -20,5 +20,5 @@
     ]
   },
   "reviewedChange": "Planning Period integration routes eligible first-run contexts into contextual onboarding while preserving legacy onboarding and production authorization.",
-  "decision": "Accepted after source review, full onboarding and planning tests, and the representative production-build browser run; this non-critical route is not claimed as directly rendered evidence."
+  "decision": "Re-attested against run tasks-playwright-e55027582c759d40842b0f40; surface unchanged in this cycle."
 }
