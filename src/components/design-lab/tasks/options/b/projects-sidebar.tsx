@@ -128,7 +128,9 @@ export function ProjectsSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
   const collapseIntent = useRef(false);
+  const expandIntent = useRef(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const drawerTriggerRef = useRef<HTMLButtonElement>(null);
   const taskCount = store.tasks.length;
@@ -140,7 +142,14 @@ export function ProjectsSidebar() {
   }
 
   useEffect(() => {
-    if (collapsed && collapseIntent.current) expandButtonRef.current?.focus();
+    if (collapsed && collapseIntent.current) {
+      collapseIntent.current = false;
+      expandButtonRef.current?.focus();
+    }
+    if (!collapsed && expandIntent.current) {
+      expandIntent.current = false;
+      sidebarRef.current?.querySelector<HTMLElement>('[aria-label="Collapse Projects sidebar"]')?.focus();
+    }
   }, [collapsed]);
 
   const closeDrawer = useCallback(() => {
@@ -224,7 +233,10 @@ export function ProjectsSidebar() {
           aria-label="Expand Projects sidebar"
           className={styles.stripButton}
           data-tip="Expand Projects sidebar"
-          onClick={() => setCollapsed(false)}
+          onClick={() => {
+            expandIntent.current = true;
+            setCollapsed(false);
+          }}
           ref={expandButtonRef}
           type="button"
         >
@@ -236,7 +248,7 @@ export function ProjectsSidebar() {
   }
 
   return (
-    <aside aria-label="Tasks projects" className={styles.projectsSidebar} data-projects-sidebar="true">
+    <aside aria-label="Tasks projects" className={styles.projectsSidebar} data-projects-sidebar="true" ref={sidebarRef}>
       <SidebarHeader
         closeLabel="Collapse Projects sidebar"
         onClose={() => {

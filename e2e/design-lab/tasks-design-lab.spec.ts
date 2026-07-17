@@ -324,3 +324,132 @@ test.describe("accessibility evidence", () => {
     }
   }
 });
+
+test.describe("Option B navigation shell", () => {
+  test("wide desktop shows the Signal product rail and the Projects sidebar", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(labUrl({ option: "b" }));
+    await settle(page);
+
+    const rail = page.locator("[data-signal-product-rail]");
+    const sidebar = page.locator("[data-projects-sidebar]");
+    await expect(rail).toBeVisible();
+    await expect(sidebar).toBeVisible();
+
+    const heading = sidebar.getByRole("heading", { name: "Projects", exact: true });
+    await expect(heading).toBeVisible();
+    await expect(heading).toHaveText("Projects");
+
+    const optionB = page.locator('[data-option="b"]');
+    await expect(optionB.getByText("Spaces", { exact: true })).toHaveCount(0);
+    await expect(optionB.getByText("Workspaces", { exact: true })).toHaveCount(0);
+
+    for (const label of ["Notes", "Tasks", "Timeline", "Signal", "More"]) {
+      await expect(rail.getByText(label, { exact: true })).toBeVisible();
+    }
+    await expect(rail.locator('[data-product="tasks"]')).toHaveAttribute("aria-current", "page");
+    await expect(rail.locator("[aria-current='page']")).toHaveCount(1);
+
+    await expect(sidebar.getByRole("button", { name: /Public launch/ })).toHaveAttribute("aria-expanded", "true");
+    await expect(sidebar.locator('[data-project-row="launch-workspace"]')).toHaveAttribute("aria-current", "page");
+
+    const documentOverflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(documentOverflows).toBe(false);
+  });
+
+  test("Projects disclosure, sidebar collapse, and rail search are fully operable", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(labUrl({ option: "b" }));
+    await settle(page);
+
+    const sidebar = page.locator("[data-projects-sidebar]");
+    const publicLaunch = sidebar.getByRole("button", { name: /Public launch/ });
+    const launchWorkspace = sidebar.locator('[data-project-row="launch-workspace"]');
+    await expect(launchWorkspace).toBeVisible();
+    await publicLaunch.click();
+    await expect(publicLaunch).toHaveAttribute("aria-expanded", "false");
+    await expect(launchWorkspace).toBeHidden();
+    await publicLaunch.focus();
+    await page.keyboard.press("Enter");
+    await expect(publicLaunch).toHaveAttribute("aria-expanded", "true");
+    await expect(launchWorkspace).toBeVisible();
+
+    const tasksButton = page.locator("[data-signal-product-rail] [data-product='tasks']");
+    await tasksButton.focus();
+    const outline = await tasksButton.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { width: Number.parseFloat(style.outlineWidth), style: style.outlineStyle };
+    });
+    expect(outline.width).toBeGreaterThanOrEqual(2);
+    expect(outline.style).not.toBe("none");
+
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    await expect(page.locator('[data-option="b"] input[aria-label="Search this view"]')).toBeFocused();
+
+    await page.getByRole("button", { name: "Collapse Projects sidebar" }).click();
+    await expect(page.locator("[data-projects-sidebar]")).toHaveCount(0);
+    const expand = page.getByRole("button", { name: "Expand Projects sidebar" });
+    await expect(expand).toBeFocused();
+    await expand.click();
+    await expect(page.locator("[data-projects-sidebar]")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Collapse Projects sidebar" })).toBeFocused();
+  });
+
+  test("narrow widths swap the sidebar for an accessible Projects drawer", async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 1000 });
+    await page.goto(labUrl({ option: "b" }));
+    await settle(page);
+
+    await expect(page.locator("[data-projects-sidebar]")).toHaveCount(0);
+    const trigger = page.getByRole("button", { name: "Open Projects" });
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+
+    const drawer = page.getByRole("dialog", { name: "Tasks projects" });
+    await expect(drawer).toBeVisible();
+    await expect(page.locator("[data-projects-drawer]")).toBeVisible();
+    await expect(drawer.getByRole("heading", { name: "Projects", exact: true })).toBeVisible();
+    const box = await drawer.boundingBox();
+    expect(box, "drawer bounding box").not.toBeNull();
+    expect(box!.y).toBeGreaterThanOrEqual(52);
+
+    const documentOverflows = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    expect(documentOverflows).toBe(false);
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-projects-drawer]")).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test("reduced motion strips the shell's transitions", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(labUrl({ option: "b" }));
+    await settle(page);
+    const durations = await page.locator("[data-signal-product-rail] [data-product='tasks'] span").first().evaluate((element) => getComputedStyle(element).transitionDuration);
+    for (const duration of durations.split(",")) {
+      expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.001);
+    }
+  });
+
+  test("Options A, C, and the hybrid keep the shared workspace rail", async ({ page }) => {
+    for (const option of ["a", "c", "hybrid"]) {
+      await page.goto(labUrl({ option }));
+      await settle(page);
+      await expect(page.locator("[data-signal-product-rail]")).toHaveCount(0);
+      await expect(page.locator("[data-projects-sidebar]")).toHaveCount(0);
+      await expect(page.getByRole("complementary", { name: "Workspace navigation" })).toHaveCount(option === "c" ? 0 : 1);
+    }
+  });
+
+  test("the shell persists across all four Option B views", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    for (const view of views) {
+      await page.goto(labUrl({ option: "b", view }));
+      await settle(page);
+      await expect(page.locator("[data-signal-product-rail]")).toBeVisible();
+      await expect(page.locator("[data-projects-sidebar]")).toBeVisible();
+      await expect(page.locator(`[data-view="${view}"]`)).toBeVisible();
+    }
+  });
+});

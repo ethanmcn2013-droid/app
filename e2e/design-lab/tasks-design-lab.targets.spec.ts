@@ -62,3 +62,46 @@ test("@targets inventories narrow-desktop interactive target sizes", async ({ pa
     surfaces,
   }, null, 2));
 });
+
+test("@targets Option B navigation shell keeps pointer targets at 1024", async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 1000 });
+  await page.goto("/__design-lab/tasks?option=b&view=board&dataset=dense&density=compact&mode=default");
+  await page.locator('[data-option="b"]').waitFor({ state: "visible" });
+  await page.locator('[data-hydrated="true"]').waitFor({ state: "attached" });
+
+  const auditShell = () => page.evaluate(() => {
+    const roots = document.querySelectorAll('[data-signal-product-rail], [data-projects-sidebar], [data-projects-drawer]');
+    const stripTrigger = document.querySelectorAll('[aria-label="Open Projects"], [aria-label="Expand Projects sidebar"]');
+    const items = [...roots, ...stripTrigger].flatMap((root) =>
+      root.matches("button") ? [root as HTMLElement] : [...root.querySelectorAll<HTMLElement>("button:not(:disabled)")]);
+    return items.map((element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        name: element.getAttribute("aria-label") || element.textContent?.trim().replace(/\s+/g, " ").slice(0, 60) || element.tagName,
+        width: Math.round(rect.width * 10) / 10,
+        height: Math.round(rect.height * 10) / 10,
+      };
+    });
+  });
+
+  const closedState = await auditShell();
+  expect(closedState.length).toBeGreaterThan(8);
+  for (const target of closedState) {
+    expect(target.width, `${target.name} width`).toBeGreaterThanOrEqual(24);
+    expect(target.height, `${target.name} height`).toBeGreaterThanOrEqual(24);
+  }
+  const coreProducts = closedState.filter((target) => ["Notes", "Tasks", "Timeline", "Signal", "More"].includes(target.name));
+  expect(coreProducts).toHaveLength(5);
+  for (const target of coreProducts) {
+    expect(target.width, `${target.name} core width`).toBeGreaterThanOrEqual(40);
+    expect(target.height, `${target.name} core height`).toBeGreaterThanOrEqual(40);
+  }
+
+  await page.getByRole("button", { name: "Open Projects" }).click();
+  await page.locator("[data-projects-drawer]").waitFor({ state: "visible" });
+  const drawerState = await auditShell();
+  for (const target of drawerState) {
+    expect(target.width, `${target.name} width (drawer)`).toBeGreaterThanOrEqual(24);
+    expect(target.height, `${target.name} height (drawer)`).toBeGreaterThanOrEqual(24);
+  }
+});

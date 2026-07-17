@@ -399,8 +399,8 @@
   flex-direction: column;
   gap: 1px;
   list-style: none;
-  margin: 1px 0 3px;
-  padding: 0 0 0 14px;
+  margin: 1px 0 6px;
+  padding: 0 0 0 22px;
   position: relative;
 }
 
@@ -408,13 +408,13 @@
   background: var(--x-task-border);
   bottom: 5px;
   content: "";
-  left: 14px;
+  left: 15px;
   position: absolute;
   top: 5px;
   width: 1px;
 }
 
-.projectChildren .projectLeaf { min-height: 32px; padding-left: 12px; }
+.projectChildren .projectLeaf { min-height: 32px; padding-left: 25px; }
 
 .projectLeaf[aria-current="page"] {
   background: var(--x-task-selected);
