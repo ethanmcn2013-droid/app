@@ -45,7 +45,16 @@ function inferPrintPath(pathname: string): string {
   return "/print/board";
 }
 
-export function AppPageHeader({ active: activeProp }: { active?: string }) {
+export function AppPageHeader({
+  active: activeProp,
+  brief,
+}: {
+  active?: string;
+  /** Editorial Project Room brief (Option B, 2026-07-17). When present it
+   *  owns workspace identity (breadcrumb + h1 + purpose + receipts), so
+   *  the header renders only the action row and view tabs around it. */
+  brief?: React.ReactNode;
+}) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   const { openDialog } = useAddTask();
@@ -79,16 +88,23 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   // amateur tell.
   return (
     <header className="px-4 pb-3 pt-3 md:px-8 md:pt-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          {/* Redundant Tasks-logo glyph box removed 2026-05-18: SuiteChrome
-              already carries product identity (signal studio. + tasks·);
-              repeating the brand mark next to every workspace title read
-              as duplicated branding. Title now stands on its own. */}
-          <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
-            <span className="block truncate">{title}</span>
-          </h1>
-        </div>
+      <div
+        className={
+          "flex items-center gap-3 " +
+          (brief ? "justify-end pb-3" : "justify-between")
+        }
+      >
+        {brief ? null : (
+          <div className="min-w-0 flex-1">
+            {/* Redundant Tasks-logo glyph box removed 2026-05-18: SuiteChrome
+                already carries product identity (signal studio. + tasks·);
+                repeating the brand mark next to every workspace title read
+                as duplicated branding. Title now stands on its own. */}
+            <h1 className="text-[20px] font-semibold tracking-tight md:text-[24px]">
+              <span className="block truncate">{title}</span>
+            </h1>
+          </div>
+        )}
         <div className="flex flex-shrink-0 items-center gap-2">
           {/* ≥lg: full chip row. Tablet keeps these actions in overflow so
               workspace identity is never sacrificed. */}
@@ -141,7 +157,9 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
+      {brief}
+
+      <div className={(brief ? "mt-3" : "mt-4") + " flex items-center justify-between"}>
         <nav
           className={
             "flex items-center gap-1 overflow-x-auto rounded-lg bg-bg-sunken/70 p-0.5 thin-scroll " +

@@ -16,6 +16,8 @@ import { SuiteContextPublisher } from "@/components/app/suite-context-publisher"
 import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
 import { DomainProvider } from "@/lib/domain-context";
 import { CurrentUserProvider } from "@/lib/auth-context";
+import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
+import { getRoomBriefData } from "@/server/actions/room";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
@@ -66,7 +68,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -87,6 +89,10 @@ async function AppShell({ children }: { children: React.ReactNode }) {
           .where(eq(workspaces.id, ws))
           .then((rows) => rows[0]),
     listMyWorkspaces(),
+    // Editorial Project Room facts (Option B): purpose, date window,
+    // period name, owner. Fetched here per DECISIONS.md D4 so the view
+    // pages stay synchronous and never re-suspend against loading.tsx.
+    getRoomBriefData(),
   ]);
   const slug = wsRow?.slug ?? ws;
   const personalization = getWorkspacePersonalization({
@@ -102,6 +108,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         personalization={personalization}
       >
         <TasksProvider initialTasks={tasks}>
+          <RoomBriefProvider value={roomBrief}>
           <ToastRoot>
             <SuiteContextPublisher
               planningPeriodId={wsRow?.planningPeriodId ?? null}
@@ -125,6 +132,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
               </PaletteRoot>
             </AddTaskRoot>
           </ToastRoot>
+          </RoomBriefProvider>
         </TasksProvider>
       </DomainProvider>
     </CurrentUserProvider>

@@ -229,6 +229,10 @@ export function TimelineApp() {
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-8 py-5">
+      {/* Editorial Project Room (Option B): commitments and milestones are
+          summarised above the planning grid, so the window reads as a
+          story before it reads as geometry. */}
+      <TimelineCommitments tasks={sorted} onOpen={openTask} />
       <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
         {/* Header */}
         <div className="grid grid-cols-[240px_1fr] border-b border-line-soft bg-bg-sunken/40">
@@ -435,6 +439,56 @@ export function TimelineApp() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Commitments strip above the planning grid (Option B). Open milestones
+ * anchor the window; the receipts say how much of the workspace is
+ * actually placed on it versus still unscheduled.
+ */
+function TimelineCommitments({
+  tasks,
+  onOpen,
+}: {
+  tasks: Task[];
+  onOpen: (id: string) => void;
+}) {
+  const milestones = tasks
+    .filter((t) => t.isMilestone && t.lane !== "done")
+    .slice(0, 4);
+  const scheduled = tasks.filter((t) => t.startDay != null).length;
+  const unscheduled = tasks.length - scheduled;
+
+  if (milestones.length === 0 && unscheduled === 0) return null;
+
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+      {milestones.length > 0 ? (
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
+          Milestones
+        </span>
+      ) : null}
+      {milestones.map((task) => (
+        <button
+          key={task.id}
+          type="button"
+          onClick={() => onOpen(task.id)}
+          className="inline-flex max-w-[220px] items-center gap-1.5 rounded-md border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink transition-colors hover:border-ink-soft/30"
+        >
+          <span aria-hidden className="text-[10px] text-brand">◇</span>
+          <span className="truncate">{task.title}</span>
+          {task.startDay != null ? (
+            <span className="flex-shrink-0 font-mono text-[9.5px] text-ink-quiet">
+              day {task.startDay + 1}
+            </span>
+          ) : null}
+        </button>
+      ))}
+      <span className="ml-auto font-mono text-[10.5px] text-ink-quiet">
+        {scheduled} on the window · {unscheduled} unscheduled
+      </span>
     </div>
   );
 }

@@ -506,6 +506,16 @@ export function BoardApp() {
  * Overflow "⋯" menu on custom columns: move left / move right / delete.
  * System lanes: overflow menu with move left / move right (no delete).
  */
+/** Editorial Project Room (Option B): each system lane explains itself in
+ *  one line, so the board reads as a narrated room rather than four
+ *  unlabeled buckets. Custom columns are user-named and carry no note. */
+const LANE_NOTES: Record<string, string> = {
+  todo: "Agreed and ready to start.",
+  doing: "In motion right now.",
+  review: "Held by a reply, a delivery, or a decision.",
+  done: "Finished work stays visible.",
+};
+
 function LaneHeader({
   columnKey,
   columnName,
@@ -654,8 +664,10 @@ function LaneHeader({
   const canMoveLeft = columnIndex > 0;
   const canMoveRight = columnIndex < totalColumns - 1;
   const showOverflow = canMoveLeft || canMoveRight || !isSystem;
+  const laneNote = isSystem ? LANE_NOTES[columnKey] : undefined;
 
   return (
+    <>
     <div className="group/colhdr flex items-center justify-between px-1.5 pb-2 pt-0.5">
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <span
@@ -794,6 +806,12 @@ function LaneHeader({
         </button>
       </div>
     </div>
+    {laneNote ? (
+      <p className="-mt-1 px-1.5 pb-2 text-[10.5px] leading-snug text-ink-quiet">
+        {laneNote}
+      </p>
+    ) : null}
+    </>
   );
 }
 
@@ -1198,6 +1216,13 @@ function Card({
           </div>
         </div>
       </div>
+      {/* Editorial Project Room (Option B): task purpose stays visible on
+          the card so intent reads at a glance without opening the panel. */}
+      {task.description ? (
+        <p className="mt-1 line-clamp-2 text-[11.5px] leading-relaxed text-ink-quiet">
+          {task.description}
+        </p>
+      ) : null}
       <div className="mt-2.5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft" title={prio.label}>

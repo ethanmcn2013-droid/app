@@ -34,6 +34,9 @@ export function CalendarApp() {
   const workspaceId = ws?.id ?? "";
   const state = useTasksState();
   const { taskId: openTaskId, openTask } = useTaskPanel();
+  // Editorial Project Room (Option B): the month grid pairs with a
+  // selected-day agenda so a dense day never hides work behind "+N more".
+  const [selectedDay, setSelectedDay] = useState(TODAY_INDEX);
 
   if (state.tasks.length === 0) {
     return (
@@ -73,8 +76,9 @@ export function CalendarApp() {
         <DayList cells={cells} openTaskId={openTaskId} openTask={openTask} />
       </div>
 
-      {/* ≥md: full 7-col month grid */}
-      <div className="hidden overflow-hidden rounded-xl border border-line-soft bg-white md:block">
+      {/* ≥md: full 7-col month grid, paired with the selected-day agenda */}
+      <div className="hidden gap-4 md:grid lg:grid-cols-[minmax(0,1fr)_260px]">
+      <div className="overflow-hidden rounded-xl border border-line-soft bg-white">
         <div className="grid grid-cols-7 border-b border-line-soft bg-bg-sunken/40 text-[11px] font-semibold uppercase tracking-wider text-ink-quiet">
           {DAYS_OF_WEEK.map((d) => (
             <div
@@ -92,6 +96,7 @@ export function CalendarApp() {
         <div className="grid grid-cols-7 grid-rows-5">
           {cells.map((cell, i) => {
             const isToday = i === TODAY_INDEX;
+            const isSelected = i === selectedDay;
             const isWeekend = i % 7 === 5 || i % 7 === 6;
             const isOutsideMonth = i < 2 || i > 32;
             return (
@@ -100,8 +105,9 @@ export function CalendarApp() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: (i % 7) * 0.02 }}
+                onClick={() => setSelectedDay(i)}
                 className={
-                  "min-h-[120px] border-b border-r border-line-soft/60 p-1.5 last:border-r-0 " +
+                  "min-h-[120px] cursor-pointer border-b border-r border-line-soft/60 p-1.5 last:border-r-0 " +
                   (isWeekend ? "bg-bg-sunken/30 " : "") +
                   (isOutsideMonth ? "opacity-50 " : "")
                 }
@@ -109,7 +115,9 @@ export function CalendarApp() {
                   background: isToday ? "var(--brand-soft)" : undefined,
                   outline: isToday
                     ? "1.5px solid var(--brand)"
-                    : undefined,
+                    : isSelected
+                      ? "1.5px dashed var(--brand)"
+                      : undefined,
                   outlineOffset: -1.5,
                 }}
               >
@@ -141,7 +149,11 @@ export function CalendarApp() {
                       <button
                         key={task.id}
                         type="button"
-                        onClick={() => openTask(task.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDay(i);
+                          openTask(task.id);
+                        }}
                         className="flex min-h-[24px] cursor-pointer items-center gap-1 truncate rounded border-l-[2.5px] bg-white/90 px-1.5 py-1 text-left text-[10.5px] transition-colors hover:bg-white"
                         style={{
                           borderLeftColor: lane.dot,
@@ -170,7 +182,109 @@ export function CalendarApp() {
           })}
         </div>
       </div>
+
+      {/* Selected-day editorial agenda (Option B): the full day, no
+          overflow truncation, plus the day's context in plain words. */}
+      <DayAgenda
+        cell={cells[selectedDay]}
+        isToday={selectedDay === TODAY_INDEX}
+        label={dayLabel(selectedDay)}
+        openTask={openTask}
+        openTaskId={openTaskId}
+      />
+      </div>
     </div>
+  );
+}
+
+/**
+ * The selected day as an editorial agenda beside the month grid. Dense
+ * days list everything the grid truncates behind "+N more"; empty days
+ * say so plainly. Desktop-wide only (lg:), the mobile day-list already
+ * plays this role below md.
+ */
+function DayAgenda({
+  cell,
+  isToday,
+  label,
+  openTask,
+  openTaskId,
+}: {
+  cell: { i: number; tasks: Task[] } | undefined;
+  isToday: boolean;
+  label: string;
+  openTask: (id: string) => void;
+  openTaskId: string | null;
+}) {
+  const tasks = cell?.tasks ?? [];
+  const done = tasks.filter((t) => t.lane === "done").length;
+  return (
+    <aside
+      aria-label="Selected day agenda"
+      className="hidden h-fit rounded-xl border border-line-soft bg-white p-4 lg:block"
+    >
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
+          {isToday ? "Today" : "Selected day"}
+        </span>
+        <span className="font-mono text-[11px] text-ink-quiet">{label}</span>
+      </div>
+      {tasks.length === 0 ? (
+        <p className="mt-3 text-[12px] leading-relaxed text-ink-quiet">
+          Nothing scheduled. Click a day on the grid to read its agenda.
+        </p>
+      ) : (
+        <>
+          <p className="mt-1.5 text-[11px] text-ink-quiet">
+            {tasks.length} task{tasks.length === 1 ? "" : "s"}
+            {done > 0 ? ` · ${done} done` : ""}
+          </p>
+          <ol className="mt-2.5 flex flex-col gap-1">
+            {tasks.map((task) => {
+              const lane = LANES[task.lane];
+              const isOpen = openTaskId === task.id;
+              return (
+                <li key={task.id}>
+                  <button
+                    type="button"
+                    onClick={() => openTask(task.id)}
+                    className="flex w-full items-start gap-2 rounded-md border-l-[2.5px] px-2 py-1.5 text-left transition-colors hover:bg-bg-sunken/50"
+                    style={{
+                      borderLeftColor: lane.dot,
+                      background: isOpen ? "var(--brand-soft)" : undefined,
+                    }}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={
+                          "block truncate text-[12px] font-medium " +
+                          (task.lane === "done"
+                            ? "text-ink-quiet line-through"
+                            : "text-ink")
+                        }
+                      >
+                        {task.title}
+                      </span>
+                      {task.description && task.lane !== "done" ? (
+                        <span className="mt-0.5 block truncate text-[10.5px] text-ink-quiet">
+                          {task.description}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span
+                      className="mt-0.5 flex-shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold uppercase"
+                      style={{ color: lane.ink, background: lane.bg }}
+                    >
+                      {lane.name}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </>
+      )}
+    </aside>
   );
 }
 
