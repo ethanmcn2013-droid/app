@@ -36,58 +36,21 @@ import {
   isColumnColorKey,
   type ColumnColorKey,
 } from "@/lib/board-colors";
+import {
+  MAX_CUSTOM_COLUMNS,
+  MAX_DESCRIPTION_LEN,
+  MAX_NAME_LEN,
+  emptyConfig,
+  parseColumnConfig,
+  serializeColumnConfig,
+  type ColumnConfig,
+} from "@/lib/board-config";
 import { isDemoMode } from "@/lib/access-mode";
 
-const MAX_NAME_LEN = 80;
-/** Max custom columns per workspace. Guards against runaway configs. */
-const MAX_CUSTOM_COLUMNS = 20;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type CustomColumn = { key: string; name: string };
-
-/**
- * Full column configuration for a board.
- *
- * - `system`: name overrides for the four system lanes (todo/doing/review/done).
- *   Absent key = use LANES static default.
- * - `custom`: user-added columns in order of creation.
- * - `order`: stable render order for ALL columns (system + custom interleaved).
- *   Absent = LANE_ORDER (no custom columns).
- *
- * The four system lane keys are always present in the render; the `order` array
- * drives left-to-right position. System keys that fall out of `order` are
- * appended at the end (defensive, keeps board functional if config is partially
- * corrupt).
- */
-export type ColumnConfig = {
-  system: Partial<Record<LaneId, string>>;
-  custom: CustomColumn[];
-  order: string[];
-  /** Per-column colour by column key (system or custom). Absent key =
-   *  the default (semantic for system lanes, neutral for custom). An
-   *  explicit "neutral" IS stored so an owner can override a system
-   *  lane's default back to no tint. T·96 / Phase 2. */
-  colors: Partial<Record<string, ColumnColorKey>>;
-  /** Per-column description / subtext by column key. Absent key = the
-   *  static default (system lanes) or no subtext (custom). Empty string
-   *  = an owner cleared the subtext. Phase 2. */
-  descriptions: Partial<Record<string, string>>;
-};
-
-/** Max column description length; wraps/truncates gracefully in the UI. */
-const MAX_DESCRIPTION_LEN = 160;
-
-/** A fresh, empty config. Used as the base whenever none is stored. */
-function emptyConfig(): ColumnConfig {
-  return {
-    system: {},
-    custom: [],
-    order: [...LANE_ORDER],
-    colors: {},
-    descriptions: {},
-  };
-}
+// Re-export the config types so existing importers of "@/server/actions/board"
+// (domain-context, board-app) keep working; the canonical model lives in
+// @/lib/board-config for unit-testability.
+export type { ColumnConfig, CustomColumn } from "@/lib/board-config";
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
 
@@ -99,114 +62,7 @@ function columnsKey(workspaceId: string): string {
   return `board:${workspaceId}:columns`;
 }
 
-// ─── Parse / serialize ────────────────────────────────────────────────────────
-
-/**
- * Parse the stored JSON into a ColumnConfig, handling both the legacy
- * `Record<LaneId, string>` format (pure system overrides, pre step-5)
- * and the new ColumnConfig shape.
- *
- * Returns `null` on parse failure or if the stored value is clearly empty.
- */
-function parseColumnConfig(raw: string): ColumnConfig | null {
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return null;
-    }
-    const obj = parsed as Record<string, unknown>;
-
-    // New format: has at least one recognised config key.
-    if (
-      "system" in obj ||
-      "custom" in obj ||
-      "order" in obj ||
-      "colors" in obj ||
-      "descriptions" in obj
-    ) {
-      const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
-      const custom = Array.isArray(obj.custom)
-        ? (obj.custom as CustomColumn[]).filter(
-            (c) =>
-              c && typeof c.key === "string" && typeof c.name === "string",
-          )
-        : [];
-      const order = Array.isArray(obj.order)
-        ? (obj.order as string[]).filter((k) => typeof k === "string")
-        : buildDefaultOrder(custom);
-      return {
-        system,
-        custom,
-        order,
-        colors: parseColors(obj.colors),
-        descriptions: parseDescriptions(obj.descriptions),
-      };
-    }
-
-    // Legacy format: flat Record<string, string> with lane keys.
-    const hasLane = LANE_ORDER.some((id) => typeof obj[id] === "string");
-    if (!hasLane) return null;
-    const system = {} as Partial<Record<LaneId, string>>;
-    for (const id of LANE_ORDER) {
-      if (typeof obj[id] === "string") system[id] = obj[id] as string;
-    }
-    return { ...emptyConfig(), system };
-  } catch {
-    return null;
-  }
-}
-
-/** Parse the stored colours map, keeping only recognised colour keys.
- *  An explicit "neutral" is preserved (Phase 2) so a system lane can be
- *  overridden back to no tint against its semantic default. */
-function parseColors(raw: unknown): Partial<Record<string, ColumnColorKey>> {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
-  const out: Partial<Record<string, ColumnColorKey>> = {};
-  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (isColumnColorKey(value)) out[key] = value;
-  }
-  return out;
-}
-
-/** Parse the stored descriptions map, keeping string values (incl. "").
- *  Clamps to MAX_DESCRIPTION_LEN defensively. */
-function parseDescriptions(raw: unknown): Partial<Record<string, string>> {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
-  const out: Partial<Record<string, string>> = {};
-  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof value === "string") out[key] = value.slice(0, MAX_DESCRIPTION_LEN);
-  }
-  return out;
-}
-
-/**
- * Build the default render order: LANE_ORDER first, then custom
- * columns in their definition order.
- */
-function buildDefaultOrder(custom: CustomColumn[]): string[] {
-  return [...LANE_ORDER, ...custom.map((c) => c.key)];
-}
-
-/**
- * Ensure every system lane key appears in `order`. Appends any that
- * are missing (defensive; guards against corrupt configs or old clients
- * that wrote an order without all four system lanes).
- */
-function normaliseOrder(config: ColumnConfig): string[] {
-  const existing = new Set(config.order);
-  const extra = LANE_ORDER.filter((id) => !existing.has(id));
-  return [...config.order, ...extra];
-}
-
-function serializeColumnConfig(config: ColumnConfig): string {
-  return JSON.stringify({
-    system: config.system,
-    custom: config.custom,
-    order: normaliseOrder(config),
-    colors: config.colors ?? {},
-    descriptions: config.descriptions ?? {},
-  });
-}
+// Parse / serialize / emptyConfig live in @/lib/board-config (pure + tested).
 
 async function readColumnConfig(
   workspaceId: string,
