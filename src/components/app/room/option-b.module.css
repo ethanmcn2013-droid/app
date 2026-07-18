@@ -157,15 +157,20 @@
 .inlineTitleInput:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 2px; }
 .inlineTitleInput { background: var(--x-task-raised); border: 1px solid var(--x-task-focus); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: inherit; font-weight: 650; line-height: 1.35; min-width: 0; padding: 4px 6px; width: 100%; }
 
-/* Board */
-.boardView,
+/* Board — Phase 4: independent per-column scrolling.
+   The board is bounded to the viewport by the flex chain (main is min-h-0),
+   the scroller handles ONLY horizontal board movement, and each column's
+   task list is the vertical scroll container. Column headers stay put
+   because they're flex-fixed above the scrolling list; overscroll-behavior
+   keeps a column's scroll from chaining into the page. */
 .listView { height: 100%; min-height: 0; position: relative; }
-.boardScroller { height: 100%; overflow: auto; overscroll-behavior: contain; }
-.boardGrid { align-items: start; display: grid; gap: 14px; grid-template-columns: repeat(5, minmax(252px, 1fr)); min-height: 100%; min-width: 1320px; padding: 18px 20px 28px; }
-.boardLane { background: color-mix(in srgb, var(--x-task-surface) 76%, transparent); border: 1px solid var(--x-task-border); border-radius: 8px; min-height: 310px; min-width: 0; }
+.boardView { display: flex; flex-direction: column; flex: 1; min-height: 0; position: relative; }
+.boardScroller { flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; }
+.boardGrid { align-items: stretch; display: grid; gap: 14px; grid-template-columns: repeat(5, minmax(252px, 1fr)); height: 100%; min-width: 1320px; padding: 18px 20px 20px; }
+.boardLane { background: color-mix(in srgb, var(--x-task-surface) 76%, transparent); border: 1px solid var(--x-task-border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
 .boardLane[data-status="done"] { background: color-mix(in srgb, var(--x-task-surface) 56%, transparent); }
 .boardLane[data-collapsed] { min-height: 0; }
-.laneHeader { background: color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)); border-bottom: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; min-height: 92px; padding: 12px 12px 10px; position: sticky; top: 0; z-index: 5; }
+.laneHeader { background: color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)); border-bottom: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; flex: 0 0 auto; min-height: 92px; padding: 12px 12px 10px; position: relative; z-index: 5; }
 .laneHeader > div { align-items: center; display: flex; gap: 7px; }
 .laneHeader h2 { font-size: 12px; font-weight: 680; margin: 0; }
 .laneCount { align-items: center; background: var(--x-task-hover); border-radius: 10px; color: var(--x-task-text-muted); display: inline-flex; font-family: var(--font-geist-mono), monospace; font-size: 8px; height: 18px; justify-content: center; min-width: 19px; padding: 0 5px; }
@@ -178,7 +183,7 @@
 .laneHeader p { color: var(--x-task-text-muted); font-size: 9px; line-height: 1.35; margin: 7px 0 0; }
 .wipNote { color: var(--x-task-text-muted); display: block; font-family: var(--font-geist-mono), monospace; font-size: 8px; margin-top: 5px; }
 .wipNote[data-over] { color: var(--x-task-danger); font-weight: 650; }
-.boardTaskList { display: flex; flex-direction: column; gap: 9px; list-style: none; margin: 0; min-height: 130px; padding: 10px; }
+.boardTaskList { display: flex; flex: 1 1 0; flex-direction: column; gap: 9px; list-style: none; margin: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 10px; }
 .boardCardItem { position: relative; }
 .boardCardItem[data-insertion-before]::before,
 .boardEndDrop[data-insertion]::before { background: var(--x-task-accent); border-radius: 2px; content: ""; height: 2px; left: 0; position: absolute; right: 0; top: -5px; }
@@ -223,7 +228,7 @@
 .emptyLane strong { color: var(--x-task-text-secondary); font-size: 10px; }
 .emptyLane span { font-size: 9px; line-height: 1.45; }
 .boardEndDrop { height: 8px; position: relative; }
-.laneAddButton { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 6px; margin: 0 10px 10px; min-height: 30px; padding: 0 7px; }
+.laneAddButton { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; flex: 0 0 auto; font: inherit; font-size: 10px; gap: 6px; margin: 0 10px 10px; min-height: 30px; padding: 0 7px; }
 .laneAddButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneAddButton:disabled { cursor: not-allowed; opacity: .42; }
 
@@ -595,6 +600,7 @@ textarea.purposeLine {
 /* Add-column tile: the lab's quiet dashed grammar at lane width. */
 .addColumnTile {
   align-items: flex-start;
+  align-self: start;
   background: transparent;
   border: 1px dashed var(--x-task-border-strong);
   border-radius: 8px;
@@ -615,6 +621,7 @@ textarea.purposeLine {
 
 /* Add-column create form (Phase 2E): name + description + colour + position. */
 .addColumnForm {
+  align-self: start;
   background: var(--x-task-surface);
   border: 1px solid var(--x-task-border-strong);
   border-radius: 8px;

@@ -171,7 +171,10 @@ async function AppShell({ children }: { children: React.ReactNode }) {
                 <RoomToolsProvider>
                   <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
                   {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
-                  <main className="flex min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
+                  {/* min-h-0 lets the board area shrink to the viewport so
+                      each Kanban column can scroll independently (Phase 4)
+                      instead of the whole page moving. */}
+                  <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
                     {children}
                   </main>
                 </RoomToolsProvider>
