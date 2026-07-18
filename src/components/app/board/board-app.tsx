@@ -1573,10 +1573,7 @@ function Card({
             className={roomStyles.cardSubtaskButton}
             data-has={task.subtaskCount ? "" : undefined}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M12.75 6.25H7.25A2.5 2.5 0 0 0 4.75 8.75V17.25A2.5 2.5 0 0 0 7.25 19.75H15.75A2.5 2.5 0 0 0 18.25 17.25V12.5" />
-              <path d="M8.5 13.25L11.25 16L19.75 5.75" />
-            </svg>
+            <Icon name="subtasks" size={13} />
             {task.subtaskCount ? (
               <span>{task.subtaskDone ?? 0}/{task.subtaskCount}</span>
             ) : null}

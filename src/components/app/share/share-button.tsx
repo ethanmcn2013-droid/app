@@ -166,19 +166,23 @@ export function ShareButton({ view }: { view: ShareView }) {
         onClick={() => setOpen((o) => !o)}
         className="inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand-soft px-2.5 py-1.5 text-[12px] font-medium text-brand transition-colors hover:border-brand/50 hover:bg-brand-soft"
       >
+        {/* Claude Design icon pack — icon-share (Phase 5). */}
         <svg
-          width="12"
-          height="12"
+          width="13"
+          height="13"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
         >
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+          <circle cx="6.75" cy="12" r="2" fill="currentColor" stroke="none" />
+          <circle cx="17.25" cy="6.75" r="2" />
+          <circle cx="17.25" cy="17.25" r="2" />
+          <path d="M8.54 11.11L15.46 7.64" />
+          <path d="M8.54 12.89L15.46 16.36" />
         </svg>
         Share
       </button>

@@ -193,6 +193,7 @@ export function RoomViewBar() {
           </button>
         ) : null}
         <button onClick={() => togglePanel("save")} title="Save this view" type="button">
+          <Icon name="save" size={15} />
           Save view
         </button>
         {/* T·97: wrap the production Share/overflow triggers so they read as

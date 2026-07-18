@@ -307,12 +307,12 @@ export function PageActionsOverflow({
                 active={copying === "csv"}
                 onClick={onCopyCsv}
                 icon={
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <line x1="3" y1="9" x2="21" y2="9" />
-                    <line x1="3" y1="15" x2="21" y2="15" />
-                    <line x1="9" y1="3" x2="9" y2="21" />
-                    <line x1="15" y1="3" x2="15" y2="21" />
+                  /* pack: icon-copy-csv */
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="6" y="5.25" width="9.5" height="11" rx="2.25" />
+                    <rect x="8.5" y="7.75" width="9.5" height="11" rx="2.25" />
+                    <path d="M13.25 10.5V16" />
+                    <path d="M10.75 13.25H15.75" />
                   </svg>
                 }
               />
@@ -321,8 +321,12 @@ export function PageActionsOverflow({
                 active={copying === "md"}
                 onClick={onCopyMarkdown}
                 icon={
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 7h16M4 12h10M4 17h16" />
+                  /* pack: icon-copy-markdown */
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="6" y="5.25" width="9.5" height="11" rx="2.25" />
+                    <rect x="8.5" y="7.75" width="9.5" height="11" rx="2.25" />
+                    <path d="M13.25 10.75V15" />
+                    <path d="M11 12.75L13.25 15.25L15.5 12.75" />
                   </svg>
                 }
               />
@@ -348,10 +352,12 @@ export function PageActionsOverflow({
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 rounded px-2 py-1.5 text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="6 9 6 2 18 2 18 9" />
-                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                  <rect x="6" y="14" width="12" height="8" />
+                {/* pack: icon-print */}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 8.5V5.25A0.5 0.5 0 0 1 8.5 4.75H15.5A0.5 0.5 0 0 1 16 5.25V8.5" />
+                  <rect x="4.75" y="8.5" width="14.5" height="7.25" rx="2" />
+                  <path d="M8 12.75H16V18.5A0.75 0.75 0 0 1 15.25 19.25H8.75A0.75 0.75 0 0 1 8 18.5Z" />
+                  <circle cx="7" cy="11.5" r="1.35" fill="currentColor" stroke="none" />
                 </svg>
                 Print view
               </Link>
