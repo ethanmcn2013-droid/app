@@ -1,4 +1,4 @@
-import type { EntitlementTier } from "./schema";
+import type { EntitlementSource, EntitlementTier } from "./schema";
 
 /**
  * Tier vocabulary + ranking helpers. Pure, no DB access, safe to
@@ -31,3 +31,23 @@ export const TIER_LABEL: Record<EntitlementTier, string> = {
   workspace: "Workspace",
   studio: "Studio",
 };
+
+/**
+ * Human "edition" label for the header licence slot (Phase 1). Bound to
+ * the entitlement *source*, not the tier: only sources that represent a
+ * distinct licence programme carry an edition badge. A plain paid
+ * `workspace_subscription` or a `free` account has no edition label — the
+ * slot renders nothing rather than inventing one. Pure, no DB access.
+ *
+ * Returns null for every source that isn't a named edition, so the header
+ * never shows a false or hardcoded label.
+ */
+const EDITION_LABEL: Partial<Record<EntitlementSource, string>> = {
+  student_edu: "School Edition",
+  venue_edition: "Venue Edition",
+};
+
+export function editionLabel(source: EntitlementSource | null | undefined): string | null {
+  if (!source) return null;
+  return EDITION_LABEL[source] ?? null;
+}

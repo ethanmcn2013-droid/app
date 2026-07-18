@@ -29,4 +29,4 @@ export {
   resolveEntitlementOrThrow,
   type ResolvedEntitlement,
 } from "./reads";
-export { TIER_LABEL, TIER_RANK, tierAtLeast } from "./tiers";
+export { TIER_LABEL, TIER_RANK, editionLabel, tierAtLeast } from "./tiers";

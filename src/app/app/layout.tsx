@@ -41,6 +41,11 @@ import {
 } from "@/server/auth";
 import { requireAppAccess } from "@/server/require-app-access";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
+import {
+  editionLabel,
+  resolveEntitlement,
+  type EntitlementSource,
+} from "@/lib/entitlements-shared";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   DEMO_PRIMARY_USE_CASE,
@@ -109,6 +114,17 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     getBoardName(ws),
   ]);
   const slug = wsRow?.slug ?? ws;
+  // Header licence slot (Phase 1): resolve the account's edition from the
+  // shared entitlements DB and derive a label. Failure-safe (resolveEntitlement
+  // returns `free` with a null source on any error) and skipped in demo mode,
+  // so a licence read never takes the board down. Only named editions
+  // (student_edu → School Edition, venue_edition → Venue Edition) produce a
+  // label; everyone else gets null and the slot renders nothing.
+  const edition = isDemoMode()
+    ? null
+    : editionLabel(
+        (await resolveEntitlement(currentUser)).source as EntitlementSource | null,
+      );
   const personalization = getWorkspacePersonalization({
     primaryUseCase: wsRow?.primaryUseCase,
     activeDomain: domain,
@@ -139,6 +155,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
                   workspaces={myWorkspaces}
                   activeWorkspaceId={ws}
                   periodName={roomBrief?.periodName ?? null}
+                  edition={edition}
                 />
                 <StudioChromeBridge />
                 <RoomToolsProvider>

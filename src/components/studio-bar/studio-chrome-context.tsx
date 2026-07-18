@@ -44,6 +44,10 @@ export type StudioChromeData = Readonly<{
   periodName: string | null;
   /** Short workspace title (before " · ") for the scope capsule. */
   workspaceTitle: string;
+  /** Licence edition label for the header slot (Phase 1). Null when the
+   *  account holds no named edition — the slot then renders nothing.
+   *  Bound to real entitlement data via editionLabel(); never hardcoded. */
+  edition: string | null;
 }>;
 
 type Ctx = {
@@ -89,17 +93,20 @@ export function StudioChromePublisher({
   workspaces,
   activeWorkspaceId,
   periodName,
+  edition = null,
 }: {
   workspaces: readonly StudioWorkspaceOption[];
   activeWorkspaceId: string;
   periodName: string | null;
+  /** Licence edition label; null when the account has no named edition. */
+  edition?: string | null;
 }) {
   const { setData } = useStudioChrome();
   const pack = useDomain();
   const workspaceTitle = shortenTitle(pack.workspaceTitle);
   useEffect(() => {
-    setData({ workspaces, activeWorkspaceId, periodName, workspaceTitle });
-  }, [setData, workspaces, activeWorkspaceId, periodName, workspaceTitle]);
+    setData({ workspaces, activeWorkspaceId, periodName, workspaceTitle, edition });
+  }, [setData, workspaces, activeWorkspaceId, periodName, workspaceTitle, edition]);
   return null;
 }
 

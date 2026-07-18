@@ -1,45 +1,38 @@
 "use client";
 
 /**
- * Studio Bar — the permanent production top chrome (T·94, 2026-07-17).
+ * Studio Bar — the permanent production top chrome (T·94, 2026-07-17;
+ * Phase 1 header cleanup 2026-07-18).
  *
- * Promoted from the Option B design lab's black header into the one
- * 48px bar every Signal Studio product will carry. Neutral black (the
- * canonical rail charcoal, --x-studio-chrome), visually continuous with
- * the 60px product rail below-left so bar + rail draw a deliberate
- * L-shaped Signal Studio frame around the white working canvas.
+ * Neutral black (the canonical rail charcoal, --x-studio-chrome), visually
+ * continuous with the 60px product rail below-left so bar + rail draw a
+ * deliberate L-shaped Signal Studio frame around the white working canvas.
  *
  * Column grid, aligned to the shell below it:
  *   60px   Signal Studio mark (over the product rail)
- *   248px  workspace switcher (over the sidebar)
- *   1fr    scope capsule (planning period › workspace, the ONE off-white
- *          element on the bar) + universal command field (⌘K / Ctrl K)
- *   auto   contextual create + account
+ *   248px  static "Tasks" wordmark + optional licence-edition slot (over the
+ *          sidebar). Phase 1: the workspace/project *dropdown* that used to
+ *          live here was removed — workspace switching now lives in the
+ *          Projects sidebar and the ⌘K palette, so the upper-left reads as
+ *          the product, not a stray project picker. No chevron, no menu.
+ *   1fr    spacer (reserved Signal pulse slot docks at the right of it)
+ *   auto   universal command field (right-aligned, Phase 1), contextual
+ *          create + account
  *
- * A restrained Signal pulse ("3 need you") has reserved space beside the
- * command field; it ships later and is deliberately NOT a bell.
- *
- * Contract: content/hq/decisions/product-header-contract.md (amended
- * 2026-07-17) + scripts/check-chrome-contract.mjs. The bar stays at
- * z-40; only overlays float above.
+ * Contract: content/hq/decisions/product-header-contract.md +
+ * scripts/check-chrome-contract.mjs. The bar stays at z-40; only overlays
+ * float above. The contract tokens (h-10, --x-studio-chrome, z-40,
+ * w-[60px] mark cell, w-[248px] identity cell, signal-pulse slot) are all
+ * preserved.
  */
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  useTransition,
-} from "react";
-import { useRouter } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { STUDIO_URL } from "@/lib/product-urls";
-import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
   useStudioChrome,
-  type StudioWorkspaceOption,
 } from "./studio-chrome-context";
 
 /* Charcoal chrome canon (rail icon-system document) rides the
@@ -64,171 +57,29 @@ function markCell() {
   );
 }
 
-function ChevronDown() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
-function CheckGlyph() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 /**
- * Workspace switcher — dark popover listbox. Desktop trigger is the
- * 248px cell; below md (where the cell and rail are hidden) a compact
- * chevron trigger beside the capsule keeps switching reachable.
+ * Static "Tasks" wordmark + licence-edition slot. Occupies the 248px
+ * identity cell over the sidebar. The wordmark is a plain link to the
+ * board (no dropdown behaviour, no chevron); the edition label renders
+ * only when the account carries a named edition (bound to real
+ * entitlement data — see editionLabel()), otherwise the slot is empty.
  */
-function WorkspaceSwitcher({
-  workspaces,
-  activeWorkspaceId,
-  compact = false,
-}: {
-  workspaces: readonly StudioWorkspaceOption[];
-  activeWorkspaceId: string;
-  compact?: boolean;
-}) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  const active = workspaces.find((w) => w.id === activeWorkspaceId);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  function choose(id: string) {
-    setOpen(false);
-    if (id === activeWorkspaceId) return;
-    startTransition(async () => {
-      await selectWorkspaceAction(id);
-      router.refresh();
-    });
-  }
-
+function IdentityCell({ edition }: { edition: string | null }) {
   return (
-    <div
-      ref={wrapRef}
-      className={
-        compact
-          ? "relative h-full md:hidden"
-          : "relative hidden h-full w-[248px] flex-none border-r border-white/[0.07] md:block"
-      }
-    >
-      {compact ? (
-        <button
-          type="button"
-          aria-label="Switch workspace"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          disabled={pending}
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-full w-8 items-center justify-center text-[var(--x-studio-ink-quiet)] outline-none transition-colors hover:text-[var(--x-studio-ink)] focus-visible:text-[var(--x-studio-ink)] disabled:cursor-wait disabled:opacity-60"
+    <div className="hidden h-full w-[248px] flex-none items-center gap-2.5 border-r border-white/[0.07] px-4 md:flex">
+      <a
+        href="/app/board"
+        className="flex-none rounded text-[13px] font-semibold tracking-tight text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
+      >
+        Tasks
+      </a>
+      {edition ? (
+        <span
+          className="flex-none truncate rounded-full border border-white/[0.14] bg-white/[0.06] px-2 py-[3px] text-[10px] font-medium leading-none text-[var(--x-studio-ink-soft)]"
+          title={`${edition} licence`}
         >
-          <ChevronDown />
-        </button>
-      ) : (
-        <button
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          disabled={pending}
-          onClick={() => setOpen((v) => !v)}
-          className="flex h-full w-full items-center gap-2 px-4 text-left outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05] disabled:cursor-wait disabled:opacity-60"
-          title="Switch workspace"
-        >
-          <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium leading-none text-[var(--x-studio-ink-mid)]">
-            {active?.name ?? "Workspace"}
-          </span>
-          <span className="flex-none text-[var(--x-studio-ink-quiet)]">
-            <ChevronDown />
-          </span>
-        </button>
-      )}
-      {open ? (
-        <div
-          role="listbox"
-          aria-label="Switch workspace"
-          className={
-            "absolute top-full z-50 mt-1 w-[248px] overflow-hidden rounded-lg border border-white/[0.08] bg-[var(--x-studio-chrome-raised)] py-1 shadow-[0_24px_56px_-20px_rgba(0,0,0,0.65)] " +
-            (compact ? "-left-32" : "left-2")
-          }
-        >
-          {workspaces.map((w) => {
-            const isActive = w.id === activeWorkspaceId;
-            return (
-              <button
-                key={w.id}
-                type="button"
-                role="option"
-                aria-selected={isActive}
-                onClick={() => choose(w.id)}
-                className={
-                  "flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] outline-none transition-colors " +
-                  (isActive
-                    ? "font-medium text-[var(--x-studio-ink-strong)]"
-                    : "text-[var(--x-studio-ink-soft)] hover:bg-white/[0.06] hover:text-[var(--x-studio-ink)] focus-visible:bg-white/[0.06]")
-                }
-              >
-                <span className="min-w-0 flex-1 truncate">{w.name}</span>
-                {isActive ? (
-                  <span className="flex-none text-[var(--x-studio-accent)]">
-                    <CheckGlyph />
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-          <div className="mx-3 my-1 border-t border-white/[0.08]" />
-          <a
-            href="/app/your-work"
-            className="flex w-full items-center px-3 py-2 text-[12px] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:bg-white/[0.06] hover:text-[var(--x-studio-ink)] focus-visible:bg-white/[0.06]"
-          >
-            Your work, across workspaces
-          </a>
-        </div>
+          {edition}
+        </span>
       ) : null}
     </div>
   );
@@ -257,35 +108,34 @@ export function StudioBar() {
       {markCell()}
 
       {data ? (
-        <WorkspaceSwitcher
-          workspaces={data.workspaces}
-          activeWorkspaceId={data.activeWorkspaceId}
-        />
+        <IdentityCell edition={data.edition} />
       ) : (
         <div
           aria-hidden="true"
           className="hidden h-full w-[248px] flex-none items-center border-r border-white/[0.07] px-4 md:flex"
         >
-          <span className="h-2 w-24 animate-pulse rounded bg-white/[0.08]" />
+          <span className="h-2.5 w-12 animate-pulse rounded bg-white/[0.08]" />
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 items-center gap-3 px-3 md:px-4">
-        {/* Scope capsule retired (T·97): the workspace name reads in the
-            switcher cell and the brief's title; the capsule was redundant.
-            The compact switcher stays as the mobile workspace control. */}
-        {data ? (
-          <WorkspaceSwitcher
-            compact
-            workspaces={data.workspaces}
-            activeWorkspaceId={data.activeWorkspaceId}
-          />
-        ) : null}
+      {/* Spacer. The reserved Signal pulse ("3 need you") docks at its right
+          edge when it ships — deliberately empty space, deliberately no bell. */}
+      <div className="flex min-w-0 flex-1 items-center justify-end px-3 md:px-4">
+        <span
+          aria-hidden="true"
+          data-slot="signal-pulse"
+          className="hidden w-10 flex-none xl:block"
+        />
+      </div>
 
+      <div className="flex flex-none items-center gap-2 pr-3">
+        {/* Phase 1: the universal command field is right-aligned, sitting in
+            the right action cluster beside create + account. */}
         <button
           type="button"
+          aria-label="Search, jump or create"
           onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:max-w-[430px]"
+          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] lg:w-[300px]"
         >
           <svg
             aria-hidden="true"
@@ -310,16 +160,19 @@ export function StudioBar() {
           </kbd>
         </button>
 
-        {/* Reserved: the restrained Signal pulse ("3 need you") docks here
-            when it ships. Deliberately empty space, deliberately no bell. */}
-        <span
-          aria-hidden="true"
-          data-slot="signal-pulse"
-          className="hidden w-10 flex-none xl:block"
-        />
-      </div>
+        {/* Compact search trigger below md, where the full field is hidden. */}
+        <button
+          type="button"
+          aria-label="Search, jump or create"
+          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
+          className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:hidden"
+        >
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </button>
 
-      <div className="flex flex-none items-center gap-2 pr-3">
         <button
           type="button"
           title="New task (C)"

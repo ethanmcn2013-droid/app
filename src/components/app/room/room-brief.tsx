@@ -53,10 +53,11 @@ export function RoomBrief() {
       <div className={styles.workspaceIdentity}>
         <WorkspaceTitle title={pack.boardName ?? shortenTitle(pack.workspaceTitle)} />
         <PurposeLine purpose={data.purpose} />
-        <div className={styles.workspaceMeta}>
-          {data.dateWindow ? <span>{data.dateWindow}</span> : null}
-          {data.ownerName ? <span>{data.ownerName}, workspace owner</span> : null}
-        </div>
+        {/* Phase 1 cleanup: the planning-date window and "…, workspace owner"
+            line were removed. The date range reads on the Timeline/Calendar
+            views and the owner reads in the Projects sidebar + share sheet,
+            so repeating them here only added a stray meta row and vertical
+            gap under the purpose line. */}
       </div>
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
         <div>
