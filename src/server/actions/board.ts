@@ -65,9 +65,29 @@ export type ColumnConfig = {
   custom: CustomColumn[];
   order: string[];
   /** Per-column colour by column key (system or custom). Absent key =
-   *  "neutral" (no tint). T·96. */
+   *  the default (semantic for system lanes, neutral for custom). An
+   *  explicit "neutral" IS stored so an owner can override a system
+   *  lane's default back to no tint. T·96 / Phase 2. */
   colors: Partial<Record<string, ColumnColorKey>>;
+  /** Per-column description / subtext by column key. Absent key = the
+   *  static default (system lanes) or no subtext (custom). Empty string
+   *  = an owner cleared the subtext. Phase 2. */
+  descriptions: Partial<Record<string, string>>;
 };
+
+/** Max column description length; wraps/truncates gracefully in the UI. */
+const MAX_DESCRIPTION_LEN = 160;
+
+/** A fresh, empty config. Used as the base whenever none is stored. */
+function emptyConfig(): ColumnConfig {
+  return {
+    system: {},
+    custom: [],
+    order: [...LANE_ORDER],
+    colors: {},
+    descriptions: {},
+  };
+}
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
 
@@ -96,8 +116,14 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
     }
     const obj = parsed as Record<string, unknown>;
 
-    // New format: has at least one of `system`, `custom`, `order`, `colors`.
-    if ("system" in obj || "custom" in obj || "order" in obj || "colors" in obj) {
+    // New format: has at least one recognised config key.
+    if (
+      "system" in obj ||
+      "custom" in obj ||
+      "order" in obj ||
+      "colors" in obj ||
+      "descriptions" in obj
+    ) {
       const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
       const custom = Array.isArray(obj.custom)
         ? (obj.custom as CustomColumn[]).filter(
@@ -108,7 +134,13 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
       const order = Array.isArray(obj.order)
         ? (obj.order as string[]).filter((k) => typeof k === "string")
         : buildDefaultOrder(custom);
-      return { system, custom, order, colors: parseColors(obj.colors) };
+      return {
+        system,
+        custom,
+        order,
+        colors: parseColors(obj.colors),
+        descriptions: parseDescriptions(obj.descriptions),
+      };
     }
 
     // Legacy format: flat Record<string, string> with lane keys.
@@ -118,18 +150,31 @@ function parseColumnConfig(raw: string): ColumnConfig | null {
     for (const id of LANE_ORDER) {
       if (typeof obj[id] === "string") system[id] = obj[id] as string;
     }
-    return { system, custom: [], order: [...LANE_ORDER], colors: {} };
+    return { ...emptyConfig(), system };
   } catch {
     return null;
   }
 }
 
-/** Parse the stored colours map, keeping only recognised colour keys. */
+/** Parse the stored colours map, keeping only recognised colour keys.
+ *  An explicit "neutral" is preserved (Phase 2) so a system lane can be
+ *  overridden back to no tint against its semantic default. */
 function parseColors(raw: unknown): Partial<Record<string, ColumnColorKey>> {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
   const out: Partial<Record<string, ColumnColorKey>> = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
-    if (isColumnColorKey(value) && value !== "neutral") out[key] = value;
+    if (isColumnColorKey(value)) out[key] = value;
+  }
+  return out;
+}
+
+/** Parse the stored descriptions map, keeping string values (incl. "").
+ *  Clamps to MAX_DESCRIPTION_LEN defensively. */
+function parseDescriptions(raw: unknown): Partial<Record<string, string>> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const out: Partial<Record<string, string>> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === "string") out[key] = value.slice(0, MAX_DESCRIPTION_LEN);
   }
   return out;
 }
@@ -159,6 +204,7 @@ function serializeColumnConfig(config: ColumnConfig): string {
     custom: config.custom,
     order: normaliseOrder(config),
     colors: config.colors ?? {},
+    descriptions: config.descriptions ?? {},
   });
 }
 
@@ -281,12 +327,7 @@ export async function renameColumnAction(
   const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
 
-  const existing = (await readColumnConfig(ws)) ?? {
-    system: {},
-    custom: [],
-    order: [...LANE_ORDER],
-    colors: {},
-  };
+  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
 
   if ((LANE_ORDER as string[]).includes(columnKey)) {
     // System lane rename.
@@ -321,17 +362,13 @@ export async function setColumnColorAction(
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
 
-  const existing = (await readColumnConfig(ws)) ?? {
-    system: {},
-    custom: [],
-    order: [...LANE_ORDER],
-    colors: {},
-  };
+  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
 
-  const colors = { ...existing.colors };
-  if (color === "neutral") delete colors[columnKey];
-  else colors[columnKey] = color;
-  existing.colors = colors;
+  // Store the chosen colour explicitly, including "neutral", so an owner
+  // can override a system lane's semantic default back to no tint. The
+  // client's boardColumnColor() treats a stored value as the owner's
+  // choice and never overrides it with a default.
+  existing.colors = { ...existing.colors, [columnKey]: color };
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
@@ -339,34 +376,73 @@ export async function setColumnColorAction(
 }
 
 /**
+ * Set (or clear) a column's description / subtext. Works for system lanes
+ * and custom columns alike. An empty string clears the subtext (the
+ * column then shows no description, not its static default). Phase 2.
+ */
+export async function setColumnDescriptionAction(
+  columnKey: string,
+  description: string,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
+  const clamped = description.trim().slice(0, MAX_DESCRIPTION_LEN);
+
+  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
+
+  await writeColumnConfig(ws, existing);
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/** Options for creating a custom column (Phase 2 full column management). */
+export type AddColumnOptions = {
+  /** Optional description / subtext shown under the column title. */
+  description?: string;
+  /** Optional colour; defaults to neutral (no tint). */
+  color?: ColumnColorKey;
+  /** Optional 0-based insert position within the full column order.
+   *  Out of range clamps to the end. Absent = append. */
+  position?: number;
+};
+
+/**
  * Add a new custom column. Generates a stable, URL-safe key from the
- * name (slug-style). Appends to the end of `order` by default.
+ * name (slug-style). Appends to the end of `order` by default, or inserts
+ * at `opts.position` when supplied.
+ *
+ * Duplicate display names are allowed (the generated key is unique), which
+ * matches the existing product convention — columns are identified by key,
+ * not name, so two "Staging" columns can coexist.
  *
  * Returns the new column's key so the client can optimistically render it.
  */
 export async function addColumnAction(
   name: string,
+  opts: AddColumnOptions = {},
 ): Promise<{ ok: true; key: string }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can't be empty.");
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
+  const color = opts.color && isColumnColorKey(opts.color) ? opts.color : null;
+  const description =
+    typeof opts.description === "string"
+      ? opts.description.trim().slice(0, MAX_DESCRIPTION_LEN)
+      : "";
+
+  const slug = clamped
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 20);
 
   if (isDemoMode()) {
-    const slug = clamped
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 20);
     return { ok: true, key: `col-${slug || "column"}-demo` };
   }
   const ws = await getActiveWorkspace();
 
-  const existing = (await readColumnConfig(ws)) ?? {
-    system: {},
-    custom: [],
-    order: [...LANE_ORDER],
-    colors: {},
-  };
+  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
 
   if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
     throw new Error(
@@ -376,22 +452,31 @@ export async function addColumnAction(
 
   // Generate a stable, collision-resistant key.
   // Format: `col-<slug>-<4-hex>` so two columns named "Staging" can coexist.
-  const slug = clamped
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 20);
   const rand = Math.floor(Math.random() * 0xffff)
     .toString(16)
     .padStart(4, "0");
   const key = `col-${slug || "column"}-${rand}`;
 
   existing.custom = [...existing.custom, { key, name: clamped }];
-  // Ensure default order exists before appending.
+  // Ensure default order exists before inserting.
   if (!existing.order.length) {
     existing.order = [...LANE_ORDER];
   }
-  existing.order = [...existing.order, key];
+  if (
+    typeof opts.position === "number" &&
+    opts.position >= 0 &&
+    opts.position < existing.order.length
+  ) {
+    const next = [...existing.order];
+    next.splice(opts.position, 0, key);
+    existing.order = next;
+  } else {
+    existing.order = [...existing.order, key];
+  }
+  if (color) existing.colors = { ...existing.colors, [key]: color };
+  if (description) {
+    existing.descriptions = { ...existing.descriptions, [key]: description };
+  }
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
@@ -415,12 +500,7 @@ export async function reorderColumnsAction(
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
-  const existing = (await readColumnConfig(ws)) ?? {
-    system: {},
-    custom: [],
-    order: [...LANE_ORDER],
-    colors: {},
-  };
+  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
 
   const allKeys = new Set([
     ...LANE_ORDER,
@@ -480,6 +560,7 @@ export async function reorderColumnsAction(
  */
 export async function deleteColumnAction(
   columnKey: string,
+  destinationKey?: string,
 ): Promise<{ ok: true; tasksReassigned: number }> {
   if ((LANE_ORDER as string[]).includes(columnKey)) {
     throw new Error("System lanes cannot be deleted.");
@@ -494,37 +575,61 @@ export async function deleteColumnAction(
   const col = existing.custom.find((c) => c.key === columnKey);
   if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
 
-  // Count tasks in this column before clearing, for the return value so
-  // the client can surface "5 tasks moved to Moving" in a toast.
+  // Validate the destination (when supplied). It must be a real, different
+  // column — a system lane or another custom column — so tasks never land
+  // in the column being deleted.
+  let destination: string | null = null;
+  if (destinationKey && destinationKey !== columnKey) {
+    const isSystem = (LANE_ORDER as string[]).includes(destinationKey);
+    const isCustom = existing.custom.some((c) => c.key === destinationKey);
+    if (!isSystem && !isCustom) {
+      throw new Error(`Unknown destination column: ${destinationKey}`);
+    }
+    destination = destinationKey;
+  }
+
+  // Count tasks in this column before moving, for the toast copy.
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(tasks)
     .where(
-      and(
-        eq(tasks.workspaceId, ws),
-        eq(tasks.boardColumnKey, columnKey),
-      ),
+      and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)),
     );
   const tasksReassigned = Number(countRow?.count ?? 0);
 
-  // Clear the boardColumnKey for all tasks in this column. Their `lane`
-  // is unchanged, they return to their canonical system lane column on
-  // the board (see deleteColumnAction JSDoc above for rationale).
+  // Move the tasks. With an explicit destination the client picked where
+  // they go: into a system lane (set `lane`, clear boardColumnKey) or
+  // another custom column (set boardColumnKey). Without one, fall back to
+  // clearing boardColumnKey so tasks return to their canonical system lane
+  // — no data loss either way.
   if (tasksReassigned > 0) {
-    await db
-      .update(tasks)
-      .set({ boardColumnKey: null })
-      .where(
-        and(
-          eq(tasks.workspaceId, ws),
-          eq(tasks.boardColumnKey, columnKey),
-        ),
-      );
+    if (destination && (LANE_ORDER as string[]).includes(destination)) {
+      await db
+        .update(tasks)
+        .set({ lane: destination as LaneId, boardColumnKey: null, idleDays: null })
+        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+    } else if (destination) {
+      await db
+        .update(tasks)
+        .set({ boardColumnKey: destination })
+        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+    } else {
+      await db
+        .update(tasks)
+        .set({ boardColumnKey: null })
+        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+    }
   }
 
-  // Remove the column from config.
+  // Remove the column from config, including any colour / description it held.
   existing.custom = existing.custom.filter((c) => c.key !== columnKey);
   existing.order = existing.order.filter((k) => k !== columnKey);
+  const nextColors = { ...existing.colors };
+  delete nextColors[columnKey];
+  existing.colors = nextColors;
+  const nextDescriptions = { ...existing.descriptions };
+  delete nextDescriptions[columnKey];
+  existing.descriptions = nextDescriptions;
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");

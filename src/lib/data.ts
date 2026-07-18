@@ -158,23 +158,30 @@ export const LANES: Record<
   LaneId,
   { id: LaneId; name: string; ink: string; bg: string; dot: string }
 > = {
+  // Phase 2 (2026-07-18): the four standard columns display as
+  // Blocked · In Progress · Reviewing · Done. Internal LaneId values
+  // (todo/doing/review/done) are STABLE — only the display labels
+  // changed — so no task, seed, selector, nudge, or migration moves.
+  // LANE_ORDER is already [todo, doing, review, done], so the required
+  // left-to-right order holds by position with zero data risk. Labels
+  // are further overridable per workspace via the column config `system` map.
   todo: {
     id: "todo",
-    name: "To do",
+    name: "Blocked",
     ink: "var(--lane-todo-ink)",
     bg: "var(--lane-todo)",
     dot: "var(--lane-todo-dot)",
   },
   doing: {
     id: "doing",
-    name: "Moving",
+    name: "In Progress",
     ink: "var(--lane-doing-ink)",
     bg: "var(--lane-doing)",
     dot: "var(--lane-doing-dot)",
   },
   review: {
     id: "review",
-    name: "Waiting",
+    name: "Reviewing",
     ink: "var(--lane-review-ink)",
     bg: "var(--lane-review)",
     dot: "var(--lane-review-dot)",

@@ -596,6 +596,52 @@ textarea.purposeLine {
 .addColumnTile:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .addColumnTile strong { color: var(--x-task-text-secondary); font-size: 10px; }
 
+/* Add-column create form (Phase 2E): name + description + colour + position. */
+.addColumnForm {
+  background: var(--x-task-surface);
+  border: 1px solid var(--x-task-border-strong);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 116px;
+  padding: 12px;
+}
+.addColumnField { display: flex; flex-direction: column; gap: 4px; }
+.addColumnField > span { color: var(--x-task-text-muted); font-size: 9px; font-weight: 600; }
+.addColumnField > span em { font-style: normal; font-weight: 400; opacity: .8; }
+.addColumnForm input,
+.addColumnForm select {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 5px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 11px;
+  height: 30px;
+  min-width: 0;
+  padding: 0 7px;
+  width: 100%;
+}
+.addColumnForm input:focus-visible,
+.addColumnForm select:focus-visible { border-color: var(--x-task-focus); outline: 2px solid color-mix(in srgb, var(--x-task-focus) 22%, transparent); outline-offset: 1px; }
+.addColumnError { color: var(--x-task-danger); font-size: 9px; margin: -4px 0 0; }
+.addColumnActions { display: flex; gap: 6px; justify-content: flex-end; margin-top: 2px; }
+.addColumnCancel,
+.addColumnCreate {
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  min-height: 30px;
+  padding: 0 10px;
+}
+.addColumnCancel { background: transparent; border: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); }
+.addColumnCancel:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
+.addColumnCreate { background: var(--x-task-text); border: 0; color: var(--x-task-raised); }
+.addColumnCreate:hover { opacity: .9; }
+
 /* Production list geometry (T·95): the complete-box column is 42px
    (the lab's selection column was 76px), so the frozen title column
    pins at 42px here or it overlays the first scrolling field. */
@@ -634,6 +680,58 @@ textarea.purposeLine {
 }
 .laneColorSwatch[data-selected] { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
 .laneColorSwatch[data-color="neutral"] { background: var(--x-task-hover); }
+
+/* Editable column subtext (Phase 2D): a click-to-edit description below
+   the lane title. At rest it reads as quiet copy; an empty column shows a
+   faint "Add description" affordance on hover/focus. Long text wraps to two
+   lines and truncates, never breaking the lane. */
+.laneDescButton {
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: -webkit-box;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1.35;
+  margin: 7px 0 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  padding: 0;
+  text-align: left;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.laneDescButton:hover { color: var(--x-task-text-secondary); }
+.laneDescAdd {
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-style: italic;
+  margin: 7px 0 0;
+  opacity: 0;
+  padding: 0;
+  text-align: left;
+  transition: opacity 120ms ease;
+}
+.laneHeader:hover .laneDescAdd,
+.laneDescAdd:focus-visible { opacity: 1; }
+.laneDescInput {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-focus);
+  border-radius: 5px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 9px;
+  line-height: 1.35;
+  margin: 7px 0 0;
+  padding: 3px 5px;
+  width: 100%;
+}
 
 /* Editable column name (T·96): the lane title is a button that opens the
    inline editor; a quiet pencil fades in on hover. Matches the lab h2. */

@@ -41,11 +41,13 @@ import {
   reorderColumnsAction,
   deleteColumnAction,
   setColumnColorAction,
+  setColumnDescriptionAction,
   type ColumnConfig,
 } from "@/server/actions/board";
 import {
   COLUMN_COLORS,
-  COLUMN_COLOR_KEYS,
+  COLUMN_PICKER_ORDER,
+  boardColumnColor,
   type ColumnColorKey,
 } from "@/lib/board-colors";
 import { useColumnConfig, usePersonalization } from "@/lib/domain-context";
@@ -101,9 +103,34 @@ type BoardColumn = {
   dot: string;
   bg: string;
   ink: string;
-  /** Owner-chosen soft colour (T·96). "neutral" = no tint. */
+  /** Effective column colour: owner choice, else the system default, else
+   *  neutral. Never overwrites a saved choice (see boardColumnColor). */
   color: ColumnColorKey;
+  /** Editable subtext. System lanes fall back to a static default; custom
+   *  columns have none until the owner writes one. Empty string = cleared. */
+  description: string | undefined;
 };
+
+/** Default subtext for the four standard system lanes (Phase 2). Owners
+ *  can edit or clear these per workspace; the copy matches the relabelled
+ *  columns (Blocked · In Progress · Reviewing · Done). */
+const DEFAULT_LANE_DESCRIPTIONS: Record<string, string> = {
+  todo: "Held up — clear the blocker before it can move.",
+  doing: "In motion right now.",
+  review: "Being checked before it ships.",
+  done: "Finished work stays visible.",
+};
+
+/** Resolve a column's effective description: an explicit stored value
+ *  (including "") wins; otherwise a system lane shows its default. */
+function resolveDescription(
+  key: string,
+  isSystem: boolean,
+  stored: string | undefined,
+): string | undefined {
+  if (stored !== undefined) return stored;
+  return isSystem ? DEFAULT_LANE_DESCRIPTIONS[key] : undefined;
+}
 
 /**
  * Build the ordered list of BoardColumns from the ColumnConfig and the
@@ -128,14 +155,17 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
       dot: LANES[id].dot,
       bg: LANES[id].bg,
       ink: LANES[id].ink,
-      color: "neutral" as ColumnColorKey,
+      color: boardColumnColor(id, undefined, true),
+      description: resolveDescription(id, true, undefined),
     }));
   }
 
   const order = config.order.length > 0 ? config.order : [...LANE_ORDER];
   const customByKey = Object.fromEntries(config.custom.map((c) => [c.key, c]));
-  const colorOf = (key: string): ColumnColorKey =>
-    config.colors?.[key] ?? "neutral";
+  const colorOf = (key: string, isSystem: boolean): ColumnColorKey =>
+    boardColumnColor(key, config.colors?.[key], isSystem);
+  const descriptionOf = (key: string, isSystem: boolean): string | undefined =>
+    resolveDescription(key, isSystem, config.descriptions?.[key]);
 
   // Collect columns in order.
   const seen = new Set<string>();
@@ -153,7 +183,8 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: LANES[laneId].dot,
         bg: LANES[laneId].bg,
         ink: LANES[laneId].ink,
-        color: colorOf(key),
+        color: colorOf(key, true),
+        description: descriptionOf(key, true),
       });
     } else if (customByKey[key]) {
       cols.push({
@@ -163,7 +194,8 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: CUSTOM_DOT,
         bg: CUSTOM_BG,
         ink: CUSTOM_INK,
-        color: colorOf(key),
+        color: colorOf(key, false),
+        description: descriptionOf(key, false),
       });
     }
     // Unknown key in order → silently skip (defensive).
@@ -179,7 +211,8 @@ function buildBoardColumns(config: ColumnConfig | null): BoardColumn[] {
         dot: LANES[id].dot,
         bg: LANES[id].bg,
         ink: LANES[id].ink,
-        color: colorOf(id),
+        color: colorOf(id, true),
+        description: descriptionOf(id, true),
       });
       seen.add(id);
     }
@@ -452,11 +485,16 @@ export function BoardApp() {
                 columnName={col.name}
                 isSystem={col.isSystem}
                 color={col.color}
+                description={col.description}
                 count={colTasks.length}
                 total={totalsByColumn[col.key] ?? colTasks.length}
                 columnIndex={idx}
                 totalColumns={boardColumns.length}
-                allColumnKeys={boardColumns.map((c) => c.key)}
+                allColumns={boardColumns.map((c) => ({
+                  key: c.key,
+                  name: c.name,
+                  dot: c.color === "neutral" ? c.dot : COLUMN_COLORS[c.color].var ?? c.dot,
+                }))}
                 onAddTask={() => setComposerColumn(col.key)}
                 onOptimisticConfigChange={setOptimisticConfig}
                 currentConfig={optimisticConfig}
@@ -536,6 +574,7 @@ export function BoardApp() {
         {/* Add column tile, lives at the end of the lane row. */}
         <AddColumnTile
           currentConfig={optimisticConfig}
+          columnRefs={boardColumns.map((c) => ({ key: c.key, name: c.name, dot: c.dot }))}
           onOptimisticConfigChange={setOptimisticConfig}
         />
         </div>
@@ -563,26 +602,25 @@ const LANE_TONE: Record<string, string | undefined> = {
  * Overflow "⋯" menu on custom columns: move left / move right / delete.
  * System lanes: overflow menu with move left / move right (no delete).
  */
-/** Editorial Project Room (Option B): each system lane explains itself in
- *  one line, so the board reads as a narrated room rather than four
- *  unlabeled buckets. Custom columns are user-named and carry no note. */
-const LANE_NOTES: Record<string, string> = {
-  todo: "Agreed and ready to start.",
-  doing: "In motion right now.",
-  review: "Held by a reply, a delivery, or a decision.",
-  done: "Finished work stays visible.",
-};
+/** A base ColumnConfig synthesised when none is stored yet (demo / new
+ *  board) so optimistic edits still apply. */
+function clientBaseConfig(allKeys: string[]): ColumnConfig {
+  return { system: {}, custom: [], order: [...allKeys], colors: {}, descriptions: {} };
+}
+
+type LaneColumnRef = { key: string; name: string; dot: string };
 
 function LaneHeader({
   columnKey,
   columnName,
   isSystem,
   color,
+  description,
   count,
   total,
   columnIndex,
   totalColumns,
-  allColumnKeys,
+  allColumns,
   onAddTask,
   onOptimisticConfigChange,
   currentConfig,
@@ -591,15 +629,17 @@ function LaneHeader({
   columnName: string;
   isSystem: boolean;
   color: ColumnColorKey;
+  description: string | undefined;
   count: number;
   total: number;
   columnIndex: number;
   totalColumns: number;
-  allColumnKeys: string[];
+  allColumns: LaneColumnRef[];
   onAddTask: () => void;
   onOptimisticConfigChange: (c: ColumnConfig | null) => void;
   currentConfig: ColumnConfig | null;
 }) {
+  const allColumnKeys = allColumns.map((c) => c.key);
   const [editing, setEditing] = useState(false);
   const [optimisticName, setOptimisticName] = useState(columnName);
   const [previousColumnName, setPreviousColumnName] = useState(columnName);
@@ -608,6 +648,13 @@ function LaneHeader({
   const [, startTransition] = useTransition();
   const [overflowOpen, setOverflowOpen] = useState(false);
   const overflowRef = useRef<HTMLDivElement | null>(null);
+  // Description editing (Phase 2D).
+  const [descEditing, setDescEditing] = useState(false);
+  const [descDraft, setDescDraft] = useState(description ?? "");
+  // Safe delete (Phase 2E): confirmation + destination for a non-empty column.
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const otherColumns = allColumns.filter((c) => c.key !== columnKey);
+  const [deleteDest, setDeleteDest] = useState(otherColumns[0]?.key ?? "");
 
   if (previousColumnName !== columnName) {
     setPreviousColumnName(columnName);
@@ -656,6 +703,36 @@ function LaneHeader({
     setDraft(optimisticName);
   }
 
+  // ── Description editing ──────────────────────────────────────────────
+  function startDescEdit() {
+    setOverflowOpen(false);
+    setDescDraft(description ?? "");
+    setDescEditing(true);
+  }
+
+  function commitDescription() {
+    const next = descDraft.trim();
+    setDescEditing(false);
+    if (next === (description ?? "")) return;
+    const base = currentConfig ?? clientBaseConfig(allColumnKeys);
+    onOptimisticConfigChange({
+      ...base,
+      descriptions: { ...base.descriptions, [columnKey]: next },
+    });
+    startTransition(async () => {
+      try {
+        await setColumnDescriptionAction(columnKey, next);
+      } catch {
+        onOptimisticConfigChange(currentConfig);
+      }
+    });
+  }
+
+  function cancelDescription() {
+    setDescEditing(false);
+    setDescDraft(description ?? "");
+  }
+
   function moveLeft() {
     setOverflowOpen(false);
     if (columnIndex === 0) return;
@@ -663,7 +740,6 @@ function LaneHeader({
     const tmp = newOrder[columnIndex - 1];
     newOrder[columnIndex - 1] = newOrder[columnIndex];
     newOrder[columnIndex] = tmp;
-    // Optimistic update.
     if (currentConfig) {
       onOptimisticConfigChange({ ...currentConfig, order: newOrder });
     }
@@ -671,7 +747,6 @@ function LaneHeader({
       try {
         await reorderColumnsAction(newOrder);
       } catch {
-        // Revert optimistic on error.
         onOptimisticConfigChange(currentConfig);
       }
     });
@@ -696,23 +771,32 @@ function LaneHeader({
     });
   }
 
-  function deleteColumn() {
+  // ── Safe delete ──────────────────────────────────────────────────────
+  function requestDelete() {
     setOverflowOpen(false);
     if (isSystem) return;
-    // Optimistic: remove the column from config immediately.
+    setDeleteDest(otherColumns[0]?.key ?? "");
+    setConfirmDelete(true);
+  }
+
+  function performDelete() {
+    setConfirmDelete(false);
+    if (isSystem) return;
+    // A non-empty column needs a destination so its tasks never vanish; an
+    // empty one deletes cleanly. Destination is only sent to the server
+    // when there are tasks to move.
+    const destination = total > 0 ? deleteDest || undefined : undefined;
     if (currentConfig) {
-      const nextConfig: ColumnConfig = {
+      onOptimisticConfigChange({
         ...currentConfig,
         custom: currentConfig.custom.filter((c) => c.key !== columnKey),
         order: currentConfig.order.filter((k) => k !== columnKey),
-      };
-      onOptimisticConfigChange(nextConfig);
+      });
     }
     startTransition(async () => {
       try {
-        await deleteColumnAction(columnKey);
+        await deleteColumnAction(columnKey, destination);
       } catch {
-        // Revert on error.
         onOptimisticConfigChange(currentConfig);
       }
     });
@@ -720,19 +804,13 @@ function LaneHeader({
 
   function setColumnColor(next: ColumnColorKey) {
     setOverflowOpen(false);
-    // A workspace with no saved config yet (incl. demo) has currentConfig
-    // null — synthesize a base from the columns on screen so the tint
-    // still applies optimistically.
-    const base: ColumnConfig = currentConfig ?? {
-      system: {},
-      custom: [],
-      order: [...allColumnKeys],
-      colors: {},
-    };
-    const colors = { ...(base.colors ?? {}) };
-    if (next === "neutral") delete colors[columnKey];
-    else colors[columnKey] = next;
-    onOptimisticConfigChange({ ...base, colors });
+    const base = currentConfig ?? clientBaseConfig(allColumnKeys);
+    // Store the choice explicitly (including "neutral") so a system lane's
+    // semantic default can be overridden. The server mirrors this.
+    onOptimisticConfigChange({
+      ...base,
+      colors: { ...(base.colors ?? {}), [columnKey]: next },
+    });
     startTransition(async () => {
       try {
         await setColumnColorAction(columnKey, next);
@@ -744,9 +822,7 @@ function LaneHeader({
 
   const canMoveLeft = columnIndex > 0;
   const canMoveRight = columnIndex < totalColumns - 1;
-  // Every column now offers rename + colour, so the overflow always shows.
-  const showOverflow = true;
-  const laneNote = isSystem ? LANE_NOTES[columnKey] : undefined;
+  const hasDescription = description !== undefined && description !== "";
 
   return (
     <header className={`${roomStyles.laneHeader} group/colhdr`}>
@@ -804,107 +880,110 @@ function LaneHeader({
       </div>
 
       <div className={roomStyles.laneHeaderActions}>
-        {/* Overflow menu: move left/right + delete (custom) */}
-        {showOverflow ? (
-          <div ref={overflowRef} className="relative">
-            <button
-              type="button"
-              aria-label="Column options"
-              aria-haspopup="menu"
-              aria-expanded={overflowOpen}
-              onClick={(e) => { e.stopPropagation(); setOverflowOpen((v) => !v); }}
-              className="inline-flex h-5 w-5 items-center justify-center rounded text-ink-quiet opacity-0 transition-colors hover:bg-white/70 hover:text-ink-soft group-hover/colhdr:opacity-100"
+        {/* Overflow menu: rename, colour, description, reorder, delete */}
+        <div ref={overflowRef} className="relative">
+          <button
+            type="button"
+            aria-label={`${optimisticName} column options`}
+            aria-haspopup="menu"
+            aria-expanded={overflowOpen}
+            onClick={(e) => { e.stopPropagation(); setOverflowOpen((v) => !v); }}
+            className="inline-flex h-5 w-5 items-center justify-center rounded text-ink-quiet opacity-0 transition-colors hover:bg-white/70 hover:text-ink-soft group-hover/colhdr:opacity-100 focus-visible:opacity-100"
+          >
+            <Icon name="more" size={13} />
+          </button>
+          {overflowOpen ? (
+            <div
+              role="menu"
+              onClick={(e) => e.stopPropagation()}
+              className="absolute right-0 top-full z-30 mt-1 w-48 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="5" cy="12" r="1.6" />
-                <circle cx="12" cy="12" r="1.6" />
-                <circle cx="19" cy="12" r="1.6" />
-              </svg>
-            </button>
-            {overflowOpen ? (
-              <div
-                role="menu"
-                onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => { setOverflowOpen(false); startEdit(e); }}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={(e) => { setOverflowOpen(false); startEdit(e); }}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                  Rename
-                </button>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                Rename
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={startDescEdit}
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M4 12h10M4 17h13" /></svg>
+                {hasDescription ? "Edit description" : "Add description"}
+              </button>
 
-                <div className="my-1 border-t border-line-soft" />
-                <div className="px-2 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
-                  Colour
-                </div>
-                <div className={roomStyles.laneColorRow} role="group" aria-label="Column colour">
-                  {COLUMN_COLOR_KEYS.map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      aria-label={COLUMN_COLORS[key].label}
-                      aria-pressed={color === key}
-                      title={COLUMN_COLORS[key].label}
-                      data-color={key}
-                      data-selected={color === key ? "" : undefined}
-                      onClick={() => setColumnColor(key)}
-                      className={roomStyles.laneColorSwatch}
-                      style={
-                        COLUMN_COLORS[key].var
-                          ? { background: COLUMN_COLORS[key].var as string, borderColor: COLUMN_COLORS[key].var as string }
-                          : undefined
-                      }
-                    />
-                  ))}
-                </div>
-
-                {canMoveLeft || canMoveRight ? (
-                  <>
-                    <div className="my-1 border-t border-line-soft" />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={!canMoveLeft}
-                      onClick={moveLeft}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
-                      Move left
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={!canMoveRight}
-                      onClick={moveRight}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
-                      Move right
-                    </button>
-                  </>
-                ) : null}
-                {!isSystem ? (
-                  <>
-                    <div className="my-1 border-t border-line-soft" />
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={deleteColumn}
-                      className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-                      Delete column
-                    </button>
-                  </>
-                ) : null}
+              <div className="my-1 border-t border-line-soft" />
+              <div className="px-2 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
+                Colour
               </div>
-            ) : null}
-          </div>
-        ) : null}
+              <div className={roomStyles.laneColorRow} role="group" aria-label="Column colour">
+                {COLUMN_PICKER_ORDER.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-label={COLUMN_COLORS[key].label}
+                    aria-pressed={color === key}
+                    title={COLUMN_COLORS[key].label}
+                    data-color={key}
+                    data-selected={color === key ? "" : undefined}
+                    onClick={() => setColumnColor(key)}
+                    className={roomStyles.laneColorSwatch}
+                    style={
+                      COLUMN_COLORS[key].var
+                        ? { background: COLUMN_COLORS[key].var as string, borderColor: COLUMN_COLORS[key].var as string }
+                        : undefined
+                    }
+                  />
+                ))}
+              </div>
+
+              {canMoveLeft || canMoveRight ? (
+                <>
+                  <div className="my-1 border-t border-line-soft" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={!canMoveLeft}
+                    onClick={moveLeft}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6" /></svg>
+                    Move left
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    disabled={!canMoveRight}
+                    onClick={moveRight}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
+                    Move right
+                  </button>
+                </>
+              ) : null}
+              {!isSystem ? (
+                <>
+                  <div className="my-1 border-t border-line-soft" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={requestDelete}
+                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Icon name="trash" size={11} />
+                    Delete column
+                  </button>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         {/* Add task button */}
         <button
@@ -913,112 +992,321 @@ function LaneHeader({
           onClick={(e) => { e.stopPropagation(); onAddTask(); }}
           className="rounded p-1 text-[var(--x-task-text-muted)] hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)]"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
+          <Icon name="add" size={13} />
         </button>
       </div>
-      {laneNote ? <p>{laneNote}</p> : null}
+
+      {/* Editable subtext (Phase 2D). */}
+      {descEditing ? (
+        <input
+          autoFocus
+          value={descDraft}
+          onChange={(e) => setDescDraft(e.target.value)}
+          onBlur={commitDescription}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") { e.preventDefault(); commitDescription(); }
+            if (e.key === "Escape") { e.preventDefault(); cancelDescription(); }
+          }}
+          maxLength={160}
+          placeholder="Describe this column…"
+          aria-label={`Description for ${optimisticName}`}
+          className={roomStyles.laneDescInput}
+        />
+      ) : hasDescription ? (
+        <button
+          type="button"
+          className={roomStyles.laneDescButton}
+          onClick={startDescEdit}
+          title="Edit column description"
+        >
+          {description}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={roomStyles.laneDescAdd}
+          onClick={startDescEdit}
+        >
+          Add description
+        </button>
+      )}
+
+      {/* Safe-delete confirmation (Phase 2E). Rendered as a centred modal so
+          it is never clipped by the lane's own overflow. */}
+      {confirmDelete ? (
+        <DeleteColumnDialog
+          columnName={optimisticName}
+          taskCount={total}
+          destinations={otherColumns}
+          deleteDest={deleteDest}
+          onDest={setDeleteDest}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={performDelete}
+        />
+      ) : null}
     </header>
+  );
+}
+
+/**
+ * Centred confirmation for deleting a custom column. When the column holds
+ * tasks the owner must choose a destination (a system lane or another
+ * custom column) so nothing is silently lost; an empty column confirms
+ * directly. Escape or the backdrop cancels; focus lands on the dialog.
+ */
+function DeleteColumnDialog({
+  columnName,
+  taskCount,
+  destinations,
+  deleteDest,
+  onDest,
+  onCancel,
+  onConfirm,
+}: {
+  columnName: string;
+  taskCount: number;
+  destinations: LaneColumnRef[];
+  deleteDest: string;
+  onDest: (key: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4"
+      onClick={onCancel}
+      onKeyDown={(e) => { if (e.key === "Escape") onCancel(); }}
+    >
+      <div
+        ref={dialogRef}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label={`Delete ${columnName}`}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-xl border border-line-soft bg-white p-5 shadow-[0_28px_60px_-20px_rgba(20,21,26,0.4)] outline-none"
+      >
+        <h2 className="text-[15px] font-semibold text-ink">Delete “{columnName}”?</h2>
+        {taskCount > 0 ? (
+          <>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-soft">
+              This column has {taskCount} task{taskCount === 1 ? "" : "s"}. Choose where
+              they should go — they will be moved, never deleted.
+            </p>
+            <label className="mt-3 block">
+              <span className="text-[11px] font-medium text-ink-quiet">Move tasks to</span>
+              <select
+                autoFocus
+                value={deleteDest}
+                onChange={(e) => onDest(e.target.value)}
+                className="mt-1 h-9 w-full rounded-md border border-line bg-white px-2 text-[12.5px] text-ink outline-none focus-visible:border-[var(--x-task-focus)]"
+              >
+                {destinations.map((d) => (
+                  <option key={d.key} value={d.key}>{d.name}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        ) : (
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-soft">
+            This column is empty. Deleting it can’t be undone.
+          </p>
+        )}
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-9 rounded-md border border-line bg-white px-3 text-[12.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={taskCount > 0 && !deleteDest}
+            className="h-9 rounded-md bg-red-600 px-3 text-[12.5px] font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {taskCount > 0 ? "Move & delete" : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 // ─── AddColumnTile ────────────────────────────────────────────────────────────
 
 /**
- * Quiet "+ Add column" affordance at the end of the lane row.
+ * "+ Add column" affordance at the end of the lane row (Phase 2E).
  *
- * At rest: a thin ghost tile with a centered "+" and a "Add column" label —
- * same height as a collapsed lane, same corner radius. Matches DESIGN.md
- * restraint: not a loud button, not a floating action button.
- *
- * On click: the tile becomes an inline input (same 12px/semibold scale as
- * LaneHeader). Enter/blur commits; Escape cancels. Optimistic: the column
- * appears immediately with a temp name; the server action provides the stable key.
+ * At rest: a quiet ghost tile. On click it opens a compact create form:
+ * name (required, validated), optional description, a colour swatch, and a
+ * position select. Enter in the name commits; Escape cancels. The new
+ * column appears optimistically with a temp key, colour and description,
+ * until the server assigns the stable key and the layout revalidates.
  */
 function AddColumnTile({
   currentConfig,
+  columnRefs,
   onOptimisticConfigChange,
 }: {
   currentConfig: ColumnConfig | null;
+  /** Existing columns in order, for the position select. */
+  columnRefs: LaneColumnRef[];
   onOptimisticConfigChange: (c: ColumnConfig | null) => void;
 }) {
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [color, setColor] = useState<ColumnColorKey>("neutral");
+  // Position is the target index in the full order; default = end (append).
+  const [position, setPosition] = useState<number>(columnRefs.length);
+  const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   function startAdd() {
-    setDraft("");
+    setName("");
+    setDescription("");
+    setColor("neutral");
+    setPosition(columnRefs.length);
+    setError(null);
     setAdding(true);
   }
 
+  function cancel() {
+    setAdding(false);
+    setError(null);
+  }
+
   function commit() {
-    const trimmed = draft.trim();
-    if (!trimmed) { cancel(); return; }
+    const trimmed = name.trim();
+    if (!trimmed) { setError("Enter a column name."); return; }
+    const desc = description.trim();
+    const append = position >= columnRefs.length;
     setAdding(false);
 
-    // Optimistic: add a placeholder column with a temp key until the
-    // server round-trip completes and the layout revalidates.
+    // Optimistic: add a placeholder column with a temp key at the chosen
+    // position, carrying the chosen colour + description, until the server
+    // round-trip completes and the layout revalidates.
     const tempKey = `col-temp-${Date.now()}`;
-    const base = currentConfig ?? { system: {}, custom: [], order: [...LANE_ORDER], colors: {} };
+    const base = currentConfig ?? clientBaseConfig(columnRefs.map((c) => c.key));
+    const nextOrder = [...base.order];
+    if (append) nextOrder.push(tempKey);
+    else nextOrder.splice(position, 0, tempKey);
     onOptimisticConfigChange({
       ...base,
       custom: [...base.custom, { key: tempKey, name: trimmed }],
-      order: [...base.order, tempKey],
+      order: nextOrder,
+      colors: color !== "neutral" ? { ...base.colors, [tempKey]: color } : base.colors,
+      descriptions: desc ? { ...base.descriptions, [tempKey]: desc } : base.descriptions,
     });
 
     startTransition(async () => {
       try {
-        await addColumnAction(trimmed);
-        // Layout revalidates, no manual cleanup needed; useEffect syncs
-        // optimisticConfig from the server-resolved columnConfig.
+        await addColumnAction(trimmed, {
+          description: desc || undefined,
+          color: color !== "neutral" ? color : undefined,
+          position: append ? undefined : position,
+        });
+        // Layout revalidates; optimisticConfig re-syncs from the server.
       } catch {
-        // Revert the temp column.
         onOptimisticConfigChange(currentConfig);
       }
     });
   }
 
-  function cancel() {
-    setAdding(false);
-    setDraft("");
+  if (!adding) {
+    return (
+      <div
+        className={roomStyles.addColumnTile}
+        onClick={startAdd}
+        role="button"
+        tabIndex={0}
+        aria-label="Add column"
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startAdd(); } }}
+      >
+        <strong>Add column</strong>
+        <span>A custom lane for this workspace.</span>
+      </div>
+    );
   }
 
   return (
-    <div
-      className={roomStyles.addColumnTile}
-      onClick={!adding ? startAdd : undefined}
-      role={!adding ? "button" : undefined}
-      tabIndex={!adding ? 0 : undefined}
-      aria-label={!adding ? "Add column" : undefined}
-      onKeyDown={!adding ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startAdd(); } } : undefined}
+    <form
+      className={roomStyles.addColumnForm}
+      onSubmit={(e) => { e.preventDefault(); commit(); }}
+      onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); cancel(); } }}
+      aria-label="New column"
     >
-      {adding ? (
+      <label className={roomStyles.addColumnField}>
+        <span>Name</span>
         <input
-          ref={inputRef}
           autoFocus
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === "Enter") { e.preventDefault(); commit(); }
-            if (e.key === "Escape") { e.preventDefault(); cancel(); }
-          }}
+          value={name}
+          onChange={(e) => { setName(e.target.value); if (error) setError(null); }}
           maxLength={80}
-          placeholder="Column name"
+          placeholder="e.g. Staging"
           aria-label="New column name"
-          className="w-full max-w-[180px] rounded border border-[var(--x-task-focus)] bg-transparent px-1 py-0 text-[12px] font-semibold text-ink outline-none"
+          aria-invalid={error ? true : undefined}
         />
-      ) : (
-        <>
-          <strong>Add column</strong>
-          <span>A custom lane for this workspace.</span>
-        </>
-      )}
-    </div>
+      </label>
+      {error ? <p className={roomStyles.addColumnError}>{error}</p> : null}
+      <label className={roomStyles.addColumnField}>
+        <span>Description <em>(optional)</em></span>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          maxLength={160}
+          placeholder="What belongs here"
+          aria-label="New column description"
+        />
+      </label>
+      <div className={roomStyles.addColumnField}>
+        <span>Colour</span>
+        <div className={roomStyles.laneColorRow} role="group" aria-label="New column colour">
+          {COLUMN_PICKER_ORDER.map((key) => (
+            <button
+              key={key}
+              type="button"
+              aria-label={COLUMN_COLORS[key].label}
+              aria-pressed={color === key}
+              title={COLUMN_COLORS[key].label}
+              data-color={key}
+              data-selected={color === key ? "" : undefined}
+              onClick={() => setColor(key)}
+              className={roomStyles.laneColorSwatch}
+              style={
+                COLUMN_COLORS[key].var
+                  ? { background: COLUMN_COLORS[key].var as string, borderColor: COLUMN_COLORS[key].var as string }
+                  : undefined
+              }
+            />
+          ))}
+        </div>
+      </div>
+      <label className={roomStyles.addColumnField}>
+        <span>Position</span>
+        <select
+          value={position}
+          onChange={(e) => setPosition(Number(e.target.value))}
+          aria-label="New column position"
+        >
+          {columnRefs.map((c, i) => (
+            <option key={c.key} value={i}>Before “{c.name}”</option>
+          ))}
+          <option value={columnRefs.length}>At the end</option>
+        </select>
+      </label>
+      <div className={roomStyles.addColumnActions}>
+        <button type="button" onClick={cancel} className={roomStyles.addColumnCancel}>Cancel</button>
+        <button type="submit" className={roomStyles.addColumnCreate}>Add column</button>
+      </div>
+    </form>
   );
 }
 

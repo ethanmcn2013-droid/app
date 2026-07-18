@@ -47,9 +47,9 @@ const FIELD_LABEL: Record<CanonicalField, string> = {
 };
 
 const LANE_LABEL: Record<LaneId, string> = {
-  todo: "To do",
-  doing: "Doing",
-  review: "Review",
+  todo: "Blocked",
+  doing: "In Progress",
+  review: "Reviewing",
   done: "Done",
 };
 

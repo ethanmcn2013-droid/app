@@ -155,6 +155,8 @@
   --x-col-emerald: var(--status-done);
   --x-col-sky:     var(--status-review);
   --x-col-violet:  var(--user-alex);
+  --x-col-teal:    var(--user-david);
+  --x-col-pink:    var(--user-chloe);
 
   /* ── User presence (cinematic demo + real users) ──────────── */
   --user-chloe: color-mix(in srgb, #e4356d 85%, var(--ink));
