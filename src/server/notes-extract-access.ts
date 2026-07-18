@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
 import { tasks, workspaceMembers } from "@/server/db/schema";
+import type { ExistingNotesExtractIdentity } from "@/server/notes-extract-idempotency";
 
 type NotesExtractDatabase = LibSQLDatabase<typeof schema>;
 
@@ -10,8 +11,29 @@ export type NotesExtractAccess =
   | Readonly<{
       kind: "allowed";
       workspaceId: string;
-      existing: { id: string; workspaceId: string | null } | null;
+      existing: ExistingNotesExtractIdentity | null;
     }>;
+
+const notesExtractIdentitySelection = {
+  id: tasks.id,
+  workspaceId: tasks.workspaceId,
+  sourceNoteExtractBody: tasks.sourceNoteExtractBody,
+  sourceNoteExtractSha256: tasks.sourceNoteExtractSha256,
+};
+
+export async function readNotesExtractIdentity(
+  database: NotesExtractDatabase,
+  sourceNoteId: string,
+): Promise<ExistingNotesExtractIdentity | null> {
+  const [existing] = await database
+    .select(notesExtractIdentitySelection)
+    .from(tasks)
+    // isolation-ok: the caller derives sourceNoteId from an authenticated,
+    // assertion-bound subject and note id before this lookup.
+    .where(eq(tasks.sourceNoteId, sourceNoteId))
+    .limit(1);
+  return existing ?? null;
+}
 
 /**
  * Resolve the current membership before looking up an idempotent task. The
@@ -37,17 +59,14 @@ export async function resolveNotesExtractAccess(
     .limit(1);
   if (!member) return { kind: "denied" };
 
-  const [existing] = await database
-    .select({ id: tasks.id, workspaceId: tasks.workspaceId })
-    .from(tasks)
-    // isolation-ok: sourceNoteId is assertion-bound to this user and note;
-    // a cross-workspace match yields only an opaque conflict, never metadata.
-    .where(eq(tasks.sourceNoteId, input.sourceNoteId))
-    .limit(1);
+  const existing = await readNotesExtractIdentity(
+    database,
+    input.sourceNoteId,
+  );
 
   return {
     kind: "allowed",
     workspaceId: member.workspaceId,
-    existing: existing ?? null,
+    existing,
   };
 }

@@ -93,6 +93,17 @@ export const tasks = sqliteTable("tasks", {
    *  never lands here, only the creator-authored extract_body becomes
    *  the task title. */
   sourceNoteId: text("source_note_id"),
+  /** Exact creator-approved wording accepted from Signal Notes.
+   *
+   * This is deliberately separate from `title`: Tasks may parse dates and
+   * tags out of the approved wording, while retries still need to prove they
+   * refer to the byte-for-byte same approval. Null marks legacy rows that
+   * predate exact replay verification and must never be guessed compatible. */
+  sourceNoteExtractBody: text("source_note_extract_body"),
+  /** Lowercase SHA-256 of the UTF-8 bytes in sourceNoteExtractBody.
+   * Stored alongside the exact value so the cross-product response can bind
+   * its receipt without returning the approved wording again. */
+  sourceNoteExtractSha256: text("source_note_extract_sha256"),
   /** T·69 step 5, custom board column key. NULL = "use `lane` as the
    *  canonical board column." Non-null = task belongs to a custom column
    *  whose key is stored in meta `board:{wsId}:columns`. Effective board

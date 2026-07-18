@@ -27,8 +27,15 @@ test("export captures owned content + footprint, scoped to the caller", async ()
         ('ws-a','ws-a','A','u-target'), ('ws-b','ws-b','B','u-bystander');
       INSERT INTO workspace_members (workspace_id, user_id, role) VALUES
         ('ws-a','u-target','owner'), ('ws-b','u-bystander','owner'), ('ws-b','u-target','member');
-      INSERT INTO tasks (id, workspace_id, title, lane, priority) VALUES
-        ('task-a1','ws-a','A task','todo','med'), ('task-b1','ws-b','B task','todo','med');
+      INSERT INTO tasks (
+        id, workspace_id, title, lane, priority,
+        source_note_id, source_note_extract_body, source_note_extract_sha256
+      ) VALUES
+        ('task-a1','ws-a','A task','todo','med',NULL,NULL,NULL),
+        ('task-b1','ws-b','B task','todo','med','clerk_target:note-shared','Exact approved wording','${"a".repeat(64)}');
+      UPDATE tasks
+      SET description='PRIVATE WORKSPACE EDIT', external_contact_email='private@example.test', cents=9900
+      WHERE id='task-b1';
       INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
         ('c-a1','ws-a','task-a1','u-target','mine in a'),
         ('c-binb','ws-b','task-b1','u-target','mine in b'),
@@ -59,6 +66,34 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       "target's comment in another workspace missing from footprint",
     );
     assert.ok(data.footprintElsewhere!.notificationPrefs, "prefs missing");
+    assert.equal(data.footprintElsewhere!.notesExtractTasks.length, 1);
+    assert.equal(data.footprintElsewhere!.notesExtractTasks[0]!.id, "task-b1");
+    assert.equal(
+      data.footprintElsewhere!.notesExtractTasks[0]!.sourceNoteExtractBody,
+      "Exact approved wording",
+    );
+    assert.equal(
+      data.footprintElsewhere!.notesExtractTasks[0]!.sourceNoteExtractSha256,
+      "a".repeat(64),
+    );
+    assert.equal(
+      "title" in data.footprintElsewhere!.notesExtractTasks[0]!,
+      false,
+    );
+    assert.equal(
+      JSON.stringify(data.footprintElsewhere!.notesExtractTasks).includes(
+        "PRIVATE WORKSPACE EDIT",
+      ),
+      false,
+      "mutable content from another workspace leaked into the export",
+    );
+    assert.equal(
+      JSON.stringify(data.footprintElsewhere!.notesExtractTasks).includes(
+        "private@example.test",
+      ),
+      false,
+      "private contact data from another workspace leaked into the export",
+    );
 
     // The bystander's owned task must NOT be in owned content.
     assert.ok(

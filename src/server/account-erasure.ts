@@ -1,6 +1,6 @@
 import { unlink } from "node:fs/promises";
 import path from "node:path";
-import { eq, inArray, like, or } from "drizzle-orm";
+import { eq, inArray, like, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
@@ -177,6 +177,24 @@ export async function eraseAccountData(
   await database
     .delete(pendingInvites)
     .where(eq(pendingInvites.acceptedByUserId, userId));
+
+  // A Notes-originated task can live in a workspace owned by somebody else.
+  // Keep that shared workspace artifact, but irreversibly unlink the erased
+  // account and remove the exact approved wording plus its stable fingerprint.
+  // `substr` is intentional: Clerk ids contain `_`, which is a wildcard in
+  // SQL LIKE and could otherwise redact another account's provenance.
+  const notesSourcePrefix = `${clerkId}:`;
+  await database
+    .update(tasks)
+    .set({
+      sourceNoteId: null,
+      sourceNoteExtractBody: null,
+      sourceNoteExtractSha256: null,
+    })
+    .where(
+      sql`substr(coalesce(${tasks.sourceNoteId}, ''), 1, ${notesSourcePrefix.length}) = ${notesSourcePrefix}`,
+    );
+
   await database
     .delete(workspaceMembers)
     .where(eq(workspaceMembers.userId, userId));
