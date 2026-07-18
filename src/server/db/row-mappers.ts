@@ -2,7 +2,11 @@ import "server-only";
 import type { tasks } from "./schema";
 import type { Task, UserId } from "@/lib/data";
 
-type TaskRow = typeof tasks.$inferSelect & { commentCount: number };
+type TaskRow = typeof tasks.$inferSelect & {
+  commentCount: number;
+  subtaskCount?: number;
+  subtaskDoneCount?: number;
+};
 
 /**
  * Drizzle row → client `Task` shape. Coerces NULL → undefined since
@@ -21,6 +25,8 @@ export function rowToTask(row: TaskRow): Task {
     estimate: row.estimate ?? undefined,
     tags: row.tags ?? undefined,
     comments: row.commentCount > 0 ? row.commentCount : undefined,
+    subtaskCount: row.subtaskCount ? row.subtaskCount : undefined,
+    subtaskDone: row.subtaskDoneCount ? row.subtaskDoneCount : undefined,
     idleDays: row.idleDays ?? undefined,
     blockedBy: row.blockedBy ?? undefined,
     recurrence: row.recurrence ?? undefined,

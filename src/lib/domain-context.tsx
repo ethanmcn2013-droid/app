@@ -5,6 +5,7 @@ import { DOMAINS, type DomainId, type DomainPack } from "@/lib/domains";
 import type { WorkspacePersonalization } from "@/lib/onboarding/personalization";
 import type { LaneId } from "@/lib/data";
 import type { ColumnConfig } from "@/server/actions/board";
+import type { TagDef } from "@/lib/tags";
 
 /** Active-workspace + domain context. The app layout resolves the
  *  active workspace once at the server-component boundary; this
@@ -23,6 +24,9 @@ type DomainCtx = {
    *  Null when no config has been stored, consumers fall back to LANES
    *  defaults and LANE_ORDER. */
   columnConfig: ColumnConfig | null;
+  /** Reusable tag definitions (name + colour) for the workspace. Empty
+   *  when none are defined; chips fall back to neutral. Phase 3A. */
+  tagDefs: TagDef[];
   /** Segment-aware copy for empty states and chrome. */
   personalization: WorkspacePersonalization;
 };
@@ -35,6 +39,7 @@ export function DomainProvider({
   workspaceSlug,
   boardName,
   columnConfig,
+  tagDefs,
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
    *  migrated yet; merged into a synthetic ColumnConfig if columnConfig is absent. */
   columnNames,
@@ -49,6 +54,8 @@ export function DomainProvider({
   boardName?: string | null;
   /** Full column config resolved by getColumnConfig() in the layout. */
   columnConfig?: ColumnConfig | null;
+  /** Reusable tag definitions resolved by getTagDefs() in the layout. */
+  tagDefs?: TagDef[];
   /** @deprecated Legacy prop, use columnConfig. */
   columnNames?: Partial<Record<LaneId, string>> | null;
   children: ReactNode;
@@ -69,6 +76,7 @@ export function DomainProvider({
         workspaceSlug,
         boardName: boardName ?? null,
         columnConfig: resolvedConfig,
+        tagDefs: tagDefs ?? [],
         personalization,
       }}
     >
@@ -109,6 +117,13 @@ export function useActiveWorkspace(): {
 export function useColumnConfig(): ColumnConfig | null {
   const v = useContext(DomainContext);
   return v?.columnConfig ?? null;
+}
+
+/** Reusable tag definitions for the active workspace (Phase 3A). Empty
+ *  outside the app shell. */
+export function useTagDefs(): TagDef[] {
+  const v = useContext(DomainContext);
+  return v?.tagDefs ?? [];
 }
 
 /**

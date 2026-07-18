@@ -511,6 +511,91 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   return getTasks(ws);
 }
 
+/** Mint a fresh task id in the `t-<8hex>` convention. */
+function freshTaskId(): string {
+  return `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, "").slice(0, 8)}`;
+}
+
+/**
+ * Duplicate a task within the active workspace (Phase 3E "Duplicate in
+ * session"). Copies the reusable fields — title, description, lane,
+ * priority, assignees, estimate, dates, tags, recurrence, external
+ * contact, amount, milestone flag, and board column — plus every subtask,
+ * as fresh rows. Deliberately does NOT copy immutable identifiers, the
+ * activity history, comments, or cross-product provenance (sourceNote*).
+ *
+ * The copy is positioned directly after the original in its lane (a hair
+ * past the original's float position) so it lands as the next card.
+ */
+export async function duplicateTaskAction(id: string): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
+  const ws = await getActiveWorkspace();
+
+  const [source] = await db
+    .select()
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws), isNull(tasks.parentTaskId)));
+  if (!source) return getTasks(ws); // workspace guard / unknown id → no-op
+
+  const newId = freshTaskId();
+  const basePosition =
+    typeof source.position === "number"
+      ? source.position + 0.0001
+      : await nextPositionForLane(source.lane as LaneId, ws);
+
+  await db.insert(tasks).values({
+    id: newId,
+    workspaceId: ws,
+    title: source.title,
+    description: source.description,
+    lane: source.lane,
+    priority: source.priority,
+    assignees: source.assignees,
+    estimate: source.estimate,
+    due: source.due,
+    dueAt: source.dueAt,
+    tags: source.tags,
+    recurrence: source.recurrence,
+    blockedBy: source.blockedBy,
+    startDay: source.startDay,
+    durationDays: source.durationDays,
+    position: basePosition,
+    externalContactName: source.externalContactName,
+    externalContactEmail: source.externalContactEmail,
+    cents: sanitizeCents(source.cents ?? null),
+    isMilestone: source.isMilestone,
+    boardColumnKey: source.boardColumnKey,
+    parentTaskId: null,
+    ...bump(),
+  });
+
+  // Copy every subtask as a child of the new task.
+  const children = await getSubtasks(id, ws);
+  for (const child of children) {
+    await db.insert(tasks).values({
+      id: freshTaskId(),
+      workspaceId: ws,
+      title: child.title,
+      description: child.description,
+      lane: child.lane,
+      priority: child.priority,
+      assignees: child.assignees,
+      estimate: child.estimate,
+      due: child.due,
+      dueAt: child.dueAt,
+      tags: child.tags,
+      cents: sanitizeCents(child.cents ?? null),
+      parentTaskId: newId,
+      ...bump(),
+    });
+  }
+
+  await recordActivity(newId, { kind: "taskAdd", lane: source.lane }, { workspaceId: ws });
+  revalidatePath("/app", "layout");
+  emitTasksChanged({ kind: "tasks" });
+  return getTasks(ws);
+}
+
 /**
  * RW-3b, toggle the milestone flag on a task.
  *

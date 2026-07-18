@@ -1,0 +1,177 @@
+/* Card action surfaces (Phase 3) — overflow menu, dialogs, tag editor.
+   All rendered in a portal above the board, on the shared --x-task-* tokens. */
+
+.menu {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 10px;
+  box-shadow: var(--x-task-shadow);
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding: 5px;
+  width: 232px;
+  z-index: 200;
+}
+.item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 12.5px;
+  gap: 9px;
+  padding: 7px 8px;
+  text-align: left;
+  width: 100%;
+}
+.item > svg { color: var(--x-task-text-muted); flex: none; }
+.item:hover:not(:disabled),
+.item:focus-visible:not(:disabled) { background: var(--x-task-hover); color: var(--x-task-text); outline: none; }
+.item:focus-visible { box-shadow: inset 0 0 0 1.5px var(--x-task-focus); }
+.item:disabled { color: var(--x-task-text-muted); cursor: default; }
+.item[aria-current="true"] { color: var(--x-task-text); font-weight: 600; }
+.sectionLabel {
+  color: var(--x-task-text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  margin: 6px 0 2px;
+  padding: 0 8px;
+  text-transform: uppercase;
+}
+.dot { border-radius: 50%; flex: none; height: 8px; width: 8px; }
+.currentTick { color: var(--x-task-accent); margin-left: auto; }
+.divider { background: var(--x-task-border); height: 1px; margin: 5px 4px; }
+.danger { color: var(--x-task-danger); }
+.danger > svg { color: var(--x-task-danger); }
+.danger:hover:not(:disabled),
+.danger:focus-visible:not(:disabled) { background: var(--x-task-danger-soft); color: var(--x-task-danger); }
+
+/* Dialogs (delete confirm, nudge) */
+.backdrop {
+  align-items: center;
+  background: rgb(0 0 0 / .3);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 300;
+}
+.dialog {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 14px;
+  box-shadow: 0 28px 60px -20px rgb(20 21 26 / .4);
+  max-width: 380px;
+  outline: none;
+  padding: 20px;
+  width: 100%;
+}
+.dialogTitle { font-size: 15px; font-weight: 660; margin: 0; }
+.dialogBody { color: var(--x-task-text-secondary); font-size: 12.5px; line-height: 1.5; margin: 6px 0 0; }
+.dialogActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+.field { display: flex; flex-direction: column; gap: 5px; margin-top: 14px; }
+.field > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; }
+.field > span em { font-style: normal; font-weight: 400; opacity: .8; }
+.field input,
+.field textarea {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 7px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 9px;
+  resize: vertical;
+  width: 100%;
+}
+.field input[readonly] { color: var(--x-task-text-muted); }
+.nudgeHint { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; margin: 12px 0 0; }
+
+.btnGhost,
+.btnDanger,
+.btnPrimary {
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 12px;
+}
+.btnGhost { background: transparent; border: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); }
+.btnGhost:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
+.btnDanger { background: var(--x-task-danger); border: 0; color: #fff; }
+.btnDanger:hover { opacity: .9; }
+.btnPrimary { background: var(--x-task-text); border: 0; color: var(--x-task-raised); }
+.btnPrimary:disabled { cursor: not-allowed; opacity: .45; }
+
+/* Tag editor */
+.tagPanel {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 10px;
+  box-shadow: var(--x-task-shadow);
+  padding: 8px;
+  width: 248px;
+  z-index: 200;
+}
+.tagSearchRow { display: flex; flex-direction: column; gap: 7px; }
+.tagSearchRow > input {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 12px;
+  height: 32px;
+  padding: 0 8px;
+  width: 100%;
+}
+.tagColorPicker { align-items: center; display: flex; flex-wrap: wrap; gap: 5px; padding: 1px 2px; }
+.tagSwatch { border: 1.5px solid var(--x-task-border-strong); border-radius: 50%; cursor: pointer; height: 16px; padding: 0; width: 16px; }
+.tagSwatch[data-selected] { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
+.tagSwatch[data-color="neutral"] { background: var(--x-task-hover); }
+.tagList { display: flex; flex-direction: column; gap: 1px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+.tagOption {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 12px;
+  gap: 8px;
+  padding: 7px 8px;
+  text-align: left;
+  width: 100%;
+}
+.tagOption:hover,
+.tagOption:focus-visible { background: var(--x-task-hover); color: var(--x-task-text); outline: none; }
+.tagOption > svg { color: var(--x-task-accent); margin-left: auto; }
+.tagOptionDot { border-radius: 50%; flex: none; height: 8px; width: 8px; }
+.tagOptionName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tagCreate {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-accent);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 8px;
+  padding: 7px 8px;
+  text-align: left;
+  width: 100%;
+}
+.tagCreate:hover { background: var(--x-task-accent-soft); }
+.tagEmpty { color: var(--x-task-text-muted); font-size: 11px; margin: 4px 8px 6px; }

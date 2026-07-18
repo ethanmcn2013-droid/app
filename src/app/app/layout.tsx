@@ -25,7 +25,8 @@ import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
 import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getProjectsTreeData } from "@/server/actions/projects-tree";
-import { getBoardName } from "@/server/actions/board";
+import { getBoardName, getColumnConfig } from "@/server/actions/board";
+import { getTagDefs } from "@/server/actions/tags";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
@@ -82,7 +83,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName, columnConfig, tagDefs] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -112,6 +113,13 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     // Editable workspace title (T·97): per-workspace name override from meta
     // KV. Null when unset; the brief falls back to shortenTitle(workspaceTitle).
     getBoardName(ws),
+    // Full column config (renames, custom columns, colours, descriptions,
+    // order) so the board's persisted layout is server-rendered and survives
+    // a reload (Phase 2). Null when nothing has been customised.
+    getColumnConfig(ws),
+    // Reusable tag definitions (name + colour) so chips render in colour on
+    // first paint (Phase 3A).
+    getTagDefs(ws),
   ]);
   const slug = wsRow?.slug ?? ws;
   // Header licence slot (Phase 1): resolve the account's edition from the
@@ -136,6 +144,8 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         workspaceId={ws}
         workspaceSlug={slug}
         boardName={boardName}
+        columnConfig={columnConfig}
+        tagDefs={tagDefs}
         personalization={personalization}
       >
         <TasksProvider initialTasks={tasks}>

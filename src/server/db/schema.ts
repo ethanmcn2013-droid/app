@@ -458,10 +458,13 @@ export const comments = sqliteTable("comments", {
 ]);
 
 // Compile-time contract, flags drift between schema and the
-// hand-written client `Task` type in src/lib/data.ts. `comments`
-// is excluded because it's a derived count populated by the query
-// layer, not a persisted column.
-type _SchemaCoversTask = keyof Omit<Task, "comments"> extends keyof typeof tasks.$inferSelect
+// hand-written client `Task` type in src/lib/data.ts. `comments`,
+// `subtaskCount`, and `subtaskDone` are excluded because they are derived
+// counts populated by the query layer, not persisted columns.
+type _SchemaCoversTask = keyof Omit<
+  Task,
+  "comments" | "subtaskCount" | "subtaskDone"
+> extends keyof typeof tasks.$inferSelect
   ? true
   : never;
 const _checkTask: _SchemaCoversTask = true;

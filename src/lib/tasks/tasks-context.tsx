@@ -27,6 +27,7 @@ import {
 } from "./tasks-reducer";
 import {
   addTaskAction,
+  duplicateTaskAction,
   moveTaskAction,
   removeTaskAction,
   reorderTaskAction,
@@ -108,6 +109,10 @@ export type TasksDispatchers = {
   }) => Task;
   removeTask: (id: string) => void;
   toggleComplete: (id: string) => void;
+  /** Duplicate a task (and its subtasks) within the workspace. Non-optimistic
+   *  — the copy's ids are server-minted, and duplication is not a
+   *  rollback-safe operation, so we wait for the authoritative result. */
+  duplicateTask: (id: string) => void;
 };
 
 const TasksStateContext = createContext<TasksState | null>(null);
@@ -278,6 +283,16 @@ export function TasksProvider({
           () => dispatch({ type: "toggleComplete", id }),
           () => toggleCompleteAction(id),
         ),
+      duplicateTask: (id) => {
+        startTransition(async () => {
+          try {
+            const fresh = await duplicateTaskAction(id);
+            dispatch({ type: "hydrate", tasks: fresh });
+          } catch (err) {
+            console.warn("tasks: duplicateTask failed", err);
+          }
+        });
+      },
     }),
 
     [dispatch, withServerSync],

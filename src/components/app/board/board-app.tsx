@@ -19,11 +19,13 @@ import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-c
 import { Icon } from "@/components/app/room/room-icons";
 import {
   LabelList,
+  OverdueFlag,
   RoomAvatarStack,
   ScheduleText,
   TaskCompleteBox,
   TaskSignals,
 } from "@/components/app/room/room-task-ui";
+import { CardMenu, TagEditor, type MenuColumn } from "./card-actions";
 import { useRoomVisibleTasks } from "@/components/app/room/room-tools-context";
 import roomStyles from "@/components/app/room/option-b.module.css";
 import {
@@ -518,7 +520,6 @@ export function BoardApp() {
                           : null
                       }
                       onClick={() => { setFocusedId(task.id); openTask(task.id); }}
-                      onMoveToColumn={(targetKey) => moveTaskToColumn(task.id, targetKey)}
                       onDragStart={(e) => {
                         e.dataTransfer.setData("text/task-id", task.id);
                         e.dataTransfer.effectAllowed = "move";
@@ -1322,7 +1323,6 @@ function Card({
   momentum,
   boardColumns,
   onClick,
-  onMoveToColumn,
   onDragStart,
   onDrag,
   onDragEnd,
@@ -1336,15 +1336,20 @@ function Card({
   momentum: { dx: number; dy: number } | null;
   boardColumns: BoardColumn[];
   onClick: () => void;
-  onMoveToColumn: (targetKey: string) => void;
   onDragStart: (e: React.DragEvent) => void;
   onDrag: (e: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [titleEditing, setTitleEditing] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(task.title);
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const tagTriggerRef = useRef<HTMLButtonElement | null>(null);
   const reduce = useReducedMotion();
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const { updateTask } = useTasksDispatch();
+  const { openTask } = useTaskPanel();
   // Mount-stable clock for the overdue receipt (Compiler-safe).
   const [now] = useState(() => Date.now());
 
@@ -1353,19 +1358,24 @@ function Card({
     cardRef.current?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduce ? "auto" : "smooth" });
   }, [isFocused, reduce]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    function onDocClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    }
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setMenuOpen(false); }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menuOpen]);
+  const menuColumns: MenuColumn[] = boardColumns.map((c) => ({
+    key: c.key,
+    name: c.name,
+    color: c.color,
+    dot: c.dot,
+    isSystem: c.isSystem,
+  }));
+
+  function startTitleEdit() {
+    setTitleDraft(task.title);
+    setTitleEditing(true);
+  }
+  function commitTitle() {
+    const next = titleDraft.trim();
+    setTitleEditing(false);
+    if (!next || next === task.title) return; // empty = cancel; preserve title
+    updateTask(task.id, { title: next });
+  }
 
   // Completion flourish, a one-shot beat the moment a card lands in "done",
   // whatever the trigger (keyboard `x`, drag, or the detail panel). Detecting
@@ -1473,65 +1483,105 @@ function Card({
           </motion.span>
         ) : null}
       </AnimatePresence>
-      {/* Lab card anatomy (board-view.tsx): lead (complete-box · title ·
-          menu) → purpose → labels → schedule row → signal footer. */}
+      {/* Lab card anatomy: lead (complete-box · title · menu) → purpose →
+          labels → schedule row → signal/subtask footer. */}
       <div className={roomStyles.cardLead}>
         <TaskCompleteBox task={task} />
-        <span className={roomStyles.taskTitleButton}>{task.title}</span>
-        <div ref={menuRef} className="relative">
-          <button
-            type="button"
-            aria-label={`More actions for ${task.title}`}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-            className={roomStyles.cardMenuButton}
-          >
-            <Icon name="more" size={16} />
-          </button>
-          {menuOpen ? (
-            <div
-              role="menu"
-              onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-full z-20 mt-1 w-44 overflow-hidden rounded-lg border border-line-soft bg-white p-1 shadow-[0_18px_40px_-18px_rgba(20,21,26,0.22)]"
-            >
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-quiet">
-                Move to
-              </div>
-              {boardColumns
-                .filter((c) => c.key !== currentColumnKey)
-                .map((col) => (
-                  <button
-                    key={col.key}
-                    type="button"
-                    role="menuitem"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpen(false);
-                      onMoveToColumn(col.key);
-                    }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-[12.5px] text-ink-soft transition-colors hover:bg-bg-sunken hover:text-ink"
-                  >
-                    <span className="block h-1.5 w-1.5 rounded-full" style={{ background: col.dot }} />
-                    {col.name}
-                  </button>
-                ))}
-            </div>
-          ) : null}
-        </div>
+        {titleEditing ? (
+          <input
+            autoFocus
+            value={titleDraft}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={commitTitle}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") { e.preventDefault(); commitTitle(); }
+              if (e.key === "Escape") { e.preventDefault(); setTitleEditing(false); setTitleDraft(task.title); }
+            }}
+            maxLength={200}
+            aria-label="Task title"
+            className={roomStyles.cardTitleInput}
+          />
+        ) : (
+          <span className={roomStyles.taskTitleButton}>{task.title}</span>
+        )}
+        <button
+          ref={menuTriggerRef}
+          type="button"
+          aria-label={`More actions for ${task.title}`}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+          className={roomStyles.cardMenuButton}
+        >
+          <Icon name="more" size={16} />
+        </button>
+        {menuOpen ? (
+          <CardMenu
+            task={task}
+            currentColumnKey={currentColumnKey}
+            columns={menuColumns}
+            triggerRef={menuTriggerRef}
+            onClose={() => setMenuOpen(false)}
+            onEditTitle={startTitleEdit}
+          />
+        ) : null}
       </div>
       {task.description ? (
         <p className={roomStyles.cardPurpose}>{task.description}</p>
       ) : null}
       <div className={roomStyles.cardLabels}>
-        <LabelList limit={2} task={task} />
+        <LabelList limit={3} task={task} />
+        <OverdueFlag now={now} task={task} />
+        <button
+          ref={tagTriggerRef}
+          type="button"
+          aria-label={`Edit tags for ${task.title}`}
+          aria-haspopup="dialog"
+          aria-expanded={tagEditorOpen}
+          onClick={(e) => { e.stopPropagation(); setTagEditorOpen((v) => !v); }}
+          className={roomStyles.cardTagButton}
+        >
+          <Icon name="add" size={12} />
+          <span className={roomStyles.cardTagButtonText}>Tag</span>
+        </button>
+        {tagEditorOpen ? (
+          <TagEditor
+            task={task}
+            triggerRef={tagTriggerRef}
+            onClose={() => setTagEditorOpen(false)}
+          />
+        ) : null}
       </div>
       <div className={roomStyles.cardScheduleRow}>
         <ScheduleText now={now} task={task} />
         <RoomAvatarStack limit={3} task={task} />
       </div>
       <footer className={roomStyles.cardFooter}>
-        <TaskSignals task={task} />
+        <div className={roomStyles.cardFooterLeft}>
+          <TaskSignals task={task} />
+          <button
+            type="button"
+            aria-label={
+              task.subtaskCount
+                ? `${task.subtaskDone ?? 0} of ${task.subtaskCount} subtasks — open`
+                : "Add subtasks"
+            }
+            title="Subtasks"
+            onClick={(e) => { e.stopPropagation(); openTask(task.id); }}
+            className={roomStyles.cardSubtaskButton}
+            data-has={task.subtaskCount ? "" : undefined}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12.75 6.25H7.25A2.5 2.5 0 0 0 4.75 8.75V17.25A2.5 2.5 0 0 0 7.25 19.75H15.75A2.5 2.5 0 0 0 18.25 17.25V12.5" />
+              <path d="M8.5 13.25L11.25 16L19.75 5.75" />
+            </svg>
+            {task.subtaskCount ? (
+              <span>{task.subtaskDone ?? 0}/{task.subtaskCount}</span>
+            ) : null}
+          </button>
+        </div>
         {task.blockedBy && task.blockedBy.length > 0 ? (
           <span className={roomStyles.waitingReason}>
             Waiting on {task.blockedBy.length} task{task.blockedBy.length === 1 ? "" : "s"}

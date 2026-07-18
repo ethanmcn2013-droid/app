@@ -55,6 +55,17 @@ const taskColumnsWithCount = {
     sql<number>`(SELECT COUNT(*) FROM ${comments} WHERE ${comments.taskId} = ${tasks.id})`.as(
       "comment_count",
     ),
+  // Subtask rollups (Phase 3B): total children and how many are done, so
+  // the board card can show a compact "done/total" subtask receipt and
+  // open straight into the checklist without a second fetch.
+  subtaskCount:
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id})`.as(
+      "subtask_count",
+    ),
+  subtaskDoneCount:
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.lane = 'done')`.as(
+      "subtask_done_count",
+    ),
 };
 
 // Lane ordering matches the client's LANE_ORDER. Encoded as a CASE

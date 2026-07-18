@@ -217,6 +217,11 @@ export type Task = {
   estimate?: number; // hours
   tags?: string[];
   comments?: number;
+  /** Subtask rollups (Phase 3B), computed by getTasks. Total children and
+   *  how many are complete, so the board card shows a "done/total" receipt
+   *  and the Subtasks action reads a live count. Undefined when none. */
+  subtaskCount?: number;
+  subtaskDone?: number;
   idleDays?: number;
   blockedBy?: string[];
   startDay?: number; // 0-13 for timeline

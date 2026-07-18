@@ -17,8 +17,31 @@
 
 import { PRIORITY_LABEL, USERS, type Priority, type Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { useTagDefs } from "@/lib/domain-context";
+import { COLUMN_COLORS } from "@/lib/board-colors";
+import { tagColor } from "@/lib/tags";
 import { Icon } from "./room-icons";
 import styles from "./room-shared.module.css";
+
+/** True when the task is past its parsed due date and not yet done. */
+export function isTaskOverdue(task: Task, now: number): boolean {
+  return Boolean(task.dueAt && task.dueAt.getTime() < now && task.lane !== "done");
+}
+
+/**
+ * Overdue flag (Phase 3A) — a small, restrained pill shown on a card when
+ * the task is past due. Colour-and-text, never colour alone, so it reads
+ * without relying on hue.
+ */
+export function OverdueFlag({ task, now }: { task: Task; now: number }) {
+  if (!isTaskOverdue(task, now)) return null;
+  return (
+    <span className={styles.overdueFlag} title="Past its due date">
+      <span className={styles.overdueDot} aria-hidden="true" />
+      Overdue
+    </span>
+  );
+}
 
 const PRIORITY_TONE: Record<Priority, string> = {
   p0: "urgent",
@@ -136,15 +159,40 @@ export function TaskSignals({ task }: { task: Task }) {
   );
 }
 
-export function LabelList({ task, limit = 2 }: { task: Task; limit?: number }) {
+export function LabelList({ task, limit = 3 }: { task: Task; limit?: number }) {
+  const defs = useTagDefs();
   const tags = task.tags ?? [];
   if (tags.length === 0) return null;
+  const shown = tags.slice(0, limit);
+  const overflow = tags.length - shown.length;
   return (
-    <span className={styles.labels}>
-      {tags.slice(0, limit).map((tag) => (
-        <span key={tag}>{tag}</span>
-      ))}
-      {tags.length > limit ? <span>+{tags.length - limit}</span> : null}
+    <span className={styles.labels} aria-label={`Tags: ${tags.join(", ")}`}>
+      {shown.map((tag) => {
+        const color = tagColor(tag, defs);
+        const cssVar = COLUMN_COLORS[color].var;
+        return (
+          <span
+            key={tag}
+            className={styles.tagChip}
+            data-color={color}
+            style={
+              cssVar
+                ? ({
+                    "--tag-color": cssVar,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          >
+            {cssVar ? <span className={styles.tagDot} aria-hidden="true" /> : null}
+            {tag}
+          </span>
+        );
+      })}
+      {overflow > 0 ? (
+        <span className={styles.tagOverflow} title={tags.slice(limit).join(", ")}>
+          +{overflow}
+        </span>
+      ) : null}
     </span>
   );
 }
