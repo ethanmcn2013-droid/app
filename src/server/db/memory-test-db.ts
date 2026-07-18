@@ -30,9 +30,12 @@ export async function freshMemoryDb(options: MemoryTestDbOptions = {}) {
   await client.execute("PRAGMA foreign_keys = OFF");
 
   if (!options.beforeMigration) {
-    await client.executeMultiple(
-      readFileSync(join(drizzleDir, "0014_current_schema_baseline.sql"), "utf8"),
-    );
+    const runtimeFiles = readdirSync(drizzleDir)
+      .filter((file) => /^\d{4}_.+\.sql$/.test(file) && file >= "0014_")
+      .sort();
+    for (const file of runtimeFiles) {
+      await client.executeMultiple(readFileSync(join(drizzleDir, file), "utf8"));
+    }
   } else {
     // Deliberately isolated historical replay used only to prove 0013's data
     // transformation. The old chain depended on this push-only attachment

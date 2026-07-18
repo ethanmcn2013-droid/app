@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "tasks-notes-extract-exact-identity-2026-07-18",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Codex, delegated implementation",
+  "authorizationSource": "Codex production Notes hybrid exact-idempotency task, 2026-07-18",
+  "migrations": [
+    {
+      "id": "0015_notes_extract_exact_identity",
+      "sha256": "67562e86ac54d8cfce5bb5c30e2eac1e884cef74c2becd7ffc95dde2aeacfb43",
+      "reviewedAt": "2026-07-18T18:45:00.000Z",
+      "risk": "additive nullable provenance columns used to fail closed on ambiguous cross-product retries",
+      "rollbackPlan": "Disable the Hybrid Notes sender or roll Notes back to the retained v1 endpoint before removing the Tasks v2 receiver. Keep the legacy /api/notes-extract route available throughout rollback. The two nullable columns can remain safely unused; drop them only in a later separately reviewed table-rebuild migration after a verified backup.",
+      "postconditions": [
+        "both exact Notes extract identity columns exist",
+        "both columns remain nullable for legacy rows",
+        "no task has a half-populated exact replay identity",
+        "stored fingerprints are lowercase 64-character hexadecimal values",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "exact-identity-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name IN ('source_note_extract_body','source_note_extract_sha256')",
+          "expected": 2
+        },
+        {
+          "id": "exact-identity-columns-nullable",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name IN ('source_note_extract_body','source_note_extract_sha256') AND \"notnull\" = 0",
+          "expected": 2
+        },
+        {
+          "id": "no-partial-exact-identities",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE (source_note_extract_body IS NULL AND source_note_extract_sha256 IS NOT NULL) OR (source_note_extract_body IS NOT NULL AND source_note_extract_sha256 IS NULL)",
+          "expected": 0
+        },
+        {
+          "id": "valid-exact-identity-fingerprints",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE source_note_extract_sha256 IS NOT NULL AND (length(source_note_extract_sha256) != 64 OR source_note_extract_sha256 GLOB '*[^0-9a-f]*')",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

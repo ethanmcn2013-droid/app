@@ -1,4 +1,4 @@
-import { eq, inArray, like, or } from "drizzle-orm";
+import { and, eq, inArray, like, notInArray, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   activities,
@@ -33,6 +33,18 @@ const attachmentMeta = {
   createdAt: attachments.createdAt,
 };
 
+/** Only the immutable Notes receipt belongs in an export from another
+ * workspace. Mutable task fields belong to that workspace and may have been
+ * edited after the exporting user lost membership. */
+const notesExtractReceiptMeta = {
+  id: tasks.id,
+  workspaceId: tasks.workspaceId,
+  sourceNoteId: tasks.sourceNoteId,
+  sourceNoteExtractBody: tasks.sourceNoteExtractBody,
+  sourceNoteExtractSha256: tasks.sourceNoteExtractSha256,
+  createdAt: tasks.createdAt,
+};
+
 /**
  * GDPR Art. 20 (data portability), assemble everything Tasks holds for a
  * user: their profile, every workspace they own and all its content, and
@@ -55,6 +67,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     return { product: "tasks" as const, exportedAt, clerkId, user: null };
   }
   const userId = user.id;
+  const notesSourcePrefix = `${clerkId}:`;
+  const fromThisNotesAccount = sql<boolean>`substr(coalesce(${tasks.sourceNoteId}, ''), 1, ${notesSourcePrefix.length}) = ${notesSourcePrefix}`;
 
   const ownedWorkspaces = await database
     .select()
@@ -80,6 +94,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myNotificationPrefs,
     myUserPreferences,
     myEntitlements,
+    myNotesExtractTasks,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
@@ -100,6 +115,17 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     database.select().from(notificationPrefs).where(eq(notificationPrefs.userId, userId)),
     database.select().from(userPreferences).where(eq(userPreferences.userId, userId)),
     database.select().from(entitlements).where(eq(entitlements.userId, userId)),
+    database
+      .select(notesExtractReceiptMeta)
+      .from(tasks)
+      .where(
+        slugs.length
+          ? and(
+              fromThisNotesAccount,
+              notInArray(tasks.workspaceId, slugs),
+            )
+          : fromThisNotesAccount,
+      ),
   ]);
 
   return {
@@ -128,6 +154,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       notificationPrefs: myNotificationPrefs[0] ?? null,
       userPreferences: myUserPreferences[0] ?? null,
       entitlements: myEntitlements,
+      notesExtractTasks: myNotesExtractTasks,
     },
   };
 }

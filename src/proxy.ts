@@ -99,6 +99,7 @@ const isPublicRoute = createRouteMatcher([
   // Cross-repo Notes→Tasks extract (bearer-auth via NOTES_TO_TASKS_SECRET).
   // The Notes server action has no Clerk session, bearer guards the route.
   "/api/notes-extract",
+  "/api/notes-extract/v2",
   "/sitemap.xml",
   "/robots.txt",
   "/sign-in(.*)",

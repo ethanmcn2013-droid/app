@@ -19,7 +19,25 @@ They must never be replayed against an existing database.
 `0014_current_schema_baseline.sql` is the supported fresh-database baseline. It
 contains all 24 application tables, 27 named indexes, the two parent/workspace
 guard triggers, and the schema constraints represented in `schema.ts`. Normal
-fresh databases apply this baseline directly; they do not replay 0000-0013.
+fresh databases apply this baseline and then every registered `forward`
+migration in order; they do not replay 0000-0013.
+
+## Current forward migration
+
+`0015_notes_extract_exact_identity.sql` adds two nullable Tasks provenance
+columns for exact Signal Notes retry verification. Existing rows remain null
+and are deliberately treated as legacy/unverifiable by the v2 receiver. Do not
+deploy `/api/notes-extract/v2` before the target database reports 0015 as
+applied. The existing `/api/notes-extract` v1 receiver remains available as the
+zero-downtime and rollback seam; v1 is never accepted by the v2 route.
+
+Production execution requires a new `tasks-migration-execution/1` receipt that
+covers 0015's exact ledger hash, a verified backup, and an isolated-copy dry
+run. Apply it with the receipt-backed runner, confirm `pnpm db:status` reports
+`current`, deploy Tasks with both the retained v1 route and strict v2 route,
+then deploy the matching Hybrid Notes sender pointed only at v2. For rollback,
+disable or roll back the Hybrid Notes sender first, confirm sends use v1, and
+only then remove or roll back the Tasks v2 receiver.
 
 Do not run `drizzle-kit migrate` directly. Its pinned LibSQL runner checks only
 the latest timestamp and does not validate historical hashes. Use the Tasks

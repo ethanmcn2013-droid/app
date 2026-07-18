@@ -147,6 +147,18 @@ function validateHighWaterRows(context, rows, appliedRuntimeCount) {
   invariant(rows.length === appliedRuntimeCount, "Drizzle high-water and exact ledger are out of sync");
 }
 
+async function verifyAppliedEntryProofs(executor, context, appliedRuntimeCount) {
+  const appliedEntries = [context.baseline, ...context.forward].slice(
+    0,
+    appliedRuntimeCount,
+  );
+  const results = [];
+  for (const entry of appliedEntries) {
+    results.push(...await verifyProofs(executor, entry.receipt.record.proofs));
+  }
+  return results;
+}
+
 function ledgerInsertStatements(context, entry, {
   status,
   executionReceiptId,
@@ -294,13 +306,15 @@ export async function runMigrations({
   }
 
   if (objects === 0 && existingRows.length === 0) {
+    const pending = [context.baseline, ...context.forward];
     const productionReceipt = requiresExecutionReceipt
-      ? validateProductionExecutionReceipt(executionReceiptPath, context, [context.baseline], { databaseUrl, environment })
+      ? validateProductionExecutionReceipt(executionReceiptPath, context, pending, { databaseUrl, environment })
       : null;
-    const proofContract = context.baseline.receipt.record.proofs;
-    const proofs = await atomicWrite(client, {
+    const applied = [];
+    const proofs = [];
+    const baselineProofs = await atomicWrite(client, {
       sql: migrationStatements(context.baseline.sql),
-      proofs: proofContract,
+      proofs: context.baseline.receipt.record.proofs,
       metadata: [
         ...metadataTableStatements(context.ledger),
         ...ledgerInsertStatements(context, context.baseline, {
@@ -313,13 +327,32 @@ export async function runMigrations({
         }),
       ],
     });
-    return { status: "applied", applied: [context.baseline.id], proofs };
+    applied.push(context.baseline.id);
+    proofs.push(...baselineProofs);
+
+    for (const entry of context.forward) {
+      const result = await atomicWrite(client, {
+        sql: migrationStatements(entry.sql),
+        proofs: entry.receipt.record.proofs,
+        metadata: ledgerInsertStatements(context, entry, {
+          status: "applied",
+          executionReceiptId: productionReceipt?.id ?? "fresh-database-bootstrap",
+          executionReceiptSha256: productionReceipt?.sha256 ?? entry.receipt.sha256,
+          releaseSha,
+          environment,
+          appliedAt: now(),
+        }),
+      });
+      applied.push(entry.id);
+      proofs.push(...result);
+    }
+    return { status: "applied", applied, proofs };
   }
 
   const pending = validateRuntimeRows(context, existingRows);
   const drizzleRows = await readDrizzleRows(client, context.ledger);
   validateHighWaterRows(context, drizzleRows, existingRows.length);
-  await verifyProofs(client, context.baseline.receipt.record.proofs);
+  await verifyAppliedEntryProofs(client, context, existingRows.length);
 
   if (pending.length === 0) return { status: "no-op", applied: [] };
   invariant(existingRows.length > 0, "baseline is missing from an initialized database");
@@ -370,7 +403,10 @@ export async function adoptExistingDatabase({
   const existingRows = await readLedgerRows(client, context.ledger);
   if (existingRows.length > 0) {
     const pending = validateRuntimeRows(context, existingRows);
-    invariant(pending.length === 0, "adopt found a partial database ledger");
+    invariant(
+      pending.every((entry) => entry.policy === "forward"),
+      "adopt found an invalid partial database ledger",
+    );
     const row = existingRows[0];
     invariant(row.status === "adopted_legacy", "existing baseline was not adopted as legacy state");
     invariant(row.execution_receipt_id === receipt.id && row.execution_receipt_sha256 === receipt.sha256, "existing adoption receipt differs from the requested receipt");
@@ -411,7 +447,7 @@ export async function migrationStatus({ client, context = loadAndValidateLedger(
   if (rows.length > 0) {
     pending = validateRuntimeRows(context, rows).map((entry) => entry.id);
     validateHighWaterRows(context, drizzleRows, rows.length);
-    await verifyProofs(client, context.baseline.receipt.record.proofs);
+    await verifyAppliedEntryProofs(client, context, rows.length);
     state = pending.length === 0 ? "current" : "pending";
   }
   return {

@@ -46,9 +46,11 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 15);
+  assert.equal(context.entries.length, 16);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
-  assert.equal(context.forward.length, 0);
+  assert.deepEqual(context.forward.map((entry) => entry.id), [
+    "0015_notes_extract_exact_identity",
+  ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
 
@@ -95,10 +97,13 @@ test("journal omission fails even when the SQL and receipt exist", () => withFix
   assert.throws(() => loadAndValidateLedger({ root }), /same entries/);
 }));
 
-test("fresh databases apply only the canonical baseline and rerun as a no-op", async () => withClient(async (client) => {
+test("fresh databases apply the canonical baseline plus forwards and rerun as a no-op", async () => withClient(async (client) => {
   const first = await runMigrations({ client, releaseSha: "test-release", now: () => 1_784_156_994_451 });
-  assert.deepEqual(first.applied, ["0014_current_schema_baseline"]);
-  assert.equal(first.proofs.length, 12);
+  assert.deepEqual(first.applied, [
+    "0014_current_schema_baseline",
+    "0015_notes_extract_exact_identity",
+  ]);
+  assert.equal(first.proofs.length, 18);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
@@ -130,6 +135,20 @@ test("schema drift fails both migration no-op and current status", async () => w
   await client.execute("DROP INDEX idx_tasks_source_note_id");
   await assert.rejects(() => runMigrations({ client }), /proof required-indexes expected 26 but received 25/);
   await assert.rejects(() => migrationStatus({ client }), /proof required-indexes expected 26 but received 25/);
+}));
+
+test("applied forward migration drift fails both migration no-op and current status", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  await client.execute("ALTER TABLE tasks DROP COLUMN source_note_extract_body");
+
+  await assert.rejects(
+    () => runMigrations({ client }),
+    /proof exact-identity-columns expected 2 but received 1/,
+  );
+  await assert.rejects(
+    () => migrationStatus({ client }),
+    /proof exact-identity-columns expected 2 but received 1/,
+  );
 }));
 
 test("same-name wrong-definition source-note index fails semantic proofs", async () => withClient(async (client) => {
@@ -180,7 +199,10 @@ test("production execution receipt is bound to target, environment, ledger, and 
     ledgerSha256: context.ledgerSha256,
     backupSha256: "a".repeat(64),
     dryRun: { status: "passed", databaseSha256: "b".repeat(64) },
-    migrations: [{ id: context.baseline.id, sha256: context.baseline.sha256 }],
+    migrations: [context.baseline, ...context.forward].map(({ id, sha256 }) => ({
+      id,
+      sha256,
+    })),
   };
   const writeReceipt = () => fs.writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
   try {
@@ -216,7 +238,10 @@ test("production execution receipt is bound to target, environment, ledger, and 
       executionReceiptPath: receiptPath,
       releaseSha: "production-release",
     });
-    assert.deepEqual(result.applied, [context.baseline.id]);
+    assert.deepEqual(
+      result.applied,
+      [context.baseline, ...context.forward].map((entry) => entry.id),
+    );
     const row = (await client.execute("SELECT execution_receipt_id, environment FROM signal_schema_migrations")).rows[0];
     assert.equal(row.execution_receipt_id, receipt.id);
     assert.equal(row.environment, "production");
@@ -231,10 +256,10 @@ test("failed postconditions roll back both SQL and ledger row", async () => with
 
   const sql = "CREATE TABLE forward_probe (id TEXT PRIMARY KEY);";
   const forward = {
-    ordinal: 15,
-    id: "0015_forward_probe",
-    file: "drizzle/0015_forward_probe.sql",
-    when: base.baseline.when + 1,
+    ordinal: base.entries.length,
+    id: "0016_forward_probe",
+    file: "drizzle/0016_forward_probe.sql",
+    when: base.entries.at(-1).when + 1,
     sha256: sha256(canonicalText(sql)),
     policy: "forward",
     sql,
@@ -250,10 +275,17 @@ test("failed postconditions roll back both SQL and ledger row", async () => with
       sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     },
   };
-  const context = { ...base, entries: [...base.entries, forward], forward: [forward] };
+  const context = {
+    ...base,
+    entries: [...base.entries, forward],
+    forward: [...base.forward, forward],
+  };
   await assert.rejects(() => runMigrations({ client, context, releaseSha: "test-release" }), /deliberate-failure/);
   assert.equal(await client.execute("SELECT COUNT(*) AS value FROM sqlite_schema WHERE name = 'forward_probe'").then((result) => Number(result.rows[0].value)), 0);
-  assert.equal(await client.execute("SELECT COUNT(*) AS value FROM signal_schema_migrations").then((result) => Number(result.rows[0].value)), 1);
+  assert.equal(
+    await client.execute("SELECT COUNT(*) AS value FROM signal_schema_migrations").then((result) => Number(result.rows[0].value)),
+    1 + base.forward.length,
+  );
 }));
 
 test("receipt-backed adoption verifies target, shape, proofs, and is idempotent", async () => withClient(async (client) => {
@@ -291,8 +323,20 @@ test("receipt-backed adoption verifies target, shape, proofs, and is idempotent"
     assert.equal(row.status, "adopted_legacy");
     assert.equal(row.execution_receipt_id, receipt.id);
 
+    assert.equal((await migrationStatus({ client, context })).state, "pending");
     const second = await adoptExistingDatabase({ client, databaseUrl, receiptPath, context, releaseSha: "adoption-release" });
     assert.equal(second.status, "no-op");
+    const upgraded = await runMigrations({
+      client,
+      databaseUrl,
+      context,
+      environment: "development",
+      releaseSha: "adoption-upgrade",
+    });
+    assert.deepEqual(
+      upgraded.applied,
+      context.forward.map((entry) => entry.id),
+    );
     assert.equal((await migrationStatus({ client, context })).state, "current");
   } finally {
     fs.rmSync(receiptDir, { recursive: true, force: true });

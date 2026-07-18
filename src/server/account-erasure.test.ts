@@ -70,9 +70,13 @@ async function seed(client: Client, probePath: string) {
       ('ws-b','u-target','member'),
       ('ws-a','u-bystander','member');
 
-    INSERT INTO tasks (id, workspace_id, title, lane, priority) VALUES
-      ('task-a1','ws-a','A task','todo','med'),
-      ('task-b1','ws-b','B task','todo','med');
+    INSERT INTO tasks (
+      id, workspace_id, title, lane, priority,
+      source_note_id, source_note_extract_body, source_note_extract_sha256
+    ) VALUES
+      ('task-a1','ws-a','A task','todo','med',NULL,NULL,NULL),
+      ('task-b1','ws-b','B task','todo','med','clerk_target:note-shared','Exact private wording','${"a".repeat(64)}'),
+      ('task-b2','ws-b','Unrelated note task','todo','med','clerkXtarget:note-safe','Keep unrelated wording','${"b".repeat(64)}');
 
     INSERT INTO comments (id, workspace_id, task_id, user_id, body) VALUES
       ('c-a1','ws-a','task-a1','u-target','t on own'),
@@ -177,7 +181,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     const survivors: Array<[string, number]> = [
       ["users", 1], // only u-bystander
       ["workspaces", 1], // only ws-b
-      ["tasks", 1], // only task-b1
+      ["tasks", 2], // shared artifact + unrelated Notes task
       ["comments", 1], // only c-b2
       ["activities", 1], // only act-b2
       ["attachments", 1], // only att-b2
@@ -207,6 +211,25 @@ test("erasure removes every target row across every table, leaves the bystander 
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
     assert.equal(await count(client, "comments WHERE id='c-b2'"), 1);
     assert.equal(await count(client, "meta WHERE key='activeDomain'"), 1);
+
+    // Shared task survives, but the erased Notes account's exact wording,
+    // fingerprint, and stable provenance identifier do not.
+    const redacted = await client.execute(
+      "SELECT source_note_id, source_note_extract_body, source_note_extract_sha256 FROM tasks WHERE id='task-b1'",
+    );
+    assert.equal(redacted.rows[0]!.source_note_id, null);
+    assert.equal(redacted.rows[0]!.source_note_extract_body, null);
+    assert.equal(redacted.rows[0]!.source_note_extract_sha256, null);
+
+    // Clerk ids contain `_`; erasure must not treat it as a LIKE wildcard.
+    const unrelated = await client.execute(
+      "SELECT source_note_id, source_note_extract_body FROM tasks WHERE id='task-b2'",
+    );
+    assert.equal(unrelated.rows[0]!.source_note_id, "clerkXtarget:note-safe");
+    assert.equal(
+      unrelated.rows[0]!.source_note_extract_body,
+      "Keep unrelated wording",
+    );
 
     // ── On-disk attachment binary unlinked ──────────────────────────────
     assert.equal(

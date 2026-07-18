@@ -130,7 +130,12 @@ test("removed Notes member cannot replay an existing promotion or receive metada
     assert.deepEqual(before, {
       kind: "allowed",
       workspaceId: "ws-notes",
-      existing: { id: "task-existing", workspaceId: "ws-notes" },
+      existing: {
+        id: "task-existing",
+        workspaceId: "ws-notes",
+        sourceNoteExtractBody: null,
+        sourceNoteExtractSha256: null,
+      },
     });
 
     await db
