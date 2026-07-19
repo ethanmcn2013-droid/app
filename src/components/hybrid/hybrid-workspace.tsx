@@ -14,8 +14,6 @@ import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
 import { tagToLabel } from "./adapter";
 import { OptionHybrid } from "./options/hybrid/option-hybrid";
 import { BulkToolbar } from "./shared/bulk-toolbar";
-import { CommandPalette } from "./shared/command-palette";
-import { TaskInspector } from "./shared/task-inspector";
 import type { LabDensity, LabLabel, LabPerson, LabRouteState, LabView } from "./types";
 import styles from "./hybrid-workspace.module.css";
 
@@ -27,28 +25,31 @@ export type HybridWorkspaceProps = {
 
 function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void }) {
   const store = useLabStore();
-  const [paletteOpen, setPaletteOpen] = useState(false);
 
+  // Chrome-level surfaces (command palette via ⌘K, quick-create via "c",
+  // and the task detail panel) are production's own, mounted globally in the
+  // app layout — the hybrid interior defers to them rather than shipping the
+  // lab stubs, so their interaction contracts stay intact. We keep only the
+  // two surface-local shortcuts the lab owns: Escape clears a selection, and
+  // Enter on the empty surface opens the active/first task's detail panel.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       const editing = target.matches("input, textarea, select, [contenteditable=true]");
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
-        event.preventDefault();
-        setPaletteOpen(true);
-        return;
-      }
-      if (!editing && event.key.toLowerCase() === "c" && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        const inSurface = target === document.body || target.dataset.workSurface === "true";
-        if (inSurface && !store.readOnly) {
-          event.preventDefault();
-          store.addTask("queued");
-        }
-      }
-      if (!editing && event.key === "Escape" && store.selectedIds.length > 0 && !store.inspectedId) {
-        if (target.closest('[data-task-menu="true"], [aria-label="Task command palette"]')) return;
+      if (editing) return;
+      const onSurface = target === document.body || target.dataset.workSurface === "true";
+      if (event.key === "Escape" && store.selectedIds.length > 0 && !store.inspectedId) {
+        if (target.closest('[data-task-menu="true"], [role="dialog"]')) return;
         event.preventDefault();
         store.clearSelection();
+        return;
+      }
+      if (event.key === "Enter" && onSurface) {
+        const id = store.activeId ?? store.tasks[0]?.id;
+        if (id) {
+          event.preventDefault();
+          store.openTask(id);
+        }
       }
     };
     document.addEventListener("keydown", onKeyDown);
@@ -60,9 +61,7 @@ function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteCha
       <div className={styles.stage}>
         <OptionHybrid hideSuiteRail onRouteChange={onRouteChange} route={route} />
       </div>
-      <TaskInspector />
       <BulkToolbar />
-      <CommandPalette onClose={() => setPaletteOpen(false)} open={paletteOpen} />
       <div aria-live="polite" className={styles.srOnly}>{store.announcement}</div>
     </div>
   );

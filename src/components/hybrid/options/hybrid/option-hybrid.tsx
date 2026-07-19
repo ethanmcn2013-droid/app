@@ -7,7 +7,7 @@ import { PRIORITY_LABELS, STATUS_LABELS, TASK_PRIORITIES, TASK_STATUSES, type La
 import { Icon } from "../../shared/icons";
 import { SuiteRail, ViewTabs } from "../../shared/lab-chrome";
 import { PlanningRail } from "../c/planning-rail";
-import { WorkspaceBrief } from "../b/option-b";
+import { WorkspaceBrief } from "../b/workspace-brief";
 import { CalendarView as BCalendarView } from "../b/calendar-view";
 import { BoardView } from "../a/board-view";
 import { ListFieldsPanel, ListView } from "../a/list-view";

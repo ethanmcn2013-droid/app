@@ -12,6 +12,7 @@
 import { useCallback, useMemo, useReducer, type ReactNode } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
+import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { setTaskMilestoneAction } from "@/server/actions/tasks";
 import {
   fieldsPatch,
@@ -123,6 +124,7 @@ export function HybridStoreProvider({
 }) {
   const { tasks: prodTasks } = useTasksState();
   const prod = useTasksDispatch();
+  const taskPanel = useTaskPanel();
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
 
   const labTasks = useMemo<LabTask[]>(
@@ -138,10 +140,14 @@ export function HybridStoreProvider({
 
   const openTask = useCallback(
     (id: string | null) => {
+      // Local inspected id drives the lab card's open-highlight; the actual
+      // detail panel is production's, opened via the ?task= param.
       dispatch({ type: "SET_INSPECTED", id });
+      if (id) taskPanel.openTask(id);
+      else taskPanel.closeTask();
       onInspectedChange?.(id);
     },
-    [onInspectedChange],
+    [onInspectedChange, taskPanel],
   );
 
   const applySchedule = useCallback(

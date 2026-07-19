@@ -159,14 +159,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-19",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "fb96deba39019651",
+      "materialityHash": "9937b54b157329b3",
       "materialityReview": {
-        "materialityHash": "fb96deba39019651",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-board-2026-07-17.json"
+        "materialityHash": "9937b54b157329b3",
+        "reviewedAt": "2026-07-19",
+        "evidence": "experience/reviews/tasks.page.app-board-2026-07-20.json"
       }
     },
     {
@@ -208,14 +208,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-19",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8ed6f55d93032f96",
+      "materialityHash": "d8c1f57a418480e2",
       "materialityReview": {
-        "materialityHash": "8ed6f55d93032f96",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-calendar-2026-07-17.json"
+        "materialityHash": "d8c1f57a418480e2",
+        "reviewedAt": "2026-07-19",
+        "evidence": "experience/reviews/tasks.page.app-calendar-2026-07-20.json"
       }
     },
     {
@@ -365,14 +365,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-19",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "63411042447c5c21",
+      "materialityHash": "77740e6178a6dd98",
       "materialityReview": {
-        "materialityHash": "63411042447c5c21",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-list-2026-07-17.json"
+        "materialityHash": "77740e6178a6dd98",
+        "reviewedAt": "2026-07-19",
+        "evidence": "experience/reviews/tasks.page.app-list-2026-07-20.json"
       }
     },
     {
@@ -514,14 +514,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-19",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bfb780f46a91b844",
+      "materialityHash": "28b1ad3f0a98db08",
       "materialityReview": {
-        "materialityHash": "bfb780f46a91b844",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-timeline-2026-07-17.json"
+        "materialityHash": "28b1ad3f0a98db08",
+        "reviewedAt": "2026-07-19",
+        "evidence": "experience/reviews/tasks.page.app-timeline-2026-07-20.json"
       }
     },
     {

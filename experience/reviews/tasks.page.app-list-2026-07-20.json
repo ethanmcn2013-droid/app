@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-list",
+  "source": "tasks/src/app/app/list/page.tsx",
+  "materialityHash": "77740e6178a6dd98",
+  "reviewedAt": "2026-07-19",
+  "reviewer": "Claude, hybrid parity (T·99)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e55027582c759d40842b0f40-d8ce5ee09c1d6d55.json",
+    "attestationSha256": "b84aa9624399fbc992096b7624c3f6c62f2818b2e2ed4c77659a599c62f0fa9b",
+    "runId": "tasks-playwright-e55027582c759d40842b0f40",
+    "canonicalEvidenceSha256": "e55027582c759d40842b0f40fae443015f8c9a2b38ee990f043516f511798899",
+    "rawArtifactSha256": "d8ce5ee09c1d6d551294db393a01c9922b9578b5bb15f031e18f761a14bb3b82",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Hybrid parity (T·99): the four task views now render the approved design-lab hybrid interior 1:1 (workspace brief, view bar, board/list/timeline/calendar, planning rail) backed by real workspace data via a Task<->LabTask adapter and a production-backed store; production left rail and top header remain. Command palette, quick-create, and the task detail panel stay production's own globally-mounted surfaces.",
+  "decision": "Accepted after review; 46/46 production-build browser evidence at both breakpoints, Axe clean."
+}
