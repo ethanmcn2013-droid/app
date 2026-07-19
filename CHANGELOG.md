@@ -4,7 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-07-19 · T·98 · ships · the Kanban board grows up
+## 2026-07-20 · T·99 · ships · the views become the lab, one to one
+
+**The board, list, timeline and calendar now render the approved design-lab hybrid exactly as it was signed off — the workspace brief, the view bar, the four view grammars and the planning rail — with the only difference being the black rail and header we keep as the frame.** Production had drifted: it mirrored the Option B lab for the calendar and carried the separate T·98 board rework, so what shipped was never the hybrid the lab presented. This closes that gap by making the lab the source of truth for the interior, verified by side-by-side render rather than a spec list.
+
+The whole design-lab component tree is ported in unchanged. It renders pixel-identical because the token layer it draws on maps onto the same base design-system tokens the lab uses, and those tokens are byte-identical between the two. A single adapter is the only seam: it maps a production task to the lab's task shape and back — the five-status model (Queued, In progress, Review, Waiting, Done), priority, schedule, tags and subtask counts — so no schema migration was needed. A production-backed store satisfies the exact lab store contract, deriving state from real workspace data and routing every edit through the existing task actions, so drag, reorder, reschedule, inline edit and bulk actions all persist and reconcile as before.
+
+The frame stays production's own. The command palette, quick-create and the task detail panel remain the globally mounted production surfaces, so their behaviour and keyboard contracts are unchanged; the brief reads the real workspace name. The T·98 board rework, the Option B/C shells and the lab ribbon are dropped in line with the one-to-one decision. Typecheck, the production build, the design-system gate, the materiality gate with a refreshed four-view review, and forty-six of forty-six browser experience checks at both breakpoints all pass. Live at tasks.signalstudio.ie.
+
 
 **The board becomes a real working surface: four named standard columns you can recolour and describe, custom columns you can create, reorder and safely remove, colour-coded tags and an overdue flag on the cards, a full quick-action menu behind the card ellipsis, and columns that finally scroll on their own — all on the Claude Design icon set.** The header sheds its clutter first: the upper-left reads as a static "Tasks" wordmark instead of a workspace dropdown, the date-window and "workspace owner" line under the purpose are gone with the gap they left, search moves to the right of the black bar, and a licence slot on the left binds to real entitlement data — School Edition or Venue Edition when the account carries one, nothing when it doesn't.
 
