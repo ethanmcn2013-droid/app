@@ -170,8 +170,8 @@
 .boardLane { background: color-mix(in srgb, var(--x-task-surface) 76%, transparent); border: 1px solid var(--x-task-border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; }
 .boardLane[data-status="done"] { background: color-mix(in srgb, var(--x-task-surface) 56%, transparent); }
 .boardLane[data-collapsed] { min-height: 0; }
-.laneHeader { background: color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)); border-bottom: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; flex: 0 0 auto; min-height: 92px; padding: 12px 12px 10px; position: relative; z-index: 5; }
-.laneHeader > div { align-items: center; display: flex; gap: 7px; }
+.laneHeader { background: color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)); border-bottom: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; flex: 0 0 auto; padding: 11px 12px 10px; position: relative; z-index: 5; }
+.laneHeader > div { align-items: center; display: flex; gap: 7px; padding-right: 46px; }
 .laneHeader h2 { font-size: 12px; font-weight: 680; margin: 0; }
 .laneCount { align-items: center; background: var(--x-task-hover); border-radius: 10px; color: var(--x-task-text-muted); display: inline-flex; font-family: var(--font-geist-mono), monospace; font-size: 8px; height: 18px; justify-content: center; min-width: 19px; padding: 0 5px; }
 .laneStatusMark { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
@@ -179,7 +179,6 @@
 .laneStatusMark[data-status="review"] { background: var(--x-task-review); }
 .laneStatusMark[data-status="waiting"] { background: var(--x-task-waiting); }
 .laneStatusMark[data-status="done"] { background: var(--x-task-success); }
-.laneHeader > button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; margin-left: auto; position: absolute; right: 7px; top: 7px; width: 28px; }
 .laneHeader p { color: var(--x-task-text-muted); font-size: 9px; line-height: 1.35; margin: 7px 0 0; }
 .wipNote { color: var(--x-task-text-muted); display: block; font-family: var(--font-geist-mono), monospace; font-size: 8px; margin-top: 5px; }
 .wipNote[data-over] { color: var(--x-task-danger); font-weight: 650; }
@@ -195,7 +194,22 @@
 .boardCard:active { cursor: grabbing; transform: translateY(0); }
 .boardCard:focus-visible { border-color: var(--x-task-focus); outline: 2px solid color-mix(in srgb, var(--x-task-focus) 22%, transparent); outline-offset: 2px; }
 .boardCard[data-selected] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); }
-.boardCard[data-dragging] { opacity: .48; transform: scale(.985); }
+.boardCard[data-dragging] { opacity: .4; }
+/* Live drop insertion line (drag & drop): a crisp accent bar above the card
+   the drop would land in front of; the end-of-list variant sits after the
+   last card. */
+.boardCard[data-drop-before]::before {
+  background: var(--x-task-accent);
+  border-radius: 2px;
+  content: "";
+  height: 3px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: -6px;
+  z-index: 4;
+}
+.dropLineEnd { background: var(--x-task-accent); border-radius: 2px; flex: none; height: 3px; margin: 0; }
 .boardLane[data-status="done"] .boardCard { background: color-mix(in srgb, var(--x-task-raised) 78%, var(--x-task-canvas)); }
 .boardLane[data-status="done"] .boardCard:focus-within,
 .boardLane[data-status="done"] .boardCard:hover { opacity: 1; }
@@ -595,7 +609,11 @@ textarea.purposeLine {
   right: 7px;
   top: 7px;
 }
-.boardLane[data-drop] { border-color: var(--x-task-accent); }
+.boardLane[data-drop] {
+  background: color-mix(in srgb, var(--x-task-accent) 6%, var(--x-task-surface));
+  border-color: color-mix(in srgb, var(--x-task-accent) 55%, var(--x-task-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--x-task-accent) 35%, transparent);
+}
 
 /* Add-column tile: the lab's quiet dashed grammar at lane width. */
 .addColumnTile {

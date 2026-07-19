@@ -43,15 +43,13 @@ const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
 // `.viewTools > button`. Targets `> div > button` so only the trigger is
 // restyled, never the popover/menu buttons inside it.
 const labButtonWrap =
-  "[&>div>button]:!h-8 [&>div>button]:!min-h-8 [&>div>button]:!rounded-md " +
-  "[&>div>button]:!border [&>div>button]:!border-[var(--x-task-border)] " +
-  "[&>div>button]:!bg-[var(--x-task-raised)] " +
+  "[&>div>button]:!h-[34px] [&>div>button]:!min-h-[34px] [&>div>button]:!rounded-md " +
+  "[&>div>button]:!border-0 [&>div>button]:!bg-transparent " +
   "[&>div>button]:!text-[var(--x-task-text-secondary)] " +
-  "[&>div>button]:!text-[11px] [&>div>button]:!font-normal " +
-  "[&>div>button]:!px-2 [&>div>button]:!gap-1.5 " +
-  "hover:[&>div>button]:!border-[var(--x-task-border-strong)] " +
+  "[&>div>button]:!text-[12px] [&>div>button]:!font-normal " +
+  "[&>div>button]:!px-2.5 [&>div>button]:!gap-1.5 " +
   "hover:[&>div>button]:!text-[var(--x-task-text)] " +
-  "hover:[&>div>button]:!bg-[var(--x-task-raised)]";
+  "hover:[&>div>button]:!bg-[var(--x-task-hover)]";
 
 type ToolPanel = "filter" | "sort" | "save" | null;
 

@@ -21,12 +21,15 @@
 .viewTabs button[aria-current="page"],
 .viewTabs a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 640; }
 
-.viewTools { align-items: center; display: flex; gap: 4px; min-width: 0; }
+.viewTools { align-items: center; display: flex; gap: 2px; min-width: 0; }
+/* Match the left-side view tabs exactly: borderless, same scale, subtle
+   hover fill — so the whole bar reads as one control set (2026-07-19). */
 .viewTools > button,
-.compactSelect { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; min-height: 32px; padding: 0 8px; white-space: nowrap; }
+.compactSelect { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 34px; padding: 0 10px; white-space: nowrap; }
 .viewTools > button:hover,
-.compactSelect:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
+.compactSelect:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .viewTools > button:disabled { cursor: not-allowed; opacity: .48; }
+.viewTools > button:disabled:hover { background: transparent; }
 .viewTools select { appearance: none; background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; outline: 0; }
 .searchBox { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; color: var(--x-task-text-muted); display: flex; height: 32px; min-width: 142px; padding: 0 7px; }
 .searchBox input { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 11px; min-width: 0; outline: 0; padding: 0 6px; width: 100%; }

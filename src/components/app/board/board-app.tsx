@@ -83,12 +83,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-/** Release-velocity record for the most recently dropped card. */
-type DropMomentum = { taskId: string; dx: number; dy: number } | null;
-
-const MOMENTUM_CLAMP = 100;
-const MOMENTUM_SCALE = 60;
-
 // ─── Column descriptor ────────────────────────────────────────────────────────
 
 /**
@@ -229,23 +223,50 @@ export function BoardApp() {
   const state = useTasksState();
   const columnConfig = useColumnConfig();
   const personalization = usePersonalization();
-  const { moveTask, moveTaskToColumn, toggleComplete } = useTasksDispatch();
+  const { moveTask, moveTaskToColumn, reorderTask, toggleComplete } =
+    useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [hoverColumn, setHoverColumn] = useState<string | null>(null);
   const [composerColumn, setComposerColumn] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const reduceMotion = useReducedMotion();
 
-  // Pointer samples for release-velocity momentum.
-  const dragSamplesRef = useRef<{ x: number; y: number; t: number }[]>([]);
-  const [dropMomentum, setDropMomentum] = useState<DropMomentum>(null);
-  useEffect(() => {
-    if (!dropMomentum) return;
-    const id = window.setTimeout(() => setDropMomentum(null), 600);
-    return () => window.clearTimeout(id);
-  }, [dropMomentum]);
+  // ── Drag & drop ────────────────────────────────────────────────────────
+  // dropTarget marks the live insertion point: which column and the index a
+  // drop would land at. Columns highlight; system lanes also show an
+  // insertion line at the index. No momentum — the reorder animates through
+  // the store's optimistic update (Framer `layout`), which reads as smooth
+  // rather than a card flung on release.
+  const [dropTarget, setDropTarget] = useState<{ column: string; index: number } | null>(null);
+  // The dragged task, captured at dragstart, so a drop knows whether it can
+  // reorder by position (only when the card and target are both system lanes).
+  const dragRef = useRef<{ id: string; fromSystem: boolean } | null>(null);
+  // Auto-scroll a column's list while a drag hovers near its top/bottom edge.
+  const autoScrollRef = useRef<{ el: HTMLElement; dir: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); }, []);
+
+  function pumpAutoScroll() {
+    const s = autoScrollRef.current;
+    if (s && s.dir !== 0) {
+      s.el.scrollTop += s.dir * 11;
+      rafRef.current = requestAnimationFrame(pumpAutoScroll);
+    } else {
+      rafRef.current = null;
+    }
+  }
+  function setAutoScroll(el: HTMLElement | null, dir: number) {
+    autoScrollRef.current = el && dir !== 0 ? { el, dir } : null;
+    if (el && dir !== 0 && rafRef.current == null) {
+      rafRef.current = requestAnimationFrame(pumpAutoScroll);
+    }
+  }
+  function endDrag() {
+    setDraggingId(null);
+    setDropTarget(null);
+    dragRef.current = null;
+    setAutoScroll(null, 0);
+  }
 
   // Optimistic column config for add/reorder/delete, the server revalidates
   // the layout on success so we hydrate from server after a beat.
@@ -264,27 +285,65 @@ export function BoardApp() {
     [optimisticConfig],
   );
 
-  /** Derive px/ms velocity from the tail of the sample buffer. */
-  function consumeReleaseMomentum(): { dx: number; dy: number } {
-    const samples = dragSamplesRef.current;
-    dragSamplesRef.current = [];
-    if (reduceMotion || samples.length < 2) return { dx: 0, dy: 0 };
-    const last = samples[samples.length - 1];
-    let first = samples[0];
-    for (let i = samples.length - 2; i >= 0; i--) {
-      if (last.t - samples[i].t > 80) {
-        first = samples[i + 1] ?? samples[i];
-        break;
-      }
-      first = samples[i];
+  /** Insertion index for a drop: the first card whose vertical midpoint is
+   *  below the pointer (counts every rendered card, including the one being
+   *  dragged). Falls back to the end of the list. */
+  function computeDropIndex(list: HTMLElement, clientY: number): number {
+    const cards = Array.from(
+      list.querySelectorAll<HTMLElement>("[data-task-id]"),
+    );
+    for (let i = 0; i < cards.length; i++) {
+      const r = cards[i].getBoundingClientRect();
+      if (clientY < r.top + r.height / 2) return i;
     }
-    const dt = last.t - first.t;
-    if (dt <= 0) return { dx: 0, dy: 0 };
-    const vx = (last.x - first.x) / dt;
-    const vy = (last.y - first.y) / dt;
-    const clamp = (v: number) =>
-      Math.max(-MOMENTUM_CLAMP, Math.min(MOMENTUM_CLAMP, v * MOMENTUM_SCALE));
-    return { dx: clamp(vx), dy: clamp(vy) };
+    return cards.length;
+  }
+
+  /** Update the live drop target + edge auto-scroll as a drag moves over a
+   *  column's list. */
+  function onListDragOver(e: React.DragEvent, columnKey: string) {
+    if (!dragRef.current) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const list = e.currentTarget as HTMLElement;
+    const index = computeDropIndex(list, e.clientY);
+    setDropTarget((prev) =>
+      prev && prev.column === columnKey && prev.index === index
+        ? prev
+        : { column: columnKey, index },
+    );
+    // Edge auto-scroll for long, independently-scrolling columns.
+    const rect = list.getBoundingClientRect();
+    const EDGE = 56;
+    const dir =
+      e.clientY < rect.top + EDGE ? -1 : e.clientY > rect.bottom - EDGE ? 1 : 0;
+    setAutoScroll(dir !== 0 ? list : null, dir);
+  }
+
+  /** Commit a drop: reorder within/among system lanes by position, else move
+   *  the card into the target column. */
+  function onListDrop(e: React.DragEvent, col: BoardColumn) {
+    e.preventDefault();
+    const info = dragRef.current;
+    const taskId = info?.id ?? e.dataTransfer.getData("text/task-id");
+    if (!taskId) { endDrag(); return; }
+    const list = e.currentTarget as HTMLElement;
+    const visualIndex = dropTarget?.column === col.key
+      ? dropTarget.index
+      : computeDropIndex(list, e.clientY);
+
+    if (col.isSystem && info?.fromSystem) {
+      // Position-honouring reorder (within a lane or across system lanes).
+      const colTasks = tasksByColumn(state, col.key);
+      const from = colTasks.findIndex((t) => t.id === taskId);
+      const siblingIndex = from >= 0 && visualIndex > from ? visualIndex - 1 : visualIndex;
+      reorderTask(taskId, col.key as LaneId, siblingIndex);
+    } else {
+      // Into/among custom columns, or a custom-column card into a lane: the
+      // column-aware move clears/sets boardColumnKey correctly (append).
+      moveTaskToColumn(taskId, col.key);
+    }
+    endDrag();
   }
 
   // Memoize column → tasks map to avoid re-walking on every keystroke.
@@ -313,6 +372,13 @@ export function BoardApp() {
     }
     return map;
   }, [state, boardColumns]);
+
+  // Whether the card currently being dragged lives in a system lane (no
+  // custom-column key). Derived from state so it stays reactive — the drop
+  // insertion line only shows for position-honouring system-lane drops.
+  const dragFromSystem = draggingId
+    ? !state.tasks.find((t) => t.id === draggingId)?.boardColumnKey
+    : false;
 
   // Keyboard-driven focus. Works across system lanes only for now.
   const effectiveFocusedId: string | null = (() => {
@@ -438,8 +504,11 @@ export function BoardApp() {
         >
         {boardColumns.map((col, idx) => {
           const colTasks = tasksByColumnMap[col.key] ?? [];
-          const isHover = hoverColumn === col.key;
+          const isHover = dropTarget?.column === col.key;
           const accentVar = COLUMN_COLORS[col.color].var;
+          // Show the positional insertion line only where a drop honours it:
+          // the dragged card and the target are both system lanes.
+          const showDropLine = col.isSystem && dragFromSystem && isHover;
 
           // Inline add for custom columns uses lane "doing" as the canonical
           // lane for newly created tasks, they'll visually appear in this
@@ -466,21 +535,6 @@ export function BoardApp() {
               data-drop={isHover || undefined}
               data-tinted={accentVar ? "" : undefined}
               style={accentVar ? ({ "--lane-accent": accentVar } as React.CSSProperties) : undefined}
-              onDragOver={(e) => { e.preventDefault(); setHoverColumn(col.key); }}
-              onDragLeave={() => setHoverColumn(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                const taskId = e.dataTransfer.getData("text/task-id");
-                const momentum = consumeReleaseMomentum();
-                if (taskId) {
-                  if (momentum.dx !== 0 || momentum.dy !== 0) {
-                    setDropMomentum({ taskId, dx: momentum.dx, dy: momentum.dy });
-                  }
-                  moveTaskToColumn(taskId, col.key);
-                }
-                setHoverColumn(null);
-                setDraggingId(null);
-              }}
             >
               <LaneHeader
                 columnKey={col.key}
@@ -502,42 +556,40 @@ export function BoardApp() {
                 currentConfig={optimisticConfig}
               />
 
-              <div className={roomStyles.boardTaskList}>
+              <div
+                className={roomStyles.boardTaskList}
+                onDragOver={(e) => onListDragOver(e, col.key)}
+                onDrop={(e) => onListDrop(e, col)}
+              >
                 <AnimatePresence initial={false}>
-                  {colTasks.map((task) => (
+                  {colTasks.map((task, ti) => (
                     <Card
                       key={task.id}
                       task={task}
                       currentColumnKey={col.key}
                       draggable={!isMobile}
                       isDragging={draggingId === task.id}
+                      dropBefore={showDropLine && dropTarget?.index === ti}
                       isSelected={openTaskId === task.id}
                       isFocused={effectiveFocusedId === task.id}
                       boardColumns={boardColumns}
-                      momentum={
-                        dropMomentum && dropMomentum.taskId === task.id
-                          ? { dx: dropMomentum.dx, dy: dropMomentum.dy }
-                          : null
-                      }
                       onClick={() => { setFocusedId(task.id); openTask(task.id); }}
                       onDragStart={(e) => {
                         e.dataTransfer.setData("text/task-id", task.id);
                         e.dataTransfer.effectAllowed = "move";
+                        dragRef.current = {
+                          id: task.id,
+                          fromSystem: col.isSystem && !task.boardColumnKey,
+                        };
                         setDraggingId(task.id);
-                        dragSamplesRef.current = [
-                          { x: e.clientX, y: e.clientY, t: performance.now() },
-                        ];
                       }}
-                      onDrag={(e) => {
-                        if (e.clientX === 0 && e.clientY === 0) return;
-                        const samples = dragSamplesRef.current;
-                        samples.push({ x: e.clientX, y: e.clientY, t: performance.now() });
-                        if (samples.length > 32) samples.splice(0, samples.length - 32);
-                      }}
-                      onDragEnd={() => { setDraggingId(null); setHoverColumn(null); }}
+                      onDragEnd={endDrag}
                     />
                   ))}
                 </AnimatePresence>
+                {showDropLine && dropTarget?.index === colTasks.length ? (
+                  <div className={roomStyles.dropLineEnd} />
+                ) : null}
 
                 {colTasks.length === 0 && composerColumn !== col.key ? (
                   <div className={roomStyles.emptyLane} data-drop-active={isHover || undefined}>
@@ -1318,26 +1370,25 @@ function Card({
   currentColumnKey,
   draggable,
   isDragging,
+  dropBefore,
   isSelected,
   isFocused,
-  momentum,
   boardColumns,
   onClick,
   onDragStart,
-  onDrag,
   onDragEnd,
 }: {
   task: Task;
   currentColumnKey: string;
   draggable: boolean;
   isDragging: boolean;
+  /** True when the live drop insertion line should sit above this card. */
+  dropBefore: boolean;
   isSelected: boolean;
   isFocused: boolean;
-  momentum: { dx: number; dy: number } | null;
   boardColumns: BoardColumn[];
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
-  onDrag: (e: React.DragEvent) => void;
   onDragEnd: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1349,7 +1400,6 @@ function Card({
   const reduce = useReducedMotion();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const { updateTask } = useTasksDispatch();
-  const { openTask } = useTaskPanel();
   // Mount-stable clock for the overdue receipt (Compiler-safe).
   const [now] = useState(() => Date.now());
 
@@ -1405,35 +1455,27 @@ function Card({
     wasDoneRef.current = isDone;
   }, [isDone, reduce]);
 
-  const isPending = isDragging || !!momentum;
+  const isPending = isDragging;
 
   const nativeDragProps = draggable
-    ? ({ draggable: true, onDragStart, onDrag, onDragEnd } as unknown as Record<string, unknown>)
+    ? ({ draggable: true, onDragStart, onDragEnd } as unknown as Record<string, unknown>)
     : ({} as Record<string, unknown>);
 
   const outline = isFocused ? "2px solid var(--x-task-focus)" : "none";
   const focusScale = isFocused && !reduce ? 1.02 : 1;
-
-  const initialX = momentum && !reduce ? momentum.dx : 0;
-  const initialY = momentum && !reduce ? momentum.dy : 0;
-  const settleTransition = reduce
-    ? { duration: 0.12, ease: "linear" as const }
-    : { type: "spring" as const, stiffness: 250, damping: 28, mass: 0.9 };
 
   return (
     <motion.div
       ref={cardRef}
       layoutId={`appcard-${task.id}`}
       layout
-      initial={momentum ? { opacity: 1, x: initialX, y: initialY, scale: focusScale } : { opacity: 0, y: 8 }}
-      animate={{ opacity: isDragging ? 0.4 : 1, x: 0, y: 0, scale: focusScale }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: isDragging ? 0.4 : 1, scale: focusScale }}
       exit={{ opacity: 0, y: 8 }}
       transition={{
-        layout: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
-        opacity: { duration: 0.2 },
+        layout: { duration: reduce ? 0 : 0.32, ease: [0.16, 1, 0.3, 1] },
+        opacity: { duration: 0.18 },
         scale: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
-        x: settleTransition,
-        y: settleTransition,
       }}
       {...nativeDragProps}
       onClick={onClick}
@@ -1445,6 +1487,7 @@ function Card({
       data-task-focused={isFocused ? "true" : undefined}
       data-selected={isSelected || undefined}
       data-dragging={isDragging || undefined}
+      data-drop-before={dropBefore || undefined}
       className={`group ${roomStyles.boardCard}`}
     >
       <AnimatePresence>
@@ -1559,26 +1602,7 @@ function Card({
         <RoomAvatarStack limit={3} task={task} />
       </div>
       <footer className={roomStyles.cardFooter}>
-        <div className={roomStyles.cardFooterLeft}>
-          <TaskSignals task={task} />
-          <button
-            type="button"
-            aria-label={
-              task.subtaskCount
-                ? `${task.subtaskDone ?? 0} of ${task.subtaskCount} subtasks — open`
-                : "Add subtasks"
-            }
-            title="Subtasks"
-            onClick={(e) => { e.stopPropagation(); openTask(task.id); }}
-            className={roomStyles.cardSubtaskButton}
-            data-has={task.subtaskCount ? "" : undefined}
-          >
-            <Icon name="subtasks" size={13} />
-            {task.subtaskCount ? (
-              <span>{task.subtaskDone ?? 0}/{task.subtaskCount}</span>
-            ) : null}
-          </button>
-        </div>
+        <TaskSignals task={task} />
         {task.blockedBy && task.blockedBy.length > 0 ? (
           <span className={roomStyles.waitingReason}>
             Waiting on {task.blockedBy.length} task{task.blockedBy.length === 1 ? "" : "s"}
