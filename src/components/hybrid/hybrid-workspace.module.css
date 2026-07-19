@@ -1,0 +1,58 @@
+/* Production host for the ported hybrid interior. Defines the exact same
+   --x-task-* token layer as the design lab's .labRoot (values are byte-identical
+   to tasks-design-lab.module.css) so the verbatim views render pixel-identical
+   to the approved lab, but sizes itself to fill production's flex <main> instead
+   of the lab's full-viewport ribbon layout. */
+.root {
+  --x-task-canvas: var(--paper-deep);
+  --x-task-surface: var(--paper-soft);
+  --x-task-raised: var(--paper);
+  --x-task-selected: var(--accent-tint);
+  --x-task-hover: var(--paper-deep);
+  --x-task-overlay: var(--paper);
+  --x-task-border: var(--hairline);
+  --x-task-border-strong: var(--ink-ghost);
+  --x-task-text: var(--ink);
+  --x-task-text-secondary: var(--ink-soft);
+  --x-task-text-muted: color-mix(in srgb, var(--ink-faint) 90%, var(--ink));
+  --x-task-accent: var(--accent);
+  --x-task-accent-soft: var(--accent-tint);
+  --x-task-focus: var(--accent-hover);
+  --x-task-success: color-mix(in srgb, var(--status-done) 60%, var(--ink));
+  --x-task-success-soft: var(--status-done-bg);
+  --x-task-waiting: color-mix(in srgb, var(--status-flight) 52%, var(--ink));
+  --x-task-waiting-soft: var(--status-flight-bg);
+  --x-task-warning: color-mix(in srgb, var(--status-flight) 60%, var(--ink));
+  --x-task-danger: color-mix(in srgb, var(--status-blocked) 72%, var(--ink));
+  --x-task-danger-soft: var(--status-blocked-bg);
+  --x-task-review: color-mix(in srgb, var(--status-review) 55%, var(--ink));
+  --x-task-review-soft: color-mix(in srgb, var(--status-review) 10%, var(--paper));
+  --x-task-shadow: var(--shadow-modal);
+  background: var(--x-task-canvas);
+  color: var(--x-task-text);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  font-family: var(--font-geist-sans), var(--font-sans), sans-serif;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}

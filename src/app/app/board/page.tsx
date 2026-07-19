@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import { AppPageHeader } from "@/components/app/page-header";
-import { RoomBrief } from "@/components/app/room/room-brief";
-import { BoardApp } from "@/components/app/board/board-app";
+import { HybridWorkspace } from "@/components/hybrid/hybrid-workspace";
 import { TemplatedToast } from "@/components/app/templated-toast";
 import { VenueWelcomeCard } from "@/components/welcome/venue-welcome-card";
 import {
@@ -15,6 +13,9 @@ import {
   DEMO_WORKSPACE_SLUG,
 } from "@/server/demo/tasks-demo";
 
+// Hybrid parity (T·99, 2026-07-19): the board view renders the approved
+// design-lab "hybrid" interior 1:1. Production's left rail and top header
+// remain; the venue-welcome + templated-toast overlays are preserved.
 export default async function BoardPage({
   searchParams,
 }: {
@@ -42,8 +43,7 @@ export default async function BoardPage({
   }
   return (
     <>
-      <AppPageHeader brief={<RoomBrief />} />
-      <BoardApp />
+      <HybridWorkspace view="board" />
       <Suspense fallback={null}>
         <TemplatedToast />
       </Suspense>

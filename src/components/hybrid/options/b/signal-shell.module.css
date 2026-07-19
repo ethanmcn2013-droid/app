@@ -1,0 +1,538 @@
+/* Option B navigation shell: Signal Studio product rail + Tasks Projects sidebar.
+   Rail values come from the canonical rail icon-system document:
+   60px rail · 34×34 r10 tiles · 20px glyphs · charcoal #17171A ·
+   inactive #A2A2AB / label #84848D · active rgba(99,102,241,.16) + #6366F1. */
+
+.srOnly {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* ── Product rail ─────────────────────────────────────────────────────── */
+
+.signalRail {
+  align-items: center;
+  background: #17171a;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex: 0 0 60px;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px 0 12px;
+  position: relative;
+  width: 60px;
+  z-index: 40;
+}
+
+.signalRail button {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  position: relative;
+}
+
+.signalRail button[aria-disabled="true"] { cursor: default; }
+
+.railHome {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  padding: 3px 0;
+  width: 52px;
+}
+
+.railHomeTile {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  flex: none;
+  height: 34px;
+  justify-content: center;
+  transition: background 150ms ease;
+  width: 34px;
+}
+
+.railHome:hover .railHomeTile { background: rgba(255, 255, 255, 0.05); }
+
+.railHomeDot {
+  background: #6366f1;
+  border-radius: 50%;
+  flex: none;
+  height: 10px;
+  width: 10px;
+}
+
+.railDivider {
+  background: rgba(255, 255, 255, 0.08);
+  flex: none;
+  height: 1px;
+  margin: 9px 0;
+  width: 24px;
+}
+
+.railProducts {
+  align-items: center;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+}
+
+.railProduct {
+  align-items: center;
+  border-radius: 10px;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 3px;
+  margin: 1px 0;
+  padding: 6px 0 7px;
+  width: 52px;
+}
+
+.railProduct:hover { background: rgba(255, 255, 255, 0.05); }
+
+.railTile {
+  align-items: center;
+  border-radius: 10px;
+  color: #a2a2ab;
+  display: flex;
+  flex: none;
+  height: 34px;
+  justify-content: center;
+  transition: background 150ms ease, color 150ms ease;
+  width: 34px;
+}
+
+.railProduct:hover .railTile { color: #f0f0f2; }
+
+.railProduct[data-active] .railTile {
+  background: rgba(99, 102, 241, 0.16);
+  color: #f4f4f5;
+}
+
+.railProduct[data-active] .iconAccent { color: #6366f1; }
+
+.railLabel {
+  color: #84848d;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  transition: color 150ms ease;
+}
+
+.railProduct:hover .railLabel { color: #b9b9c2; }
+.railProduct[data-active] .railLabel { color: #f4f4f5; font-weight: 600; }
+
+.railSpacer { flex: 1; min-height: 12px; }
+
+.railUtility {
+  align-items: center;
+  border-radius: 10px;
+  color: #84848d;
+  display: flex;
+  flex: none;
+  height: 40px;
+  justify-content: center;
+  margin: 1px 0;
+  transition: background 150ms ease, color 150ms ease;
+  width: 40px;
+}
+
+.railUtility:hover { background: rgba(255, 255, 255, 0.05); color: #f0f0f2; }
+
+.railAccount {
+  align-items: center;
+  background: #26262c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #b9b9c2;
+  display: flex;
+  flex: none;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8.5px;
+  font-weight: 600;
+  height: 26px;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+  width: 26px;
+}
+
+.signalRail :focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 2px;
+}
+
+/* Tooltips: keyboard and pointer, no dependency. */
+.signalRail [data-tip]::after,
+.projectsSidebar [data-tip]::after,
+.projectsDrawer [data-tip]::after,
+.sidebarStrip [data-tip]::after {
+  background: #26262c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #ececef;
+  content: attr(data-tip);
+  font-size: 10px;
+  font-weight: 500;
+  left: calc(100% + 10px);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  opacity: 0;
+  padding: 6px 8px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: opacity 130ms ease 60ms;
+  white-space: nowrap;
+  z-index: 120;
+}
+
+.signalRail [data-tip]:hover::after,
+.signalRail [data-tip]:focus-visible::after,
+.projectsSidebar [data-tip]:hover::after,
+.projectsSidebar [data-tip]:focus-visible::after,
+.projectsDrawer [data-tip]:hover::after,
+.projectsDrawer [data-tip]:focus-visible::after,
+.sidebarStrip [data-tip]:hover::after,
+.sidebarStrip [data-tip]:focus-visible::after {
+  opacity: 1;
+}
+
+/* Sidebar rows show tooltips near the pointer edge instead of far right. */
+.projectsSidebar .navRow[data-tip]::after,
+.projectsSidebar .projectParent[data-tip]::after,
+.projectsSidebar .projectLeaf[data-tip]::after,
+.projectsDrawer .navRow[data-tip]::after,
+.projectsDrawer .projectParent[data-tip]::after,
+.projectsDrawer .projectLeaf[data-tip]::after {
+  left: 12px;
+  top: 100%;
+  transform: none;
+}
+
+/* ── Projects sidebar ─────────────────────────────────────────────────── */
+
+.projectsSidebar {
+  background: var(--x-task-surface);
+  border-right: 1px solid var(--x-task-border);
+  display: flex;
+  flex: 0 0 248px;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  width: 248px;
+}
+
+.sidebarHeader {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--x-task-border);
+  display: flex;
+  flex: none;
+  justify-content: space-between;
+  padding: 13px 10px 11px 16px;
+}
+
+.sidebarIdentity { display: flex; flex-direction: column; min-width: 0; }
+
+.sidebarEyebrow {
+  color: var(--x-task-text-muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebarTitle {
+  color: var(--x-task-text);
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  margin-top: 3px;
+}
+
+.sidebarCollapse {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  position: relative;
+  width: 28px;
+}
+
+.sidebarCollapse:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+
+.sidebarScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 10px 8px 16px;
+}
+
+.sidebarNav { display: flex; flex-direction: column; gap: 1px; }
+
+.navRow {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: default;
+  display: flex;
+  font: inherit;
+  font-size: 11.5px;
+  gap: 9px;
+  min-height: 33px;
+  padding: 0 8px;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.navRow svg { color: var(--x-task-text-muted); }
+.navRow:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+
+.navCount {
+  background: var(--x-task-hover);
+  border-radius: 9px;
+  color: var(--x-task-text-muted);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  margin-left: auto;
+  padding: 2px 6px;
+}
+
+.projectsSection { margin-top: 18px; }
+
+.projectsHeading {
+  color: var(--x-task-text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  margin: 0;
+  padding: 0 8px 6px;
+  text-transform: uppercase;
+}
+
+.projectTree {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.projectParent,
+.projectLeaf {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: default;
+  display: flex;
+  font: inherit;
+  font-size: 11.5px;
+  gap: 7px;
+  min-height: 33px;
+  padding: 0 8px;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+
+.projectParent[aria-expanded] { cursor: pointer; }
+.projectParent:hover,
+.projectLeaf:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+
+.projectName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectParent[aria-expanded] .projectName { font-weight: 600; }
+
+.disclosure {
+  align-items: center;
+  color: var(--x-task-text-muted);
+  display: flex;
+  flex: none;
+  height: 14px;
+  justify-content: center;
+  transition: transform 140ms ease;
+  width: 14px;
+}
+
+.disclosure[data-open] { transform: rotate(90deg); }
+
+.disclosureGhost { flex: none; width: 14px; }
+
+.projectDate {
+  color: var(--x-task-text-muted);
+  flex: none;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  margin-left: auto;
+  padding-left: 6px;
+}
+
+.projectChildren {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  list-style: none;
+  margin: 1px 0 6px;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+
+.projectChildren::before {
+  background: var(--x-task-border);
+  bottom: 5px;
+  content: "";
+  left: 15px;
+  position: absolute;
+  top: 5px;
+  width: 1px;
+}
+
+.projectChildren .projectLeaf { min-height: 32px; padding-left: 25px; }
+
+.projectLeaf[aria-current="page"] {
+  background: var(--x-task-selected);
+  color: var(--x-task-text);
+  cursor: pointer;
+  font-weight: 630;
+}
+
+.leafCount {
+  color: var(--x-task-text-muted);
+  flex: none;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 8px;
+  margin-left: auto;
+}
+
+.projectLeaf[aria-current="page"] .leafCount { color: var(--x-task-accent); }
+
+.privacyMark {
+  align-items: center;
+  color: var(--x-task-text-muted);
+  display: flex;
+  flex: none;
+  margin-left: auto;
+}
+
+.sidebarFoot { flex: none; height: 14px; }
+
+.projectsSidebar :focus-visible,
+.projectsDrawer :focus-visible,
+.sidebarStrip :focus-visible {
+  outline: 2px solid var(--x-task-focus);
+  outline-offset: 2px;
+}
+
+/* ── Collapsed strip and narrow-width trigger ─────────────────────────── */
+
+.sidebarStrip {
+  align-items: center;
+  background: var(--x-task-surface);
+  border-right: 1px solid var(--x-task-border);
+  display: flex;
+  flex: 0 0 44px;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding-top: 8px;
+  width: 44px;
+}
+
+.stripButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: flex;
+  flex: none;
+  height: 40px;
+  justify-content: center;
+  position: relative;
+  width: 40px;
+}
+
+.stripButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+
+.stripLabel {
+  color: var(--x-task-text-muted);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+}
+
+/* ── Drawer (below ~1100px) ───────────────────────────────────────────── */
+
+.drawerBackdrop {
+  background: color-mix(in srgb, var(--x-task-text) 36%, transparent);
+  inset: 52px 0 0 0;
+  position: fixed;
+  z-index: 72;
+}
+
+.projectsDrawer {
+  background: var(--x-task-surface);
+  border-right: 1px solid var(--x-task-border);
+  bottom: 0;
+  box-shadow: var(--x-task-shadow);
+  display: flex;
+  flex-direction: column;
+  left: 60px;
+  position: fixed;
+  top: 52px;
+  width: 272px;
+  z-index: 73;
+}
+
+/* ── Responsive widths ────────────────────────────────────────────────── */
+
+@media (max-width: 1439px) {
+  .projectsSidebar { flex-basis: 228px; width: 228px; }
+}
+
+@media (max-width: 1279px) {
+  .projectsSidebar { flex-basis: 212px; width: 212px; }
+  .projectDate { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .railHomeTile,
+  .railTile,
+  .railLabel,
+  .railUtility,
+  .disclosure { transition: none; }
+  .signalRail [data-tip]::after,
+  .projectsSidebar [data-tip]::after,
+  .projectsDrawer [data-tip]::after,
+  .sidebarStrip [data-tip]::after { transition: none; }
+}
