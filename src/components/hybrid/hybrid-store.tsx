@@ -140,9 +140,10 @@ export function HybridStoreProvider({
 
   const openTask = useCallback(
     (id: string | null) => {
-      // Local inspected id drives the lab card's open-highlight; the actual
-      // detail panel is production's, opened via the ?task= param.
-      dispatch({ type: "SET_INSPECTED", id });
+      // Defer entirely to production's detail panel (opened via the ?task=
+      // param). We intentionally do NOT mirror the id into local store state:
+      // that would rebuild the derived store value and re-render every view in
+      // the same tick as the pushState, aborting the in-flight RSC request.
       if (id) taskPanel.openTask(id);
       else taskPanel.closeTask();
       onInspectedChange?.(id);
