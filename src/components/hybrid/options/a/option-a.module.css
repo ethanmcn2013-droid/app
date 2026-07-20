@@ -219,8 +219,11 @@
 
 /* Board */
 .boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.boardScroll { display: flex; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
-.boardLane { background: var(--x-task-canvas); border-right: 1px solid var(--x-task-border); display: flex; flex: 0 0 272px; flex-direction: column; min-height: 100%; min-width: 248px; }
+/* The board scrolls horizontally between columns; vertical scroll lives inside
+   each lane (see .laneList) so hovering a column and scrolling moves only that
+   column, never the page. */
+.boardScroll { display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
+.boardLane { background: var(--x-task-canvas); border-right: 1px solid var(--x-task-border); display: flex; flex: 0 0 272px; flex-direction: column; height: 100%; min-height: 0; min-width: 248px; }
 .boardLane[data-done] { background: color-mix(in srgb, var(--x-task-canvas) 88%, var(--x-task-surface)); }
 .laneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 38px; justify-content: space-between; padding: 0 9px 0 11px; position: sticky; top: 0; z-index: 4; }
 .laneHeader > div { align-items: center; display: flex; gap: 6px; min-width: 0; }
@@ -228,7 +231,7 @@
 .laneCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 8px; }
 .wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 7px; }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
-.laneList { display: flex; flex: 1; flex-direction: column; gap: 6px; list-style: none; margin: 0; min-height: 0; padding: 7px; }
+.laneList { display: flex; flex: 1; flex-direction: column; gap: 6px; list-style: none; margin: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 7px; scrollbar-width: thin; }
 .laneList > li { min-width: 0; }
 .boardCard { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; cursor: default; padding: 7px 8px 8px; position: relative; }
 .boardCard:hover { border-color: var(--x-task-border-strong); }

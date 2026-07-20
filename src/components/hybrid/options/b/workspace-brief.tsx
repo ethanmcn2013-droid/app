@@ -5,6 +5,7 @@
 // full Option-B shell (product rail, projects sidebar) that production replaces
 // with its own chrome. Renders the real workspace name from DomainProvider.
 
+import { useEffect, useRef } from "react";
 import { useDomain } from "@/lib/domain-context";
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
@@ -17,6 +18,75 @@ import styles from "./option-b.module.css";
 function shortenWorkspaceTitle(value: string): string {
   const index = value.indexOf(" · ");
   return index > 0 ? value.slice(0, index) : value;
+}
+
+/**
+ * Inline-editable brief text (the workspace heading and its supporting line).
+ * Click to edit; the value persists per workspace in localStorage so the founder
+ * can retitle a workspace board ("Q3 launch") and rewrite the line beneath it
+ * without a round-trip. Renders as a real h1/p so the existing brief styles apply.
+ */
+function EditableText({
+  tag: Tag,
+  storageKey,
+  fallback,
+  ariaLabel,
+}: {
+  tag: "h1" | "p";
+  storageKey: string;
+  fallback: string;
+  ariaLabel: string;
+}) {
+  const ref = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    let value = fallback;
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored && stored.length > 0) value = stored;
+    } catch {
+      /* private mode / storage disabled — keep the fallback */
+    }
+    if (ref.current && ref.current.textContent !== value) ref.current.textContent = value;
+  }, [storageKey, fallback]);
+
+  const commit = () => {
+    const el = ref.current;
+    if (!el) return;
+    const next = (el.textContent ?? "").replace(/\s+/g, " ").trim() || fallback;
+    el.textContent = next;
+    try {
+      window.localStorage.setItem(storageKey, next);
+    } catch {
+      /* ignore persistence failure */
+    }
+  };
+
+  return (
+    <Tag
+      aria-label={ariaLabel}
+      className={styles.editable}
+      contentEditable
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.currentTarget.blur();
+        } else if (event.key === "Escape") {
+          event.currentTarget.blur();
+        }
+      }}
+      ref={(node) => {
+        ref.current = node;
+      }}
+      role="textbox"
+      spellCheck={false}
+      suppressContentEditableWarning
+      tabIndex={0}
+    >
+      {fallback}
+    </Tag>
+  );
 }
 
 export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTask[]; showMilestones?: boolean }) {
@@ -36,9 +106,8 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
     <header className={styles.workspaceBrief} data-milestones={showMilestones ? undefined : "off"}>
       <div className={styles.workspaceIdentity}>
         <div className={styles.workspacePath}><span>Workspace</span><Icon name="chevron-right" size={12} /><strong>{workspaceName}</strong></div>
-        <h1>{workspaceName}</h1>
-        <p>Everything for this workspace in one view. Every task should leave a clear next handoff.</p>
-        <div className={styles.workspaceMeta}><span>{store.tasks.length} tasks</span><span>{completed} complete</span>{overdue > 0 ? <span>{overdue} overdue</span> : null}</div>
+        <EditableText ariaLabel="Workspace name" fallback={workspaceName} storageKey={`tasks:brief:title:${workspaceName}`} tag="h1" />
+        <EditableText ariaLabel="Workspace description" fallback="Everything for this workspace in one view. Every task should leave a clear next handoff." storageKey={`tasks:brief:subtitle:${workspaceName}`} tag="p" />
       </div>
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
         <div><span>Progress</span><strong>{progress}%</strong></div>

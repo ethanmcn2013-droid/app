@@ -69,9 +69,11 @@ function IdentityCell({ edition }: { edition: string | null }) {
     <div className="hidden h-full w-[248px] flex-none items-center gap-2.5 border-r border-white/[0.07] px-4 md:flex">
       <a
         href="/app/board"
-        className="flex-none rounded text-[13px] font-semibold tracking-tight text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
+        aria-label="Tasks"
+        className="flex-none select-none rounded text-[18px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
+        style={{ letterSpacing: "-0.05em" }}
       >
-        Tasks
+        tasks
       </a>
       {edition ? (
         <span
