@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-20 · T·100 · tightens · the working row sheds what the frame already carries
+
+**The hybrid interior's control row drops the second search box, the All-tasks filter, the Manual-order sort, the Planning button and the live "N shown" count, keeping only Fields, density and Add task — the black Studio Bar already owns search, and the row had started saying things twice.** The one-to-one hybrid port brought the lab's full control row back with it, so the founder's earlier row cleanup had to land again on the new interior; this re-applies it. The controls that stay wear the Signal Studio rail-icon set — fields, density, more, search, sort, filter and settings — repointed through the one icon wrapper, so the whole app moves to the same glyphs at once.
+
+The frame reads as the product now. The black bar's top-left is the real Tasks wordmark — lowercase, larger, tight-tracked — instead of a small label, and the indigo dot stays on the Signal Studio home mark to its left, never doubled. In the workspace brief, the big title and the line beneath it are editable in place: click, type, and the text persists per workspace, so "Q3 launch" and the sentence under it are yours to set. The "N tasks / N complete" receipt row under them is gone, since the progress column already carries that count.
+
+And the board's columns scroll on their own again. A wheel over a column moves only that column, the page stays anchored and the headers fixed, with the horizontal board scroll intact — the independent-column behaviour the hybrid interior had lost. Typecheck, lint, the chrome and suite contract gates, and the production build all pass; live at tasks.signalstudio.ie.
+
 ## 2026-07-20 · T·99 · ships · the views become the lab, one to one
 
 **The board, list, timeline and calendar now render the approved design-lab hybrid exactly as it was signed off — the workspace brief, the view bar, the four view grammars and the planning rail — with the only difference being the black rail and header we keep as the frame.** Production had drifted: it mirrored the Option B lab for the calendar and carried the separate T·98 board rework, so what shipped was never the hybrid the lab presented. This closes that gap by making the lab the source of truth for the interior, verified by side-by-side render rather than a spec list.
