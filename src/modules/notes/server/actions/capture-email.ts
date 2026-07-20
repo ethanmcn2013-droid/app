@@ -96,6 +96,8 @@ export async function getCaptureEmail(): Promise<CaptureEmailResult> {
  * after this returns. Tier-gated.
  */
 export async function regenerateCaptureSlug(): Promise<CaptureEmailResult> {
+  // demo mode never touches the DB — return the same free-tier nudge as getCaptureEmail.
+  if (isDemoMode()) return { ok: false, reason: "free-tier-not-enabled" };
   const userId = await requireUser();
   if (!(await notesProEnabled(userId))) {
     return { ok: false, reason: "free-tier-not-enabled" };

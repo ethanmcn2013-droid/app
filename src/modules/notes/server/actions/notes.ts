@@ -45,6 +45,7 @@ import {
   type TrustedTasksSendReceipt,
 } from "@/modules/notes/server/notes-task-send-contract";
 import {
+  DEMO_REFERENCE_TIME,
   demoArchivedNotes,
   demoNotes,
   demoSearchNotes,
@@ -52,6 +53,23 @@ import {
 
 function makeId() {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
+}
+
+/** Fabricate a plausible NoteRead for demo-mode write actions. */
+function makeDemoNote(overrides: Partial<NoteRead> = {}): NoteRead {
+  const now = DEMO_REFERENCE_TIME;
+  return {
+    id: `demo-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`,
+    body: "",
+    createdAt: now,
+    updatedAt: now,
+    extractBody: null,
+    promotedTaskId: null,
+    archivedAt: null,
+    source: null,
+    workspaceId: null,
+    ...overrides,
+  };
 }
 
 export type NoteRead = Pick<
@@ -145,6 +163,17 @@ export async function createNote(
   body: string,
   requestedWorkspaceId?: string | null,
 ): Promise<NoteRead> {
+  // demo mode never touches the DB — return a fabricated note so the client
+  // can merge optimistically without a real write.
+  if (isDemoMode()) {
+    const now = Date.now();
+    return makeDemoNote({
+      id: `demo-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`,
+      body: body.trim(),
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
   const userId = await requireUser();
   const trimmed = body.trim();
   if (!trimmed) {
@@ -314,6 +343,8 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
  * Server action: delete a note the user owns.
  */
 export async function deleteNote(id: string): Promise<void> {
+  // demo mode never touches the DB — silently no-op; in-memory seed is unchanged.
+  if (isDemoMode()) return;
   const userId = await requireUser();
 
   await db.transaction(async (tx) => {
@@ -361,6 +392,11 @@ export async function setNoteWorkspace(
   noteId: string,
   requestedWorkspaceId: string | null,
 ): Promise<NoteRead> {
+  // demo mode never touches the DB — return a fabricated note reflecting the requested change.
+  if (isDemoMode()) {
+    const now = Date.now();
+    return makeDemoNote({ id: noteId, updatedAt: now, workspaceId: requestedWorkspaceId?.trim() || null });
+  }
   const userId = await requireUser();
   const workspaceId = requestedWorkspaceId?.trim() || null;
 
@@ -417,6 +453,11 @@ export async function setNoteExtract(
   id: string,
   body: string
 ): Promise<NoteRead> {
+  // demo mode never touches the DB — return a fabricated note with the extract applied.
+  if (isDemoMode()) {
+    const now = Date.now();
+    return makeDemoNote({ id, extractBody: body.trim(), updatedAt: now });
+  }
   const userId = await requireUser();
   const trimmed = body.trim();
   if (!trimmed) {
@@ -465,6 +506,10 @@ export async function setNoteExtract(
  * Notes owns the extract draft, not the resulting Task.
  */
 export async function clearNoteExtract(id: string): Promise<NoteRead> {
+  // demo mode never touches the DB — return a fabricated note with the extract cleared.
+  if (isDemoMode()) {
+    return makeDemoNote({ id, extractBody: null, updatedAt: Date.now() });
+  }
   const userId = await requireUser();
   const now = Date.now();
 
@@ -518,6 +563,8 @@ export async function sendExtractToTasks(
   workspaceId: string,
 ): Promise<{ note: NoteRead; result: ExtractSendResult }> {
   refuseLegacyTasksSendWhenHybridEnabled();
+  // demo mode never touches the DB — cross-repo sends are unavailable in demo.
+  refuseDemoMutation();
   const userId = await requireUser();
   const tasksUrlRaw =
     process.env.TASKS_API_URL ??
@@ -676,6 +723,8 @@ export async function promoteNoteToTasks(
   workspaceId: string,
 ): Promise<{ note: NoteRead; result: ExtractSendResult }> {
   refuseLegacyTasksSendWhenHybridEnabled();
+  // demo mode never touches the DB — cross-repo sends are unavailable in demo.
+  refuseDemoMutation();
   const userId = await requireUser();
 
   const tasksUrlRaw =
@@ -879,6 +928,10 @@ export async function listArchivedNotes(): Promise<NoteRead[]> {
  * into the model.
  */
 export async function unPromoteNote(noteId: string): Promise<NoteRead> {
+  // demo mode never touches the DB — return a fabricated note with archive state cleared.
+  if (isDemoMode()) {
+    return makeDemoNote({ id: noteId, archivedAt: null, promotedTaskId: null, updatedAt: Date.now() });
+  }
   const userId = await requireUser();
 
   const now = Date.now();

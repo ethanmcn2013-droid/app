@@ -14,6 +14,7 @@ import {
   sendTimelinePromotionCommand,
   type TimelinePromotionReceipt,
 } from "@/modules/notes/server/timeline-promotion-adapter";
+import { isDemoMode } from "@/lib/access-mode";
 
 export async function promoteSelectedExtractToTimeline(input: {
   noteId: string;
@@ -22,6 +23,14 @@ export async function promoteSelectedExtractToTimeline(input: {
   completion: number;
   audienceLabel: string;
 }): Promise<TimelinePromotionReceipt & { preview: string }> {
+  // demo mode never touches the DB — cross-product Timeline writes are unavailable in demo.
+  if (isDemoMode()) {
+    return {
+      status: "unavailable",
+      message: "Timeline sharing is not available in demo mode. Your note stays private.",
+      preview: "",
+    };
+  }
   const userId = await requireUser();
   const enabled =
     process.env.SIGNAL_PLANNING_PERIODS_ENABLED === "1" ||
