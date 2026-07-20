@@ -6,7 +6,9 @@
  * in production every tile is a real destination, never a preview stub:
  *
  *   home     → the Signal Studio umbrella
- *   products → each sibling's authed /app (Tasks is the lit current tile)
+ *   products → each sibling's module route within this app, or the Tasks
+ *              board (Tasks is the current product; siblings are module
+ *              placeholders until their migration completes)
  *   more     → the umbrella (all products)
  *   search   → the universal command palette
  *   updates  → /app/inbox (the daily digest surface)
@@ -20,24 +22,39 @@
  * keeps the account avatar, since the rail is not painted there).
  */
 
+import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  NOTES_URL,
-  SIGNAL_URL,
-  STUDIO_URL,
-  TIMELINE_URL,
-} from "@/lib/product-urls";
+import { STUDIO_URL } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { STUDIO_PALETTE_EVENT } from "./studio-chrome-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
-const CORE_PRODUCTS: Array<{ key: RailIconName; label: string; href: string | null }> = [
-  { key: "notes", label: "Notes", href: `${NOTES_URL}/app` },
-  { key: "tasks", label: "Tasks", href: null },
-  { key: "timeline", label: "Timeline", href: `${TIMELINE_URL}/app` },
-  { key: "signal", label: "Signal", href: `${SIGNAL_URL}/app` },
+/** Internal route for each product module within the unified app. */
+const CORE_PRODUCTS: Array<{ key: RailIconName; label: string; href: string; activePrefix: string }> = [
+  { key: "notes",    label: "Notes",    href: "/app/notes", activePrefix: "/app/notes" },
+  { key: "tasks",    label: "Tasks",    href: "/app/board", activePrefix: "/app" },
+  { key: "timeline", label: "Timeline", href: "/app/plan",  activePrefix: "/app/plan" },
+  { key: "signal",   label: "Signal",   href: "/app/brief", activePrefix: "/app/brief" },
 ];
+
+/**
+ * Determine whether a product tile should be lit active for the current path.
+ *
+ * Tasks is active on all /app/* paths that are not owned by a sibling
+ * module, so it stays lit on board/inbox/settings/etc. Sibling modules
+ * (notes, timeline, signal) are active only on their own prefix.
+ */
+function isActive(key: RailIconName, activePrefix: string, pathname: string): boolean {
+  if (key === "tasks") {
+    return (
+      !pathname.startsWith("/app/notes") &&
+      !pathname.startsWith("/app/plan") &&
+      !pathname.startsWith("/app/brief")
+    );
+  }
+  return pathname.startsWith(activePrefix);
+}
 
 function ProductTile({ icon, label, active }: { icon: RailIconName; label: string; active?: boolean }) {
   return (
@@ -51,36 +68,29 @@ function ProductTile({ icon, label, active }: { icon: RailIconName; label: strin
 }
 
 export function StudioRail() {
+  const pathname = usePathname() ?? "";
+
   return (
     <aside aria-label="Signal Studio products" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
       {/* The Signal Studio home mark lives once, in the Studio Bar's
           top-left cell directly above this rail — no second dot here. */}
       <nav aria-label="Products" className={styles.railProducts}>
-        {CORE_PRODUCTS.map((product) =>
-          product.href ? (
-            <a
+        {CORE_PRODUCTS.map((product) => {
+          const active = isActive(product.key, product.activePrefix, pathname);
+          return (
+            <Link
+              aria-current={active ? "page" : undefined}
               className={styles.railProduct}
+              data-active={active ? "true" : undefined}
               data-product={product.key}
-              data-tip={`Open ${product.label}`}
+              data-tip={active ? `${product.label} · current` : `Open ${product.label}`}
               href={product.href}
               key={product.key}
             >
-              <ProductTile icon={product.key} label={product.label} />
-            </a>
-          ) : (
-            <Link
-              aria-current="page"
-              className={styles.railProduct}
-              data-active="true"
-              data-product={product.key}
-              data-tip={`${product.label} · current product`}
-              href="/app/board"
-              key={product.key}
-            >
-              <ProductTile active icon={product.key} label={product.label} />
+              <ProductTile active={active} icon={product.key} label={product.label} />
             </Link>
-          ),
-        )}
+          );
+        })}
       </nav>
       <span aria-hidden="true" className={styles.railDivider} />
       <a
