@@ -52,6 +52,17 @@ function walk(dir) {
   return out;
 }
 
+/**
+ * Strip line and block comments so commented-out code can neither trip the
+ * import rules nor satisfy the requireAppAccess assertion (gate-hardening,
+ * Phase 2 Opus review MAJOR-1).
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
 /** Extract all import/from string literals from a source file. */
 function extractImportPaths(source) {
   // Matches: import ... from "..." and import("...") and require("...")
@@ -90,7 +101,7 @@ const modulesDir = path.join(srcDir, "modules");
 for (const mod of MODULES) {
   const modDir = path.join(modulesDir, mod);
   for (const file of walk(modDir)) {
-    const source = readFileSync(file, "utf8");
+    const source = stripComments(readFileSync(file, "utf8"));
     for (const imp of extractImportPaths(source)) {
       // Resolve relative imports to a canonical form for matching.
       // An import from src/modules/<other> can appear as:
@@ -152,12 +163,22 @@ for (const mod of MODULES) {
     const modDir = path.join(modulesDir, mod);
     if (file.startsWith(modDir + path.sep)) continue;
 
-    // Check if this file imports from the module.
-    const source = readFileSync(file, "utf8");
+    // Check if this file imports from the module — via the @/modules alias
+    // OR via a relative path that resolves into the module directory
+    // (gate-hardening, Phase 2 Opus review MAJOR-2).
+    const source = stripComments(readFileSync(file, "utf8"));
     for (const imp of extractImportPaths(source)) {
-      const isModuleImport =
+      let isModuleImport =
         imp === `@/modules/${mod}` ||
         imp.startsWith(`@/modules/${mod}/`);
+
+      if (!isModuleImport && imp.startsWith(".")) {
+        const resolved = path.resolve(path.dirname(file), imp);
+        const relToModule = path.relative(path.join(modulesDir, mod), resolved);
+        if (relToModule === "" || !relToModule.startsWith("..")) {
+          isModuleImport = true;
+        }
+      }
 
       if (!isModuleImport) continue;
 
@@ -190,11 +211,14 @@ for (const [segment, pagePath] of Object.entries(MODULE_PAGES)) {
     );
     continue;
   }
-  const source = readFileSync(pagePath, "utf8");
-  if (!source.includes("requireAppAccess(")) {
+  const source = stripComments(readFileSync(pagePath, "utf8"));
+  const hasImport = /from\s+["']@\/server\/require-app-access["']/.test(source);
+  const hasCall = /(?:^|[^.\w])(?:await\s+)?requireAppAccess\s*\(/.test(source);
+  if (!hasImport || !hasCall) {
     failures.push(
-      `[rule-3] src/app/app/${segment}/page.tsx does not call requireAppAccess(). ` +
-        `Each module page must gate access explicitly (AD-005 defence-in-depth).`,
+      `[rule-3] src/app/app/${segment}/page.tsx must import requireAppAccess ` +
+        `from "@/server/require-app-access" and call it (comments do not count) ` +
+        `(AD-005 defence-in-depth).`,
     );
   }
 }
