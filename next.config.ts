@@ -64,19 +64,18 @@ const securityHeaders = [
 ];
 
 // AD-012: /embed/[slug] is a documented framable surface — partners and venue
-// pages iframe it to show a live task board. The global "/(.*)" rule above
-// sends X-Frame-Options: DENY and CSP frame-ancestors 'none', which blocks
-// that contract. Fix: a second headers entry for /embed/:path* overrides
-// exactly those two headers (Next.js "last key wins" per-path merge).
-// All other security headers from the global rule still apply to embed routes.
+// pages iframe it to show a live task board. A blocking X-Frame-Options on
+// /embed cannot be neutralised by CSP frame-ancestors while the CSP ships
+// Report-Only (browsers only let an ENFORCED frame-ancestors override XFO),
+// so /embed must receive no X-Frame-Options at all: the global rule excludes
+// /embed/* via negative lookahead, and /embed/:path* gets the full security
+// header set minus XFO, with frame-ancestors * in its CSP.
 const embedCsp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
 const embedFrameHeaders = [
-  // Override: allow framing from any origin (modern browsers honour CSP).
   { key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: embedCsp },
-  // Override: SAMEORIGIN instead of DENY so legacy XFO-only browsers do not
-  // hard-block the embed; CSP frame-ancestors * is the authoritative signal
-  // for browsers that support it.
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  ...securityHeaders.filter(
+    (h) => h.key !== "X-Frame-Options" && !h.key.startsWith("Content-Security-Policy"),
+  ),
 ];
 
 const nextConfig: NextConfig = {
@@ -95,14 +94,15 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // Global baseline — applies to every route including /embed.
+      // Global baseline — every route EXCEPT /embed/* (AD-012: embed pages
+      // must not receive X-Frame-Options; the exception entry below carries
+      // the rest of the security headers for them).
       {
-        source: "/(.*)",
+        source: "/((?!embed/).*)",
         headers: securityHeaders,
       },
-      // AD-012: embed exception — overrides the two framing headers so that
-      // /embed/:path* routes are framable. All other security headers from the
-      // global rule above remain in effect (Next.js "last key wins" merge).
+      // AD-012: embed exception — framable surface: full security header set
+      // minus X-Frame-Options, CSP with frame-ancestors *.
       {
         source: "/embed/:path*",
         headers: embedFrameHeaders,

@@ -8,9 +8,11 @@
  *   1. The global headers rule still carries X-Frame-Options: DENY — the
  *      default posture that protects every non-embed route.
  *
- *   2. An /embed exception exists that overrides XFO away from DENY and
- *      replaces CSP frame-ancestors 'none' with frame-ancestors * so that
- *      /embed/[slug] is actually framable (the documented embed contract).
+ *   2. The global rule EXCLUDES /embed/* (negative lookahead source) and an
+ *      /embed exception entry exists that carries NO X-Frame-Options at all,
+ *      with CSP frame-ancestors * — under a Report-Only CSP, only the total
+ *      absence of a blocking XFO makes embeds actually framable cross-origin
+ *      (browsers only let an ENFORCED frame-ancestors override XFO).
  *
  * A full runtime header check requires a running server and is deferred to
  * Phase 9 live verification. This static check is sufficient to catch the
@@ -58,18 +60,26 @@ if (!source.includes("frame-ancestors 'none'")) {
   );
 }
 
-/* ── Assertion 2: /embed exception exists ────────────────────────────── */
+/* ── Assertion 2: global rule excludes /embed; exception carries no XFO ── */
 
-// A headers entry with source "/embed/:path*" (or equivalent) must be present.
+// The global rule must exclude embed paths via negative lookahead so /embed
+// never receives X-Frame-Options (setting any XFO value would still block
+// cross-origin framing while the CSP is Report-Only).
+if (!source.includes('"/((?!embed/).*)"') && !source.includes("'/((?!embed/).*)'")) {
+  failures.push(
+    'next.config.ts: global headers source must be "/((?!embed/).*)" so /embed/* ' +
+    "receives no X-Frame-Options at all (AD-012).",
+  );
+}
+
+// A headers entry with source "/embed/:path*" must be present.
 if (!source.includes('"/embed/:path*"') && !source.includes("'/embed/:path*'")) {
   failures.push(
     'next.config.ts: no /embed/:path* headers entry found. ' +
-    'AD-012 requires a second headers entry that overrides X-Frame-Options and ' +
-    'CSP frame-ancestors for framable embed routes.',
+    'AD-012 requires an exception entry carrying the security headers minus ' +
+    'X-Frame-Options for framable embed routes.',
   );
 } else {
-  // The embed exception must override frame-ancestors to something other than 'none'.
-  // We look for frame-ancestors * as the declared override value.
   if (!source.includes("frame-ancestors *")) {
     failures.push(
       "next.config.ts: /embed/:path* entry exists but \"frame-ancestors *\" not found. " +
@@ -77,13 +87,11 @@ if (!source.includes('"/embed/:path*"') && !source.includes("'/embed/:path*'")) 
     );
   }
 
-  // The embed exception must not re-assert DENY for X-Frame-Options.
-  // We check that SAMEORIGIN appears (the agreed override value).
-  if (!source.includes('"SAMEORIGIN"') && !source.includes("'SAMEORIGIN'")) {
+  // The embed header list must EXCLUDE X-Frame-Options entirely.
+  if (!/embedFrameHeaders[\s\S]*?filter[\s\S]*?X-Frame-Options/.test(source)) {
     failures.push(
-      'next.config.ts: /embed/:path* entry exists but X-Frame-Options override ' +
-      '(SAMEORIGIN) not found. The embed exception must override X-Frame-Options ' +
-      'away from DENY so legacy XFO-only browsers do not block the embed.',
+      "next.config.ts: embedFrameHeaders must filter X-Frame-Options out of the " +
+      "security header set — embed routes must carry no XFO header at all (AD-012).",
     );
   }
 }
