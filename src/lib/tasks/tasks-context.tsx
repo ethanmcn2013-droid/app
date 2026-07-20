@@ -31,6 +31,7 @@ import {
   moveTaskAction,
   removeTaskAction,
   reorderTaskAction,
+  setTaskArchivedAction,
   toggleCompleteAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
@@ -108,6 +109,9 @@ export type TasksDispatchers = {
     recurrence?: RecurrenceSpec;
   }) => Task;
   removeTask: (id: string) => void;
+  /** Archive a task (sets archived_at; leaves every active view, restorable
+   *  from /app/archived). Optimistically removes it from board state. */
+  archiveTask: (id: string) => void;
   toggleComplete: (id: string) => void;
   /** Duplicate a task (and its subtasks) within the workspace. Non-optimistic
    *  — the copy's ids are server-minted, and duplication is not a
@@ -277,6 +281,14 @@ export function TasksProvider({
         withServerSync(
           () => dispatch({ type: "remove", id }),
           () => removeTaskAction(id),
+        ),
+      archiveTask: (id) =>
+        // Archived tasks leave every active view, so optimistically drop the
+        // row from board state exactly like a delete; the server sets
+        // archived_at instead of deleting, so it can be restored later.
+        withServerSync(
+          () => dispatch({ type: "remove", id }),
+          () => setTaskArchivedAction(id, true),
         ),
       toggleComplete: (id) =>
         withServerSync(

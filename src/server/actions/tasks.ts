@@ -511,6 +511,27 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   return getTasks(ws);
 }
 
+/**
+ * Archive or restore a task. Non-destructive: sets/clears `archived_at`
+ * so the task leaves (or returns to) every active view without deleting
+ * it. Workspace-guarded like every other write here. Returns the active
+ * task list (archived rows are filtered out of it by getTasks).
+ */
+export async function setTaskArchivedAction(
+  id: string,
+  archived: boolean,
+): Promise<Task[]> {
+  if (isDemoMode()) return demoTasks();
+  const ws = await getActiveWorkspace();
+  await db
+    .update(tasks)
+    .set({ archivedAt: archived ? new Date() : null, ...bump() })
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  revalidatePath("/app", "layout");
+  emitTasksChanged({ kind: "tasks" });
+  return getTasks(ws);
+}
+
 /** Mint a fresh task id in the `t-<8hex>` convention. */
 function freshTaskId(): string {
   return `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, "").slice(0, 8)}`;

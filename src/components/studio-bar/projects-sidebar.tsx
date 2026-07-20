@@ -16,14 +16,23 @@ import {
   useState,
   useSyncExternalStore,
   useTransition,
+  type CSSProperties,
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
 import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
-import { createProjectAction } from "@/server/actions/planning";
-import type { ProjectsTreeGroup } from "@/server/actions/projects-tree";
+import {
+  archiveProjectAction,
+  createProjectAction,
+  deleteProjectAction,
+  restoreProjectAction,
+} from "@/server/actions/planning";
+import type {
+  ProjectsTreeData,
+  ProjectsTreeLeaf,
+} from "@/server/actions/projects-tree";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { RailIcon, ShellGlyph, SidebarGlyph } from "./rail-icons";
 import styles from "./signal-shell.module.css";
@@ -241,12 +250,196 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
   );
 }
 
+/**
+ * Per-project overflow menu (the ⋯ that appears on row hover). Hosts the
+ * project lifecycle: Archive / Restore and Delete (delete is a two-step
+ * confirm — no undo). Owner-gated server-side; the button is best-effort UI.
+ */
+function ProjectRowMenu({
+  workspaceId,
+  name,
+  archived,
+  onDone,
+}: {
+  workspaceId: string;
+  name: string;
+  archived: boolean;
+  onDone: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setConfirmingDelete(false);
+      }
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        setConfirmingDelete(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function run(action: () => Promise<unknown>) {
+    startTransition(async () => {
+      try {
+        await action();
+      } catch (e) {
+        console.warn("project action failed", e);
+      }
+      setOpen(false);
+      setConfirmingDelete(false);
+      onDone();
+    });
+  }
+
+  const itemStyle: CSSProperties = {
+    alignItems: "center",
+    background: "transparent",
+    border: 0,
+    borderRadius: 6,
+    color: "var(--x-task-text-secondary)",
+    cursor: "pointer",
+    display: "flex",
+    font: "inherit",
+    fontSize: 11.5,
+    gap: 8,
+    padding: "7px 8px",
+    textAlign: "left",
+    width: "100%",
+  };
+
+  return (
+    <div className={styles.projectRowMenu} data-open={open || undefined} ref={wrapRef}>
+      <button
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Project options for ${name}`}
+        className={styles.projectRowMenuBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+          setConfirmingDelete(false);
+        }}
+        type="button"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.7" />
+          <circle cx="12" cy="12" r="1.7" />
+          <circle cx="19" cy="12" r="1.7" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          aria-label={`${name} options`}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            background: "var(--x-task-overlay)",
+            border: "1px solid var(--x-task-border)",
+            borderRadius: 8,
+            boxShadow: "var(--x-task-shadow)",
+            padding: 5,
+            position: "absolute",
+            right: 0,
+            top: "calc(100% + 4px)",
+            width: 176,
+            zIndex: 70,
+          }}
+        >
+          {archived ? (
+            <button
+              disabled={pending}
+              onClick={() => run(() => restoreProjectAction(workspaceId))}
+              role="menuitem"
+              style={itemStyle}
+              type="button"
+            >
+              <RailIcon name="updates" size={14} />
+              Restore project
+            </button>
+          ) : (
+            <button
+              disabled={pending}
+              onClick={() => run(() => archiveProjectAction(workspaceId))}
+              role="menuitem"
+              style={itemStyle}
+              type="button"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="4" rx="1" />
+                <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+                <path d="M10 12h4" />
+              </svg>
+              Archive project
+            </button>
+          )}
+          {confirmingDelete ? (
+            <button
+              disabled={pending}
+              onClick={() => run(() => deleteProjectAction(workspaceId))}
+              role="menuitem"
+              style={{ ...itemStyle, color: "var(--x-task-danger)" }}
+              type="button"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              {pending ? "Deleting…" : "Delete forever"}
+            </button>
+          ) : (
+            <button
+              disabled={pending}
+              onClick={() => setConfirmingDelete(true)}
+              role="menuitem"
+              style={{ ...itemStyle, color: "var(--x-task-danger)" }}
+              type="button"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              Delete project
+            </button>
+          )}
+          {confirmingDelete ? (
+            <p
+              style={{
+                color: "var(--x-task-text-muted)",
+                fontSize: 10,
+                lineHeight: 1.45,
+                margin: "2px 6px 4px",
+              }}
+            >
+              Deletes every task in {name}. This can’t be undone.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SidebarBody({
   tree,
   activeWorkspaceId,
   onNavigate,
 }: {
-  tree: readonly ProjectsTreeGroup[];
+  tree: ProjectsTreeData;
   activeWorkspaceId: string;
   onNavigate?: () => void;
 }) {
@@ -255,12 +448,13 @@ function SidebarBody({
   const tasks = useTasksState();
   const inboxCount = openTaskCount(tasks);
   const [, startTransition] = useTransition();
-  const activeGroup = tree.find((g) =>
+  const activeGroup = tree.groups.find((g) =>
     g.workspaces.some((w) => w.id === activeWorkspaceId),
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     activeGroup?.periodId ? { [activeGroup.periodId]: true } : {},
   );
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   function chooseWorkspace(id: string) {
     onNavigate?.();
@@ -270,6 +464,10 @@ function SidebarBody({
       router.refresh();
     });
   }
+
+  const refreshTree = useCallback(() => {
+    startTransition(() => router.refresh());
+  }, [router]);
 
   return (
     <div className={styles.sidebarScroll}>
@@ -306,12 +504,25 @@ function SidebarBody({
           <SidebarGlyph name="people" size={16} />
           <span>Assigned to me</span>
         </Link>
+        <Link
+          aria-current={pathname === "/app/archived" ? "page" : undefined}
+          className={styles.navRow}
+          href="/app/archived"
+          onClick={onNavigate}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="4" rx="1" />
+            <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+            <path d="M10 12h4" />
+          </svg>
+          <span>Archived</span>
+        </Link>
         <SavedViewsRow />
       </nav>
       <nav aria-label="Projects" className={styles.projectsSection}>
         <h2 className={styles.projectsHeading}>Projects</h2>
         <ul className={styles.projectTree}>
-          {tree.map((group) => {
+          {tree.groups.map((group) => {
             if (group.periodId) {
               const open = openGroups[group.periodId] ?? false;
               const domId = `projects-${group.periodId}`;
@@ -340,17 +551,25 @@ function SidebarBody({
                   <ul className={styles.projectChildren} hidden={!open} id={domId}>
                     {group.workspaces.map((w) => (
                       <li key={w.id}>
-                        <button
-                          aria-current={w.id === activeWorkspaceId ? "page" : undefined}
-                          className={styles.projectLeaf}
-                          onClick={() => chooseWorkspace(w.id)}
-                          type="button"
-                        >
-                          <span className={styles.projectName}>{w.name}</span>
-                          <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
-                            {w.taskCount}
-                          </span>
-                        </button>
+                        <div className={styles.projectRowWrap}>
+                          <button
+                            aria-current={w.id === activeWorkspaceId ? "page" : undefined}
+                            className={styles.projectLeaf}
+                            onClick={() => chooseWorkspace(w.id)}
+                            type="button"
+                          >
+                            <span className={styles.projectName}>{w.name}</span>
+                            <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                              {w.taskCount}
+                            </span>
+                          </button>
+                          <ProjectRowMenu
+                            archived={false}
+                            name={w.name}
+                            onDone={refreshTree}
+                            workspaceId={w.id}
+                          />
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -360,23 +579,70 @@ function SidebarBody({
             // Periodless workspaces: standalone parent-level rows.
             return group.workspaces.map((w) => (
               <li key={w.id}>
-                <button
-                  aria-current={w.id === activeWorkspaceId ? "page" : undefined}
-                  className={styles.projectParent}
-                  data-active={w.id === activeWorkspaceId || undefined}
-                  onClick={() => chooseWorkspace(w.id)}
-                  type="button"
-                >
-                  <span aria-hidden="true" className={styles.disclosureGhost} />
-                  <span className={styles.projectName}>{w.name}</span>
-                  <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
-                    {w.taskCount}
-                  </span>
-                </button>
+                <div className={styles.projectRowWrap}>
+                  <button
+                    aria-current={w.id === activeWorkspaceId ? "page" : undefined}
+                    className={styles.projectParent}
+                    data-active={w.id === activeWorkspaceId || undefined}
+                    onClick={() => chooseWorkspace(w.id)}
+                    type="button"
+                  >
+                    <span aria-hidden="true" className={styles.disclosureGhost} />
+                    <span className={styles.projectName}>{w.name}</span>
+                    <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                      {w.taskCount}
+                    </span>
+                  </button>
+                  <ProjectRowMenu
+                    archived={false}
+                    name={w.name}
+                    onDone={refreshTree}
+                    workspaceId={w.id}
+                  />
+                </div>
               </li>
             ));
           })}
           <AddProjectRow onCreated={onNavigate} />
+          {tree.archived.length > 0 ? (
+            <li>
+              <button
+                aria-controls="projects-archived"
+                aria-expanded={archivedOpen}
+                className={styles.projectParent}
+                onClick={() => setArchivedOpen((v) => !v)}
+                type="button"
+              >
+                <span aria-hidden="true" className={styles.disclosure} data-open={archivedOpen || undefined}>
+                  <ShellGlyph name="chevron" size={13} />
+                </span>
+                <span className={styles.projectName}>Archived</span>
+                <span aria-label={`${tree.archived.length} archived`} className={styles.leafCount}>
+                  {tree.archived.length}
+                </span>
+              </button>
+              <ul className={styles.projectChildren} hidden={!archivedOpen} id="projects-archived">
+                {tree.archived.map((w: ProjectsTreeLeaf) => (
+                  <li key={w.id}>
+                    <div className={styles.projectRowWrap}>
+                      <span className={styles.projectLeaf} data-archived="true">
+                        <span className={styles.projectName}>{w.name}</span>
+                        <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                          {w.taskCount}
+                        </span>
+                      </span>
+                      <ProjectRowMenu
+                        archived
+                        name={w.name}
+                        onDone={refreshTree}
+                        workspaceId={w.id}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ) : null}
         </ul>
       </nav>
     </div>
@@ -415,7 +681,7 @@ export function ProjectsSidebar({
   tree,
   activeWorkspaceId,
 }: {
-  tree: readonly ProjectsTreeGroup[];
+  tree: ProjectsTreeData;
   activeWorkspaceId: string;
 }) {
   const drawerMode = useDrawerViewport();

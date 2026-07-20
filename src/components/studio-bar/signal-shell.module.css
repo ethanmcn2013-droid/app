@@ -178,6 +178,19 @@
 
 .railAccount:hover { border-color: rgba(255, 255, 255, 0.24); color: var(--x-studio-ink); }
 
+/* Foot-of-rail account slot: hosts the relocated profile avatar (with its
+   full account menu). Centres the 32px avatar in the 60px rail and gives it
+   the same breathing room the monogram chip used to have. */
+.railAccountSlot {
+  align-items: center;
+  display: flex;
+  flex: none;
+  justify-content: center;
+  margin-top: 10px;
+  margin-bottom: 2px;
+  position: relative;
+}
+
 .signalRail :focus-visible {
   outline: 2px solid var(--x-studio-focus);
   outline-offset: 2px;
@@ -444,6 +457,49 @@
 }
 
 .projectLeaf[aria-current="page"] .leafCount { color: var(--x-task-accent); }
+
+/* Project row + its hover-revealed ⋯ options menu. The switch button and the
+   menu are siblings inside a positioned wrapper (a button can't nest a
+   button), so the menu floats over the row's right edge on hover / when open. */
+.projectRowWrap { position: relative; }
+
+.projectRowMenu {
+  opacity: 0;
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: opacity 120ms ease;
+}
+
+.projectRowWrap:hover .projectRowMenu,
+.projectRowMenu[data-open] {
+  opacity: 1;
+}
+
+.projectRowMenuBtn {
+  align-items: center;
+  background: var(--x-task-hover);
+  border: 0;
+  border-radius: 5px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 22px;
+  justify-content: center;
+  padding: 0;
+  width: 22px;
+}
+
+.projectRowMenuBtn:hover { background: var(--x-task-selected); color: var(--x-task-text); }
+
+/* Archived leaf is a non-clickable label, dimmed until you act via the menu. */
+.projectLeaf[data-archived] {
+  color: var(--x-task-text-muted);
+  cursor: default;
+}
+
+.projectLeaf[data-archived]:hover { background: transparent; }
 
 .privacyMark {
   align-items: center;

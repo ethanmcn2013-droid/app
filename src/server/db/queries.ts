@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   getTableColumns,
+  isNotNull,
   isNull,
   like,
   sql,
@@ -92,7 +93,16 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
   const rows = await db
     .select(taskColumnsWithCount)
     .from(tasks)
-    .where(byWorkspace(tasks.workspaceId, workspaceId, isNull(tasks.parentTaskId)))
+    .where(
+      byWorkspace(
+        tasks.workspaceId,
+        workspaceId,
+        isNull(tasks.parentTaskId),
+        // Archived tasks leave every active view; they live only on the
+        // /app/archived surface until restored or deleted.
+        isNull(tasks.archivedAt),
+      ),
+    )
     .orderBy(laneOrderSql, positionOrderSql)
     // Hard safety cap. The board/list/timeline never need more than
     // this, and the public `/p/{slug}` share path resolves through
@@ -101,6 +111,31 @@ export async function getTasks(workspaceId: string): Promise<Task[]> {
     // real workspace; if a workspace legitimately exceeds it, the
     // overflow is the long tail of oldest in-lane rows.
     .limit(2000);
+    return rows.map(rowToTask);
+  });
+}
+
+/**
+ * Archived top-level tasks for a workspace, newest-archived first. Powers
+ * the /app/archived restore surface. Mirrors getTasks' tenant + parent
+ * guards but inverts the archive filter.
+ */
+export async function getArchivedTasks(workspaceId: string): Promise<Task[]> {
+  if (isDemoMode()) return [];
+  return withReadRetry(async () => {
+    const rows = await db
+      .select(taskColumnsWithCount)
+      .from(tasks)
+      .where(
+        byWorkspace(
+          tasks.workspaceId,
+          workspaceId,
+          isNull(tasks.parentTaskId),
+          isNotNull(tasks.archivedAt),
+        ),
+      )
+      .orderBy(desc(tasks.archivedAt))
+      .limit(2000);
     return rows.map(rowToTask);
   });
 }

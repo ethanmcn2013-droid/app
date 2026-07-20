@@ -119,7 +119,7 @@ export function CardMenu({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const pos = useAnchoredPosition(triggerRef, panelRef, true);
   const { openTask } = useTaskPanel();
-  const { moveTask, moveTaskToColumn, toggleComplete, updateTask, duplicateTask } =
+  const { moveTask, moveTaskToColumn, toggleComplete, updateTask, duplicateTask, archiveTask } =
     useTasksDispatch();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [nudgeOpen, setNudgeOpen] = useState(false);
@@ -269,6 +269,15 @@ export function CardMenu({
         </button>
 
         <div className={styles.divider} />
+        <button
+          type="button"
+          role="menuitem"
+          className={styles.item}
+          onClick={() => { archiveTask(task.id); close(); }}
+        >
+          <Icon name="inbox" size={14} />
+          Archive
+        </button>
         <button
           type="button"
           role="menuitem"

@@ -14,7 +14,7 @@ import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Popover } from "./popover";
-import { useState } from "react";
+import { DueCalendar } from "./due-calendar";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
 const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
@@ -379,27 +379,66 @@ function sameRecurrence(
 
 function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
-  const [draft, setDraft] = useState(task.due ?? "");
+  const current = task.dueAt ? new Date(task.dueAt) : null;
+  const hasDate = Boolean(task.due);
   return (
-    <input
-      type="text"
-      value={draft}
-      placeholder="No due date"
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => {
-        if (draft !== (task.due ?? "")) {
-          updateTask(task.id, { due: draft || undefined });
-        }
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
-        if (e.key === "Escape") {
-          setDraft(task.due ?? "");
-          (e.currentTarget as HTMLInputElement).blur();
-        }
-      }}
-      className="w-fit rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-[12.5px] text-ink hover:border-line-soft focus:border-brand focus:outline-none"
-    />
+    <Popover
+      align="start"
+      width={264}
+      aria-label="Choose a due date"
+      trigger={({ onClick, "aria-expanded": expanded, ref }) => (
+        <button
+          ref={ref}
+          type="button"
+          onClick={onClick}
+          aria-expanded={expanded}
+          aria-haspopup="dialog"
+          className={
+            "inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-[12.5px] transition-colors hover:border-line-soft focus:border-brand focus:outline-none " +
+            (hasDate ? "text-ink" : "text-ink-faint")
+          }
+        >
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-ink-quiet"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4.5" width="18" height="16.5" rx="2.5" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="8" y1="2.5" x2="8" y2="6" />
+            <line x1="16" y1="2.5" x2="16" y2="6" />
+          </svg>
+          {task.due || "No due date"}
+        </button>
+      )}
+    >
+      {(close) => (
+        <DueCalendar
+          value={current}
+          onSelect={(date, label) => {
+            updateTask(task.id, { due: label, dueAt: date });
+            close();
+          }}
+          onClear={() => {
+            // Send explicit null (not undefined) so the server clears the
+            // columns — updateTaskAction strips undefined from sparse patches,
+            // so a due date can only be removed by writing null.
+            updateTask(task.id, {
+              due: null,
+              dueAt: null,
+            } as unknown as Partial<Omit<Task, "id">>);
+            close();
+          }}
+        />
+      )}
+    </Popover>
   );
 }
 

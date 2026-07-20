@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useOptimistic, useState, useTransition } from "react";
-import { useTasksState } from "@/lib/tasks/tasks-context";
+import { useTasksState, useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { getTaskConversationAction } from "@/server/actions/conversation";
 import { setTaskMilestoneAction } from "@/server/actions/tasks";
@@ -249,7 +249,12 @@ function PanelFooter({ task }: { task: Task }) {
           </a>
         </div>
       ) : null}
-      <div className="flex items-center justify-end gap-1 px-6 py-3">
+      <div className="flex items-center justify-between gap-1 px-6 py-3">
+        <div className="flex items-center gap-1">
+          <DeleteTaskButton task={task} />
+          <ArchiveTaskButton task={task} />
+        </div>
+        <div className="flex items-center gap-1">
         <RepeatButton task={task} />
         <MilestoneButton task={task} />
         <button
@@ -280,8 +285,112 @@ function PanelFooter({ task }: { task: Task }) {
           </svg>
           Focus
         </button>
+        </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Archive this task from the panel. Reversible (restore from /app/archived),
+ * so a single click — no confirm — then closes the panel.
+ */
+function ArchiveTaskButton({ task }: { task: Task }) {
+  const { archiveTask } = useTasksDispatch();
+  const { closeTask } = useTaskPanel();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        archiveTask(task.id);
+        closeTask();
+      }}
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+      aria-label="Archive this task"
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <rect x="3" y="4" width="18" height="4" rx="1" />
+        <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+        <path d="M10 12h4" />
+      </svg>
+      Archive
+    </button>
+  );
+}
+
+/**
+ * Delete this task, from the panel. A discoverable, unambiguous delete for
+ * the open task (the board card menu also carries one). Two-step inline
+ * confirm — no accidental deletes, no modal — then closes the panel.
+ */
+function DeleteTaskButton({ task }: { task: Task }) {
+  const { removeTask } = useTasksDispatch();
+  const { closeTask } = useTaskPanel();
+  const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    if (!confirming) return;
+    const t = window.setTimeout(() => setConfirming(false), 4000);
+    return () => window.clearTimeout(t);
+  }, [confirming]);
+
+  if (confirming) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => {
+            removeTask(task.id);
+            closeTask();
+          }}
+          className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-2 py-1 text-[11.5px] font-medium text-white transition-colors hover:bg-red-700"
+        >
+          Delete task
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+        >
+          Keep
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setConfirming(true)}
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-red-50 hover:text-red-600"
+      aria-label="Delete this task"
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      </svg>
+      Delete
+    </button>
   );
 }
 

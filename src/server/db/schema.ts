@@ -126,6 +126,13 @@ export const tasks = sqliteTable("tasks", {
   isMilestone: integer("is_milestone", { mode: "boolean" })
     .notNull()
     .default(false),
+  /** Archive timestamp. Non-null hides the task from every active view
+   *  (getTasks filters `archived_at IS NULL`) without deleting it; restore
+   *  clears it back to null. Nullable, absent on legacy rows.
+   *
+   *  MIGRATION REQUIRED before this column is readable from prod:
+   *  see drizzle/0016_tasks_archived_at.sql. */
+  archivedAt: integer("archived_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

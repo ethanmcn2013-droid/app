@@ -32,6 +32,14 @@ export type ProjectsTreeGroup = Readonly<{
   workspaces: readonly ProjectsTreeLeaf[];
 }>;
 
+export type ProjectsTreeData = Readonly<{
+  /** Active (non-archived) projects, grouped by planning period. */
+  groups: readonly ProjectsTreeGroup[];
+  /** Archived projects, flat. Surfaced under a collapsed "Archived"
+   *  section in the sidebar; restore returns them to `groups`. */
+  archived: readonly ProjectsTreeLeaf[];
+}>;
+
 function compactDate(value: string): string {
   const parsed = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return value;
@@ -42,27 +50,34 @@ function compactDate(value: string): string {
   });
 }
 
-export async function getProjectsTreeData(): Promise<readonly ProjectsTreeGroup[]> {
+export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
   if (isDemoMode()) {
-    return [
-      {
-        periodId: "demo-planning-period",
-        periodName: "Wedding season",
-        dateRange: "12 Sep",
-        workspaces: [
-          { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
-        ],
-      },
-    ];
+    return {
+      groups: [
+        {
+          periodId: "demo-planning-period",
+          periodName: "Wedding season",
+          dateRange: "12 Sep",
+          workspaces: [
+            { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
+          ],
+        },
+      ],
+      archived: [],
+    };
   }
 
   const mine = await listMyWorkspaces();
-  if (mine.length === 0) return [];
+  if (mine.length === 0) return { groups: [], archived: [] };
   const ids = mine.map((w) => w.id);
 
   const [wsRows, countRows] = await Promise.all([
     db
-      .select({ id: workspaces.id, planningPeriodId: workspaces.planningPeriodId })
+      .select({
+        id: workspaces.id,
+        planningPeriodId: workspaces.planningPeriodId,
+        archivedAt: workspaces.archivedAt,
+      })
       .from(workspaces)
       .where(inArray(workspaces.id, ids)),
     db
@@ -73,6 +88,9 @@ export async function getProjectsTreeData(): Promise<readonly ProjectsTreeGroup[
   ]);
 
   const periodByWs = new Map(wsRows.map((r) => [r.id, r.planningPeriodId]));
+  const archivedWs = new Set(
+    wsRows.filter((r) => r.archivedAt != null).map((r) => r.id),
+  );
   const countByWs = new Map(countRows.map((r) => [r.workspaceId, r.n]));
 
   const periodIds = [
@@ -92,14 +110,19 @@ export async function getProjectsTreeData(): Promise<readonly ProjectsTreeGroup[
   const periodById = new Map(periods.map((p) => [p.id, p]));
 
   const groups = new Map<string | null, ProjectsTreeLeaf[]>();
+  const archived: ProjectsTreeLeaf[] = [];
   for (const w of mine) {
-    const pid = periodByWs.get(w.id) ?? null;
-    const key = pid && periodById.has(pid) ? pid : null;
     const leaf: ProjectsTreeLeaf = {
       id: w.id,
       name: w.name,
       taskCount: countByWs.get(w.id) ?? 0,
     };
+    if (archivedWs.has(w.id)) {
+      archived.push(leaf);
+      continue;
+    }
+    const pid = periodByWs.get(w.id) ?? null;
+    const key = pid && periodById.has(pid) ? pid : null;
     const bucket = groups.get(key);
     if (bucket) bucket.push(leaf);
     else groups.set(key, [leaf]);
@@ -121,5 +144,5 @@ export async function getProjectsTreeData(): Promise<readonly ProjectsTreeGroup[
   if (loose) {
     result.push({ periodId: null, periodName: null, dateRange: null, workspaces: loose });
   }
-  return result;
+  return { groups: result, archived };
 }
