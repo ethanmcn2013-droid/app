@@ -392,7 +392,7 @@ function ProjectRowMenu({
               disabled={pending}
               onClick={() => run(() => deleteProjectAction(workspaceId))}
               role="menuitem"
-              style={{ ...itemStyle, color: "var(--x-task-danger, #dc2626)" }}
+              style={{ ...itemStyle, color: "var(--x-task-danger)" }}
               type="button"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -406,7 +406,7 @@ function ProjectRowMenu({
               disabled={pending}
               onClick={() => setConfirmingDelete(true)}
               role="menuitem"
-              style={{ ...itemStyle, color: "var(--x-task-danger, #dc2626)" }}
+              style={{ ...itemStyle, color: "var(--x-task-danger)" }}
               type="button"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
