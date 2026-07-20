@@ -30,13 +30,17 @@ const clerkHosts =
   "https://*.signalstudio.ie https://*.clerk.accounts.dev https://*.clerk.com https://clerk-telemetry.com";
 const turnstile = "https://challenges.cloudflare.com";
 
+const googleTag = "https://www.googletagmanager.com";
+const googleAnalytics =
+  "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com";
+
 const csp = [
   `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io ${googleTag}`,
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' data: blob: https:`,
   `font-src 'self' data:`,
-  `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com`,
+  `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${googleTag} ${googleAnalytics}`,
   `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
   `worker-src 'self' blob:`,
   `frame-ancestors 'none'`,

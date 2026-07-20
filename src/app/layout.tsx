@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleTag } from "@/components/analytics/google-tag";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { MotionProvider } from "@/components/motion-provider";
@@ -91,6 +92,8 @@ export default function RootLayout({
       style={{ background: "#fff", colorScheme: "light" }}
     >
       <head>
+        {/* Google tag (gtag.js) — production only, on every page. */}
+        <GoogleTag />
         <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
         <link rel="preconnect" href="https://timeline.signalstudio.ie" />
         <link rel="dns-prefetch" href="https://timeline.signalstudio.ie" />
