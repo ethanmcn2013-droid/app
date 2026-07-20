@@ -63,6 +63,22 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
 ];
 
+// AD-012: /embed/[slug] is a documented framable surface — partners and venue
+// pages iframe it to show a live task board. The global "/(.*)" rule above
+// sends X-Frame-Options: DENY and CSP frame-ancestors 'none', which blocks
+// that contract. Fix: a second headers entry for /embed/:path* overrides
+// exactly those two headers (Next.js "last key wins" per-path merge).
+// All other security headers from the global rule still apply to embed routes.
+const embedCsp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+const embedFrameHeaders = [
+  // Override: allow framing from any origin (modern browsers honour CSP).
+  { key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: embedCsp },
+  // Override: SAMEORIGIN instead of DENY so legacy XFO-only browsers do not
+  // hard-block the embed; CSP frame-ancestors * is the authoritative signal
+  // for browsers that support it.
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+];
+
 const nextConfig: NextConfig = {
   env: {
     // Build-time, non-secret deployment posture used by shared server/client
@@ -79,9 +95,17 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Global baseline — applies to every route including /embed.
       {
         source: "/(.*)",
         headers: securityHeaders,
+      },
+      // AD-012: embed exception — overrides the two framing headers so that
+      // /embed/:path* routes are framable. All other security headers from the
+      // global rule above remain in effect (Next.js "last key wins" merge).
+      {
+        source: "/embed/:path*",
+        headers: embedFrameHeaders,
       },
     ];
   },
