@@ -136,7 +136,20 @@ function EyeIcon() {
  * same-site cookie + sessionStorage mirror so the proxy allows an
  * authed user to view the marketing site without being redirected.
  */
-function DemoUserButtonWithSuite({ current }: { current: ProductSlug }) {
+function DemoUserButtonWithSuite({
+  current,
+  placement = "bar",
+}: {
+  current: ProductSlug;
+  placement?: "bar" | "rail";
+}) {
+  // In the bar (top-right) the menu drops down-right; at the foot of the
+  // left product rail it must fly up and to the right so it never clips the
+  // viewport edge below or the rail edge to the left.
+  const menuPosition =
+    placement === "rail"
+      ? "bottom-full left-0 mb-2"
+      : "right-0 mt-2";
   return (
     <details className="group relative">
       <summary
@@ -145,7 +158,7 @@ function DemoUserButtonWithSuite({ current }: { current: ProductSlug }) {
       >
         DO
       </summary>
-      <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]">
+      <div className={`absolute z-50 w-52 rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)] ${menuPosition}`}>
         <p className="px-2.5 py-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint">
           Demo operator
         </p>
@@ -247,9 +260,18 @@ function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
   );
 }
 
-export function UserButtonWithSuite({ current }: { current: ProductSlug }) {
+export function UserButtonWithSuite({
+  current,
+  placement = "bar",
+}: {
+  current: ProductSlug;
+  /** Where the avatar is mounted. "rail" flips the demo menu upward so it
+   *  clears the viewport from the foot of the left product rail. The Clerk
+   *  UserButton auto-positions its own popover, so it ignores this. */
+  placement?: "bar" | "rail";
+}) {
   return isDemoMode() ? (
-    <DemoUserButtonWithSuite current={current} />
+    <DemoUserButtonWithSuite current={current} placement={placement} />
   ) : (
     <ClerkUserButtonWithSuite current={current} />
   );

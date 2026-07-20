@@ -12,20 +12,22 @@
  *   updates  → /app/inbox (the daily digest surface)
  *   team     → workspace settings (members live there)
  *   settings → /app/settings
- *   account  → /settings/profile, with the signed-in monogram
+ *   account  → the profile avatar + full account menu, docked at the foot
+ *              of the rail (the L-frame's bottom-left corner). Relocated
+ *              from the Studio Bar's top-right cluster.
  *
- * Hidden below md, where the bottom tab bar owns navigation.
+ * Hidden below md, where the bottom tab bar owns navigation (and the bar
+ * keeps the account avatar, since the rail is not painted there).
  */
 
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
-import { isDemoMode } from "@/lib/access-mode";
 import {
   NOTES_URL,
   SIGNAL_URL,
   STUDIO_URL,
   TIMELINE_URL,
 } from "@/lib/product-urls";
+import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { STUDIO_PALETTE_EVENT } from "./studio-chrome-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
@@ -46,26 +48,6 @@ function ProductTile({ icon, label, active }: { icon: RailIconName; label: strin
       <span className={styles.railLabel}>{label}</span>
     </>
   );
-}
-
-/* Clerk hooks only mount outside demo/review (same split as
-   UserButtonWithSuite): demo builds have no ClerkProvider. */
-function ClerkMonogram() {
-  const { user } = useUser();
-  const source = user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "";
-  const parts = source.trim().split(/\s+/).filter(Boolean);
-  const monogram =
-    parts.length >= 2
-      ? (parts[0][0] + parts[1][0]).toUpperCase()
-      : parts.length === 1 && parts[0].length > 0
-        ? parts[0].slice(0, 2).toUpperCase()
-        : "·";
-  return <span aria-hidden="true">{monogram}</span>;
-}
-
-function Monogram() {
-  if (isDemoMode()) return <span aria-hidden="true">DO</span>;
-  return <ClerkMonogram />;
 }
 
 export function StudioRail() {
@@ -131,10 +113,14 @@ export function StudioRail() {
       <Link aria-label="Settings" className={styles.railUtility} data-tip="Settings" href="/app/settings">
         <RailIcon name="settings" size={18} />
       </Link>
-      <Link className={styles.railAccount} data-tip="Account" href="/settings/profile">
-        <Monogram />
-        <span className={styles.srOnly}>Account settings</span>
-      </Link>
+      {/* Account lives here at the foot of the rail — the bottom-left corner
+          of the Signal Studio L-frame. The profile avatar (with its full
+          account menu) was relocated from the Studio Bar's top-right cluster
+          so the top chrome reads as product identity, not account. The menu
+          flies up-and-right via placement="rail" so it never clips. */}
+      <span className={styles.railAccountSlot} data-tip="Account">
+        <UserButtonWithSuite current="tasks" placement="rail" />
+      </span>
     </aside>
   );
 }

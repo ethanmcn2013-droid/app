@@ -8,7 +8,7 @@ import { openTaskCount } from "@/lib/tasks/selectors";
 import { useCurrentUser } from "@/lib/auth-context";
 import { usePalette } from "@/components/app/palette/command-palette";
 import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
-import type { ProjectsTreeGroup } from "@/server/actions/projects-tree";
+import type { ProjectsTreeData } from "@/server/actions/projects-tree";
 
 const VIEWS = [
   { href: "/app/board", label: "Board", icon: "board" },
@@ -28,7 +28,7 @@ export function AppSidebar({
   activeWorkspaceId,
 }: {
   active?: string;
-  tree: readonly ProjectsTreeGroup[];
+  tree: ProjectsTreeData;
   activeWorkspaceId: string;
 }) {
   const pathname = usePathname();

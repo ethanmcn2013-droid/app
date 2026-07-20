@@ -7,6 +7,7 @@ import {
   desc,
   eq,
   gt,
+  inArray,
   sql,
 } from "drizzle-orm";
 import { cookies } from "next/headers";
@@ -15,12 +16,15 @@ import { db } from "@/server/db";
 import {
   planningOnboardingSessions,
   planningPeriods,
+  shareLinkVisits,
+  shareLinks,
   tasks,
   workspaceMembers,
   workspaceSponsorships,
   workspaces,
   type PlanningOnboardingState,
 } from "@/server/db/schema";
+import { emitTasksChanged } from "@/server/events";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
   getCurrentUser,
@@ -206,6 +210,83 @@ export async function restorePlanningPeriodAction(
   await trackPlanningEvent(actorUserId, "planning_period_restored", {
     source: "lifecycle",
   });
+  return { ok: true };
+}
+
+/**
+ * Archive a project (workspace). Owner-only, non-destructive: it sets
+ * `archivedAt` so the project drops out of the active projects tree while
+ * its tasks, members, and history stay intact. Restore brings it back.
+ */
+export async function archiveProjectAction(
+  workspaceId: string,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const actorUserId = await getCurrentUser();
+  await requireWorkspaceOwner(actorUserId, workspaceId);
+  await db
+    .update(workspaces)
+    .set({ archivedAt: new Date(), updatedAt: new Date() })
+    .where(eq(workspaces.id, workspaceId));
+  revalidatePlanningSurfaces();
+  await trackPlanningEvent(actorUserId, "workspace_archived", {
+    source: "lifecycle",
+  });
+  return { ok: true };
+}
+
+/** Restore an archived project (workspace). Owner-only; clears `archivedAt`. */
+export async function restoreProjectAction(
+  workspaceId: string,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const actorUserId = await getCurrentUser();
+  await requireWorkspaceOwner(actorUserId, workspaceId);
+  await db
+    .update(workspaces)
+    .set({ archivedAt: null, updatedAt: new Date() })
+    .where(eq(workspaces.id, workspaceId));
+  revalidatePlanningSurfaces();
+  await trackPlanningEvent(actorUserId, "workspace_restored", {
+    source: "lifecycle",
+  });
+  return { ok: true };
+}
+
+/**
+ * Delete a project (workspace) by id. Owner-only, no-undo. Cascades tasks
+ * and public share links/visits explicitly (legacy rows didn't all carry a
+ * workspace FK — mirror of deleteWorkspaceAction). If the deleted project
+ * was the active one, the active-workspace cookie is cleared so the next
+ * request resolves a surviving sibling.
+ */
+export async function deleteProjectAction(
+  workspaceId: string,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const actorUserId = await getCurrentUser();
+  await requireWorkspaceOwner(actorUserId, workspaceId);
+  await db.transaction(async (tx) => {
+    const linkRows = await tx
+      .select({ token: shareLinks.token })
+      .from(shareLinks)
+      .where(eq(shareLinks.workspaceId, workspaceId));
+    const tokens = linkRows.map((row) => row.token);
+    if (tokens.length > 0) {
+      await tx
+        .delete(shareLinkVisits)
+        .where(inArray(shareLinkVisits.token, tokens));
+    }
+    await tx.delete(shareLinks).where(eq(shareLinks.workspaceId, workspaceId));
+    await tx.delete(tasks).where(eq(tasks.workspaceId, workspaceId));
+    await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
+  });
+  const c = await cookies();
+  if (c.get(ACTIVE_WORKSPACE_COOKIE_NAME)?.value === workspaceId) {
+    c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
+  }
+  revalidatePlanningSurfaces();
+  emitTasksChanged({ kind: "seed" });
   return { ok: true };
 }
 

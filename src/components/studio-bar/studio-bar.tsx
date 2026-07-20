@@ -70,7 +70,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
       <a
         href="/app/board"
         aria-label="Tasks"
-        className="flex-none select-none rounded text-[18px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
+        className="flex-none select-none rounded text-[27px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
         style={{ letterSpacing: "-0.05em" }}
       >
         tasks
@@ -196,9 +196,11 @@ export function StudioBar() {
           </svg>
           <span className="hidden sm:block">New task</span>
         </button>
-        {/* Quiet raised ring, the rail-account-chip register: the Clerk
-            avatar keeps its menu; the chrome supplies the frame. */}
-        <span className="flex flex-none items-center rounded-full bg-white/[0.06] p-px ring-1 ring-white/[0.12]">
+        {/* Account avatar. On desktop (md+) it lives at the foot of the
+            product rail (bottom-left of the L-frame); here it renders only
+            below md, where the rail is hidden and the bar owns account
+            access. Quiet raised ring keeps the rail-account-chip register. */}
+        <span className="flex flex-none items-center rounded-full bg-white/[0.06] p-px ring-1 ring-white/[0.12] md:hidden">
           <UserButtonWithSuite current="tasks" />
         </span>
       </div>
