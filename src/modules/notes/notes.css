@@ -1,0 +1,1562 @@
+/* ── The notebook surface (the product) ─────────────────────────── */
+/* ───────────────────────────────────────────────────────────────── */
+
+[data-notes-module] .shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  gap: clamp(24px, 5vw, 72px);
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: clamp(32px, 7vh, 72px) 0 56px;
+  animation: notes-shell-rise var(--motion-slow) var(--ease-out) var(--motion-instant) both;
+}
+@keyframes notes-shell-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .shell { animation: none; }
+}
+
+[data-notes-module] .notebook {
+  min-height: min(720px, calc(100vh - 128px));
+  background: var(--color-paper);
+  border: 1px solid var(--color-line);
+  box-shadow: var(--shadow-warm);
+  display: flex;
+  flex-direction: column;
+}
+
+[data-notes-module] .notebook-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 70px;
+  padding: 0 clamp(20px, 4vw, 42px);
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* Notebook header wordmark — same shared grammar as .notes-mark.
+   Size dropped from 32px → 18px so the wordmark sits beneath the capture
+   textarea in the visual hierarchy. At 32px the wordmark competed with
+   the capture field at narrow viewports; the suitebar already carries
+   the brand at full weight, no need to repeat it loud in-product. */
+[data-notes-module] .wordmark {
+  font-family: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  display: inline-flex;
+  align-items: baseline;
+  text-decoration: none;
+  color: var(--color-ink);
+  font-size: 18px;
+  line-height: 1;
+  white-space: nowrap;
+}
+[data-notes-module] .wordmark .word {
+  display: inline-block;
+  line-height: 0.95;
+}
+[data-notes-module] .wordmark .dot {
+  /* Same hard ceiling as .notes-mark .dot — prevents balloon during
+     font-swap before Geist resolves. R3-mount fix. */
+  /* Floor at 4px: below that, border-radius stops reading as a circle
+     at fractional device-pixel ratios and the dot rasterises square. */
+  width: clamp(4px, 0.16em, 10px);
+  height: clamp(4px, 0.16em, 10px);
+  max-width: 10px;
+  max-height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+  margin-left: 0.06em;
+  margin-bottom: 0.06em;
+  align-self: flex-end;
+  flex: 0 0 auto;
+  transform-origin: center;
+  animation: notes-dot-caret 1.1s steps(1, end) infinite;
+}
+/* Caret blink for the in-app notebook header wordmark. The marketing
+   breadcrumb (.notes-mark .dot) deliberately does NOT use this — static
+   there for suite-wide breadcrumb consistency.
+   ~1.1s sharp on/off per BRAND.md §4 — caret gesture. */
+@keyframes notes-dot-caret {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .wordmark .dot { animation: none; opacity: 1; transform: scale(1); }
+}
+
+[data-notes-module] .search {
+  display: grid;
+  gap: 6px;
+  width: min(250px, 42vw);
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+[data-notes-module] .search input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-ink);
+  padding: 6px 0 7px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 14px;
+  transition: border-color var(--motion-base) var(--ease-out);
+}
+[data-notes-module] .search input::placeholder {
+  color: var(--color-ink-faint);
+  opacity: 0.6;
+}
+[data-notes-module] .search input:focus-visible { border-color: var(--color-accent); }
+
+[data-notes-module] .workspace-selector {
+  display: grid;
+  gap: 4px;
+  width: min(230px, 34vw);
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+[data-notes-module] .workspace-selector select,
+[data-notes-module] .open-note-workspace select {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--color-line-strong);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-ink);
+  padding: 6px 0 7px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+[data-notes-module] .workspace-selector select:focus-visible,
+[data-notes-module] .open-note-workspace select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+[data-notes-module] .workspace-selector-status {
+  color: var(--color-ink-faint);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.3;
+  text-transform: none;
+}
+
+[data-notes-module] .capture {
+  --capture-pad: clamp(20px, 4vw, 42px);
+  position: relative;
+  display: block;
+  padding: var(--capture-pad);
+  border-bottom: 1px solid var(--color-line);
+}
+[data-notes-module] .capture textarea {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  min-height: 138px;
+  resize: vertical;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: clamp(28px, 5vw, 56px);
+  font-weight: 560;
+  line-height: 1.03;
+  letter-spacing: 0;
+  caret-color: var(--color-accent);
+  font-family: inherit;
+}
+/* Defensive: PrivateNotesEmptyState is sole owner of the placeholder
+   visual. If a native placeholder ever slips through (e.g. during a
+   refactor), hide it so the two strings never paint stacked. R1 fix. */
+[data-notes-module] .capture textarea::placeholder {
+  color: transparent;
+}
+/* E6 — Restore keyboard focus ring without geometry change (WCAG 2.4.7).
+   box-shadow is colour-only: it doesn't affect layout, so the stream
+   below the capture area never shifts on focus. Matches the indigo
+   suite accent (#4f46e5) as the focus-colour signal. Stable min-height
+   is already set on the textarea; no height rule added here. */
+[data-notes-module] .capture textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-signal);
+  border-radius: 2px;
+}
+
+[data-notes-module] .private-notes-empty-state {
+  position: absolute;
+  top: var(--capture-pad);
+  left: var(--capture-pad);
+  z-index: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  width: min(100% - (var(--capture-pad) * 2), 24ch);
+  color: color-mix(in srgb, var(--color-ink-faint) 72%, var(--color-paper));
+  font-size: clamp(24px, 3.9vw, 44px);
+  font-weight: 520;
+  letter-spacing: 0;
+  line-height: 1.12;
+  opacity: 1;
+  pointer-events: none;
+  transform: translateY(0);
+  transition:
+    opacity var(--motion-moderate) var(--ease-standard),
+    transform var(--motion-slow) var(--ease-standard);
+}
+
+[data-notes-module] .private-notes-empty-state.is-changing,
+[data-notes-module] .private-notes-empty-state.is-hidden {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+[data-notes-module] .private-notes-empty-caret {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 0.82em;
+  background: color-mix(in srgb, var(--color-accent) 58%, var(--color-paper));
+  animation: private-notes-caret 1.35s ease-in-out infinite;
+}
+
+@keyframes private-notes-caret {
+  0%, 46% { opacity: 0.22; }
+  50%, 92% { opacity: 1; }
+  100% { opacity: 0.22; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .private-notes-empty-state {
+    transform: none;
+    transition: none;
+  }
+
+  [data-notes-module] .private-notes-empty-caret {
+    animation: none;
+    opacity: 0.72;
+  }
+}
+
+[data-notes-module] .capture-hint {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-faint);
+}
+[data-notes-module] .capture-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 4px;
+  background: var(--color-field);
+  color: var(--color-ink-soft);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  margin: 0 1px;
+}
+
+[data-notes-module] .stream-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px clamp(20px, 4vw, 42px);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+[data-notes-module] .stream {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+[data-notes-module] .note-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  width: 100%;
+  padding: 18px clamp(20px, 4vw, 42px);
+  border: 0;
+  border-bottom: 1px solid var(--color-line);
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+[data-notes-module] .note-row:hover,
+[data-notes-module] .note-row:focus-visible {
+  background: var(--color-field);
+}
+[data-notes-module] .note-row.is-fresh {
+  animation: note-row-arrive var(--motion-moderate) var(--ease-out) both;
+}
+@keyframes note-row-arrive {
+  from { opacity: 0; transform: translateY(-6px); background: color-mix(in srgb, var(--color-accent-2) 8%, var(--color-paper)); }
+  to   { opacity: 1; transform: translateY(0); background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .note-row.is-fresh { animation: none; }
+}
+
+[data-notes-module] .note-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 620;
+}
+[data-notes-module] .note-preview {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+[data-notes-module] .note-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+[data-notes-module] .note-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-signal);
+  opacity: 0.85;
+  display: inline-block;
+  flex-shrink: 0;
+}
+[data-notes-module] .note-dot--sent {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-accent);
+  background: transparent;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+[data-notes-module] .open-note {
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  border-top: 1px solid var(--color-line-strong);
+  background: color-mix(in srgb, var(--color-paper) 94%, white);
+  padding: 18px clamp(20px, 4vw, 42px) 22px;
+  animation: open-note-expand var(--motion-base) var(--ease-out) both;
+  max-height: min(40vh, 320px);
+  overflow-y: auto;
+}
+@keyframes open-note-expand {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .open-note { animation: none; }
+}
+[data-notes-module] .open-note-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 650;
+}
+[data-notes-module] .open-note-body {
+  margin: 10px 0 0;
+  color: var(--color-ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+[data-notes-module] .open-note-head-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+[data-notes-module] .open-note-workspace { width: min(180px, 38vw); }
+[data-notes-module] .workspace-message {
+  margin: 8px 0 0;
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  line-height: 1.4;
+}
+[data-notes-module] .timeline-promotion {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-line);
+  padding-top: 14px;
+}
+[data-notes-module] .timeline-promotion summary {
+  cursor: pointer;
+  color: var(--color-ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-notes-module] .timeline-promotion-copy,
+[data-notes-module] .timeline-promotion-receipt {
+  margin: 10px 0 0;
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  line-height: 1.5;
+}
+[data-notes-module] .timeline-promotion-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+[data-notes-module] .timeline-promotion-fields label {
+  display: grid;
+  gap: 5px;
+  color: var(--color-ink-faint);
+  font-size: 11px;
+}
+[data-notes-module] .timeline-promotion-fields input {
+  min-width: 0;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 6px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  padding: 8px 9px;
+  font-size: 13px;
+}
+[data-notes-module] .timeline-promotion-preview {
+  display: grid;
+  gap: 5px;
+  margin: 14px 0;
+  border-left: 2px solid var(--color-accent);
+  padding-left: 12px;
+  color: var(--color-ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+}
+[data-notes-module] .timeline-promotion-preview strong {
+  color: var(--color-ink-faint);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+[data-notes-module] .btn-delete {
+  background: transparent;
+  border: 0;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  padding: 0 8px;
+}
+[data-notes-module] .btn-delete:hover { color: var(--color-ink); }
+
+[data-notes-module] .btn-draft-action {
+  background: transparent;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 8px;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 6px 12px;
+  transition: border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out);
+}
+[data-notes-module] .btn-draft-action:hover {
+  border-color: var(--color-signal);
+  color: var(--color-ink);
+}
+[data-notes-module] .btn-draft-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* E2 — "rename first" secondary affordance beside the primary "Send to Tasks".
+   Appears only before the extract is drafted. Small, dotted-underline,
+   faint — clearly subordinate to the primary action. */
+[data-notes-module] .btn-rename-before-send {
+  background: transparent;
+  border: 0;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  padding: 0 4px;
+  font-family: inherit;
+  transition: color var(--motion-instant) var(--ease-out);
+}
+[data-notes-module] .btn-rename-before-send:hover { color: var(--color-ink-soft); }
+[data-notes-module] .btn-rename-before-send:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Caravaggio walkover row 2 — corner-only send icon button.
+   Replaces the full-text "Send to Tasks" / "shape it first" pair at
+   the top of the open-note panel. Square hit target, indigo on hover,
+   visible focus ring. The action lives in the corner — the panel
+   body breathes. */
+[data-notes-module] .open-note-corner-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out),
+              color var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out);
+}
+[data-notes-module] .open-note-corner-send:hover {
+  border-color: var(--color-signal);
+  color: var(--color-signal);
+}
+[data-notes-module] .open-note-corner-send:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+/* Caravaggio walkover row 13 — equal-weight Send as-is / Shape & send.
+   Two sibling primaries inside the open-note panel. They sit beneath
+   the body and share gravity. The primary variant is indigo-filled;
+   the equal variant is bordered with the same geometry so neither
+   reads as a fallback. */
+[data-notes-module] .open-note-action-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+[data-notes-module] .btn-draft-action--primary {
+  background: var(--color-signal);
+  border-color: var(--color-signal);
+  color: #ffffff;
+}
+[data-notes-module] .btn-draft-action--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #ffffff;
+}
+[data-notes-module] .btn-draft-action--equal {
+  /* Inherits the bordered .btn-draft-action geometry — same padding,
+     same radius, same font scale — so it reads as a sibling, not a
+     subordinate. */
+}
+
+/* Caravaggio walkover row 2 — overflow menu for Edit / Remove on a
+   drafted extract. Trigger is a faint ··· that gains weight on hover
+   or focus-within; menu is absolutely positioned and revealed by the
+   parent's hover / focus-within / data-open states. Keyboard reachable
+   via the trigger button — no JS-only state required for the common
+   pointer path. */
+[data-notes-module] .extract-overflow {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+[data-notes-module] .extract-overflow-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--color-ink-faint);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+              background var(--motion-fast) var(--ease-out);
+}
+[data-notes-module] .extract-overflow-trigger:hover,
+[data-notes-module] .extract-overflow:focus-within .extract-overflow-trigger {
+  color: var(--color-ink);
+  background: rgba(17, 17, 17, 0.04);
+}
+[data-notes-module] .extract-overflow-trigger:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+[data-notes-module] .extract-overflow-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 120px;
+  padding: 4px;
+  background: var(--color-surface, #ffffff);
+  border: 1px solid var(--color-line-strong);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(20, 21, 26, 0.08);
+  z-index: 5;
+}
+[data-notes-module] .extract-overflow:hover .extract-overflow-menu,
+[data-notes-module] .extract-overflow:focus-within .extract-overflow-menu {
+  display: flex;
+}
+[data-notes-module] .extract-overflow-menu .btn-delete {
+  text-align: left;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+}
+[data-notes-module] .extract-overflow-menu .btn-delete:hover {
+  background: rgba(17, 17, 17, 0.04);
+}
+
+/* First-use hint shown beside the Draft action button when the stream
+   is empty or contains a single note. Quiet — does not compete. */
+[data-notes-module] .draft-action-hint {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+[data-notes-module] .extract-input {
+  margin-top: 14px;
+  padding: 12px 14px 10px;
+  border-left: 2px solid var(--color-signal);
+  background: color-mix(in srgb, var(--color-paper) 96%, var(--color-signal) 4%);
+  border-radius: 0 6px 6px 0;
+}
+[data-notes-module] .extract-input input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 4px 0;
+}
+[data-notes-module] .extract-input input:not(:focus-visible) {
+  outline: none;
+}
+[data-notes-module] .extract-input input::placeholder {
+  color: var(--color-ink-faint);
+}
+[data-notes-module] .extract-line-picker {
+  margin: 0 0 12px;
+}
+[data-notes-module] .extract-line-picker-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+  margin-bottom: 6px;
+}
+[data-notes-module] .extract-line-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+[data-notes-module] .extract-line-chip {
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: inherit;
+  background: color-mix(in srgb, var(--color-paper) 94%, var(--color-signal) 6%);
+  border: 1px solid color-mix(in srgb, var(--color-signal) 14%, transparent);
+  border-radius: 6px;
+  padding: 6px 9px;
+  cursor: pointer;
+  white-space: normal;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+[data-notes-module] .extract-line-chip:hover {
+  background: color-mix(in srgb, var(--color-paper) 88%, var(--color-signal) 12%);
+  border-color: color-mix(in srgb, var(--color-signal) 40%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .extract-line-chip {
+    transition: none;
+  }
+}
+[data-notes-module] .extract-input-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+[data-notes-module] .extract-hint {
+  margin: 6px 0 0;
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+[data-notes-module] .extract-hint kbd {
+  font-family: var(--font-mono-stack, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 10.5px;
+  padding: 1px 4px;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 3px;
+  color: var(--color-ink-soft);
+}
+
+[data-notes-module] .extract-drafted {
+  margin-top: 14px;
+  padding: 10px 14px 10px;
+  /* Neutralised 2026-05-18: was an indigo left-rule + indigo-tinted fill
+     (--color-signal #4f46e5) that read as a distracting purple box and
+     was an off-system suite colour inside Notes' own green/mustard palette
+     (DESIGN.md §11). The block is functional (holds the send-to-Tasks
+     controls) so it stays — now in Notes' calm native line/paper system.
+     Status is carried by the meta line, not colour. */
+  border: 1px solid var(--color-line);
+  background: transparent;
+  border-radius: 6px;
+}
+[data-notes-module] .extract-drafted-meta {
+  margin: 0;
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+[data-notes-module] .extract-drafted-body {
+  margin: 4px 0 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+[data-notes-module] .extract-drafted-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+[data-notes-module] .extract-error {
+  margin: 10px 0 0;
+  padding: 0;
+  color: var(--color-error);
+  font-size: 12px;
+}
+
+[data-notes-module] .capture-hint-error {
+  margin-top: 8px;
+  color: var(--color-error);
+}
+
+/* ── Empty states (PRODUCT.md §9) ────────────────────────────────── */
+
+[data-notes-module] .empty-state {
+  padding: 32px clamp(20px, 4vw, 42px);
+  color: var(--color-ink-soft);
+  font-size: 15px;
+  line-height: 1.55;
+}
+[data-notes-module] .empty-state em { font-style: normal; color: var(--color-ink); }
+
+/* ── Aside: product context ─────────────────────────────────────── */
+
+[data-notes-module] .product {
+  align-self: start;
+  padding-top: 16px;
+}
+[data-notes-module] .product-eyebrow {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+[data-notes-module] .product-h1 {
+  max-width: 8ch;
+  margin: 18px 0 0;
+  font-size: clamp(46px, 6vw, 84px);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  color: var(--color-ink);
+}
+/* Mobile leading correction — 0.92 lets descenders clip into the next
+   line's cap-height once clamp() shrinks to ~41px on phones. Loosen
+   below 640px while keeping the tight desktop register. Mirrors the
+   spirit of studio S·26 / tasks T·47, adapted to Notes's own scale. */
+@media (max-width: 640px) {
+  /* !important guards against any inline line-height on .product-h1
+     callsites overriding this mobile loosening. */
+  [data-notes-module] .product-h1 { line-height: 1.02 !important; }
+  [data-notes-module] .notebook-top {
+    flex-wrap: wrap;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  [data-notes-module] .search,
+  [data-notes-module] .workspace-selector { width: calc(50% - 12px); }
+  [data-notes-module] .timeline-promotion-fields { grid-template-columns: 1fr; }
+}
+[data-notes-module] .product-promise {
+  max-width: 28ch;
+  margin: 26px 0 0;
+  color: var(--color-ink-soft);
+  font-size: clamp(16px, 1.6vw, 19px);
+  line-height: 1.5;
+}
+
+/* E1 — Authed right rail. Marketing headline + promise removed; stats
+   start at the rail top. A quiet reassurance line at the bottom reclaims
+   the space with privacy-aligned copy rather than leaving it hollow.
+   flex + justify-content:space-between pins the stat block to the top
+   and the reassurance line to the rail bottom — no trailing dead air. */
+[data-notes-module] .product--authed {
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-self: stretch;
+}
+/* First stats block in authed view — no top-margin gap (headline gone) */
+[data-notes-module] .product-stats--first {
+  margin-top: 0;
+}
+/* Reassurance line — Geist Mono, 11px, ink-faint. Anchors the rail
+   bottom without competing with the metadata above. Sits 24px below
+   the last stat row's border, separated by generous white air. */
+[data-notes-module] .product-reassurance {
+  margin: 24px 0 0;
+  font-family: var(--font-geist-sans), "Geist", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  line-height: 1.55;
+  color: var(--color-ink-faint);
+  max-width: 26ch;
+}
+
+[data-notes-module] .product-stats {
+  display: grid;
+  gap: 0;
+  margin: 40px 0 0;
+  border-top: 1px solid var(--color-line);
+  padding-left: 0;
+}
+[data-notes-module] .product-stats > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 18px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-line);
+}
+[data-notes-module] .product-stats dt {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+}
+[data-notes-module] .product-stats dd {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 14px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+[data-notes-module] .product-stats dd em { font-style: normal; color: var(--color-ink); }
+
+/* ── Responsive: collapse aside on narrow screens ───────────────── */
+
+@media (max-width: 860px) {
+  [data-notes-module] .suitebar-inner {
+    align-items: center;
+    flex-direction: row;
+    gap: 16px;
+    padding: 0 20px;
+  }
+  [data-notes-module] .suite-breadcrumb,
+  [data-notes-module] .notes-section-breadcrumb {
+    gap: 10px;
+  }
+  [data-notes-module] .suitebar nav {
+    flex-wrap: nowrap;
+    gap: 2px;
+  }
+  [data-notes-module] .shell {
+    grid-template-columns: 1fr;
+    width: min(100% - 24px, 640px);
+    padding-top: 22px;
+  }
+  [data-notes-module] .product {
+    order: -1;
+    padding-top: 0;
+  }
+  [data-notes-module] .product-h1 { max-width: none; }
+}
+
+@media (max-width: 380px) {
+  [data-notes-module] .suitebar-inner {
+    gap: 12px;
+    padding: 0 16px;
+  }
+  [data-notes-module] .suite-breadcrumb {
+    gap: 8px;
+  }
+  [data-notes-module] .notes-section-breadcrumb {
+    display: none;
+  }
+}
+
+/* ── Undo toast ──────────────────────────────────────────────────── */
+
+[data-notes-module] .undo-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-size: 13px;
+  line-height: 1;
+  padding: 10px 14px 10px 18px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-modal);
+  z-index: 200;
+  white-space: nowrap;
+  animation: undo-in var(--motion-fast) var(--ease-out) both;
+}
+
+@keyframes undo-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+[data-notes-module] .undo-toast-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  color: var(--color-paper);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  transition: border-color var(--motion-instant) var(--ease-out), background var(--motion-instant) var(--ease-out);
+}
+[data-notes-module] .undo-toast-btn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Extract-drafted reveal ──────────────────────────────────────── */
+/* The "Saved. Ready to send to Signal Tasks." panel enters on opacity
+   + translateY only — no height animation (the open-note max-height
+   approach handles overflow; we never animate height). Calm, not flashy. */
+[data-notes-module] .extract-drafted {
+  animation: extract-drafted-in var(--motion-base) var(--ease-out) both;
+}
+@keyframes extract-drafted-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .extract-drafted { animation: none; }
+}
+
+/* E2 — In-panel promote success confirmation.
+   Shows "Added to your Tasks workspace." at the point of attention
+   (inside the open-note panel) for ~800ms before the panel closes.
+   ink-faint colour keeps it calm — not a celebration, just a receipt. */
+[data-notes-module] .open-note-promote-confirm {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--color-ink-faint);
+  letter-spacing: 0.01em;
+  animation: promote-confirm-in var(--motion-fast) var(--ease-out) both;
+}
+@keyframes promote-confirm-in {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .open-note-promote-confirm { animation: none; }
+}
+
+/* ── Linear calm: reduce chrome weight ──────────────────────────── */
+/* Dial-down pass: borders and decorative separators that read heavier
+   than the content they bound. Opacity-only — no hue change (palette
+   exempt). Each target is a visible seam; reducing to ~70-75% keeps
+   structure without competing with content. */
+[data-notes-module] .notebook {
+  border-color: rgba(217, 221, 207, 0.72);
+}
+[data-notes-module] .notebook-top {
+  border-bottom-color: rgba(217, 221, 207, 0.72);
+}
+[data-notes-module] .capture {
+  border-bottom-color: rgba(217, 221, 207, 0.72);
+}
+[data-notes-module] .stream-head {
+  border-bottom-color: rgba(217, 221, 207, 0.72);
+}
+[data-notes-module] .note-row {
+  border-bottom-color: rgba(217, 221, 207, 0.6);
+}
+/* The open-note border-top is load-bearing as a visual break before
+   the sticky panel — keep it at moderate strength, just not full. */
+[data-notes-module] .open-note {
+  border-top-color: rgba(183, 191, 170, 0.72);
+}
+/* note-dot opacity is set directly on the base rule above. */
+
+/* ── Capture-by-email footer (N-1b · 2026-05-14) ──
+   Quiet row beneath the stream. Workspace+ shows the address; free
+   shows an upgrade nudge. Same paper background as the notebook so
+   it reads as part of the surface, not a CTA. */
+/* R9: dropped font-family mono — copy is human-facing, not a code label.
+   Uses body sans (Geist since SDS 2.0 Wave 4) to match the surface register. */
+[data-notes-module] .capture-email {
+  align-items: center;
+  color: var(--color-ink-soft);
+  display: flex;
+  font-size: 12px;
+  gap: 8px;
+  margin: 32px auto 16px;
+  max-width: 720px;
+  padding: 8px 24px;
+}
+[data-notes-module] .capture-email a {
+  color: color-mix(in srgb, var(--color-ink) 75%, transparent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-ink) 25%, transparent);
+  text-underline-offset: 2px;
+}
+[data-notes-module] .capture-email a:hover {
+  color: var(--color-ink);
+}
+[data-notes-module] .capture-email__address {
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: var(--color-ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  padding: 0;
+}
+[data-notes-module] .capture-email__address code {
+  font: inherit;
+  letter-spacing: 0.01em;
+}
+[data-notes-module] .capture-email__address:hover code {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-ink) 35%, transparent);
+  text-underline-offset: 2px;
+}
+[data-notes-module] .capture-email__hint {
+  color: var(--color-ink-soft);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* Clipboard-unavailable fallback: a selectable readonly input that reveals
+   the capture address without requiring the clipboard API. */
+[data-notes-module] .capture-email__fallback-input {
+  background: transparent;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 4px;
+  color: var(--color-ink);
+  font: inherit;
+  letter-spacing: 0.01em;
+  padding: 1px 6px;
+  width: max-content;
+  max-width: 100%;
+}
+[data-notes-module] .capture-email__fallback-input:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 1px;
+}
+
+/* ── RW-3a: Promote gesture styles ──────────────────────────────── */
+
+/* note-list-item: position context for ghost button + tray */
+[data-notes-module] .note-list-item {
+  position: relative;
+}
+
+/* note-row-wrapper: positions the row + the ghost button side-by-side */
+[data-notes-module] .note-row-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+[data-notes-module] .note-row-wrapper .note-row {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* Ghost button — "→ Tasks" on hover (pointer devices only).
+   Hidden on touch devices via @media (hover: none). Sits at the right
+   edge of the note row, same vertical position as the timestamp. */
+[data-notes-module] .note-ghost-promote {
+  position: absolute;
+  right: clamp(20px, 4vw, 42px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: 0;
+  padding: 4px 0 4px 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+  font-family: inherit;
+  line-height: 1;
+  z-index: 2;
+}
+/* The directional chevron — same crafted mark as the "In Tasks" section and
+   suite-arrows. Nudges toward Tasks on intent. */
+[data-notes-module] .note-ghost-arrow {
+  flex: 0 0 auto;
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+[data-notes-module] .note-ghost-promote:hover .note-ghost-arrow,
+[data-notes-module] .note-ghost-promote:focus-visible .note-ghost-arrow {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .note-ghost-arrow { transition: none; }
+}
+/* Only show on pointer devices (not touch) */
+@media (hover: hover) and (pointer: fine) {
+  [data-notes-module] .note-row-wrapper:hover .note-ghost-promote,
+  [data-notes-module] .note-row-wrapper:focus-within .note-ghost-promote {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  [data-notes-module] .note-ghost-promote:hover,
+  [data-notes-module] .note-ghost-promote:focus-visible {
+    color: var(--color-accent);
+    opacity: 1;
+  }
+  /* Hide the timestamp when the ghost button is visible (Defect 3).
+     The ghost button sits at the same right-edge position as the
+     timestamp — both visible at once causes label collision "jdTasku". */
+  [data-notes-module] .note-row-wrapper:hover .note-meta > span:last-child,
+  [data-notes-module] .note-row-wrapper:focus-within .note-meta > span:last-child {
+    visibility: hidden;
+  }
+}
+/* Hide on touch so it doesn't linger on tap */
+@media (hover: none) {
+  [data-notes-module] .note-ghost-promote {
+    display: none;
+  }
+}
+
+/* Long-press feedback: slight scale-down + opacity dim at 350ms.
+   Uses --motion-fast + --ease-standard per UX_SPEC. */
+[data-notes-module] .note-row.is-longpress-feedback {
+  transform: scale(0.98);
+  opacity: 0.82;
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    opacity var(--motion-fast) var(--ease-standard);
+}
+
+/* Promoting state: note fades to 0.5, gains "In Tasks" label.
+   After grace period the row slides up and height collapses. */
+[data-notes-module] .note-row.is-promoted {
+  opacity: 0.5;
+  pointer-events: none;
+  transition:
+    opacity var(--motion-base) var(--ease-standard);
+}
+
+/* "In Tasks" text label shown on the note-meta area when promoting */
+[data-notes-module] .note-tasks-label {
+  font-size: 11px;
+  color: var(--color-accent);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* N·24 (Pattern 4) — cross-cutting provenance chip used by
+   calendar-spawned notes and (Cycle 3) OCR image-match search hits.
+   10px monospace, ink-faint by default; the inline color style on
+   the chip carries the kind-specific accent (green or mustard).
+
+   Sits inside .note-meta beside the timestamp — no icon, text only.
+   The chip wholly disappears once the note is edited (caller
+   removes it from the DOM); we don't animate the exit. */
+[data-notes-module] .note-provenance-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  opacity: 0.9;
+  /* Soft fade-in when the row first paints — matches the calm
+     register of the rest of the stream. 200ms ease-out, same shape
+     as Pattern 1's resume strip per handoff §4. */
+  animation: provenance-chip-fade var(--motion-base, 200ms)
+    var(--ease-out, ease-out) both;
+}
+@keyframes provenance-chip-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .note-provenance-chip {
+    animation: none;
+  }
+}
+
+/* Inline tray (touch long-press confirm) — 44px tall, slides up from
+   below the note row. Two text buttons: primary ink, cancel faint. */
+[data-notes-module] .note-promote-tray {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0;
+  min-height: 44px;
+  padding: 0 clamp(20px, 4vw, 42px);
+  background: color-mix(in srgb, var(--color-paper) 92%, var(--color-accent) 8%);
+  border-top: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-line);
+  animation: tray-slide-up var(--motion-fast) var(--ease-out) both;
+}
+@keyframes tray-slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .note-promote-tray { animation: none; }
+}
+
+[data-notes-module] .note-tray-promote {
+  background: transparent;
+  border: 0;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  font-family: inherit;
+  transition: color var(--motion-instant) var(--ease-out);
+}
+[data-notes-module] .note-tray-promote:hover,
+[data-notes-module] .note-tray-promote:focus-visible {
+  color: var(--color-accent);
+}
+
+[data-notes-module] .note-tray-cancel {
+  background: transparent;
+  border: 0;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 10px 16px;
+  font-family: inherit;
+  transition: color var(--motion-instant) var(--ease-out);
+}
+[data-notes-module] .note-tray-cancel:hover,
+[data-notes-module] .note-tray-cancel:focus-visible {
+  color: var(--color-ink);
+}
+
+/* "In Tasks" label on the open-note promote result */
+[data-notes-module] .open-note-promoted-label {
+  font-size: 12px;
+  color: var(--color-accent);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0 8px;
+}
+
+/* ── RW-3a: "In Tasks" section ──────────────────────────────────── */
+
+/* Collapsible section at the bottom of the notebook stream.
+   Not a dump — a named, calm place. Never says "Archived". */
+[data-notes-module] .in-tasks-section {
+  border-top: 1px solid var(--color-line);
+  margin-top: auto;
+}
+
+[data-notes-module] .in-tasks-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px clamp(20px, 4vw, 42px);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--color-ink-faint);
+  text-align: left;
+  transition: color var(--motion-fast) var(--ease-out);
+  font-family: inherit;
+}
+[data-notes-module] .in-tasks-toggle:hover {
+  color: var(--color-ink-soft);
+}
+
+[data-notes-module] .in-tasks-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Count chip rendered in the cross-product signal (indigo) — a quiet tally
+   of how many thoughts have crossed into the suite. */
+[data-notes-module] .in-tasks-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-signal) 11%, transparent);
+  color: var(--color-signal);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-notes-module] .in-tasks-chevron {
+  display: inline-block;
+  flex: 0 0 auto;
+  transition: transform var(--motion-base) var(--ease-standard);
+  transform: rotate(0deg);
+}
+[data-notes-module] .in-tasks-chevron.is-open {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .in-tasks-chevron { transition: none; }
+}
+
+[data-notes-module] .in-tasks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  animation: tray-slide-up var(--motion-fast) var(--ease-out) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .in-tasks-list { animation: none; }
+}
+
+[data-notes-module] .in-tasks-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 13px clamp(20px, 4vw, 42px);
+  border-bottom: 1px solid var(--color-line);
+  transition: background var(--motion-fast) var(--ease-out);
+}
+[data-notes-module] .in-tasks-row:hover {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .in-tasks-row { transition: none; }
+}
+
+[data-notes-module] .in-tasks-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+[data-notes-module] .in-tasks-title {
+  font-size: 14px;
+  color: var(--color-ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 560;
+}
+
+[data-notes-module] .in-tasks-extract {
+  font-size: 11.5px;
+  color: var(--color-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+
+/* The one-way edge made visible: indigo (the suite's cross-product signal)
+   with a chevron that nudges toward Tasks on intent. Always present, so the
+   hop is never a dead end. */
+[data-notes-module] .in-tasks-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 550;
+  letter-spacing: -0.005em;
+  color: var(--color-signal);
+  text-decoration: none;
+  white-space: nowrap;
+}
+[data-notes-module] .in-tasks-link-arrow {
+  transition: transform var(--motion-base) var(--ease-standard);
+}
+[data-notes-module] .in-tasks-link:hover .in-tasks-link-arrow,
+[data-notes-module] .in-tasks-link:focus-visible .in-tasks-link-arrow {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .in-tasks-link-arrow { transition: none; }
+}
+
+/* Reversibility without anxiety: a quiet text affordance, never destructive
+   red. Calm by default; on hover-capable devices it stays out of the way
+   until the row is engaged. */
+[data-notes-module] .in-tasks-remove {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  margin-right: -8px;
+  background: transparent;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-ink-faint);
+  transition: color var(--motion-fast) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+[data-notes-module] .in-tasks-remove:hover {
+  color: var(--color-ink-soft);
+}
+[data-notes-module] .in-tasks-remove:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+@media (hover: hover) {
+  [data-notes-module] .in-tasks-remove {
+    opacity: 0;
+  }
+  [data-notes-module] .in-tasks-row:hover .in-tasks-remove,
+  [data-notes-module] .in-tasks-row:focus-within .in-tasks-remove {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-notes-module] .in-tasks-remove { transition: color var(--motion-fast) var(--ease-out); }
+}
+
+/* Footer note in the "In Tasks" section — clarifies what Remove does so the
+   affordance reads as reversible, not destructive. */
+[data-notes-module] .in-tasks-footer {
+  padding: 11px clamp(20px, 4vw, 42px);
+  font-size: 11px;
+  color: var(--color-ink-faint);
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* ── Promote toast ───────────────────────────────────────────────── */
+
+/* Sits just above the undo-toast position; uses the same dark pill shape.
+   Success is a quiet whisper (no action needed). Error has a Retry button. */
+[data-notes-module] .promote-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  line-height: 1;
+  padding: 10px 14px 10px 18px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-modal);
+  z-index: 201;
+  white-space: nowrap;
+  animation: undo-in var(--motion-fast) var(--ease-out) both;
+}
+[data-notes-module] .promote-toast--success {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+[data-notes-module] .promote-toast--error {
+  background: var(--color-error);
+  color: #fff;
+}
+/* ── End RW-3a styles ────────────────────────────────────────────── */

@@ -1,10 +1,11 @@
 import { requireAppAccess } from "@/server/require-app-access";
-import { NotesHome } from "@/modules/notes";
+import { NotebookPage } from "@/modules/notes";
+import "@/modules/notes/notes.css";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Notes · Tasks",
+  title: "Notes · Signal Studio",
 };
 
 /**
@@ -14,7 +15,13 @@ export const metadata = {
  * though the /app layout's AppShell already enforces it. The function is
  * a read-then-redirect with no side effects; calling it twice is harmless.
  */
-export default async function NotesPage() {
+export default async function NotesPage(
+  props: { searchParams: Promise<Record<string, string | string[] | undefined>> },
+) {
   await requireAppAccess();
-  return <NotesHome />;
+  return (
+    <div data-notes-module>
+      <NotebookPage searchParams={props.searchParams} />
+    </div>
+  );
 }

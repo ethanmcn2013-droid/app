@@ -1,8 +1,8 @@
 /**
  * Notes module public surface.
  *
- * The module home is a server-component placeholder rendered inside the
- * /app chrome while Notes migrates into Signal Studio. Import only from
- * this barrel; do not reach into src/modules/notes internals directly.
+ * Exports the real module page component (NotebookPage) for use in the
+ * /app/notes route segment. Import only from this barrel; do not reach
+ * into src/modules/notes internals directly.
  */
-export { NotesHome } from "./home";
+export { default as NotebookPage } from "./app/page";

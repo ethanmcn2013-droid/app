@@ -23,6 +23,7 @@
     "db:status": "node scripts/db/migrate.mjs status",
     "db:adopt": "node scripts/db/migrate.mjs adopt",
     "db:push:unsafe": "drizzle-kit push --force",
+    "notes:db:push:unsafe": "drizzle-kit push --force --config drizzle.notes.config.ts",
     "db:check": "drizzle-kit check",
     "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
