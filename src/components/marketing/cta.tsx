@@ -20,7 +20,7 @@ export function CallToAction() {
           </p>
           <div className="mt-8 flex flex-wrap items-start gap-3">
             <a
-              href="/waitlist?source=cta&product=tasks"
+              href="https://signalstudio.ie/waitlist?source=cta&product=tasks"
               className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
             >
               Request access

@@ -9,13 +9,15 @@ import { isDemoMode } from "@/lib/access-mode";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
 const UMBRELLA_DESIGN = "https://signalstudio.ie/design";
+const UMBRELLA_ABOUT = "https://signalstudio.ie/about";
 
 // One header contract (product-header-contract.md, 2026-07-06): the marketing
-// header nav is exactly Pricing · Design, both umbrella links. Demo, Anatomy
+// header nav is Pricing · Design · About, all umbrella links. Demo, Anatomy
 // and App stay reachable from the page body and footer, not the header.
 const NAV: SuiteNavItem[] = [
   { href: UMBRELLA_PRICING, label: "Pricing", external: true },
   { href: UMBRELLA_DESIGN, label: "Design", external: true },
+  { href: UMBRELLA_ABOUT, label: "About", external: true },
 ];
 
 /**
@@ -47,9 +49,9 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
           />
         ) : (
           <Link
-            href="/waitlist?source=header&product=tasks"
-            className="inline-flex min-h-8 items-center rounded-full px-3.5 text-[13px] font-medium text-white transition-transform hover:-translate-y-px"
-            style={{ background: "var(--ink)" }}
+            href="https://signalstudio.ie/waitlist?source=header&product=tasks"
+            className="inline-flex min-h-8 items-center rounded-full px-3.5 text-[13px] font-medium"
+            style={{ color: "var(--ink-soft)", transition: "color 140ms ease" }}
           >
             Join the waitlist
           </Link>
