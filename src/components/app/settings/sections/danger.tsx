@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/primitives/toast";
 import { Dialog } from "@/components/primitives/dialog";
-import { clearAllTasksAction } from "@/server/actions/seed";
+import { clearAllTasksAction, seedDomainAction } from "@/server/actions/seed";
 import { deleteWorkspaceAction } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
 
@@ -20,8 +20,28 @@ export function DangerSection({
   const [pending, startTransition] = useTransition();
   const [clearOpen, setClearOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [weddingOpen, setWeddingOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
   const isOwner = myRole === "owner";
+
+  function loadWeddingDemo() {
+    setWeddingOpen(false);
+    startTransition(async () => {
+      try {
+        await seedDomainAction("wedding");
+        toast("Wedding demo loaded", {
+          tone: "success",
+          body: "This workspace now holds the wedding sample tasks.",
+        });
+        router.refresh();
+      } catch (e) {
+        toast("Couldn't load the demo", {
+          tone: "error",
+          body: (e as Error).message,
+        });
+      }
+    });
+  }
 
   function clearAllTasks() {
     setClearOpen(false);
@@ -71,6 +91,17 @@ export function DangerSection({
       />
 
       <div className="space-y-4">
+        {/* Load the wedding demo */}
+        <DangerCard
+          title="Load the wedding demo"
+          description="Replaces this workspace's tasks with the wedding sample set (venue, vendors, run-of-show). Handy for demos and screenshots. Clears the current tasks first, so treat it like a reset."
+          buttonLabel="Load wedding demo"
+          disabled={pending || !isOwner}
+          tone="emerald"
+          onClick={() => setWeddingOpen(true)}
+          gateNote={!isOwner ? "Only the owner can do this." : null}
+        />
+
         {/* Clear tasks */}
         <DangerCard
           title="Clear all tasks"
@@ -101,6 +132,47 @@ export function DangerSection({
           </div>
         )}
       </div>
+
+      {/* Load-wedding-demo confirmation */}
+      <Dialog
+        open={weddingOpen}
+        onClose={() => setWeddingOpen(false)}
+        labelledBy="wedding-demo-title"
+        width={440}
+      >
+        <div className="px-5 py-5">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+            Confirm
+          </div>
+          <h3
+            id="wedding-demo-title"
+            className="mt-1 text-[17px] font-semibold tracking-tight"
+          >
+            Load the wedding demo into {workspaceName}?
+          </h3>
+          <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
+            This clears the current tasks and seeds the wedding sample set
+            (venue, vendors, run-of-show). Members and billing are untouched.
+          </p>
+          <div className="mt-5 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setWeddingOpen(false)}
+              className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink"
+            >
+              Never mind
+            </button>
+            <button
+              type="button"
+              onClick={loadWeddingDemo}
+              disabled={pending}
+              className="rounded-full bg-emerald-600 px-3 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {pending ? "Loading…" : "Load wedding demo"}
+            </button>
+          </div>
+        </div>
+      </Dialog>
 
       {/* Clear-tasks confirmation */}
       <Dialog
@@ -219,17 +291,21 @@ function DangerCard({
   buttonLabel: string;
   onClick: () => void;
   disabled?: boolean;
-  tone: "amber" | "rose";
+  tone: "amber" | "rose" | "emerald";
   gateNote?: string | null;
 }) {
   const ring =
     tone === "rose"
       ? "border-rose-200 bg-rose-50/40"
-      : "border-amber-200 bg-amber-50/40";
+      : tone === "emerald"
+        ? "border-emerald-200 bg-emerald-50/40"
+        : "border-amber-200 bg-amber-50/40";
   const button =
     tone === "rose"
       ? "border-rose-300 bg-white text-rose-700 hover:border-rose-400 hover:bg-rose-50"
-      : "border-amber-300 bg-white text-amber-800 hover:border-amber-400 hover:bg-amber-50";
+      : tone === "emerald"
+        ? "border-emerald-300 bg-white text-emerald-800 hover:border-emerald-400 hover:bg-emerald-50"
+        : "border-amber-300 bg-white text-amber-800 hover:border-amber-400 hover:bg-amber-50";
   return (
     <div
       className={

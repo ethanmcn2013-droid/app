@@ -270,6 +270,10 @@ export type Task = {
    *  `↩ From Notes` chip in the detail-panel header. Null/undefined on
    *  every task authored inside Tasks directly. */
   sourceNoteId?: string | null;
+  /** Archive timestamp. Non-null pulls the task out of every active view
+   *  (board / list / timeline / calendar) without deleting it — restore
+   *  clears it. Null/undefined on active tasks and legacy rows. */
+  archivedAt?: Date | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
 };

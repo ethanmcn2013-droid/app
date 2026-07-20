@@ -62,6 +62,7 @@ export function AppPageHeader({
 
   const isMyTasks = pathname === "/app/my-tasks";
   const isInbox = pathname === "/app/inbox";
+  const isArchived = pathname === "/app/archived";
   // Breadcrumb mini-row removed 2026-05-18: SuiteChrome already establishes
   // the "signal studio. / tasks" context one row up, so lead › trail here
   // was a redundant second context line that made this read as a stacked
@@ -70,12 +71,14 @@ export function AppPageHeader({
     ? "My week"
     : isInbox
       ? "Inbox"
-      : shortenTitle(pack.workspaceTitle);
+      : isArchived
+        ? "Archived"
+        : shortenTitle(pack.workspaceTitle);
   // Inbox + My Tasks aren't workspace views, hide Share + lane tabs.
   // My Tasks is a personal filtered view; sharing it is meaningless.
   // "New task" becomes the sole primary CTA on My Tasks (M2).
-  const showWorkspaceTabs = !isInbox && !isMyTasks;
-  const showShare = !isInbox && !isMyTasks;
+  const showWorkspaceTabs = !isInbox && !isMyTasks && !isArchived;
+  const showShare = !isInbox && !isMyTasks && !isArchived;
 
   const shareView = inferShareView(pathname ?? "/app/board");
   const printPath = inferPrintPath(pathname ?? "/app/board");

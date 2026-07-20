@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "tasks-archived-at-2026-07-20",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Claude Code, delegated implementation",
+  "authorizationSource": "Task lifecycle work (task archive), operator go-ahead 2026-07-20",
+  "migrations": [
+    {
+      "id": "0016_tasks_archived_at",
+      "sha256": "bcfda865ffae2066029e8284b59f2cab21bb71c59eadd258b07dab5a590d49c0",
+      "reviewedAt": "2026-07-20T12:00:00.000Z",
+      "risk": "additive nullable timestamp column; getTasks filters archived_at IS NULL so it must exist before the filtering code deploys",
+      "rollbackPlan": "Ship the migration before the code that reads archived_at. To roll back the feature, revert the app code (getTasks stops filtering); the nullable column can remain safely unused and be dropped later in a separately reviewed table-rebuild migration after a verified backup.",
+      "postconditions": [
+        "the tasks.archived_at column exists",
+        "the column is nullable for legacy rows",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "archived-at-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name = 'archived_at'",
+          "expected": 1
+        },
+        {
+          "id": "archived-at-nullable",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name = 'archived_at' AND \"notnull\" = 0",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

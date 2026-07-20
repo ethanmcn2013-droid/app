@@ -113,6 +113,13 @@
       "when": 1784396022988,
       "tag": "0015_notes_extract_exact_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1784548800000,
+      "tag": "0016_tasks_archived_at",
+      "breakpoints": true
     }
   ]
 }

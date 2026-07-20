@@ -250,7 +250,10 @@ function PanelFooter({ task }: { task: Task }) {
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-1 px-6 py-3">
-        <DeleteTaskButton task={task} />
+        <div className="flex items-center gap-1">
+          <DeleteTaskButton task={task} />
+          <ArchiveTaskButton task={task} />
+        </div>
         <div className="flex items-center gap-1">
         <RepeatButton task={task} />
         <MilestoneButton task={task} />
@@ -285,6 +288,43 @@ function PanelFooter({ task }: { task: Task }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Archive this task from the panel. Reversible (restore from /app/archived),
+ * so a single click — no confirm — then closes the panel.
+ */
+function ArchiveTaskButton({ task }: { task: Task }) {
+  const { archiveTask } = useTasksDispatch();
+  const { closeTask } = useTaskPanel();
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        archiveTask(task.id);
+        closeTask();
+      }}
+      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+      aria-label="Archive this task"
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <rect x="3" y="4" width="18" height="4" rx="1" />
+        <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
+        <path d="M10 12h4" />
+      </svg>
+      Archive
+    </button>
   );
 }
 
