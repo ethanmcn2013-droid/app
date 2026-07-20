@@ -25,6 +25,11 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["CRON_SECRET", "cron endpoint authentication"],
   ["RESEND_API_KEY", "transactional email"],
+  // Notes module (D4 — WARN tier; promoted to required at Phase 8).
+  // Without these the /app/notes DB calls will throw at runtime but the
+  // rest of the app remains unaffected (module-isolated lazy DB init).
+  ["NOTES_DATABASE_URL", "Notes module database (notes.signalstudio.ie Turso)"],
+  ["NOTES_AUTH_TOKEN", "Notes module database auth token"],
 ];
 
 let validated = false;
