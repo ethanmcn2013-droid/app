@@ -29,11 +29,13 @@ function shortenWorkspaceTitle(value: string): string {
 function EditableText({
   tag: Tag,
   storageKey,
+  legacyStorageKey,
   fallback,
   ariaLabel,
 }: {
   tag: "h1" | "p";
   storageKey: string;
+  legacyStorageKey?: string;
   fallback: string;
   ariaLabel: string;
 }) {
@@ -43,12 +45,23 @@ function EditableText({
     let value = fallback;
     try {
       const stored = window.localStorage.getItem(storageKey);
-      if (stored && stored.length > 0) value = stored;
+      if (stored && stored.length > 0) {
+        value = stored;
+      } else if (legacyStorageKey) {
+        // Migration: fall back to old key; if found, promote to new key and
+        // remove old so subsequent reads use the namespaced key.
+        const legacy = window.localStorage.getItem(legacyStorageKey);
+        if (legacy && legacy.length > 0) {
+          value = legacy;
+          window.localStorage.setItem(storageKey, legacy);
+          window.localStorage.removeItem(legacyStorageKey);
+        }
+      }
     } catch {
       /* private mode / storage disabled — keep the fallback */
     }
     if (ref.current && ref.current.textContent !== value) ref.current.textContent = value;
-  }, [storageKey, fallback]);
+  }, [storageKey, legacyStorageKey, fallback]);
 
   const commit = () => {
     const el = ref.current;
@@ -106,8 +119,8 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
     <header className={styles.workspaceBrief} data-milestones={showMilestones ? undefined : "off"}>
       <div className={styles.workspaceIdentity}>
         <div className={styles.workspacePath}><span>Workspace</span><Icon name="chevron-right" size={12} /><strong>{workspaceName}</strong></div>
-        <EditableText ariaLabel="Workspace name" fallback={workspaceName} storageKey={`tasks:brief:title:${workspaceName}`} tag="h1" />
-        <EditableText ariaLabel="Workspace description" fallback="Everything for this workspace in one view. Every task should leave a clear next handoff." storageKey={`tasks:brief:subtitle:${workspaceName}`} tag="p" />
+        <EditableText ariaLabel="Workspace name" fallback={workspaceName} storageKey={`signal-tasks.brief.title:${workspaceName}`} legacyStorageKey={`tasks:brief:title:${workspaceName}`} tag="h1" />
+        <EditableText ariaLabel="Workspace description" fallback="Everything for this workspace in one view. Every task should leave a clear next handoff." storageKey={`signal-tasks.brief.subtitle:${workspaceName}`} legacyStorageKey={`tasks:brief:subtitle:${workspaceName}`} tag="p" />
       </div>
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
         <div><span>Progress</span><strong>{progress}%</strong></div>

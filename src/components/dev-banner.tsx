@@ -26,7 +26,7 @@ function bannerEnabled(): boolean {
   return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 }
 
-const DISMISS_KEY = "signal_devbanner_dismissed";
+const DISMISS_KEY = "signal-tasks.devbanner_dismissed";
 
 export function DevBanner() {
   const hydrated = useHydrated();
