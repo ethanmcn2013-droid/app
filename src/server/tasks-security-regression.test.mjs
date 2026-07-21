@@ -62,6 +62,10 @@ const duplicateTaskActions = readFileSync(
   join(serverDir, "actions", "duplicate-task.ts"),
   "utf8",
 );
+const setParentActions = readFileSync(
+  join(serverDir, "actions", "set-parent.ts"),
+  "utf8",
+);
 const aiActions = readFileSync(
   join(serverDir, "actions", "ai.ts"),
   "utf8",
@@ -387,6 +391,15 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     "emitTasksChanged",
   ]) {
     assertDemoGuardBefore(duplicateTaskActions, "duplicateTaskAction", boundary);
+  }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "await db",
+    "recordActivity",
+    "revalidatePath",
+    "emitTasksChanged",
+  ]) {
+    assertDemoGuardBefore(setParentActions, "setParentAction", boundary);
   }
   for (const name of [
     "draftReplyAction",
