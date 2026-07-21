@@ -1,8 +1,14 @@
 /**
- * Signal module public surface.
+ * Signal module public surface — Phase 6 port.
  *
- * The module home is a server-component placeholder rendered inside the
- * /app chrome while Signal migrates into Signal Studio. Import only from
- * this barrel; do not reach into src/modules/signal internals directly.
+ * Exports the three route-level components wired by host route stubs.
+ * Do not import from internal module paths; use this barrel only.
+ *
+ * Routes:
+ *   /app/brief                      → SignalBriefPage
+ *   /app/brief/onboarding           → SignalOnboardingPage
+ *   /app/brief/settings/notifications → SignalNotificationsPage
  */
-export { SignalHome } from "./home";
+export { SignalBriefPage } from "./app/signal-brief-page";
+export { SignalOnboardingPage } from "./app/onboarding/signal-onboarding-page";
+export { SignalNotificationsPage } from "./app/settings/notifications/signal-notifications-page";
