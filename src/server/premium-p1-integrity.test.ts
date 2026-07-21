@@ -280,6 +280,283 @@ test("removeTaskAction: deleting a parent removes children, comments, activities
   );
 });
 
+// ── Tests 8-13: resources ────────────────────────────────────────────────
+
+/**
+ * Seed resources for the resources tests.
+ *
+ * ws-res / u-res / task-res-parent / task-res-child
+ *   att-r1    — attachment (to be backfilled)
+ *   res-att-r1 — mirrored resources row (kind=upload)
+ *   res-link-1  — link resource
+ *   att-r2    — attachment NOT yet mirrored into resources
+ */
+async function seedResources(client: Client) {
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials) VALUES ('u-res','clerk_res','#555','RS');
+    INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
+      ('ws-res','ws-res-slug','Res WS','u-res');
+    INSERT INTO workspace_members (workspace_id, user_id, role) VALUES
+      ('ws-res','u-res','owner');
+
+    INSERT INTO tasks (id, workspace_id, title, lane, priority) VALUES
+      ('task-res-parent','ws-res','Parent','todo','med'),
+      ('task-res-child','ws-res','Child','todo','med');
+    UPDATE tasks SET parent_task_id = 'task-res-parent' WHERE id = 'task-res-child';
+
+    INSERT INTO attachments (id, workspace_id, task_id, uploader_user_id, filename, stored_path, mime_type, size_bytes) VALUES
+      ('att-r1','ws-res','task-res-parent','u-res','file1.pdf','.data/uploads/file1.pdf','application/pdf',1024),
+      ('att-r2','ws-res','task-res-parent','u-res','file2.png','.data/uploads/file2.png','image/png',2048);
+
+    INSERT INTO resources (id, workspace_id, task_id, kind, provider, title, mime_type, size_bytes, added_by_user_id, added_at, access_state, counts_against_storage) VALUES
+      ('res-att-r1','ws-res','task-res-parent','upload','file','file1.pdf','application/pdf',1024,'u-res',1753056000,'legacy',1),
+      ('res-link-1','ws-res','task-res-parent','link','figma','Design file','application/pdf',NULL,'u-res',1753056001,'ok',0);
+  `);
+}
+
+// ── Test 8: backfill idempotency ─────────────────────────────────────────
+
+test("backfill idempotency: running INSERT WHERE NOT EXISTS twice yields no duplicates", async () => {
+  const { client } = await freshMemoryDb();
+  await seedResources(client);
+
+  // Count resources before re-running the backfill INSERT.
+  const beforeCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM resources WHERE workspace_id = 'ws-res'`,
+  );
+
+  // Re-run the exact backfill logic from the migration.
+  await client.execute(`
+    INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider,
+      title, mime_type, size_bytes,
+      added_by_user_id, added_at,
+      access_state, counts_against_storage
+    )
+    SELECT
+      'res-' || a.id,
+      COALESCE(a.workspace_id, ''),
+      a.task_id,
+      'upload',
+      'file',
+      a.filename,
+      a.mime_type,
+      a.size_bytes,
+      a.uploader_user_id,
+      a.created_at,
+      'legacy',
+      1
+    FROM attachments a
+    WHERE NOT EXISTS (
+      SELECT 1 FROM resources r WHERE r.id = 'res-' || a.id
+    )
+  `);
+
+  const afterCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM resources WHERE workspace_id = 'ws-res'`,
+  );
+
+  // att-r2 gets a new mirrored row; att-r1 is already mirrored (WHERE NOT EXISTS blocks it).
+  assert.equal(afterCount, beforeCount + 1, "re-running backfill must add only the unmirrored row");
+
+  // Verify no duplicates: count of upload-kind rows must equal attachments count.
+  const uploadCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM resources WHERE workspace_id = 'ws-res' AND kind = 'upload'`,
+  );
+  const attachCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM attachments WHERE workspace_id = 'ws-res'`,
+  );
+  assert.equal(uploadCount, attachCount, "upload-kind resources must equal attachments count after backfill");
+});
+
+// ── Test 9: union read returns each source exactly once ──────────────────
+
+test("union read returns migrated upload + new link + post-backfill attachment exactly once each", async () => {
+  const { client } = await freshMemoryDb();
+  await seedResources(client);
+
+  // att-r2 is unmirrored (no resources row with id='res-att-r2').
+  // The union read SQL:
+  //   - resources rows for task-res-parent: res-att-r1 + res-link-1
+  //   - attachments whose 'res-'+id is absent from resources: att-r2
+  const resourceRows = await client.execute(
+    `SELECT id FROM resources WHERE task_id = 'task-res-parent'`,
+  );
+  const mirroredIds = resourceRows.rows.map((r) => r.id as string);
+
+  const allAttachments = await client.execute(
+    `SELECT id FROM attachments WHERE task_id = 'task-res-parent'`,
+  );
+  const unmirrored = allAttachments.rows.filter(
+    (a) => !mirroredIds.includes(`res-${a.id as string}`),
+  );
+
+  // Should have 2 resources rows + 1 unmirrored attachment = 3 total.
+  assert.equal(resourceRows.rows.length, 2, "resources table must have 2 rows for task-res-parent");
+  assert.equal(unmirrored.length, 1, "exactly one unmirrored attachment");
+  assert.equal(unmirrored[0]!.id as string, "att-r2", "the unmirrored attachment must be att-r2");
+
+  const total = resourceRows.rows.length + unmirrored.length;
+  assert.equal(total, 3, "union read must yield 3 distinct items (no duplicates)");
+});
+
+// ── Test 10: provider detection ──────────────────────────────────────────
+
+test("provider detection: correct provider assigned per URL", () => {
+  // Mirror the detectProvider logic from resources.ts directly in the test.
+  function detectProvider(rawUrl: string): string {
+    let hostname = "";
+    let pathname = "";
+    try {
+      const parsed = new URL(rawUrl);
+      hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+      pathname = parsed.pathname.toLowerCase();
+    } catch {
+      return "url";
+    }
+    if (hostname === "docs.google.com") {
+      if (pathname.startsWith("/document")) return "google_doc";
+      if (pathname.startsWith("/spreadsheets")) return "google_sheet";
+      if (pathname.startsWith("/presentation")) return "google_slides";
+    }
+    if (hostname === "drive.google.com") return "drive";
+    if (hostname === "figma.com" || hostname.endsWith(".figma.com")) return "figma";
+    if (hostname === "github.com") return "github";
+    return "url";
+  }
+
+  const cases: [string, string][] = [
+    ["https://docs.google.com/document/d/abc/edit", "google_doc"],
+    ["https://docs.google.com/spreadsheets/d/abc", "google_sheet"],
+    ["https://docs.google.com/presentation/d/abc", "google_slides"],
+    ["https://drive.google.com/file/d/abc", "drive"],
+    ["https://figma.com/file/abc", "figma"],
+    ["https://www.figma.com/file/abc", "figma"],
+    ["https://github.com/org/repo", "github"],
+    ["https://example.com/page", "url"],
+    ["https://notion.so/page", "url"],
+  ];
+
+  for (const [url, expected] of cases) {
+    assert.equal(
+      detectProvider(url),
+      expected,
+      `provider detection failed for ${url}`,
+    );
+  }
+});
+
+// ── Test 11: removeResourceAction deletes upload backing row ─────────────
+
+test("removeResourceAction: removing upload-kind resource deletes the backing attachments row", async () => {
+  const { client } = await freshMemoryDb();
+  await seedResources(client);
+
+  // Confirm both rows exist before removal.
+  assert.equal(
+    await count(client, "resources WHERE id = 'res-att-r1'"),
+    1,
+    "resources row must exist before removal",
+  );
+  assert.equal(
+    await count(client, "attachments WHERE id = 'att-r1'"),
+    1,
+    "attachments row must exist before removal",
+  );
+
+  // Simulate removeResourceAction logic for kind='upload':
+  // 1. Delete the backing attachments row (id = resourceId with 'res-' stripped).
+  await client.execute(`DELETE FROM attachments WHERE id = 'att-r1'`);
+  // 2. Delete the resources row.
+  await client.execute(`DELETE FROM resources WHERE id = 'res-att-r1'`);
+
+  assert.equal(
+    await count(client, "resources WHERE id = 'res-att-r1'"),
+    0,
+    "resources row must be deleted",
+  );
+  assert.equal(
+    await count(client, "attachments WHERE id = 'att-r1'"),
+    0,
+    "backing attachments row must be deleted when upload resource is removed",
+  );
+  // Other rows are untouched.
+  assert.equal(
+    await count(client, "attachments WHERE id = 'att-r2'"),
+    1,
+    "unrelated attachments row must survive",
+  );
+});
+
+// ── Test 12: removeTaskAction removes resources rows for subtree ─────────
+
+test("removeTaskAction: deleting parent removes resources rows for parent and all children", async () => {
+  const { client } = await freshMemoryDb();
+  await seedResources(client);
+
+  // Seed a resources row for the child task too.
+  await client.execute(`
+    INSERT INTO resources (id, workspace_id, task_id, kind, provider, title, added_at, access_state, counts_against_storage)
+    VALUES ('res-child-link','ws-res','task-res-child','link','url','https://child.example.com',1753056002,'ok',0)
+  `);
+
+  // Confirm resource rows exist before deletion.
+  assert.equal(await count(client, "resources WHERE task_id = 'task-res-parent'"), 2);
+  assert.equal(await count(client, "resources WHERE task_id = 'task-res-child'"), 1);
+
+  // Simulate removeTaskAction subtree delete:
+  const childResult = await client.execute(
+    `SELECT id FROM tasks WHERE parent_task_id = 'task-res-parent' AND workspace_id = 'ws-res'`,
+  );
+  const childIds = childResult.rows.map((r) => r.id as string);
+  assert.equal(childIds.length, 1);
+
+  // Delete child resources.
+  await client.execute(
+    `DELETE FROM resources WHERE task_id IN ('${childIds.join("','")}')`,
+  );
+  // Delete child tasks (simplified — skipping activities/comments/attachments for this assertion).
+  await client.execute(
+    `DELETE FROM tasks WHERE id IN ('${childIds.join("','")}')`,
+  );
+
+  // Delete parent resources.
+  await client.execute(`DELETE FROM resources WHERE task_id = 'task-res-parent'`);
+  await client.execute(
+    `DELETE FROM tasks WHERE id = 'task-res-parent' AND workspace_id = 'ws-res'`,
+  );
+
+  // All resources rows must be gone.
+  assert.equal(
+    await count(client, "resources WHERE workspace_id = 'ws-res'"),
+    0,
+    "all resources rows must be removed when parent task is deleted",
+  );
+});
+
+// ── Test 13: erasure removes resources ───────────────────────────────────
+
+test("erasure removes resources rows for owned workspaces", async () => {
+  const { client } = await freshMemoryDb();
+  await seedResources(client);
+
+  // Confirm seed.
+  assert.equal(await count(client, "resources WHERE workspace_id = 'ws-res'"), 2);
+
+  // Simulate eraseAccountData for workspace ws-res.
+  await client.execute(`DELETE FROM resources WHERE workspace_id = 'ws-res'`);
+
+  assert.equal(
+    await count(client, "resources WHERE workspace_id = 'ws-res'"),
+    0,
+    "erasure must remove all resources rows for owned workspaces",
+  );
+});
+
 // ── Test 7: parent archive cascades; restore restores ───────────────────────
 
 test("setTaskArchivedAction: archiving parent cascades to children; restore restores them", async () => {

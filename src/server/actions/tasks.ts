@@ -4,7 +4,7 @@ import { unlink } from "node:fs/promises";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { activities, attachments, comments, tasks } from "@/server/db/schema";
+import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -533,11 +533,13 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
     .where(eq(attachments.taskId, id));
   const parentAttachmentPaths = parentAttachmentRows.map((r) => r.storedPath);
 
-  // 3. Delete children's child rows (activities, comments, attachments).
+  // 3. Delete children's child rows (activities, comments, attachments,
+  //    resources). No runtime FK cascade — hand-rolled explicitly.
   if (childIds.length > 0) {
     await db.delete(activities).where(inArray(activities.taskId, childIds));
     await db.delete(comments).where(inArray(comments.taskId, childIds));
     await db.delete(attachments).where(inArray(attachments.taskId, childIds));
+    await db.delete(resources).where(inArray(resources.taskId, childIds));
     await db.delete(tasks).where(inArray(tasks.id, childIds));
   }
 
@@ -545,6 +547,7 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   await db.delete(activities).where(eq(activities.taskId, id));
   await db.delete(comments).where(eq(comments.taskId, id));
   await db.delete(attachments).where(eq(attachments.taskId, id));
+  await db.delete(resources).where(eq(resources.taskId, id));
   await db
     .delete(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));

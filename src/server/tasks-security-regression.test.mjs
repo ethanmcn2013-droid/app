@@ -66,6 +66,10 @@ const setParentActions = readFileSync(
   join(serverDir, "actions", "set-parent.ts"),
   "utf8",
 );
+const resourceActions = readFileSync(
+  join(serverDir, "actions", "resources.ts"),
+  "utf8",
+);
 const aiActions = readFileSync(
   join(serverDir, "actions", "ai.ts"),
   "utf8",
@@ -401,6 +405,23 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(setParentActions, "setParentAction", boundary);
   }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "await db",
+  ]) {
+    assertDemoGuardBefore(resourceActions, "listTaskResourcesAction", boundary);
+  }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "getCurrentUser",
+    "await db",
+    "recordActivity",
+    "revalidatePath",
+    "emitTasksChanged",
+  ]) {
+    assertDemoGuardBefore(resourceActions, "addLinkResourceAction", boundary);
+  }
+  assertDemoGuardBefore(resourceActions, "removeResourceAction", "getActiveWorkspace");
   for (const name of [
     "draftReplyAction",
     "summarizeConversationAction",
