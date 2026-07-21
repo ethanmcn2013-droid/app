@@ -1,9 +1,10 @@
 "use server";
 
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { unlink } from "node:fs/promises";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { tasks } from "@/server/db/schema";
+import { activities, attachments, comments, tasks } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -501,11 +502,62 @@ export async function reorderTaskAction(
 export async function removeTaskAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
-  // Workspace guard: deletes only fire when the row belongs to the
-  // caller's active workspace. FK cascade drops activities for the row.
+
+  // Workspace guard: confirm the parent belongs to this tenant.
+  const [parent] = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  if (!parent) return getTasks(ws);
+
+  // FK cascade does NOT fire over Turso stateless HTTP, so we hand-roll
+  // the full subtree delete (mirrors account-erasure.ts pattern).
+  // 1. Collect child ids so we can delete their rows explicitly.
+  const childRows = await db
+    .select({ id: tasks.id, storedPath: attachments.storedPath })
+    .from(tasks)
+    .leftJoin(attachments, eq(attachments.taskId, tasks.id))
+    .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
+
+  const childIds = [...new Set(childRows.map((r) => r.id))];
+
+  // Collect attachment paths for best-effort unlink after row deletion.
+  const childAttachmentPaths = childRows
+    .map((r) => r.storedPath)
+    .filter((p): p is string => p !== null);
+
+  // 2. Also collect attachment paths on the parent itself.
+  const parentAttachmentRows = await db
+    .select({ storedPath: attachments.storedPath })
+    .from(attachments)
+    .where(eq(attachments.taskId, id));
+  const parentAttachmentPaths = parentAttachmentRows.map((r) => r.storedPath);
+
+  // 3. Delete children's child rows (activities, comments, attachments).
+  if (childIds.length > 0) {
+    await db.delete(activities).where(inArray(activities.taskId, childIds));
+    await db.delete(comments).where(inArray(comments.taskId, childIds));
+    await db.delete(attachments).where(inArray(attachments.taskId, childIds));
+    await db.delete(tasks).where(inArray(tasks.id, childIds));
+  }
+
+  // 4. Delete the parent's own child rows, then the parent itself.
+  await db.delete(activities).where(eq(activities.taskId, id));
+  await db.delete(comments).where(eq(comments.taskId, id));
+  await db.delete(attachments).where(eq(attachments.taskId, id));
   await db
     .delete(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+
+  // 5. Best-effort unlink of orphaned attachment binaries.
+  for (const storedPath of [...childAttachmentPaths, ...parentAttachmentPaths]) {
+    try {
+      await unlink(storedPath);
+    } catch {
+      // ENOENT or serverless: nothing left to remove.
+    }
+  }
+
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -516,6 +568,10 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
  * so the task leaves (or returns to) every active view without deleting
  * it. Workspace-guarded like every other write here. Returns the active
  * task list (archived rows are filtered out of it by getTasks).
+ *
+ * Cascades to children in the same write (per review §1.2 option (a)):
+ * archiving a parent hides the whole subtree; restoring a parent restores
+ * every child too. Emits per-task activity for the parent and each child.
  */
 export async function setTaskArchivedAction(
   id: string,
@@ -523,10 +579,39 @@ export async function setTaskArchivedAction(
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
   const ws = await getActiveWorkspace();
+
+  // Workspace guard: confirm the task belongs to this tenant.
+  const [ownedTask] = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  if (!ownedTask) return getTasks(ws);
+
+  const archivedAt = archived ? new Date() : null;
+  const activityPayload = archived
+    ? ({ kind: "archived" } as const)
+    : ({ kind: "restored" } as const);
+
+  // Update parent.
   await db
     .update(tasks)
-    .set({ archivedAt: archived ? new Date() : null, ...bump() })
+    .set({ archivedAt, ...bump() })
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
+  await recordActivity(id, activityPayload, { workspaceId: ws });
+
+  // Cascade to children — fetch their ids then update + record per-child.
+  const children = await db
+    .select({ id: tasks.id })
+    .from(tasks)
+    .where(and(eq(tasks.parentTaskId, id), eq(tasks.workspaceId, ws)));
+  for (const child of children) {
+    await db
+      .update(tasks)
+      .set({ archivedAt, ...bump() })
+      .where(and(eq(tasks.id, child.id), eq(tasks.workspaceId, ws)));
+    await recordActivity(child.id, activityPayload, { workspaceId: ws });
+  }
+
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);

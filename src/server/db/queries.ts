@@ -60,11 +60,11 @@ const taskColumnsWithCount = {
   // the board card can show a compact "done/total" subtask receipt and
   // open straight into the checklist without a second fetch.
   subtaskCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id})`.as(
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL)`.as(
       "subtask_count",
     ),
   subtaskDoneCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.lane = 'done')`.as(
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL AND child.lane = 'done')`.as(
       "subtask_done_count",
     ),
 };
