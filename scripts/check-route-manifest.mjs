@@ -45,6 +45,8 @@ const MANIFEST = [
   "app/my-tasks",
   "app/notes",
   "app/plan",
+  "app/plan/[projectSlug]",
+  "app/plan/audience",
   "app/settings",
   "app/timeline",
   "app/your-work",

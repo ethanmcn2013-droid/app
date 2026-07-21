@@ -377,11 +377,49 @@
         { "kind": "role", "role": "dialog", "name": "Confirm marquee sides with the hire company", "proves": ["default"] }
       ],
       "remainingStates": []
+    },
+    {
+      "id": "tasks.page.app-plan",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "demo workspace dashboard",
+          "path": "/app/plan",
+          "states": ["populated", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Tasks · Product Roadmap", "proves": ["populated"] },
+            { "kind": "text", "text": "Workspace", "proves": ["populated"] }
+          ]
+        }
+      ],
+      "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted"]
+    },
+    {
+      "id": "tasks.page.app-plan-project",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "force-dynamic export", "contains": "force-dynamic" },
+        { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
+        { "label": "Suspense curation split (T7)", "contains": "Suspense" },
+        { "label": "breadcrumb above Suspense", "contains": "Breadcrumb" }
+      ],
+      "remainingStates": ["populated", "loading", "error", "empty"]
+    },
+    {
+      "id": "tasks.page.app-plan-audience",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "force-dynamic export", "contains": "force-dynamic" },
+        { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
+        { "label": "audience timeline feature flag", "contains": "audienceTimelineEnabled" }
+      ],
+      "remainingStates": ["populated", "empty", "loading", "error"]
     }
   ],
   "operatorBlocked": [
     "Production Clerk sign-in and sign-up states require a real review identity and provider email flows.",
     "Production invite acceptance and redemption mutations require an isolated review tenant and expendable codes.",
-    "Visual baseline approval remains founder-owned; generated screenshots are evidence, not approval."
+    "Visual baseline approval remains founder-owned; generated screenshots are evidence, not approval.",
+    "Timeline /app/plan demo workspace (create-workspace gate) renders because demo mode short-circuits auth; full authed states require Clerk + Timeline Turso in production."
   ]
 }
