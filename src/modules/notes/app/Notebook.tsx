@@ -1201,8 +1201,13 @@ export function Notebook({
 
   const openNote = notes.find((n) => n.id === openId) ?? null;
 
+  // Demoted from <main> to <div>: the /app layout already owns the sole
+  // <main> landmark (layout.tsx). A nested <main> caused
+  // landmark-main-is-top-level + landmark-no-duplicate-main axe violations
+  // (Phase 7 findings). The sr-only h1 below provides the page title for
+  // screen readers; the section aria-label carries the section identity.
   return (
-    <main className="shell">
+    <div className="shell">
       <h1 className="sr-only">Signal Notes notebook</h1>
       {/* ── The notebook ────────────────────────────────────────── */}
       <section className="notebook" aria-label="Signal Notes notebook">
@@ -1409,10 +1414,12 @@ export function Notebook({
                         </span>
                       )}
                       {!isPromoting && note.promotedTaskId && (
-                        <span aria-label="In Tasks" className="note-dot--sent" />
+                        /* role="img" required: aria-label is prohibited on plain <span>
+                           (generic role). Marking as img makes the label valid. */
+                        <span role="img" aria-label="In Tasks" className="note-dot--sent" />
                       )}
                       {!isPromoting && note.extractBody && !note.promotedTaskId && (
-                        <span aria-label="Extract drafted, not yet in Tasks" className="note-dot" />
+                        <span role="img" aria-label="Extract drafted, not yet in Tasks" className="note-dot" />
                       )}
                       {/* N·24 (Pattern 4), calendar provenance pill.
                           Renders only while the spawned note is untouched
@@ -2071,6 +2078,6 @@ export function Notebook({
           Only you can see this.
         </p>
       </aside>
-    </main>
+    </div>
   );
 }

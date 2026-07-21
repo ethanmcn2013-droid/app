@@ -1698,8 +1698,11 @@ export function HybridNotebook({
       }
     : null;
 
+  // Demoted from <main> to <div>: the /app layout already owns the sole
+  // <main> landmark. A nested <main> causes landmark-main-is-top-level +
+  // landmark-no-duplicate-main axe violations (Phase 7 / Phase 9 fixes).
   return (
-    <main id="main-content" className={styles.root} data-hybrid-notebook="true" data-review-mode={reviewMode} data-sentry-mask="true" data-clarity-mask="true" data-dd-privacy="mask" data-1p-ignore="true">
+    <div id="main-content" className={styles.root} data-hybrid-notebook="true" data-review-mode={reviewMode} data-sentry-mask="true" data-clarity-mask="true" data-dd-privacy="mask" data-1p-ignore="true">
       <header className={styles.notebookHeader} inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
         <div className={styles.identity}>
           <h1 className={styles.wordmark}>Notes<span className={styles.wordmarkDot}>.</span></h1>
@@ -2117,6 +2120,6 @@ export function HybridNotebook({
       ) : null}
       <span className={styles.srOnly} aria-live="polite" aria-atomic="true">{announcement}</span>
       {firstCapture ? <FirstCaptureMoment onDone={() => setFirstCapture(false)} /> : null}
-    </main>
+    </div>
   );
 }

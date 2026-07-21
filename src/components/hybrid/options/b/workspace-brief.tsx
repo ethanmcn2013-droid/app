@@ -75,6 +75,10 @@ function EditableText({
     }
   };
 
+  // aria-allowed-role fix (Phase 9): heading elements (h1–h6) prohibit
+  // role="textbox". Apply it only when Tag is a non-heading element ("p").
+  // contentEditable alone signals editability to AT on h1; aria-label carries
+  // the accessible name.
   return (
     <Tag
       aria-label={ariaLabel}
@@ -92,7 +96,7 @@ function EditableText({
       ref={(node) => {
         ref.current = node;
       }}
-      role="textbox"
+      role={Tag === "p" ? "textbox" : undefined}
       spellCheck={false}
       suppressContentEditableWarning
       tabIndex={0}

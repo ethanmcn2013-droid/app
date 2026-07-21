@@ -279,7 +279,11 @@
   justify-content: space-between;
   padding: 18px clamp(20px, 4vw, 42px);
   border-bottom: 1px solid var(--color-line);
-  color: var(--color-ink-faint);
+  /* WCAG AA fix (Phase 9): --color-ink-faint (#71717a) at 11px gives ~4.48:1
+     contrast on --color-paper (#ffffff), just under the 4.5:1 AA threshold.
+     Swapped to --color-ink-soft (#3f3f46) which gives ~8.5:1. Scoped to the
+     notes module; no suite-wide token is changed. */
+  color: var(--color-ink-soft);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.14em;
@@ -863,16 +867,15 @@
 [data-notes-module] .product-stats--first {
   margin-top: 0;
 }
-/* Reassurance line — Geist Mono, 11px, ink-faint. Anchors the rail
-   bottom without competing with the metadata above. Sits 24px below
-   the last stat row's border, separated by generous white air. */
+/* Reassurance line — 11px, scoped ink-soft (WCAG AA fix Phase 9: ink-faint
+   at 11px gives ~4.48:1 on paper, just under the 4.5:1 AA threshold). */
 [data-notes-module] .product-reassurance {
   margin: 24px 0 0;
   font-family: var(--font-geist-sans), "Geist", ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;
   letter-spacing: 0.02em;
   line-height: 1.55;
-  color: var(--color-ink-faint);
+  color: var(--color-ink-soft);
   max-width: 26ch;
 }
 
@@ -891,7 +894,8 @@
   border-bottom: 1px solid var(--color-line);
 }
 [data-notes-module] .product-stats dt {
-  color: var(--color-ink-faint);
+  /* WCAG AA fix (Phase 9): same ink-faint → ink-soft swap as .stream-head. */
+  color: var(--color-ink-soft);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.06em;
