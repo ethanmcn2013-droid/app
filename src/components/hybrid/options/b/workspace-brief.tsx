@@ -64,7 +64,7 @@ function EditableText({
 
   return (
     <Tag
-      aria-label={ariaLabel}
+      aria-label={Tag === "h1" ? undefined : ariaLabel}
       className={styles.editable}
       contentEditable
       onBlur={commit}
@@ -79,7 +79,6 @@ function EditableText({
       ref={(node) => {
         ref.current = node;
       }}
-      role="textbox"
       spellCheck={false}
       suppressContentEditableWarning
       tabIndex={0}
