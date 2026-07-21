@@ -30,6 +30,11 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // rest of the app remains unaffected (module-isolated lazy DB init).
   ["NOTES_DATABASE_URL", "Notes module database (notes.signalstudio.ie Turso)"],
   ["NOTES_AUTH_TOKEN", "Notes module database auth token"],
+  // Timeline module (Phase 5 — WARN tier; promoted to required at Phase 9 cutover).
+  // Without these /app/plan DB calls throw at runtime; the rest of the app
+  // is unaffected (module-isolated lazy DB init via file:roadmap.db dev fallback).
+  ["TIMELINE_DATABASE_URL", "Timeline module database (timeline.signalstudio.ie Turso)"],
+  ["TIMELINE_AUTH_TOKEN", "Timeline module database auth token"],
 ];
 
 let validated = false;
