@@ -170,7 +170,15 @@ export default async function InviteAcceptPage({
                 <div className="mt-5 grid gap-2 rounded-xl border border-line-soft bg-white px-4 py-3 text-[12.5px]">
                   <div className="flex items-center justify-between">
                     <span className="text-ink-quiet">Sent to</span>
-                    <span className="font-mono text-ink">{preview.email}</span>
+                    {/* Security: only reveal the invited email once the signed-in
+                        user's email matches. Pre-auth, show a placeholder so the
+                        page cannot be used to enumerate email addresses. */}
+                    {myEmail &&
+                    myEmail.toLowerCase() === preview.email.toLowerCase() ? (
+                      <span className="font-mono text-ink">{preview.email}</span>
+                    ) : (
+                      <span className="text-ink-soft">Sign in to confirm</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-ink-quiet">Expires</span>
@@ -215,8 +223,7 @@ export default async function InviteAcceptPage({
                       Sign in to accept
                     </Link>
                     <p className="mt-3 text-[12px] text-ink-quiet">
-                      Use the email this was sent to:{" "}
-                      <span className="font-mono">{preview.email}</span>.
+                      Sign in with the email address this invite was sent to.
                     </p>
                   </div>
                 )}

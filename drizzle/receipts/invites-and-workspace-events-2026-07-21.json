@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "invites-and-workspace-events-2026-07-21",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Claude Code, delegated implementation",
+  "authorizationSource": "Signal Tasks Premium Programme Phase 2 invite-hardening pack (D-018, D-019), operator go-ahead 2026-07-21",
+  "migrations": [
+    {
+      "id": "0019_invites_and_workspace_events",
+      "sha256": "5835f200fe1b510a033738be9d38b293f757793c436e762c536890b7f745aebf",
+      "reviewedAt": "2026-07-21T00:00:00.000Z",
+      "risk": "additive only: two ALTER TABLE ADD COLUMN (role NOT NULL DEFAULT 'member', last_sent_at nullable integer) on pending_invites; one CREATE TABLE workspace_events (no existing rows affected); one CREATE INDEX on workspace_events. No existing columns modified, no data deleted, no constraints removed. Existing pending_invites rows receive role='member' default, consistent with the pre-migration hardcoded value. Safe to re-run on an already-migrated DB (SQLite ADD COLUMN on existing column errors; migration runner guards re-apply).",
+      "rollbackPlan": "Drop workspace_events table and index (no downstream reads yet). DROP COLUMN role and DROP COLUMN last_sent_at from pending_invites (SQLite 3.35+). The invite action falls back to hardcoded 'member' on absent column; no data loss on rollback.",
+      "postconditions": [
+        "pending_invites.role column exists with default 'member'",
+        "pending_invites.last_sent_at column exists and is nullable",
+        "workspace_events table exists",
+        "idx_workspace_events_workspace_created index exists",
+        "integrity check passes",
+        "foreign keys remain clean",
+        "existing pending_invites rows have role = 'member'"
+      ],
+      "proofs": [
+        {
+          "id": "pending-invites-role-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('pending_invites') WHERE name = 'role'",
+          "expected": 1
+        },
+        {
+          "id": "pending-invites-role-column-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('pending_invites') WHERE name = 'role' AND dflt_value = '''member'''",
+          "expected": 1
+        },
+        {
+          "id": "pending-invites-last-sent-at-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('pending_invites') WHERE name = 'last_sent_at'",
+          "expected": 1
+        },
+        {
+          "id": "workspace-events-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'workspace_events'",
+          "expected": 1
+        },
+        {
+          "id": "workspace-events-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'index' AND name = 'idx_workspace_events_workspace_created'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

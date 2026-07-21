@@ -198,6 +198,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/notification-prefs-nudges-2026-07-21.json",
       "receiptSha256": "383921aed8a676fc96d38d037a80736e3b7459971e77b85039821fbbc9ed9157"
+    },
+    {
+      "ordinal": 19,
+      "id": "0019_invites_and_workspace_events",
+      "file": "drizzle/0019_invites_and_workspace_events.sql",
+      "when": 1784764800000,
+      "sha256": "5835f200fe1b510a033738be9d38b293f757793c436e762c536890b7f745aebf",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/invites-and-workspace-events-2026-07-21.json",
+      "receiptSha256": "f1d6f3a912ab1b5e514ffa188ff67b69c7a962cc0b6f411f08336107ecec5bbd"
     }
   ]
 }

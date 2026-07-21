@@ -553,3 +553,88 @@ test("demo and review cannot bind or seed the configured database", () => {
     /process\.env\.NODE_ENV === "development"\s*&&\s*!demoMode\s*&&/,
   );
 });
+
+// ── Phase 2 invite-hardening regression guards ───────────────────────────────
+
+const settingsActions = readFileSync(
+  join(serverDir, "actions", "settings.ts"),
+  "utf8",
+);
+
+test("acceptInviteAction validates before writing membership row", () => {
+  // All validation (invite exists, not accepted, not expired, email match, cap)
+  // must appear before the INSERT OR IGNORE into workspace_members.
+  const start = settingsActions.indexOf("export async function acceptInviteAction");
+  const end = settingsActions.indexOf("\nexport async function ", start + 1);
+  const body = settingsActions.slice(start, end === -1 ? settingsActions.length : end);
+
+  const inviteLoad = body.indexOf("select({");
+  const emailCheck = body.indexOf("clerkEmail.toLowerCase() !== invite.email.toLowerCase()");
+  const capCheck = body.indexOf("canAddMemberByWorkspace(");
+  const memberInsert = body.indexOf("INSERT OR IGNORE INTO workspace_members");
+  const tokenBurn = body.indexOf(".set({ acceptedAt:");
+
+  assert.ok(inviteLoad >= 0, "acceptInviteAction must load the invite row");
+  assert.ok(emailCheck >= 0, "acceptInviteAction must check email match against Clerk verified email");
+  assert.ok(capCheck >= 0, "acceptInviteAction must re-check member cap");
+  assert.ok(memberInsert >= 0, "acceptInviteAction must insert workspace_members row");
+  assert.ok(tokenBurn >= 0, "acceptInviteAction must burn the token");
+
+  assert.ok(emailCheck < memberInsert, "email validation must precede membership write");
+  assert.ok(capCheck < memberInsert, "cap check must precede membership write");
+  assert.ok(memberInsert < tokenBurn, "membership write must precede token burn");
+});
+
+test("acceptInviteAction writes invite role not hardcoded member", () => {
+  const start = settingsActions.indexOf("export async function acceptInviteAction");
+  const end = settingsActions.indexOf("\nexport async function ", start + 1);
+  const body = settingsActions.slice(start, end === -1 ? settingsActions.length : end);
+
+  // Must read the role from the invite row
+  assert.match(body, /role:\s*pendingInvites\.role/, "must select role from pendingInvites");
+  // Must clamp the role defensively
+  assert.match(body, /grantedRole/, "must use a grantedRole variable");
+  // Must pass grantedRole (not literal 'member') to INSERT
+  assert.match(body, /VALUES.*grantedRole/, "must pass grantedRole to workspace_members INSERT");
+  // Must NOT hardcode 'member' in the INSERT statement
+  assert.doesNotMatch(
+    body.slice(body.indexOf("INSERT OR IGNORE INTO workspace_members")),
+    /'member'\s*\)/,
+    "must not hardcode 'member' in workspace_members INSERT",
+  );
+});
+
+test("invite actions insert workspace_events rows", () => {
+  // inviteMemberByEmailAction writes an inviteSent event
+  const inviteStart = settingsActions.indexOf("export async function inviteMemberByEmailAction");
+  const inviteEnd = settingsActions.indexOf("\nexport async function ", inviteStart + 1);
+  const inviteBody = settingsActions.slice(inviteStart, inviteEnd === -1 ? settingsActions.length : inviteEnd);
+  assert.match(inviteBody, /workspaceEvents/, "inviteMemberByEmailAction must insert into workspaceEvents");
+  assert.match(inviteBody, /kind.*inviteSent/, "inviteMemberByEmailAction must write inviteSent kind");
+  // No email in payload
+  assert.doesNotMatch(inviteBody, /payload.*trimmed/, "inviteSent payload must not include the email address");
+
+  // acceptInviteAction writes an inviteAccepted event
+  const acceptStart = settingsActions.indexOf("export async function acceptInviteAction");
+  const acceptEnd = settingsActions.indexOf("\nexport async function ", acceptStart + 1);
+  const acceptBody = settingsActions.slice(acceptStart, acceptEnd === -1 ? settingsActions.length : acceptEnd);
+  assert.match(acceptBody, /workspaceEvents/, "acceptInviteAction must insert into workspaceEvents");
+  assert.match(acceptBody, /kind.*inviteAccepted/, "acceptInviteAction must write inviteAccepted kind");
+});
+
+test("createShareLinkAction clamps mode to view", () => {
+  // D-020: mode must be clamped server-side to 'view' regardless of input
+  const createStart = shareActions.indexOf("export async function createShareLinkAction");
+  const createEnd = shareActions.indexOf("\nexport async function ", createStart + 1);
+  const createBody = shareActions.slice(createStart, createEnd === -1 ? shareActions.length : createEnd);
+
+  // Must have an explicit clamp
+  assert.match(createBody, /const mode.*=.*"view"/, "createShareLinkAction must clamp mode to 'view'");
+  // Must use the clamped variable in the insert, not input.mode directly
+  assert.match(createBody, /mode,/, "createShareLinkAction must pass the clamped mode variable");
+  assert.doesNotMatch(
+    createBody.slice(createBody.indexOf("db.insert(")),
+    /input\.mode/,
+    "createShareLinkAction must not pass input.mode directly to the insert",
+  );
+});

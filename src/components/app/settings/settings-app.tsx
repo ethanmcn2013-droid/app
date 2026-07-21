@@ -87,6 +87,7 @@ export function SettingsApp({
   pendingInvites: Array<{
     token: string;
     email: string;
+    role: "owner" | "member";
     createdAt: string;
     expiresAt: string;
     invitedByUserId: string;
