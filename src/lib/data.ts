@@ -591,7 +591,15 @@ export type ActivityKind =
   | "commentAdd"
   | "commentRemove"
   | "attach"
-  | "detach";
+  | "detach"
+  | "parentChanged"
+  | "resourceAdd"
+  | "resourceRemove"
+  | "nudgeSent"
+  | "inviteSent"
+  | "inviteAccepted"
+  | "archived"
+  | "restored";
 
 export type UpdateField =
   | "title"
@@ -620,7 +628,15 @@ export type ActivityPayload =
       kind: "detach";
       attachmentId: string;
       filename: string;
-    };
+    }
+  | { kind: "parentChanged"; from: string | null; to: string | null }
+  | { kind: "resourceAdd"; resourceId: string; provider: string; title: string }
+  | { kind: "resourceRemove"; resourceId: string; title: string }
+  | { kind: "nudgeSent"; toUserId: string }
+  | { kind: "inviteSent" }
+  | { kind: "inviteAccepted"; userId: string }
+  | { kind: "archived" }
+  | { kind: "restored" };
 
 export type Activity = {
   id: string;
