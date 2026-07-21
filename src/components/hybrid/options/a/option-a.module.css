@@ -243,6 +243,30 @@
 .cardTopline { align-items: center; display: flex; height: 22px; }
 .cardSpacer { flex: 1; }
 .cardTopline > button { height: 24px; width: 24px; }
+
+/* ••• trigger button rendered by ContextActions inside the card topline */
+.cardMenuTrigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+}
+.cardMenuTrigger:hover,
+.cardMenuTrigger:focus-visible,
+.cardMenuTrigger[data-state="open"] {
+  background: var(--x-task-hover);
+  color: var(--x-task-text);
+}
+.cardMenuTrigger[data-state="open"] {
+  border-color: var(--x-task-border);
+}
 .boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.35; margin: 4px 0 7px; min-height: 30px; overflow: hidden; padding: 0; text-align: left; width: 100%; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .boardCard[data-completed] .boardTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
 .boardTitleEdit { margin: 4px 0 7px; }
