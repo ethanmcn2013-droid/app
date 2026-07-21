@@ -188,6 +188,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/resources-2026-07-21.json",
       "receiptSha256": "994cd7517368ea0c9d0fd250c53f722c07078c39772a0ba215f249f28b08e3f6"
+    },
+    {
+      "ordinal": 18,
+      "id": "0018_notification_prefs_nudges",
+      "file": "drizzle/0018_notification_prefs_nudges.sql",
+      "when": 1784678400000,
+      "sha256": "505c94e536fa4d11d665ea2972a2eb95974492da6eb0fd465b89dbd1f8737b5d",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/notification-prefs-nudges-2026-07-21.json",
+      "receiptSha256": "383921aed8a676fc96d38d037a80736e3b7459971e77b85039821fbbc9ed9157"
     }
   ]
 }

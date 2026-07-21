@@ -529,6 +529,7 @@ export async function getNotificationPrefs(): Promise<{
   dailyDigest: boolean;
   mentions: boolean;
   commentReplies: boolean;
+  nudges: boolean;
 }> {
   const me = await getCurrentUser();
   const [row] = await db
@@ -536,19 +537,22 @@ export async function getNotificationPrefs(): Promise<{
     .from(notificationPrefs)
     .where(eq(notificationPrefs.userId, me));
   if (!row) {
-    return { dailyDigest: true, mentions: true, commentReplies: false };
+    return { dailyDigest: true, mentions: true, commentReplies: false, nudges: true };
   }
   return {
     dailyDigest: row.dailyDigest,
     mentions: row.mentions,
     commentReplies: row.commentReplies,
+    // Pre-migration rows (no nudges column) fall back to true — same as the
+    // schema default. The DB layer returns null/undefined for absent columns.
+    nudges: row.nudges ?? true,
   };
 }
 
-/** Upsert one notification toggle. Three keys instead of a generic
+/** Upsert one notification toggle. Four keys instead of a generic
  *  setter so the type system catches typos at the callsite. */
 export async function setNotificationPrefAction(
-  key: "dailyDigest" | "mentions" | "commentReplies",
+  key: "dailyDigest" | "mentions" | "commentReplies" | "nudges",
   value: boolean,
 ): Promise<{ ok: true }> {
   const me = await getCurrentUser();
@@ -569,12 +573,20 @@ export async function setNotificationPrefAction(
         mentions = excluded.mentions,
         updated_at = unixepoch()
     `);
-  } else {
+  } else if (key === "commentReplies") {
     await db.run(sql`
       INSERT INTO notification_prefs (user_id, comment_replies)
       VALUES (${me}, ${value ? 1 : 0})
       ON CONFLICT(user_id) DO UPDATE SET
         comment_replies = excluded.comment_replies,
+        updated_at = unixepoch()
+    `);
+  } else {
+    await db.run(sql`
+      INSERT INTO notification_prefs (user_id, nudges)
+      VALUES (${me}, ${value ? 1 : 0})
+      ON CONFLICT(user_id) DO UPDATE SET
+        nudges = excluded.nudges,
         updated_at = unixepoch()
     `);
   }

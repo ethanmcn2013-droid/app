@@ -70,6 +70,10 @@ const resourceActions = readFileSync(
   join(serverDir, "actions", "resources.ts"),
   "utf8",
 );
+const nudgeActions = readFileSync(
+  join(serverDir, "actions", "nudge.ts"),
+  "utf8",
+);
 const aiActions = readFileSync(
   join(serverDir, "actions", "ai.ts"),
   "utf8",
@@ -422,6 +426,13 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     assertDemoGuardBefore(resourceActions, "addLinkResourceAction", boundary);
   }
   assertDemoGuardBefore(resourceActions, "removeResourceAction", "getActiveWorkspace");
+  for (const boundary of [
+    "getActiveWorkspace",
+    "getCurrentUser",
+    "await db",
+  ]) {
+    assertDemoGuardBefore(nudgeActions, "sendNudgeAction", boundary);
+  }
   for (const name of [
     "draftReplyAction",
     "summarizeConversationAction",

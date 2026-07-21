@@ -639,6 +639,28 @@ function renderNotificationSentence(n: Notification): {
           </>
         ),
       };
+    case "nudge": {
+      // Recipient line: "{Name} sent a gentle reminder about '{title}'."
+      // The task title is resolved at query time via the getNotificationsForUser
+      // join; the payload intentionally carries only ids (D-008 privacy rule).
+      // We resolve the sender's display name from the USERS proxy (covers seeded
+      // personas) with a safe "A teammate" fallback for real Clerk ids whose
+      // display name we don't have on the client.
+      const senderMeta = USERS[n.payload.fromUserId];
+      const senderName = senderMeta?.name ?? "A teammate";
+      // taskTitle is carried by the NotificationRow via n.taskId; we don't
+      // have it in the payload (by design). Use the task link affordance: the
+      // row's onOpen already opens the task panel when n.taskId is set.
+      return {
+        actor: n.payload.fromUserId,
+        line: (
+          <>
+            <span className="font-medium text-ink">{senderName}</span>{" "}
+            sent a gentle reminder.
+          </>
+        ),
+      };
+    }
     default:
       return null;
   }

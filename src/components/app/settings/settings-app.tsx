@@ -82,6 +82,7 @@ export function SettingsApp({
     dailyDigest: boolean;
     mentions: boolean;
     commentReplies: boolean;
+    nudges: boolean;
   };
   pendingInvites: Array<{
     token: string;

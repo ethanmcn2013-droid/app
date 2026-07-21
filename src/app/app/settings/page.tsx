@@ -81,6 +81,7 @@ export default async function SettingsPage() {
               dailyDigest: true,
               mentions: true,
               commentReplies: true,
+              nudges: true,
             }}
             pendingInvites={[]}
             recentActivity={[]}

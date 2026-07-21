@@ -649,6 +649,15 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
   commentReplies: integer("comment_replies", { mode: "boolean" })
     .notNull()
     .default(false),
+  /** "Human nudge notifications" — allow in-app + email nudges from
+   *  teammates. On by default. When 0, the sender's nudge action still
+   *  records the activity row (audit trail) but skips writing a
+   *  notifications row and skips the email.
+   *
+   *  MIGRATION REQUIRED: drizzle/0018_notification_prefs_nudges.sql */
+  nudges: integer("nudges", { mode: "boolean" })
+    .notNull()
+    .default(true),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

@@ -654,7 +654,7 @@ export type Activity = {
 // Notifications
 // ────────────────────────────────────────────────────────────────────
 
-export type NotificationKind = "mention" | "blocked" | "dueToday";
+export type NotificationKind = "mention" | "blocked" | "dueToday" | "nudge";
 
 export type NotificationPayload =
   | {
@@ -676,6 +676,14 @@ export type NotificationPayload =
       kind: "dueToday";
       taskId: string;
       taskTitle: string;
+    }
+  | {
+      /** Human nudge: a teammate sent a gentle reminder about a task.
+       *  Payload is deliberately id-only — no names or email addresses
+       *  are stored in the notification row (D-008 privacy rule). */
+      kind: "nudge";
+      taskId: string;
+      fromUserId: UserId;
     };
 
 export type Notification = {

@@ -127,6 +127,13 @@
       "when": 1784592000000,
       "tag": "0017_resources",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1784678400000,
+      "tag": "0018_notification_prefs_nudges",
+      "breakpoints": true
     }
   ]
 }

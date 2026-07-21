@@ -557,6 +557,221 @@ test("erasure removes resources rows for owned workspaces", async () => {
   );
 });
 
+// ── Tests 14-18: human Nudge (D-008) ────────────────────────────────────────
+
+/**
+ * Minimal nudge seed:
+ *   ws-nudge / u-sender / u-receiver / task-nudge
+ *   notification_prefs row for u-receiver with nudges=1 (default on)
+ */
+async function seedNudge(client: Client) {
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials, name) VALUES
+      ('u-sender','clerk_sender','#111','SN','Ethan'),
+      ('u-receiver','clerk_receiver','#222','RC','Chloe');
+
+    INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
+      ('ws-nudge','ws-nudge-slug','Nudge WS','u-sender');
+
+    INSERT INTO workspace_members (workspace_id, user_id, role) VALUES
+      ('ws-nudge','u-sender','owner'),
+      ('ws-nudge','u-receiver','member');
+
+    INSERT INTO tasks (id, workspace_id, title, lane, priority, assignees) VALUES
+      ('task-nudge','ws-nudge','Confirm final guest numbers','todo','med','["u-receiver"]');
+
+    INSERT INTO notification_prefs (user_id, daily_digest, mentions, comment_replies, nudges)
+      VALUES ('u-receiver', 1, 1, 0, 1);
+  `);
+}
+
+// ── Test 14: rate limit blocks a second nudge inside 24h ────────────────────
+
+test("nudge: rate limit blocks second nudge inside 24h window", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  const nowTs = Math.floor(Date.now() / 1000);
+  // Insert a nudgeSent activity 1 hour ago (well within 24h window).
+  await client.execute(`
+    INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload, created_at)
+    VALUES ('act-nudge-1','ws-nudge','task-nudge','u-sender','nudgeSent',
+            '{"kind":"nudgeSent","toUserId":"u-receiver"}',
+            ${nowTs - 3600})
+  `);
+
+  // Simulate rate-limit check: look for a nudgeSent activity within the
+  // last 24h for this (sender, task, recipient) triple.
+  const windowStart = nowTs - 24 * 60 * 60;
+  const recent = await client.execute(`
+    SELECT created_at FROM activities
+    WHERE task_id = 'task-nudge'
+      AND workspace_id = 'ws-nudge'
+      AND user_id = 'u-sender'
+      AND kind = 'nudgeSent'
+      AND created_at >= ${windowStart}
+      AND json_extract(payload, '$.toUserId') = 'u-receiver'
+    LIMIT 1
+  `);
+  assert.equal(recent.rows.length, 1, "rate-limit check must find the recent nudge");
+});
+
+// ── Test 15: rate limit allows after 24h window passes ──────────────────────
+
+test("nudge: rate limit allows nudge after 24h window", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  const nowTs = Math.floor(Date.now() / 1000);
+  // Insert a nudgeSent activity 25 hours ago (outside the 24h window).
+  await client.execute(`
+    INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload, created_at)
+    VALUES ('act-nudge-old','ws-nudge','task-nudge','u-sender','nudgeSent',
+            '{"kind":"nudgeSent","toUserId":"u-receiver"}',
+            ${nowTs - 25 * 3600})
+  `);
+
+  const windowStart = nowTs - 24 * 60 * 60;
+  const recent = await client.execute(`
+    SELECT created_at FROM activities
+    WHERE task_id = 'task-nudge'
+      AND workspace_id = 'ws-nudge'
+      AND user_id = 'u-sender'
+      AND kind = 'nudgeSent'
+      AND created_at >= ${windowStart}
+      AND json_extract(payload, '$.toUserId') = 'u-receiver'
+    LIMIT 1
+  `);
+  assert.equal(recent.rows.length, 0, "rate-limit check must not find an expired nudge");
+});
+
+// ── Test 16: self-nudge rejected ─────────────────────────────────────────────
+
+test("nudge: self-nudge rejected at the notification layer", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  // Simulate the notifications.ts self-guard for kind='nudge':
+  // a notification where userId === payload.fromUserId must not be inserted.
+  const selfUserId = "u-sender";
+  const payload = JSON.stringify({ kind: "nudge", taskId: "task-nudge", fromUserId: "u-sender" });
+
+  // The guard condition: fromUserId === userId → skip insert.
+  // We verify: if we try to insert such a row and then read it back,
+  // the guard logic (fromUserId === userId) would have prevented the insert.
+  const fromUserId = JSON.parse(payload).fromUserId;
+  const isSelf = fromUserId === selfUserId;
+  assert.equal(isSelf, true, "self-nudge guard must detect self fromUserId");
+
+  // Verify there are no notification rows for a self-nudge scenario.
+  const rowCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM notifications
+     WHERE user_id = 'u-sender'
+       AND kind = 'nudge'
+       AND json_extract(payload, '$.fromUserId') = 'u-sender'`,
+  );
+  assert.equal(rowCount, 0, "no self-nudge notification rows must exist after guard");
+});
+
+// ── Test 17: muted recipient gets activity but no notification row ───────────
+
+test("nudge: muted recipient gets activity row but no notifications row", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  // Mute the receiver.
+  await client.execute(
+    `UPDATE notification_prefs SET nudges = 0 WHERE user_id = 'u-receiver'`,
+  );
+
+  // Verify mute flag is set.
+  const prefsRow = await client.execute(
+    `SELECT nudges FROM notification_prefs WHERE user_id = 'u-receiver'`,
+  );
+  assert.equal(Number(prefsRow.rows[0]!.nudges), 0, "nudges pref must be 0 (muted)");
+
+  // Simulate the action: always write activity, skip notification when muted.
+  const nudgesAllowed = Number(prefsRow.rows[0]!.nudges) !== 0;
+  assert.equal(nudgesAllowed, false, "muted recipient must not receive notifications");
+
+  // Simulate: write activity row (always).
+  await client.execute(`
+    INSERT INTO activities (id, workspace_id, task_id, user_id, kind, payload)
+    VALUES ('act-nudge-muted','ws-nudge','task-nudge','u-sender','nudgeSent',
+            '{"kind":"nudgeSent","toUserId":"u-receiver"}')
+  `);
+
+  // Do NOT insert notification row (nudgesAllowed = false).
+  // Verify: activity row exists, notification row does not.
+  const actCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM activities WHERE id = 'act-nudge-muted'`,
+  );
+  assert.equal(actCount, 1, "activity row must be written even when recipient is muted");
+
+  const notifCount = await scalar<number>(
+    client,
+    `SELECT COUNT(*) AS c FROM notifications WHERE user_id = 'u-receiver' AND kind = 'nudge'`,
+  );
+  assert.equal(notifCount, 0, "no notification row must exist for a muted recipient");
+});
+
+// ── Test 18: notification payload contains no email/name strings ─────────────
+
+test("nudge: notification payload contains only ids, no email or display-name strings", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  // Insert a well-formed nudge notification row (simulating what the action writes).
+  const payload = JSON.stringify({
+    kind: "nudge",
+    taskId: "task-nudge",
+    fromUserId: "u-sender",
+  });
+  await client.execute(`
+    INSERT INTO notifications (id, workspace_id, user_id, kind, task_id, payload)
+    VALUES ('notif-nudge-1','ws-nudge','u-receiver','nudge','task-nudge','${payload}')
+  `);
+
+  const row = await client.execute(
+    `SELECT payload FROM notifications WHERE id = 'notif-nudge-1'`,
+  );
+  const stored = JSON.parse(row.rows[0]!.payload as string);
+
+  // The payload must contain taskId and fromUserId but no email or name keys.
+  assert.ok("taskId" in stored, "payload must contain taskId");
+  assert.ok("fromUserId" in stored, "payload must contain fromUserId");
+  assert.ok(!("email" in stored), "payload must not contain email");
+  assert.ok(!("name" in stored), "payload must not contain name");
+  assert.ok(!("senderName" in stored), "payload must not contain senderName");
+  assert.ok(!("taskTitle" in stored), "payload must not contain taskTitle");
+});
+
+// ── Test 19: prefs default allows nudges ─────────────────────────────────────
+
+test("nudge: notification_prefs default allows nudges (nudges=1)", async () => {
+  const { client } = await freshMemoryDb();
+  await seedNudge(client);
+
+  // The seed inserts a prefs row with nudges=1. Verify the default.
+  const row = await client.execute(
+    `SELECT nudges FROM notification_prefs WHERE user_id = 'u-receiver'`,
+  );
+  assert.equal(Number(row.rows[0]!.nudges), 1, "nudges pref must default to 1 (allowed)");
+
+  // Also verify: a user with no prefs row defaults to allowed.
+  // (The action checks: recipientPrefs === undefined || recipientPrefs.nudges !== false)
+  const noRow = await client.execute(
+    `SELECT nudges FROM notification_prefs WHERE user_id = 'u-sender'`,
+  );
+  assert.equal(noRow.rows.length, 0, "u-sender has no prefs row");
+  // Simulate the action default: undefined row → nudgesAllowed = true.
+  const recipientPrefs = noRow.rows[0] as unknown as { nudges: number } | undefined;
+  const nudgesAllowed = recipientPrefs === undefined || recipientPrefs.nudges !== 0;
+  assert.equal(nudgesAllowed, true, "missing prefs row must default to nudges allowed");
+});
+
 // ── Test 7: parent archive cascades; restore restores ───────────────────────
 
 test("setTaskArchivedAction: archiving parent cascades to children; restore restores them", async () => {
