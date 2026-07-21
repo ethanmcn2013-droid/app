@@ -291,6 +291,10 @@ export function personById(id: string): LabPerson | undefined {
   return runtimePeople.get(id) ?? LAB_PEOPLE.find((person) => person.id === id);
 }
 
+export function listPeople(): LabPerson[] {
+  return runtimePeople.size > 0 ? [...runtimePeople.values()] : LAB_PEOPLE;
+}
+
 export function labelById(id: string): LabLabel | undefined {
   if (runtimeLabels.size > 0) {
     return runtimeLabels.get(id) ?? { id, name: id, tone: "neutral" };

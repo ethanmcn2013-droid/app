@@ -17,6 +17,17 @@ import {
 import { InlineTaskTitle, KeyboardLegend } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
 import styles from "./option-a.module.css";
+import { listPeople } from "../../fixtures";
+import { asCalendarDate, addDays } from "../../dates";
+
+/** Convert the current wall-clock date to a CalendarDate (YYYY-MM-DD). */
+function todayCalendarDate() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return asCalendarDate(`${y}-${m}-${d}`);
+}
 
 const WIP_LIMITS: Partial<Record<TaskStatus, number>> = {
   queued: 12,
@@ -94,6 +105,68 @@ function buildTaskActions(
     onSelect: () => { if (!ro) store.updatePriority(task.id, value); },
   }));
 
+  // ── assign submenu ────────────────────────────────────────────────────────
+  const assignSubmenu: ActionItem[] = listPeople().map((person) => {
+    const assigned = task.assigneeIds.includes(person.id);
+    return {
+      id: `assign-${person.id}`,
+      label: person.name,
+      icon: assigned ? <Icon name="check" size={14} /> : undefined,
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => {
+        if (ro) return;
+        const next = assigned
+          ? task.assigneeIds.filter((id) => id !== person.id)
+          : [...task.assigneeIds, person.id];
+        store.updateAssignees(task.id, next);
+      },
+    };
+  });
+
+  // ── due-date submenu ──────────────────────────────────────────────────────
+  // Quick presets only — the full calendar picker lives in the task panel DueRow.
+  const hasSchedule = (store.taskById(task.id)?.schedule ?? task.schedule).kind !== "unscheduled";
+  const dueDateSubmenu: ActionItem[] = [
+    {
+      id: "due-today",
+      label: "Today",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, todayCalendarDate()); },
+    },
+    {
+      id: "due-tomorrow",
+      label: "Tomorrow",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 1)); },
+    },
+    {
+      id: "due-next-week",
+      label: "Next week",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 7)); },
+    },
+    ...(hasSchedule
+      ? [
+          {
+            id: "due-clear",
+            label: "Clear due date",
+            group: "workflow" as ActionItem["group"],
+            disabled: ro,
+            disabledReason: ro ? "Read-only workspace" : undefined,
+            onSelect: () => { if (!ro) store.unscheduleTask(task.id); },
+          },
+        ]
+      : []),
+  ];
+
   const workflowItems: ActionItem[] = [
     // One-click complete/reopen stays first — it was the old menu's primary
     // action and the most common thing anyone does from a card.
@@ -124,6 +197,24 @@ function buildTaskActions(
       submenu: prioritySubmenu,
       onSelect: () => undefined,
     },
+    {
+      id: "assign",
+      label: "Assign",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: assignSubmenu,
+      onSelect: () => undefined,
+    },
+    {
+      id: "set-due-date",
+      label: "Set due date",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: dueDateSubmenu,
+      onSelect: () => undefined,
+    },
   ];
 
   // ── organisation ──────────────────────────────────────────────────────────
@@ -136,6 +227,30 @@ function buildTaskActions(
     disabledReason: ro ? "Read-only workspace" : undefined,
     onSelect: () => { if (!ro) store.moveStatus(task.id, status); },
   }));
+
+  // ── make subtask of ───────────────────────────────────────────────────────
+  // Production only (makeSubtaskOf absent from LabStore). One-level cap:
+  // hide the item entirely when the task already has subtasks of its own.
+  const storeAsAny = store as Record<string, unknown>;
+  const hasArchive = typeof storeAsAny["archiveTask"] === "function";
+  const canMakeSubtask = typeof storeAsAny["makeSubtaskOf"] === "function" && task.subtasks.length === 0;
+  const makeSubtaskSubmenu: ActionItem[] = canMakeSubtask
+    ? store.tasks
+        .filter((t) => t.id !== task.id)
+        .slice(0, 15)
+        .map((candidate) => ({
+          id: `subtask-of-${candidate.id}`,
+          label: candidate.title.length > 40 ? `${candidate.title.slice(0, 40)}…` : candidate.title,
+          group: "organisation" as ActionItem["group"],
+          disabled: ro,
+          disabledReason: ro ? "Read-only workspace" : undefined,
+          onSelect: () => {
+            if (!ro) (storeAsAny["makeSubtaskOf"] as (id: string, parentId: string) => void)(task.id, candidate.id);
+          },
+        }))
+    : [];
+  // An empty submenu would render an empty popout on a one-task board.
+  const hasMakeSubtask = canMakeSubtask && makeSubtaskSubmenu.length > 0;
 
   const organisationItems: ActionItem[] = [
     {
@@ -155,6 +270,19 @@ function buildTaskActions(
       disabledReason: ro ? "Read-only workspace" : undefined,
       onSelect: () => { if (!ro) store.duplicateTask(task.id); },
     },
+    ...(hasMakeSubtask
+      ? [
+          {
+            id: "make-subtask-of",
+            label: "Make subtask of",
+            group: "organisation" as ActionItem["group"],
+            disabled: ro,
+            disabledReason: ro ? "Read-only workspace" : undefined,
+            submenu: makeSubtaskSubmenu,
+            onSelect: () => undefined,
+          },
+        ]
+      : []),
   ];
 
   // ── destructive ───────────────────────────────────────────────────────────
@@ -162,8 +290,6 @@ function buildTaskActions(
   // where available. In lab/demo mode (LabStoreProvider), archiveTask does not
   // exist on the LabStore contract — fall back to deleteTask for session cleanup.
   // The store shape is checked at runtime so this is safe in both contexts.
-  const storeAsAny = store as Record<string, unknown>;
-  const hasArchive = typeof storeAsAny["archiveTask"] === "function";
 
   const destructiveItems: ActionItem[] = [
     ...(hasArchive

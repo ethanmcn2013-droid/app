@@ -276,6 +276,8 @@ export function HybridStoreProvider({
       },
       deleteTask: (id) => !readOnly && prod.removeTask(id),
       duplicateTask: (id) => !readOnly && prod.duplicateTask(id),
+      archiveTask: (id: string) => { if (!readOnly) prod.archiveTask(id); },
+      makeSubtaskOf: (id: string, parentId: string | null) => { if (!readOnly) prod.setParent(id, parentId); },
     };
   }, [applySchedule, labTasks, openTask, prod, prodById, readOnly, ui]);
 
