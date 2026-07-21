@@ -258,7 +258,7 @@ for (const fixture of routeCases) {
     expect(response?.status()).toBe(fixture.expectedStatus ?? 200);
     if (fixture.experienceId === "tasks.page.app") {
       await page.waitForURL("**/app/board");
-      await expect(page.getByRole("heading", { name: "Hartwell Wedding" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
     }
     await enterDeterministicMotionMode(page);
     await page.waitForTimeout(300);
@@ -286,7 +286,7 @@ test("tasks.surface.command-palette / keyboard search", async ({ page }, testInf
   await test.step("load the hydrated demo workspace", async () => {
     await page.goto("/app/board", { waitUntil: "domcontentloaded" });
     await expect(
-      page.getByRole("heading", { name: "Hartwell Wedding" }),
+      page.getByRole("heading", { name: "The Orchard, events" }),
     ).toBeVisible();
     await enterDeterministicMotionMode(page);
   });
@@ -325,7 +325,7 @@ test("tasks.surface.quick-create / long natural-language task", async ({ page },
   );
   expect(fixture?.assertions).toBeDefined();
   await page.goto("/app/board", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Hartwell Wedding" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("c");
   const dialog = page.getByRole("dialog");
@@ -355,7 +355,7 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
   );
   expect(fixture?.assertions).toBeDefined();
   await page.goto("/app/board", { waitUntil: "domcontentloaded" });
-  await expect(page.getByRole("heading", { name: "Hartwell Wedding" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("Enter");
   const panel = page.getByRole("dialog", {

@@ -81,7 +81,7 @@ function EditableText({
   // the accessible name.
   return (
     <Tag
-      aria-label={ariaLabel}
+      aria-label={Tag === "h1" ? undefined : ariaLabel}
       className={styles.editable}
       contentEditable
       onBlur={commit}

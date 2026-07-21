@@ -1,6 +1,7 @@
 export type SuiteContextV2 = Readonly<{
   version: 2;
-  planningPeriodId: string;
+  planningPeriodId?: string;
+  projectId?: string;
   workspaceId: string;
 }>;
 
@@ -17,9 +18,15 @@ export function withSuiteContext(
 ): string {
   if (!context) return appUrl;
   const url = new URL(appUrl);
+  url.searchParams.set("sourceProduct", "tasks");
   url.searchParams.set("contextVersion", "2");
-  url.searchParams.set("planningPeriodId", context.planningPeriodId);
   url.searchParams.set("workspaceId", context.workspaceId);
+  if (context.planningPeriodId) {
+    url.searchParams.set("planningPeriodId", context.planningPeriodId);
+  }
+  if (context.projectId) {
+    url.searchParams.set("projectId", context.projectId);
+  }
   return url.toString();
 }
 

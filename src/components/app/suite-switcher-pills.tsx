@@ -169,12 +169,17 @@ export function SuiteSwitcher({
         ) as Partial<SuiteContextV2> | null;
         setSuiteContext(
           parsed?.version === 2 &&
-            isSuiteContextId(parsed.planningPeriodId) &&
-            isSuiteContextId(parsed.workspaceId)
+            isSuiteContextId(parsed.workspaceId) &&
+            (parsed.planningPeriodId === undefined ||
+              isSuiteContextId(parsed.planningPeriodId)) &&
+            (parsed.projectId === undefined || isSuiteContextId(parsed.projectId))
             ? {
                 version: 2,
-                planningPeriodId: parsed.planningPeriodId,
                 workspaceId: parsed.workspaceId,
+                ...(parsed.planningPeriodId
+                  ? { planningPeriodId: parsed.planningPeriodId }
+                  : {}),
+                ...(parsed.projectId ? { projectId: parsed.projectId } : {}),
               }
             : null,
         );
