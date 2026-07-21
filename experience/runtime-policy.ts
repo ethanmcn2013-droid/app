@@ -90,7 +90,11 @@ export function runtimeFailures(
         try {
           const requestUrl = new URL(issue.url);
           const pageUrl = new URL(currentPageUrl);
-          if (requestUrl.origin === pageUrl.origin && requestUrl.searchParams.has("_rsc")) {
+          if (
+            requestUrl.origin === pageUrl.origin &&
+            (requestUrl.searchParams.has("_rsc") ||
+              (requestUrl.pathname.startsWith("/app") && requestUrl.searchParams.has("task")))
+          ) {
             return false;
           }
         } catch {
