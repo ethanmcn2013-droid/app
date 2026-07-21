@@ -35,16 +35,39 @@ function clerkConfigured(): boolean {
 const DEV_FALLBACK_USER = "david";
 
 /**
+ * The keyless-dev fallback predicate, exported for unit testing.
+ *
+ * Fail-closed ON ITS OWN: the fallback additionally requires
+ * NODE_ENV !== "production", because an explicit SIGNAL_ACCESS_MODE=development
+ * is NOT downgraded by access-mode's production-deployment check (only
+ * demo/review are). Without the NODE_ENV term, a production deploy carrying
+ * that env var with Clerk unset would mint the dev identity and depend
+ * entirely on the proxy's 503 backstop. (Phase 4 Opus review M1.)
+ */
+export function devFallbackEligible(env: {
+  nodeEnv: string | undefined;
+  clerkConfigured: boolean;
+  accessMode: string;
+}): boolean {
+  return (
+    env.nodeEnv !== "production" &&
+    !env.clerkConfigured &&
+    env.accessMode === "development"
+  );
+}
+
+/**
  * Server-side helper: returns the Clerk userId or throws
  * UnauthorizedError if no session.
  *
  * Server actions in /server/actions/notes.ts call this before any
  * read or write so we never accidentally leak across users.
  *
- * Keyless-dev fallback: when Clerk is not configured AND the access mode
- * is development, returns DEV_FALLBACK_USER ("david") — the same identity
- * the host app uses — so Notes dev flows work without Clerk keys. This
- * path is fail-closed: it is unreachable in production mode.
+ * Keyless-dev fallback: when NODE_ENV is not production AND Clerk is not
+ * configured AND the access mode is development, returns DEV_FALLBACK_USER
+ * ("david") — the same identity the host app uses — so Notes dev flows work
+ * without Clerk keys. Fail-closed on its own via the NODE_ENV term; see
+ * devFallbackEligible.
  */
 export async function requireUser(): Promise<string> {
   // Demo/Review mode: resolve to the synthetic demo identity. Callers in
@@ -52,9 +75,14 @@ export async function requireUser(): Promise<string> {
   // the in-memory seed, so the real DB is never queried for the demo user.
   if (isDemoMode()) return DEMO_USER_ID;
 
-  // Keyless development fallback — mirrors src/server/auth.ts behaviour.
-  // Fail-closed: only active when Clerk is absent AND mode is development.
-  if (!clerkConfigured() && getAccessMode() === "development") {
+  // Keyless development fallback — fail-closed independent of the proxy.
+  if (
+    devFallbackEligible({
+      nodeEnv: process.env.NODE_ENV,
+      clerkConfigured: clerkConfigured(),
+      accessMode: getAccessMode(),
+    })
+  ) {
     return DEV_FALLBACK_USER;
   }
 
