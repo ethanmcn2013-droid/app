@@ -7,7 +7,9 @@ import { WorkspaceSection } from "./sections/workspace";
 import { MembersSection } from "./sections/members";
 import { BillingSection } from "./sections/billing";
 import { NotificationsSection } from "./sections/notifications";
+import { SecuritySection } from "./sections/security";
 import { DangerSection } from "./sections/danger";
+import type { SecurityData } from "@/server/actions/security";
 
 export type SettingsMember = {
   userId: string;
@@ -37,6 +39,7 @@ export type SettingsWorkspace = {
 type Tab =
   | "workspace"
   | "members"
+  | "security"
   | "billing"
   | "notifications"
   | "danger";
@@ -44,9 +47,10 @@ type Tab =
 const TABS: Array<{ id: Tab; label: string; eyebrow: string }> = [
   { id: "workspace", label: "Workspace", eyebrow: "01" },
   { id: "members", label: "Members", eyebrow: "02" },
-  { id: "billing", label: "Billing", eyebrow: "03" },
-  { id: "notifications", label: "Notifications", eyebrow: "04" },
-  { id: "danger", label: "Danger zone", eyebrow: "05" },
+  { id: "security", label: "Security", eyebrow: "03" },
+  { id: "billing", label: "Billing", eyebrow: "04" },
+  { id: "notifications", label: "Notifications", eyebrow: "05" },
+  { id: "danger", label: "Danger zone", eyebrow: "06" },
 ];
 
 /**
@@ -71,6 +75,7 @@ export function SettingsApp({
   notificationPrefs,
   pendingInvites,
   recentActivity,
+  securityData,
 }: {
   currentUserId: string;
   myRole: "owner" | "member" | "none";
@@ -98,6 +103,7 @@ export function SettingsApp({
     relative: string;
     createdAt: string;
   }>;
+  securityData: SecurityData;
 }) {
   const [tab, setTab] = useState<Tab>("workspace");
 
@@ -198,6 +204,9 @@ export function SettingsApp({
               pendingInvites={pendingInvites}
               recentActivity={recentActivity}
             />
+          ) : null}
+          {tab === "security" ? (
+            <SecuritySection data={securityData} />
           ) : null}
           {tab === "billing" ? (
             <BillingSection tier={tier} />

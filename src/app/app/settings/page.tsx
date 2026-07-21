@@ -10,6 +10,7 @@ import {
   listPendingInvitesAction,
   listWorkspaceActivityAction,
 } from "@/server/actions/settings";
+import { getSecurityData } from "@/server/actions/security";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { isDemoMode } from "@/lib/access-mode";
@@ -85,6 +86,7 @@ export default async function SettingsPage() {
             }}
             pendingInvites={[]}
             recentActivity={[]}
+            securityData={{ clerkAvailable: false, signInMethods: [], sessions: [], recentActivity: [] }}
           />
         </div>
       </>
@@ -117,13 +119,14 @@ export default async function SettingsPage() {
     .leftJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, ws));
 
-  const [tier, prefs, memberCapacity, pendingInvites, recentActivity] =
+  const [tier, prefs, memberCapacity, pendingInvites, recentActivity, securityData] =
     await Promise.all([
       getEffectiveTier(me, ws),
       getNotificationPrefs(),
       getMemberCapacity(ws),
       listPendingInvitesAction(),
       listWorkspaceActivityAction(),
+      getSecurityData(),
     ]);
 
   return (
@@ -166,6 +169,7 @@ export default async function SettingsPage() {
         notificationPrefs={prefs}
         pendingInvites={pendingInvites}
         recentActivity={recentActivity}
+        securityData={securityData}
       />
     </>
   );

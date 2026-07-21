@@ -561,6 +561,11 @@ const settingsActions = readFileSync(
   "utf8",
 );
 
+const securityActions = readFileSync(
+  join(serverDir, "actions", "security.ts"),
+  "utf8",
+);
+
 test("acceptInviteAction validates before writing membership row", () => {
   // All validation (invite exists, not accepted, not expired, email match, cap)
   // must appear before the INSERT OR IGNORE into workspace_members.
@@ -620,6 +625,75 @@ test("invite actions insert workspace_events rows", () => {
   const acceptBody = settingsActions.slice(acceptStart, acceptEnd === -1 ? settingsActions.length : acceptEnd);
   assert.match(acceptBody, /workspaceEvents/, "acceptInviteAction must insert into workspaceEvents");
   assert.match(acceptBody, /kind.*inviteAccepted/, "acceptInviteAction must write inviteAccepted kind");
+});
+
+// ── Phase 2.3/2.4 security actions regression guards ────────────────────────
+
+test("revokeSessionAction lists owned sessions before revoking", () => {
+  // Ownership check: getSessionList must precede revokeSession in the
+  // function body. The list result is matched against the caller's
+  // userId so a session belonging to another user cannot be revoked.
+  const fnStart = securityActions.indexOf("export async function revokeSessionAction");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const authGuard = body.indexOf("await auth()");
+  const listCall = body.indexOf("getSessionList(");
+  const ownedCheck = body.indexOf(".some((s) => s.id === sessionId)");
+  const revokeCall = body.indexOf("revokeSession(sessionId)");
+
+  assert.ok(authGuard >= 0, "revokeSessionAction must call auth() to resolve the caller");
+  assert.ok(listCall >= 0, "revokeSessionAction must call getSessionList before revoking");
+  assert.ok(ownedCheck >= 0, "revokeSessionAction must verify session ownership via list match");
+  assert.ok(revokeCall >= 0, "revokeSessionAction must call revokeSession");
+
+  assert.ok(authGuard < listCall, "auth() resolution must precede getSessionList");
+  assert.ok(listCall < ownedCheck, "getSessionList must precede the ownership check");
+  assert.ok(ownedCheck < revokeCall, "ownership check must precede revokeSession call");
+});
+
+test("revokeOtherSessionsAction lists owned sessions before revoking", () => {
+  const fnStart = securityActions.indexOf("export async function revokeOtherSessionsAction");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const authGuard = body.indexOf("await auth()");
+  const listCall = body.indexOf("getSessionList(");
+  const filterCall = body.indexOf(".filter(");
+  const revokeAll = body.indexOf("revokeSession(s.id)");
+
+  assert.ok(authGuard >= 0, "revokeOtherSessionsAction must call auth() to resolve the caller");
+  assert.ok(listCall >= 0, "revokeOtherSessionsAction must call getSessionList before revoking");
+  assert.ok(filterCall >= 0, "revokeOtherSessionsAction must filter out the current session");
+  assert.ok(revokeAll >= 0, "revokeOtherSessionsAction must call revokeSession");
+
+  assert.ok(authGuard < listCall, "auth() resolution must precede getSessionList");
+  assert.ok(listCall < filterCall, "getSessionList must precede the filter step");
+  assert.ok(filterCall < revokeAll, "filter must precede revokeSession calls");
+});
+
+test("security.ts server reads are guarded before Clerk or DB calls", () => {
+  // getSecurityData must resolve currentUser/auth before any Clerk or DB call.
+  const fnStart = securityActions.indexOf("export async function getSecurityData");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const demoGuard = body.indexOf("isDemoMode()");
+  const clerkCheck = body.indexOf("clerkConfigured()");
+  const userGuard = body.indexOf("currentUser()");
+  const clerkClientCall = body.indexOf("clerkClient()");
+  const dbCall = body.indexOf("await db");
+
+  assert.ok(demoGuard >= 0, "getSecurityData must guard demo mode");
+  assert.ok(clerkCheck >= 0, "getSecurityData must guard when Clerk is unconfigured");
+  assert.ok(userGuard >= 0, "getSecurityData must call currentUser() before Clerk/DB access");
+  assert.ok(clerkClientCall >= 0, "getSecurityData must call clerkClient() to list sessions");
+  assert.ok(dbCall >= 0, "getSecurityData must read workspace_events from DB");
+
+  assert.ok(demoGuard < clerkClientCall, "demo guard must precede clerkClient() call");
+  assert.ok(clerkCheck < clerkClientCall, "clerkConfigured() check must precede clerkClient() call");
+  assert.ok(userGuard < clerkClientCall, "currentUser() resolution must precede clerkClient() call");
+  assert.ok(userGuard < dbCall, "currentUser() resolution must precede DB access");
 });
 
 test("createShareLinkAction clamps mode to view", () => {
