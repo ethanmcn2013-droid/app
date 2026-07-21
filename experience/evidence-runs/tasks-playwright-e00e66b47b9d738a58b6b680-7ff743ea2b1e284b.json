@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "signal-playwright-attestation/1",
+  "runId": "tasks-playwright-e00e66b47b9d738a58b6b680",
+  "canonicalEvidenceSha256": "e00e66b47b9d738a58b6b680ef360acecb8d55ec87992855617f7eab31380fc4",
+  "rawArtifactSha256": "7ff743ea2b1e284b745c4bffb50a2a20fd54450b181cbf3ac35af329b6edcd02",
+  "artifactPath": "experience/output/critical-evidence.json",
+  "browserContractSha256": "1b9b86020d897ba440146fb422c2772c5c0ba37cdf29d0b3148a7dcc16b4e5b6",
+  "fixtureManifestSha256": "dd2289b1f4ff2944094c4917446fc86feb367037b4c18ad3cb132fb52ecee157",
+  "playwrightConfigSha256": "5f151fe8ef9eaa4fd3370235ca85ffc6cf1f69eeb70b255f0288ce5317af0bf7",
+  "playwrightSpecSha256": "e285860fc5693e11c30db376382ab998f570d39703d2d2289e324663d48ce831",
+  "projects": [
+    {
+      "name": "mobile",
+      "tests": 23
+    },
+    {
+      "name": "desktop",
+      "tests": 23
+    }
+  ],
+  "testCount": 46,
+  "passedCount": 46,
+  "unexpectedCount": 0,
+  "startedAt": "2026-07-21T19:19:15.595Z"
+}

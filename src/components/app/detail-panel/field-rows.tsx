@@ -67,7 +67,9 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatusRow({ task }: { task: Task }) {
+// Named exports for MetadataRail composition (premium-p1).
+// Behaviour is unchanged; adding `export` makes each row importable directly.
+export function StatusRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   return (
     <div className="flex flex-wrap gap-1">
@@ -100,7 +102,7 @@ function StatusRow({ task }: { task: Task }) {
   );
 }
 
-function PriorityRow({ task }: { task: Task }) {
+export function PriorityRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = PRIORITY_LABEL[task.priority];
   return (
@@ -159,7 +161,7 @@ function PriorityRow({ task }: { task: Task }) {
   );
 }
 
-function AssigneesRow({ task }: { task: Task }) {
+export function AssigneesRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const me = useCurrentUser();
   const assigned = task.assignees;
@@ -383,7 +385,7 @@ const RECURRENCE_OPTIONS: Array<{
   },
 ];
 
-function RecurrenceRow({ task }: { task: Task }) {
+export function RecurrenceRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.recurrence;
   const summary = current ? formatRecurrenceLabel(current) : "Doesn't repeat";
@@ -483,7 +485,7 @@ function sameRecurrence(
   return false;
 }
 
-function DueRow({ task }: { task: Task }) {
+export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.dueAt ? new Date(task.dueAt) : null;
   const hasDate = Boolean(task.due);
@@ -547,4 +549,3 @@ function DueRow({ task }: { task: Task }) {
     </Popover>
   );
 }
-

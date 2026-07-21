@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "82ace5109d9a18c2",
+  "reviewedAt": "2026-07-21",
+  "reviewer": "Claude Fable 5, premium programme Phase 3",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-7ff743ea2b1e284b.json",
+    "attestationSha256": "2e0f2e86b1a64b5c1209554fa7d2ac2755ef7491181afe09cbd83dbe06ec9572",
+    "runId": "tasks-playwright-e00e66b47b9d738a58b6b680",
+    "canonicalEvidenceSha256": "e00e66b47b9d738a58b6b680ef360acecb8d55ec87992855617f7eab31380fc4",
+    "rawArtifactSha256": "7ff743ea2b1e284b745c4bffb50a2a20fd54450b181cbf3ac35af329b6edcd02",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Phase 2 Security and Login settings section (commit 75af14b): sign-in methods, active sessions with ownership-checked revocation, security activity from workspace_events. Hash drifted without a reviewed refresh; this receipt closes that gap.",
+  "decision": "Reviewed against the live demo build during the Phase 3 evidence run; settings page renders the new section within the existing settings grammar."
+}

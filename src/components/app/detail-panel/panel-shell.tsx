@@ -1,7 +1,27 @@
 "use client";
 
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { hasOpenLayer } from "@/components/primitives/open-layer";
+
+const LS_KEY = "tasks.taskdetail.width";
+const MIN_WIDTH = 420;
+const MAX_WIDTH = 720;
+const DEFAULT_WIDTH = 520;
+
+function readStoredWidth(): number {
+  if (typeof window === "undefined") return DEFAULT_WIDTH;
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const n = parseInt(raw, 10);
+      if (!Number.isNaN(n) && n >= MIN_WIDTH && n <= MAX_WIDTH) return n;
+    }
+  } catch {
+    // ignore storage errors
+  }
+  return DEFAULT_WIDTH;
+}
 
 export function PanelShell({
   open,
@@ -14,14 +34,56 @@ export function PanelShell({
 }) {
   const reduce = useReducedMotion();
 
-  // ⎋ closes
+  // Lazy init: reads localStorage on client; SSR falls back to DEFAULT_WIDTH.
+  const [width, setWidth] = useState(() => readStoredWidth());
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const startW = useRef(DEFAULT_WIDTH);
+
+  // Pointer-capture drag on the left edge handle
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      dragging.current = true;
+      startX.current = e.clientX;
+      startW.current = width;
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    [width],
+  );
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    const delta = startX.current - e.clientX;
+    const next = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW.current + delta));
+    setWidth(next);
+  }, []);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    const delta = startX.current - e.clientX;
+    const final = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW.current + delta));
+    try {
+      localStorage.setItem(LS_KEY, String(final));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
+  // Escape closes (PanelShell owns it; TaskDetail focus shell handles its own).
+  // Skipped while a layered surface (Radix menu, field popover) is open — that
+  // keypress belongs to the layer. Capture phase is required: Radix dismisses
+  // its menu with a synchronously-flushed discrete event, so by the bubble
+  // phase the layer is already out of the DOM and the check would pass.
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (hasOpenLayer()) return;
+      onClose();
     }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
   }, [open, onClose]);
 
   return (
@@ -61,12 +123,52 @@ export function PanelShell({
                     opacity: { duration: 0.36, ease: [0.16, 1, 0.3, 1] },
                   }
             }
-            className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-[480px]"
+            className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-auto"
             style={{
+              // min(100vw, Npx): below md the resizable width (≥420px)
+              // exceeds most viewports, so the panel stays full-screen;
+              // at md+ the stored width applies.
+              width: `min(100vw, ${width}px)`,
               boxShadow:
                 "-28px 0 60px -20px rgba(20,21,26,0.28), -8px 0 16px -8px rgba(20,21,26,0.10)",
             }}
           >
+            {/* Drag handle on the left edge (md+ only via pointer interaction) */}
+            <div
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: 6,
+                cursor: "col-resize",
+                zIndex: 10,
+                touchAction: "none",
+              }}
+              role="separator"
+              aria-label="Drag to resize panel"
+              aria-orientation="vertical"
+              title={`Panel width: ${width}px (drag to resize, min ${MIN_WIDTH}px, max ${MAX_WIDTH}px)`}
+            >
+              {/* Visible indicator bar */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: 2,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  width: 2,
+                  height: 48,
+                  borderRadius: 1,
+                  background: "var(--hairline, rgba(0,0,0,0.08))",
+                  transition: "background 0.15s",
+                }}
+              />
+            </div>
+
             {children}
           </motion.aside>
         </>

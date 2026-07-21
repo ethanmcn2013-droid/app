@@ -465,14 +465,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-21",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bd8813991120b530",
+      "materialityHash": "82ace5109d9a18c2",
       "materialityReview": {
-        "materialityHash": "bd8813991120b530",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-15.json"
+        "materialityHash": "82ace5109d9a18c2",
+        "reviewedAt": "2026-07-21",
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-21.json"
       }
     },
     {
@@ -1060,7 +1060,7 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "62fbaa7d996b5c00"
+      "materialityHash": "5513f587418d4cbb"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -2790,7 +2790,140 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "0ef1d5df1c7a63b7"
+      "materialityHash": "b0f425f5fd012ffb"
+    },
+    {
+      "id": "tasks.page.app-task-by-id",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/task/[id]",
+      "source": "tasks/src/app/app/task/[id]/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "detail-or-record-view",
+      "primaryJob": "Work on one task at full depth without the board beside it.",
+      "primaryAction": "Update the task.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2a4ce560e47bd087"
+    },
+    {
+      "id": "tasks.state.app-task-by-id-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/task/[id]",
+      "source": "tasks/src/app/app/task/[id]/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand the task page is loading.",
+      "primaryAction": "Wait for the task detail to arrive.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ecae15d3b650a93f"
+    },
+    {
+      "id": "tasks.page.lab-task-detail",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/task-detail",
+      "source": "tasks/src/app/lab/task-detail/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "editor-or-canvas",
+      "primaryJob": "Review the task-detail design exploration.",
+      "primaryAction": "Compare panel, focus, and mobile shells.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "69f567c70748ff44"
     }
   ]
 }
