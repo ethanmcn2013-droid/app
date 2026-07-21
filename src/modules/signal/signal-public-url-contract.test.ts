@@ -28,6 +28,12 @@ function walk(dir: string): string[] {
   return files;
 }
 
+function stripComments(source: string): string {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+}
+
 describe("S5 URL contract: no hardcoded external URLs in Signal module", () => {
   const files = walk(MODULE_DIR).filter(
     (f) => !f.includes("signal-public-url-contract.test"),
@@ -36,7 +42,7 @@ describe("S5 URL contract: no hardcoded external URLs in Signal module", () => {
   test("no file contains tasks.signalstudio.ie", () => {
     const hits: string[] = [];
     for (const file of files) {
-      const content = readFileSync(file, "utf8");
+      const content = stripComments(readFileSync(file, "utf8"));
       if (content.includes("tasks.signalstudio.ie")) {
         hits.push(path.relative(MODULE_DIR, file));
       }
@@ -51,7 +57,7 @@ describe("S5 URL contract: no hardcoded external URLs in Signal module", () => {
   test("no file references process.env.NEXT_PUBLIC_SITE_URL for in-module links", () => {
     const hits: string[] = [];
     for (const file of files) {
-      const content = readFileSync(file, "utf8");
+      const content = stripComments(readFileSync(file, "utf8"));
       if (/process\.env\.NEXT_PUBLIC_SITE_URL/.test(content)) {
         hits.push(path.relative(MODULE_DIR, file));
       }

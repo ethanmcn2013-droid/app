@@ -6,12 +6,11 @@ import { signalHref } from "./links";
 import type { SignalView } from "./signal-types";
 
 // S1 route rename: /app → /app/brief (module home in host).
-// /app/brief/overview and /app/brief/trends are not yet wired in the host
-// (analytics-path only, phase 6 ports the briefing path only).
+// Overview and Trends routes are not ported yet (analytics-path, Phase 7
+// candidate) — until they exist, only the Briefing tab renders. Pointing
+// unported tabs at /app/brief would be two lying dead-ends (Opus P6 MINOR-1).
 const VIEWS: ReadonlyArray<{ view: SignalView; label: string; pathname: string }> = [
   { view: "briefing", label: "Briefing", pathname: "/app/brief" },
-  { view: "overview", label: "Overview", pathname: "/app/brief" },
-  { view: "trends", label: "Trends", pathname: "/app/brief" },
 ];
 
 interface SignalViewTabsProps {

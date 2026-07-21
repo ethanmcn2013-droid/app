@@ -13,12 +13,19 @@ import type { Config } from "drizzle-kit";
  *
  * S8: ported copy — prod schema owned by signal.git cron + its own drizzle migrations.
  */
+const url = process.env.SIGNAL_PREFS_DATABASE_URL;
+if (!url) {
+  throw new Error(
+    "SIGNAL_PREFS_DATABASE_URL is required — the prefs DB has no dev fallback (S2).",
+  );
+}
+
 export default {
   schema: "./src/modules/signal/lib/db/signal-prefs-schema.ts",
   out: "./drizzle-signal-prefs",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.SIGNAL_PREFS_DATABASE_URL ?? "file:prefs.db",
+    url,
   },
   verbose: false,
   strict: true,
