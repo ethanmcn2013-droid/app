@@ -59,3 +59,8 @@ next-env.d.ts
 /.data/
 
 roadmap.db
+
+# local module dev DBs (migration)
+analytics.db*
+roadmap.db*
+prefs.db*

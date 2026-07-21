@@ -1,7 +1,7 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server";
 import { isDemoMode } from "@/lib/access-mode";
+import { requireSignalUser, UnauthorizedError } from "../server/signal-auth";
 import { signalAnalyticsDb as db } from "../server/db/signal-analytics-client";
 import { briefingFeedback } from "../server/db/signal-analytics-schema";
 
@@ -26,13 +26,20 @@ export async function recordBriefingFeedback(
   if (isDemoMode()) return;
 
   try {
-    const user = await currentUser();
-    if (!user) return;
+    // Module auth helper (not raw Clerk): identical in production, and the
+    // keyless-dev fallback keeps the action testable outside prod (P6 QA gap).
+    let clerkId: string;
+    try {
+      clerkId = await requireSignalUser();
+    } catch (err) {
+      if (err instanceof UnauthorizedError) return;
+      throw err;
+    }
     const now = new Date();
     await db
       .insert(briefingFeedback)
       .values({
-        clerkId: user.id,
+        clerkId,
         itemKey,
         verdict,
         triggerId: triggerId ?? null,

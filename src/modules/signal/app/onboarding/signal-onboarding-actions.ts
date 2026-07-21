@@ -1,12 +1,13 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
 import { signalAnalyticsDb as db } from "../../server/db/signal-analytics-client";
 import { analyticsUsers } from "../../server/db/signal-analytics-schema";
 import { dataSource } from "../../lib/data/source";
+import { requireSignalUser, UnauthorizedError } from "../../server/signal-auth";
 
 /**
  * Onboarding write action — ported from signal/src/server/onboarding/actions.ts.
@@ -21,9 +22,16 @@ export async function completeOnboarding(formData: FormData): Promise<void> {
     redirect("/app/brief");
   }
 
-  const { userId } = await auth();
-  if (!userId) {
-    redirect("/sign-in");
+  // Module auth helper (not raw Clerk): identical in production, and the
+  // keyless-dev fallback keeps the action testable outside prod (P6 QA gap).
+  let userId: string;
+  try {
+    userId = await requireSignalUser();
+  } catch (err) {
+    if (err instanceof UnauthorizedError) {
+      redirect("/sign-in");
+    }
+    throw err;
   }
 
   const workspaceId = String(formData.get("workspaceId") ?? "").trim();
