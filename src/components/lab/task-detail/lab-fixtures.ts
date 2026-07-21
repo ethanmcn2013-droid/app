@@ -92,7 +92,7 @@ export function personById(id: string): LabDetailPerson | undefined {
 
 export const STATUS_CONFIG: Record<LabDetailStatus, { label: string; dot: string; bg: string; ink: string }> = {
   queued:  { label: "Queued",      dot: "#a1a1aa",  bg: "#f4f4f5",  ink: "#52525b" },
-  active:  { label: "In progress", dot: "#6366f1",  bg: "#eef2ff",  ink: "#4f46e5" },
+  active:  { label: "In progress", dot: "#4f46e5",  bg: "#eef2ff",  ink: "#4f46e5" },
   review:  { label: "Review",      dot: "#06b6d4",  bg: "#ecfeff",  ink: "#0e7490" },
   waiting: { label: "Waiting",     dot: "#f59e0b",  bg: "#fffbeb",  ink: "#b45309" },
   done:    { label: "Done",        dot: "#10b981",  bg: "#d1fae5",  ink: "#065f46" },

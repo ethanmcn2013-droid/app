@@ -684,6 +684,11 @@ export const userPreferences = sqliteTable("user_preferences", {
     .default("off"),
   /** IANA tz string. Optional, falls back to UTC when null. */
   timeZone: text("time_zone"),
+  /** UI colour-scheme preference. Null resolves to "system".
+   *  D-013: only "system" and "light" are selectable; "dark" is
+   *  designed-not-shipped (operator gate). The server action enforces
+   *  this allow-list so a crafted payload cannot enable dark mode. */
+  themeMode: text("theme_mode"),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

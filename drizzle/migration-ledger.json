@@ -208,6 +208,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/invites-and-workspace-events-2026-07-21.json",
       "receiptSha256": "f1d6f3a912ab1b5e514ffa188ff67b69c7a962cc0b6f411f08336107ecec5bbd"
+    },
+    {
+      "ordinal": 20,
+      "id": "0020_user_preferences_theme_mode",
+      "file": "drizzle/0020_user_preferences_theme_mode.sql",
+      "when": 1784851200000,
+      "sha256": "f372dd8df9fb132b58050d41bd9c02713783ff6ec961014d62cc9ff39a8efb46",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/user-preferences-theme-mode-2026-07-21.json",
+      "receiptSha256": "e43df8972d80d671ee0b53bbca380be37604f77511f95c5b476184d61eeeab7c"
     }
   ]
 }

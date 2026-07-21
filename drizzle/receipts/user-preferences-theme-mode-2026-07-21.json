@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "user-preferences-theme-mode-2026-07-21",
+  "authorizedBy": "founder standing directive (premium programme session 1)",
+  "reviewedBy": "Opus 4.8 Phase 4 review",
+  "authorizationSource": "docs/execution/signal-studio/DECISIONS.md D-013",
+  "migrations": [
+    {
+      "id": "0020_user_preferences_theme_mode",
+      "sha256": "f372dd8df9fb132b58050d41bd9c02713783ff6ec961014d62cc9ff39a8efb46",
+      "reviewedAt": "2026-07-21T00:00:00.000Z",
+      "risk": "low (metadata-only ADD COLUMN); nullable text column with no default; existing rows gain a NULL value; no data loss; no existing columns modified",
+      "rollbackPlan": "ALTER TABLE user_preferences DROP COLUMN theme_mode (SQLite 3.35+); read path treats absent value as system",
+      "postconditions": [
+        "theme_mode column exists on user_preferences table",
+        "theme_mode column is nullable text with no enforced default",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "theme-mode-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('user_preferences') WHERE name = 'theme_mode'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

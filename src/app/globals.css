@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "../ds/tokens.css";
+@import "../ds/theme-overrides.css";
 @import "../ds/tailwind.css";
 
 /* ────────────────────────────────────────────────────────────

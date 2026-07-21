@@ -5,12 +5,17 @@ import { getCurrentUser } from "@/server/auth";
 import {
   type DailySignalCadence,
   type WeeklySummary,
+  type ThemeMode,
   type UserPreferencesPatch,
   upsertUserPreferences,
 } from "@/server/db/preferences";
 
 const CADENCE: DailySignalCadence[] = ["off", "weekdays", "daily"];
 const SUMMARY: WeeklySummary[] = ["off", "mondays"];
+// D-013: dark is designed-not-shipped. Only system and light are
+// selectable. This allow-list is the server-side enforcement boundary;
+// a crafted payload with "dark" is silently dropped.
+const THEME: ThemeMode[] = ["system", "light"];
 
 export async function updateUserPreferencesAction(
   raw: UserPreferencesPatch,
@@ -31,6 +36,9 @@ export async function updateUserPreferencesAction(
   }
   if (raw.timeZone !== undefined) {
     patch.timeZone = raw.timeZone ? String(raw.timeZone).slice(0, 64) : null;
+  }
+  if (raw.themeMode !== undefined && THEME.includes(raw.themeMode)) {
+    patch.themeMode = raw.themeMode;
   }
   await upsertUserPreferences(me, patch);
   revalidatePath("/settings/notifications");

@@ -11,6 +11,8 @@ import {
   listWorkspaceActivityAction,
 } from "@/server/actions/settings";
 import { getSecurityData } from "@/server/actions/security";
+import { getUserPreferences } from "@/server/db/preferences";
+import { getWorkspaceStorageUsage } from "@/server/actions/attachments";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { isDemoMode } from "@/lib/access-mode";
@@ -27,11 +29,13 @@ export const dynamic = "force-dynamic";
  * Single-page settings surface, tabbed sub-views. NOT split into
  * /app/settings/billing etc., owner-gated mutations would have to
  * re-resolve role in every nested layout, and the v1.0 spec is small
- * enough that one client-rendered tab switcher beats five layouts.
+ * enough that one client-rendered tab switcher beats nine layouts.
  *
- * All five sub-views (workspace, members, billing, notifications,
- * danger) read their server-side state at this top level so the
- * client shell stays a pure UI orchestrator.
+ * All sub-views (workspace, members, notifications, appearance,
+ * security, storage, billing, privacy, danger) read their server-side
+ * state at this top level so the client shell stays a pure UI
+ * orchestrator. New data fetches are folded into the existing
+ * Promise.all — never serial.
  */
 export default async function SettingsPage() {
   // Demo/Review: render a coherent settings surface from the synthetic
@@ -52,6 +56,7 @@ export default async function SettingsPage() {
         <div inert aria-disabled="true">
           <SettingsApp
             currentUserId={DEMO_USER_ID}
+            currentUserEmail="you@theorchard.example"
             myRole="owner"
             workspace={{
               id: DEMO_WORKSPACE_ID,
@@ -87,6 +92,8 @@ export default async function SettingsPage() {
             pendingInvites={[]}
             recentActivity={[]}
             securityData={{ clerkAvailable: false, signInMethods: [], sessions: [], recentActivity: [] }}
+            initialThemeMode="system"
+            storageUsageBytes={0}
           />
         </div>
       </>
@@ -119,21 +126,37 @@ export default async function SettingsPage() {
     .leftJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, ws));
 
-  const [tier, prefs, memberCapacity, pendingInvites, recentActivity, securityData] =
-    await Promise.all([
-      getEffectiveTier(me, ws),
-      getNotificationPrefs(),
-      getMemberCapacity(ws),
-      listPendingInvitesAction(),
-      listWorkspaceActivityAction(),
-      getSecurityData(),
-    ]);
+  // All remaining fetches run in parallel — no serial reads after this point.
+  const [
+    tier,
+    prefs,
+    memberCapacity,
+    pendingInvites,
+    recentActivity,
+    securityData,
+    userPreferences,
+    storageUsageBytes,
+  ] = await Promise.all([
+    getEffectiveTier(me, ws),
+    getNotificationPrefs(),
+    getMemberCapacity(ws),
+    listPendingInvitesAction(),
+    listWorkspaceActivityAction(),
+    getSecurityData(),
+    getUserPreferences(me),
+    getWorkspaceStorageUsage(ws),
+  ]);
+
+  // Resolve the current user's email from the member rows (already fetched).
+  const myMember = memberRows.find((m) => m.userId === me);
+  const currentUserEmail = myMember?.email ?? "";
 
   return (
     <>
       <AppPageHeader />
       <SettingsApp
         currentUserId={me}
+        currentUserEmail={currentUserEmail}
         myRole={myRole}
         workspace={
           workspaceRow
@@ -170,6 +193,8 @@ export default async function SettingsPage() {
         pendingInvites={pendingInvites}
         recentActivity={recentActivity}
         securityData={securityData}
+        initialThemeMode={userPreferences.themeMode}
+        storageUsageBytes={storageUsageBytes}
       />
     </>
   );

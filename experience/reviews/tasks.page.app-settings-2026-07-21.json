@@ -2,15 +2,15 @@
   "schemaVersion": "signal-materiality-review/2",
   "experienceId": "tasks.page.app-settings",
   "source": "tasks/src/app/app/settings/page.tsx",
-  "materialityHash": "82ace5109d9a18c2",
+  "materialityHash": "6bf217a35352f080",
   "reviewedAt": "2026-07-21",
-  "reviewer": "Claude Fable 5, premium programme Phase 3",
+  "reviewer": "Claude Fable 5, premium programme Phase 4",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-7ff743ea2b1e284b.json",
-    "attestationSha256": "2e0f2e86b1a64b5c1209554fa7d2ac2755ef7491181afe09cbd83dbe06ec9572",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-b115854ed1c156c3.json",
+    "attestationSha256": "fb3b97abe96c7a1344b19e59215797b9c7a5f484ee43392f04f122ee77cfff98",
     "runId": "tasks-playwright-e00e66b47b9d738a58b6b680",
     "canonicalEvidenceSha256": "e00e66b47b9d738a58b6b680ef360acecb8d55ec87992855617f7eab31380fc4",
-    "rawArtifactSha256": "7ff743ea2b1e284b745c4bffb50a2a20fd54450b181cbf3ac35af329b6edcd02",
+    "rawArtifactSha256": "b115854ed1c156c35df763a366829cfa05dd0f639d7a214c7e720e402d79a35a",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -19,6 +19,6 @@
       "desktop"
     ]
   },
-  "reviewedChange": "Phase 2 Security and Login settings section (commit 75af14b): sign-in methods, active sessions with ownership-checked revocation, security activity from workspace_events. Hash drifted without a reviewed refresh; this receipt closes that gap.",
-  "decision": "Reviewed against the live demo build during the Phase 3 evidence run; settings page renders the new section within the existing settings grammar."
+  "reviewedChange": "Phase 4.2 settings IA extension: tabs reordered and extended with Account, Appearance (theme preference, D-013 system/light only), Storage (workspace usage vs quota), and Privacy and data (export download, type-to-confirm account deletion); billing tab gains the entitlement-gated Stripe portal button.",
+  "decision": "Reviewed against the production build during the Phase 4 evidence run (46/46). One earlier mobile run failed on an aborted app-icon request; re-run passed both projects and the attested run is fully green."
 }

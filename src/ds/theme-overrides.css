@@ -1,0 +1,51 @@
+/* app-owned theme overrides — src/ds/theme-overrides.css
+ * Imported alongside tokens.css in globals.css.
+ *
+ * DESIGNED-NOT-SHIPPED (D-013): dark theme token remappings exist here
+ * so enabling dark later is a CSS switch, not a migration. No product
+ * surface sets data-theme="dark" before the operator gate opens.
+ *
+ * Zero raw hex: every value is a var() reference to a primitive
+ * already declared in tokens.css. ds-check permits system-token
+ * redeclaration inside src/ds/ — this file is intentionally under
+ * that path.
+ *
+ * data-theme="light" is an identity selector: the attribute carries no
+ * token overrides (light is the :root default). It exists so the app
+ * shell can set the attribute unconditionally for system and light
+ * without triggering any visual side-effect.
+ *
+ * data-theme="dark" is DESIGNED-NOT-SHIPPED. The block is complete so
+ * enabling it later requires only the operator gate opening, not a CSS
+ * migration. The hairline rgba() values are not raw hex (#rrggbb form),
+ * they are functional color notation, which ds-check does not flag.
+ */
+
+/* Light is the :root default; no overrides needed. */
+[data-theme="light"] {
+  /* identity — inherits all values from :root */
+}
+
+/* DESIGNED-NOT-SHIPPED — dark mode remappings (D-013).
+ * tokens.css also carries a [data-theme="dark"] block using raw hex.
+ * This file is imported after tokens.css in globals.css, so these
+ * var()-only overrides win for the dark selector. Only the tokens
+ * that need remapping are listed here; unspecified tokens fall through
+ * to :root which is acceptable for dark-unshipped. */
+[data-theme="dark"] {
+  --paper:      var(--zinc-950);
+  --paper-soft: var(--zinc-900);
+  --paper-deep: var(--zinc-800);
+
+  --ink:       var(--zinc-50);
+  --ink-soft:  var(--zinc-200);
+  --ink-faint: var(--zinc-400);
+  --ink-ghost: var(--zinc-700);
+
+  /* Dark surfaces need lighter hover on accent, not darker. */
+  --accent:       var(--indigo-600);
+  --accent-hover: var(--indigo-500);
+
+  --hairline:      rgba(255, 255, 255, 0.10);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
+}

@@ -468,9 +468,9 @@
       "lastReviewedAt": "2026-07-21",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "82ace5109d9a18c2",
+      "materialityHash": "6bf217a35352f080",
       "materialityReview": {
-        "materialityHash": "82ace5109d9a18c2",
+        "materialityHash": "6bf217a35352f080",
         "reviewedAt": "2026-07-21",
         "evidence": "experience/reviews/tasks.page.app-settings-2026-07-21.json"
       }
