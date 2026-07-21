@@ -16,7 +16,7 @@ import { DescriptionEditor } from "./description-editor";
 import { RepeatButton } from "./repeat-button";
 import { TIMELINE_URL } from "@/lib/product-urls";
 import { SubtasksSection } from "./subtasks-section";
-import { AttachmentsSection } from "./attachments-section";
+import { ResourcesSection } from "./resources-section";
 import type { Task } from "@/lib/data";
 
 export function TaskDetailPanel() {
@@ -113,7 +113,7 @@ export function TaskDetailPanel() {
               <CentsEditor key={task.id} task={task} />
             </Section>
             <SubtasksSection key={`subtasks-${task.id}`} task={task} />
-            <AttachmentsSection key={`attachments-${task.id}`} task={task} />
+            <ResourcesSection key={`resources-${task.id}`} task={task} />
             <Section title="Conversation">
               {loading ? (
                 <ConversationSkeleton />
