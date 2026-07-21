@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import { devFallbackEligible } from "./notes-auth";
+import { devFallbackEligible } from "./notes-auth-policy";
 
 /**
  * Locks the fail-closed invariant from the Phase 4 Opus review (M1):
