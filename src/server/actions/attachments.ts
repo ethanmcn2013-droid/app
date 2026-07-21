@@ -1,62 +1,48 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
 import { db } from "@/server/db";
-import { attachments, tasks } from "@/server/db/schema";
+import { attachments, resources, tasks } from "@/server/db/schema";
 import { getAttachmentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
+import { getEffectiveTier } from "@/server/db/entitlements";
+import {
+  getQuota,
+  SERVER_UPLOAD_LIMIT_BYTES,
+  WARN_THRESHOLDS,
+} from "@/lib/storage-config";
+import { putBytes, deleteBytes } from "@/server/storage";
 
 /**
- * Local-disk file attachments. Bytes go to
- * `<repo>/.data/uploads/<workspaceId>/<taskId>/<attachmentId>-<safeFilename>`,
- * outside `public/` so the Next static handler never auto-serves them.
- * The authenticated `/api/attachments/[id]` route is the only path
- * the client uses to read the bytes.
+ * File attachment server actions.
  *
- * v1: local disk only. The API surface here (`uploadAttachmentAction`,
- * `deleteAttachmentAction`, `listAttachmentsForTaskAction`) is the
- * stable contract the future S3 / Vercel Blob swap will reimplement
- * behind. Schema, server actions, and download route are all written
- * so the storage substrate is the only thing that needs to change.
+ * Storage substrate is abstracted behind src/server/storage.ts; the
+ * upload action uses claim-then-verify (Opus §1.4): the metadata row
+ * is inserted BEFORE bytes are written so the usage SUM is atomic.
+ * If quota is exceeded or the byte write fails, the claim row is
+ * deleted and no orphan bytes or rows survive.
+ *
+ * stored_path holds either a disk path (legacy / dev) or a blob URL
+ * (https://...). The download route distinguishes by prefix.
  */
 
-/** Hard upload cap. Mirrored client-side as a UI hint; the server is
- *  the authority. */
-const MAX_BYTES = 25 * 1024 * 1024;
-
-/** Mime types we refuse outright. Not a full antivirus pass, that's
- *  a future enhancement (TODO: virus-scan via ClamAV / cloud scanner
- *  before the user-content surface goes external), but enough to
- *  reject the obvious executable shapes a user might drop in by
- *  accident. */
+/** Mime types refused outright. Not a full antivirus pass; enough to
+ *  block the obvious executable + stored-XSS shapes. */
 const BLOCKED_MIME_TYPES = new Set<string>([
   "application/x-msdownload",
   "application/x-msdos-program",
   "text/x-shellscript",
-  // Script-capable document types, stored-XSS shapes if ever rendered.
-  // The download route also forces these to `attachment` + nosniff + a
-  // sandbox CSP; blocking at upload is the belt to that route's braces.
   "text/html",
   "application/xhtml+xml",
   "image/svg+xml",
   "application/xml",
   "text/xml",
 ]);
-
-/** Repository-rooted uploads dir. Resolved per call so dev (cwd
- *  = project root) and Vercel (cwd = /var/task, writable mount at
- *  /tmp) both land somewhere sensible. The user will swap the storage
- *  substrate before this surface goes multi-replica. */
-function uploadsRoot(): string {
-  return join(process.cwd(), ".data", "uploads");
-}
 
 function newAttachmentId(): string {
   const raw =
@@ -65,48 +51,100 @@ function newAttachmentId(): string {
   return `att-${raw.replace(/-/g, "").slice(0, 8)}`;
 }
 
-/** Strip path separators and anything outside `[a-zA-Z0-9._-]`. Falls
- *  back to `file.bin` when the input collapses to empty so we never
- *  build a path with a trailing dash. */
+/** Strip path separators and anything outside [a-zA-Z0-9._-]. */
 function safeFilename(name: string): string {
   const base = name.split(/[\\/]/).pop() ?? "";
   const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
-  // Avoid a leading dot turning the file invisible / dotfile-shaped.
   const trimmed = cleaned.replace(/^\.+/, "");
   return trimmed.length > 0 ? trimmed : "file.bin";
 }
 
-/** Resolve the on-disk path for an attachment given its workspace +
- *  task + id + (already-sanitized) filename. */
-function buildStoredPath(
+/**
+ * Compute the workspace-prefixed blob key (also used as the sub-path
+ * under uploadsRoot() for disk). Format:
+ *   <workspaceId>/<taskId>/<attachmentId>-<safeFilename>
+ */
+function buildStorageKey(
   workspaceId: string,
   taskId: string,
   attachmentId: string,
   filename: string,
 ): string {
-  return join(
-    uploadsRoot(),
-    workspaceId,
-    taskId,
-    `${attachmentId}-${filename}`,
-  );
+  return `${workspaceId}/${taskId}/${attachmentId}-${filename}`;
 }
 
+// ── Workspace storage usage ───────────────────────────────────────────
+
 /**
- * Accept a `formData.get('file')` Web `File`, persist the bytes under
- * the repo-rooted uploads dir, and insert the metadata row. Returns
- * the freshly-inserted `Attachment` so optimistic UI can swap its
- * placeholder out atomically.
+ * Sum storage bytes for a workspace, counting:
+ *   - resources rows where counts_against_storage = 1
+ *   - attachments rows NOT mirrored into resources (post-backfill
+ *     uploads that still live only in attachments)
  *
- * Validation order matches the spec: file present → size ≤ cap →
- * mime not in the blocklist → task belongs to the active workspace.
- * Failures throw so the client's `useTransition` sees a rejection and
- * can surface a toast.
+ * This is the same union rule as listTaskResourcesAction so no bytes
+ * are double-counted. Called AFTER the claim row is inserted so the
+ * SUM already includes the pending upload.
+ */
+export async function getWorkspaceStorageUsage(
+  workspaceId: string,
+): Promise<number> {
+  // Sum from resources (counts_against_storage=1 only).
+  const resResult = await db
+    .select({ total: sql<number>`COALESCE(SUM(${resources.sizeBytes}), 0)` })
+    .from(resources)
+    .where(
+      and(
+        eq(resources.workspaceId, workspaceId),
+        eq(resources.countsAgainstStorage, 1),
+      ),
+    );
+  const fromResources = Number(resResult[0]?.total ?? 0);
+
+  // Sum from attachments whose derived id ('res-' + att.id) is absent from resources.
+  // This avoids double-counting attachments already mirrored into resources.
+  const attResult = await db.get<{ total: number }>(
+    sql`SELECT COALESCE(SUM(a.size_bytes), 0) AS total
+        FROM attachments a
+        WHERE a.workspace_id = ${workspaceId}
+          AND NOT EXISTS (
+            SELECT 1 FROM resources r WHERE r.id = 'res-' || a.id
+          )`,
+  );
+  const fromAttachments = Number(attResult?.total ?? 0);
+
+  return fromResources + fromAttachments;
+}
+
+// ── Upload action result ──────────────────────────────────────────────
+
+export type UploadAttachmentResult = {
+  attachment: Attachment;
+  /** Current workspace usage in bytes after this upload. */
+  usageBytes: number;
+  /** Warn thresholds crossed, expressed as fraction strings e.g. "0.8". */
+  warnThresholds: string[];
+};
+
+/**
+ * Accept a formData.get('file') Web File, enforce quota, and persist
+ * the bytes through the storage seam (Vercel Blob or local disk).
+ *
+ * Quota enforcement uses claim-then-verify:
+ *   (a) validate per-file size limit
+ *   (b) resolve tier + quota
+ *   (c) INSERT metadata row (the "claim")
+ *   (d) SUM workspace usage INCLUDING the claim
+ *   (e) if over quota: delete claim row, return over-quota error
+ *   (f) write bytes; if write fails: delete claim row, throw
+ *
+ * Bounded overshoot: at most one file beyond the quota can land (two
+ * concurrent uploads that both passed the pre-check — one wins the
+ * byte write, the other's claim is already counted in the sum).
  */
 export async function uploadAttachmentAction(
   taskId: string,
   formData: FormData,
-): Promise<Attachment> {
+): Promise<UploadAttachmentResult> {
   if (isDemoMode()) {
     throw new Error("Attachments are read-only in demo and review mode");
   }
@@ -117,11 +155,22 @@ export async function uploadAttachmentAction(
   if (file.size <= 0) {
     throw new Error("uploadAttachmentAction: empty file");
   }
-  if (file.size > MAX_BYTES) {
+
+  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
+
+  // Resolve tier and quota before touching the DB.
+  const tier = await getEffectiveTier(me, ws);
+  const quota = getQuota(tier);
+  const effectiveCap = Math.min(quota.maxFileBytes, SERVER_UPLOAD_LIMIT_BYTES);
+
+  if (file.size > effectiveCap) {
     throw new Error(
-      `uploadAttachmentAction: file exceeds ${MAX_BYTES} byte cap`,
+      `uploadAttachmentAction: file exceeds ${effectiveCap}-byte cap ` +
+        `(tier ${tier}, effective cap = min(${quota.maxFileBytes}, ${SERVER_UPLOAD_LIMIT_BYTES}))`,
     );
   }
+
   const mimeType = file.type || "application/octet-stream";
   if (BLOCKED_MIME_TYPES.has(mimeType)) {
     throw new Error(
@@ -129,12 +178,7 @@ export async function uploadAttachmentAction(
     );
   }
 
-  const ws = await getActiveWorkspace();
-  const me = await getCurrentUser();
-
-  // Confirm the task belongs to the active workspace before we touch
-  // disk. A mismatched id should look like the task doesn't exist
-  // rather than reveal cross-tenant leakage.
+  // Confirm the task belongs to the active workspace.
   const [parent] = await db
     .select({ workspaceId: tasks.workspaceId })
     .from(tasks)
@@ -145,53 +189,91 @@ export async function uploadAttachmentAction(
 
   const attachmentId = newAttachmentId();
   const filename = safeFilename(file.name);
-  const storedPath = buildStoredPath(ws, taskId, attachmentId, filename);
-
-  await mkdir(dirname(storedPath), { recursive: true });
-  const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(storedPath, bytes);
-
+  const storageKey = buildStorageKey(ws, taskId, attachmentId, filename);
   const createdAt = new Date();
+
+  // (c) INSERT the claim row first. stored_path is a placeholder;
+  // it will be updated after the byte write succeeds. We use the
+  // storage key as a stable interim value so the row is non-null.
   await db.insert(attachments).values({
     id: attachmentId,
     workspaceId: ws,
     taskId,
     uploaderUserId: me,
     filename,
-    storedPath,
+    storedPath: storageKey,
     mimeType,
     sizeBytes: file.size,
     createdAt,
   });
 
-  await recordActivity(taskId, {
-    kind: "attach",
-    attachmentId,
-    filename,
-    sizeBytes: file.size,
-  }, { workspaceId: ws });
+  // (d) SUM workspace usage INCLUDING the claim.
+  const usageBytesAfterClaim = await getWorkspaceStorageUsage(ws);
+
+  // (e) Over-quota check.
+  if (usageBytesAfterClaim > quota.totalBytes) {
+    // Delete the claim row — no orphan row survives.
+    await db.delete(attachments).where(eq(attachments.id, attachmentId));
+    throw new Error(
+      `uploadAttachmentAction: workspace storage quota exceeded ` +
+        `(usage ${usageBytesAfterClaim} bytes, limit ${quota.totalBytes} bytes, tier ${tier})`,
+    );
+  }
+
+  // (f) Write bytes. If this fails, delete the claim row.
+  let finalStoredPath: string;
+  try {
+    const bytes = Buffer.from(await file.arrayBuffer());
+    finalStoredPath = await putBytes(storageKey, bytes, mimeType);
+  } catch (err) {
+    await db.delete(attachments).where(eq(attachments.id, attachmentId));
+    throw err;
+  }
+
+  // Update stored_path to the final value (blob URL or abs disk path).
+  if (finalStoredPath !== storageKey) {
+    await db
+      .update(attachments)
+      .set({ storedPath: finalStoredPath })
+      .where(eq(attachments.id, attachmentId));
+  }
+
+  await recordActivity(
+    taskId,
+    { kind: "attach", attachmentId, filename, sizeBytes: file.size },
+    { workspaceId: ws },
+  );
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "attachments" });
 
+  // Determine which warn thresholds this upload crossed.
+  const warnThresholds = WARN_THRESHOLDS.filter(
+    (t) => usageBytesAfterClaim / quota.totalBytes >= t,
+  ).map(String);
+
   return {
-    id: attachmentId,
-    workspaceId: ws,
-    taskId,
-    uploaderUserId: me,
-    filename,
-    storedPath,
-    mimeType,
-    sizeBytes: file.size,
-    createdAt,
+    attachment: {
+      id: attachmentId,
+      workspaceId: ws,
+      taskId,
+      uploaderUserId: me,
+      filename,
+      storedPath: finalStoredPath,
+      mimeType,
+      sizeBytes: file.size,
+      createdAt,
+    },
+    usageBytes: usageBytesAfterClaim,
+    warnThresholds,
   };
 }
 
 /**
- * Delete a single attachment row + best-effort unlink the file. The
- * disk unlink is wrapped because a missing file shouldn't keep the
- * row alive, the UI promise is "remove this", and an orphan blob is
- * preferable to an orphan row that the user can't dismiss.
+ * Delete a single attachment row + best-effort remove bytes.
+ * Works regardless of quota state; quota never gates deletes.
+ * Routes the unlink through the storage seam (handles both blob URLs
+ * and disk paths).
  */
 export async function deleteAttachmentAction(
   attachmentId: string,
@@ -215,20 +297,13 @@ export async function deleteAttachmentAction(
 
   await db.delete(attachments).where(eq(attachments.id, attachmentId));
 
-  try {
-    await unlink(row.storedPath);
-  } catch (err) {
-    console.warn(
-      `attachments: unlink failed for ${row.storedPath}; row already removed`,
-      err,
-    );
-  }
+  await deleteBytes(row.storedPath);
 
-  await recordActivity(row.taskId, {
-    kind: "detach",
-    attachmentId,
-    filename: row.filename,
-  }, { workspaceId: ws });
+  await recordActivity(
+    row.taskId,
+    { kind: "detach", attachmentId, filename: row.filename },
+    { workspaceId: ws },
+  );
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "attachments" });
@@ -251,4 +326,3 @@ export async function listAttachmentsForTaskAction(
   if (!parent || parent.workspaceId !== ws) return [];
   return getAttachmentsForTask(taskId);
 }
-

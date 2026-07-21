@@ -16,7 +16,10 @@ import { Avatar } from "@/components/showcase/avatar";
 import { useToast } from "@/components/primitives/toast";
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { uploadAttachmentAction } from "@/server/actions/attachments";
+import {
+  uploadAttachmentAction,
+  type UploadAttachmentResult,
+} from "@/server/actions/attachments";
 import {
   addLinkResourceAction,
   listTaskResourcesAction,
@@ -25,7 +28,10 @@ import {
 } from "@/server/actions/resources";
 import { Popover } from "./popover";
 
-const MAX_BYTES = 25 * 1024 * 1024;
+// Client-side hint only; the server is the authority on size limits.
+// Updated to match SERVER_UPLOAD_LIMIT_BYTES (50 MB) so the hint stays
+// aligned with the effective cap until client-direct multipart ships.
+const MAX_BYTES = 50 * 1024 * 1024;
 
 /**
  * Resources section in the task detail panel. Replaces the old
@@ -79,7 +85,7 @@ export function ResourcesSection({ task }: { task: Task }) {
 
       for (const file of list) {
         if (file.size > MAX_BYTES) {
-          toast(`${file.name} is over 25 MB`, {
+          toast(`${file.name} is over 50 MB`, {
             tone: "warn",
             body: "Trim it down or share a link instead.",
           });
@@ -103,10 +109,20 @@ export function ResourcesSection({ task }: { task: Task }) {
 
         startTransition(async () => {
           try {
-            await uploadAttachmentAction(task.id, fd);
+            const result: UploadAttachmentResult = await uploadAttachmentAction(task.id, fd);
             // Refresh from server to get the canonical resource row.
             const rows = await listTaskResourcesAction(task.id);
             setItems(rows.map(toDisplayRow));
+            // Surface calm storage-usage warning if a threshold was crossed.
+            if (result.warnThresholds.length > 0) {
+              const highestThreshold = Math.max(
+                ...result.warnThresholds.map(Number),
+              );
+              const displayPct = Math.round(highestThreshold * 100);
+              toast(`Storage is at ${displayPct}% of your plan.`, {
+                tone: "warn",
+              });
+            }
           } catch (err) {
             console.warn("resources: upload failed; rolling back", err);
             setItems((cur) =>

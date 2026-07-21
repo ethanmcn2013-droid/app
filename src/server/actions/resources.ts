@@ -2,13 +2,13 @@
 
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { unlink } from "node:fs/promises";
 import { db } from "@/server/db";
 import { attachments, resources, tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { deleteBytes } from "@/server/storage";
 
 // ── Provider detection ────────────────────────────────────────────────
 
@@ -259,11 +259,7 @@ export async function removeResourceAction(
           .where(eq(attachments.id, attachmentId));
 
         if (attRow?.storedPath) {
-          try {
-            await unlink(attRow.storedPath);
-          } catch {
-            // ENOENT or serverless: nothing left to remove.
-          }
+          await deleteBytes(attRow.storedPath);
         }
       }
     }
@@ -298,11 +294,7 @@ export async function removeResourceAction(
       .delete(attachments)
       .where(eq(attachments.id, attachmentId));
 
-    try {
-      await unlink(attRow.storedPath);
-    } catch {
-      // ENOENT or serverless: nothing left to remove.
-    }
+    await deleteBytes(attRow.storedPath);
 
     await recordActivity(
       attRow.taskId,
