@@ -107,7 +107,7 @@ function errorState(error: unknown): AudienceActionState {
 }
 
 function shareUrl(rawToken: string): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? TIMELINE_URL).replace(/\/$/, "");
+  const base = (process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL).replace(/\/$/, "");
   return `${base}/s/${rawToken}`;
 }
 

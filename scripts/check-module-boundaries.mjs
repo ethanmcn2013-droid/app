@@ -197,26 +197,33 @@ for (const mod of MODULES) {
 
 /* ── Rule 3: requireAppAccess() present in each module page ─────────── */
 
-const MODULE_PAGES = {
-  notes: path.join(srcDir, "app", "app", "notes", "page.tsx"),
-  plan: path.join(srcDir, "app", "app", "plan", "page.tsx"),
-  brief: path.join(srcDir, "app", "app", "brief", "page.tsx"),
-};
+// EVERY page.tsx under a module's route segment must gate access — not just
+// the top-level page (Phase 5 Opus review MINOR-1: sub-routes like
+// /app/plan/[projectSlug] and /app/plan/audience are module entries too).
+const MODULE_SEGMENTS = ["notes", "plan", "brief"];
 
-for (const [segment, pagePath] of Object.entries(MODULE_PAGES)) {
-  if (!existsSync(pagePath)) {
+const modulePages = [];
+for (const segment of MODULE_SEGMENTS) {
+  const segmentDir = path.join(srcDir, "app", "app", segment);
+  const pages = walk(segmentDir).filter((f) => path.basename(f) === "page.tsx");
+  if (pages.length === 0) {
     failures.push(
-      `[rule-3] src/app/app/${segment}/page.tsx missing — ` +
+      `[rule-3] src/app/app/${segment}/ has no page.tsx — ` +
         `the module route page must exist and call requireAppAccess() (AD-005).`,
     );
-    continue;
   }
+  for (const pagePath of pages) {
+    modulePages.push([segment, pagePath]);
+  }
+}
+
+for (const [, pagePath] of modulePages) {
   const source = stripComments(readFileSync(pagePath, "utf8"));
   const hasImport = /from\s+["']@\/server\/require-app-access["']/.test(source);
   const hasCall = /(?:^|[^.\w])(?:await\s+)?requireAppAccess\s*\(/.test(source);
   if (!hasImport || !hasCall) {
     failures.push(
-      `[rule-3] src/app/app/${segment}/page.tsx must import requireAppAccess ` +
+      `[rule-3] ${rel(pagePath)} must import requireAppAccess ` +
         `from "@/server/require-app-access" and call it (comments do not count) ` +
         `(AD-005 defence-in-depth).`,
     );
