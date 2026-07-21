@@ -949,6 +949,55 @@ export const actionItems = sqliteTable("action_items", {
   completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
+/**
+ * Unified resource model. Absorbs file attachments (kind='upload') and
+ * external links (kind='link') into one read layer.
+ *
+ * Uploads keep writing `attachments` (unchanged upload path); this table
+ * is backfilled from attachments at migration time and unified at the
+ * read layer until Phase 9 retires attachments. New external links write
+ * only here.
+ *
+ * No runtime FK cascade — libSQL over Turso stateless HTTP does not fire
+ * them reliably. Cascade deletes are hand-wired in removeTaskAction,
+ * account-erasure.ts, and removeResourceAction.
+ */
+export const resources = sqliteTable("resources", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  taskId: text("task_id").notNull(),
+  /** 'upload' = file attachment; 'link' = external URL. */
+  kind: text("kind").$type<"upload" | "link">().notNull(),
+  /** Provider slug: 'file' | 'google_doc' | 'google_sheet' | 'google_slides'
+   *  | 'drive' | 'figma' | 'github' | 'url'. */
+  provider: text("provider").notNull(),
+  /** Optional provider-native identifier (e.g. Figma file key). */
+  externalId: text("external_id"),
+  title: text("title").notNull(),
+  url: text("url"),
+  mimeType: text("mime_type"),
+  sizeBytes: integer("size_bytes"),
+  thumbnail: text("thumbnail"),
+  addedByUserId: text("added_by_user_id"),
+  /** Unix epoch seconds. Stored as integer to match the attachments
+   *  created_at column type exactly (avoids mode mismatch in the union). */
+  addedAt: integer("added_at").notNull(),
+  refreshedAt: integer("refreshed_at"),
+  /** 'ok' | 'legacy' | 'pending' | 'unavailable'. 'legacy' = backfilled
+   *  upload whose cloud URL is not yet known; bytes may still exist on
+   *  local disk. */
+  accessState: text("access_state").notNull().default("ok"),
+  /** 1 when the resource bytes count against the workspace storage quota. */
+  countsAgainstStorage: integer("counts_against_storage").notNull().default(0),
+}, (t) => [
+  index("idx_resources_task_id").on(t.taskId),
+  index("idx_resources_workspace_id").on(t.workspaceId),
+  check(
+    "resources_kind_check",
+    sql`${t.kind} IN ('upload','link')`,
+  ),
+]);
+
 export const pendingInvites = sqliteTable("pending_invites", {
   /** URL-safe random token, also the primary key. */
   token: text("token").primaryKey(),

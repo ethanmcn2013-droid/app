@@ -178,6 +178,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/tasks-archived-at-2026-07-20.json",
       "receiptSha256": "87b3d5319d4fd3fb8329ec6e1cb5a74e065fa1710e6d0195fe8e9bbc648bfce1"
+    },
+    {
+      "ordinal": 17,
+      "id": "0017_resources",
+      "file": "drizzle/0017_resources.sql",
+      "when": 1784592000000,
+      "sha256": "70acfb68112f42a096afe16c02578f265d782c435487368424f17414c5642828",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/resources-2026-07-21.json",
+      "receiptSha256": "994cd7517368ea0c9d0fd250c53f722c07078c39772a0ba215f249f28b08e3f6"
     }
   ]
 }

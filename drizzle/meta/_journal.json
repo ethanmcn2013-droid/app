@@ -120,6 +120,13 @@
       "when": 1784548800000,
       "tag": "0016_tasks_archived_at",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1784592000000,
+      "tag": "0017_resources",
+      "breakpoints": true
     }
   ]
 }
