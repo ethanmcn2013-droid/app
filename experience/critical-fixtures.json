@@ -23,7 +23,7 @@
           "states": ["populated", "reduced-motion", "keyboard-only"],
           "assertions": [
             { "kind": "url", "pathname": "/app/board", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "Hartwell Wedding", "proves": ["populated"] }
+            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["populated"] }
           ]
         }
       ],

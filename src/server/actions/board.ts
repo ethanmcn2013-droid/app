@@ -46,6 +46,7 @@ import {
   type ColumnConfig,
 } from "@/lib/board-config";
 import { isDemoMode } from "@/lib/access-mode";
+import { DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
 
 // Re-export the config types so existing importers of "@/server/actions/board"
 // (domain-context, board-app) keep working; the canonical model lives in
@@ -102,7 +103,7 @@ async function writeColumnConfig(
 export async function getBoardName(
   workspaceId: string,
 ): Promise<string | null> {
-  if (isDemoMode()) return null;
+  if (isDemoMode()) return DEMO_WORKSPACE_NAME;
   const key = boardNameKey(workspaceId);
   const [row] = await db
     .select({ value: meta.value })
