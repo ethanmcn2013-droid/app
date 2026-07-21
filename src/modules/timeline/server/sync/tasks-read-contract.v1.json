@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "owner": "tasks",
+  "operation": "milestones",
+  "timeoutMs": 2000,
+  "retry": "idempotent-only",
+  "scope": "subject+workspace"
+}
