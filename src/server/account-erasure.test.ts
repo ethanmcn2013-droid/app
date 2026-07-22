@@ -94,6 +94,11 @@ async function seed(client: Client, probePath: string) {
       ('att-b1','ws-b','task-b1','u-target','tb.bin','.data/uploads/missing-b1.bin','application/octet-stream',3),
       ('att-b2','ws-b','task-b1','u-bystander','bb.bin','.data/uploads/missing-b2.bin','application/octet-stream',3);
 
+    INSERT INTO resources (id, workspace_id, task_id, kind, provider, title, added_at, access_state, counts_against_storage) VALUES
+      ('res-att-a1','ws-a','task-a1','upload','file','probe.bin',1753056000,'legacy',1),
+      ('res-link-a1','ws-a','task-a1','link','url','https://example.com',1753056000,'ok',0),
+      ('res-b1','ws-b','task-b1','link','figma','https://figma.com/x',1753056000,'ok',0);
+
     INSERT INTO notifications (id, workspace_id, user_id, kind, task_id, payload) VALUES
       ('n-a1','ws-a','u-target','mention','task-a1','{}'),
       ('n-tinb','ws-b','u-target','mention','task-b1','{}'),
@@ -159,6 +164,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["comments", "comments WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["activities", "activities WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["attachments", "attachments WHERE uploader_user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
+      ["resources", "resources WHERE workspace_id='ws-a'"],
       ["notifications", "notifications WHERE user_id='u-target' OR workspace_id='ws-a' OR task_id='task-a1'"],
       ["entitlements", "entitlements WHERE user_id='u-target' OR workspace_id='ws-a'"],
       ["notification_prefs", "notification_prefs WHERE user_id='u-target'"],
@@ -185,6 +191,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["comments", 1], // only c-b2
       ["activities", 1], // only act-b2
       ["attachments", 1], // only att-b2
+      ["resources", 1], // only res-b1 (ws-b link resource)
       ["notifications", 1], // only n-b
       ["entitlements", 1], // only e-b
       ["notification_prefs", 1],

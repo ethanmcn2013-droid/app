@@ -40,7 +40,11 @@ import {
   getCurrentUser,
   listMyWorkspaces,
 } from "@/server/auth";
-import { requireAppAccess } from "@/server/require-app-access";
+import { getUserPreferences } from "@/server/db/preferences";
+// D-018: use the Tasks-local wrapper that extends the shared allowlist gate
+// with a membership check (accepted-invite users pass even if not allowlisted).
+// require-app-access.ts is a byte-identical four-repo copy; do not edit it.
+import { requireAppAccessTasks } from "@/server/app-access";
 import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
 import {
   editionLabel,
@@ -75,7 +79,8 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   // demo/dev unaffected). Runs inside this Suspense boundary so the wordmark
   // loader paints during the check and no protected content shows before a
   // non-allowlisted account is redirected to /waitlist.
-  await requireAppAccess();
+  // D-018: Tasks-local wrapper also passes invited members (membership row).
+  await requireAppAccessTasks();
 
   const ws = await getActiveWorkspace();
   // First-run gate: redirect to /welcome until user has a starter workspace.
@@ -83,7 +88,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
   if (await isFirstRun(ws)) {
     redirect("/welcome");
   }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName, columnConfig, tagDefs] = await Promise.all([
+  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName, columnConfig, tagDefs, userPrefs] = await Promise.all([
     getTasks(ws),
     getActiveDomain(ws),
     getCurrentUser(),
@@ -120,6 +125,16 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     // Reusable tag definitions (name + colour) so chips render in colour on
     // first paint (Phase 3A).
     getTagDefs(ws),
+    // Theme preference (D-013): one extra parallel PK lookup in this
+    // Promise.all — never serial. getCurrentUser() is called again here
+    // because currentUser is not yet resolved at this point; Next.js
+    // caches auth() so the second call is not a duplicate network round-trip.
+    // Null in DB resolves to "system" in getUserPreferences (the DEFAULTS).
+    // Demo/Review: the demo DB has no tables — never reach it (same guard
+    // shape as the workspace-row read above).
+    isDemoMode()
+      ? Promise.resolve(null)
+      : getCurrentUser().then((uid) => getUserPreferences(uid)),
   ]);
   const slug = wsRow?.slug ?? ws;
   // Header licence slot (Phase 1): resolve the account's edition from the
@@ -137,59 +152,75 @@ async function AppShell({ children }: { children: React.ReactNode }) {
     primaryUseCase: wsRow?.primaryUseCase,
     activeDomain: domain,
   });
+  const themeMode = userPrefs?.themeMode ?? "system";
+  // data-theme lives on this div, below the Suspense boundary in AppShell.
+  // Acceptable only while dark is unselectable (D-013): the loading fallback
+  // paints with :root tokens and there is no flash because "system" and "light"
+  // both resolve to the light palette. A cookie-based html-level read is the
+  // recorded path if dark ever ships (would need to move above Suspense).
   return (
-    <CurrentUserProvider user={currentUser}>
-      <DomainProvider
-        domain={domain}
-        workspaceId={ws}
-        workspaceSlug={slug}
-        boardName={boardName}
-        columnConfig={columnConfig}
-        tagDefs={tagDefs}
-        personalization={personalization}
-      >
-        <TasksProvider initialTasks={tasks}>
-          <RoomBriefProvider value={roomBrief}>
-          <ToastRoot>
-            <SuiteContextPublisher
-              planningPeriodId={wsRow?.planningPeriodId ?? null}
-              workspaceId={ws}
-            />
-            <AddTaskRoot>
-              <PaletteRoot>
-                {/* T·94: workspace switching + scope moved up into the
-                    Studio Bar (layout level). Publisher fills the bar's
-                    cells; Bridge routes its command-field / create events
-                    into PaletteRoot + AddTaskRoot. */}
-                <StudioChromePublisher
-                  workspaces={myWorkspaces}
-                  activeWorkspaceId={ws}
-                  periodName={roomBrief?.periodName ?? null}
-                  edition={edition}
-                />
-                <StudioChromeBridge />
-                <RoomToolsProvider>
-                  <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
-                  {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
-                  {/* min-h-0 lets the board area shrink to the viewport so
-                      each Kanban column can scroll independently (Phase 4)
-                      instead of the whole page moving. */}
-                  <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
-                    {children}
-                  </main>
-                </RoomToolsProvider>
-                <TaskDetailPanel />
-                <CrossWorkspaceOverdue />
-                <CrossWorkspaceSearch />
-                <FocusMode />
-                <ToastBridge />
-              </PaletteRoot>
-            </AddTaskRoot>
-          </ToastRoot>
-          </RoomBriefProvider>
-        </TasksProvider>
-      </DomainProvider>
-    </CurrentUserProvider>
+    <div
+      data-theme={themeMode}
+      // color-scheme stays "light" for BOTH modes today: "system" has no dark
+      // palette to resolve to (D-013), and advertising "light dark" would let
+      // an OS-dark browser render dark form controls and scrollbars against
+      // our light tokens. Follow the theme here when dark ships.
+      style={{ colorScheme: "light" }}
+      className="contents"
+    >
+      <CurrentUserProvider user={currentUser}>
+        <DomainProvider
+          domain={domain}
+          workspaceId={ws}
+          workspaceSlug={slug}
+          boardName={boardName}
+          columnConfig={columnConfig}
+          tagDefs={tagDefs}
+          personalization={personalization}
+        >
+          <TasksProvider initialTasks={tasks}>
+            <RoomBriefProvider value={roomBrief}>
+            <ToastRoot>
+              <SuiteContextPublisher
+                planningPeriodId={wsRow?.planningPeriodId ?? null}
+                workspaceId={ws}
+              />
+              <AddTaskRoot>
+                <PaletteRoot>
+                  {/* T·94: workspace switching + scope moved up into the
+                      Studio Bar (layout level). Publisher fills the bar's
+                      cells; Bridge routes its command-field / create events
+                      into PaletteRoot + AddTaskRoot. */}
+                  <StudioChromePublisher
+                    workspaces={myWorkspaces}
+                    activeWorkspaceId={ws}
+                    periodName={roomBrief?.periodName ?? null}
+                    edition={edition}
+                  />
+                  <StudioChromeBridge />
+                  <RoomToolsProvider>
+                    <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
+                    {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
+                    {/* min-h-0 lets the board area shrink to the viewport so
+                        each Kanban column can scroll independently (Phase 4)
+                        instead of the whole page moving. */}
+                    <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
+                      {children}
+                    </main>
+                  </RoomToolsProvider>
+                  <TaskDetailPanel />
+                  <CrossWorkspaceOverdue />
+                  <CrossWorkspaceSearch />
+                  <FocusMode />
+                  <ToastBridge />
+                </PaletteRoot>
+              </AddTaskRoot>
+            </ToastRoot>
+            </RoomBriefProvider>
+          </TasksProvider>
+        </DomainProvider>
+      </CurrentUserProvider>
+    </div>
   );
 }
 

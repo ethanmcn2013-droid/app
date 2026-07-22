@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useState,
   useSyncExternalStore,
   useTransition,
@@ -24,6 +25,9 @@ import { ShareThisWeekButton } from "@/components/app/share-this-week-button";
 import { CopySlackSummary } from "@/components/app/copy-slack-summary";
 import { RollForwardButton } from "@/components/app/inbox/roll-forward-button";
 import { useHydrated } from "@/lib/use-hydrated";
+import { buildGreeting } from "@/lib/personality";
+import type { PersonalityPrefs } from "@/lib/personality-prefs";
+import { TipCard } from "@/components/app/tip-card";
 
 /**
  * Inbox renders two surfaces stacked:
@@ -47,6 +51,7 @@ export function InboxApp({
   workspaceSlug,
   overdueCount,
   userName,
+  personalityPrefs,
 }: {
   notifications: Notification[];
   digest: DailyDigest;
@@ -75,6 +80,9 @@ export function InboxApp({
    *  priority over the USERS Proxy fallback so Clerk users see their
    *  actual name instead of "Someone" in the greeting. */
   userName?: string;
+  /** Personality prefs threaded from the page. When omitted, greeting
+   *  and tips default to off (safe fallback for legacy callers). */
+  personalityPrefs?: PersonalityPrefs;
 }) {
   const { openTask } = useTaskPanel();
   const me = USERS[digest.user];
@@ -87,6 +95,15 @@ export function InboxApp({
        not the inbox; white stays its ground. */
     <div className="thin-scroll flex-1 overflow-auto bg-bg px-4 py-5 md:px-8 md:py-6">
       <div className="mx-auto max-w-[820px] space-y-8">
+        <GreetingBanner
+          name={userName ?? null}
+          dueToday={digest.dueToday.length}
+          overdueCount={overdueCount ?? 0}
+          enabled={personalityPrefs?.greeting ?? false}
+        />
+
+        <TipCard context="inbox" enabled={personalityPrefs?.tips ?? false} />
+
         <NudgesSection nudges={nudges} onOpen={openTask} />
 
         {weeklySnapshot && weeklyEnabled ? (
@@ -639,9 +656,101 @@ function renderNotificationSentence(n: Notification): {
           </>
         ),
       };
+    case "nudge": {
+      // Recipient line: "{Name} sent a gentle reminder about '{title}'."
+      // The task title is resolved at query time via the getNotificationsForUser
+      // join; the payload intentionally carries only ids (D-008 privacy rule).
+      // We resolve the sender's display name from the USERS proxy (covers seeded
+      // personas) with a safe "A teammate" fallback for real Clerk ids whose
+      // display name we don't have on the client.
+      const senderMeta = USERS[n.payload.fromUserId];
+      const senderName = senderMeta?.name ?? "A teammate";
+      // taskTitle is carried by the NotificationRow via n.taskId; we don't
+      // have it in the payload (by design). Use the task link affordance: the
+      // row's onOpen already opens the task panel when n.taskId is set.
+      return {
+        actor: n.payload.fromUserId,
+        line: (
+          <>
+            <span className="font-medium text-ink">{senderName}</span>{" "}
+            sent a gentle reminder.
+          </>
+        ),
+      };
+    }
+    case "milestone": {
+      // System-generated: actor is null, renders the brand-soft dot avatar.
+      const { count } = n.payload;
+      return {
+        actor: null,
+        line: <>That was your {count}th completed task.</>,
+      };
+    }
     default:
       return null;
   }
+}
+
+// ────────────────────────────────────────────────────────────────────
+// GreetingBanner — one-per-session contextual greeting above the inbox.
+// Reads counts from props already available to InboxApp; computes the
+// hour client-side on mount so there is no server/client mismatch.
+// ────────────────────────────────────────────────────────────────────
+
+const GREETING_SESSION_KEY = "personality:greeted:v1";
+
+function GreetingBanner({
+  name,
+  dueToday,
+  overdueCount,
+  enabled,
+}: {
+  name: string | null;
+  dueToday: number;
+  overdueCount: number;
+  enabled: boolean;
+}) {
+  const [line, setLine] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Defer past the paint frame so setState is not called synchronously
+    // inside the effect body (react-hooks/set-state-in-effect).
+    const timer = window.setTimeout(() => {
+      try {
+        if (sessionStorage.getItem(GREETING_SESSION_KEY)) return;
+      } catch {
+        // sessionStorage unavailable (private browsing edge case)
+        return;
+      }
+      const hour = new Date().getHours();
+      const result = buildGreeting({
+        name,
+        hour,
+        dueToday,
+        overdue: overdueCount,
+        doneToday: 0,
+      });
+      if (!result) return;
+      try {
+        sessionStorage.setItem(GREETING_SESSION_KEY, "1");
+      } catch {
+        // ignore write failure
+      }
+      setLine(result.line);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [name, dueToday, overdueCount, enabled]);
+
+  if (!line) return null;
+
+  return (
+    <div className="rounded-lg border border-line-soft bg-bg-elevated px-4 py-3 text-[13px] leading-[1.5] text-ink-soft">
+      {line}
+    </div>
+  );
 }
 
 // ────────────────────────────────────────────────────────────────────

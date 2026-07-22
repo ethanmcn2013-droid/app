@@ -3,11 +3,10 @@
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
 import { useLabStore } from "../../store";
 import { STATUS_LABELS, TASK_STATUSES, type LabTask, type TaskStatus } from "../../types";
-import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
+import { ActionsDropdown, ContextActions, type ActionItem } from "@/components/primitives/context-actions";
 import { Icon } from "../../shared/icons";
 import {
   AvatarStack,
-  IconButton,
   LabelList,
   PriorityMark,
   ScheduleText,
@@ -18,6 +17,17 @@ import {
 import { InlineTaskTitle, KeyboardLegend } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
 import styles from "./option-a.module.css";
+import { listPeople } from "../../fixtures";
+import { asCalendarDate, addDays } from "../../dates";
+
+/** Convert the current wall-clock date to a CalendarDate (YYYY-MM-DD). */
+function todayCalendarDate() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return asCalendarDate(`${y}-${m}-${d}`);
+}
 
 const WIP_LIMITS: Partial<Record<TaskStatus, number>> = {
   queued: 12,
@@ -31,9 +41,287 @@ function statusOffset(status: TaskStatus, amount: number): TaskStatus {
   return TASK_STATUSES[Math.max(0, Math.min(TASK_STATUSES.length - 1, index + amount))];
 }
 
+/**
+ * Build the action registry for a task card.
+ *
+ * Groups: open → workflow → organisation → destructive
+ * Labels: plain brand-voice per brief ("Open", "Copy link", "Change status",
+ *   "Assign", "Set priority", "Move to", "Make subtask of", "Archive", "Delete").
+ *
+ * In demo/lab contexts the store's readOnly flag is respected — mutations
+ * no-op exactly as they did in the old hand-rolled menu.
+ */
+function buildTaskActions(
+  task: LabTask,
+  store: ReturnType<typeof useLabStore>,
+): ActionItem[] {
+  const ro = store.readOnly;
+
+  // ── open ──────────────────────────────────────────────────────────────────
+  const openItems: ActionItem[] = [
+    {
+      id: "open",
+      label: "Open",
+      icon: <Icon name="focus" size={14} />,
+      group: "open",
+      shortcutHint: "↵",
+      onSelect: () => store.openTask(task.id),
+    },
+    {
+      id: "copy-link",
+      label: "Copy link",
+      group: "open",
+      onSelect: () => {
+        const url = `${typeof window !== "undefined" ? window.location.origin : ""}/app/board?task=${task.id}`;
+        navigator.clipboard?.writeText(url).catch(() => undefined);
+      },
+    },
+  ];
+
+  // ── workflow ───────────────────────────────────────────────────────────────
+  const statusSubmenu: ActionItem[] = TASK_STATUSES.map((status) => ({
+    id: `status-${status}`,
+    label: STATUS_LABELS[status],
+    icon: <span style={{ background: "var(--x-task-text-muted)", borderRadius: "50%", display: "inline-block", height: 7, width: 7 }} data-status={status} />,
+    group: "workflow" as ActionItem["group"],
+    disabled: ro || status === task.status,
+    disabledReason: ro ? "Read-only workspace" : undefined,
+    onSelect: () => { if (!ro) store.moveStatus(task.id, status); },
+  }));
+
+  const prioritySubmenu: ActionItem[] = (
+    [
+      { value: "urgent" as const, label: "Urgent" },
+      { value: "high" as const, label: "High" },
+      { value: "normal" as const, label: "Normal" },
+      { value: "low" as const, label: "Low" },
+    ] as const
+  ).map(({ value, label }) => ({
+    id: `priority-${value}`,
+    label,
+    group: "workflow" as ActionItem["group"],
+    disabled: ro || task.priority === value,
+    disabledReason: ro ? "Read-only workspace" : undefined,
+    onSelect: () => { if (!ro) store.updatePriority(task.id, value); },
+  }));
+
+  // ── assign submenu ────────────────────────────────────────────────────────
+  const assignSubmenu: ActionItem[] = listPeople().map((person) => {
+    const assigned = task.assigneeIds.includes(person.id);
+    return {
+      id: `assign-${person.id}`,
+      label: person.name,
+      icon: assigned ? <Icon name="check" size={14} /> : undefined,
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => {
+        if (ro) return;
+        const next = assigned
+          ? task.assigneeIds.filter((id) => id !== person.id)
+          : [...task.assigneeIds, person.id];
+        store.updateAssignees(task.id, next);
+      },
+    };
+  });
+
+  // ── due-date submenu ──────────────────────────────────────────────────────
+  // Quick presets only — the full calendar picker lives in the task panel DueRow.
+  const hasSchedule = (store.taskById(task.id)?.schedule ?? task.schedule).kind !== "unscheduled";
+  const dueDateSubmenu: ActionItem[] = [
+    {
+      id: "due-today",
+      label: "Today",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, todayCalendarDate()); },
+    },
+    {
+      id: "due-tomorrow",
+      label: "Tomorrow",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 1)); },
+    },
+    {
+      id: "due-next-week",
+      label: "Next week",
+      group: "workflow" as ActionItem["group"],
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 7)); },
+    },
+    ...(hasSchedule
+      ? [
+          {
+            id: "due-clear",
+            label: "Clear due date",
+            group: "workflow" as ActionItem["group"],
+            disabled: ro,
+            disabledReason: ro ? "Read-only workspace" : undefined,
+            onSelect: () => { if (!ro) store.unscheduleTask(task.id); },
+          },
+        ]
+      : []),
+  ];
+
+  const workflowItems: ActionItem[] = [
+    // One-click complete/reopen stays first — it was the old menu's primary
+    // action and the most common thing anyone does from a card.
+    {
+      id: "toggle-complete",
+      label: task.completed ? "Reopen" : "Mark done",
+      icon: <Icon name="check" size={14} />,
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.toggleComplete(task.id); },
+    },
+    {
+      id: "change-status",
+      label: "Change status",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: statusSubmenu,
+      onSelect: () => undefined,
+    },
+    {
+      id: "set-priority",
+      label: "Set priority",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: prioritySubmenu,
+      onSelect: () => undefined,
+    },
+    {
+      id: "assign",
+      label: "Assign",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: assignSubmenu,
+      onSelect: () => undefined,
+    },
+    {
+      id: "set-due-date",
+      label: "Set due date",
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: dueDateSubmenu,
+      onSelect: () => undefined,
+    },
+  ];
+
+  // ── organisation ──────────────────────────────────────────────────────────
+  // "Move to" — available statuses excluding current
+  const moveToSubmenu: ActionItem[] = TASK_STATUSES.filter((s) => s !== task.status).map((status) => ({
+    id: `move-to-${status}`,
+    label: STATUS_LABELS[status],
+    group: "organisation" as ActionItem["group"],
+    disabled: ro,
+    disabledReason: ro ? "Read-only workspace" : undefined,
+    onSelect: () => { if (!ro) store.moveStatus(task.id, status); },
+  }));
+
+  // ── make subtask of ───────────────────────────────────────────────────────
+  // Production only (makeSubtaskOf absent from LabStore). One-level cap:
+  // hide the item entirely when the task already has subtasks of its own.
+  const storeAsAny = store as Record<string, unknown>;
+  const hasArchive = typeof storeAsAny["archiveTask"] === "function";
+  const canMakeSubtask = typeof storeAsAny["makeSubtaskOf"] === "function" && task.subtasks.length === 0;
+  const makeSubtaskSubmenu: ActionItem[] = canMakeSubtask
+    ? store.tasks
+        .filter((t) => t.id !== task.id)
+        .slice(0, 15)
+        .map((candidate) => ({
+          id: `subtask-of-${candidate.id}`,
+          label: candidate.title.length > 40 ? `${candidate.title.slice(0, 40)}…` : candidate.title,
+          group: "organisation" as ActionItem["group"],
+          disabled: ro,
+          disabledReason: ro ? "Read-only workspace" : undefined,
+          onSelect: () => {
+            if (!ro) (storeAsAny["makeSubtaskOf"] as (id: string, parentId: string) => void)(task.id, candidate.id);
+          },
+        }))
+    : [];
+  // An empty submenu would render an empty popout on a one-task board.
+  const hasMakeSubtask = canMakeSubtask && makeSubtaskSubmenu.length > 0;
+
+  const organisationItems: ActionItem[] = [
+    {
+      id: "move-to",
+      label: "Move to",
+      group: "organisation",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      submenu: moveToSubmenu,
+      onSelect: () => undefined,
+    },
+    {
+      id: "duplicate",
+      label: "Duplicate",
+      group: "organisation",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.duplicateTask(task.id); },
+    },
+    ...(hasMakeSubtask
+      ? [
+          {
+            id: "make-subtask-of",
+            label: "Make subtask of",
+            group: "organisation" as ActionItem["group"],
+            disabled: ro,
+            disabledReason: ro ? "Read-only workspace" : undefined,
+            submenu: makeSubtaskSubmenu,
+            onSelect: () => undefined,
+          },
+        ]
+      : []),
+  ];
+
+  // ── destructive ───────────────────────────────────────────────────────────
+  // Archive is handled through the production store's archiveTask dispatcher
+  // where available. In lab/demo mode (LabStoreProvider), archiveTask does not
+  // exist on the LabStore contract — fall back to deleteTask for session cleanup.
+  // The store shape is checked at runtime so this is safe in both contexts.
+
+  const destructiveItems: ActionItem[] = [
+    ...(hasArchive
+      ? [
+          {
+            id: "archive",
+            label: "Archive",
+            group: "destructive" as ActionItem["group"],
+            disabled: ro,
+            disabledReason: ro ? "Read-only workspace" : undefined,
+            onSelect: () => {
+              if (!ro) (storeAsAny["archiveTask"] as (id: string) => void)(task.id);
+            },
+          },
+        ]
+      : []),
+    {
+      id: "delete",
+      label: "Delete",
+      icon: <Icon name="trash" size={14} />,
+      group: "destructive",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.deleteTask(task.id); },
+    },
+  ];
+
+  return [...openItems, ...workflowItems, ...organisationItems, ...destructiveItems];
+}
+
 export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const store = useLabStore();
-  const context = useTaskContextMenu();
   const orderedIds = tasks.map((task) => task.id);
 
   const tasksInLane = (status: TaskStatus) => tasks
@@ -57,11 +345,6 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     laneIndex: number,
   ) => {
     if (event.target !== event.currentTarget) return;
-    if (event.shiftKey && event.key === "F10") {
-      event.preventDefault();
-      context.openMenuAt(task.id, event.currentTarget);
-      return;
-    }
     if (event.key === "F2" && !store.readOnly) {
       event.preventDefault();
       store.setEditing(task.id, "title");
@@ -139,61 +422,75 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 }}
                 onDrop={(event) => dropTask(event, status, laneTasks.length)}
               >
-                {laneTasks.map((task, index) => (
-                  <li key={task.id}>
-                    {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
-                    <article
-                      aria-label={`${task.title}, ${STATUS_LABELS[task.status]}`}
-                      className={styles.boardCard}
-                      data-active={store.activeId === task.id || undefined}
-                      data-completed={task.completed || undefined}
-                      data-dragging={store.drag?.kind === "board" && store.drag.taskId === task.id || undefined}
-                      data-selected={store.selectedIds.includes(task.id) || undefined}
-                      data-task-id={task.id}
-                      draggable={!store.readOnly}
-                      onClick={(event) => cardClick(event, task)}
-                      onContextMenu={(event) => context.openMenu(task.id, event)}
-                      onDragEnd={() => store.setDrag(null)}
-                      onDragOver={(event) => {
-                        if (store.readOnly || store.drag?.kind !== "board") return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        store.setDrag({ ...store.drag, overStatus: status, overIndex: index });
-                      }}
-                      onDragStart={(event) => {
-                        if (store.readOnly) return;
-                        event.dataTransfer.effectAllowed = "move";
-                        event.dataTransfer.setData("text/task-id", task.id);
-                        store.setDrag({ kind: "board", taskId: task.id, fromStatus: task.status, overStatus: task.status, overIndex: index });
-                      }}
-                      onDrop={(event) => { event.stopPropagation(); dropTask(event, status, index); }}
-                      onFocus={() => { store.setActive(task.id); store.setPreview(task.id); }}
-                      onKeyDown={(event) => keyCard(event, task, laneTasks, index)}
-                      onMouseEnter={() => store.setPreview(task.id)}
-                      onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
-                      tabIndex={0}
-                    >
-                      <div className={styles.cardTopline}>
-                        <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
-                        <PriorityMark task={task} />
-                        <span className={styles.cardSpacer} />
-                        <IconButton
-                          icon="more"
-                          label={`Actions for ${task.title}`}
-                          onClick={(event) => { event.stopPropagation(); context.openMenuAt(task.id, event.currentTarget); }}
-                        />
-                      </div>
-                      {store.editing?.taskId === task.id && store.editing.field === "title" ? (
-                        <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
-                      ) : (
-                        <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
-                      )}
-                      <div className={styles.cardLabels}><LabelList task={task} /></div>
-                      <div className={styles.cardSchedule}><ScheduleText compact task={task} /><TaskSignals task={task} /></div>
-                      <footer><AvatarStack task={task} /><span>{task.estimate ?? "No estimate"}</span></footer>
-                    </article>
-                  </li>
-                ))}
+                {laneTasks.map((task, index) => {
+                  const actions = buildTaskActions(task, store);
+                  return (
+                    <li key={task.id}>
+                      {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
+                      {/*
+                        ContextActions wraps the card: right-click on the article
+                        and the visible ••• button are driven by the same action
+                        registry (Principle 1, D-005); the previous hand-rolled
+                        card menu is fully replaced on this surface.
+                      */}
+                      <ContextActions
+                        items={actions}
+                        target={
+                          <article
+                            aria-label={`${task.title}, ${STATUS_LABELS[task.status]}`}
+                            className={styles.boardCard}
+                            data-active={store.activeId === task.id || undefined}
+                            data-completed={task.completed || undefined}
+                            data-dragging={store.drag?.kind === "board" && store.drag.taskId === task.id || undefined}
+                            data-selected={store.selectedIds.includes(task.id) || undefined}
+                            data-task-id={task.id}
+                            draggable={!store.readOnly}
+                            onClick={(event) => cardClick(event, task)}
+                            onDragEnd={() => store.setDrag(null)}
+                            onDragOver={(event) => {
+                              if (store.readOnly || store.drag?.kind !== "board") return;
+                              event.preventDefault();
+                              event.stopPropagation();
+                              store.setDrag({ ...store.drag, overStatus: status, overIndex: index });
+                            }}
+                            onDragStart={(event) => {
+                              if (store.readOnly) return;
+                              event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/task-id", task.id);
+                              store.setDrag({ kind: "board", taskId: task.id, fromStatus: task.status, overStatus: task.status, overIndex: index });
+                            }}
+                            onDrop={(event) => { event.stopPropagation(); dropTask(event, status, index); }}
+                            onFocus={() => { store.setActive(task.id); store.setPreview(task.id); }}
+                            onKeyDown={(event) => keyCard(event, task, laneTasks, index)}
+                            onMouseEnter={() => store.setPreview(task.id)}
+                            onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
+                            tabIndex={0}
+                          >
+                            <div className={styles.cardTopline}>
+                              <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                              <PriorityMark task={task} />
+                              <span className={styles.cardSpacer} />
+                              <ActionsDropdown
+                                items={actions}
+                                trigger={<Icon name="more" size={15} />}
+                                triggerLabel={`Actions for ${task.title}`}
+                                triggerClassName={styles.cardMenuTrigger}
+                              />
+                            </div>
+                            {store.editing?.taskId === task.id && store.editing.field === "title" ? (
+                              <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
+                            ) : (
+                              <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
+                            )}
+                            <div className={styles.cardLabels}><LabelList task={task} /></div>
+                            <div className={styles.cardSchedule}><ScheduleText compact task={task} /><TaskSignals task={task} /></div>
+                            <footer><AvatarStack task={task} /><span>{task.estimate ?? "No estimate"}</span></footer>
+                          </article>
+                        }
+                      />
+                    </li>
+                  );
+                })}
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
@@ -208,8 +505,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           );
         })}
       </div>
-      <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits. Shift + F10 opens actions.</KeyboardLegend>
-      <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
+      <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits title.</KeyboardLegend>
     </div>
   );
 }

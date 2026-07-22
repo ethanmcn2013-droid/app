@@ -591,7 +591,15 @@ export type ActivityKind =
   | "commentAdd"
   | "commentRemove"
   | "attach"
-  | "detach";
+  | "detach"
+  | "parentChanged"
+  | "resourceAdd"
+  | "resourceRemove"
+  | "nudgeSent"
+  | "inviteSent"
+  | "inviteAccepted"
+  | "archived"
+  | "restored";
 
 export type UpdateField =
   | "title"
@@ -620,7 +628,15 @@ export type ActivityPayload =
       kind: "detach";
       attachmentId: string;
       filename: string;
-    };
+    }
+  | { kind: "parentChanged"; from: string | null; to: string | null }
+  | { kind: "resourceAdd"; resourceId: string; provider: string; title: string }
+  | { kind: "resourceRemove"; resourceId: string; title: string }
+  | { kind: "nudgeSent"; toUserId: string }
+  | { kind: "inviteSent" }
+  | { kind: "inviteAccepted"; userId: string }
+  | { kind: "archived" }
+  | { kind: "restored" };
 
 export type Activity = {
   id: string;
@@ -638,7 +654,7 @@ export type Activity = {
 // Notifications
 // ────────────────────────────────────────────────────────────────────
 
-export type NotificationKind = "mention" | "blocked" | "dueToday";
+export type NotificationKind = "mention" | "blocked" | "dueToday" | "nudge" | "milestone";
 
 export type NotificationPayload =
   | {
@@ -660,6 +676,22 @@ export type NotificationPayload =
       kind: "dueToday";
       taskId: string;
       taskTitle: string;
+    }
+  | {
+      /** Human nudge: a teammate sent a gentle reminder about a task.
+       *  Payload is deliberately id-only — no names or email addresses
+       *  are stored in the notification row (D-008 privacy rule). */
+      kind: "nudge";
+      taskId: string;
+      fromUserId: UserId;
+    }
+  | {
+      /** System milestone: fired when the user crosses 100/250/500/1000
+       *  distinct completed tasks. actor is null (system-generated). */
+      kind: "milestone";
+      taskId: string;
+      threshold: number;
+      count: number;
     };
 
 export type Notification = {

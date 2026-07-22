@@ -12,6 +12,7 @@ import {
   notificationPrefs,
   notifications,
   pendingInvites,
+  resources,
   shareLinkVisits,
   shareLinks,
   tasks,
@@ -119,6 +120,8 @@ export async function eraseAccountData(
     await database.delete(shareLinks).where(eq(shareLinks.workspaceId, wsId));
 
     // Task-bound children, by task id AND by workspace id.
+    // No runtime FK cascade — hand-rolled explicitly (same pattern as
+    // removeTaskAction; libSQL over Turso stateless HTTP does not fire cascades).
     await database
       .delete(activities)
       .where(byTaskOrWs(activities.taskId, activities.workspaceId));
@@ -128,6 +131,9 @@ export async function eraseAccountData(
     await database
       .delete(attachments)
       .where(byTaskOrWs(attachments.taskId, attachments.workspaceId));
+    await database
+      .delete(resources)
+      .where(eq(resources.workspaceId, wsId));
     await database
       .delete(notifications)
       .where(byTaskOrWs(notifications.taskId, notifications.workspaceId));

@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "resources-2026-07-21",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Claude Code, delegated implementation",
+  "authorizationSource": "Signal Tasks Premium Programme Phase 1 Step 2 (Task Resources model), operator go-ahead 2026-07-21",
+  "migrations": [
+    {
+      "id": "0017_resources",
+      "sha256": "70acfb68112f42a096afe16c02578f265d782c435487368424f17414c5642828",
+      "reviewedAt": "2026-07-21T00:00:00.000Z",
+      "risk": "additive new table + indexes + idempotent backfill INSERT; no existing columns modified; backfill WHERE NOT EXISTS is safe to re-run; workspace_id NOT NULL is satisfied via COALESCE for pre-cutover NULL rows",
+      "rollbackPlan": "DROP TABLE resources; the attachments table is untouched so the legacy read path is unaffected. The resources action file can be removed or feature-flagged before the drop. No schema change to existing tables is rolled back.",
+      "postconditions": [
+        "resources table exists",
+        "idx_resources_task_id index exists",
+        "idx_resources_workspace_id index exists",
+        "resources kind CHECK constraint allows only upload and link",
+        "upload-kind resources count equals attachments count (backfill complete)",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "resources-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'resources'",
+          "expected": 1
+        },
+        {
+          "id": "resources-task-id-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'index' AND name = 'idx_resources_task_id'",
+          "expected": 1
+        },
+        {
+          "id": "resources-workspace-id-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'index' AND name = 'idx_resources_workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "backfill-upload-count-matches-attachments",
+          "sql": "SELECT CASE WHEN (SELECT COUNT(*) FROM resources WHERE kind = 'upload') = (SELECT COUNT(*) FROM attachments) THEN 1 ELSE 0 END AS value",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

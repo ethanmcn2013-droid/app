@@ -24,11 +24,13 @@ export async function notify(
   payload: NotificationPayload,
 ): Promise<void> {
   // Don't notify yourself: an actor mentioning themselves shouldn't
-  // ping their own inbox.
-  if (
-    payload.kind === "mention" &&
-    payload.from === userId
-  ) {
+  // ping their own inbox. Same guard for nudges (sendNudgeAction already
+  // blocks self-nudge at the action layer; this is a belt-and-suspenders
+  // check at the DB layer).
+  if (payload.kind === "mention" && payload.from === userId) {
+    return;
+  }
+  if (payload.kind === "nudge" && payload.fromUserId === userId) {
     return;
   }
   // Inherit workspace from the originating task so the notification

@@ -36,6 +36,7 @@ function displayName(m: SettingsMember): string {
 type PendingInvite = {
   token: string;
   email: string;
+  role: "member" | "owner";
   createdAt: string;
   expiresAt: string;
   invitedByUserId: string;
@@ -86,6 +87,8 @@ export function MembersSection({
     null,
   );
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"member" | "owner">("member");
+  const [inviteNotice, setInviteNotice] = useState<string | null>(null);
   const canEdit = myRole === "owner";
   const isCapped =
     memberCapacity.max !== null &&
@@ -135,14 +138,26 @@ export function MembersSection({
     e.preventDefault();
     const email = inviteEmail.trim();
     if (!email) return;
+    setInviteNotice(null);
     startTransition(async () => {
       try {
-        await inviteMemberByEmailAction(email);
+        const result = await inviteMemberByEmailAction(email, inviteRole);
+        if (result.reason === "already-member") {
+          setInviteNotice(`${email} is already a member of this workspace.`);
+          return;
+        }
+        if (result.reason === "cooldown") {
+          setInviteNotice(
+            `An invite was sent to ${email} recently. Wait an hour before resending.`,
+          );
+          return;
+        }
         toast(`Invite sent to ${email}`, {
           tone: "success",
           body: "Good for 7 days. They click the link, sign in with this address, and they're in.",
         });
         setInviteEmail("");
+        setInviteNotice(null);
       } catch (err) {
         toast("Couldn't invite", {
           tone: "error",
@@ -169,7 +184,21 @@ export function MembersSection({
   function handleResend(invite: PendingInvite) {
     startTransition(async () => {
       try {
-        await inviteMemberByEmailAction(invite.email);
+        const result = await inviteMemberByEmailAction(invite.email, invite.role);
+        if (result.reason === "cooldown") {
+          toast("Resend skipped", {
+            tone: "info",
+            body: "An invite was sent recently. Wait an hour before resending.",
+          });
+          return;
+        }
+        if (result.reason === "already-member") {
+          toast("Already a member", {
+            tone: "info",
+            body: `${invite.email} has already joined the workspace.`,
+          });
+          return;
+        }
         toast(`Resent to ${invite.email}`, {
           tone: "success",
           body: "Same link, same expiry. Worth a follow-up if it's been days.",
@@ -225,11 +254,21 @@ export function MembersSection({
           <input
             type="email"
             value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
+            onChange={(e) => { setInviteEmail(e.target.value); setInviteNotice(null); }}
             placeholder="teammate@yourdomain.com"
             disabled={!canEdit || pending || isCapped}
             className="flex-1 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
           />
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value as "member" | "owner")}
+            disabled={!canEdit || pending || isCapped}
+            className="rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+            aria-label="Role for invited member"
+          >
+            <option value="member">Member</option>
+            <option value="owner">Owner</option>
+          </select>
           <button
             type="submit"
             disabled={!canEdit || pending || isCapped || !inviteEmail.trim()}
@@ -238,6 +277,11 @@ export function MembersSection({
             Send invite
           </button>
         </div>
+        {inviteNotice ? (
+          <p className="mt-2 text-[12px] leading-[1.5] text-ink-soft">
+            {inviteNotice}
+          </p>
+        ) : null}
         {!canEdit ? (
           <p className="mt-2 text-[11.5px] text-ink-quiet">
             Only the owner can invite. Ask them.

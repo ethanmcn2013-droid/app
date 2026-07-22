@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import {
   LANES,
   LANE_ORDER,
@@ -13,6 +14,8 @@ import {
 import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
+import { useCurrentUser } from "@/lib/auth-context";
+import { sendNudgeAction } from "@/server/actions/nudge";
 import { Popover } from "./popover";
 import { DueCalendar } from "./due-calendar";
 
@@ -64,7 +67,9 @@ function Label({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatusRow({ task }: { task: Task }) {
+// Named exports for MetadataRail composition (premium-p1).
+// Behaviour is unchanged; adding `export` makes each row importable directly.
+export function StatusRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   return (
     <div className="flex flex-wrap gap-1">
@@ -97,7 +102,7 @@ function StatusRow({ task }: { task: Task }) {
   );
 }
 
-function PriorityRow({ task }: { task: Task }) {
+export function PriorityRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = PRIORITY_LABEL[task.priority];
   return (
@@ -156,9 +161,13 @@ function PriorityRow({ task }: { task: Task }) {
   );
 }
 
-function AssigneesRow({ task }: { task: Task }) {
+export function AssigneesRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
+  const me = useCurrentUser();
   const assigned = task.assignees;
+  // Show Nudge button only when there is at least one assignee that is not
+  // the current user — hidden entirely when task has no other assignee.
+  const hasOtherAssignee = assigned.some((a) => a !== me);
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex items-center -space-x-1.5">
@@ -255,7 +264,106 @@ function AssigneesRow({ task }: { task: Task }) {
           </ul>
         )}
       </Popover>
+      {hasOtherAssignee ? <NudgeButton taskId={task.id} /> : null}
     </div>
+  );
+}
+
+/**
+ * Quiet "Nudge" button shown in the Who row when the task has a
+ * non-self assignee. One click sends a gentle in-app (+ optional email)
+ * reminder. Rate-limited to once per 24 h per (sender, assignee, task).
+ *
+ * Visual grammar: same ink-quiet / hover:bg-sunken pattern as the panel
+ * footer buttons. Icon: a hand-pointer (reminder, not the bell which =
+ * notifications). No badge, no animation beyond the existing transition.
+ */
+function NudgeButton({ taskId }: { taskId: string }) {
+  const [isPending, startTransition] = useTransition();
+  // null = not yet sent; ISO string = sent (or rate-limited); shows "Nudged just now"
+  const [sentAt, setSentAt] = useState<string | null>(null);
+  // true = the last send was rate-limited
+  const [rateLimited, setRateLimited] = useState(false);
+
+  function handleNudge() {
+    if (isPending || sentAt) return;
+    startTransition(async () => {
+      const result = await sendNudgeAction(taskId);
+      if (result.ok) {
+        if (result.lastNudgedAt && result.nudgedCount === 0) {
+          // All recipients were rate-limited.
+          setSentAt(result.lastNudgedAt);
+          setRateLimited(true);
+        } else {
+          setSentAt(new Date().toISOString());
+          setRateLimited(false);
+        }
+      }
+      // Silently ignore ok:false (demo, no assignee, etc.) — button
+      // visibility already guards against those states.
+    });
+  }
+
+  const isDisabled = isPending || (rateLimited && sentAt !== null);
+  const tooltipText = rateLimited
+    ? "You nudged this task in the last day."
+    : isPending
+      ? "Sending nudge…"
+      : undefined;
+
+  if (sentAt && !rateLimited) {
+    // Post-send success state: quiet confirmation, same size as the button.
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] text-ink-quiet">
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Nudged just now
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleNudge}
+      disabled={isDisabled}
+      title={tooltipText}
+      aria-label="Send a gentle reminder to the assignee"
+      className={[
+        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors",
+        isDisabled
+          ? "cursor-not-allowed text-ink-faint opacity-60"
+          : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
+      ].join(" ")}
+    >
+      {/* Hand-pointer glyph — "reminder", distinct from the bell (notifications) */}
+      <svg
+        width="11"
+        height="11"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
+        <path d="M18 8a6 6 0 0 0-12 0v7a5 5 0 0 0 5 5h2a5 5 0 0 0 5-5V8z" />
+        <path d="M12 2v6" />
+      </svg>
+      Nudge
+    </button>
   );
 }
 
@@ -277,7 +385,7 @@ const RECURRENCE_OPTIONS: Array<{
   },
 ];
 
-function RecurrenceRow({ task }: { task: Task }) {
+export function RecurrenceRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.recurrence;
   const summary = current ? formatRecurrenceLabel(current) : "Doesn't repeat";
@@ -377,7 +485,7 @@ function sameRecurrence(
   return false;
 }
 
-function DueRow({ task }: { task: Task }) {
+export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.dueAt ? new Date(task.dueAt) : null;
   const hasDate = Boolean(task.due);
@@ -441,4 +549,3 @@ function DueRow({ task }: { task: Task }) {
     </Popover>
   );
 }
-

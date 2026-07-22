@@ -7,6 +7,7 @@ import {
   createCheckoutSessionAction,
   expireEntitlementByNotes,
 } from "@/server/actions/billing";
+import { createBillingPortalSessionAction } from "@/server/actions/plan";
 import { redeemCompCodeAction } from "@/server/actions/comp";
 import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
@@ -131,6 +132,20 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
     });
   }
 
+  function openPortal() {
+    startTransition(async () => {
+      try {
+        const { url } = await createBillingPortalSessionAction("/app/settings");
+        window.location.href = url;
+      } catch (e) {
+        toast("Couldn't open billing portal", {
+          tone: "error",
+          body: (e as Error).message,
+        });
+      }
+    });
+  }
+
   function cancelSubscription() {
     setCancelOpen(false);
     startTransition(async () => {
@@ -213,14 +228,24 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           </div>
           <div className="flex flex-shrink-0 items-center gap-2">
             {isPaid ? (
-              <button
-                type="button"
-                onClick={() => setCancelOpen(true)}
-                disabled={pending}
-                className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
-              >
-                Cancel subscription
-              </button>
+              <div className="flex flex-shrink-0 flex-col gap-2 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={openPortal}
+                  disabled={pending}
+                  className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-ink-soft/30 hover:text-ink disabled:opacity-60"
+                >
+                  Manage billing
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCancelOpen(true)}
+                  disabled={pending}
+                  className="rounded-full border border-line bg-white px-3 py-1.5 text-[12.5px] font-medium text-ink-soft hover:border-rose-300 hover:text-rose-600 disabled:opacity-60"
+                >
+                  Cancel subscription
+                </button>
+              </div>
             ) : null}
           </div>
         </div>

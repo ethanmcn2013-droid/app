@@ -3,6 +3,7 @@ import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { getAttachmentById } from "@/server/db/queries";
 import { getActiveWorkspace } from "@/server/auth";
+import { resolveStoredPath } from "@/server/storage";
 
 // node:fs isn't edge-friendly.
 export const runtime = "nodejs";
@@ -12,12 +13,12 @@ export const dynamic = "force-dynamic";
  * Authenticated attachment download. Re-checks workspace membership
  * before streaming so a leaked id from another tenant is invisible:
  * mismatched / unknown / on-disk-missing all return 404 (not 403).
- * Opacity is the right default, the user shouldn't be able to probe
- * for the existence of an id they have no access to.
+ * Opacity is the right default.
  *
- * Streaming uses Node's `fs.createReadStream` adapted to a Web
- * `ReadableStream` via `Readable.toWeb`, which lines up cleanly with
- * Next 16's `Response` body contract for Node-runtime route handlers.
+ * Serves both storage backends:
+ *  - stored_path starts with http(s) → 302 redirect to the blob URL
+ *    (Vercel Blob signs the URL; the browser fetches directly from CDN)
+ *  - stored_path is a disk path → streams via Node fs exactly as before
  */
 export async function GET(
   _req: Request,
@@ -34,18 +35,26 @@ export async function GET(
     return notFound();
   }
 
-  // Confirm the bytes actually exist before we promise a stream, a
-  // missing file (manual cleanup, partial deploy) should look like a
-  // 404 to the client too, not a half-written zero-byte response.
+  const resolved = await resolveStoredPath(att.storedPath);
+
+  if (resolved.kind === "redirect") {
+    return Response.redirect(resolved.url, 302);
+  }
+
+  if (resolved.kind === "missing") {
+    return notFound();
+  }
+
+  // Disk path — stream bytes with security headers.
   let size: number;
   try {
-    const s = await stat(att.storedPath);
+    const s = await stat(resolved.absPath);
     size = s.size;
   } catch {
     return notFound();
   }
 
-  const nodeStream = createReadStream(att.storedPath);
+  const nodeStream = createReadStream(resolved.absPath);
   const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
   return new Response(webStream, {
@@ -54,18 +63,10 @@ export async function GET(
       "Content-Type": att.mimeType || "application/octet-stream",
       "Content-Length": String(size),
       "Content-Disposition": dispositionHeader(att.filename, att.mimeType),
-      // Defense against stored XSS via user-uploaded content served from
-      // this authed origin:
-      //   - nosniff: the browser must honour Content-Type, never sniff a
-      //     "text/plain" upload into executable text/html.
-      //   - CSP default-src 'none' + sandbox: even if a file is rendered,
-      //     no script/network/form/same-origin context is available, so an
-      //     HTML/SVG payload can't run in the tasks origin or touch Clerk.
+      // Defense against stored XSS via user-uploaded content:
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'; sandbox; frame-ancestors 'none'",
-      // User content, never CDN-cache it. The `id` is opaque enough
-      // that browser memory cache is fine; intermediaries shouldn't
-      // hold copies because authorization is per-request.
+      // User content, never CDN-cache it.
       "Cache-Control": "private, no-store",
     },
   });
@@ -79,10 +80,8 @@ function notFound(): Response {
 }
 
 /**
- * MIME types safe to render `inline` in the browser. Everything else is
- * forced to `attachment` (download) so an HTML/SVG/XML upload can never be
- * rendered as active content in this origin. SVG is deliberately EXCLUDED —
- * it is an XML document that can carry <script>.
+ * MIME types safe to render inline in the browser. SVG is deliberately
+ * excluded — it can carry <script>.
  */
 const INLINE_SAFE_MIME = new Set<string>([
   "image/png",
@@ -94,11 +93,9 @@ const INLINE_SAFE_MIME = new Set<string>([
 ]);
 
 /**
- * Build a `Content-Disposition` value that respects RFC 6266: send a
- * sanitized ASCII fallback alongside a UTF-8 `filename*` parameter so
- * non-Latin filenames survive the round-trip. `inline` (browser preview)
- * is used ONLY for the safe-preview allowlist; every other type is forced
- * to `attachment` so it downloads rather than rendering.
+ * Build a Content-Disposition value per RFC 6266: sanitized ASCII
+ * fallback plus UTF-8 filename* parameter. inline only for the safe
+ * allowlist.
  */
 function dispositionHeader(filename: string, mimeType: string): string {
   const ascii = filename.replace(/[^\x20-\x7E]/g, "_");

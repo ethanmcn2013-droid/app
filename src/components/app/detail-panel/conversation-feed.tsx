@@ -345,6 +345,29 @@ function formatActivityLine(payload: ActivityPayload): string {
       return `attached \`${payload.filename}\` · ${formatBytesShort(payload.sizeBytes)}`;
     case "detach":
       return `removed the attachment \`${payload.filename}\``;
+    case "parentChanged": {
+      if (payload.from === null && payload.to !== null) {
+        return "moved this under a parent task";
+      }
+      if (payload.from !== null && payload.to === null) {
+        return "removed this from its parent task";
+      }
+      return "changed the parent task";
+    }
+    case "resourceAdd":
+      return `added resource \`${payload.title}\``;
+    case "resourceRemove":
+      return `removed resource \`${payload.title}\``;
+    case "nudgeSent":
+      return "sent a nudge";
+    case "inviteSent":
+      return "invited a new member";
+    case "inviteAccepted":
+      return "accepted the workspace invite";
+    case "archived":
+      return "archived this task";
+    case "restored":
+      return "restored this task";
     default: {
       const _exhaustive: never = payload;
       void _exhaustive;

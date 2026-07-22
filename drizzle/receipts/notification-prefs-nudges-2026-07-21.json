@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "notification-prefs-nudges-2026-07-21",
+  "authorizedBy": "Ethan McNamara",
+  "reviewedBy": "Claude Code, delegated implementation",
+  "authorizationSource": "Signal Tasks Premium Programme Phase 2 D-008 Human Nudge feature, operator go-ahead 2026-07-21",
+  "migrations": [
+    {
+      "id": "0018_notification_prefs_nudges",
+      "sha256": "505c94e536fa4d11d665ea2972a2eb95974492da6eb0fd465b89dbd1f8737b5d",
+      "reviewedAt": "2026-07-21T00:00:00.000Z",
+      "risk": "additive ALTER TABLE ADD COLUMN with DEFAULT 1 NOT NULL; existing rows receive the default value; no data loss; no existing columns modified; safe to re-run on already-migrated DB (ALTER TABLE ADD COLUMN is idempotent in SQLite when the column already exists returns error but migration runner guards against re-applying)",
+      "rollbackPlan": "ALTER TABLE notification_prefs DROP COLUMN nudges (SQLite 3.35+). No downstream data to clean. The nudge action gracefully defaults to allowing nudges when the column is absent.",
+      "postconditions": [
+        "nudges column exists on notification_prefs table",
+        "nudges column has default value 1",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "nudges-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('notification_prefs') WHERE name = 'nudges'",
+          "expected": 1
+        },
+        {
+          "id": "nudges-column-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('notification_prefs') WHERE name = 'nudges' AND dflt_value = '1'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

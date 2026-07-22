@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-settings",
+  "source": "tasks/src/app/app/settings/page.tsx",
+  "materialityHash": "9335b240eb37bac0",
+  "reviewedAt": "2026-07-22",
+  "reviewer": "Claude Fable 5, premium programme Phase 9 security hardening",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-2dac4b1a45f5bce7.json",
+    "attestationSha256": "c0f8a637e51d6bb726bab8777ed6645ae26a46da55fcf735af94d71344357346",
+    "runId": "tasks-playwright-e00e66b47b9d738a58b6b680",
+    "canonicalEvidenceSha256": "e00e66b47b9d738a58b6b680ef360acecb8d55ec87992855617f7eab31380fc4",
+    "rawArtifactSha256": "2dac4b1a45f5bce71dfa1449acfd94b0b650c2163003f1f1d61f94cb4f8d6e78",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Non-visual server refactor: the settings page now reads personality prefs via the server-only readPersonalityPrefs helper instead of the getPersonalityPrefs action (least-privilege fix F2, no rendered change). Re-attested against the Phase 5 evidence run which remains visually representative.",
+  "decision": "The settings surface renders identically; the change is server-side identity resolution only. Accepted against the standing 46/46 evidence run."
+}

@@ -44,6 +44,12 @@ function newToken(): string {
 /**
  * Mint a fresh share token. New options: `mode` (view/comment/edit),
  * `expiresInDays` (null = no expiry), and a `label` for the manage UI.
+ *
+ * D-020: mode is clamped to 'view' server-side. The 'comment' and 'edit'
+ * values have no enforced write path — the share surface is always read-only
+ * regardless of the stored value — so accepting them would be misleading.
+ * They remain in the schema type for future guarded write work; this clamp
+ * stays until a dedicated write-capability guard exists.
  */
 export async function createShareLinkAction(input: {
   view: ShareView;
@@ -58,11 +64,13 @@ export async function createShareLinkAction(input: {
     input.expiresInDays != null
       ? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000)
       : null;
+  // D-020: clamp mode to 'view' — comment/edit have no enforced write path.
+  const mode: ShareMode = "view";
   await db.insert(shareLinks).values({
     token,
     workspaceId: ws,
     view: input.view,
-    mode: input.mode ?? "view",
+    mode,
     label: input.label ?? null,
     expiresAt,
   });

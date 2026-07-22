@@ -22,6 +22,8 @@ import {
   demoTasks,
 } from "@/server/demo/tasks-demo";
 import { USERS } from "@/lib/data";
+import { readPersonalityPrefs } from "@/server/personality-read";
+import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,7 @@ export default async function InboxPage() {
           workspaceSlug={DEMO_WORKSPACE_SLUG}
           overdueCount={0}
           userName={USERS[DEMO_USER_ID].name}
+          personalityPrefs={PERSONALITY_DEFAULTS}
         />
       </>
     );
@@ -68,7 +71,7 @@ export default async function InboxPage() {
   // Server-fetch in parallel: notifications + digest + the task list
   // we need to compute rules-based nudges from. All three scoped to
   // the current workspace.
-  const [notifications, digest, tasks, weeklySnapshot, wsMeta, overdueCount, userRow] =
+  const [notifications, digest, tasks, weeklySnapshot, wsMeta, overdueCount, userRow, personalityPrefs] =
     await Promise.all([
       getNotificationsForUser(me, ws),
       compileDailyDigest(me, ws),
@@ -94,6 +97,8 @@ export default async function InboxPage() {
         .from(users)
         .where(eq(users.id, me))
         .then((rows) => rows[0] ?? null),
+      // Personality prefs for greeting + tips gating.
+      readPersonalityPrefs(me),
     ]);
   const nudges = generateNudges(tasks, me);
   return (
@@ -110,6 +115,7 @@ export default async function InboxPage() {
         workspaceSlug={wsMeta?.slug}
         overdueCount={overdueCount}
         userName={userRow?.name ?? undefined}
+        personalityPrefs={personalityPrefs}
       />
     </>
   );

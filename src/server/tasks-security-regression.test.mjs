@@ -62,6 +62,18 @@ const duplicateTaskActions = readFileSync(
   join(serverDir, "actions", "duplicate-task.ts"),
   "utf8",
 );
+const setParentActions = readFileSync(
+  join(serverDir, "actions", "set-parent.ts"),
+  "utf8",
+);
+const resourceActions = readFileSync(
+  join(serverDir, "actions", "resources.ts"),
+  "utf8",
+);
+const nudgeActions = readFileSync(
+  join(serverDir, "actions", "nudge.ts"),
+  "utf8",
+);
 const aiActions = readFileSync(
   join(serverDir, "actions", "ai.ts"),
   "utf8",
@@ -388,6 +400,39 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(duplicateTaskActions, "duplicateTaskAction", boundary);
   }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "await db",
+    "recordActivity",
+    "revalidatePath",
+    "emitTasksChanged",
+  ]) {
+    assertDemoGuardBefore(setParentActions, "setParentAction", boundary);
+  }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "await db",
+  ]) {
+    assertDemoGuardBefore(resourceActions, "listTaskResourcesAction", boundary);
+  }
+  for (const boundary of [
+    "getActiveWorkspace",
+    "getCurrentUser",
+    "await db",
+    "recordActivity",
+    "revalidatePath",
+    "emitTasksChanged",
+  ]) {
+    assertDemoGuardBefore(resourceActions, "addLinkResourceAction", boundary);
+  }
+  assertDemoGuardBefore(resourceActions, "removeResourceAction", "getActiveWorkspace");
+  for (const boundary of [
+    "getActiveWorkspace",
+    "getCurrentUser",
+    "await db",
+  ]) {
+    assertDemoGuardBefore(nudgeActions, "sendNudgeAction", boundary);
+  }
   for (const name of [
     "draftReplyAction",
     "summarizeConversationAction",
@@ -506,5 +551,164 @@ test("demo and review cannot bind or seed the configured database", () => {
   assert.match(
     dbIndex,
     /process\.env\.NODE_ENV === "development"\s*&&\s*!demoMode\s*&&/,
+  );
+});
+
+// ── Phase 2 invite-hardening regression guards ───────────────────────────────
+
+const settingsActions = readFileSync(
+  join(serverDir, "actions", "settings.ts"),
+  "utf8",
+);
+
+const securityActions = readFileSync(
+  join(serverDir, "actions", "security.ts"),
+  "utf8",
+);
+
+test("acceptInviteAction validates before writing membership row", () => {
+  // All validation (invite exists, not accepted, not expired, email match, cap)
+  // must appear before the INSERT OR IGNORE into workspace_members.
+  const start = settingsActions.indexOf("export async function acceptInviteAction");
+  const end = settingsActions.indexOf("\nexport async function ", start + 1);
+  const body = settingsActions.slice(start, end === -1 ? settingsActions.length : end);
+
+  const inviteLoad = body.indexOf("select({");
+  const emailCheck = body.indexOf("clerkEmail.toLowerCase() !== invite.email.toLowerCase()");
+  const capCheck = body.indexOf("canAddMemberByWorkspace(");
+  const memberInsert = body.indexOf("INSERT OR IGNORE INTO workspace_members");
+  const tokenBurn = body.indexOf(".set({ acceptedAt:");
+
+  assert.ok(inviteLoad >= 0, "acceptInviteAction must load the invite row");
+  assert.ok(emailCheck >= 0, "acceptInviteAction must check email match against Clerk verified email");
+  assert.ok(capCheck >= 0, "acceptInviteAction must re-check member cap");
+  assert.ok(memberInsert >= 0, "acceptInviteAction must insert workspace_members row");
+  assert.ok(tokenBurn >= 0, "acceptInviteAction must burn the token");
+
+  assert.ok(emailCheck < memberInsert, "email validation must precede membership write");
+  assert.ok(capCheck < memberInsert, "cap check must precede membership write");
+  assert.ok(memberInsert < tokenBurn, "membership write must precede token burn");
+});
+
+test("acceptInviteAction writes invite role not hardcoded member", () => {
+  const start = settingsActions.indexOf("export async function acceptInviteAction");
+  const end = settingsActions.indexOf("\nexport async function ", start + 1);
+  const body = settingsActions.slice(start, end === -1 ? settingsActions.length : end);
+
+  // Must read the role from the invite row
+  assert.match(body, /role:\s*pendingInvites\.role/, "must select role from pendingInvites");
+  // Must clamp the role defensively
+  assert.match(body, /grantedRole/, "must use a grantedRole variable");
+  // Must pass grantedRole (not literal 'member') to INSERT
+  assert.match(body, /VALUES.*grantedRole/, "must pass grantedRole to workspace_members INSERT");
+  // Must NOT hardcode 'member' in the INSERT statement
+  assert.doesNotMatch(
+    body.slice(body.indexOf("INSERT OR IGNORE INTO workspace_members")),
+    /'member'\s*\)/,
+    "must not hardcode 'member' in workspace_members INSERT",
+  );
+});
+
+test("invite actions insert workspace_events rows", () => {
+  // inviteMemberByEmailAction writes an inviteSent event
+  const inviteStart = settingsActions.indexOf("export async function inviteMemberByEmailAction");
+  const inviteEnd = settingsActions.indexOf("\nexport async function ", inviteStart + 1);
+  const inviteBody = settingsActions.slice(inviteStart, inviteEnd === -1 ? settingsActions.length : inviteEnd);
+  assert.match(inviteBody, /workspaceEvents/, "inviteMemberByEmailAction must insert into workspaceEvents");
+  assert.match(inviteBody, /kind.*inviteSent/, "inviteMemberByEmailAction must write inviteSent kind");
+  // No email in payload
+  assert.doesNotMatch(inviteBody, /payload.*trimmed/, "inviteSent payload must not include the email address");
+
+  // acceptInviteAction writes an inviteAccepted event
+  const acceptStart = settingsActions.indexOf("export async function acceptInviteAction");
+  const acceptEnd = settingsActions.indexOf("\nexport async function ", acceptStart + 1);
+  const acceptBody = settingsActions.slice(acceptStart, acceptEnd === -1 ? settingsActions.length : acceptEnd);
+  assert.match(acceptBody, /workspaceEvents/, "acceptInviteAction must insert into workspaceEvents");
+  assert.match(acceptBody, /kind.*inviteAccepted/, "acceptInviteAction must write inviteAccepted kind");
+});
+
+// ── Phase 2.3/2.4 security actions regression guards ────────────────────────
+
+test("revokeSessionAction lists owned sessions before revoking", () => {
+  // Ownership check: getSessionList must precede revokeSession in the
+  // function body. The list result is matched against the caller's
+  // userId so a session belonging to another user cannot be revoked.
+  const fnStart = securityActions.indexOf("export async function revokeSessionAction");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const authGuard = body.indexOf("await auth()");
+  const listCall = body.indexOf("getSessionList(");
+  const ownedCheck = body.indexOf(".some((s) => s.id === sessionId)");
+  const revokeCall = body.indexOf("revokeSession(sessionId)");
+
+  assert.ok(authGuard >= 0, "revokeSessionAction must call auth() to resolve the caller");
+  assert.ok(listCall >= 0, "revokeSessionAction must call getSessionList before revoking");
+  assert.ok(ownedCheck >= 0, "revokeSessionAction must verify session ownership via list match");
+  assert.ok(revokeCall >= 0, "revokeSessionAction must call revokeSession");
+
+  assert.ok(authGuard < listCall, "auth() resolution must precede getSessionList");
+  assert.ok(listCall < ownedCheck, "getSessionList must precede the ownership check");
+  assert.ok(ownedCheck < revokeCall, "ownership check must precede revokeSession call");
+});
+
+test("revokeOtherSessionsAction lists owned sessions before revoking", () => {
+  const fnStart = securityActions.indexOf("export async function revokeOtherSessionsAction");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const authGuard = body.indexOf("await auth()");
+  const listCall = body.indexOf("getSessionList(");
+  const filterCall = body.indexOf(".filter(");
+  const revokeAll = body.indexOf("revokeSession(s.id)");
+
+  assert.ok(authGuard >= 0, "revokeOtherSessionsAction must call auth() to resolve the caller");
+  assert.ok(listCall >= 0, "revokeOtherSessionsAction must call getSessionList before revoking");
+  assert.ok(filterCall >= 0, "revokeOtherSessionsAction must filter out the current session");
+  assert.ok(revokeAll >= 0, "revokeOtherSessionsAction must call revokeSession");
+
+  assert.ok(authGuard < listCall, "auth() resolution must precede getSessionList");
+  assert.ok(listCall < filterCall, "getSessionList must precede the filter step");
+  assert.ok(filterCall < revokeAll, "filter must precede revokeSession calls");
+});
+
+test("security.ts server reads are guarded before Clerk or DB calls", () => {
+  // getSecurityData must resolve currentUser/auth before any Clerk or DB call.
+  const fnStart = securityActions.indexOf("export async function getSecurityData");
+  const fnEnd = securityActions.indexOf("\nexport async function ", fnStart + 1);
+  const body = securityActions.slice(fnStart, fnEnd === -1 ? securityActions.length : fnEnd);
+
+  const demoGuard = body.indexOf("isDemoMode()");
+  const clerkCheck = body.indexOf("clerkConfigured()");
+  const userGuard = body.indexOf("currentUser()");
+  const clerkClientCall = body.indexOf("clerkClient()");
+  const dbCall = body.indexOf("await db");
+
+  assert.ok(demoGuard >= 0, "getSecurityData must guard demo mode");
+  assert.ok(clerkCheck >= 0, "getSecurityData must guard when Clerk is unconfigured");
+  assert.ok(userGuard >= 0, "getSecurityData must call currentUser() before Clerk/DB access");
+  assert.ok(clerkClientCall >= 0, "getSecurityData must call clerkClient() to list sessions");
+  assert.ok(dbCall >= 0, "getSecurityData must read workspace_events from DB");
+
+  assert.ok(demoGuard < clerkClientCall, "demo guard must precede clerkClient() call");
+  assert.ok(clerkCheck < clerkClientCall, "clerkConfigured() check must precede clerkClient() call");
+  assert.ok(userGuard < clerkClientCall, "currentUser() resolution must precede clerkClient() call");
+  assert.ok(userGuard < dbCall, "currentUser() resolution must precede DB access");
+});
+
+test("createShareLinkAction clamps mode to view", () => {
+  // D-020: mode must be clamped server-side to 'view' regardless of input
+  const createStart = shareActions.indexOf("export async function createShareLinkAction");
+  const createEnd = shareActions.indexOf("\nexport async function ", createStart + 1);
+  const createBody = shareActions.slice(createStart, createEnd === -1 ? shareActions.length : createEnd);
+
+  // Must have an explicit clamp
+  assert.match(createBody, /const mode.*=.*"view"/, "createShareLinkAction must clamp mode to 'view'");
+  // Must use the clamped variable in the insert, not input.mode directly
+  assert.match(createBody, /mode,/, "createShareLinkAction must pass the clamped mode variable");
+  assert.doesNotMatch(
+    createBody.slice(createBody.indexOf("db.insert(")),
+    /input\.mode/,
+    "createShareLinkAction must not pass input.mode directly to the insert",
   );
 });

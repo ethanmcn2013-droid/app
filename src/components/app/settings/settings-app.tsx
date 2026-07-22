@@ -3,11 +3,18 @@
 import { useState } from "react";
 import type { EntitlementTier } from "@/lib/data";
 import type { MemberCapacity } from "@/server/db/membership";
+import type { ThemeMode } from "@/server/db/preferences";
+import type { PersonalityPrefs } from "@/lib/personality-prefs";
 import { WorkspaceSection } from "./sections/workspace";
 import { MembersSection } from "./sections/members";
 import { BillingSection } from "./sections/billing";
 import { NotificationsSection } from "./sections/notifications";
+import { SecuritySection } from "./sections/security";
+import { AppearanceSection } from "./sections/appearance";
+import { StorageSection } from "./sections/storage";
+import { PrivacySection } from "./sections/privacy";
 import { DangerSection } from "./sections/danger";
+import type { SecurityData } from "@/server/actions/security";
 
 export type SettingsMember = {
   userId: string;
@@ -37,32 +44,41 @@ export type SettingsWorkspace = {
 type Tab =
   | "workspace"
   | "members"
-  | "billing"
   | "notifications"
+  | "appearance"
+  | "security"
+  | "storage"
+  | "billing"
+  | "privacy"
   | "danger";
 
 const TABS: Array<{ id: Tab; label: string; eyebrow: string }> = [
-  { id: "workspace", label: "Workspace", eyebrow: "01" },
-  { id: "members", label: "Members", eyebrow: "02" },
-  { id: "billing", label: "Billing", eyebrow: "03" },
-  { id: "notifications", label: "Notifications", eyebrow: "04" },
-  { id: "danger", label: "Danger zone", eyebrow: "05" },
+  { id: "workspace",     label: "Workspace",     eyebrow: "01" },
+  { id: "members",       label: "Members",        eyebrow: "02" },
+  { id: "notifications", label: "Notifications",  eyebrow: "03" },
+  { id: "appearance",    label: "Appearance",     eyebrow: "04" },
+  { id: "security",      label: "Security",       eyebrow: "05" },
+  { id: "storage",       label: "Storage",        eyebrow: "06" },
+  { id: "billing",       label: "Billing",        eyebrow: "07" },
+  { id: "privacy",       label: "Privacy and data", eyebrow: "08" },
+  { id: "danger",        label: "Danger zone",    eyebrow: "09" },
 ];
 
 /**
- * Settings app shell. Five sub-surfaces in a single client-rendered
- * page; tab state lives here so the URL stays clean and back/forward
- * doesn't fight the user. Each section is a thin client component
- * that wraps its own server actions.
+ * Settings app shell. Sub-surfaces in a single client-rendered page;
+ * tab state lives here so the URL stays clean and back/forward does
+ * not fight the user. Each section is a thin client component that
+ * wraps its own server actions.
  *
- * Why one page (not five routes): each section's mutations affect
+ * Why one page (not nine routes): each section's mutations affect
  * shared state (workspace name appears in chrome, member role gates
  * danger zone, tier gates billing copy), re-fetching across route
  * boundaries would either flicker or require a parent layout that
- * does the same work this page does. Tabbed-in-page is just leaner.
+ * does the same work this page does. Tabbed-in-page is leaner.
  */
 export function SettingsApp({
   currentUserId,
+  currentUserEmail,
   myRole,
   workspace,
   members,
@@ -71,8 +87,13 @@ export function SettingsApp({
   notificationPrefs,
   pendingInvites,
   recentActivity,
+  securityData,
+  initialThemeMode,
+  storageUsageBytes,
+  initialPersonalityPrefs,
 }: {
   currentUserId: string;
+  currentUserEmail: string;
   myRole: "owner" | "member" | "none";
   workspace: SettingsWorkspace | null;
   members: SettingsMember[];
@@ -82,10 +103,12 @@ export function SettingsApp({
     dailyDigest: boolean;
     mentions: boolean;
     commentReplies: boolean;
+    nudges: boolean;
   };
   pendingInvites: Array<{
     token: string;
     email: string;
+    role: "owner" | "member";
     createdAt: string;
     expiresAt: string;
     invitedByUserId: string;
@@ -96,6 +119,10 @@ export function SettingsApp({
     relative: string;
     createdAt: string;
   }>;
+  securityData: SecurityData;
+  initialThemeMode: ThemeMode;
+  storageUsageBytes: number;
+  initialPersonalityPrefs: PersonalityPrefs;
 }) {
   const [tab, setTab] = useState<Tab>("workspace");
 
@@ -157,8 +184,7 @@ export function SettingsApp({
         {/* Main column */}
         <div className="min-w-0 flex-1">
           {/* Mobile-friendly horizontal tab strip; lg:hidden so the
-              rail above is the only nav on wider screens. Agent 1 owns
-              the deeper responsive lift. */}
+              rail above is the only nav on wider screens. */}
           <div className="mb-6 flex items-center gap-1 overflow-x-auto rounded-full border border-line-soft bg-bg-sunken/70 p-0.5 lg:hidden">
             {TABS.map((t) => {
               const isActive = tab === t.id;
@@ -197,11 +223,26 @@ export function SettingsApp({
               recentActivity={recentActivity}
             />
           ) : null}
+          {tab === "notifications" ? (
+            <NotificationsSection prefs={notificationPrefs} />
+          ) : null}
+          {tab === "appearance" ? (
+            <AppearanceSection
+              initialThemeMode={initialThemeMode}
+              initialPersonalityPrefs={initialPersonalityPrefs}
+            />
+          ) : null}
+          {tab === "security" ? (
+            <SecuritySection data={securityData} />
+          ) : null}
+          {tab === "storage" ? (
+            <StorageSection tier={tier} usageBytes={storageUsageBytes} />
+          ) : null}
           {tab === "billing" ? (
             <BillingSection tier={tier} />
           ) : null}
-          {tab === "notifications" ? (
-            <NotificationsSection prefs={notificationPrefs} />
+          {tab === "privacy" ? (
+            <PrivacySection userEmail={currentUserEmail} />
           ) : null}
           {tab === "danger" ? (
             <DangerSection

@@ -11,6 +11,7 @@
 // persists via the meta KV.
 
 import { useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDomain } from "@/lib/domain-context";
 import { useTasks } from "@/lib/tasks/tasks-context";
@@ -58,6 +59,16 @@ export function RoomBrief() {
             views and the owner reads in the Projects sidebar + share sheet,
             so repeating them here only added a stray meta row and vertical
             gap under the purpose line. */}
+        {/* Phase 4.1: quiet Overview link to the project overview page. */}
+        <Link
+          href="/app/project"
+          className={styles.workspaceMeta}
+          style={{ marginTop: 10, display: "inline-flex" }}
+        >
+          <span style={{ fontSize: 9, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+            Overview
+          </span>
+        </Link>
       </div>
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
         <div>

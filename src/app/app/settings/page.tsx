@@ -10,6 +10,9 @@ import {
   listPendingInvitesAction,
   listWorkspaceActivityAction,
 } from "@/server/actions/settings";
+import { getSecurityData } from "@/server/actions/security";
+import { getUserPreferences } from "@/server/db/preferences";
+import { getWorkspaceStorageUsage } from "@/server/actions/attachments";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { isDemoMode } from "@/lib/access-mode";
@@ -19,6 +22,8 @@ import {
   DEMO_WORKSPACE_SLUG,
   DEMO_WORKSPACE_NAME,
 } from "@/server/demo/tasks-demo";
+import { readPersonalityPrefs } from "@/server/personality-read";
+import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +31,13 @@ export const dynamic = "force-dynamic";
  * Single-page settings surface, tabbed sub-views. NOT split into
  * /app/settings/billing etc., owner-gated mutations would have to
  * re-resolve role in every nested layout, and the v1.0 spec is small
- * enough that one client-rendered tab switcher beats five layouts.
+ * enough that one client-rendered tab switcher beats nine layouts.
  *
- * All five sub-views (workspace, members, billing, notifications,
- * danger) read their server-side state at this top level so the
- * client shell stays a pure UI orchestrator.
+ * All sub-views (workspace, members, notifications, appearance,
+ * security, storage, billing, privacy, danger) read their server-side
+ * state at this top level so the client shell stays a pure UI
+ * orchestrator. New data fetches are folded into the existing
+ * Promise.all — never serial.
  */
 export default async function SettingsPage() {
   // Demo/Review: render a coherent settings surface from the synthetic
@@ -51,6 +58,7 @@ export default async function SettingsPage() {
         <div inert aria-disabled="true">
           <SettingsApp
             currentUserId={DEMO_USER_ID}
+            currentUserEmail="you@theorchard.example"
             myRole="owner"
             workspace={{
               id: DEMO_WORKSPACE_ID,
@@ -81,9 +89,14 @@ export default async function SettingsPage() {
               dailyDigest: true,
               mentions: true,
               commentReplies: true,
+              nudges: true,
             }}
             pendingInvites={[]}
             recentActivity={[]}
+            securityData={{ clerkAvailable: false, signInMethods: [], sessions: [], recentActivity: [] }}
+            initialThemeMode="system"
+            storageUsageBytes={0}
+            initialPersonalityPrefs={PERSONALITY_DEFAULTS}
           />
         </div>
       </>
@@ -116,20 +129,39 @@ export default async function SettingsPage() {
     .leftJoin(users, eq(users.id, workspaceMembers.userId))
     .where(eq(workspaceMembers.workspaceId, ws));
 
-  const [tier, prefs, memberCapacity, pendingInvites, recentActivity] =
-    await Promise.all([
-      getEffectiveTier(me, ws),
-      getNotificationPrefs(),
-      getMemberCapacity(ws),
-      listPendingInvitesAction(),
-      listWorkspaceActivityAction(),
-    ]);
+  // All remaining fetches run in parallel — no serial reads after this point.
+  const [
+    tier,
+    prefs,
+    memberCapacity,
+    pendingInvites,
+    recentActivity,
+    securityData,
+    userPreferences,
+    storageUsageBytes,
+    personalityPrefs,
+  ] = await Promise.all([
+    getEffectiveTier(me, ws),
+    getNotificationPrefs(),
+    getMemberCapacity(ws),
+    listPendingInvitesAction(),
+    listWorkspaceActivityAction(),
+    getSecurityData(),
+    getUserPreferences(me),
+    getWorkspaceStorageUsage(ws),
+    readPersonalityPrefs(me),
+  ]);
+
+  // Resolve the current user's email from the member rows (already fetched).
+  const myMember = memberRows.find((m) => m.userId === me);
+  const currentUserEmail = myMember?.email ?? "";
 
   return (
     <>
       <AppPageHeader />
       <SettingsApp
         currentUserId={me}
+        currentUserEmail={currentUserEmail}
         myRole={myRole}
         workspace={
           workspaceRow
@@ -165,6 +197,10 @@ export default async function SettingsPage() {
         notificationPrefs={prefs}
         pendingInvites={pendingInvites}
         recentActivity={recentActivity}
+        securityData={securityData}
+        initialThemeMode={userPreferences.themeMode}
+        storageUsageBytes={storageUsageBytes}
+        initialPersonalityPrefs={personalityPrefs}
       />
     </>
   );

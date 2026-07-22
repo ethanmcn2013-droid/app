@@ -122,8 +122,8 @@
       "source": "tasks/src/app/app/board/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "editor-or-canvas",
-      "primaryJob": "Understand and use app · board.",
-      "primaryAction": "Complete the primary action on app · board.",
+      "primaryJob": "Understand and use app Â· board.",
+      "primaryAction": "Complete the primary action on app Â· board.",
       "roles": [
         "owner",
         "member"
@@ -177,8 +177,8 @@
       "source": "tasks/src/app/app/calendar/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use app · calendar.",
-      "primaryAction": "Complete the primary action on app · calendar.",
+      "primaryJob": "Understand and use app Â· calendar.",
+      "primaryAction": "Complete the primary action on app Â· calendar.",
       "roles": [
         "owner",
         "member"
@@ -226,8 +226,8 @@
       "source": "tasks/src/app/app/import/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "create-and-edit-form",
-      "primaryJob": "Understand and use app · import.",
-      "primaryAction": "Complete the primary action on app · import.",
+      "primaryJob": "Understand and use app Â· import.",
+      "primaryAction": "Complete the primary action on app Â· import.",
       "roles": [
         "owner",
         "member"
@@ -276,8 +276,8 @@
       "source": "tasks/src/app/app/inbox/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "Understand and use app · inbox.",
-      "primaryAction": "Complete the primary action on app · inbox.",
+      "primaryJob": "Understand and use app Â· inbox.",
+      "primaryAction": "Complete the primary action on app Â· inbox.",
       "roles": [
         "owner",
         "member"
@@ -317,7 +317,7 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "99af9f2ef3ef3e65"
+      "materialityHash": "17abdc26302306a7"
     },
     {
       "id": "tasks.page.app-list",
@@ -327,8 +327,8 @@
       "source": "tasks/src/app/app/list/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "list-and-data-table",
-      "primaryJob": "Understand and use app · list.",
-      "primaryAction": "Complete the primary action on app · list.",
+      "primaryJob": "Understand and use app Â· list.",
+      "primaryAction": "Complete the primary action on app Â· list.",
       "roles": [
         "owner",
         "member"
@@ -383,8 +383,8 @@
       "source": "tasks/src/app/app/my-tasks/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "Understand and use app · my tasks.",
-      "primaryAction": "Complete the primary action on app · my tasks.",
+      "primaryJob": "Understand and use app Â· my tasks.",
+      "primaryAction": "Complete the primary action on app Â· my tasks.",
       "roles": [
         "owner",
         "member"
@@ -434,8 +434,8 @@
       "source": "tasks/src/app/app/settings/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use app · settings.",
-      "primaryAction": "Complete the primary action on app · settings.",
+      "primaryJob": "Understand and use app Â· settings.",
+      "primaryAction": "Complete the primary action on app Â· settings.",
       "roles": [
         "owner",
         "member"
@@ -465,14 +465,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-17",
+      "lastReviewedAt": "2026-07-22",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bd8813991120b530",
+      "materialityHash": "9335b240eb37bac0",
       "materialityReview": {
-        "materialityHash": "bd8813991120b530",
-        "reviewedAt": "2026-07-17",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-15.json"
+        "materialityHash": "9335b240eb37bac0",
+        "reviewedAt": "2026-07-22",
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-21.json"
       }
     },
     {
@@ -483,8 +483,8 @@
       "source": "tasks/src/app/app/timeline/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use app · timeline.",
-      "primaryAction": "Complete the primary action on app · timeline.",
+      "primaryJob": "Understand and use app Â· timeline.",
+      "primaryAction": "Complete the primary action on app Â· timeline.",
       "roles": [
         "owner",
         "member"
@@ -677,8 +677,8 @@
       "source": "tasks/src/app/embed/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use embed · selected record.",
-      "primaryAction": "Complete the primary action on embed · selected record.",
+      "primaryJob": "Understand and use embed Â· selected record.",
+      "primaryAction": "Complete the primary action on embed Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -722,8 +722,8 @@
       "source": "tasks/src/app/embed/guide/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use embed · guide.",
-      "primaryAction": "Complete the primary action on embed · guide.",
+      "primaryJob": "Understand and use embed Â· guide.",
+      "primaryAction": "Complete the primary action on embed Â· guide.",
       "roles": [
         "owner",
         "guest",
@@ -767,8 +767,8 @@
       "source": "tasks/src/app/for/community/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · community.",
-      "primaryAction": "Complete the primary action on for · community.",
+      "primaryJob": "Understand and use for Â· community.",
+      "primaryAction": "Complete the primary action on for Â· community.",
       "roles": [
         "public"
       ],
@@ -810,8 +810,8 @@
       "source": "tasks/src/app/for/freelancers/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · freelancers.",
-      "primaryAction": "Complete the primary action on for · freelancers.",
+      "primaryJob": "Understand and use for Â· freelancers.",
+      "primaryAction": "Complete the primary action on for Â· freelancers.",
       "roles": [
         "public"
       ],
@@ -853,8 +853,8 @@
       "source": "tasks/src/app/for/small-business/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · small business.",
-      "primaryAction": "Complete the primary action on for · small business.",
+      "primaryJob": "Understand and use for Â· small business.",
+      "primaryAction": "Complete the primary action on for Â· small business.",
       "roles": [
         "public"
       ],
@@ -896,8 +896,8 @@
       "source": "tasks/src/app/for/students/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · students.",
-      "primaryAction": "Complete the primary action on for · students.",
+      "primaryJob": "Understand and use for Â· students.",
+      "primaryAction": "Complete the primary action on for Â· students.",
       "roles": [
         "public"
       ],
@@ -939,8 +939,8 @@
       "source": "tasks/src/app/for/trades/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · trades.",
-      "primaryAction": "Complete the primary action on for · trades.",
+      "primaryJob": "Understand and use for Â· trades.",
+      "primaryAction": "Complete the primary action on for Â· trades.",
       "roles": [
         "public"
       ],
@@ -982,8 +982,8 @@
       "source": "tasks/src/app/for/weddings/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for · weddings.",
-      "primaryAction": "Complete the primary action on for · weddings.",
+      "primaryJob": "Understand and use for Â· weddings.",
+      "primaryAction": "Complete the primary action on for Â· weddings.",
       "roles": [
         "public"
       ],
@@ -1025,8 +1025,8 @@
       "source": "tasks/src/app/invite/[token]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use invite · selected record.",
-      "primaryAction": "Complete the primary action on invite · selected record.",
+      "primaryJob": "Understand and use invite Â· selected record.",
+      "primaryAction": "Complete the primary action on invite Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1060,7 +1060,7 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "62fbaa7d996b5c00"
+      "materialityHash": "5513f587418d4cbb"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -1070,8 +1070,8 @@
       "source": "tasks/src/app/p/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use p · selected record.",
-      "primaryAction": "Complete the primary action on p · selected record.",
+      "primaryJob": "Understand and use p Â· selected record.",
+      "primaryAction": "Complete the primary action on p Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -1244,8 +1244,8 @@
       "source": "tasks/src/app/print/board/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "editor-or-canvas",
-      "primaryJob": "Understand and use print · board.",
-      "primaryAction": "Complete the primary action on print · board.",
+      "primaryJob": "Understand and use print Â· board.",
+      "primaryAction": "Complete the primary action on print Â· board.",
       "roles": [
         "public"
       ],
@@ -1298,8 +1298,8 @@
       "source": "tasks/src/app/print/calendar/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use print · calendar.",
-      "primaryAction": "Complete the primary action on print · calendar.",
+      "primaryJob": "Understand and use print Â· calendar.",
+      "primaryAction": "Complete the primary action on print Â· calendar.",
       "roles": [
         "public"
       ],
@@ -1346,8 +1346,8 @@
       "source": "tasks/src/app/print/list/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "list-and-data-table",
-      "primaryJob": "Understand and use print · list.",
-      "primaryAction": "Complete the primary action on print · list.",
+      "primaryJob": "Understand and use print Â· list.",
+      "primaryAction": "Complete the primary action on print Â· list.",
       "roles": [
         "public"
       ],
@@ -1401,8 +1401,8 @@
       "source": "tasks/src/app/print/timeline/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use print · timeline.",
-      "primaryAction": "Complete the primary action on print · timeline.",
+      "primaryJob": "Understand and use print Â· timeline.",
+      "primaryAction": "Complete the primary action on print Â· timeline.",
       "roles": [
         "public"
       ],
@@ -1492,8 +1492,8 @@
       "source": "tasks/src/app/redeem/[code]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use redeem · selected record.",
-      "primaryAction": "Complete the primary action on redeem · selected record.",
+      "primaryJob": "Understand and use redeem Â· selected record.",
+      "primaryAction": "Complete the primary action on redeem Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1710,8 +1710,8 @@
       "source": "tasks/src/app/settings/notifications/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings · notifications.",
-      "primaryAction": "Complete the primary action on settings · notifications.",
+      "primaryJob": "Understand and use settings Â· notifications.",
+      "primaryAction": "Complete the primary action on settings Â· notifications.",
       "roles": [
         "owner",
         "member"
@@ -1759,8 +1759,8 @@
       "source": "tasks/src/app/settings/plan/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings · plan.",
-      "primaryAction": "Complete the primary action on settings · plan.",
+      "primaryJob": "Understand and use settings Â· plan.",
+      "primaryAction": "Complete the primary action on settings Â· plan.",
       "roles": [
         "owner",
         "member"
@@ -1808,8 +1808,8 @@
       "source": "tasks/src/app/settings/profile/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings · profile.",
-      "primaryAction": "Complete the primary action on settings · profile.",
+      "primaryJob": "Understand and use settings Â· profile.",
+      "primaryAction": "Complete the primary action on settings Â· profile.",
       "roles": [
         "owner",
         "member"
@@ -1857,8 +1857,8 @@
       "source": "tasks/src/app/share/[token]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use share · selected record.",
-      "primaryAction": "Complete the primary action on share · selected record.",
+      "primaryJob": "Understand and use share Â· selected record.",
+      "primaryAction": "Complete the primary action on share Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -1948,8 +1948,8 @@
       "source": "tasks/src/app/sign-in/[[...sign-in]]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use sign in · selected record.",
-      "primaryAction": "Complete the primary action on sign in · selected record.",
+      "primaryJob": "Understand and use sign in Â· selected record.",
+      "primaryAction": "Complete the primary action on sign in Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1993,8 +1993,8 @@
       "source": "tasks/src/app/sign-up/[[...sign-up]]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use sign up · selected record.",
-      "primaryAction": "Complete the primary action on sign up · selected record.",
+      "primaryJob": "Understand and use sign up Â· selected record.",
+      "primaryAction": "Complete the primary action on sign up Â· selected record.",
       "roles": [
         "public"
       ],
@@ -2167,8 +2167,8 @@
       "source": "tasks/src/app/templates/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use templates · selected record.",
-      "primaryAction": "Complete the primary action on templates · selected record.",
+      "primaryJob": "Understand and use templates Â· selected record.",
+      "primaryAction": "Complete the primary action on templates Â· selected record.",
       "roles": [
         "public"
       ],
@@ -2530,8 +2530,8 @@
       "source": "tasks/src/app/share/[token]/not-found.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Understand and use share · selected record.",
-      "primaryAction": "Complete the primary action on share · selected record.",
+      "primaryJob": "Understand and use share Â· selected record.",
+      "primaryAction": "Complete the primary action on share Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -2790,7 +2790,229 @@
       "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "0ef1d5df1c7a63b7"
+      "materialityHash": "b0f425f5fd012ffb"
+    },
+    {
+      "id": "tasks.page.app-task-by-id",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/task/[id]",
+      "source": "tasks/src/app/app/task/[id]/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "detail-or-record-view",
+      "primaryJob": "Work on one task at full depth without the board beside it.",
+      "primaryAction": "Update the task.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2a4ce560e47bd087"
+    },
+    {
+      "id": "tasks.state.app-task-by-id-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/task/[id]",
+      "source": "tasks/src/app/app/task/[id]/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand the task page is loading.",
+      "primaryAction": "Wait for the task detail to arrive.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ecae15d3b650a93f"
+    },
+    {
+      "id": "tasks.page.lab-task-detail",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/task-detail",
+      "source": "tasks/src/app/lab/task-detail/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "editor-or-canvas",
+      "primaryJob": "Review the task-detail design exploration.",
+      "primaryAction": "Compare panel, focus, and mobile shells.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "69f567c70748ff44"
+    },
+    {
+      "id": "tasks.page.app-project",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/project",
+      "source": "tasks/src/app/app/project/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "detail-or-record-view",
+      "primaryJob": "Understand the active project at a glance: declared status, task progress, team, milestones, and recent activity.",
+      "primaryAction": "Review or update the declared project status and target date.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "error",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7e4a0d3ae3e2b094"
+    },
+    {
+      "id": "tasks.state.app-project-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/project",
+      "source": "tasks/src/app/app/project/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand the project overview page is loading.",
+      "primaryAction": "Wait for the project overview to arrive.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-21",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "137e7a72bd5331da"
     },
     {
       "id": "tasks.page.app-brief",
@@ -3100,6 +3322,136 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "18eee97320455ddd"
+    },
+    {
+      "id": "tasks.page.app-plan-by-project-slug",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/plan/[projectSlug]",
+      "source": "tasks/src/app/app/plan/[projectSlug]/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Open a single plan by project from the unified app shell.",
+      "primaryAction": "Open the plan.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "4196ed621d50d086"
+    },
+    {
+      "id": "tasks.state.app-plan-by-project-slug-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/plan/[projectSlug]",
+      "source": "tasks/src/app/app/plan/[projectSlug]/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Show the plan loading boundary while the project plan resolves.",
+      "primaryAction": "Wait for the plan to load.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7fb18a74b8982d11"
+    },
+    {
+      "id": "tasks.page.app-plan-audience",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/plan/audience",
+      "source": "tasks/src/app/app/plan/audience/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Open the audience view of the plan from the unified app shell.",
+      "primaryAction": "Open the audience plan.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7ba8f64862913b20"
     }
   ]
 }

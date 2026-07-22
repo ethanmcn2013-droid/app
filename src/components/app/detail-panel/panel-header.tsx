@@ -46,7 +46,10 @@ export function PanelHeader({
   );
 }
 
-function EditedStamp({ updatedAt }: { updatedAt: Date }) {
+// Named exports for TaskDetail header composition (premium-p1).
+// Behaviour is unchanged; adding `export` makes each chip importable directly.
+
+export function EditedStamp({ updatedAt }: { updatedAt: Date }) {
   // Defer rendering until after hydration: relative time + locale-
   // formatted tooltip both differ between server and client (server
   // clock != client clock; locale defaults can differ). Render
@@ -96,7 +99,7 @@ function EditedStamp({ updatedAt }: { updatedAt: Date }) {
  * idempotency tuple, not a public URL. When Notes ships a deep-link
  * surface for individual notes, swap the span for an anchor.
  */
-function FromNotesChip() {
+export function FromNotesChip() {
   return (
     <>
       <span className="text-ink-faint">·</span>
@@ -110,7 +113,7 @@ function FromNotesChip() {
   );
 }
 
-function TaskIdChip({ id }: { id: string }) {
+export function TaskIdChip({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
   // Format t-101 → T-101 (uppercase, reads as a clean task id)
   const display = id.replace(/^t-/, "T-").toUpperCase();

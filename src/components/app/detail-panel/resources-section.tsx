@@ -10,54 +10,64 @@ import {
   useTransition,
   type DragEvent,
 } from "react";
-import type { Attachment, Task } from "@/lib/data";
+import type { Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { useToast } from "@/components/primitives/toast";
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
-  deleteAttachmentAction,
-  listAttachmentsForTaskAction,
   uploadAttachmentAction,
+  type UploadAttachmentResult,
 } from "@/server/actions/attachments";
+import {
+  addLinkResourceAction,
+  listTaskResourcesAction,
+  removeResourceAction,
+  type ResourceRow,
+} from "@/server/actions/resources";
 import { Popover } from "./popover";
 
-const MAX_BYTES = 25 * 1024 * 1024;
+// Client-side hint only; the server is the authority on size limits.
+// Updated to match SERVER_UPLOAD_LIMIT_BYTES (50 MB) so the hint stays
+// aligned with the effective cap until client-direct multipart ships.
+const MAX_BYTES = 50 * 1024 * 1024;
 
 /**
- * Attachments section in the task detail panel. Drag-and-drop over
- * the section uploads the dropped files; the explicit "Attach" button
- * triggers a hidden multi-file picker so keyboard users hit the same
- * path. Each pending file inserts an optimistic row immediately and
- * is reconciled (or removed + toasted) when the server resolves.
+ * Resources section in the task detail panel. Replaces the old
+ * AttachmentsSection with a unified view: file uploads + external links.
  *
- * Bytes never round-trip through this component on the read path —
- * the rendered rows link out to `/api/attachments/[id]` and the
- * route streams from disk after re-checking the workspace.
+ * Upload path is unchanged — bytes go to the same local-disk store via
+ * uploadAttachmentAction. Links are added inline via addLinkResourceAction
+ * (no external fetch; synchronous insert). Both kinds remove via
+ * removeResourceAction which hand-rolls the backing-row delete.
+ *
+ * access_state='legacy' rows render normally; the bytes may still exist
+ * on local disk for local-disk deployments.
  */
-export function AttachmentsSection({ task }: { task: Task }) {
+export function ResourcesSection({ task }: { task: Task }) {
   const me = useCurrentUser();
   const { toast } = useToast();
-  const [items, setItems] = useState<AttachmentRow[] | null>(null);
+  const [items, setItems] = useState<DisplayRow[] | null>(null);
   const [, startTransition] = useTransition();
   const [dragDepth, setDragDepth] = useState(0);
+  const [linkInput, setLinkInput] = useState("");
+  const [linkPending, setLinkPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
 
   const refreshKey = task.updatedAt?.getTime();
 
-  // Load on mount + whenever the parent task's updatedAt flips
-  // (server-side reconciliation after upload / delete).
   useEffect(() => {
     let ignore = false;
-    listAttachmentsForTaskAction(task.id)
+    listTaskResourcesAction(task.id)
       .then((rows) => {
-        if (!ignore) setItems(rows.map(toRealRow));
+        if (!ignore) setItems(rows.map(toDisplayRow));
       })
       .catch((err) => {
         if (!ignore) {
-          console.warn("attachments: fetch failed", err);
+          console.warn("resources: fetch failed", err);
           setItems([]);
         }
       });
@@ -66,6 +76,8 @@ export function AttachmentsSection({ task }: { task: Task }) {
     };
   }, [task.id, refreshKey]);
 
+  // ── Upload handler (unchanged path) ──────────────────────────────────
+
   const handleFiles = useCallback(
     (files: FileList | File[]) => {
       const list = Array.from(files);
@@ -73,7 +85,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
 
       for (const file of list) {
         if (file.size > MAX_BYTES) {
-          toast(`${file.name} is over 25 MB`, {
+          toast(`${file.name} is over 50 MB`, {
             tone: "warn",
             body: "Trim it down or share a link instead.",
           });
@@ -81,14 +93,14 @@ export function AttachmentsSection({ task }: { task: Task }) {
         }
 
         const tempId = `temp-${Math.random().toString(36).slice(2, 8)}`;
-        const placeholder: AttachmentRow = {
-          kind: "pending",
+        const placeholder: PendingUploadRow = {
+          kind: "pending-upload",
           tempId,
-          filename: file.name,
+          title: file.name,
           mimeType: file.type || "application/octet-stream",
           sizeBytes: file.size,
-          uploaderUserId: me,
-          createdAt: new Date(),
+          addedByUserId: me,
+          addedAt: Math.floor(Date.now() / 1000),
         };
         setItems((cur) => (cur ? [...cur, placeholder] : [placeholder]));
 
@@ -97,21 +109,27 @@ export function AttachmentsSection({ task }: { task: Task }) {
 
         startTransition(async () => {
           try {
-            const real = await uploadAttachmentAction(task.id, fd);
-            setItems((cur) => {
-              if (!cur) return [toRealRow(real)];
-              return cur.map((row) =>
-                row.kind === "pending" && row.tempId === tempId
-                  ? toRealRow(real)
-                  : row,
+            const result: UploadAttachmentResult = await uploadAttachmentAction(task.id, fd);
+            // Refresh from server to get the canonical resource row.
+            const rows = await listTaskResourcesAction(task.id);
+            setItems(rows.map(toDisplayRow));
+            // Surface calm storage-usage warning if a threshold was crossed.
+            if (result.warnThresholds.length > 0) {
+              const highestThreshold = Math.max(
+                ...result.warnThresholds.map(Number),
               );
-            });
+              const displayPct = Math.round(highestThreshold * 100);
+              toast(`Storage is at ${displayPct}% of your plan.`, {
+                tone: "warn",
+              });
+            }
           } catch (err) {
-            console.warn("attachments: upload failed; rolling back", err);
+            console.warn("resources: upload failed; rolling back", err);
             setItems((cur) =>
               cur
                 ? cur.filter(
-                    (row) => !(row.kind === "pending" && row.tempId === tempId),
+                    (row) =>
+                      !(row.kind === "pending-upload" && row.tempId === tempId),
                   )
                 : cur,
             );
@@ -129,22 +147,49 @@ export function AttachmentsSection({ task }: { task: Task }) {
     [me, task.id, toast],
   );
 
+  // ── Link add handler ──────────────────────────────────────────────────
+
+  const handleAddLink = useCallback(() => {
+    const url = linkInput.trim();
+    if (!url) return;
+
+    setLinkPending(true);
+    startTransition(async () => {
+      try {
+        const rows = await addLinkResourceAction(task.id, url);
+        setItems(rows.map(toDisplayRow));
+        setLinkInput("");
+      } catch (err) {
+        console.warn("resources: add link failed", err);
+        toast("Couldn't add link", {
+          tone: "error",
+          body:
+            err instanceof Error ? err.message : "The link could not be added.",
+        });
+      } finally {
+        setLinkPending(false);
+      }
+    });
+  }, [linkInput, task.id, toast]);
+
+  // ── Remove handler ────────────────────────────────────────────────────
+
   const remove = useCallback(
-    (att: RealRow) => {
-      setItems((cur) => (cur ? cur.filter((r) => r !== att) : cur));
+    (row: RealRow) => {
+      setItems((cur) => (cur ? cur.filter((r) => r !== row) : cur));
       startTransition(async () => {
         try {
-          await deleteAttachmentAction(att.id);
+          await removeResourceAction(row.id);
         } catch (err) {
-          console.warn("attachments: delete failed", err);
-          toast(`Couldn't remove ${att.filename}`, { tone: "error" });
-          // Reinsert at original position is more trouble than it's
-          // worth; refetch will catch the row on next refresh.
+          console.warn("resources: remove failed", err);
+          toast(`Couldn't remove ${row.title}`, { tone: "error" });
         }
       });
     },
     [toast],
   );
+
+  // ── Drag events ───────────────────────────────────────────────────────
 
   const onDragEnter = useCallback((e: DragEvent<HTMLDivElement>) => {
     if (!hasFiles(e)) return;
@@ -175,11 +220,13 @@ export function AttachmentsSection({ task }: { task: Task }) {
     [handleFiles],
   );
 
-  // Defer rendering until the first read resolves, flashing an
-  // empty state would lie about the row count.
   if (items === null) return null;
 
   const dragging = dragDepth > 0;
+  const realItems = items.filter((r): r is RealRow => r.kind === "real");
+  const pendingItems = items.filter(
+    (r): r is PendingUploadRow => r.kind === "pending-upload",
+  );
   const total = items.length;
 
   return (
@@ -193,14 +240,15 @@ export function AttachmentsSection({ task }: { task: Task }) {
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
+      {/* Section header */}
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <span className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
-          Attachments
+          Resources
         </span>
         <div className="flex items-baseline gap-3">
           {total > 0 ? (
             <span className="text-[10.5px] tabular-nums text-ink-quiet">
-              {total} {total === 1 ? "file" : "files"}
+              {total} {total === 1 ? "item" : "items"}
             </span>
           ) : null}
           <button
@@ -215,6 +263,7 @@ export function AttachmentsSection({ task }: { task: Task }) {
         </div>
       </div>
 
+      {/* Hidden file input */}
       <input
         ref={inputRef}
         id={inputId}
@@ -224,31 +273,63 @@ export function AttachmentsSection({ task }: { task: Task }) {
         className="sr-only"
         onChange={(e) => {
           if (e.target.files) handleFiles(e.target.files);
-          // Reset so picking the same file twice still fires `change`.
           e.target.value = "";
         }}
       />
 
-      {total === 0 ? (
-        <EmptyState dragging={dragging} />
+      {/* Resource list */}
+      {total === 0 && !dragging ? (
+        <div className="rounded-md border border-dashed border-line px-3 py-3 text-[12px] leading-snug text-ink-quiet">
+          Drop files or paste a link below.
+        </div>
       ) : (
         <ul className="flex flex-col gap-1">
           <AnimatePresence initial={false}>
-            {items.map((row) =>
-              row.kind === "real" ? (
-                <RealAttachmentRow
-                  key={row.id}
-                  row={row}
-                  onRemove={() => remove(row)}
-                />
-              ) : (
-                <PendingAttachmentRow key={row.tempId} row={row} />
-              ),
-            )}
+            {realItems.map((row) => (
+              <RealResourceRow
+                key={row.id}
+                row={row}
+                onRemove={() => remove(row)}
+              />
+            ))}
+            {pendingItems.map((row) => (
+              <PendingRow key={row.tempId} row={row} />
+            ))}
           </AnimatePresence>
         </ul>
       )}
 
+      {/* Inline "Paste a link" add-row */}
+      <div className="mt-3 flex items-center gap-1.5">
+        <LinkGlyph />
+        <input
+          ref={linkInputRef}
+          type="url"
+          value={linkInput}
+          onChange={(e) => setLinkInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleAddLink();
+            }
+          }}
+          placeholder="Paste a link…"
+          disabled={linkPending}
+          className="min-w-0 flex-1 rounded-md border border-line px-2 py-1 text-[12px] text-ink placeholder:text-ink-faint focus:border-ink-soft focus:outline-none disabled:opacity-50"
+        />
+        {linkInput.trim() ? (
+          <button
+            type="button"
+            onClick={handleAddLink}
+            disabled={linkPending}
+            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[11.5px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
+          >
+            Add
+          </button>
+        ) : null}
+      </div>
+
+      {/* Drag-over overlay */}
       <AnimatePresence>
         {dragging ? (
           <motion.div
@@ -266,65 +347,68 @@ export function AttachmentsSection({ task }: { task: Task }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────
-// Row state types, local to this component
-// ────────────────────────────────────────────────────────────────────
+// ── Row state types ───────────────────────────────────────────────────
 
 type RealRow = {
   kind: "real";
   id: string;
-  filename: string;
-  mimeType: string;
-  sizeBytes: number;
-  uploaderUserId: import("@/lib/data").UserId;
-  createdAt: Date;
+  resourceKind: "upload" | "link";
+  provider: string;
+  title: string;
+  url: string | null;
+  mimeType: string | null;
+  sizeBytes: number | null;
+  addedByUserId: string | null;
+  addedAt: number;
+  accessState: string;
 };
 
-type PendingRow = {
-  kind: "pending";
+type PendingUploadRow = {
+  kind: "pending-upload";
   tempId: string;
-  filename: string;
+  title: string;
   mimeType: string;
   sizeBytes: number;
-  uploaderUserId: import("@/lib/data").UserId;
-  createdAt: Date;
+  addedByUserId: import("@/lib/data").UserId;
+  addedAt: number;
 };
 
-type AttachmentRow = RealRow | PendingRow;
+type DisplayRow = RealRow | PendingUploadRow;
 
-function toRealRow(att: Attachment): RealRow {
+function toDisplayRow(r: ResourceRow): RealRow {
   return {
     kind: "real",
-    id: att.id,
-    filename: att.filename,
-    mimeType: att.mimeType,
-    sizeBytes: att.sizeBytes,
-    uploaderUserId: att.uploaderUserId,
-    createdAt: att.createdAt,
+    id: r.id,
+    resourceKind: r.kind,
+    provider: r.provider,
+    title: r.title,
+    url: r.url,
+    mimeType: r.mimeType,
+    sizeBytes: r.sizeBytes,
+    addedByUserId: r.addedByUserId,
+    addedAt: r.addedAt,
+    accessState: r.accessState,
   };
 }
 
-function hasFiles(e: DragEvent<HTMLDivElement>): boolean {
-  const types = e.dataTransfer?.types;
-  if (!types) return false;
-  for (let i = 0; i < types.length; i++) {
-    if (types[i] === "Files") return true;
-  }
-  return false;
-}
+// ── Real resource row ─────────────────────────────────────────────────
 
-// ────────────────────────────────────────────────────────────────────
-// Rows
-// ────────────────────────────────────────────────────────────────────
-
-function RealAttachmentRow({
+function RealResourceRow({
   row,
   onRemove,
 }: {
   row: RealRow;
   onRemove: () => void;
 }) {
-  const downloadUrl = `/api/attachments/${row.id}`;
+  const isUpload = row.resourceKind === "upload";
+  // Upload rows link to the authenticated download route using the
+  // attachment id derived from the resource id ('res-' prefix stripped).
+  const downloadUrl = isUpload
+    ? `/api/attachments/${row.id.startsWith("res-") ? row.id.slice(4) : row.id}`
+    : null;
+  const href = isUpload ? (downloadUrl ?? "#") : (row.url ?? "#");
+  const isExternal = !isUpload;
+
   return (
     <motion.li
       layout="position"
@@ -332,46 +416,52 @@ function RealAttachmentRow({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginTop: 0 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="group/attachment flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-bg-sunken/60"
+      className="group/resource flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-bg-sunken/60"
     >
-      <FileGlyph mimeType={row.mimeType} downloadUrl={downloadUrl} />
+      <ResourceGlyph row={row} downloadUrl={downloadUrl} />
       <a
-        href={downloadUrl}
-        download={row.filename}
+        href={href}
+        {...(isExternal
+          ? { target: "_blank", rel: "noreferrer" }
+          : { download: row.title })}
         className="min-w-0 flex-1"
       >
         <div className="truncate text-[12.5px] font-medium leading-tight text-ink">
-          {row.filename}
+          {row.title}
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] tabular-nums text-ink-quiet">
-          <span>{formatBytes(row.sizeBytes)}</span>
-          <span aria-hidden>·</span>
-          <Avatar user={row.uploaderUserId} size={12} />
-          <span title={row.createdAt.toLocaleString()}>
-            {formatRelativeTime(row.createdAt)}
+          <span className="rounded px-1 py-px text-[9.5px] font-medium uppercase tracking-wide text-ink-faint ring-1 ring-line">
+            {providerLabel(row.provider)}
+          </span>
+          {row.sizeBytes != null ? (
+            <>
+              <span aria-hidden>·</span>
+              <span>{formatBytes(row.sizeBytes)}</span>
+            </>
+          ) : null}
+          {row.addedByUserId ? (
+            <>
+              <span aria-hidden>·</span>
+              <Avatar user={row.addedByUserId} size={12} />
+            </>
+          ) : null}
+          <span title={new Date(row.addedAt * 1000).toLocaleString()}>
+            {formatRelativeTime(new Date(row.addedAt * 1000))}
           </span>
         </div>
-      </a>
-      <a
-        href={downloadUrl}
-        download={row.filename}
-        aria-label={`Download ${row.filename}`}
-        className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover/attachment:opacity-100 focus-visible:opacity-100"
-      >
-        <DownloadGlyph />
       </a>
       <Popover
         align="end"
         width={200}
-        aria-label="Confirm delete attachment"
+        aria-label="Confirm remove resource"
         trigger={({ onClick, "aria-expanded": expanded, ref }) => (
           <button
             type="button"
             ref={ref}
             onClick={onClick}
             aria-expanded={expanded}
-            aria-label={`Remove ${row.filename}`}
-            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover/attachment:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
+            aria-label={`Remove ${row.title}`}
+            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover/resource:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
           >
             <TrashGlyph />
           </button>
@@ -380,7 +470,7 @@ function RealAttachmentRow({
         {(close) => (
           <div className="flex flex-col gap-1.5 p-1.5">
             <p className="px-1.5 pt-1 text-[12px] leading-snug text-ink-soft">
-              Remove this attachment?
+              Remove this resource?
             </p>
             <div className="flex items-center justify-end gap-1.5">
               <button
@@ -408,7 +498,7 @@ function RealAttachmentRow({
   );
 }
 
-function PendingAttachmentRow({ row }: { row: PendingRow }) {
+function PendingRow({ row }: { row: PendingUploadRow }) {
   return (
     <motion.li
       layout="position"
@@ -421,7 +511,7 @@ function PendingAttachmentRow({ row }: { row: PendingRow }) {
       <FileGlyph mimeType={row.mimeType} />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12.5px] font-medium leading-tight text-ink-soft">
-          {row.filename}
+          {row.title}
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] tabular-nums text-ink-faint">
           <span>{formatBytes(row.sizeBytes)}</span>
@@ -439,25 +529,27 @@ function PendingAttachmentRow({ row }: { row: PendingRow }) {
   );
 }
 
-function EmptyState({ dragging }: { dragging: boolean }) {
+// ── Icon helpers ──────────────────────────────────────────────────────
+
+function ResourceGlyph({
+  row,
+  downloadUrl,
+}: {
+  row: RealRow;
+  downloadUrl: string | null;
+}) {
+  if (row.resourceKind === "upload") {
+    return <FileGlyph mimeType={row.mimeType ?? ""} downloadUrl={downloadUrl ?? undefined} />;
+  }
   return (
-    <div
-      className={cn(
-        "rounded-md border border-dashed border-line px-3 py-3 text-[12px] leading-snug transition-colors",
-        dragging
-          ? "border-ink-soft/40 text-ink-soft"
-          : "text-ink-quiet",
-      )}
+    <span
+      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line-soft bg-white text-ink-quiet"
+      aria-hidden
     >
-      Drop files to attach. Up to 25 MB each.
-    </div>
+      <ExternalLinkGlyph />
+    </span>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────
-// File icon, branches on mime category. Image rows render the
-// thumbnail fetched through the authenticated route.
-// ────────────────────────────────────────────────────────────────────
 
 function FileGlyph({
   mimeType,
@@ -478,9 +570,7 @@ function FileGlyph({
   }
   return (
     <span
-      className={cn(
-        "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line-soft bg-white text-ink-quiet",
-      )}
+      className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border border-line-soft bg-white text-ink-quiet"
       aria-hidden
     >
       <CategoryGlyph category={category} />
@@ -488,13 +578,7 @@ function FileGlyph({
   );
 }
 
-type MimeCategory =
-  | "image"
-  | "pdf"
-  | "doc"
-  | "code"
-  | "archive"
-  | "other";
+type MimeCategory = "image" | "pdf" | "doc" | "code" | "archive" | "other";
 
 function mimeCategory(mimeType: string): MimeCategory {
   const m = mimeType.toLowerCase();
@@ -506,21 +590,17 @@ function mimeCategory(mimeType: string): MimeCategory {
     m === "application/x-tar" ||
     m === "application/x-7z-compressed" ||
     m === "application/gzip"
-  ) {
-    return "archive";
-  }
+  ) return "archive";
   if (
     m === "application/msword" ||
-    m === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    m === "application/vnd.oasis.opendocument.text" ||
+    m.includes("wordprocessingml") ||
+    m.includes("opendocument.text") ||
     m === "text/plain" ||
     m === "text/markdown" ||
     m === "text/csv" ||
     m.includes("spreadsheet") ||
     m.includes("presentation")
-  ) {
-    return "doc";
-  }
+  ) return "doc";
   if (
     m === "application/json" ||
     m === "application/javascript" ||
@@ -528,37 +608,34 @@ function mimeCategory(mimeType: string): MimeCategory {
     m.startsWith("text/") ||
     m.includes("xml") ||
     m.includes("html")
-  ) {
-    return "code";
-  }
+  ) return "code";
   return "other";
 }
 
+const svgBase = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+};
+
 function CategoryGlyph({ category }: { category: MimeCategory }) {
-  const common = {
-    width: 16,
-    height: 16,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.6,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
   switch (category) {
     case "pdf":
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
           <polyline points="14 3 14 8 19 8" />
-          <text x="8" y="17" fontSize="6" fontWeight="700" fill="currentColor" stroke="none">
-            PDF
-          </text>
+          <text x="8" y="17" fontSize="6" fontWeight="700" fill="currentColor" stroke="none">PDF</text>
         </svg>
       );
     case "doc":
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
           <polyline points="14 3 14 8 19 8" />
           <line x1="8" y1="13" x2="16" y2="13" />
@@ -567,37 +644,45 @@ function CategoryGlyph({ category }: { category: MimeCategory }) {
       );
     case "code":
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <polyline points="16 18 22 12 16 6" />
           <polyline points="8 6 2 12 8 18" />
         </svg>
       );
     case "archive":
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <rect x="3" y="3" width="18" height="4" rx="1" />
           <path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7" />
           <line x1="12" y1="11" x2="12" y2="17" />
         </svg>
       );
     case "image":
-      // Only used as a fallback when downloadUrl is missing.
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <circle cx="9" cy="9" r="2" />
           <path d="m21 15-5-5L5 21" />
         </svg>
       );
-    case "other":
     default:
       return (
-        <svg {...common}>
+        <svg {...svgBase}>
           <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
           <polyline points="14 3 14 8 19 8" />
         </svg>
       );
   }
+}
+
+function ExternalLinkGlyph() {
+  return (
+    <svg {...svgBase}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  );
 }
 
 function PaperclipGlyph() {
@@ -618,7 +703,7 @@ function PaperclipGlyph() {
   );
 }
 
-function DownloadGlyph() {
+function LinkGlyph() {
   return (
     <svg
       width="13"
@@ -630,10 +715,10 @@ function DownloadGlyph() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
+      className="flex-shrink-0 text-ink-faint"
     >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
     </svg>
   );
 }
@@ -659,9 +744,30 @@ function TrashGlyph() {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────
-// Helpers
-// ────────────────────────────────────────────────────────────────────
+// ── Utility helpers ───────────────────────────────────────────────────
+
+function providerLabel(provider: string): string {
+  switch (provider) {
+    case "google_doc": return "Doc";
+    case "google_sheet": return "Sheet";
+    case "google_slides": return "Slides";
+    case "drive": return "Drive";
+    case "figma": return "Figma";
+    case "github": return "GitHub";
+    case "file": return "File";
+    case "url": return "Link";
+    default: return provider;
+  }
+}
+
+function hasFiles(e: DragEvent<HTMLDivElement>): boolean {
+  const types = e.dataTransfer?.types;
+  if (!types) return false;
+  for (let i = 0; i < types.length; i++) {
+    if (types[i] === "Files") return true;
+  }
+  return false;
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

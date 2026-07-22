@@ -60,11 +60,11 @@ const taskColumnsWithCount = {
   // the board card can show a compact "done/total" subtask receipt and
   // open straight into the checklist without a second fetch.
   subtaskCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id})`.as(
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL)`.as(
       "subtask_count",
     ),
   subtaskDoneCount:
-    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.lane = 'done')`.as(
+    sql<number>`(SELECT COUNT(*) FROM tasks child WHERE child.parent_task_id = ${tasks.id} AND child.archived_at IS NULL AND child.lane = 'done')`.as(
       "subtask_done_count",
     ),
 };
@@ -254,6 +254,41 @@ export async function getTaskById(id: string): Promise<Task | null> {
       .from(tasks)
       .where(eq(tasks.id, id));
     return row ? rowToTask(row) : null;
+  });
+}
+
+/**
+ * Single-task fetch for the focus route (/app/task/[id]).
+ *
+ * Cross-workspace safety: both id AND workspaceId must match — a caller
+ * who knows a foreign task id gets null, not a data leak. Existence is
+ * never confirmed to unauthenticated callers (null covers both "missing"
+ * and "wrong workspace").
+ *
+ * Returns:
+ *   null                         — not found or wrong workspace
+ *   { task, archived: true }     — found but archived (read-only display)
+ *   { task, archived: false }    — active task, full edit surface
+ */
+export async function getTaskDetail(
+  id: string,
+  workspaceId: string,
+): Promise<{ task: Task; archived: boolean } | null> {
+  // Demo/Review: resolve from the in-memory venue board; never reach the
+  // real DB (there is none in demo). Demo tasks are never archived.
+  if (isDemoMode()) {
+    const task = demoTasks().find((t) => t.id === id);
+    return task ? { task, archived: false } : null;
+  }
+  return withReadRetry(async () => {
+    const [row] = await db
+      .select(taskColumnsWithCount)
+      .from(tasks)
+      .where(byWorkspace(tasks.workspaceId, workspaceId, eq(tasks.id, id)));
+    if (!row) return null;
+    const task = rowToTask(row);
+    const archived = row.archivedAt != null;
+    return { task, archived };
   });
 }
 

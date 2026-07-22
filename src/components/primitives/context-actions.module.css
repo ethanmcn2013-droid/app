@@ -1,0 +1,155 @@
+/**
+ * context-actions.module.css — Signal grammar for the ContextActions primitive.
+ *
+ * Tokens: --x-task-* CSS custom properties from the existing hybrid CSS layer.
+ * Animation: 120ms opacity + scale-98 enter; respects prefers-reduced-motion.
+ * Destructive items: rose tone via --x-task-danger.
+ */
+
+/* ── Content panel (shared by dropdown and context menu) ─────────────────── */
+
+.content {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 8px;
+  box-shadow: var(--x-task-shadow);
+  min-width: 220px;
+  outline: none;
+  padding: 5px;
+  z-index: 200;
+
+  /* Enter animation: 120ms opacity + scale, no exit (Radix unmounts on close) */
+  animation: contentIn 120ms ease-out;
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin,
+                       var(--radix-context-menu-content-transform-origin,
+                       top left));
+}
+
+@keyframes contentIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content {
+    animation: none;
+  }
+}
+
+/* ── Menu items ──────────────────────────────────────────────────────────── */
+
+.item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--x-task-text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  /* 13px labels per brief */
+  font-size: 13px;
+  gap: 8px;
+  min-height: 32px;
+  outline: none;
+  padding: 0 8px;
+  text-align: left;
+  user-select: none;
+  width: 100%;
+}
+
+/* Calm hover — bg-line-soft/60 analogue in the task token space */
+.item[data-highlighted] {
+  background: color-mix(in srgb, var(--x-task-hover) 60%, transparent);
+  color: var(--x-task-text);
+}
+
+.item[data-disabled] {
+  color: var(--x-task-text-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Destructive items: rose tone */
+.item[data-destructive] {
+  color: var(--x-task-danger);
+}
+
+.item[data-destructive][data-highlighted] {
+  background: color-mix(in srgb, var(--x-task-danger-soft) 60%, transparent);
+  color: var(--x-task-danger);
+}
+
+/* SubTrigger open state matches highlighted */
+.item[data-state="open"] {
+  background: color-mix(in srgb, var(--x-task-hover) 60%, transparent);
+}
+
+/* ── Focus-visible ring (keyboard navigation) ────────────────────────────── */
+
+.content :focus-visible {
+  outline: 2px solid var(--x-task-focus);
+  outline-offset: 1px;
+}
+
+/* ── Icon slot ───────────────────────────────────────────────────────────── */
+
+.icon {
+  align-items: center;
+  color: var(--x-task-text-muted);
+  display: inline-flex;
+  flex: 0 0 16px;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+
+.item[data-destructive] .icon {
+  color: var(--x-task-danger);
+}
+
+/* ── Label ───────────────────────────────────────────────────────────────── */
+
+.label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Shortcut hint: right-aligned, mono 10.5px ───────────────────────────── */
+
+.shortcut {
+  color: var(--x-task-text-muted);
+  flex: 0 0 auto;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* ── Submenu chevron ─────────────────────────────────────────────────────── */
+
+.chevron {
+  color: var(--x-task-text-muted);
+  flex: 0 0 auto;
+  font-size: 14px;
+  line-height: 1;
+  margin-left: auto;
+}
+
+/* ── Separator ───────────────────────────────────────────────────────────── */
+
+.separator {
+  background: var(--x-task-border);
+  height: 1px;
+  margin: 4px;
+}

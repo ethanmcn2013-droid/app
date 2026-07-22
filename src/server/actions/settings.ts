@@ -12,6 +12,7 @@ import {
   shareLinkVisits,
   tasks,
   users,
+  workspaceEvents,
   workspaceMembers,
   workspaces,
 } from "@/server/db/schema";
@@ -20,6 +21,7 @@ import {
   getActiveWorkspace,
   getCurrentUser,
 } from "@/server/auth";
+import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
@@ -226,31 +228,52 @@ export async function unpublishWorkspaceAction(): Promise<{
 }
 
 const INVITE_EXPIRY_DAYS = 7;
+/** Resend cooldown window in milliseconds (1 hour). */
+const INVITE_RESEND_COOLDOWN_MS = 60 * 60 * 1000;
 const FALLBACK_BASE = "http://localhost:3001";
 
 function siteUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? FALLBACK_BASE;
 }
 
-/** Mint an invite token + send the email. Replaces the cycle-17 stub.
- *  The cap from cycle 17 is still checked first, the real flow
- *  inherits the rule that Free + Pro workspaces cap at 4 members
- *  total (1 owner + 3 invitees).
+/** Monotonic wall-clock ms. Extracted so tests can see the boundary. */
+function nowMs(): number {
+  return Date.now();
+}
+
+/** Mint an invite token + send the email.
  *
- *  Idempotency: if a pending invite already exists for the same
- *  workspace + email, we re-send the existing token's email rather
- *  than minting a fresh one. Keeps the recipient from being confused
- *  by two separate links if the owner clicks "Send invite" twice.
+ *  Changes in the Phase 2 invite-hardening pack:
+ *  - Accepts a validated `role` param clamped server-side to 'member'|'owner'.
+ *  - Returns a friendly already-a-member result when the email belongs to a
+ *    current member; no email is sent.
+ *  - Enforces a 1-per-hour resend cooldown via last_sent_at.
+ *  - Sets last_sent_at on every real send.
+ *  - Records a workspace_events row {kind:'inviteSent', payload:{role}}.
+ *    No email address is stored in the payload.
+ *  - Idempotency: live pending invite for the same workspace+email reuses
+ *    the existing token rather than minting a fresh one.
  */
 export async function inviteMemberByEmailAction(
   email: string,
-): Promise<{ ok: true; email: string; sent: boolean }> {
+  inviteRole?: "member" | "owner",
+): Promise<{
+  ok: true;
+  email: string;
+  sent: boolean;
+  reason?: "already-member" | "cooldown";
+}> {
   const trimmed = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
     throw new Error("That doesn't look like an email.");
   }
-  const role = await getMyRoleInActiveWorkspace();
-  if (role !== "owner") {
+
+  // Clamp role server-side; never trust the caller.
+  const role: "member" | "owner" =
+    inviteRole === "owner" ? "owner" : "member";
+
+  const myRole = await getMyRoleInActiveWorkspace();
+  if (myRole !== "owner") {
     throw new Error("Only the owner can invite new members.");
   }
   const ws = await getActiveWorkspace();
@@ -258,6 +281,23 @@ export async function inviteMemberByEmailAction(
     throw new Error(
       "Free workspaces include three editing guests. Upgrade to Workspace to invite more.",
     );
+  }
+
+  // Existing-member check: if the email already belongs to a current member,
+  // return a friendly no-op without sending email (G4).
+  const existingMemberCheck = await db
+    .select({ userId: users.id })
+    .from(users)
+    .innerJoin(workspaceMembers, eq(workspaceMembers.userId, users.id))
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, ws),
+        eq(users.email, trimmed),
+      ),
+    )
+    .limit(1);
+  if (existingMemberCheck.length > 0) {
+    return { ok: true, email: trimmed, sent: false, reason: "already-member" };
   }
 
   const me = await getCurrentUser();
@@ -274,13 +314,13 @@ export async function inviteMemberByEmailAction(
   const workspaceName = workspace?.name ?? "your workspace";
 
   // Look up existing pending invite for this workspace+email pair.
-  // If found and not yet expired/accepted, reuse the token.
-  const now = new Date();
+  const now = nowMs();
   const [existing] = await db
     .select({
       token: pendingInvites.token,
       expiresAt: pendingInvites.expiresAt,
       acceptedAt: pendingInvites.acceptedAt,
+      lastSentAt: pendingInvites.lastSentAt,
     })
     .from(pendingInvites)
     .where(
@@ -292,19 +332,27 @@ export async function inviteMemberByEmailAction(
 
   let token: string;
   let expiresAt: Date;
-  if (existing && !existing.acceptedAt && existing.expiresAt > now) {
+
+  if (existing && !existing.acceptedAt && existing.expiresAt > new Date(now)) {
+    // Resend cooldown: if last_sent_at is within the cooldown window, block (G9).
+    if (
+      existing.lastSentAt !== null &&
+      existing.lastSentAt !== undefined &&
+      now - existing.lastSentAt < INVITE_RESEND_COOLDOWN_MS
+    ) {
+      return { ok: true, email: trimmed, sent: false, reason: "cooldown" };
+    }
     token = existing.token;
     expiresAt = existing.expiresAt;
   } else {
     token = mintInviteToken();
-    expiresAt = new Date(
-      Date.now() + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
-    );
+    expiresAt = new Date(now + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
     await db.insert(pendingInvites).values({
       token,
       workspaceId: ws,
       email: trimmed,
       invitedByUserId: me,
+      role,
       expiresAt,
     });
   }
@@ -330,6 +378,23 @@ export async function inviteMemberByEmailAction(
   if (!result.ok) {
     throw new Error(result.error ?? "Couldn't send the invite email.");
   }
+
+  // Update last_sent_at on the pending_invites row (covers both new and resend).
+  await db
+    .update(pendingInvites)
+    .set({ lastSentAt: now })
+    .where(eq(pendingInvites.token, token));
+
+  // Record workspace event. No email address in payload (audit trail only).
+  await db.insert(workspaceEvents).values({
+    id: mintEventId(),
+    workspaceId: ws,
+    userId: me,
+    kind: "inviteSent",
+    payload: JSON.stringify({ role }),
+    createdAt: Math.floor(now / 1000),
+  });
+
   return { ok: true, email: trimmed, sent: true };
 }
 
@@ -348,12 +413,22 @@ function mintInviteToken(): string {
     .replace(/=/g, "");
 }
 
+/** Mint a short random ID for workspace_events rows. */
+function mintEventId(): string {
+  const bytes = new Uint8Array(12);
+  globalThis.crypto.getRandomValues(bytes);
+  return Buffer.from(bytes).toString("hex");
+}
+
 /** Accept-invite action, called from `/invite/[token]/page.tsx`
- *  after the user signs in via Clerk. Validates the token's email
- *  matches the current user's email (case-insensitive), checks the
- *  cap, INSERTs the workspace_members row, marks the invite
- *  accepted, and flips the active-workspace cookie to the joined
- *  workspace.
+ *  after the user signs in via Clerk.
+ *
+ *  Phase 2 hardening changes:
+ *  - G8: validates email against the Clerk VERIFIED primary email
+ *    (via clerkCurrentUser()) rather than the lagging users.email mirror.
+ *  - Ordering: ALL validation runs BEFORE any membership write or token burn.
+ *  - Writes the invite's role (not hardcoded 'member') into workspace_members.
+ *  - Records workspace_events {kind:'inviteAccepted', payload:{userId, role}}.
  *
  *  Returns the workspace slug so the page can redirect to
  *  `/app/board` with the right active context. */
@@ -363,11 +438,13 @@ export async function acceptInviteAction(token: string): Promise<{
   workspaceSlug: string;
   workspaceName: string;
 }> {
+  // ── 1. Load and validate the invite row ──────────────────────────────────
   const [invite] = await db
     .select({
       token: pendingInvites.token,
       workspaceId: pendingInvites.workspaceId,
       email: pendingInvites.email,
+      role: pendingInvites.role,
       expiresAt: pendingInvites.expiresAt,
       acceptedAt: pendingInvites.acceptedAt,
     })
@@ -384,28 +461,37 @@ export async function acceptInviteAction(token: string): Promise<{
     throw new Error("This invite has expired. Ask the owner for a fresh one.");
   }
 
-  const me = await getCurrentUser();
-  const [user] = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.id, me));
-  if (!user?.email) {
-    throw new Error("Your account doesn't have an email on file. Reach out to support.");
+  // ── 2. Verify the caller's Clerk verified primary email (G8) ────────────
+  // Use clerkCurrentUser() directly so we compare against Clerk's verified
+  // source of truth, not the lagging users.email mirror.
+  const clerkUser = await clerkCurrentUser();
+  if (!clerkUser) {
+    throw new Error("You need to be signed in to accept an invite.");
   }
-  if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+  const clerkEmail =
+    clerkUser.emailAddresses.find(
+      (e) => e.id === clerkUser.primaryEmailAddressId,
+    )?.emailAddress ?? null;
+  if (!clerkEmail) {
+    throw new Error(
+      "Your account doesn't have a verified email. Complete email verification and try again.",
+    );
+  }
+  if (clerkEmail.toLowerCase() !== invite.email.toLowerCase()) {
     throw new Error(
       "This invite was sent to a different email. Sign in with the address you were invited at.",
     );
   }
 
-  // Re-check the cap at accept time, the workspace tier could have
-  // changed (downgrade) between mint + accept.
+  // ── 3. Re-check the member cap at accept time ────────────────────────────
+  // The workspace tier could have changed (downgrade) between mint + accept.
   if (!(await canAddMemberByWorkspace(invite.workspaceId))) {
     throw new Error(
       "This workspace is at its free-tier member cap. Ask the owner to upgrade to Workspace.",
     );
   }
 
+  // ── 4. Resolve workspace ────────────────────────────────────────────────
   const [workspace] = await db
     .select({ slug: workspaces.slug, name: workspaces.name })
     .from(workspaces)
@@ -414,17 +500,37 @@ export async function acceptInviteAction(token: string): Promise<{
     throw new Error("This workspace no longer exists.");
   }
 
-  // INSERT or IGNORE, already-a-member is a no-op success.
+  // ── 5. All validation passed — now write ─────────────────────────────────
+  const me = await getCurrentUser();
+
+  // Clamp the stored role defensively (belt-and-braces against pre-migration
+  // rows that may have an unexpected value).
+  const grantedRole: "member" | "owner" =
+    invite.role === "owner" ? "owner" : "member";
+
+  // INSERT or IGNORE: already-a-member is a no-op success. Write the
+  // invite's role, not a hardcoded 'member' (D-018).
   await db.run(sql`
     INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-    VALUES (${invite.workspaceId}, ${me}, 'member')
+    VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
   `);
 
-  // Mark the invite accepted (audit trail).
+  // Mark the invite accepted (audit trail). Burns the token so it
+  // cannot be reused (INSERT OR IGNORE above makes double-accept safe).
   await db
     .update(pendingInvites)
     .set({ acceptedAt: new Date(), acceptedByUserId: me })
     .where(eq(pendingInvites.token, token));
+
+  // Record workspace audit event (D-019). No email address in payload.
+  await db.insert(workspaceEvents).values({
+    id: mintEventId(),
+    workspaceId: invite.workspaceId,
+    userId: me,
+    kind: "inviteAccepted",
+    payload: JSON.stringify({ userId: me, role: grantedRole }),
+    createdAt: Math.floor(Date.now() / 1000),
+  });
 
   // Flip the active-workspace cookie so /app/board lands the user
   // in the freshly-joined workspace.
@@ -453,6 +559,7 @@ export async function acceptInviteAction(token: string): Promise<{
 export type PendingInviteRead = {
   token: string;
   email: string;
+  role: "member" | "owner";
   createdAt: string;
   expiresAt: string;
   invitedByUserId: string;
@@ -465,6 +572,7 @@ export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
     .select({
       token: pendingInvites.token,
       email: pendingInvites.email,
+      role: pendingInvites.role,
       createdAt: pendingInvites.createdAt,
       expiresAt: pendingInvites.expiresAt,
       invitedByUserId: pendingInvites.invitedByUserId,
@@ -478,6 +586,7 @@ export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
     .map((r) => ({
       token: r.token,
       email: r.email,
+      role: (r.role === "owner" ? "owner" : "member") as "member" | "owner",
       createdAt: r.createdAt.toISOString(),
       expiresAt: r.expiresAt.toISOString(),
       invitedByUserId: r.invitedByUserId,
@@ -529,6 +638,7 @@ export async function getNotificationPrefs(): Promise<{
   dailyDigest: boolean;
   mentions: boolean;
   commentReplies: boolean;
+  nudges: boolean;
 }> {
   const me = await getCurrentUser();
   const [row] = await db
@@ -536,19 +646,22 @@ export async function getNotificationPrefs(): Promise<{
     .from(notificationPrefs)
     .where(eq(notificationPrefs.userId, me));
   if (!row) {
-    return { dailyDigest: true, mentions: true, commentReplies: false };
+    return { dailyDigest: true, mentions: true, commentReplies: false, nudges: true };
   }
   return {
     dailyDigest: row.dailyDigest,
     mentions: row.mentions,
     commentReplies: row.commentReplies,
+    // Pre-migration rows (no nudges column) fall back to true — same as the
+    // schema default. The DB layer returns null/undefined for absent columns.
+    nudges: row.nudges ?? true,
   };
 }
 
-/** Upsert one notification toggle. Three keys instead of a generic
+/** Upsert one notification toggle. Four keys instead of a generic
  *  setter so the type system catches typos at the callsite. */
 export async function setNotificationPrefAction(
-  key: "dailyDigest" | "mentions" | "commentReplies",
+  key: "dailyDigest" | "mentions" | "commentReplies" | "nudges",
   value: boolean,
 ): Promise<{ ok: true }> {
   const me = await getCurrentUser();
@@ -569,12 +682,20 @@ export async function setNotificationPrefAction(
         mentions = excluded.mentions,
         updated_at = unixepoch()
     `);
-  } else {
+  } else if (key === "commentReplies") {
     await db.run(sql`
       INSERT INTO notification_prefs (user_id, comment_replies)
       VALUES (${me}, ${value ? 1 : 0})
       ON CONFLICT(user_id) DO UPDATE SET
         comment_replies = excluded.comment_replies,
+        updated_at = unixepoch()
+    `);
+  } else {
+    await db.run(sql`
+      INSERT INTO notification_prefs (user_id, nudges)
+      VALUES (${me}, ${value ? 1 : 0})
+      ON CONFLICT(user_id) DO UPDATE SET
+        nudges = excluded.nudges,
         updated_at = unixepoch()
     `);
   }

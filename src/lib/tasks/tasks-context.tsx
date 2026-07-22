@@ -36,6 +36,7 @@ import {
   updateTaskAction,
 } from "@/server/actions/tasks";
 import { moveTaskToColumnAction } from "@/server/actions/board";
+import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
 
 /** Gap-numbered float position so inserts never need to renumber the
@@ -117,6 +118,11 @@ export type TasksDispatchers = {
    *  — the copy's ids are server-minted, and duplication is not a
    *  rollback-safe operation, so we wait for the authoritative result. */
   duplicateTask: (id: string) => void;
+  /** Reparent a task. When parentId is non-null the task is optimistically
+   *  removed from the board (it leaves the flat lane view) and the server
+   *  persists the new parent_task_id. When parentId is null the task is
+   *  promoted back to top-level (no optimistic removal). */
+  setParent: (id: string, parentId: string | null) => void;
 };
 
 const TasksStateContext = createContext<TasksState | null>(null);
@@ -302,6 +308,27 @@ export function TasksProvider({
             dispatch({ type: "hydrate", tasks: fresh });
           } catch (err) {
             console.warn("tasks: duplicateTask failed", err);
+          }
+        });
+      },
+      setParent: (id, parentId) => {
+        const prior = stateRef.current.tasks;
+        // Optimistically remove from board when reparenting (task becomes a subtask
+        // and leaves the flat lane view). Promoting to top-level (null) has no
+        // optimistic visual since the task re-enters at an unknown position.
+        if (parentId !== null) dispatch({ type: "remove", id });
+        startTransition(async () => {
+          try {
+            const result = await setParentAction(id, parentId);
+            if (result.ok) {
+              dispatch({ type: "hydrate", tasks: result.tasks });
+            } else {
+              console.warn("tasks: setParent failed;", result.error);
+              dispatch({ type: "hydrate", tasks: prior });
+            }
+          } catch (err) {
+            console.warn("tasks: setParent threw; reverting", err);
+            dispatch({ type: "hydrate", tasks: prior });
           }
         });
       },

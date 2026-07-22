@@ -649,6 +649,15 @@ export const notificationPrefs = sqliteTable("notification_prefs", {
   commentReplies: integer("comment_replies", { mode: "boolean" })
     .notNull()
     .default(false),
+  /** "Human nudge notifications" — allow in-app + email nudges from
+   *  teammates. On by default. When 0, the sender's nudge action still
+   *  records the activity row (audit trail) but skips writing a
+   *  notifications row and skips the email.
+   *
+   *  MIGRATION REQUIRED: drizzle/0018_notification_prefs_nudges.sql */
+  nudges: integer("nudges", { mode: "boolean" })
+    .notNull()
+    .default(true),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -675,6 +684,11 @@ export const userPreferences = sqliteTable("user_preferences", {
     .default("off"),
   /** IANA tz string. Optional, falls back to UTC when null. */
   timeZone: text("time_zone"),
+  /** UI colour-scheme preference. Null resolves to "system".
+   *  D-013: only "system" and "light" are selectable; "dark" is
+   *  designed-not-shipped (operator gate). The server action enforces
+   *  this allow-list so a crafted payload cannot enable dark mode. */
+  themeMode: text("theme_mode"),
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -697,7 +711,12 @@ export const shareLinks = sqliteTable("share_links", {
   /** Default view shown when the guest opens the link. */
   view: text("view").$type<"board" | "list" | "timeline" | "calendar">().notNull(),
   /** What guests can do at the link. `view` shows tasks; `comment`
-   *  lets guests post comments; `edit` lets them mutate fields too. */
+   *  lets guests post comments; `edit` lets them mutate fields too.
+   *
+   *  D-020: 'comment' and 'edit' have no enforced write path — the share
+   *  surface is always read-only regardless of this value. createShareLinkAction
+   *  clamps new links to 'view' until a dedicated write-capability guard exists.
+   *  The column is preserved so the type contract survives future implementation. */
   mode: text("mode")
     .$type<"view" | "comment" | "edit">()
     .notNull()
@@ -949,6 +968,55 @@ export const actionItems = sqliteTable("action_items", {
   completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
+/**
+ * Unified resource model. Absorbs file attachments (kind='upload') and
+ * external links (kind='link') into one read layer.
+ *
+ * Uploads keep writing `attachments` (unchanged upload path); this table
+ * is backfilled from attachments at migration time and unified at the
+ * read layer until Phase 9 retires attachments. New external links write
+ * only here.
+ *
+ * No runtime FK cascade — libSQL over Turso stateless HTTP does not fire
+ * them reliably. Cascade deletes are hand-wired in removeTaskAction,
+ * account-erasure.ts, and removeResourceAction.
+ */
+export const resources = sqliteTable("resources", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  taskId: text("task_id").notNull(),
+  /** 'upload' = file attachment; 'link' = external URL. */
+  kind: text("kind").$type<"upload" | "link">().notNull(),
+  /** Provider slug: 'file' | 'google_doc' | 'google_sheet' | 'google_slides'
+   *  | 'drive' | 'figma' | 'github' | 'url'. */
+  provider: text("provider").notNull(),
+  /** Optional provider-native identifier (e.g. Figma file key). */
+  externalId: text("external_id"),
+  title: text("title").notNull(),
+  url: text("url"),
+  mimeType: text("mime_type"),
+  sizeBytes: integer("size_bytes"),
+  thumbnail: text("thumbnail"),
+  addedByUserId: text("added_by_user_id"),
+  /** Unix epoch seconds. Stored as integer to match the attachments
+   *  created_at column type exactly (avoids mode mismatch in the union). */
+  addedAt: integer("added_at").notNull(),
+  refreshedAt: integer("refreshed_at"),
+  /** 'ok' | 'legacy' | 'pending' | 'unavailable'. 'legacy' = backfilled
+   *  upload whose cloud URL is not yet known; bytes may still exist on
+   *  local disk. */
+  accessState: text("access_state").notNull().default("ok"),
+  /** 1 when the resource bytes count against the workspace storage quota. */
+  countsAgainstStorage: integer("counts_against_storage").notNull().default(0),
+}, (t) => [
+  index("idx_resources_task_id").on(t.taskId),
+  index("idx_resources_workspace_id").on(t.workspaceId),
+  check(
+    "resources_kind_check",
+    sql`${t.kind} IN ('upload','link')`,
+  ),
+]);
+
 export const pendingInvites = sqliteTable("pending_invites", {
   /** URL-safe random token, also the primary key. */
   token: text("token").primaryKey(),
@@ -960,13 +1028,46 @@ export const pendingInvites = sqliteTable("pending_invites", {
   email: text("email").notNull(),
   /** User who minted the invite. */
   invitedByUserId: text("invited_by_user_id").notNull(),
+  /** Role to grant the invitee on accept. Validated server-side and
+   *  clamped to 'member' | 'owner'. Added in migration 0019 (D-018). */
+  role: text("role").$type<"member" | "owner">().notNull().default("member"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
   /** 7 days from createdAt. */
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  /** Unix epoch seconds of the last invite email send. Used to enforce
+   *  the 1-per-hour resend cooldown. Added in migration 0019 (D-019). */
+  lastSentAt: integer("last_sent_at"),
   /** Set when redeemed, keeps the row as an audit trail rather than
    *  deleting. Null = pending. */
   acceptedAt: integer("accepted_at", { mode: "timestamp" }),
   acceptedByUserId: text("accepted_by_user_id"),
 });
+
+/**
+ * Workspace-scoped audit event log. Stores invite sent/accepted events and
+ * future workspace-level actions. Added in migration 0019 (D-019).
+ *
+ * Rationale: activities.taskId is NOT NULL (a hot-path table invariant); it
+ * cannot hold workspace-scoped events without a schema change that would
+ * require a full table rebuild on the production hot path. This additive table
+ * avoids that. See agent report phase2-opus-invite-security-review.md.
+ */
+export const workspaceEvents = sqliteTable("workspace_events", {
+  /** CSPRNG UUID or nanoid, generated by the writer. */
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull(),
+  /** Optional: the user who triggered the event. */
+  userId: text("user_id"),
+  /** Event type: 'inviteSent' | 'inviteAccepted' | future kinds. */
+  kind: text("kind").notNull(),
+  /** JSON payload. No PII in the payload (email addresses excluded).
+   *  Payload shape per kind: inviteSent = {role}, inviteAccepted = {userId, role}. */
+  payload: text("payload").notNull().default("{}"),
+  /** Unix epoch seconds. Integer to stay consistent with the schema
+   *  convention for audit timestamps on this database. */
+  createdAt: integer("created_at").notNull(),
+}, (t) => [
+  index("idx_workspace_events_workspace_created").on(t.workspaceId, t.createdAt),
+]);

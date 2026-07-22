@@ -5,7 +5,7 @@ import { useToast } from "@/components/primitives/toast";
 import { setNotificationPrefAction } from "@/server/actions/settings";
 import { SectionHeader } from "../settings-app";
 
-type PrefKey = "dailyDigest" | "mentions" | "commentReplies";
+type PrefKey = "dailyDigest" | "mentions" | "commentReplies" | "nudges";
 
 const TOGGLES: Array<{
   key: PrefKey;
@@ -29,6 +29,13 @@ const TOGGLES: Array<{
     defaultsOn: true,
   },
   {
+    key: "nudges",
+    title: "Nudge notifications",
+    description:
+      "A teammate sent a gentle reminder about a task assigned to you. In-app and email. No pressure, just a tap on the shoulder.",
+    defaultsOn: true,
+  },
+  {
     key: "commentReplies",
     title: "Comment notifications without @-mention",
     description:
@@ -41,7 +48,7 @@ const TOGGLES: Array<{
 export function NotificationsSection({
   prefs,
 }: {
-  prefs: { dailyDigest: boolean; mentions: boolean; commentReplies: boolean };
+  prefs: { dailyDigest: boolean; mentions: boolean; commentReplies: boolean; nudges: boolean };
 }) {
   const { toast } = useToast();
   const [state, setState] = useState(prefs);
