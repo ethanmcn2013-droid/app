@@ -2,7 +2,13 @@
   --x-timeline-studio-ink: color-mix(in srgb, var(--ink) 97.5%, var(--paper));
   --x-timeline-studio-soft: color-mix(in srgb, var(--ink-faint) 92%, var(--ink));
   --x-timeline-studio-line: color-mix(in srgb, var(--ink) 14%, var(--paper));
+  flex: 1 1 auto;
+  min-height: 0;
   min-width: 0;
+  height: 100%;
+  overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: clamp(1.25rem, 3vw, 3rem);
   color: var(--x-timeline-studio-ink);
 }
