@@ -36,10 +36,8 @@
  *
  * ── Visual tokens ────────────────────────────────────────────────
  *
- * All visual values come from CSS custom properties defined in globals.css.
- * The inline fallbacks (#ffffff / #4f46e5) are the same values; they exist
- * only to handle the pre-CSS parse window on first cross-origin load.
- * Never change the fallback values, they are the Layer-0 instant canvas.
+ * All visual values come from semantic CSS custom properties defined in
+ * globals.css, including the Layer-0 canvas used during cross-origin load.
  *
  * ── Usage ────────────────────────────────────────────────────────
  *
@@ -137,7 +135,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "var(--paper, #ffffff)",
+          background: "var(--load-bg, var(--paper))",
           zIndex: 9999,
           // Instant swap under reduced-motion; 120ms fade otherwise.
           opacity: fieldVisible ? 1 : 0,
@@ -145,7 +143,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
             ? "none"
             : reduceMotion
               ? "none"
-              : "opacity var(--load-fade-out, 120ms) var(--load-fade-easing, ease-out)",
+              : "opacity var(--load-fade-out, 120ms) var(--load-fade-easing, var(--ease-out))",
           // Remove from pointer events once invisible.
           pointerEvents: fieldVisible ? "auto" : "none",
         }}
@@ -156,7 +154,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
             width: "var(--load-dot-size, 10px)",
             height: "var(--load-dot-size, 10px)",
             borderRadius: "var(--load-dot-radius, 50%)",
-            background: "var(--load-dot-color, var(--indigo, #4f46e5))",
+            background: "var(--load-dot-color, var(--accent))",
             flexShrink: 0,
             willChange: "transform, opacity",
           }}
@@ -171,7 +169,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
             opacity: 1,
             transition: reduceMotion
               ? "none"
-              : "opacity var(--shell-fade-in, 160ms) var(--shell-fade-easing, ease-out)",
+              : "opacity var(--shell-fade-in, 160ms) var(--shell-fade-easing, var(--ease-out))",
           }}
         >
           {chrome}
@@ -185,7 +183,7 @@ export function SuiteLoader({ phase, chrome, children }: SuiteLoaderProps) {
             opacity: 1,
             animation: reduceMotion
               ? "none"
-              : "suite-content-arrive var(--content-fade-in, 200ms) var(--content-fade-easing, cubic-bezier(.22,.61,.36,1)) both",
+              : "suite-content-arrive var(--content-fade-in, 200ms) var(--content-fade-easing, var(--ease-out)) both",
           }}
         >
           {children}
@@ -223,7 +221,7 @@ export function SuiteLoaderField() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--paper, #ffffff)",
+        background: "var(--load-bg, var(--paper))",
         zIndex: 9999,
       }}
     >
@@ -233,7 +231,7 @@ export function SuiteLoaderField() {
           width: "var(--load-dot-size, 10px)",
           height: "var(--load-dot-size, 10px)",
           borderRadius: "var(--load-dot-radius, 50%)",
-          background: "var(--load-dot-color, var(--indigo, #4f46e5))",
+          background: "var(--load-dot-color, var(--accent))",
           flexShrink: 0,
           willChange: "transform, opacity",
         }}

@@ -75,7 +75,7 @@ export function SignalCadenceForm({ initial }: { initial: Cadence }) {
               <span
                 className="text-[15px] font-semibold"
                 style={{
-                  color: selected ? "var(--brand)" : "var(--ink, #14151a)",
+                  color: selected ? "var(--brand)" : "var(--ink)",
                 }}
               >
                 {opt.label}
@@ -95,7 +95,7 @@ export function SignalCadenceForm({ initial }: { initial: Cadence }) {
                 )}
               </span>
             </div>
-            <p className="mt-1 text-[13.5px] leading-[1.55] text-[color:var(--ink-soft,#535560)]">
+            <p className="mt-1 text-[13.5px] leading-[1.55] text-[color:var(--ink-soft)]">
               {opt.description}
             </p>
           </button>
@@ -103,7 +103,7 @@ export function SignalCadenceForm({ initial }: { initial: Cadence }) {
       })}
       <p
         className="mt-1 text-[12px]"
-        style={{ color: "var(--ink-quiet, #7a7d87)" }}
+        style={{ color: "var(--ink-soft)" }}
         aria-live="polite"
       >
         {pending

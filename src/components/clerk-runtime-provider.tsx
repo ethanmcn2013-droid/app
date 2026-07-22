@@ -8,9 +8,9 @@ export function ClerkRuntimeProvider({ children }: { children: React.ReactNode }
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: "#4f46e5",
-          colorBackground: "#ffffff",
-          colorForeground: "#14151a",
+          colorPrimary: "var(--accent)",
+          colorBackground: "var(--paper)",
+          colorForeground: "var(--ink)",
           fontFamily: "var(--font-geist-sans)",
           borderRadius: "0.5rem",
         },

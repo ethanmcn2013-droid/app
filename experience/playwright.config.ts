@@ -59,6 +59,7 @@ export default defineConfig({
       SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_TASKS_FIRST_COMPLETION: "off",
+      SIGNAL_ANALYTICS_V1_ENABLED: "false",
       NEXT_TELEMETRY_DISABLED: "1",
     },
   },

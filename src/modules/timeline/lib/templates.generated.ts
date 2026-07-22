@@ -33,7 +33,7 @@ export const SYNCED_TEMPLATE_ROADMAPS: SyncedTemplateRoadmap[] = [
           "slug": "planning",
           "name": "Planning Roadmap",
           "oneLiner": "What is decided, what is moving, and what needs attention before the day.",
-          "accent": "#be185d"
+          "accent": "rgb(190 24 93)" // ds-allow: CSS variables cannot safely cross the generated serialization boundary.
         }
       ],
       "items": [
@@ -97,7 +97,7 @@ export const SYNCED_TEMPLATE_ROADMAPS: SyncedTemplateRoadmap[] = [
           "slug": "monthly-rhythm",
           "name": "Monthly rhythm",
           "oneLiner": "What is closed, what is paying, what is moving, and what is owed before month-end.",
-          "accent": "#0e7490"
+          "accent": "rgb(14 116 144)" // ds-allow: CSS variables cannot safely cross the generated serialization boundary.
         }
       ],
       "items": [

@@ -138,7 +138,7 @@ export function CreateProjectForm({
       )}
 
       {/* R6 fix: only dim when slug is invalid, not when pending.
-          Pending = indigo fill + inline spinner. WCAG AA: white on #4f46e5 = 5.3:1. */}
+          Pending = indigo fill + inline spinner. The token pairing passes WCAG AA. */}
       <button
         type="submit"
         disabled={pending || !slugOk}

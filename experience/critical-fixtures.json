@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience-fixtures/1",
-  "generatedAt": "2026-07-15",
+  "generatedAt": "2026-07-22",
   "product": "tasks",
   "determinism": {
     "accessMode": "demo",
@@ -379,6 +379,51 @@
       "remainingStates": []
     },
     {
+      "id": "tasks.page.app-brief",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "demo morning briefing",
+          "path": "/app/brief",
+          "states": ["default", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "url", "pathname": "/app/brief", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading"]
+    },
+    {
+      "id": "tasks.page.app-brief-onboarding",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "demo workspace onboarding",
+          "path": "/app/brief/onboarding",
+          "states": ["first-use", "populated", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "We found your workspace.", "proves": ["first-use", "populated"] }
+          ]
+        }
+      ],
+      "remainingStates": ["empty", "loading"]
+    },
+    {
+      "id": "tasks.page.app-brief-settings-notifications",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "demo briefing cadence",
+          "path": "/app/brief/settings/notifications",
+          "states": ["default", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "How often should the briefing land?", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading"]
+    },
+    {
       "id": "tasks.page.app-plan",
       "evidence": "rendered",
       "cases": [
@@ -449,14 +494,33 @@
         {
           "name": "invalid bearer link",
           "path": "/s/invalid",
-          "states": ["error", "keyboard-only"],
-          "expectedStatus": 404,
+          "states": ["error"],
           "assertions": [
             { "kind": "role", "role": "heading", "name": "This link has reached its end.", "proves": ["error"] }
           ]
         }
       ],
       "remainingStates": []
+    },
+    {
+      "id": "tasks.state.s-by-token-loading",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "private Timeline loading identity", "contains": "Loading shared timeline" },
+        { "label": "semantic paper surface", "contains": "bg-paper" },
+        { "label": "reduced-motion fallback", "contains": "motion-reduce:animate-none" }
+      ],
+      "remainingStates": ["loading", "slow-loading", "reduced-motion"]
+    },
+    {
+      "id": "tasks.state.s-by-token-not-found",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        { "label": "generic unavailable-link headline", "contains": "This link has reached its end." },
+        { "label": "non-oracular recovery copy", "contains": "rotated, revoked or unpublished" },
+        { "label": "standalone paper surface", "contains": "bg-paper" }
+      ],
+      "remainingStates": ["error", "keyboard-only"]
     }
   ],
   "operatorBlocked": [

@@ -51,7 +51,7 @@ export async function SignalOnboardingPage() {
           fontWeight: 600,
           letterSpacing: "0.14em",
           textTransform: "uppercase",
-          color: "var(--ink-quiet)",
+          color: "var(--ink-soft)",
           marginBottom: 14,
         }}
       >

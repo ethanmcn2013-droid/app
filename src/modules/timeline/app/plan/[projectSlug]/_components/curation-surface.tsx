@@ -58,8 +58,8 @@ function LaneSeparator({ lane }: { lane: LaneLabel }) {
 // ── Status circle ─────────────────────────────────────────────────────────────
 
 function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boolean }) {
-  const accentBorder = `1.5px solid var(--indigo, #4f46e5)`;
-  const ghostBorder = `1.5px solid var(--ink-ghost, #d4d4d8)`;
+  const accentBorder = `1.5px solid var(--indigo)`;
+  const ghostBorder = `1.5px solid var(--ink-ghost)`;
 
   const style: React.CSSProperties = {
     width: 8,
@@ -75,7 +75,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
       <span
         style={{
           ...style,
-          background: "var(--ink-ghost, #d4d4d8)",
+          background: "var(--ink-ghost)",
           border: ghostBorder,
         }}
       />
@@ -86,7 +86,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
       <span
         style={{
           ...style,
-          background: "color-mix(in srgb, var(--ink-ghost, #d4d4d8) 50%, transparent)",
+          background: "color-mix(in srgb, var(--ink-ghost) 50%, transparent)",
           border: isMilestone ? accentBorder : ghostBorder,
         }}
       />
@@ -98,7 +98,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
         style={{
           ...style,
           background: "transparent",
-          border: "1.5px dashed var(--ink-ghost, #d4d4d8)",
+          border: "1.5px dashed var(--ink-ghost)",
         }}
       />
     );
@@ -273,9 +273,9 @@ function NodeCard({
         opacity: node.hidden ? 0.4 : isPending ? 0.7 : 1,
         transition: "opacity 160ms ease-out",
         borderLeft: isDraggingOver
-          ? "2px solid var(--indigo, #4f46e5)"
-          : "2px solid var(--indigo-soft, rgba(79,70,229,0.12))",
-        background: isDraggingOver ? "var(--paper-soft, #fafafa)" : "var(--paper)",
+          ? "2px solid var(--indigo)"
+          : "2px solid var(--indigo-soft)",
+        background: isDraggingOver ? "var(--paper-soft)" : "var(--paper)",
         cursor: "grab",
       }}
     >
@@ -347,7 +347,7 @@ function NodeCard({
                 lineHeight: 1.4,
                 background: "transparent",
                 border: "none",
-                borderBottom: "1px solid var(--indigo, #4f46e5)",
+                borderBottom: "1px solid var(--indigo)",
                 outline: "none",
                 width: "100%",
                 padding: "0 0 2px",
@@ -592,7 +592,7 @@ function NodeCard({
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: node.hidden ? "var(--indigo, #4f46e5)" : "var(--ink-ghost)",
+            color: node.hidden ? "var(--indigo)" : "var(--ink-ghost)",
             padding: 4,
             borderRadius: 4,
             flexShrink: 0,
@@ -709,7 +709,7 @@ function ManualAddForm({
         border: "1px solid var(--hairline)",
         borderRadius: 10,
         padding: 16,
-        background: "var(--paper-soft, #fafafa)",
+        background: "var(--paper-soft)",
         marginTop: 8,
       }}
     >
@@ -1006,7 +1006,7 @@ function SyncButton({
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: "var(--indigo, #4f46e5)",
+              color: "var(--indigo)",
               textDecoration: "none",
               fontWeight: 500,
               whiteSpace: "nowrap",
@@ -1024,7 +1024,7 @@ function SyncButton({
         </span>
       )}
 
-      {/* Error, Fix 3: var(--alarm) = #ef4444 (confirmed in globals.css line 52) */}
+      {/* Error state uses the shared alarm token. */}
       {result === "error" && (
         <span style={{ fontSize: 11, color: "var(--alarm)" }}>{errorMsg}</span>
       )}
@@ -1253,7 +1253,7 @@ export function CurationSurface({
             padding: "10px 14px",
             borderRadius: 8,
             border: "1px solid var(--hairline)",
-            background: "var(--paper-soft, #fafafa)",
+            background: "var(--paper-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1292,7 +1292,7 @@ export function CurationSurface({
             padding: "10px 14px",
             borderRadius: 8,
             border: "1px solid var(--hairline)",
-            background: "var(--paper-soft, #fafafa)",
+            background: "var(--paper-soft)",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
@@ -1576,7 +1576,7 @@ export function CurationSurface({
               className="quiet-link-hover"
               style={{
                 fontSize: 12,
-                color: "var(--indigo, #4f46e5)",
+                color: "var(--indigo)",
                 background: "none",
                 border: "none",
                 cursor: "pointer",

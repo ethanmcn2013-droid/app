@@ -22,7 +22,7 @@ export async function SignalNotificationsPage() {
     <main className="mx-auto w-full max-w-[640px] px-6 py-16">
       <p
         className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
-        style={{ color: "var(--ink-quiet)" }}
+        style={{ color: "var(--ink-soft)" }}
       >
         Settings · Notifications
       </p>
@@ -55,7 +55,7 @@ export async function SignalNotificationsPage() {
       >
         <p
           className="text-[12.5px] font-semibold uppercase tracking-[0.12em]"
-          style={{ color: "var(--ink-quiet)" }}
+          style={{ color: "var(--ink-soft)" }}
         >
           Our promise
         </p>

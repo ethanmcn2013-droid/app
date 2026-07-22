@@ -89,7 +89,7 @@ const CSS = `
   justify-content: center;
   pointer-events: none;
   /* Whole-moment fade: in fast, long hold, gentle out. */
-  animation: fcm-root 2900ms cubic-bezier(.22,.7,.2,1) both;
+  animation: fcm-root 2900ms cubic-bezier(.22,.7,.2,1) both; /* ds-allow — Notes first-capture signature choreography. */
 }
 .fcm-cluster {
   display: flex;
@@ -103,11 +103,11 @@ const CSS = `
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  background: #4f46e5; /* --color-signal */
-  box-shadow: 0 0 0 0 color-mix(in srgb, #4f46e5 42%, transparent);
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 42%, transparent);
   animation:
-    fcm-pip-bloom 620ms cubic-bezier(.34,1.56,.64,1) both,
-    fcm-pip-ring 1500ms cubic-bezier(.22,.7,.2,1) 360ms both;
+    fcm-pip-bloom 620ms cubic-bezier(.34,1.56,.64,1) both, /* ds-allow — Notes first-capture pip bloom. */
+    fcm-pip-ring 1500ms cubic-bezier(.22,.7,.2,1) 360ms both; /* ds-allow — Notes first-capture ring settle. */
 }
 .fcm-line {
   margin: 0;
@@ -115,9 +115,9 @@ const CSS = `
   font-size: clamp(17px, 1rem + 0.6vw, 21px);
   font-weight: 500;
   letter-spacing: -0.02em;
-  color: var(--color-ink, #111111);
+  color: var(--ink);
   opacity: 0;
-  animation: fcm-line 700ms cubic-bezier(.22,.7,.2,1) 460ms both;
+  animation: fcm-line 700ms cubic-bezier(.22,.7,.2,1) 460ms both; /* ds-allow — Notes first-capture line settle. */
 }
 
 @keyframes fcm-root {
@@ -132,8 +132,8 @@ const CSS = `
   100% { opacity: 1; transform: scale(1); }
 }
 @keyframes fcm-pip-ring {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, #4f46e5 42%, transparent); }
-  100% { box-shadow: 0 0 0 22px color-mix(in srgb, #4f46e5 0%, transparent); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 42%, transparent); }
+  100% { box-shadow: 0 0 0 22px color-mix(in srgb, var(--accent) 0%, transparent); }
 }
 @keyframes fcm-line {
   0%   { opacity: 0; transform: translateY(6px); }

@@ -99,7 +99,7 @@ export function PublishControl({
           padding: "16px 20px",
           border: "1px solid var(--hairline)",
           borderRadius: 10,
-          background: "var(--paper-deep, #f4f4f5)",
+          background: "var(--paper-deep)",
           maxWidth: 480,
         }}
       >
@@ -109,7 +109,7 @@ export function PublishControl({
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: "var(--ink, #111111)",
+            color: "var(--ink)",
             marginBottom: 4,
           }}
         >
@@ -118,7 +118,7 @@ export function PublishControl({
         <p
           style={{
             fontSize: 12,
-            color: "var(--ink-quiet, #71717a)",
+            color: "var(--ink-quiet)",
             marginBottom: 14,
             lineHeight: 1.5,
           }}
@@ -129,7 +129,7 @@ export function PublishControl({
           <p
             style={{
               fontSize: 12,
-              color: "var(--alarm, #ef4444)",
+              color: "var(--alarm)",
               marginBottom: 10,
             }}
           >
@@ -142,8 +142,8 @@ export function PublishControl({
           onClick={handlePublish}
           disabled={isPending}
           style={{
-            background: "var(--ink, #111111)",
-            color: "var(--paper, #ffffff)",
+            background: "var(--ink)",
+            color: "var(--paper)",
             padding: "10px 20px",
             borderRadius: 999,
             fontSize: 13,
@@ -167,7 +167,7 @@ export function PublishControl({
         padding: "16px 20px",
         border: "1px solid var(--hairline)",
         borderRadius: 10,
-        background: "var(--paper, #ffffff)",
+        background: "var(--paper)",
         maxWidth: 480,
         animation: justPublished
           ? "rw-published-in 200ms ease-out both"
@@ -197,7 +197,7 @@ export function PublishControl({
         style={{
           fontSize: 13,
           fontWeight: 500,
-          color: "var(--ink, #111111)",
+          color: "var(--ink)",
           marginBottom: 10,
         }}
       >
@@ -215,7 +215,7 @@ export function PublishControl({
             flexWrap: "wrap",
             marginBottom: 10,
             animation: justPublished
-              ? "rw-chip-in 240ms var(--ease-out, cubic-bezier(0,0,0.2,1)) 80ms both"
+              ? "rw-chip-in 240ms var(--ease-out) 80ms both"
               : "none",
           }}
         >
@@ -224,8 +224,8 @@ export function PublishControl({
             style={{
               fontFamily: "var(--font-mono-stack)",
               fontSize: 12,
-              color: "var(--ink-soft, #3f3f46)",
-              background: "var(--paper-soft, #fafafa)",
+              color: "var(--ink-soft)",
+              background: "var(--paper-soft)",
               border: "1px solid var(--hairline)",
               borderRadius: 6,
               padding: "6px 10px",
@@ -233,7 +233,7 @@ export function PublishControl({
             }}
           >
             {urlBase}
-            <strong style={{ fontWeight: 500, color: "var(--ink, #111111)" }}>
+            <strong style={{ fontWeight: 500, color: "var(--ink)" }}>
               {urlSlug}
             </strong>
           </span>
@@ -248,7 +248,7 @@ export function PublishControl({
             rel="noopener noreferrer"
             aria-label="Open published roadmap"
             style={{
-              color: "var(--ink-quiet, #71717a)",
+              color: "var(--ink-quiet)",
               display: "flex",
               alignItems: "center",
             }}
@@ -276,7 +276,7 @@ export function PublishControl({
       <p
         style={{
           fontSize: 12,
-          color: "var(--ink-quiet, #71717a)",
+          color: "var(--ink-quiet)",
           marginBottom: 12,
           lineHeight: 1.5,
         }}
@@ -289,7 +289,7 @@ export function PublishControl({
         <p
           style={{
             fontSize: 12,
-            color: "var(--alarm, #ef4444)",
+            color: "var(--alarm)",
             marginBottom: 8,
           }}
         >
@@ -304,7 +304,7 @@ export function PublishControl({
         disabled={isPending}
         style={{
           fontSize: 12,
-          color: "var(--ink-quiet, #71717a)",
+          color: "var(--ink-quiet)",
           background: "none",
           border: "none",
           cursor: isPending ? "default" : "pointer",
@@ -361,10 +361,10 @@ function CopyLinkButton({ url }: { url: string }) {
         padding: "4px 10px",
         borderRadius: 999,
         border: "1px solid var(--hairline)",
-        background: "var(--paper, #ffffff)",
+        background: "var(--paper)",
         color: copied
-          ? "var(--status-done, #10b981)"
-          : "var(--ink-soft, #3f3f46)",
+          ? "var(--status-done)"
+          : "var(--ink-soft)",
         cursor: "pointer",
         transition: "color 160ms",
       }}

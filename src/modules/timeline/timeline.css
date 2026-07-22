@@ -21,9 +21,9 @@
 [data-timeline-module] .tl-skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    var(--bg-deep, #f5f5f5) 25%,
-    var(--bg-elev, #ebebeb) 50%,
-    var(--bg-deep, #f5f5f5) 75%
+    var(--bg-deep) 25%,
+    var(--bg-elev) 50%,
+    var(--bg-deep) 75%
   );
   background-size: 200% 100%;
   animation: tl-skeleton-shimmer-anim 1.4s ease-in-out infinite;
@@ -32,6 +32,6 @@
 @media (prefers-reduced-motion: reduce) {
   [data-timeline-module] .tl-skeleton-shimmer {
     animation: none;
-    background: var(--bg-deep, #f5f5f5);
+    background: var(--bg-deep);
   }
 }

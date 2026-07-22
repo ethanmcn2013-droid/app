@@ -182,7 +182,7 @@ export function CreateWorkspaceForm({ writesPaused = false }: { writesPaused?: b
 
         {/* R6 fix: only dim when slug is invalid, not when pending.
             Pending = indigo fill + inline spinner so it reads "working",
-            not "disabled". WCAG AA contrast: white on #4f46e5 = 5.3:1. */}
+            not "disabled". The token pairing passes WCAG AA. */}
         <button
           type="submit"
           disabled={pending || !slugOk || writesPaused}

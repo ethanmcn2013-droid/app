@@ -4,6 +4,8 @@ import { useEffect } from "react";
 
 const MIN_VISIBLE_MS = 2_000;
 const SESSION_KEY_PREFIX = "signal-timeline-qualified-view:v1:";
+const SENT_KEY_PREFIX = "signal-timeline-qualified-view-sent:v1:";
+const pendingOrSentPublications = new Set<string>();
 
 export type QualifiedViewTrackerMode = "shared" | "owner-preview";
 
@@ -27,6 +29,23 @@ function browserSessionId(publicationId: string): string | null {
   }
 }
 
+function wasSentInThisSession(publicationId: string): boolean {
+  if (pendingOrSentPublications.has(publicationId)) return true;
+  try {
+    return window.sessionStorage.getItem(`${SENT_KEY_PREFIX}${publicationId}`) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberSuccessfulSend(publicationId: string) {
+  try {
+    window.sessionStorage.setItem(`${SENT_KEY_PREFIX}${publicationId}`, "1");
+  } catch {
+    // The document-scoped set still prevents duplicate sends while this page is open.
+  }
+}
+
 /**
  * Counts one browser session only after two seconds of actual page visibility.
  * Owner phone previews must pass mode="owner-preview" and never send a receipt.
@@ -42,7 +61,7 @@ export function QualifiedViewTracker({
     if (mode !== "shared") return;
     const endpoint = viewEndpoint(window.location.pathname);
     const sessionId = browserSessionId(publicationId);
-    if (!endpoint || !sessionId) return;
+    if (!endpoint || !sessionId || wasSentInThisSession(publicationId)) return;
 
     let remainingMs = MIN_VISIBLE_MS;
     let visibleSince: number | null = null;
@@ -71,6 +90,7 @@ export function QualifiedViewTracker({
         return;
       }
       sent = true;
+      pendingOrSentPublications.add(publicationId);
       void fetch(endpoint, {
         method: "POST",
         cache: "no-store",
@@ -82,9 +102,15 @@ export function QualifiedViewTracker({
           sessionId,
           visibleForMs: MIN_VISIBLE_MS,
         }),
-      }).catch(() => {
-        // Analytics is best-effort and must never disturb the shared artefact.
-      });
+      })
+        .then((response) => {
+          if (response.ok) rememberSuccessfulSend(publicationId);
+          else pendingOrSentPublications.delete(publicationId);
+        })
+        .catch(() => {
+          pendingOrSentPublications.delete(publicationId);
+          // Analytics is best-effort and must never disturb the shared artefact.
+        });
     };
 
     function startTimer() {

@@ -34,7 +34,7 @@ export default function BriefLoading() {
           height: 12,
           width: 180,
           borderRadius: 6,
-          background: "var(--bg-deep, #f4f4f5)",
+          background: "var(--bg-deep)",
           marginBottom: 20,
         }}
       />
@@ -44,7 +44,7 @@ export default function BriefLoading() {
           height: 30,
           width: "62%",
           borderRadius: 8,
-          background: "var(--bg-deep, #f4f4f5)",
+          background: "var(--bg-deep)",
           marginBottom: 10,
         }}
       />
@@ -53,7 +53,7 @@ export default function BriefLoading() {
           height: 16,
           width: "84%",
           borderRadius: 6,
-          background: "var(--bg-deep, #f4f4f5)",
+          background: "var(--bg-deep)",
           marginBottom: 40,
         }}
       />
@@ -73,7 +73,7 @@ export default function BriefLoading() {
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                background: "var(--brand, #4f46e5)",
+                background: "var(--brand)",
                 flexShrink: 0,
               }}
             />
@@ -82,7 +82,7 @@ export default function BriefLoading() {
                 fontSize: 13,
                 fontWeight: 600,
                 letterSpacing: "-0.01em",
-                color: "var(--ink-soft, #3f3f46)",
+                color: "var(--ink-soft)",
               }}
             >
               {label}
@@ -103,7 +103,7 @@ export default function BriefLoading() {
                   height: 14,
                   width: i === 1 ? "72%" : "58%",
                   borderRadius: 6,
-                  background: "var(--bg-deep, #f4f4f5)",
+                  background: "var(--bg-deep)",
                   marginBottom: 8,
                 }}
               />
@@ -112,7 +112,7 @@ export default function BriefLoading() {
                   height: 12,
                   width: i === 1 ? "88%" : "76%",
                   borderRadius: 6,
-                  background: "var(--bg-deep, #f4f4f5)",
+                  background: "var(--bg-deep)",
                 }}
               />
             </div>
