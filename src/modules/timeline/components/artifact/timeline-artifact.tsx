@@ -382,7 +382,11 @@ function Journey({
   const scrollPointIntoView = (index: number, behavior: ScrollBehavior) => {
     const viewport = viewportRef.current;
     const point = model.points[index];
-    if (!viewport || !point || viewport.scrollWidth <= viewport.clientWidth) return;
+    if (!viewport || !point) return;
+    if (viewport.scrollWidth <= viewport.clientWidth) {
+      pointRefs.current[index]?.scrollIntoView({ block: "center", behavior });
+      return;
+    }
     const target = (point.position / 100) * viewport.scrollWidth - viewport.clientWidth / 2;
     viewport.scrollTo({ left: Math.max(0, target), behavior });
   };
@@ -457,6 +461,13 @@ function Journey({
                 className={styles.completedRail}
                 initial={reduceMotion ? false : { scaleX: 0 }}
                 animate={{ scaleX: model.percent / 100 }}
+                transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
+                aria-hidden="true"
+              />
+              <motion.span
+                className={styles.completedRailVertical}
+                initial={reduceMotion ? false : { scaleY: 0 }}
+                animate={{ scaleY: model.percent / 100 }}
                 transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
                 aria-hidden="true"
               />
