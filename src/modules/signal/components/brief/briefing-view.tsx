@@ -50,22 +50,17 @@ const bucketAccents = {
  */
 export function BriefingView({
   briefing,
+  generatedAtLabel,
   firstName,
   scopeLabel,
   scopeKind,
 }: {
   briefing: Briefing;
+  generatedAtLabel: string;
   firstName?: string | null;
   scopeLabel?: string;
   scopeKind?: "workspace" | "planningPeriod";
 }) {
-  const stamp = new Date(briefing.generatedAt).toLocaleString("en-IE", {
-    weekday: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
   return (
     <MotionConfig reducedMotion="user">
       {/* Page-settle entrance: gentle stagger, not a feed pop.
@@ -78,7 +73,7 @@ export function BriefingView({
           shown: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
         }}
       >
-        <Header stamp={stamp} scopeLabel={scopeLabel} scopeKind={scopeKind} />
+        <Header stamp={generatedAtLabel} scopeLabel={scopeLabel} scopeKind={scopeKind} />
 
         {briefing.isEmpty ? (
           <AllClear

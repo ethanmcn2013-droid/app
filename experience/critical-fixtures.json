@@ -387,7 +387,8 @@
           "path": "/app/brief",
           "states": ["default", "reduced-motion", "keyboard-only"],
           "assertions": [
-            { "kind": "url", "pathname": "/app/brief", "proves": ["default"] }
+            { "kind": "url", "pathname": "/app/brief", "proves": ["default"] },
+            { "kind": "text", "text": "Daily Signal · Wednesday 08:42", "proves": ["default"] }
           ]
         }
       ],

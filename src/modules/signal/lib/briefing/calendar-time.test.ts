@@ -1,10 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  briefingTimestampLabel,
   calendarDayDifference,
   dateOnlyToTimestamp,
   localWeekday,
 } from "./calendar-time";
+
+test("briefing timestamps use the authorized timezone instead of the host timezone", () => {
+  const generatedAt = Date.UTC(2026, 6, 15, 7, 42);
+  assert.equal(
+    briefingTimestampLabel(generatedAt, "Europe/Dublin"),
+    "Wednesday 08:42",
+  );
+  assert.equal(briefingTimestampLabel(generatedAt, "UTC"), "Wednesday 07:42");
+});
 
 test("Europe/Dublin calendar days survive the 23-hour DST transition", () => {
   const before = Date.parse("2026-03-28T12:00:00Z");
