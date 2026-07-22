@@ -359,7 +359,8 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .baseRail,
-.completedRail {
+.completedRail,
+.completedRailVertical {
   position: absolute;
   inset-inline: 0;
   inset-block-start: 50%;
@@ -374,6 +375,10 @@ button.timeLens:focus-visible .metricAlternate {
 .completedRail {
   height: 2px;
   background: var(--ink);
+}
+
+.completedRailVertical {
+  display: none;
 }
 
 .todayMarker {
@@ -936,19 +941,109 @@ button.timeLens:focus-visible .metricAlternate {
     margin: 0;
   }
 
-  .railFrame::after {
-    content: "";
-    position: absolute;
-    inset-block: 0;
-    inset-inline-end: 0;
-    z-index: 8;
-    width: var(--space-8);
-    background: linear-gradient(90deg, transparent, var(--paper));
-    pointer-events: none;
+  .artifact[data-compact="true"] .railFrame::after {
+    display: none;
   }
 
+  .artifact[data-compact="true"] .stageViewport,
   .stageViewport {
-    scroll-snap-type: inline proximity;
+    overflow-x: hidden;
+    overflow-y: visible;
+    scroll-snap-type: none;
+  }
+
+  .artifact[data-compact="true"] .stage,
+  .stage {
+    min-width: 100%;
+    min-height: max(42rem, calc(var(--timeline-point-count) * 6.5rem + var(--space-8)));
+    overflow: visible;
+  }
+
+  .progressGeometry {
+    inset-block: var(--space-5);
+    inset-inline: 1.75rem auto;
+    width: 2px;
+    height: auto;
+  }
+
+  .baseRail,
+  .completedRail,
+  .completedRailVertical {
+    inset-block: 0;
+    inset-inline: 50% auto;
+    width: 1px;
+    height: auto;
+    transform-origin: top center;
+  }
+
+  .completedRail {
+    display: none;
+  }
+
+  .completedRailVertical {
+    display: block;
+    width: 2px;
+  }
+
+  .todayMarker {
+    inset-block-start: clamp(var(--space-5), var(--timeline-position), calc(100% - var(--space-5)));
+    inset-inline: 1.75rem auto;
+    width: 2rem;
+    height: 1px;
+    translate: -50% -50%;
+  }
+
+  .todayMarker::before {
+    width: 1.35rem;
+    height: 1px;
+  }
+
+  .todayMarker > span {
+    inset-block-end: auto;
+    inset-inline-start: calc(50% + var(--space-4));
+    padding-inline: var(--space-1);
+    background: var(--paper);
+    translate: 0 -50%;
+  }
+
+  .milestones {
+    inset: 0;
+  }
+
+  .milestone {
+    inset-block-start: var(--timeline-position);
+    inset-inline-start: 1.75rem;
+  }
+
+  .milestone[data-side="above"] .milestoneLabel,
+  .milestone[data-side="below"] .milestoneLabel,
+  .milestone[data-edge="start"] .milestoneLabel,
+  .milestone[data-edge="end"] .milestoneLabel {
+    inset-block-start: 50%;
+    inset-block-end: auto;
+    inset-inline-start: calc(var(--x-timeline-hit) / 2 + var(--space-4));
+    width: min(15rem, calc(100cqw - 5.5rem));
+    translate: 0 -50%;
+    text-align: start;
+  }
+
+  .milestone[data-labelled="false"] .milestoneLabel {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .startCap,
+  .finishCap {
+    inset-inline-start: calc(var(--x-timeline-hit) / 2 + var(--space-4));
+  }
+
+  .startCap {
+    inset-block-start: 0;
+  }
+
+  .finishCap {
+    inset-block-start: auto;
+    inset-block-end: 0;
   }
 
   .detailInner {

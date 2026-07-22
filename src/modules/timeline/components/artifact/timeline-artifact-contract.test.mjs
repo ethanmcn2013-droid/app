@@ -36,6 +36,9 @@ test("the milestone rail exposes roving keyboard navigation and touch-safe targe
   assert.match(artifact, /tabIndex=\{index === boundedFocusIndex \? 0 : -1\}/);
   assert.match(styles, /--x-timeline-hit:\s*3rem/);
   assert.match(styles, /overflow-x:\s*auto/);
+  assert.match(artifact, /completedRailVertical/);
+  assert.match(styles, /\.completedRailVertical/);
+  assert.match(styles, /overflow-x:\s*hidden/);
 });
 
 test("motion has a reduced-motion path and the metric swaps as a single face", () => {
