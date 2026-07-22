@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import AppLoading from "./loading";
 import { AppSidebar } from "@/components/app/sidebar";
 import { StudioBar } from "@/components/studio-bar/studio-bar";
@@ -241,7 +242,7 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
+  const shell = (
     /*
      * L4, persistent top chrome (DESIGN.md §14, amended by the Studio Bar
      * contract 2026-07-17). The 48px Studio Bar spans the top; the 60px
@@ -262,7 +263,7 @@ export default function AppLayout({
      * same wordmark holds the moment either way, no re-blank.
      */
     <StudioChromeProvider>
-      <div className="flex h-screen w-full flex-col bg-bg">
+        <div className="flex h-screen w-full flex-col bg-bg">
         {/* T·94: the 48px Studio Bar replaces SuiteChrome + the
             WorkspaceContextBar row. Bar (top) + rail (left) render at
             this synchronous level so the black L-frame paints instantly
@@ -276,7 +277,8 @@ export default function AppLayout({
             <AppShell>{children}</AppShell>
           </Suspense>
         </div>
-      </div>
+        </div>
     </StudioChromeProvider>
   );
+  return isDemoMode() ? shell : <ClerkRuntimeProvider>{shell}</ClerkRuntimeProvider>;
 }

@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: ["/", "/pricing", "/about", "/students", "/changelog"],
         // Auth-stub workspace + per-token guest links shouldn't be
         // crawled. /api is server-only.
-        disallow: ["/app", "/share", "/redeem", "/welcome", "/api"],
+        disallow: ["/app", "/s", "/share", "/redeem", "/welcome", "/api"],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

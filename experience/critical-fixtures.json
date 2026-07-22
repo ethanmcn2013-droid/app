@@ -395,15 +395,15 @@
       "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted"]
     },
     {
-      "id": "tasks.page.app-plan-project",
+      "id": "tasks.page.app-plan-by-project-slug",
       "evidence": "source-contract",
       "sourceAssertions": [
         { "label": "force-dynamic export", "contains": "force-dynamic" },
         { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
-        { "label": "Suspense curation split (T7)", "contains": "Suspense" },
-        { "label": "breadcrumb above Suspense", "contains": "Breadcrumb" }
+        { "label": "Timeline curation module boundary", "contains": "PlanProjectPage" },
+        { "label": "defence-in-depth call", "contains": "await requireAppAccess()" }
       ],
-      "remainingStates": ["populated", "loading", "error", "empty"]
+      "remainingStates": ["default", "populated", "loading", "error", "empty", "reduced-motion", "keyboard-only"]
     },
     {
       "id": "tasks.page.app-plan-audience",
@@ -411,9 +411,52 @@
       "sourceAssertions": [
         { "label": "force-dynamic export", "contains": "force-dynamic" },
         { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
-        { "label": "audience timeline feature flag", "contains": "audienceTimelineEnabled" }
+        { "label": "audience manager module boundary", "contains": "AudiencePage" }
       ],
-      "remainingStates": ["populated", "empty", "loading", "error"]
+      "remainingStates": ["default", "populated", "empty", "loading", "error", "reduced-motion", "keyboard-only"]
+    },
+    {
+      "id": "tasks.page.app-plan-audience-by-publication-id",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "owner artifact and live phone preview",
+          "path": "/app/plan/audience/demo-audience-publication",
+          "states": ["populated", "empty", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "See the story they will see.", "proves": ["populated"] },
+            { "kind": "role", "role": "heading", "name": "The same story, in their hand.", "proves": ["populated"] },
+            { "kind": "text", "text": "Preview only · this does not add a view", "proves": ["empty"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "error", "restricted"]
+    },
+    {
+      "id": "tasks.page.s-by-token",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "link-only wedding artifact",
+          "path": "/s/DemoAudienceTimelineToken2026Fixed000000000",
+          "states": ["populated", "long-content", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "Mara & Finn", "proves": ["populated"] },
+            { "kind": "role", "role": "button", "name": "Share this timeline", "proves": ["populated"] },
+            { "kind": "role", "role": "button", "name": "Menu tasting at The Orchard. Our next milestone. 1 August 2026. Milestone 3 of 9.", "proves": ["populated"] }
+          ]
+        },
+        {
+          "name": "invalid bearer link",
+          "path": "/s/invalid",
+          "states": ["error", "keyboard-only"],
+          "expectedStatus": 404,
+          "assertions": [
+            { "kind": "role", "role": "heading", "name": "This link has reached its end.", "proves": ["error"] }
+          ]
+        }
+      ],
+      "remainingStates": []
     }
   ],
   "operatorBlocked": [

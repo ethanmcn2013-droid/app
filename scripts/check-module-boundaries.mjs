@@ -185,6 +185,12 @@ for (const mod of MODULES) {
     // Allow the segment itself (the page.tsx directly in the segment dir):
     path.join(srcDir, "app", "app", segment) + ".",
   ];
+  // Timeline's bearer-link artifact deliberately sits outside /app so it can
+  // render without authenticated operating chrome. This is the only public
+  // route allowed to consume the Timeline module directly.
+  if (mod === "timeline") {
+    allowedDirs.push(path.join(srcDir, "app", "s") + path.sep);
+  }
 
   for (const file of allSrcFiles) {
     // Skip files that live inside this module itself (already covered by rule 1).

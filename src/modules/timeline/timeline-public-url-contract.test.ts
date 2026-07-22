@@ -8,13 +8,13 @@ import path from "node:path";
  *
  * MAJOR-1: every public-facing URL the Timeline module builds must anchor on
  * the TIMELINE public origin (NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL),
- * never the unified app's own NEXT_PUBLIC_SITE_URL — in the unified app that
- * is the Tasks origin, and /s/[token] + /:workspaceSlug only exist on
- * timeline.signalstudio.ie (AD-009).
+ * never the unified app's own NEXT_PUBLIC_SITE_URL. The stable branded
+ * timeline.signalstudio.ie link hands `/s/[token]` to the unified app while
+ * preserving the opaque path and its privacy headers (AD-009).
  *
- * MINOR-2: the publish/unpublish actions may only revalidate authed /app/plan
- * paths — public-page revalidation is architecturally impossible cross-app
- * and must never silently reappear.
+ * MINOR-2: publish/unpublish actions revalidate only authenticated owner
+ * surfaces. Shared artifacts are force-dynamic and no-store, so they never
+ * need a token-bearing path passed into the revalidation API.
  */
 const moduleRoot = path.join(process.cwd(), "src", "modules", "timeline");
 
@@ -56,7 +56,7 @@ describe("timeline public-url contract", () => {
     for (const call of calls) {
       assert.ok(
         call[2].startsWith("/app/plan"),
-        `revalidatePath("${call[2]}") targets a non-authed path — public pages live on the old deployment and cannot be revalidated from this app`,
+        `revalidatePath("${call[2]}") targets a non-owner path; bearer-link artifacts are dynamic and must not enter revalidation calls`,
       );
     }
   });

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { SettingsChrome } from "@/components/settings/settings-chrome";
 import { isDemoMode } from "@/lib/access-mode";
 
@@ -14,9 +15,9 @@ export default function SettingsLayout({
   children: React.ReactNode;
 }) {
   const demo = isDemoMode();
-  return (
-    <Suspense fallback={null}>
-      <SettingsChrome>
+  const shell = (
+      <Suspense fallback={null}>
+        <SettingsChrome>
         {demo ? (
           <>
             <p
@@ -32,7 +33,8 @@ export default function SettingsLayout({
         ) : (
           children
         )}
-      </SettingsChrome>
-    </Suspense>
+        </SettingsChrome>
+      </Suspense>
   );
+  return demo ? shell : <ClerkRuntimeProvider>{shell}</ClerkRuntimeProvider>;
 }

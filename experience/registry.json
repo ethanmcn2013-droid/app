@@ -3294,8 +3294,13 @@
         "member"
       ],
       "requiredStates": [
-        "default",
+        "first-use",
+        "empty",
+        "populated",
         "loading",
+        "partial-failure",
+        "error",
+        "restricted",
         "reduced-motion",
         "keyboard-only"
       ],
@@ -3307,21 +3312,21 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "supporting",
+      "reviewTier": "critical",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
       "implementationStatus": "preview",
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "18eee97320455ddd"
+      "materialityHash": "1d96eff68618cce6"
     },
     {
       "id": "tasks.page.app-plan-by-project-slug",
@@ -3339,7 +3344,10 @@
       ],
       "requiredStates": [
         "default",
+        "empty",
+        "populated",
         "loading",
+        "error",
         "reduced-motion",
         "keyboard-only"
       ],
@@ -3351,18 +3359,18 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "supporting",
+      "reviewTier": "critical",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
       "implementationStatus": "preview",
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
+      "automatedTestCoverage": "partial",
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-15",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4196ed621d50d086"
@@ -3425,7 +3433,10 @@
       ],
       "requiredStates": [
         "default",
+        "empty",
+        "populated",
         "loading",
+        "error",
         "reduced-motion",
         "keyboard-only"
       ],
@@ -3437,6 +3448,151 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-15",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7ba8f64862913b20"
+    },
+    {
+      "id": "tasks.page.app-plan-audience-by-publication-id",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/plan/audience/[publicationId]",
+      "source": "tasks/src/app/app/plan/audience/[publicationId]/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "review-and-approval-workspace",
+      "primaryJob": "Preview the exact shared Timeline experience before sending its link.",
+      "primaryAction": "Review the full artifact and its live phone preview.",
+      "roles": [
+        "owner"
+      ],
+      "requiredStates": [
+        "populated",
+        "empty",
+        "loading",
+        "error",
+        "restricted",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-artifact",
+        "timeline-phone-preview"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "owner-preview-does-not-count"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-15",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "76e7e22e7dba2f0c"
+    },
+    {
+      "id": "tasks.page.s-by-token",
+      "product": "tasks",
+      "surfaceType": "shared-link",
+      "route": "/s/[token]",
+      "source": "tasks/src/app/s/[token]/page.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "public-information-and-proof",
+      "primaryJob": "Understand the project journey and its progress at a glance.",
+      "primaryAction": "Explore milestone points or switch the time lens.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "populated",
+        "error",
+        "reduced-motion",
+        "keyboard-only",
+        "long-content"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [
+        "timeline-artifact"
+      ],
+      "patternDependencies": [
+        "link-only-publication",
+        "qualified-view-receipt"
+      ],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-15",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "13aaa53c7f4e9ca9"
+    },
+    {
+      "id": "tasks.state.s-by-token-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/s/[token]",
+      "source": "tasks/src/app/s/[token]/loading.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Hold the shared Timeline composition while it resolves.",
+      "primaryAction": "Wait for the Timeline to open.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [
+        "link-only-publication"
+      ],
       "reviewTier": "supporting",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
@@ -3444,14 +3600,57 @@
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-22",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "7ba8f64862913b20"
+      "materialityHash": "ec1e913352457d23"
+    },
+    {
+      "id": "tasks.state.s-by-token-not-found",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/s/[token]",
+      "source": "tasks/src/app/s/[token]/not-found.tsx",
+      "parentJourney": "shared-output-viewed",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Explain that a shared Timeline link is no longer available without exposing why.",
+      "primaryAction": "Ask the owner for the current link.",
+      "roles": [
+        "link-holder"
+      ],
+      "requiredStates": [
+        "error",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [
+        "link-only-publication"
+      ],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-22",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ec86f56a763d4e5c"
     }
   ]
 }
