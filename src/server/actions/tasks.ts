@@ -8,8 +8,9 @@ import { activities, attachments, comments, resources, tasks } from "@/server/db
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { maybeAwardCompletionMilestone } from "@/server/milestones";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import {
   LANE_ORDER,
@@ -115,7 +116,7 @@ export async function moveTaskAction(
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
   // Workspace guard on the read: scope to the caller's workspace so a
   // foreign task id is a silent no-op rather than a cross-tenant toggle.
   const [row] = await db
@@ -139,6 +140,8 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
       })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
     await recordActivity(id, { kind: "toggleComplete", to: "done" }, { workspaceId: ws });
+    // Recurrence path always records a completion — award milestones accordingly.
+    await maybeAwardCompletionMilestone(me, id).catch(() => {});
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
     return getTasks(ws);
@@ -153,6 +156,10 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     kind: "toggleComplete",
     to: target === "done" ? "done" : "open",
   }, { workspaceId: ws });
+  // Only award a milestone when the task actually became done.
+  if (target === "done") {
+    await maybeAwardCompletionMilestone(me, id).catch(() => {});
+  }
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);

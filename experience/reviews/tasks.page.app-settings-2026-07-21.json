@@ -2,15 +2,15 @@
   "schemaVersion": "signal-materiality-review/2",
   "experienceId": "tasks.page.app-settings",
   "source": "tasks/src/app/app/settings/page.tsx",
-  "materialityHash": "6bf217a35352f080",
-  "reviewedAt": "2026-07-21",
-  "reviewer": "Claude Fable 5, premium programme Phase 4",
+  "materialityHash": "9335b240eb37bac0",
+  "reviewedAt": "2026-07-22",
+  "reviewer": "Claude Fable 5, premium programme Phase 9 security hardening",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-b115854ed1c156c3.json",
-    "attestationSha256": "fb3b97abe96c7a1344b19e59215797b9c7a5f484ee43392f04f122ee77cfff98",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e00e66b47b9d738a58b6b680-2dac4b1a45f5bce7.json",
+    "attestationSha256": "c0f8a637e51d6bb726bab8777ed6645ae26a46da55fcf735af94d71344357346",
     "runId": "tasks-playwright-e00e66b47b9d738a58b6b680",
     "canonicalEvidenceSha256": "e00e66b47b9d738a58b6b680ef360acecb8d55ec87992855617f7eab31380fc4",
-    "rawArtifactSha256": "b115854ed1c156c35df763a366829cfa05dd0f639d7a214c7e720e402d79a35a",
+    "rawArtifactSha256": "2dac4b1a45f5bce71dfa1449acfd94b0b650c2163003f1f1d61f94cb4f8d6e78",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -19,6 +19,6 @@
       "desktop"
     ]
   },
-  "reviewedChange": "Phase 4.2 settings IA extension: tabs reordered and extended with Account, Appearance (theme preference, D-013 system/light only), Storage (workspace usage vs quota), and Privacy and data (export download, type-to-confirm account deletion); billing tab gains the entitlement-gated Stripe portal button.",
-  "decision": "Reviewed against the production build during the Phase 4 evidence run (46/46). One earlier mobile run failed on an aborted app-icon request; re-run passed both projects and the attested run is fully green."
+  "reviewedChange": "Non-visual server refactor: the settings page now reads personality prefs via the server-only readPersonalityPrefs helper instead of the getPersonalityPrefs action (least-privilege fix F2, no rendered change). Re-attested against the Phase 5 evidence run which remains visually representative.",
+  "decision": "The settings surface renders identically; the change is server-side identity resolution only. Accepted against the standing 46/46 evidence run."
 }

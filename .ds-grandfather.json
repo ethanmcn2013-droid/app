@@ -287,6 +287,10 @@
     "hex": 6,
     "ease": 0
   },
+  "src/server/milestones.test.ts": {
+    "hex": 4,
+    "ease": 0
+  },
   "src/server/premium-p1-integrity.test.ts": {
     "hex": 7,
     "ease": 0

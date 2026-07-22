@@ -654,7 +654,7 @@ export type Activity = {
 // Notifications
 // ────────────────────────────────────────────────────────────────────
 
-export type NotificationKind = "mention" | "blocked" | "dueToday" | "nudge";
+export type NotificationKind = "mention" | "blocked" | "dueToday" | "nudge" | "milestone";
 
 export type NotificationPayload =
   | {
@@ -684,6 +684,14 @@ export type NotificationPayload =
       kind: "nudge";
       taskId: string;
       fromUserId: UserId;
+    }
+  | {
+      /** System milestone: fired when the user crosses 100/250/500/1000
+       *  distinct completed tasks. actor is null (system-generated). */
+      kind: "milestone";
+      taskId: string;
+      threshold: number;
+      count: number;
     };
 
 export type Notification = {

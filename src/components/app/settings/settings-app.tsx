@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { EntitlementTier } from "@/lib/data";
 import type { MemberCapacity } from "@/server/db/membership";
 import type { ThemeMode } from "@/server/db/preferences";
+import type { PersonalityPrefs } from "@/lib/personality-prefs";
 import { WorkspaceSection } from "./sections/workspace";
 import { MembersSection } from "./sections/members";
 import { BillingSection } from "./sections/billing";
@@ -89,6 +90,7 @@ export function SettingsApp({
   securityData,
   initialThemeMode,
   storageUsageBytes,
+  initialPersonalityPrefs,
 }: {
   currentUserId: string;
   currentUserEmail: string;
@@ -120,6 +122,7 @@ export function SettingsApp({
   securityData: SecurityData;
   initialThemeMode: ThemeMode;
   storageUsageBytes: number;
+  initialPersonalityPrefs: PersonalityPrefs;
 }) {
   const [tab, setTab] = useState<Tab>("workspace");
 
@@ -224,7 +227,10 @@ export function SettingsApp({
             <NotificationsSection prefs={notificationPrefs} />
           ) : null}
           {tab === "appearance" ? (
-            <AppearanceSection initialThemeMode={initialThemeMode} />
+            <AppearanceSection
+              initialThemeMode={initialThemeMode}
+              initialPersonalityPrefs={initialPersonalityPrefs}
+            />
           ) : null}
           {tab === "security" ? (
             <SecuritySection data={securityData} />

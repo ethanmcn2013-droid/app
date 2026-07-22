@@ -34,6 +34,7 @@ import { ActionsDropdown } from "@/components/primitives/context-actions";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { MetadataRail } from "./metadata-rail";
 import { buildTaskDetailActions } from "./task-detail-actions";
+import { TipCard } from "@/components/app/tip-card";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -526,6 +527,13 @@ export function TaskDetail({
         <div className="thin-scroll flex-1 overflow-y-auto">
           <div className="border-b border-line-soft px-6 py-4">
             <MetadataRail task={task} compact />
+          </div>
+          {/* Tip card mounts after content to avoid layout shift. No
+              `enabled` prop: the panel has no prefs in scope, so TipCard
+              self-gates on the "Tips while you work" preference (memoized
+              fetch) plus the stored session/weekly caps. */}
+          <div className="px-6 pt-4">
+            <TipCard context="task-panel" />
           </div>
           <PrimaryContent task={task} conversation={conversation} />
         </div>

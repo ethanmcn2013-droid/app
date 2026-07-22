@@ -22,6 +22,8 @@ import {
   DEMO_WORKSPACE_SLUG,
   DEMO_WORKSPACE_NAME,
 } from "@/server/demo/tasks-demo";
+import { readPersonalityPrefs } from "@/server/personality-read";
+import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +96,7 @@ export default async function SettingsPage() {
             securityData={{ clerkAvailable: false, signInMethods: [], sessions: [], recentActivity: [] }}
             initialThemeMode="system"
             storageUsageBytes={0}
+            initialPersonalityPrefs={PERSONALITY_DEFAULTS}
           />
         </div>
       </>
@@ -136,6 +139,7 @@ export default async function SettingsPage() {
     securityData,
     userPreferences,
     storageUsageBytes,
+    personalityPrefs,
   ] = await Promise.all([
     getEffectiveTier(me, ws),
     getNotificationPrefs(),
@@ -145,6 +149,7 @@ export default async function SettingsPage() {
     getSecurityData(),
     getUserPreferences(me),
     getWorkspaceStorageUsage(ws),
+    readPersonalityPrefs(me),
   ]);
 
   // Resolve the current user's email from the member rows (already fetched).
@@ -195,6 +200,7 @@ export default async function SettingsPage() {
         securityData={securityData}
         initialThemeMode={userPreferences.themeMode}
         storageUsageBytes={storageUsageBytes}
+        initialPersonalityPrefs={personalityPrefs}
       />
     </>
   );
