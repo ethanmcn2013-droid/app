@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { GoogleTag } from "@/components/analytics/google-tag";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
-import { MotionProvider } from "@/components/motion-provider";
 import { DevBanner } from "@/components/dev-banner";
-import { clerkPublishableKey, isDemoMode } from "@/lib/access-mode";
+import { MotionProvider } from "@/components/motion-provider";
+import { isDemoMode } from "@/lib/access-mode";
 import { TASKS_URL } from "@/lib/product-urls";
 import "./globals.css";
 
@@ -40,51 +40,36 @@ export const metadata: Metadata = {
   },
 };
 
-function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
+function ProductRuntime({
+  children,
+  demoMode,
+  bareArtifact,
+}: Readonly<{
+  children: React.ReactNode;
+  demoMode: boolean;
+  bareArtifact: boolean;
+}>) {
+  const runtime = (
     <>
       <MotionProvider>{children}</MotionProvider>
-      <DevBanner />
+      {demoMode && !bareArtifact ? <DevBanner /> : null}
     </>
   );
+
+  return runtime;
 }
 
-function AuthShell({ children }: Readonly<{ children: React.ReactNode }>) {
-  if (isDemoMode()) {
-    return <AppShell>{children}</AppShell>;
-  }
-
-  return (
-    <ClerkProvider
-      publishableKey={clerkPublishableKey()}
-      appearance={{
-        variables: {
-          colorPrimary: "#4f46e5",
-          colorBackground: "#ffffff",
-          colorForeground: "#14151a",
-          fontFamily: "var(--font-geist-sans)",
-          borderRadius: "0.5rem",
-        },
-        elements: {
-          formFieldInput: "!min-h-[48px] !text-[16px]",
-          formButtonPrimary:
-            "bg-ink hover:bg-ink-soft text-white rounded-full !min-h-[48px] !text-[15px]",
-          socialButtonsBlockButton: "!min-h-[48px] !text-[15px]",
-          socialButtonsBlockButtonText: "!text-[15px]",
-          card: "shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]",
-        },
-      }}
-    >
-      <AppShell>{children}</AppShell>
-    </ClerkProvider>
-  );
-}
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Proxy writes this request header only for /s/* before any Clerk middleware
+  // runs. Selecting the runtime on the server keeps Clerk's client bundle and
+  // suite preconnect hints completely out of bearer-link HTML.
+  const bareArtifact = (await headers()).get("x-signal-bare-artifact") === "1";
+  const demoMode = isDemoMode();
+
   return (
     <html
       lang="en"
@@ -92,20 +77,27 @@ export default function RootLayout({
       style={{ background: "#fff", colorScheme: "light" }}
     >
       <head>
-        {/* Google tag (gtag.js) — production only, on every page. */}
-        <GoogleTag />
+        {!bareArtifact ? (
+          <GoogleTag enabled={process.env.VERCEL_ENV === "production"} />
+        ) : null}
         <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
-        <link rel="preconnect" href="https://timeline.signalstudio.ie" />
-        <link rel="dns-prefetch" href="https://timeline.signalstudio.ie" />
-        <link rel="preconnect" href="https://notes.signalstudio.ie" />
-        <link rel="dns-prefetch" href="https://notes.signalstudio.ie" />
-        <link rel="preconnect" href="https://signal.signalstudio.ie" />
-        <link rel="dns-prefetch" href="https://signal.signalstudio.ie" />
-        <link rel="preconnect" href="https://signalstudio.ie" />
-        <link rel="dns-prefetch" href="https://signalstudio.ie" />
+        {!bareArtifact ? (
+          <>
+            <link rel="preconnect" href="https://timeline.signalstudio.ie" />
+            <link rel="dns-prefetch" href="https://timeline.signalstudio.ie" />
+            <link rel="preconnect" href="https://notes.signalstudio.ie" />
+            <link rel="dns-prefetch" href="https://notes.signalstudio.ie" />
+            <link rel="preconnect" href="https://signal.signalstudio.ie" />
+            <link rel="dns-prefetch" href="https://signal.signalstudio.ie" />
+            <link rel="preconnect" href="https://signalstudio.ie" />
+            <link rel="dns-prefetch" href="https://signalstudio.ie" />
+          </>
+        ) : null}
       </head>
       <body className="min-h-full flex flex-col" style={{ background: "#fff" }}>
-        <AuthShell>{children}</AuthShell>
+        <ProductRuntime demoMode={demoMode} bareArtifact={bareArtifact}>
+          {children}
+        </ProductRuntime>
       </body>
     </html>
   );

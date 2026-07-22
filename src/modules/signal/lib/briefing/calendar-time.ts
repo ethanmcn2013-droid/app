@@ -46,6 +46,28 @@ export function localWeekday(timestamp: number, timezone: string): string {
   }).format(new Date(timestamp));
 }
 
+/**
+ * Produce the briefing's compact timestamp in an explicit reader timezone.
+ * Joining named parts avoids runtime-specific Intl punctuation while keeping
+ * the calendar conversion DST-aware.
+ */
+export function briefingTimestampLabel(timestamp: number, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-IE", {
+    timeZone: timezone,
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(timestamp));
+  const read = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
+  const weekday = read("weekday");
+  const hour = read("hour");
+  const minute = read("minute");
+  if (!weekday || !hour || !minute) throw new RangeError("Invalid briefing timestamp");
+  return `${weekday} ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
 /** Parse a canonical date-only field at UTC noon so local DST offsets never change its day. */
 export function dateOnlyToTimestamp(value: string): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);

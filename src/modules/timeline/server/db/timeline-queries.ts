@@ -196,7 +196,7 @@ export async function seedWorkspaceFromTemplate({
           slug: p.slug,
           name: p.name,
           oneLiner: p.oneLiner,
-          accent: p.accent ?? "#4f46e5",
+          accent: p.accent ?? "rgb(79 70 229)", // ds-allow: CSS variables cannot safely cross the database boundary.
           workspaceSlug,
           sortOrder: i,
         })),
@@ -336,7 +336,7 @@ export async function createProject({
   name,
   workspaceSlug,
   oneLiner = "",
-  accent = "#4f46e5",
+  accent = "rgb(79 70 229)", // ds-allow: CSS variables cannot safely cross the database boundary.
   publishedAt = null,
 }: {
   slug: string;

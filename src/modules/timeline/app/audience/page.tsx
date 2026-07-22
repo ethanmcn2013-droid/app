@@ -13,7 +13,7 @@ import {
 import { AudienceManager } from "./audience-manager";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Audience Timelines, Timeline", robots: { index: false, follow: false } };
+export const metadata = { title: "Shared timelines, Timeline", robots: { index: false, follow: false } };
 
 export default async function AudienceTimelineManagerPage({
   searchParams,
@@ -53,15 +53,15 @@ export default async function AudienceTimelineManagerPage({
           {workspace.name}
         </Link>
         <span aria-hidden className="mx-2">/</span>
-        <span className="text-ink">Audience Timelines</span>
+        <span className="text-ink">Shared timelines</span>
       </nav>
       <header className="mb-10 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Separate sharing boundary</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Link-only sharing</p>
         <h1 className="mt-2 text-[clamp(2rem,1.4rem+2vw,3.25rem)] font-semibold leading-none tracking-[-0.04em] text-ink">
-          Share the schedule, not the workspace.
+          Share the journey, not the workspace.
         </h1>
         <p className="mt-4 text-base leading-7 text-ink-soft">
-          Audience Timelines are frozen public copies for a class, module, or couple. Source changes are flagged for review and never propagate silently.
+          Shared timelines are frozen, link-only copies for a class, module, or couple. They are absent from directories and search; source changes wait for your review.
         </p>
       </header>
       <AudienceManager

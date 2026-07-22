@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { isDemoMode } from "@/lib/access-mode";
+import { isBareArtifactPath } from "@/lib/bare-artifact-path";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -34,6 +35,15 @@ const MARKETING_PATHS = new Set(["/", "/features", "/pricing", "/changelog"]);
 
 /** App entry for tasks. */
 const APP_ENTRY = "/app";
+
+const BARE_ARTIFACT_RESPONSE_HEADERS = {
+  "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+  "CDN-Cache-Control": "private, no-store",
+  "Vercel-CDN-Cache-Control": "private, no-store",
+  "Referrer-Policy": "no-referrer",
+  "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet",
+  "Cross-Origin-Resource-Policy": "same-origin",
+} as const;
 
 /**
  * @param isAuthed real Clerk session state (userId present), NOT raw cookie
@@ -80,6 +90,7 @@ const isPublicRoute = createRouteMatcher([
   "/embed/(.*)",
   "/p/(.*)",
   "/share/(.*)",
+  "/s/(.*)",
   "/redeem/(.*)",
   "/invite/(.*)",
   "/embed.js",
@@ -150,6 +161,15 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
 });
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
+  if (isBareArtifactPath(req.nextUrl.pathname)) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-signal-bare-artifact", "1");
+    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    for (const [key, value] of Object.entries(BARE_ARTIFACT_RESPONSE_HEADERS)) {
+      response.headers.set(key, value);
+    }
+    return response;
+  }
   if (isDemoMode()) return NextResponse.next();
   return productionProxy(req, event);
 }
@@ -165,6 +185,7 @@ export const config = {
     "/pricing",
     "/changelog",
     "/app/:path*",
+    "/s/:path*",
     "/api/:path*",
     "/sign-in/:path*",
     "/sign-up/:path*",

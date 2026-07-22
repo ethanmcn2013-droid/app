@@ -11,8 +11,32 @@ import {
   timelinePublications,
   timelinePublicationItems,
   audienceShares,
+  audienceViewReceipts,
 } from "./db/timeline-schema";
 import { db } from "./db/timeline-client";
+
+type AudienceShareExport = Pick<
+  typeof audienceShares.$inferSelect,
+  | "id"
+  | "publicationId"
+  | "state"
+  | "version"
+  | "expiresAt"
+  | "createdAt"
+  | "rotatedAt"
+  | "revokedAt"
+>;
+
+const audienceShareExportColumns = {
+  id: audienceShares.id,
+  publicationId: audienceShares.publicationId,
+  state: audienceShares.state,
+  version: audienceShares.version,
+  expiresAt: audienceShares.expiresAt,
+  createdAt: audienceShares.createdAt,
+  rotatedAt: audienceShares.rotatedAt,
+  revokedAt: audienceShares.revokedAt,
+};
 
 /**
  * GDPR Art. 20 (data portability) — Timeline module.
@@ -20,16 +44,16 @@ import { db } from "./db/timeline-client";
  * Returns everything Timeline holds for the user, keyed at the workspace
  * layer (`workspaces.ownerUserId` = Clerk userId).
  *
- * Audience publications, items, and shares owned by the user's workspaces
- * are included. `audience_shares.token_hash` is a SHA-256 digest of the
- * share token — the raw token is never persisted, so no credential is
- * exposed.
+ * Audience publications, items, and link lifecycle metadata owned by the
+ * user's workspaces are included. Token digests and short-lived qualified-
+ * view session digests are omitted: neither is portable user content and
+ * exposing them would weaken the sharing boundary.
  *
  * May be called from the GDPR orchestrator in src/server/ via the boundary-
  * approved import path (check-module-boundaries.mjs gdprOrchestrators list).
  */
 export async function exportForUser(clerkId: string): Promise<
-  | { available: true; workspaces: (typeof workspaces.$inferSelect)[]; projects: (typeof projects.$inferSelect)[]; tasks: (typeof tasks.$inferSelect)[]; subtasks: (typeof subtasks.$inferSelect)[]; activity: (typeof activity.$inferSelect)[]; comments: (typeof comments.$inferSelect)[]; projectSources: (typeof projectSources.$inferSelect)[]; nodeOverlays: (typeof nodeOverlays.$inferSelect)[]; publications: (typeof timelinePublications.$inferSelect)[]; publicationItems: (typeof timelinePublicationItems.$inferSelect)[]; audienceShares: (typeof audienceShares.$inferSelect)[] }
+  | { available: true; workspaces: (typeof workspaces.$inferSelect)[]; projects: (typeof projects.$inferSelect)[]; tasks: (typeof tasks.$inferSelect)[]; subtasks: (typeof subtasks.$inferSelect)[]; activity: (typeof activity.$inferSelect)[]; comments: (typeof comments.$inferSelect)[]; projectSources: (typeof projectSources.$inferSelect)[]; nodeOverlays: (typeof nodeOverlays.$inferSelect)[]; publications: (typeof timelinePublications.$inferSelect)[]; publicationItems: (typeof timelinePublicationItems.$inferSelect)[]; audienceShares: AudienceShareExport[] }
   | { available: false; reason: string }
 > {
   try {
@@ -82,7 +106,10 @@ export async function exportForUser(clerkId: string): Promise<
     const [pubItemRows, shareRows] = pubIds.length
       ? await Promise.all([
           db.select().from(timelinePublicationItems).where(inArray(timelinePublicationItems.publicationId, pubIds)),
-          db.select().from(audienceShares).where(inArray(audienceShares.publicationId, pubIds)),
+          db
+            .select(audienceShareExportColumns)
+            .from(audienceShares)
+            .where(inArray(audienceShares.publicationId, pubIds)),
         ])
       : [[], []];
 
@@ -112,7 +139,8 @@ export async function exportForUser(clerkId: string): Promise<
  * Hard-deletes every row owned by `clerkId` across all Timeline tables.
  * Mirrors the erasure logic from the standalone roadmap repo
  * (`roadmap/src/server/account-erasure.ts`), extended to also sweep
- * timeline publications, publication items, and audience shares.
+ * timeline publications, publication items, audience shares, and qualified-
+ * view receipts.
  *
  * Explicit deletes for every child table — never relies on FK cascade,
  * which is not reliably enforced over Turso's stateless HTTP.
@@ -152,6 +180,9 @@ export async function eraseForUser(
       .where(inArray(timelinePublications.workspaceSlug, slugs));
     if (pubRows.length > 0) {
       const pubIds = pubRows.map((p) => p.id);
+      await db
+        .delete(audienceViewReceipts)
+        .where(inArray(audienceViewReceipts.publicationId, pubIds));
       await db
         .delete(audienceShares)
         .where(inArray(audienceShares.publicationId, pubIds));

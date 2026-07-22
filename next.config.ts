@@ -63,6 +63,37 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
 ];
 
+// Bearer-link Timelines are a deliberately isolated artifact surface. The
+// browser may load first-party code and record one first-party view receipt,
+// but no identity, advertising, analytics, payment, or error-reporting host is
+// permitted to receive the token-bearing URL.
+const audienceArtifactCsp = [
+  `default-src 'self'`,
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src 'self' data: blob:`,
+  `font-src 'self' data:`,
+  `connect-src 'self'`,
+  `worker-src 'self' blob:`,
+  `frame-ancestors 'none'`,
+  `base-uri 'none'`,
+  `form-action 'self'`,
+  `object-src 'none'`,
+].join("; ");
+
+const audienceArtifactHeaders = [
+  { key: "Content-Security-Policy", value: audienceArtifactCsp },
+  { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+  { key: "CDN-Cache-Control", value: "private, no-store" },
+  { key: "Vercel-CDN-Cache-Control", value: "private, no-store" },
+  { key: "Referrer-Policy", value: "no-referrer" },
+  { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
+];
+
 // AD-012: /embed/[slug] is a documented framable surface — partners and venue
 // pages iframe it to show a live task board. A blocking X-Frame-Options on
 // /embed cannot be neutralised by CSP frame-ancestors while the CSP ships
@@ -106,6 +137,10 @@ const nextConfig: NextConfig = {
       {
         source: "/embed/:path*",
         headers: embedFrameHeaders,
+      },
+      {
+        source: "/s/:path*",
+        headers: audienceArtifactHeaders,
       },
     ];
   },

@@ -1,4 +1,8 @@
+"use client";
+
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { isBareArtifactPath } from "@/lib/bare-artifact-path";
 
 /**
  * Google Analytics 4 measurement ID for the Signal Studio web properties.
@@ -14,8 +18,9 @@ export const GA_MEASUREMENT_ID = "G-YHBS152PJK";
  * No consent gate yet — if a cookie-consent banner is added, switch to
  * Consent Mode v2 (default `denied`) here.
  */
-export function GoogleTag() {
-  if (process.env.VERCEL_ENV !== "production") return null;
+export function GoogleTag({ enabled }: { enabled: boolean }) {
+  const pathname = usePathname() ?? "";
+  if (!enabled || isBareArtifactPath(pathname)) return null;
   return (
     <>
       <Script

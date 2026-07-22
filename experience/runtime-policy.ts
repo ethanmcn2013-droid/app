@@ -7,12 +7,14 @@ export type RuntimeIssue =
 export type RuntimeWatch = {
   issues: RuntimeIssue[];
   intentionalEventSourceTeardowns: Set<string>;
+  completedQualifiedViewWrites: Set<string>;
 };
 
 export type MainDocumentAllowance = { status: number; url: string } | null;
 
 export type RuntimeResponse = {
   headers: Record<string, string>;
+  method?: string;
   resourceType: string;
   status: number;
   url: string;
@@ -25,6 +27,28 @@ export function normalizeUrl(url: string) {
     return parsed.href;
   } catch {
     return url;
+  }
+}
+
+function isExactQualifiedViewEndpoint(url: string, currentPageUrl: string) {
+  try {
+    const requestUrl = new URL(url);
+    const pageUrl = new URL(currentPageUrl);
+    const pageSegments = pageUrl.pathname.split("/").filter(Boolean);
+    const requestSegments = requestUrl.pathname.split("/").filter(Boolean);
+    return (
+      requestUrl.origin === pageUrl.origin &&
+      pageUrl.search === "" &&
+      requestUrl.search === "" &&
+      pageSegments.length === 2 &&
+      pageSegments[0] === "s" &&
+      requestSegments.length === 3 &&
+      requestSegments[0] === "s" &&
+      requestSegments[1] === pageSegments[1] &&
+      requestSegments[2] === "view"
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -54,6 +78,18 @@ export function isIntentionalEventSourceDisableResponse(
   );
 }
 
+export function isCompletedQualifiedViewResponse(
+  response: RuntimeResponse,
+  currentPageUrl: string,
+) {
+  return (
+    response.method === "POST" &&
+    response.resourceType === "fetch" &&
+    response.status === 204 &&
+    isExactQualifiedViewEndpoint(response.url, currentPageUrl)
+  );
+}
+
 function isIntentionalEventSourceTeardown(
   issue: RuntimeIssue,
   runtime: RuntimeWatch,
@@ -65,6 +101,20 @@ function isIntentionalEventSourceTeardown(
     issue.message === "net::ERR_ABORTED" &&
     isExactRealtimeEndpoint(issue.url, currentPageUrl) &&
     runtime.intentionalEventSourceTeardowns.has(normalizeUrl(issue.url))
+  );
+}
+
+function isCompletedQualifiedViewAbort(
+  issue: RuntimeIssue,
+  runtime: RuntimeWatch,
+  currentPageUrl: string,
+) {
+  return (
+    issue.kind === "requestfailed" &&
+    issue.resourceType === "fetch" &&
+    issue.message === "net::ERR_ABORTED" &&
+    isExactQualifiedViewEndpoint(issue.url, currentPageUrl) &&
+    runtime.completedQualifiedViewWrites.has(normalizeUrl(issue.url))
   );
 }
 
@@ -102,6 +152,7 @@ export function runtimeFailures(
         }
       }
       if (isIntentionalEventSourceTeardown(issue, runtime, currentPageUrl)) return false;
+      if (isCompletedQualifiedViewAbort(issue, runtime, currentPageUrl)) return false;
       if (!allowance || !mainUrl) return true;
       if (
         issue.kind === "http" &&

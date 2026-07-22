@@ -1,8 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Page, type Response, type TestInfo } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
+  isCompletedQualifiedViewResponse,
   isIntentionalEventSourceDisableResponse,
   normalizeUrl,
   runtimeFailures,
@@ -59,6 +60,7 @@ const routeCases = manifest.experiences.flatMap((entry) =>
 function watchRuntime(page: Page): RuntimeWatch {
   const issues: RuntimeIssue[] = [];
   const intentionalEventSourceTeardowns = new Set<string>();
+  const completedQualifiedViewWrites = new Set<string>();
   page.on("pageerror", (error) => issues.push({ kind: "pageerror", message: error.message }));
   page.on("console", (message) => {
     if (message.type() === "error") {
@@ -75,6 +77,7 @@ function watchRuntime(page: Page): RuntimeWatch {
       isIntentionalEventSourceDisableResponse(
         {
           headers: response.headers(),
+          method: request.method(),
           resourceType: request.resourceType(),
           status: response.status(),
           url: response.url(),
@@ -83,6 +86,20 @@ function watchRuntime(page: Page): RuntimeWatch {
       )
     ) {
       intentionalEventSourceTeardowns.add(normalizeUrl(response.url()));
+    }
+    if (
+      isCompletedQualifiedViewResponse(
+        {
+          headers: response.headers(),
+          method: request.method(),
+          resourceType: request.resourceType(),
+          status: response.status(),
+          url: response.url(),
+        },
+        page.url(),
+      )
+    ) {
+      completedQualifiedViewWrites.add(normalizeUrl(response.url()));
     }
     if (response.status() >= 400) {
       issues.push({
@@ -101,7 +118,7 @@ function watchRuntime(page: Page): RuntimeWatch {
       url: request.url(),
     });
   });
-  return { issues, intentionalEventSourceTeardowns };
+  return { issues, intentionalEventSourceTeardowns, completedQualifiedViewWrites };
 }
 
 async function expectNoBlockingAccessibilityIssues(page: Page) {
@@ -226,6 +243,110 @@ async function attachRenderedEvidence(
   });
 }
 
+type TimelineRuntimeEvidence = {
+  externalRequests: string[];
+  viewRequests: string[];
+  viewResponses: number[];
+};
+
+function watchTimelineRuntime(page: Page): TimelineRuntimeEvidence {
+  const evidence: TimelineRuntimeEvidence = {
+    externalRequests: [],
+    viewRequests: [],
+    viewResponses: [],
+  };
+  page.on("request", (request) => {
+    const requestUrl = new URL(request.url());
+    const pageUrl = page.url() ? new URL(page.url()) : null;
+    if (pageUrl && requestUrl.origin !== pageUrl.origin) {
+      evidence.externalRequests.push(request.url());
+    }
+    if (request.method() === "POST" && /^\/s\/[^/]+\/view$/.test(requestUrl.pathname)) {
+      evidence.viewRequests.push(request.url());
+    }
+  });
+  page.on("response", (response) => {
+    if (
+      response.request().method() === "POST" &&
+      /^\/s\/[^/]+\/view$/.test(new URL(response.url()).pathname)
+    ) {
+      evidence.viewResponses.push(response.status());
+    }
+  });
+  return evidence;
+}
+
+async function auditTimelineContract(
+  page: Page,
+  testInfo: TestInfo,
+  experienceId: string,
+  caseName: string,
+  response: Response | null,
+  evidence: TimelineRuntimeEvidence,
+) {
+  if (experienceId === "tasks.page.app-plan-audience-by-publication-id") {
+    await expect(page.locator("[data-timeline-phone-preview]")).toBeVisible();
+    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(2);
+    await page.waitForTimeout(2_100);
+    expect(evidence.viewRequests).toEqual([]);
+    return;
+  }
+  if (experienceId !== "tasks.page.s-by-token") return;
+  expect(response).not.toBeNull();
+  if (!response) return;
+
+  expect(response.headers()["cache-control"]).toContain("no-store");
+  expect(response.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(response.headers()["x-robots-tag"]).toContain("noindex");
+  expect(response.headers()["content-security-policy"]).toContain("connect-src 'self'");
+
+  if (caseName === "invalid bearer link") {
+    // Next's streamed notFound boundary is intentionally a soft 404. The
+    // privacy contract is the generic body plus no-store/noindex headers;
+    // token validity is not disclosed by a distinct network response.
+    expect(response.status()).toBe(200);
+    await expect(page.getByRole("heading", { name: "Mara & Finn" })).toHaveCount(0);
+    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(0);
+    return;
+  }
+
+  await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline");
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("22");
+  await expect(page.getByRole("progressbar", { name: "Milestone completion" }))
+    .toHaveAttribute("aria-valuenow", "22");
+  await expect(page.locator("[data-today-marker]")).toHaveAttribute(
+    "aria-label",
+    /Our next milestone is Menu tasting at The Orchard/,
+  );
+  await expect(page.locator("[data-studio-rail], nav[aria-label='Products']")).toHaveCount(0);
+
+  const toggle = page.locator("[data-timeline-metric-toggle]");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("73");
+
+  const current = page.getByRole("button", { name: /Menu tasting at The Orchard/ });
+  await current.focus();
+  await current.press("ArrowRight");
+  await expect(page.getByRole("button", { name: /Send the invitations/ })).toBeFocused();
+
+  if (testInfo.project.name === "mobile") {
+    const minimumTarget = await page.locator("[data-timeline-scroll-viewport] button").evaluateAll(
+      (buttons) => Math.min(...buttons.map((button) => button.getBoundingClientRect().height)),
+    );
+    expect(minimumTarget).toBeGreaterThanOrEqual(44);
+  }
+
+  await page.waitForTimeout(2_100);
+  await expect.poll(() => evidence.viewRequests.length).toBe(1);
+  await expect.poll(() => evidence.viewResponses).toEqual([204]);
+  await page.waitForTimeout(100);
+  expect(evidence.viewRequests).toHaveLength(1);
+  expect(
+    evidence.externalRequests.filter((url) => /clerk|google|sentry|posthog/i.test(url)),
+  ).toEqual([]);
+}
+
 async function auditCurrentSurface(
   page: Page,
   testInfo: TestInfo,
@@ -235,6 +356,8 @@ async function auditCurrentSurface(
   runtime: RuntimeWatch,
   mainDocumentAllowance: MainDocumentAllowance,
   keyboardOnly: boolean,
+  response: Response | null,
+  timelineEvidence: TimelineRuntimeEvidence,
 ) {
   await expect(page.locator("main, [role=dialog]").first()).toBeVisible();
   // Audit the settled state, not the translucent first frames of an entrance
@@ -245,6 +368,14 @@ async function auditCurrentSurface(
   if (keyboardOnly) await expectKeyboardEntry(page);
   await expectStateAssertions(page, assertions);
   await attachRenderedEvidence(page, testInfo, experienceId, caseName);
+  await auditTimelineContract(
+    page,
+    testInfo,
+    experienceId,
+    caseName,
+    response,
+    timelineEvidence,
+  );
   // Read the live issue buffer after the settled audit and screenshot. This
   // catches errors emitted during hydration, delayed chunks, Axe, or capture.
   expect(runtimeFailures(runtime, mainDocumentAllowance, page.url())).toEqual([]);
@@ -253,6 +384,7 @@ async function auditCurrentSurface(
 for (const fixture of routeCases) {
   test(`${fixture.experienceId} / ${fixture.name}`, async ({ page }, testInfo) => {
     const runtime = watchRuntime(page);
+    const timelineEvidence = watchTimelineRuntime(page);
     const response = await page.goto(fixture.path, { waitUntil: "domcontentloaded" });
     expect(response).not.toBeNull();
     expect(response?.status()).toBe(fixture.expectedStatus ?? 200);
@@ -273,12 +405,15 @@ for (const fixture of routeCases) {
         ? { status: 404, url: response.url() }
         : null,
       fixture.states.includes("keyboard-only"),
+      response,
+      timelineEvidence,
     );
   });
 }
 
 test("tasks.surface.command-palette / keyboard search", async ({ page }, testInfo) => {
   const runtime = watchRuntime(page);
+  const timelineEvidence = watchTimelineRuntime(page);
   const fixture = manifest.experiences.find(
     (entry) => entry.id === "tasks.surface.command-palette",
   );
@@ -315,11 +450,14 @@ test("tasks.surface.command-palette / keyboard search", async ({ page }, testInf
     runtime,
     null,
     true,
+    null,
+    timelineEvidence,
   );
 });
 
 test("tasks.surface.quick-create / long natural-language task", async ({ page }, testInfo) => {
   const runtime = watchRuntime(page);
+  const timelineEvidence = watchTimelineRuntime(page);
   const fixture = manifest.experiences.find(
     (entry) => entry.id === "tasks.surface.quick-create",
   );
@@ -345,11 +483,14 @@ test("tasks.surface.quick-create / long natural-language task", async ({ page },
     runtime,
     null,
     true,
+    null,
+    timelineEvidence,
   );
 });
 
 test("tasks.surface.task-detail-panel / populated task", async ({ page }, testInfo) => {
   const runtime = watchRuntime(page);
+  const timelineEvidence = watchTimelineRuntime(page);
   const fixture = manifest.experiences.find(
     (entry) => entry.id === "tasks.surface.task-detail-panel",
   );
@@ -371,5 +512,7 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
     runtime,
     null,
     true,
+    null,
+    timelineEvidence,
   );
 });

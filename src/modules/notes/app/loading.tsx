@@ -7,14 +7,14 @@
  *
  * Choreography:
  *   1. Letters of "notes" rise into place with stagger (60ms apart,
- *      280ms cubic-bezier(0.16,1,0.3,1)).
+ *      280ms using the licensed wordmark-loader easing).
  *   2. Indigo dot lands as the period with a soft overshoot bounce
  *      after the last letter starts.
  *   3. Once landed, the dot enters the canonical Notes caret blink —
  *      same gesture as the notebook header.
  *
- * Notes uses its own paper colour `#ffffff` (warm white) per the
- * Notes brand register, not the suite `--paper` token.
+ * Notes uses the canonical `--paper` surface, which carries its warm-white
+ * brand register.
  *
  * Reduced motion: letters appear fully, dot lands without scale-bounce,
  * caret stops blinking.
@@ -39,7 +39,7 @@ export default function NotesLoading() {
         gap: 18,
         alignItems: "center",
         justifyContent: "center",
-        background: "#ffffff",
+        background: "var(--paper)",
         zIndex: 9999,
       }}
     >
@@ -52,7 +52,7 @@ export default function NotesLoading() {
           fontSize: 36,
           letterSpacing: "-0.04em",
           lineHeight: 0.96,
-          color: "#111111",
+          color: "var(--ink)",
           display: "inline-flex",
           alignItems: "baseline",
           whiteSpace: "nowrap",
@@ -63,7 +63,7 @@ export default function NotesLoading() {
             key={i}
             style={{
               display: "inline-block",
-              animation: `signal-letter-rise 280ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both`,
+              animation: `signal-letter-rise 280ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both`, // ds-allow — Notes wordmark-loader rise choreography.
             }}
           >
             {c}
@@ -79,12 +79,12 @@ export default function NotesLoading() {
             maxWidth: 3,
             maxHeight: 22,
             borderRadius: 1,
-            background: "#4f46e5",
+            background: "var(--accent)",
             marginLeft: 6,
             alignSelf: "center",
             transform: "translateY(1px)",
             flexShrink: 0,
-            animation: `signal-caret-land 360ms cubic-bezier(0.34,1.56,0.64,1) ${word.length * 60 + 80}ms both, signal-notes-caret 1.1s steps(1,end) ${word.length * 60 + 600}ms infinite`,
+            animation: `signal-caret-land 360ms cubic-bezier(0.34,1.56,0.64,1) ${word.length * 60 + 80}ms both, signal-notes-caret 1.1s steps(1,end) ${word.length * 60 + 600}ms infinite`, // ds-allow — Notes caret-land signature bounce.
           }}
         />
       </span>

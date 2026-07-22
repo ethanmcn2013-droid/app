@@ -1,7 +1,7 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import { cache } from "react";
 import {
   audienceShares,
@@ -66,6 +66,8 @@ export type AudienceOwnerPublication = Readonly<{
   timezone: string;
   state: "draft" | "published" | "unpublished";
   lastUpdatedAt: Date;
+  qualifiedViewCount: number;
+  lastQualifiedViewAt: Date | null;
   activeShareCount: number;
   items: readonly AudienceOwnerItem[];
 }>;
@@ -80,22 +82,28 @@ export const DEMO_AUDIENCE_TOKEN =
 
 const DEMO_AUDIENCE_DTO = validateAudienceTimelineDto({
   version: AUDIENCE_TIMELINE_DTO_VERSION,
-  audienceKind: "module",
+  audienceKind: "couple",
   publicationId: "demo-audience-publication",
-  label: "Launch partners, autumn roadmap",
-  ownerDisplayLabel: "Shared by Signal Studio",
-  primaryDate: { label: "Launch review", date: "2026-09-18" },
-  lastUpdatedAt: "2026-07-15T09:00:00.000Z",
-  today: "2026-07-15",
+  label: "Mara & Finn",
+  ownerDisplayLabel: "Shared by Mara & Finn",
+  primaryDate: { label: "Wedding day", date: "2026-10-03" },
+  lastUpdatedAt: "2026-07-21T18:30:00.000Z",
+  today: "2026-07-22",
   sections: [
     {
       state: "covered",
       label: SECTION_LABELS.covered,
       items: [
         {
-          publicId: "demo-audience-item-brief",
-          title: "Partner brief agreed",
-          date: "2026-07-10",
+          publicId: "demo-audience-item-yes",
+          title: "We said yes",
+          date: "2026-01-02",
+          state: "covered",
+        },
+        {
+          publicId: "demo-audience-item-venue",
+          title: "The Orchard reserved",
+          date: "2026-04-18",
           state: "covered",
         },
       ],
@@ -105,9 +113,9 @@ const DEMO_AUDIENCE_DTO = validateAudienceTimelineDto({
       label: SECTION_LABELS.now,
       items: [
         {
-          publicId: "demo-audience-item-pilot",
-          title: "Pilot workspace review",
-          date: "2026-07-15",
+          publicId: "demo-audience-item-menu",
+          title: "Menu tasting at The Orchard",
+          date: "2026-08-01",
           state: "now",
         },
       ],
@@ -117,16 +125,57 @@ const DEMO_AUDIENCE_DTO = validateAudienceTimelineDto({
       label: SECTION_LABELS.next,
       items: [
         {
-          publicId: "demo-audience-item-onboarding",
-          title: "Partner onboarding window",
-          date: "2026-08-21",
+          publicId: "demo-audience-item-invitations",
+          title: "Send the invitations",
+          date: "2026-08-08",
           state: "next",
         },
         {
-          publicId: "demo-audience-item-review",
-          title: "Launch readiness review",
-          date: "2026-09-18",
+          publicId: "demo-audience-item-fitting",
+          title: "Final dress fitting",
+          date: "2026-08-22",
           state: "next",
+        },
+        {
+          publicId: "demo-audience-item-music",
+          title: "Choose the evening music",
+          date: "2026-08-29",
+          state: "next",
+        },
+      ],
+    },
+    {
+      state: "later",
+      label: SECTION_LABELS.later,
+      items: [
+        {
+          publicId: "demo-audience-item-guests",
+          title: "Final guest numbers",
+          date: "2026-09-05",
+          state: "later",
+        },
+        {
+          publicId: "demo-audience-item-walkthrough",
+          title: "Venue walk-through",
+          date: "2026-09-19",
+          state: "later",
+        },
+        {
+          publicId: "demo-audience-item-wedding",
+          title: "Wedding day",
+          date: "2026-10-03",
+          state: "later",
+        },
+      ],
+    },
+    {
+      state: "cancelled",
+      label: SECTION_LABELS.cancelled,
+      items: [
+        {
+          publicId: "demo-audience-item-hotel",
+          title: "City hotel shortlist",
+          state: "cancelled",
         },
       ],
     },
@@ -143,6 +192,8 @@ const DEMO_OWNER_PUBLICATION: AudienceOwnerPublication = {
   timezone: "Europe/Dublin",
   state: "published",
   lastUpdatedAt: new Date(DEMO_AUDIENCE_DTO.lastUpdatedAt),
+  qualifiedViewCount: 0,
+  lastQualifiedViewAt: null,
   activeShareCount: 1,
   items: DEMO_AUDIENCE_DTO.sections.flatMap((section) =>
     section.items.map((item, sortOrder) => ({
@@ -390,6 +441,8 @@ export async function getOwnerAudiencePublications(
       primaryDate: timelinePublications.primaryDate,
       state: timelinePublications.state,
       lastUpdatedAt: timelinePublications.lastUpdatedAt,
+      qualifiedViewCount: timelinePublications.qualifiedViewCount,
+      lastQualifiedViewAt: timelinePublications.lastQualifiedViewAt,
     })
     .from(timelinePublications)
     .where(eq(timelinePublications.workspaceSlug, workspaceSlug))
@@ -418,6 +471,10 @@ export async function getOwnerAudiencePublications(
         and(
           inArray(audienceShares.publicationId, publicationIds),
           eq(audienceShares.state, "active"),
+          or(
+            isNull(audienceShares.expiresAt),
+            gt(audienceShares.expiresAt, new Date()),
+          ),
         ),
       ),
   ]);
@@ -713,18 +770,30 @@ export const resolveAudienceTimeline = cache(async (
       : { kind: "invalid" };
   }
 
-  const rateLimit = await checkRateLimit(
-    "audience-read",
-    await getClientIp(),
-    120,
-    60,
-  );
-  if (!rateLimit.allowed) return { kind: "invalid" };
   if (!isAudienceTokenShape(rawToken)) return { kind: "invalid" };
+
+  // A share token carries 256 bits of entropy and the digest lookup is
+  // indexed, so the link remains safe and usable when the optional
+  // distributed limiter has not been provisioned. If either Upstash value is
+  // present, treat the limiter as configured and fail closed on a missing
+  // counterpart or service error through checkRateLimit().
+  const audienceLimiterConfigured = Boolean(
+    process.env.UPSTASH_REDIS_REST_URL ||
+      process.env.UPSTASH_REDIS_REST_TOKEN,
+  );
+  if (audienceLimiterConfigured) {
+    const rateLimit = await checkRateLimit(
+      "audience-read",
+      await getClientIp(),
+      120,
+      60,
+    );
+    if (!rateLimit.allowed) return { kind: "invalid" };
+  }
+
   const tokenHash = hashAudienceToken(rawToken);
   const [share] = await db
     .select({
-      id: audienceShares.id,
       publicationId: audienceShares.publicationId,
       tokenHash: audienceShares.tokenHash,
       state: audienceShares.state,
@@ -800,21 +869,5 @@ export const resolveAudienceTimeline = cache(async (
         })),
     })).filter((section) => section.items.length > 0),
   };
-  const dto = validateAudienceTimelineDto(candidate);
-  const accessReceipt = await db
-    .update(audienceShares)
-    .set({
-      lastAccessAt: new Date(),
-      visitCount: sql`${audienceShares.visitCount} + 1`,
-    })
-    .where(
-      and(
-        eq(audienceShares.id, share.id),
-        eq(audienceShares.tokenHash, tokenHash),
-        eq(audienceShares.state, "active"),
-      ),
-    )
-    .returning({ id: audienceShares.id });
-  if (accessReceipt.length !== 1) return { kind: "revoked" };
-  return { kind: "ok", dto };
+  return { kind: "ok", dto: validateAudienceTimelineDto(candidate) };
 });

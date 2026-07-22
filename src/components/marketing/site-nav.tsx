@@ -5,6 +5,7 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { SuiteLauncher } from "@/components/app/suite-launcher";
 import { SuiteHeader, type SuiteNavItem } from "@/components/chrome/suite-header";
 import { UserButton } from "@clerk/nextjs";
+import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { isDemoMode } from "@/lib/access-mode";
 
 const UMBRELLA_PRICING = "https://signalstudio.ie/pricing";
@@ -44,9 +45,11 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
             Demo workspace
           </Link>
         ) : isAuthed ? (
-          <UserButton
-            appearance={{ elements: { avatarBox: "h-8 w-8 rounded-full" } }}
-          />
+          <ClerkRuntimeProvider>
+            <UserButton
+              appearance={{ elements: { avatarBox: "h-8 w-8 rounded-full" } }}
+            />
+          </ClerkRuntimeProvider>
         ) : (
           <Link
             href="https://signalstudio.ie/waitlist?source=header&product=tasks"

@@ -24,7 +24,7 @@ export const demoProjects: Project[] = [
     slug: "product",
     name: "Product Roadmap",
     oneLiner: "What we're building, and what we said no to.",
-    accent: "#4f46e5",
+    accent: "rgb(79 70 229)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 0,
     // Demo workspace is always published.
     publishedAt: createdAt,
@@ -303,7 +303,7 @@ export const weddingDemoProjects: Project[] = [
     slug: "planning",
     name: "Planning Roadmap",
     oneLiner: "What is decided, what is moving, and what needs attention before the day.",
-    accent: "#be185d",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 0,
     // Wedding demo workspace is always published.
     publishedAt: createdAt,

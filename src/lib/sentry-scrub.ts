@@ -24,7 +24,7 @@ const SENSITIVE_KEY = /(token|code|secret|authorization|cookie|password|credenti
 
 export function redactSensitiveUrl(value: string): string {
   const withoutBearerPaths = value.replace(
-    /\/(share|invite|redeem|oauth)\/[^/?#]+/gi,
+    /\/(s|share|invite|redeem|oauth)\/[^/?#]+/gi,
     "/$1/[redacted]",
   );
   return withoutBearerPaths.replace(

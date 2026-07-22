@@ -184,7 +184,7 @@ export function SignalOnboardingPicker({
           marginTop: 16,
           fontSize: 12,
           fontFamily: "var(--font-mono-stack)",
-          color: "var(--ink-faint)",
+          color: "var(--ink-soft)",
           letterSpacing: "0.02em",
         }}
       >

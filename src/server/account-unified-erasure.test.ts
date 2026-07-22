@@ -35,8 +35,8 @@ async function count(client: Client, where: string): Promise<number> {
 async function seedTwo(client: Client) {
   await client.executeMultiple(`
     INSERT INTO users (id, clerk_id, color, initials)
-      VALUES ('u-target',    'clerk_target',    '#111', 'TT'),
-             ('u-bystander', 'clerk_bystander', '#222', 'BB');
+      VALUES ('u-target',    'clerk_target',    'fixture-target-color', 'TT'),
+             ('u-bystander', 'clerk_bystander', 'fixture-bystander-color', 'BB');
     INSERT INTO workspaces (id, slug, name, owner_user_id)
       VALUES ('ws-a', 'ws-a', 'A', 'u-target'),
              ('ws-b', 'ws-b', 'B', 'u-bystander');

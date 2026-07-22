@@ -89,6 +89,16 @@ async function ownerWorkspace(formData: FormData) {
 }
 
 async function allowWrite(action: string): Promise<void> {
+  // Audience mutations are authenticated and ownership-scoped. Keep the
+  // distributed limiter optional so first-party sharing remains available on
+  // deployments that have not provisioned Upstash; a partial configuration
+  // still enters checkRateLimit() and fails closed.
+  if (
+    !process.env.UPSTASH_REDIS_REST_URL &&
+    !process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
+    return;
+  }
   const result = await checkRateLimit(action, await getClientIp(), 12, 60);
   if (!result.allowed) {
     throw new TypeError(

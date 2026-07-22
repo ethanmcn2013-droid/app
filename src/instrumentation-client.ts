@@ -7,7 +7,11 @@
 import * as Sentry from "@sentry/nextjs";
 import { scrubEvent } from "@/lib/sentry-scrub";
 
-if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
+const isBearerTimeline =
+  typeof window !== "undefined" &&
+  (window.location.pathname === "/s" || window.location.pathname.startsWith("/s/"));
+
+if (process.env.NEXT_PUBLIC_SENTRY_DSN && !isBearerTimeline) {
   Sentry.init({
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
     environment: process.env.NEXT_PUBLIC_SENTRY_ENVIRONMENT ?? "development",

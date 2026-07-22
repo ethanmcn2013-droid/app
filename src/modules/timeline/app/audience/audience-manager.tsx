@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import {
   connectSuiteWorkspaceAction,
@@ -70,7 +71,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
         </button>
       </div>
       <p className="mt-2 text-xs text-indigo-800">
-        Signal Timeline stores only its hash. If this receipt is lost, rotate the link.
+        Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
       </p>
     </div>
   );
@@ -169,17 +170,17 @@ export function AudienceManager({
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Frozen projection</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
-              Create an Audience Timeline
+              Create a shared timeline
             </h2>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Select the exact milestone labels, dates, and completion states to copy. Descriptions, notes, people, attachments, and source IDs never appear on the shared page.
+              Choose the exact milestone labels, dates, and completion states to copy. Notes, people, attachments, and source IDs never appear to viewers.
             </p>
           </div>
           <form action={createAction} className="mt-5 rounded-xl border border-line-soft bg-white p-5">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-ink-soft">
-                Public label
+                Timeline title
                 <input className={`${fieldClass} mt-1.5`} name="label" required maxLength={120} placeholder="Module timeline" />
               </label>
               <label className="text-sm font-medium text-ink-soft">
@@ -263,14 +264,22 @@ export function AudienceManager({
                       </p>
                       <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
-                        {publication.items.length} public item{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"}
+                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"} · {publication.qualifiedViewCount.toLocaleString("en-GB")} view{publication.qualifiedViewCount === 1 ? "" : "s"}
                       </p>
                     </div>
-                    <form action={divergenceAction}>
-                      <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-                      <input type="hidden" name="publicationId" value={publication.id} />
-                      <button disabled={divergencePending} className={quietButton}>Check source changes</button>
-                    </form>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/app/plan/audience/${encodeURIComponent(publication.id)}`}
+                        className={primaryButton}
+                      >
+                        View artifact studio
+                      </Link>
+                      <form action={divergenceAction}>
+                        <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                        <input type="hidden" name="publicationId" value={publication.id} />
+                        <button disabled={divergencePending} className={quietButton}>Check source changes</button>
+                      </form>
+                    </div>
                   </div>
                   {divergenceState.publicationId === publication.id ? <ActionNotice state={divergenceState} /> : null}
                 </header>
@@ -289,7 +298,7 @@ export function AudienceManager({
                         <input type="hidden" name="publicationId" value={publication.id} />
                         <input type="hidden" name="publicId" value={item.publicId} />
                         <label className="text-xs font-medium text-ink-quiet">
-                          Public title
+                          Shared title
                           <input className={`${fieldClass} mt-1`} name="title" required maxLength={180} defaultValue={item.title} />
                         </label>
                         <label className="text-xs font-medium text-ink-quiet">
@@ -297,7 +306,7 @@ export function AudienceManager({
                           <input className={`${fieldClass} mt-1`} type="date" name="calendarDate" defaultValue={item.calendarDate ?? ""} />
                         </label>
                         <label className="text-xs font-medium text-ink-quiet">
-                          Public state
+                          Shared state
                           <select className={`${fieldClass} mt-1`} name="state" defaultValue={item.state}>
                             <option value="covered">Covered</option>
                             <option value="now">Now</option>
@@ -309,7 +318,7 @@ export function AudienceManager({
                         <button disabled={updatePending} className={quietButton}>Save public copy</button>
                         {item.divergedAt ? (
                           <p className="text-xs text-ink-quiet sm:col-span-4">
-                            Source changed after copying. This public item stayed frozen.
+                            The source changed after copying. This shared milestone stayed frozen.
                           </p>
                         ) : null}
                       </form>

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  isCompletedQualifiedViewResponse,
   isIntentionalEventSourceDisableResponse,
   runtimeFailures,
   type RuntimeIssue,
@@ -52,8 +53,13 @@ for (const [label, response] of fatalResponseVariants) {
 function failures(
   issue: RuntimeIssue,
   intentionalEventSourceTeardowns = new Set<string>(),
+  completedQualifiedViewWrites = new Set<string>(),
 ) {
-  const runtime: RuntimeWatch = { issues: [issue], intentionalEventSourceTeardowns };
+  const runtime: RuntimeWatch = {
+    issues: [issue],
+    intentionalEventSourceTeardowns,
+    completedQualifiedViewWrites,
+  };
   return runtimeFailures(runtime, null, pageUrl);
 }
 
@@ -96,6 +102,66 @@ for (const [label, issue, marked = new Set<string>()] of fatalVariants) {
   assert.equal(failures(issue, marked).length, 1, `${label} must remain fatal`);
 }
 
+const timelinePageUrl = "http://localhost:4342/s/opaque-token";
+const completedViewUrl = `${timelinePageUrl}/view`;
+const completedViewResponse: RuntimeResponse = {
+  headers: {},
+  method: "POST",
+  resourceType: "fetch",
+  status: 204,
+  url: completedViewUrl,
+};
+const completedViewAbort: RuntimeIssue = {
+  kind: "requestfailed",
+  resourceType: "fetch",
+  message: "net::ERR_ABORTED",
+  url: completedViewUrl,
+};
+
+assert.equal(
+  isCompletedQualifiedViewResponse(completedViewResponse, timelinePageUrl),
+  true,
+  "the exact same-origin POST 204 should attest a completed qualified view",
+);
+assert.deepEqual(
+  runtimeFailures(
+    {
+      issues: [completedViewAbort],
+      intentionalEventSourceTeardowns: new Set(),
+      completedQualifiedViewWrites: new Set([completedViewUrl]),
+    },
+    null,
+    timelinePageUrl,
+  ),
+  [],
+  "an abort reported after the exact POST 204 must be benign",
+);
+for (const [label, response] of [
+  ["wrong method", { ...completedViewResponse, method: "GET" }],
+  ["wrong status", { ...completedViewResponse, status: 202 }],
+  ["wrong resource", { ...completedViewResponse, resourceType: "document" }],
+  ["cross-origin", { ...completedViewResponse, url: "https://example.com/s/opaque-token/view" }],
+] as const) {
+  assert.equal(
+    isCompletedQualifiedViewResponse(response, timelinePageUrl),
+    false,
+    `${label} must not attest a completed qualified view`,
+  );
+}
+assert.equal(
+  runtimeFailures(
+    {
+      issues: [completedViewAbort],
+      intentionalEventSourceTeardowns: new Set(),
+      completedQualifiedViewWrites: new Set(),
+    },
+    null,
+    timelinePageUrl,
+  ).length,
+  1,
+  "an abort without a recorded 204 must remain fatal",
+);
+
 console.log(
-  "experience:runtime-policy:self-test: pass - only the marked same-origin /api/events ERR_ABORTED teardown is benign",
+  "experience:runtime-policy:self-test: pass - only marked realtime teardown and an exact qualified-view POST 204 abort are benign",
 );

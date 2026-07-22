@@ -70,7 +70,7 @@ const okOpts = {
 async function seedTasksUser(client: import("@libsql/client").Client) {
   await client.executeMultiple(`
     INSERT INTO users (id, clerk_id, color, initials)
-      VALUES ('u-target', 'clerk_target', '#111', 'TT');
+      VALUES ('u-target', 'clerk_target', 'fixture-target-color', 'TT');
     INSERT INTO workspaces (id, slug, name, owner_user_id)
       VALUES ('ws-a', 'ws-a', 'A', 'u-target');
     INSERT INTO workspace_members (workspace_id, user_id, role)

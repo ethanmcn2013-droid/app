@@ -192,7 +192,7 @@
 /* E6 — Restore keyboard focus ring without geometry change (WCAG 2.4.7).
    box-shadow is colour-only: it doesn't affect layout, so the stream
    below the capture area never shifts on focus. Matches the indigo
-   suite accent (#4f46e5) as the focus-colour signal. Stable min-height
+   suite accent token as the focus-colour signal. Stable min-height
    is already set on the textarea; no height rule added here. */
 [data-notes-module] .capture textarea:focus-visible {
   outline: none;
@@ -279,9 +279,9 @@
   justify-content: space-between;
   padding: 18px clamp(20px, 4vw, 42px);
   border-bottom: 1px solid var(--color-line);
-  /* WCAG AA fix (Phase 9): --color-ink-faint (#71717a) at 11px gives ~4.48:1
-     contrast on --color-paper (#ffffff), just under the 4.5:1 AA threshold.
-     Swapped to --color-ink-soft (#3f3f46) which gives ~8.5:1. Scoped to the
+  /* WCAG AA fix (Phase 9): --color-ink-faint at 11px gives ~4.48:1
+     contrast on --color-paper, just under the 4.5:1 AA threshold.
+     Swapped to --color-ink-soft, which gives ~8.5:1. Scoped to the
      notes module; no suite-wide token is changed. */
   color: var(--color-ink-soft);
   font-size: 11px;
@@ -576,12 +576,12 @@
 [data-notes-module] .btn-draft-action--primary {
   background: var(--color-signal);
   border-color: var(--color-signal);
-  color: #ffffff;
+  color: var(--color-paper);
 }
 [data-notes-module] .btn-draft-action--primary:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  color: #ffffff;
+  color: var(--color-paper);
 }
 [data-notes-module] .btn-draft-action--equal {
   /* Inherits the bordered .btn-draft-action geometry — same padding,
@@ -635,7 +635,7 @@
   align-items: stretch;
   min-width: 120px;
   padding: 4px;
-  background: var(--color-surface, #ffffff);
+  background: var(--color-surface, var(--color-paper));
   border: 1px solid var(--color-line-strong);
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(20, 21, 26, 0.08);
@@ -750,7 +750,7 @@
   margin-top: 14px;
   padding: 10px 14px 10px;
   /* Neutralised 2026-05-18: was an indigo left-rule + indigo-tinted fill
-     (--color-signal #4f46e5) that read as a distracting purple box and
+     (--color-signal) that read as a distracting purple box and
      was an off-system suite colour inside Notes' own green/mustard palette
      (DESIGN.md §11). The block is functional (holds the send-to-Tasks
      controls) so it stays — now in Notes' calm native line/paper system.
@@ -1561,6 +1561,6 @@
 }
 [data-notes-module] .promote-toast--error {
   background: var(--color-error);
-  color: #fff;
+  color: var(--color-paper);
 }
 /* ── End RW-3a styles ────────────────────────────────────────────── */

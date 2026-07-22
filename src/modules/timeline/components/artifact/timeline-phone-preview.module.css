@@ -1,0 +1,100 @@
+.preview {
+  width: min(100%, 28rem);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.previewHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block-end: var(--space-4);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.previewHeader > span:first-child {
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.device {
+  position: relative;
+  width: min(100%, 24.75rem);
+  margin-inline: auto;
+  border: var(--space-2) solid var(--ink);
+  border-radius: 2.75rem;
+  padding: var(--space-3) var(--space-1) var(--space-5);
+  background: var(--ink);
+  box-shadow: var(--shadow-modal);
+}
+
+.screen {
+  position: relative;
+  height: min(43rem, 76dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border-radius: 2rem;
+  background: var(--paper);
+  scrollbar-width: none;
+}
+
+.screen::-webkit-scrollbar {
+  display: none;
+}
+
+.speaker {
+  position: absolute;
+  inset-block-start: var(--space-4);
+  inset-inline-start: 50%;
+  z-index: 10;
+  width: var(--space-10);
+  height: var(--space-5);
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  pointer-events: none;
+  translate: -50% 0;
+}
+
+.homeIndicator {
+  position: absolute;
+  inset-block-end: var(--space-2);
+  inset-inline-start: 50%;
+  width: var(--space-10);
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: var(--ink-ghost);
+  pointer-events: none;
+  translate: -50% 0;
+}
+
+.previewNote {
+  max-width: 38ch;
+  margin: var(--space-4) auto 0;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  line-height: var(--leading-body);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+@media (max-width: 440px) {
+  .device {
+    border-width: var(--space-1);
+    border-radius: 2rem;
+    padding: var(--space-2) 0 var(--space-4);
+  }
+
+  .screen {
+    height: 42rem;
+    border-radius: 1.6rem;
+  }
+
+  .speaker {
+    inset-block-start: var(--space-3);
+  }
+}

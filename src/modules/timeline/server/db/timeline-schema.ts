@@ -510,6 +510,9 @@ export const timelinePublications = sqliteTable(
       .default(sql`(unixepoch())`),
     publishedAt: integer("published_at", { mode: "timestamp" }),
     unpublishedAt: integer("unpublished_at", { mode: "timestamp" }),
+    /** Qualified, human-visible sessions aggregated across every link version. */
+    qualifiedViewCount: integer("qualified_view_count").notNull().default(0),
+    lastQualifiedViewAt: integer("last_qualified_view_at", { mode: "timestamp" }),
   },
   (t) => [
     index("idx_timeline_publications_workspace").on(t.workspaceSlug),
@@ -577,6 +580,31 @@ export const audienceShares = sqliteTable(
   ],
 );
 
+/**
+ * Short-lived deduplication receipts for qualified public views.
+ *
+ * The session digest is publication-scoped and derived from a browser-generated
+ * random UUID. No raw session, token, IP, referrer, or user-agent is retained.
+ * Receipts expire after 30 minutes; the publication aggregate remains.
+ */
+export const audienceViewReceipts = sqliteTable(
+  "audience_view_receipts",
+  {
+    publicationId: text("publication_id")
+      .notNull()
+      .references(() => timelinePublications.id, { onDelete: "cascade" }),
+    sessionHash: text("session_hash").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.publicationId, t.sessionHash] }),
+    index("idx_audience_view_receipts_expiry").on(t.expiresAt),
+  ],
+);
+
 export type Project = typeof projects.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Subtask = typeof subtasks.$inferSelect;
@@ -587,3 +615,4 @@ export type NodeOverlay = typeof nodeOverlays.$inferSelect;
 export type TimelinePublication = typeof timelinePublications.$inferSelect;
 export type TimelinePublicationItem = typeof timelinePublicationItems.$inferSelect;
 export type AudienceShare = typeof audienceShares.$inferSelect;
+export type AudienceViewReceipt = typeof audienceViewReceipts.$inferSelect;

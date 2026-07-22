@@ -7,3 +7,11 @@
  * from outside the module (check-module-boundaries.mjs enforces this).
  */
 export { default as TimelineHome } from "./app/page";
+export {
+  TimelineArtifact,
+  TimelinePhonePreview,
+  buildTimelineArtifactModel,
+  buildTimelineCountdown,
+  type TimelineArtifactProps,
+  type TimelinePhonePreviewProps,
+} from "./components/artifact";

@@ -21,8 +21,8 @@ import {
 // does not read CSS custom properties at runtime, so we keep named
 // constants here that exactly match the :root values in globals.css.
 //
-//   EASE_OUT    → --ease-out   cubic-bezier(0,0,0.2,1)  arrivals
-//   EASE_IN_OUT → --ease-standard cubic-bezier(0.2,0,0,1) crossfades
+//   EASE_OUT    → --ease-out       arrivals
+//   EASE_IN_OUT → --ease-standard  crossfades
 //
 // Duration budget (UI ≤ --motion-moderate = 320ms):
 //   fadeUp: --motion-base   220ms  page-settle entrance
@@ -32,14 +32,14 @@ import {
 // Reduced motion: MotionConfig reducedMotion="user" collapses
 // every animation to zero, accessibility prefs win in one line.
 // ─────────────────────────────────────────────────────────────
-// --ease-out: cubic-bezier(0, 0, 0.2, 1) , confident arrivals
+// --ease-out: cubic-bezier(0, 0, 0.2, 1); ds-allow: Motion needs a JS tuple for the established briefing arrival choreography.
 const EASE_OUT = [0, 0, 0.2, 1] as const;
-// --ease-standard: cubic-bezier(0.2, 0, 0, 1), quiet pulse timing
+// --ease-standard: cubic-bezier(0.2, 0, 0, 1); ds-allow: Motion needs a JS tuple for the established briefing pulse choreography.
 const EASE_STANDARD = [0.2, 0, 0, 1] as const;
 
 const bucketAccents = {
-  attention: "var(--brand, #4f46e5)",
-  risks: "var(--brand, #4f46e5)",
+  attention: "var(--brand)",
+  risks: "var(--brand)",
 } as const;
 
 /**
@@ -50,22 +50,17 @@ const bucketAccents = {
  */
 export function BriefingView({
   briefing,
+  generatedAtLabel,
   firstName,
   scopeLabel,
   scopeKind,
 }: {
   briefing: Briefing;
+  generatedAtLabel: string;
   firstName?: string | null;
   scopeLabel?: string;
   scopeKind?: "workspace" | "planningPeriod";
 }) {
-  const stamp = new Date(briefing.generatedAt).toLocaleString("en-IE", {
-    weekday: "long",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
   return (
     <MotionConfig reducedMotion="user">
       {/* Page-settle entrance: gentle stagger, not a feed pop.
@@ -78,7 +73,7 @@ export function BriefingView({
           shown: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
         }}
       >
-        <Header stamp={stamp} scopeLabel={scopeLabel} scopeKind={scopeKind} />
+        <Header stamp={generatedAtLabel} scopeLabel={scopeLabel} scopeKind={scopeKind} />
 
         {briefing.isEmpty ? (
           <AllClear
@@ -132,7 +127,7 @@ export function BriefingView({
 
             <motion.p
               className="mt-12 text-[11px] tracking-[0.14em]"
-              style={{ color: "var(--ink-quiet)" }}
+              style={{ color: "var(--ink-soft)" }}
               variants={fadeUp}
             >
               {graceNote(briefing)}
@@ -168,7 +163,7 @@ function Header({
     <motion.div className="mb-6" variants={fadeUp}>
       <p
         className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-        style={{ color: "var(--ink-quiet)" }}
+        style={{ color: "var(--ink-soft)" }}
       >
         Daily Signal · {stamp}
       </p>
@@ -282,7 +277,7 @@ function BriefRow({
       </p>
       <p
         className="mt-1 text-[12px]"
-        style={{ color: "var(--ink-quiet)" }}
+        style={{ color: "var(--ink-soft)" }}
       >
         from {item.sourceLabel}
         {item.ageDays ? ` · ${ageNote(item.trigger, item.ageDays)}` : null}
@@ -320,7 +315,7 @@ function FeedbackControl({
 
   if (chosen) {
     return (
-      <p className="mt-2 text-[11.5px]" style={{ color: "var(--ink-quiet)" }}>
+      <p className="mt-2 text-[11.5px]" style={{ color: "var(--ink-soft)" }}>
         {chosen === "useful" ? "Thanks, noted." : "Thanks, I'll show less of this."}
       </p>
     );
@@ -335,7 +330,7 @@ function FeedbackControl({
 
   return (
     <div className="mt-2 flex items-center gap-3">
-      <span className="text-[11.5px]" style={{ color: "var(--ink-quiet)" }}>
+      <span className="text-[11.5px]" style={{ color: "var(--ink-soft)" }}>
         Useful?
       </span>
       <button
@@ -470,7 +465,7 @@ function AllClear({
       <motion.span
         aria-hidden
         className="mb-8 inline-block h-2 w-2 rounded-full"
-        style={{ background: "var(--brand, #4f46e5)" }}
+        style={{ background: "var(--brand)" }}
         variants={fadeUp}
         {...(reducedMotion
           ? {}
@@ -513,14 +508,14 @@ function AllClear({
           hatch, calm, not a CTA. */}
       <motion.p
         className="mt-14 font-mono text-[11px] tracking-[0.02em]"
-        style={{ color: "var(--ink-quiet)" }}
+        style={{ color: "var(--ink-soft)" }}
         variants={fadeUp}
       >
         Your next briefing builds tomorrow, 6am.{" "}
         <a
           href="/app/board"
           className="underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand)]"
-          style={{ color: "var(--ink-quiet)" }}
+          style={{ color: "var(--ink-soft)" }}
         >
           Open the Tasks workspace
         </a>
