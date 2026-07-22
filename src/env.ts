@@ -25,6 +25,24 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   ["STRIPE_WEBHOOK_SECRET", "Stripe webhook signature verification"],
   ["CRON_SECRET", "cron endpoint authentication"],
   ["RESEND_API_KEY", "transactional email"],
+  // Notes module (D4 — WARN tier; promoted to required at Phase 8).
+  // Without these the /app/notes DB calls will throw at runtime but the
+  // rest of the app remains unaffected (module-isolated lazy DB init).
+  ["NOTES_DATABASE_URL", "Notes module database (notes.signalstudio.ie Turso)"],
+  ["NOTES_AUTH_TOKEN", "Notes module database auth token"],
+  // Timeline module (Phase 5 — WARN tier; promoted to required at Phase 9 cutover).
+  // Without these /app/plan DB calls throw at runtime; the rest of the app
+  // is unaffected (module-isolated lazy DB init via file:roadmap.db dev fallback).
+  ["TIMELINE_DATABASE_URL", "Timeline module database (timeline.signalstudio.ie Turso)"],
+  ["TIMELINE_AUTH_TOKEN", "Timeline module database auth token"],
+  // Signal module (Phase 6 — WARN tier; promoted to required at Phase 10 cutover).
+  // S2 env renames: TURSO_ANALYTICS_* → SIGNAL_ANALYTICS_* (analytics DB, dev fallback file:analytics.db).
+  //                 TURSO_DATABASE_URL/TOKEN → SIGNAL_PREFS_* (prefs DB, NO dev fallback — throws at first use).
+  // Without these /app/brief DB calls throw at runtime; the rest of the app is unaffected.
+  ["SIGNAL_ANALYTICS_DATABASE_URL", "Signal module analytics database (signal.signalstudio.ie Turso — analytics)"],
+  ["SIGNAL_ANALYTICS_AUTH_TOKEN", "Signal module analytics database auth token"],
+  ["SIGNAL_PREFS_DATABASE_URL", "Signal module prefs database (signal.signalstudio.ie Turso — user_preferences)"],
+  ["SIGNAL_PREFS_AUTH_TOKEN", "Signal module prefs database auth token"],
 ];
 
 let validated = false;

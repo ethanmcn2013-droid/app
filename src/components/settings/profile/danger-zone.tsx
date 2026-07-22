@@ -29,9 +29,9 @@ export function DangerZone({ email }: { email: string }) {
         Delete account
       </h2>
       <p className="mt-1.5 max-w-[560px] text-[12.5px] leading-[1.6] text-rose-800/80">
-        Closes your Signal account across every product, Tasks, Notes,
-        Roadmap, Analytics. Workspaces you own are deleted with you, including
-        anyone you&apos;ve invited. There&apos;s no undo.
+        Removes your data across all Signal Studio products: Tasks, Notes,
+        Timeline, and Signal. Workspaces you own are deleted with you,
+        including anyone you have invited. This cannot be undone.
       </p>
       <div className="mt-3">
         <button

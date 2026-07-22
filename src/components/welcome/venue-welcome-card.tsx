@@ -8,7 +8,8 @@ type Props = {
   sponsorSlug: string;
 };
 
-const DISMISS_PREFIX = "venue-welcome-dismissed:";
+const DISMISS_PREFIX = "signal-tasks.venue-welcome-dismissed:";
+const DISMISS_PREFIX_OLD = "venue-welcome-dismissed:";
 
 /**
  * One-time dismissible card shown after a venue-edition redemption
@@ -22,7 +23,14 @@ export function VenueWelcomeCard({ sponsorName, sponsorSlug }: Props) {
   const [dismissed, setDismissed] = useState(() => {
     if (typeof localStorage === "undefined") return false;
     try {
-      return localStorage.getItem(`${DISMISS_PREFIX}${sponsorSlug}`) === "1";
+      if (localStorage.getItem(`${DISMISS_PREFIX}${sponsorSlug}`) === "1") return true;
+      // Migration: if old key is set, migrate to new key and treat as dismissed.
+      if (localStorage.getItem(`${DISMISS_PREFIX_OLD}${sponsorSlug}`) === "1") {
+        localStorage.setItem(`${DISMISS_PREFIX}${sponsorSlug}`, "1");
+        localStorage.removeItem(`${DISMISS_PREFIX_OLD}${sponsorSlug}`);
+        return true;
+      }
+      return false;
     } catch {
       return false;
     }

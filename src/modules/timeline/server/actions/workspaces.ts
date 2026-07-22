@@ -1,0 +1,474 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { clerkClient } from "@clerk/nextjs/server";
+import { requireUser } from "@/modules/timeline/server/auth";
+import {
+  createWorkspace,
+  createProject,
+  getWorkspace,
+  getWorkspacesForUser,
+  getProjectsForWorkspace,
+  getEffectiveNodesForWorkspace,
+  seedWorkspaceFromTemplate,
+  publishWorkspace,
+  unpublishWorkspace,
+  isWorkspacePublished,
+  writeRoadmapNodes,
+  upsertNodeOverlay,
+  batchUpsertNodeSortOrders,
+  bindProjectToTasksWorkspace,
+  type NodeOverlayInput,
+} from "@/modules/timeline/server/db/timeline-queries";
+import { isValidSlug, slugify } from "@/modules/timeline/lib/reserved-slugs";
+import { checkRateLimit, getClientIp, type RateLimitResult } from "@/modules/timeline/lib/rate-limit";
+import { getSyncedTemplateRoadmap } from "@/modules/timeline/lib/templates.generated";
+import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
+import { tierAtLeast } from "@/lib/entitlements-shared/tiers";
+import { isDemoMode } from "@/lib/access-mode";
+import { demoEffectiveNodes } from "@/modules/timeline/lib/roadmap/demo-data";
+
+/** Translate a denied RateLimitResult into the correct user-facing error string. */
+function rateLimitError(result: RateLimitResult & { allowed: false }): string {
+  if (result.reason === "config-miss") {
+    return "This isn't available right now. Try again shortly.";
+  }
+  return "Too many requests. Try again later.";
+}
+
+/** Roadmap's tier policy (E-4, 2026-05-14; revised post-validation):
+ *  - Free / Event / Wedding: max 1 workspace.
+ *  - Workspace / Studio: unlimited.
+ *  Matches signalstudio.ie/pricing, Event sells "One workspace,
+ *  event-shaped" and Wedding is for one wedding. Only Workspace+
+ *  bypasses the cap. Tier is read from the shared signal-entitlements
+ *  DB. Failures resolve to "free" so a transient DB blip can't unlock
+ *  paid capacity. */
+const FREE_WORKSPACE_CAP = 1;
+
+/**
+ * Pull the user's display name + primary email from Clerk for
+ * attribution + reply gesture on the public guest view (Sprint 2
+ * cycles 10.2 + 10.3). Best-effort: any failure returns nulls so
+ * workspace creation never blocks on Clerk.
+ *
+ * Cached together because both come from the same Clerk.users.getUser
+ * call. Owner email powers the mailto reply on /[workspaceSlug]/update.
+ */
+async function resolveOwnerIdentity(
+  userId: string,
+): Promise<{ name: string | null; email: string | null }> {
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const email = user.emailAddresses?.[0]?.emailAddress ?? null;
+    const full = [user.firstName, user.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    if (full) return { name: full, email };
+    if (user.username) return { name: user.username, email };
+    if (email) return { name: email.split("@")[0], email };
+    return { name: null, email };
+  } catch {
+    return { name: null, email: null };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Workspace creation
+// ---------------------------------------------------------------------------
+
+export type CreateWorkspaceResult =
+  | { ok: true }
+  | { error: string };
+
+export async function createWorkspaceAction(
+  formData: FormData,
+): Promise<CreateWorkspaceResult> {
+  const userId = await requireUser();
+
+  // Rate limit: 5 workspace creations per IP per hour
+  const ip = await getClientIp();
+  const rlResult = await checkRateLimit("create-workspace", ip, 5, 3600);
+  if (!rlResult.allowed) return { error: rateLimitError(rlResult) };
+
+  const name = (formData.get("name") as string | null)?.trim() ?? "";
+  const slug = (formData.get("slug") as string | null)?.trim() ?? "";
+  const fromTemplate =
+    (formData.get("fromTemplate") as string | null)?.trim() || null;
+
+  if (!name) return { error: "Workspace name is required." };
+  if (name.length > 80) {
+    return { error: "Workspace name must be 80 characters or fewer." };
+  }
+  if (!slug) return { error: "Slug is required." };
+  if (!isValidSlug(slug)) {
+    return {
+      error:
+        "Slug must be 3–32 characters, lowercase letters, numbers, and hyphens only. No reserved words.",
+    };
+  }
+
+  // Resolve template up front so we don't create a workspace then fail
+  // on the seed step.
+  const template = fromTemplate ? getSyncedTemplateRoadmap(fromTemplate) : null;
+  if (fromTemplate && !template) {
+    return { error: `Unknown template id: ${fromTemplate}` };
+  }
+
+  // Uniqueness check
+  const existing = await getWorkspace(slug);
+  if (existing) {
+    return { error: "That slug is already taken. Try another." };
+  }
+
+  // Workspace-count cap. Read the canonical tier from
+  // signal-entitlements; only Workspace+ bypasses. Event and Wedding
+  // are one-workspace-by-design (matches /pricing).
+  const { tier } = await resolveEntitlement(userId);
+  if (!tierAtLeast(tier, "workspace")) {
+    const owned = await getWorkspacesForUser(userId);
+    if (owned.length >= FREE_WORKSPACE_CAP) {
+      const message =
+        tier === "event"
+          ? "Event is one workspace, event-shaped. Upgrade to Workspace at signalstudio.ie/pricing for more."
+          : tier === "wedding"
+            ? "Wedding is one workspace. Upgrade to Workspace at signalstudio.ie/pricing for more."
+            : "Free includes one workspace. Upgrade at signalstudio.ie/pricing to add more.";
+      return { error: message };
+    }
+  }
+
+  const owner = await resolveOwnerIdentity(userId);
+
+  await createWorkspace({
+    slug,
+    name,
+    ownerUserId: userId,
+    ownerName: owner.name,
+    ownerEmail: owner.email,
+    templateId: template?.id ?? null,
+  });
+
+  if (template) {
+    await seedWorkspaceFromTemplate({ workspaceSlug: slug, template });
+  }
+
+  revalidatePath("/app/plan");
+  redirect(template ? `/${slug}` : "/app/plan");
+}
+
+// ---------------------------------------------------------------------------
+// Project creation
+// ---------------------------------------------------------------------------
+
+export type CreateProjectResult =
+  | { ok: true; slug: string }
+  | { error: string };
+
+export async function createProjectAction(
+  workspaceSlug: string,
+  formData: FormData,
+): Promise<CreateProjectResult> {
+  const userId = await requireUser();
+
+  // Rate limit: 20 project creations per IP per hour. createWorkspaceAction
+  // is also limited; this covers the project-creation path (reviewer P1, 2026-05-15).
+  const ip = await getClientIp();
+  const rlResult = await checkRateLimit("create-project", ip, 20, 3600);
+  if (!rlResult.allowed) return { error: rateLimitError(rlResult) };
+
+  // Verify user owns this workspace
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Workspace not found." };
+  }
+
+  const name = (formData.get("name") as string | null)?.trim() ?? "";
+  const rawSlug = (formData.get("slug") as string | null)?.trim() ?? "";
+  const slug = rawSlug || slugify(name);
+
+  if (!name) return { error: "Project name is required." };
+  if (!isValidSlug(slug)) {
+    return {
+      error:
+        "Slug must be 3–32 characters, lowercase letters, numbers, and hyphens only.",
+    };
+  }
+
+  // Check slug uniqueness within workspace
+  const projects = await getProjectsForWorkspace(workspaceSlug);
+  if (projects.some((p) => p.slug === slug)) {
+    return { error: "A project with that slug already exists in this workspace." };
+  }
+
+  // If the workspace is currently published, new projects inherit that state
+  // so the public view doesn't go dark when the owner adds a project to an
+  // already-live workspace. (seamless-ecosystem-2026-05-18)
+  const workspaceIsPublished = await isWorkspacePublished(workspaceSlug);
+  const publishedAt = workspaceIsPublished ? new Date() : null;
+  await createProject({ slug, name, workspaceSlug, publishedAt });
+
+  revalidatePath("/app/plan");
+  return { ok: true, slug };
+}
+
+// ---------------------------------------------------------------------------
+// Sync milestones from Tasks DB → private draft
+// ---------------------------------------------------------------------------
+
+export type SyncMilestonesResult =
+  | { ok: true; count: number }
+  | { error: string };
+
+export async function syncMilestonesAction(
+  workspaceSlug: string,
+  projectSlug: string,
+): Promise<SyncMilestonesResult> {
+  // Demo/review is a read-only fixture boundary. The editor still exercises
+  // its real autosync POST lifecycle, but the action returns deterministic
+  // fixture evidence before auth, Tasks, or Timeline databases are touched.
+  if (isDemoMode()) {
+    return { ok: true, count: demoEffectiveNodes(workspaceSlug).length };
+  }
+
+  const userId = await requireUser();
+
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Workspace not found." };
+  }
+
+  const ownedProjects = await getProjectsForWorkspace(workspaceSlug);
+  if (ownedProjects.length === 0) {
+    return { error: "Create a project first." };
+  }
+
+  const targetProject = ownedProjects.find((project) => project.slug === projectSlug);
+  if (!targetProject) return { error: "Project not found." };
+  const canonicalWorkspaceId =
+    targetProject.sourceTasksWorkspaceId ?? workspace.suiteWorkspaceId;
+  if (!canonicalWorkspaceId) {
+    return {
+      error:
+        "Connect this plan to one canonical Signal Tasks workspace before syncing.",
+    };
+  }
+  if (
+    targetProject.sourceTasksWorkspaceId &&
+    workspace.suiteWorkspaceId &&
+    targetProject.sourceTasksWorkspaceId !== workspace.suiteWorkspaceId
+  ) {
+    return { error: "This project is connected to a different canonical workspace." };
+  }
+
+  // Import lazily to avoid bundling in the non-sync path
+  const { makeMilestoneSyncSource } = await import("@/modules/timeline/server/sync/tasks-milestone-source");
+  const source = makeMilestoneSyncSource();
+  if (!source) {
+    return { error: "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN." };
+  }
+
+  const rawMilestones = await source.getMilestonesForClerkId(
+    userId,
+    canonicalWorkspaceId,
+  );
+
+  // Persist the provenance mapping before writing synced rows. This turns
+  // future publication checks into an exact project-level proof and prevents
+  // old mixed-workspace rows from being promoted via a workspace fallback.
+  await bindProjectToTasksWorkspace(
+    workspaceSlug,
+    targetProject.slug,
+    canonicalWorkspaceId,
+  );
+
+  // One canonical Tasks workspace maps to this one explicitly selected
+  // Timeline project. Never pool every member workspace into a first project.
+  const milestones = rawMilestones.map((m) => ({
+    ...m,
+    workspaceSlug,
+    projectSlug: targetProject.slug,
+  }));
+  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones);
+
+  // Revalidate private draft only, NOT the public URL (D6 two-gate)
+  revalidatePath("/app/plan");
+  revalidatePath(`/app/plan/${targetProject.slug}`);
+
+  return { ok: true, count: milestones.length };
+}
+
+// ---------------------------------------------------------------------------
+// Curation overlay upsert
+// ---------------------------------------------------------------------------
+
+export type UpsertOverlayResult = { ok: true } | { error: string };
+
+export async function upsertNodeOverlayAction(
+  workspaceSlug: string,
+  projectSlug: string,
+  overlay: NodeOverlayInput,
+): Promise<UpsertOverlayResult> {
+  const userId = await requireUser();
+
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Something went wrong. Reload the page and try again." };
+  }
+
+  try {
+    await upsertNodeOverlay(workspaceSlug, overlay);
+  } catch {
+    return { error: "Couldn't save that milestone. Check your connection and try again." };
+  }
+
+  // Revalidate curation view only, public URL not touched until Publish
+  revalidatePath(`/app/plan/${projectSlug}`);
+
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Reorder nodes (BV-2: batch-write ALL sibling sortOverride values)
+// ---------------------------------------------------------------------------
+
+export type ReorderNodesResult = { ok: true } | { error: string };
+
+/**
+ * Persist the full ordered node list after a drag-drop.
+ *
+ * Writes sortOverride for EVERY node in the lane, not just the moved node —
+ * so reload order is deterministic regardless of the Tasks-side sortOrder
+ * values. Fixes the BV-2 defect where sibling nodes reverted to Tasks DB
+ * order on the next page load.
+ *
+ * D6 invariant: revalidates only /app (dashboard) and /app/plan/… (curation
+ * view). Never touches /{workspaceSlug}, publish remains the only gate.
+ */
+export async function reorderNodesAction(
+  workspaceSlug: string,
+  projectSlug: string,
+  orderedNodeIds: string[],
+): Promise<ReorderNodesResult> {
+  const userId = await requireUser();
+
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Workspace not found." };
+  }
+
+  const entries = orderedNodeIds.map((nodeId, i) => ({ nodeId, sortOverride: i }));
+  try {
+    await batchUpsertNodeSortOrders(workspaceSlug, entries);
+  } catch {
+    // C2 symmetry with upsertNodeOverlayAction, return string error so the
+    // caller's optimistic UI can revert + surface a transient role=status
+    // message, instead of bubbling a rejected promise into the React tree.
+    return { error: "Couldn't save that reorder. Check your connection and try again." };
+  }
+
+  // Revalidate private curation view only, D6 invariant preserved
+  revalidatePath("/app/plan");
+  revalidatePath(`/app/plan/${projectSlug}`);
+
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// Publish / Unpublish workspace
+// ---------------------------------------------------------------------------
+
+export type PublishResult = { ok: true } | { error: string };
+
+/**
+ * Publish all projects in the owner's workspace.
+ * Sets published_at on every project row. /{workspaceSlug}/... public URLs
+ * become live and no-auth forwardable after this action.
+ *
+ * Hard-refuses an empty publish (D2, P0-2): a workspace with no projects or
+ * no tasks produces a blank public roadmap. The owner pressing Publish on an
+ * empty workspace believed it would go live; instead they get a calm,
+ * actionable message. published_at is never set on this path.
+ */
+export async function publishWorkspaceAction(
+  workspaceSlug: string,
+): Promise<PublishResult> {
+  const userId = await requireUser();
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Workspace not found." };
+  }
+
+  // Guard: refuse to publish a workspace that has no content to share.
+  // Check projects first (cheap list), then tasks (one-fetch existence check).
+  const existingProjects = await getProjectsForWorkspace(workspaceSlug);
+  if (existingProjects.length === 0) {
+    return {
+      error:
+        "Add at least one project before publishing. Your roadmap needs something to share.",
+    };
+  }
+
+  // Use effective nodes (synced tasks + manual overlays), same source the
+  // curation surface renders. A manual-only roadmap (source="manual" rows,
+  // no tasks rows) is valid content and must not be blocked by a tasks-only check.
+  const effectiveNodes = await getEffectiveNodesForWorkspace(workspaceSlug);
+  const visibleNodes = effectiveNodes.filter((n) => !n.hidden);
+  if (visibleNodes.length === 0) {
+    return {
+      error:
+        "Add items to your projects before publishing. Your plan needs something to share.",
+    };
+  }
+
+  await publishWorkspace(workspaceSlug);
+  // Revalidate the authed dashboard in the unified app.
+  revalidatePath("/app/plan");
+  // PARITY NOTE (manifest §revalidation contracts): the DB write above sets
+  // publishedAt on the Timeline Turso row. The PUBLIC deployment at
+  // timeline.signalstudio.ie is a separate Next.js app — this unified app
+  // CANNOT revalidatePath across deployments. The public page picks up the
+  // change within its ISR window (revalidate=300, ~5 min). Document in
+  // cutover runbook and Phase 9 checks. No revalidatePath(`/${workspaceSlug}`)
+  // here — it would target the unified app's own route namespace, not the
+  // public Timeline deployment.
+  return { ok: true };
+}
+
+/**
+ * Unpublish all projects in the owner's workspace.
+ * Sets published_at to null. Non-owner visitors to /{workspaceSlug}/...
+ * will see a "Not published yet" state instead of the roadmap.
+ */
+export async function unpublishWorkspaceAction(
+  workspaceSlug: string,
+): Promise<PublishResult> {
+  const userId = await requireUser();
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Workspace not found." };
+  }
+  await unpublishWorkspace(workspaceSlug);
+  // Revalidate the authed dashboard in the unified app.
+  revalidatePath("/app/plan");
+  // PARITY NOTE: same as publishWorkspaceAction — DB write is sufficient.
+  // Public Timeline deployment picks up the unpublished state within its
+  // own ISR window. See cutover runbook.
+  return { ok: true };
+}
+
+// D6 two-gate path contracts live in ./revalidation-contracts.ts (BV-4).
+// NOT re-exported here: a "use server" file may only export async functions.
+// Tests import them directly from ./revalidation-contracts.
+
+// ---------------------------------------------------------------------------
+// Comments removed 2026-05-12, Suite Review T3 decision. The locked
+// refusal on comment threading is now honored at the architecture layer,
+// not just at the render gate. Schema column `comments` is preserved
+// against any existing owner-side data; the query (getCommentsForTask)
+// and the queries-layer addComment helper were also removed. Anything
+// reaching for an owner-only annotation surface should ship a private
+// description field on the task, not a panel.

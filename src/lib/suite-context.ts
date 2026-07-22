@@ -29,3 +29,50 @@ export function withSuiteContext(
   }
   return url.toString();
 }
+
+// ── Signal module additions (Phase 6 port) ──────────────────────────────────
+
+const MAX_IDENTIFIER_LENGTH = 200;
+
+function boundedIdentifier(value: string | null): string | undefined {
+  if (value && /[\u0000-\u001f\u007f]/.test(value)) return undefined;
+  const normalized = value?.trim();
+  if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) return undefined;
+  return normalized;
+}
+
+const SUITE_PRODUCT_IDS = new Set([
+  "studio",
+  "tasks",
+  "timeline",
+  "signal",
+  "notes",
+]);
+
+/**
+ * Translate an inbound version-one SuiteContext into Signal's native scope
+ * keys. Native keys win when both forms are present; authorization remains a
+ * server responsibility after parsing.
+ *
+ * Ported from signal/src/lib/suite-context.ts for Phase 6 host compatibility.
+ */
+export function normalizeSuiteContextForSignal(
+  input: URLSearchParams,
+): URLSearchParams {
+  const normalized = new URLSearchParams(input);
+  const sourceProduct = input.get("sourceProduct");
+  if (!sourceProduct || !SUITE_PRODUCT_IDS.has(sourceProduct)) return normalized;
+
+  const workspaceId = boundedIdentifier(input.get("workspaceId"));
+  if (!normalized.has("workspace_id") && workspaceId) {
+    normalized.set("workspace_id", workspaceId);
+  }
+
+  const projectId = boundedIdentifier(input.get("projectId"));
+  if (projectId && !normalized.has("scope_id")) {
+    normalized.set("scope_id", projectId);
+    if (!normalized.has("scope_type")) normalized.set("scope_type", "project");
+  }
+
+  return normalized;
+}

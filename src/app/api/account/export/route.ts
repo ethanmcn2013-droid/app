@@ -1,16 +1,20 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { db } from "@/server/db";
-import { exportAccountData } from "@/server/account-export";
+import { exportAccountForUser } from "@/server/account";
 
 /**
- * GET /api/account/export · Signal Tasks.
+ * GET /api/account/export · Signal Studio unified export.
  *
  * GDPR Art. 20 data portability: the signed-in user downloads a complete
- * machine-readable (JSON) copy of everything Tasks holds for them, their
- * profile, every owned workspace and its content, and their footprint in
- * other workspaces. Authed; resolved from the Clerk session, never a
- * client-supplied id. Attachment bytes are not inlined (metadata only).
+ * machine-readable (JSON) copy of everything the Signal Studio suite holds
+ * for them across Tasks, Notes, Timeline, and Signal. Authed; the user id
+ * is always resolved from the Clerk session, never from the client.
+ *
+ * Module sections that are unavailable (missing env or transient DB error)
+ * degrade to `{ available: false }` rather than failing the whole export.
+ *
+ * The filename is scoped to the user id and the current date so repeated
+ * exports are distinguishable without leaking server-side metadata.
  */
 export async function GET() {
   const { userId } = await auth();
@@ -19,12 +23,13 @@ export async function GET() {
   }
 
   try {
-    const data = await exportAccountData(db, userId);
+    const data = await exportAccountForUser(userId);
+    const date = new Date().toISOString().slice(0, 10);
     return new NextResponse(JSON.stringify(data, null, 2), {
       status: 200,
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="signal-tasks-export-${userId}.json"`,
+        "Content-Disposition": `attachment; filename="signal-export-${userId}-${date}.json"`,
         "Cache-Control": "private, no-store",
       },
     });

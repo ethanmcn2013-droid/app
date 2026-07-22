@@ -10,6 +10,7 @@ import { TwoFactorRow } from "./two-factor-row";
 import { SessionsRow } from "./sessions-row";
 import { OAuthRow } from "./oauth-row";
 import { DangerZone } from "./danger-zone";
+import { DataPrivacy } from "./data-privacy";
 
 export function ProfilePanel() {
   const { isLoaded, user } = useUser();
@@ -30,6 +31,7 @@ export function ProfilePanel() {
         <TwoFactorRow user={user} />
         <SessionsRow user={user} />
         <OAuthRow user={user} />
+        <DataPrivacy />
         <DangerZone email={user.primaryEmailAddress?.emailAddress ?? ""} />
       </div>
     </SettingsSection>

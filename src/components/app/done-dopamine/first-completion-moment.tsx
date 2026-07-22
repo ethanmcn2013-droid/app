@@ -16,7 +16,8 @@ import { useEffect, useState } from "react";
  * Reviewable on a seeded demo via any /app route + ?firstcompletion=preview.
  */
 
-const STORAGE_KEY = "tasks-first-completion-seen";
+const STORAGE_KEY = "signal-tasks.first-completion-seen";
+const STORAGE_KEY_OLD = "tasks-first-completion-seen";
 const EVENT = "tasks:first-completion";
 
 export const FIRST_COMPLETION_ENABLED =
@@ -29,6 +30,12 @@ export const FIRST_COMPLETION_ENABLED =
 export function maybeFireFirstCompletion(): void {
   if (!FIRST_COMPLETION_ENABLED || typeof window === "undefined") return;
   try {
+    // Migration: old key present → treat as seen, write new key, remove old.
+    if (window.localStorage.getItem(STORAGE_KEY_OLD) === "1") {
+      window.localStorage.setItem(STORAGE_KEY, "1");
+      window.localStorage.removeItem(STORAGE_KEY_OLD);
+      return;
+    }
     if (window.localStorage.getItem(STORAGE_KEY) === "1") return;
     window.localStorage.setItem(STORAGE_KEY, "1");
   } catch {

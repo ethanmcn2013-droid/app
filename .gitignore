@@ -47,6 +47,10 @@ next-env.d.ts
 /tasks.db-journal
 /tasks.db-shm
 /tasks.db-wal
+/notes.db
+/notes.db-journal
+/notes.db-shm
+/notes.db-wal
 
 # clerk configuration (can include secrets)
 /.clerk/
@@ -55,3 +59,8 @@ next-env.d.ts
 /.data/
 
 roadmap.db
+
+# local module dev DBs (migration)
+analytics.db*
+roadmap.db*
+prefs.db*

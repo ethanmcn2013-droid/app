@@ -1,24 +1,56 @@
 import "server-only";
 import { db } from "@/server/db";
-import { eraseAccountData } from "@/server/account-erasure";
+import { deleteUnifiedAccountDataWith, defaultRevokeGoogleTokens } from "@/server/account-unified-erasure";
+import { exportUnifiedAccountDataWith } from "@/server/account-unified-export";
+import {
+  exportForUser as exportNotesForUser,
+  eraseForUser as eraseNotesForUser,
+} from "@/modules/notes/server/notes-gdpr";
+import {
+  exportForUser as exportTimelineForUser,
+  eraseForUser as eraseTimelineForUser,
+} from "@/modules/timeline/server/timeline-gdpr";
+import {
+  exportForUser as exportSignalForUser,
+  eraseForUser as eraseSignalForUser,
+} from "@/modules/signal/server/signal-gdpr";
 
 /**
- * Hard-delete the user's entire footprint in Tasks' Turso DB.
+ * GDPR Art. 20 data portability — unified Signal Studio export.
  *
- * Called by `POST /api/account/delete` BEFORE the Clerk admin delete so
- * that if the DB purge errors we don't end up with an orphaned
- * Clerk-deleted user whose data is still here.
+ * Binds the production Tasks DB singleton and real per-module export
+ * functions. Called by GET /api/account/export.
  *
- * The erasure itself lives in `account-erasure.ts` as a db-injected pure
- * function so it can be exercised end-to-end against an in-memory libSQL DB
- * (see account-erasure.test.ts), it deletes EVERY child row explicitly
- * across every table rather than trusting libSQL FK cascade over Turso's
- * stateless HTTP, and unlinks the user's on-disk attachment binaries. This
- * thin wrapper just binds the production `db` singleton.
+ * The injectable core (`exportUnifiedAccountDataWith`) is in
+ * `account-unified-export.ts` so it can be exercised in tests without
+ * real Turso credentials.
+ */
+export async function exportAccountForUser(clerkId: string) {
+  return exportUnifiedAccountDataWith(db, clerkId, {
+    exportNotes: exportNotesForUser,
+    exportTimeline: exportTimelineForUser,
+    exportSignal: exportSignalForUser,
+  });
+}
+
+/**
+ * GDPR right-to-erasure — unified Signal Studio deletion.
  *
- * Idempotent: re-running after a partial failure is safe. Returns without
- * writing when the user was never provisioned here.
+ * Binds the production Tasks DB singleton, real per-module erase
+ * functions, and the real Google revocation fetch. Called by
+ * POST /api/account/delete BEFORE the Clerk admin delete.
+ *
+ * The injectable core (`deleteUnifiedAccountDataWith`) is in
+ * `account-unified-erasure.ts` so it can be exercised in tests without
+ * real Turso credentials or network access.
+ *
+ * Idempotent: re-running after a partial failure is safe.
  */
 export async function deleteAccountForUser(clerkId: string): Promise<void> {
-  await eraseAccountData(db, clerkId);
+  await deleteUnifiedAccountDataWith(db, clerkId, {
+    eraseNotes: eraseNotesForUser,
+    eraseTimeline: eraseTimelineForUser,
+    eraseSignal: eraseSignalForUser,
+    revokeTokens: defaultRevokeGoogleTokens,
+  });
 }

@@ -1,0 +1,1233 @@
+.root {
+  position: relative;
+  min-block-size: 100dvh;
+  inline-size: 100%;
+  overflow-x: clip;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  accent-color: var(--accent);
+}
+
+.root *,
+.root *::before,
+.root *::after {
+  box-sizing: border-box;
+}
+
+.root button,
+.root input,
+.root select,
+.root textarea {
+  max-inline-size: 100%;
+  color: inherit;
+  font: inherit;
+}
+
+.root button,
+.root select {
+  cursor: pointer;
+}
+
+.root button:disabled,
+.root input:disabled,
+.root select:disabled,
+.root textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.root ::selection {
+  background: var(--accent-tint);
+  color: var(--ink);
+}
+
+.root [hidden] {
+  display: none !important;
+}
+
+.notebookHeader {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 4;
+  display: flex;
+  min-block-size: var(--nav-h);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-inline: clamp(var(--space-4), 4vw, var(--space-7));
+  border-block-end: 1px solid var(--hairline);
+  background: var(--paper);
+}
+
+.identity {
+  display: flex;
+  min-inline-size: 0;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.wordmark {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-heading);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+}
+
+.wordmarkDot {
+  color: var(--accent);
+}
+
+.privateLabel {
+  padding-inline-start: var(--space-3);
+  border-inline-start: 1px solid var(--hairline);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.capture {
+  inline-size: min(100%, var(--container));
+  margin-inline: auto;
+  padding: var(--space-5) clamp(var(--space-4), 4vw, var(--space-8)) var(--space-4);
+  border-block-end: 1px solid var(--hairline);
+  background: var(--paper);
+}
+
+.captureHeader,
+.detailHeader,
+.extractionHeader {
+  display: flex;
+  min-inline-size: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.captureHeader {
+  margin-block-end: var(--space-2);
+}
+
+.captureLabel,
+.searchLabel {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.captureLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+}
+
+.captureLabel::after {
+  inline-size: 1px;
+  block-size: 0.9em;
+  background: var(--accent);
+  content: "";
+  opacity: 0;
+}
+
+.capture:focus-within .captureLabel::after {
+  opacity: 1;
+  animation: capture-ready-caret 1.1s steps(1, end) infinite;
+}
+
+@keyframes capture-ready-caret {
+  0%,
+  48% {
+    opacity: 1;
+  }
+
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.captureTextarea,
+.searchInput,
+.workspaceSelect,
+.extractionTextarea,
+.timelineFields input,
+.timelineFields select,
+.timelineFields textarea {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.captureTextarea {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 88px;
+  max-block-size: 40dvh;
+  resize: vertical;
+  padding: var(--space-3) var(--space-4);
+  background: var(--paper-soft);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+}
+
+.captureTextarea::placeholder,
+.searchInput::placeholder,
+.detailTextarea::placeholder,
+.extractionTextarea::placeholder {
+  color: var(--ink-faint);
+  opacity: 1;
+}
+
+.captureTextarea:focus,
+.searchInput:focus,
+.workspaceSelect:focus,
+.extractionTextarea:focus,
+.timelineFields input:focus,
+.timelineFields select:focus,
+.timelineFields textarea:focus {
+  border-color: var(--accent);
+  background: var(--paper);
+}
+
+.capture[data-state="offline"] .captureTextarea,
+.capture[data-state="pending"] .captureTextarea {
+  border-color: var(--status-flight);
+}
+
+.capture[data-state="failed"] .captureTextarea,
+.capture[data-state="error"] .captureTextarea {
+  border-color: var(--status-blocked);
+}
+
+.captureFooter {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-block-start: var(--space-3);
+}
+
+.captureHint,
+.detailHelp,
+.selectionStatus,
+.workspaceMessage,
+.payloadReceipt {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.captureHint {
+  max-inline-size: 64ch;
+}
+
+.captureActions,
+.detailToolbar,
+.actionRow,
+.conflictActions {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.primaryButton,
+.quietButton,
+.dangerButton,
+.recoveryRow button,
+.conflictActions button {
+  display: inline-flex;
+  min-block-size: var(--control-h-md);
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  transition:
+    background-color var(--motion-instant) var(--ease-out),
+    border-color var(--motion-instant) var(--ease-out),
+    color var(--motion-instant) var(--ease-out),
+    transform var(--motion-instant) var(--ease-out);
+}
+
+.primaryButton {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* `.root button` carries more selector weight than a bare class. Keep the
+   deliberate inverse label legible instead of inheriting ink-on-ink. */
+.root .primaryButton {
+  color: var(--paper);
+}
+
+.primaryButton:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+  background: var(--ink-soft);
+}
+
+.extractionPanel .primaryButton {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.extractionPanel .primaryButton:hover:not(:disabled) {
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+.quietButton,
+.recoveryRow button,
+.conflictActions button {
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--ink-soft);
+}
+
+.quietButton:hover:not(:disabled),
+.recoveryRow button:hover:not(:disabled),
+.conflictActions button:hover:not(:disabled) {
+  border-color: var(--ink-ghost);
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+.dangerButton {
+  border: 1px solid var(--status-blocked);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--status-blocked-bg);
+}
+
+.primaryButton:active:not(:disabled),
+.quietButton:active:not(:disabled),
+.dangerButton:active:not(:disabled),
+.recoveryRow button:active:not(:disabled),
+.conflictActions button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.stateLine {
+  display: flex;
+  min-block-size: var(--space-5);
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.stateLine[data-state="saved"],
+.stateLine[data-state="complete"],
+.receipt,
+.noteReceipt {
+  color: var(--ink-soft);
+}
+
+.stateLine[data-state="offline"],
+.stateLine[data-state="pending"],
+.stateLine[data-state="saving"],
+.pending {
+  color: var(--ink-soft);
+}
+
+.stateLine[data-state="failed"],
+.stateLine[data-state="error"],
+.errorText,
+.failed {
+  color: var(--ink);
+}
+
+.errorText {
+  margin: 0;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.searchControls {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.searchControls .quietButton {
+  min-block-size: var(--control-h-sm);
+  padding-inline: var(--space-3);
+}
+
+.searchHighlight {
+  border-radius: var(--radius-sm);
+  background: var(--accent-tint);
+  color: inherit;
+  font-weight: inherit;
+}
+
+.searchBand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  inline-size: min(100%, var(--container));
+  align-items: center;
+  gap: var(--space-3);
+  margin-inline: auto;
+  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8));
+  border-block-end: 1px solid var(--hairline);
+  background: var(--paper);
+}
+
+.searchInput,
+.workspaceSelect {
+  min-block-size: var(--control-h-md);
+  min-inline-size: 0;
+  padding-inline: var(--space-3);
+}
+
+.searchMeta {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.workspaceSelect {
+  inline-size: min(100%, 20rem);
+  background: var(--paper);
+}
+
+.workspaceMessage {
+  inline-size: min(100%, var(--container));
+  margin-inline: auto;
+  padding: var(--space-3) clamp(var(--space-4), 4vw, var(--space-8));
+  border-block-end: 1px solid var(--hairline);
+}
+
+.workspaceMessage[data-state="error"] {
+  border-color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+  color: var(--ink);
+}
+
+.workspaceMessage[data-state="offline"] {
+  border-color: var(--status-flight);
+  background: var(--status-flight-bg);
+  color: var(--ink-soft);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.82fr) minmax(0, 1.18fr);
+  inline-size: min(100%, var(--container));
+  min-block-size: calc(100dvh - var(--nav-h));
+  margin-inline: auto;
+  background: var(--paper);
+}
+
+.streamPane,
+.detailPane {
+  min-inline-size: 0;
+}
+
+.streamPane {
+  border-inline-end: 1px solid var(--hairline);
+}
+
+.streamHeader {
+  display: flex;
+  min-block-size: var(--nav-h);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-block-end: 1px solid var(--hairline);
+  background: var(--paper);
+}
+
+.streamHeader h2,
+.streamHeader h3,
+.detailHeader h2,
+.detailHeader h3,
+.extractionHeader h3,
+.extractionHeader h4 {
+  margin: 0;
+}
+
+.streamHeader h2,
+.streamHeader h3 {
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.streamList,
+.previousList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noteItem {
+  min-inline-size: 0;
+  margin: 0;
+  border-block-end: 1px solid var(--hairline-soft);
+}
+
+.noteButton {
+  display: block;
+  inline-size: 100%;
+  min-block-size: var(--table-row-h);
+  padding: var(--space-4) var(--space-5);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+  transition:
+    background-color var(--motion-instant) var(--ease-out),
+    box-shadow var(--motion-instant) var(--ease-out);
+}
+
+.noteButton:hover {
+  background: var(--paper-soft);
+}
+
+.noteSelected,
+.noteButton[data-selected="true"],
+.noteItem[data-selected="true"] .noteButton {
+  background: var(--accent-tint);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.noteSelected:hover,
+.noteButton[data-selected="true"]:hover,
+.noteItem[data-selected="true"] .noteButton:hover {
+  background: var(--accent-tint);
+}
+
+.noteSelected .noteMeta,
+.noteButton[data-selected="true"] .noteMeta,
+.noteItem[data-selected="true"] .noteMeta {
+  color: var(--ink-soft);
+}
+
+.noteItem[data-state="pending"] .noteButton {
+  box-shadow: inset 2px 0 0 var(--status-flight);
+}
+
+.noteItem[data-state="failed"] .noteButton,
+.noteItem[data-state="error"] .noteButton {
+  box-shadow: inset 2px 0 0 var(--status-blocked);
+}
+
+.noteCopy {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-1);
+}
+
+.noteTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+  overflow-wrap: anywhere;
+}
+
+.noteSnippet {
+  display: -webkit-box;
+  max-inline-size: 70ch;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.noteMeta {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin-block-start: var(--space-1);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.noteReceipt {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.recoveryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-inline-start: 2px solid var(--status-blocked);
+  background: var(--status-blocked-bg);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+}
+
+.emptyState {
+  display: grid;
+  min-block-size: 14rem;
+  place-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5);
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.emptyState > * {
+  max-inline-size: 46ch;
+  margin: 0;
+}
+
+.detailPane {
+  padding: var(--space-6) clamp(var(--space-5), 4vw, var(--space-8)) var(--space-8);
+  background: var(--paper);
+}
+
+.detailHeader {
+  margin-block-end: var(--space-5);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--hairline);
+}
+
+.detailTitle {
+  max-inline-size: 72ch;
+  color: var(--ink);
+  font-size: var(--text-heading);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+  line-height: var(--leading-heading);
+  overflow-wrap: anywhere;
+}
+
+.detailMeta {
+  flex: 0 0 auto;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-align: end;
+  white-space: nowrap;
+}
+
+.detailTextarea {
+  display: block;
+  inline-size: min(100%, 72ch);
+  min-block-size: clamp(18rem, 46dvh, 34rem);
+  resize: vertical;
+  padding: 0 0 var(--space-4);
+  border: 0;
+  border-block-end: 1px solid var(--hairline);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  caret-color: var(--ink);
+  overflow-wrap: anywhere;
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+
+.detailTextarea:focus {
+  border-color: var(--accent);
+  outline: 0;
+  caret-color: var(--accent);
+}
+
+.detailTextarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.detailHelp {
+  inline-size: min(100%, 72ch);
+  margin-block-start: var(--space-2);
+}
+
+.detailToolbar {
+  inline-size: min(100%, 72ch);
+  justify-content: space-between;
+  margin-block-start: var(--space-5);
+}
+
+.selectionStatus {
+  inline-size: min(100%, 72ch);
+  margin-block-start: var(--space-3);
+}
+
+.extractionPanel {
+  inline-size: min(100%, 72ch);
+  margin-block-start: var(--space-8);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.privacyBoundary {
+  margin-block-end: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 2px solid var(--accent);
+  background: var(--accent-tint);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
+.privacyBoundary strong {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
+}
+
+.extractionHeader {
+  margin-block-end: var(--space-3);
+}
+
+.extractionHeader h3,
+.extractionHeader h4 {
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.extractionTextarea {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 7.5rem;
+  resize: vertical;
+  padding: var(--space-3) var(--space-4);
+  color: var(--ink);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  caret-color: var(--ink);
+}
+
+.extractionTextarea:focus {
+  caret-color: var(--accent);
+}
+
+.payloadReceipt {
+  margin-block-start: var(--space-2);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 1px solid var(--hairline);
+  font-family: var(--font-mono);
+}
+
+.receipt,
+.errorReceipt {
+  margin-block-start: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: 2px solid var(--status-done);
+  background: var(--status-done-bg);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
+.errorReceipt {
+  border-color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+  color: var(--ink);
+}
+
+.actionRow {
+  margin-block-start: var(--space-4);
+}
+
+.conflictPanel,
+.discardPanel {
+  inline-size: min(100%, 72ch);
+  margin-block-start: var(--space-6);
+  padding: var(--space-4);
+  border-block: 1px solid var(--status-flight);
+  background: var(--status-flight-bg);
+  color: var(--ink-soft);
+}
+
+.conflictPanel[data-state="error"] {
+  border-color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+}
+
+.conflictVersions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin-block: var(--space-4);
+}
+
+.conflictVersion {
+  min-inline-size: 0;
+  padding-inline-start: var(--space-4);
+  border-inline-start: 2px solid var(--status-flight);
+}
+
+.conflictVersion h3,
+.conflictVersion h4,
+.conflictVersion p,
+.conflictVersion pre {
+  margin-block-start: 0;
+  overflow-wrap: anywhere;
+}
+
+.conflictVersion pre {
+  max-block-size: 16rem;
+  overflow: auto;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  white-space: pre-wrap;
+}
+
+.conflictActions {
+  justify-content: flex-start;
+}
+
+.discardPanel {
+  border-color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+}
+
+.timelinePanel,
+.previousSection {
+  inline-size: min(100%, 72ch);
+  margin-block-start: var(--space-8);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.timelineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-block-start: var(--space-4);
+}
+
+.timelineFields input,
+.timelineFields select,
+.timelineFields textarea {
+  inline-size: 100%;
+  min-block-size: var(--control-h-md);
+  padding: var(--space-2) var(--space-3);
+}
+
+.timelineFields textarea {
+  grid-column: 1 / -1;
+  min-block-size: 6rem;
+  resize: vertical;
+}
+
+.toast {
+  position: fixed;
+  inset-inline-end: var(--space-5);
+  inset-block-end: var(--space-5);
+  z-index: 80;
+  max-inline-size: min(26rem, calc(100vw - (2 * var(--space-5))));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-float);
+  color: var(--ink);
+  font-size: var(--text-body-sm);
+  overflow-wrap: anywhere;
+}
+
+.toast[data-state="error"] {
+  border-color: var(--status-blocked);
+  background: var(--status-blocked-bg);
+}
+
+.toast[data-state="saved"],
+.toast[data-state="complete"] {
+  border-color: var(--status-done);
+  background: var(--status-done-bg);
+}
+
+.previousList {
+  margin-block-start: var(--space-3);
+}
+
+.previousRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--hairline-soft);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+}
+
+.previousRow > * {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+}
+
+.mobileOnly {
+  display: none;
+}
+
+.desktopOnly {
+  display: revert;
+}
+
+@media (max-width: 67.99rem) {
+  .notebookHeader {
+    padding-inline: var(--space-4);
+  }
+
+  .capture {
+    padding: var(--space-4);
+  }
+
+  .captureTextarea,
+  .detailTextarea,
+  .extractionTextarea,
+  .searchInput,
+  .workspaceSelect,
+  .timelineFields input,
+  .timelineFields select,
+  .timelineFields textarea {
+    font-size: 16px;
+  }
+
+  .captureFooter {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .captureActions {
+    inline-size: 100%;
+  }
+
+  .captureActions > * {
+    flex: 1 1 auto;
+  }
+
+  .searchBand {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-inline: var(--space-4);
+  }
+
+  .searchLabel {
+    grid-column: 1 / -1;
+  }
+
+  .searchInput {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .searchMeta {
+    text-align: start;
+    white-space: normal;
+  }
+
+  .searchControls {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    justify-content: flex-start;
+  }
+
+  .workspaceMessage {
+    padding-inline: var(--space-4);
+  }
+
+  .workspace {
+    display: block;
+    min-block-size: 0;
+  }
+
+  .streamPane {
+    border-inline-end: 0;
+  }
+
+  .streamHeader,
+  .noteButton,
+  .recoveryRow {
+    padding-inline: var(--space-4);
+  }
+
+  .noteButton {
+    min-block-size: 5rem;
+  }
+
+  .detailPane {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: none;
+    inline-size: 100%;
+    block-size: 100dvh;
+    min-block-size: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom));
+    background: var(--paper);
+  }
+
+  .detailPane[data-open="true"],
+  .detailPane[data-state="open"],
+  .detailPane[data-selected="true"] {
+    display: block;
+  }
+
+  .detailHeader {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    align-items: center;
+    margin-block-end: var(--space-5);
+    padding-block: calc(var(--space-4) + env(safe-area-inset-top)) var(--space-3);
+    background: var(--paper);
+  }
+
+  .detailHeader .quietButton {
+    min-block-size: 44px;
+  }
+
+  .detailTitle {
+    font-size: var(--text-body-lg);
+  }
+
+  .detailMeta {
+    white-space: normal;
+  }
+
+  .detailTextarea {
+    min-block-size: calc(100dvh - 14rem);
+  }
+
+  .detailToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detailToolbar > *,
+  .actionRow > * {
+    min-block-size: 44px;
+  }
+
+  .conflictVersions,
+  .timelineFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .timelineFields textarea {
+    grid-column: auto;
+  }
+
+  .toast {
+    inset-inline: var(--space-3);
+    inset-block-end: calc(var(--space-3) + env(safe-area-inset-bottom));
+    max-inline-size: none;
+  }
+
+  .previousRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mobileOnly {
+    display: revert;
+  }
+
+  .desktopOnly {
+    display: none;
+  }
+}
+
+@media (max-width: 22rem) {
+  .notebookHeader,
+  .identity {
+    align-items: flex-start;
+  }
+
+  .notebookHeader {
+    padding-block: var(--space-3);
+  }
+
+  .identity {
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .privateLabel {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+
+  .captureActions,
+  .actionRow,
+  .conflictActions {
+    align-items: stretch;
+    flex-direction: column;
+    inline-size: 100%;
+  }
+
+  .captureActions > *,
+  .actionRow > *,
+  .conflictActions > * {
+    inline-size: 100%;
+  }
+
+  .detailHeader,
+  .extractionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .detailMeta {
+    text-align: start;
+  }
+}
+
+@media (pointer: coarse) {
+  .primaryButton,
+  .quietButton,
+  .dangerButton,
+  .recoveryRow button,
+  .conflictActions button,
+  .searchInput,
+  .workspaceSelect {
+    min-block-size: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .capture:focus-within .captureLabel::after {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .root :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .wordmarkDot,
+  .noteReceipt,
+  .receipt {
+    color: LinkText;
+  }
+
+  .captureLabel::after {
+    background: CanvasText;
+  }
+
+  .primaryButton,
+  .quietButton,
+  .dangerButton,
+  .recoveryRow button,
+  .conflictActions button,
+  .captureTextarea,
+  .searchInput,
+  .workspaceSelect,
+  .extractionTextarea,
+  .timelineFields input,
+  .timelineFields select,
+  .timelineFields textarea {
+    border: 1px solid ButtonText;
+  }
+
+  .noteSelected,
+  .noteButton[data-selected="true"],
+  .noteItem[data-selected="true"] .noteButton {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    background: Canvas;
+    box-shadow: none;
+  }
+
+  .noteItem[data-state="pending"] .noteButton,
+  .noteItem[data-state="failed"] .noteButton,
+  .noteItem[data-state="error"] .noteButton,
+  .privacyBoundary,
+  .receipt,
+  .errorReceipt,
+  .recoveryRow,
+  .conflictPanel,
+  .discardPanel,
+  .toast {
+    border: 2px solid CanvasText;
+    background: Canvas;
+  }
+
+  .pending,
+  .failed,
+  .errorText,
+  .errorReceipt {
+    color: CanvasText;
+  }
+}

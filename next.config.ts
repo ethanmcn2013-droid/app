@@ -63,6 +63,21 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
 ];
 
+// AD-012: /embed/[slug] is a documented framable surface — partners and venue
+// pages iframe it to show a live task board. A blocking X-Frame-Options on
+// /embed cannot be neutralised by CSP frame-ancestors while the CSP ships
+// Report-Only (browsers only let an ENFORCED frame-ancestors override XFO),
+// so /embed must receive no X-Frame-Options at all: the global rule excludes
+// /embed/* via negative lookahead, and /embed/:path* gets the full security
+// header set minus XFO, with frame-ancestors * in its CSP.
+const embedCsp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+const embedFrameHeaders = [
+  { key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: embedCsp },
+  ...securityHeaders.filter(
+    (h) => h.key !== "X-Frame-Options" && !h.key.startsWith("Content-Security-Policy"),
+  ),
+];
+
 const nextConfig: NextConfig = {
   env: {
     // Build-time, non-secret deployment posture used by shared server/client
@@ -79,9 +94,18 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Global baseline — every route EXCEPT /embed/* (AD-012: embed pages
+      // must not receive X-Frame-Options; the exception entry below carries
+      // the rest of the security headers for them).
       {
-        source: "/(.*)",
+        source: "/((?!embed/).*)",
         headers: securityHeaders,
+      },
+      // AD-012: embed exception — framable surface: full security header set
+      // minus X-Frame-Options, CSP with frame-ancestors *.
+      {
+        source: "/embed/:path*",
+        headers: embedFrameHeaders,
       },
     ];
   },

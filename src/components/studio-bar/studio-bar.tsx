@@ -27,6 +27,7 @@
  */
 
 import { useSyncExternalStore } from "react";
+import { usePathname } from "next/navigation";
 import { STUDIO_URL } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
@@ -58,22 +59,45 @@ function markCell() {
 }
 
 /**
- * Static "Tasks" wordmark + licence-edition slot. Occupies the 248px
+ * Module identity for the 248px cell: the wordmark follows the ACTIVE module
+ * (unified app, Phase 9) using the exact approved wordmark treatment — only
+ * the string and its home link change. Tasks remains the default for all
+ * Tasks-owned routes.
+ */
+const MODULE_IDENTITY: ReadonlyArray<{ prefix: string; word: string; home: string }> = [
+  { prefix: "/app/notes", word: "notes", home: "/app/notes" },
+  { prefix: "/app/plan", word: "timeline", home: "/app/plan" },
+  { prefix: "/app/brief", word: "signal", home: "/app/brief" },
+];
+
+function activeModuleIdentity(pathname: string): { word: string; home: string; label: string } {
+  for (const m of MODULE_IDENTITY) {
+    if (pathname === m.prefix || pathname.startsWith(m.prefix + "/")) {
+      return { word: m.word, home: m.home, label: m.word[0].toUpperCase() + m.word.slice(1) };
+    }
+  }
+  return { word: "tasks", home: "/app/board", label: "Tasks" };
+}
+
+/**
+ * Module wordmark + licence-edition slot. Occupies the 248px
  * identity cell over the sidebar. The wordmark is a plain link to the
- * board (no dropdown behaviour, no chevron); the edition label renders
- * only when the account carries a named edition (bound to real
- * entitlement data — see editionLabel()), otherwise the slot is empty.
+ * active module's home (no dropdown behaviour, no chevron); the edition
+ * label renders only when the account carries a named edition (bound to
+ * real entitlement data — see editionLabel()), otherwise the slot is empty.
  */
 function IdentityCell({ edition }: { edition: string | null }) {
+  const pathname = usePathname();
+  const identity = activeModuleIdentity(pathname ?? "");
   return (
     <div className="hidden h-full w-[248px] flex-none items-center gap-2.5 border-r border-white/[0.07] px-4 md:flex">
       <a
-        href="/app/board"
-        aria-label="Tasks"
+        href={identity.home}
+        aria-label={identity.label}
         className="flex-none select-none rounded text-[27px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
         style={{ letterSpacing: "-0.05em" }}
       >
-        tasks
+        {identity.word}
       </a>
       {edition ? (
         <span
