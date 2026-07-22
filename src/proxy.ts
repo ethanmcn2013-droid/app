@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
-import { isDemoMode } from "@/lib/access-mode";
+import { isDemoMode, isProductionMode } from "@/lib/access-mode";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -151,6 +151,20 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
   if (isDemoMode()) return NextResponse.next();
+  if (!clerkConfigured) {
+    // Never hand an unkeyed request to clerkMiddleware() — it throws
+    // "Missing publishableKey" at the edge before our inner handler runs
+    // (this crashed preview deploys that briefly resolved to production
+    // mode without Clerk keys). Fail CLOSED on a real production
+    // deployment; pass through on preview/dev builds that legitimately
+    // run keyless.
+    if (isProductionMode()) {
+      return new NextResponse("Authentication is not configured.", {
+        status: 503,
+      });
+    }
+    return NextResponse.next();
+  }
   return productionProxy(req, event);
 }
 

@@ -56,7 +56,14 @@ export function getAccessMode(): AccessMode {
     process.env.DEMO_MODE === "true";
   if (legacyDemo) return isProductionDeployment() ? "production" : "demo";
 
-  return process.env.NODE_ENV === "production" ? "production" : "development";
+  // Vercel sets NODE_ENV=production on every build, previews included, so
+  // NODE_ENV alone cannot tell a preview from production. Only a genuine
+  // production deployment defaults to the locked "production" posture; a
+  // preview build with no explicit mode defaults to the public "review"
+  // posture (keyless, seed-data) instead of resolving to production and
+  // crashing on absent prod-only secrets (e.g. the edge proxy's Clerk keys).
+  if (process.env.NODE_ENV !== "production") return "development";
+  return isProductionDeployment() ? "production" : "review";
 }
 
 /** Production deployments never accept the public demo/review posture. */
