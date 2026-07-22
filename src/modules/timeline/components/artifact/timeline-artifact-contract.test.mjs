@@ -5,6 +5,10 @@ import { test } from "node:test";
 const artifact = readFileSync(new URL("./timeline-artifact.tsx", import.meta.url), "utf8");
 const phonePreview = readFileSync(new URL("./timeline-phone-preview.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("./timeline-artifact.module.css", import.meta.url), "utf8");
+const studioStyles = readFileSync(
+  new URL("../../app/audience/artifact-studio.module.css", import.meta.url),
+  "utf8",
+);
 
 test("the artifact keeps the locked Option D identity and line-first hierarchy", () => {
   assert.match(artifact, /data-timeline-wordmark/);
@@ -38,4 +42,10 @@ test("motion has a reduced-motion path and the metric swaps as a single face", (
   assert.match(artifact, /useReducedMotion/);
   assert.match(artifact, /<AnimatePresence initial=\{false\} mode="wait"/);
   assert.match(styles, /prefers-reduced-motion:\s*reduce/);
+});
+
+test("the owner studio owns vertical scrolling inside the app shell", () => {
+  assert.match(studioStyles, /\.studio\s*\{[\s\S]*?height:\s*100%;/);
+  assert.match(studioStyles, /\.studio\s*\{[\s\S]*?min-height:\s*0;/);
+  assert.match(studioStyles, /\.studio\s*\{[\s\S]*?overflow-y:\s*auto;/);
 });
