@@ -145,6 +145,34 @@ for (const mod of MODULES) {
 
 /* ── Rule 2: modules are only imported by their own route or themselves ── */
 
+/**
+ * GDPR orchestrator exemption (Phase 2 GDPR work, 2026-07-22).
+ *
+ * The unified account-export and account-erasure orchestrators in src/server/
+ * are cross-cutting GDPR concerns that must compose per-module export/erase
+ * functions. Each module exposes a narrow GDPR surface
+ * (`src/modules/<m>/server/<m>-gdpr.ts`) imported ONLY by the two designated
+ * orchestrator files below. No other src/server/ file may import from modules.
+ *
+ * Each entry maps a module name to the set of absolute file paths that are
+ * permitted to import from that module's gdpr surface.
+ */
+// account.ts is the production binding file that imports real module functions
+// and real DB singletons. The two injectable files (account-unified-export.ts
+// and account-unified-erasure.ts) are pure functions with no module imports.
+const GDPR_ORCHESTRATOR_FILES = new Set([
+  path.join(srcDir, "server", "account.ts"),
+]);
+
+// The specific import path each module exposes for GDPR (relative to the
+// module server dir). Only this exact path is allowed; all other module
+// internals remain off-limits to orchestrator files.
+const MODULE_GDPR_IMPORT = {
+  notes: `@/modules/notes/server/notes-gdpr`,
+  timeline: `@/modules/timeline/server/timeline-gdpr`,
+  signal: `@/modules/signal/server/signal-gdpr`,
+};
+
 // Collect all source files outside each module to check their imports.
 const allSrcFiles = walk(srcDir);
 
@@ -184,7 +212,15 @@ for (const mod of MODULES) {
 
       // File is outside the module. Is it in the allowed route segment?
       const inAllowedDir = allowedDirs.some((d) => file.startsWith(d));
-      if (!inAllowedDir) {
+
+      // GDPR orchestrator exemption: a designated orchestrator file may import
+      // ONLY the module's specific gdpr surface, not any other module path.
+      const isGdprOrchestratorForThisModule =
+        GDPR_ORCHESTRATOR_FILES.has(file) &&
+        (imp === MODULE_GDPR_IMPORT[mod] ||
+          imp.startsWith(MODULE_GDPR_IMPORT[mod] + "/"));
+
+      if (!inAllowedDir && !isGdprOrchestratorForThisModule) {
         failures.push(
           `[rule-2] ${rel(file)}: imports from src/modules/${mod} but is not ` +
             `inside src/app/app/${segment}/ or src/modules/${mod}/. ` +
