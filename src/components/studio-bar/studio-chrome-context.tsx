@@ -138,7 +138,10 @@ export function StudioChromeBridge() {
   const { openPalette } = usePalette();
   const { openDialog } = useAddTask();
   useEffect(() => {
-    const onPalette = () => openPalette();
+    const onPalette = (e: Event) => {
+      const query = (e as CustomEvent<{ query?: string }>).detail?.query;
+      openPalette(query ?? "");
+    };
     const onCreate = () => openDialog();
     window.addEventListener(STUDIO_PALETTE_EVENT, onPalette);
     window.addEventListener(STUDIO_CREATE_EVENT, onCreate);

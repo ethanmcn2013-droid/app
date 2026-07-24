@@ -33,7 +33,13 @@ import {
   type ScopeOption,
 } from "@/components/ui/scope-search";
 
-type Ctx = { open: boolean; openPalette: () => void; closePalette: () => void };
+type Ctx = {
+  open: boolean;
+  /** Optionally seed the search field (e.g. from the Studio Bar's inline
+   *  Search-Expand affordance handing off what the user typed). */
+  openPalette: (initialQuery?: string) => void;
+  closePalette: () => void;
+};
 const PaletteContext = createContext<Ctx | null>(null);
 
 /**
@@ -56,15 +62,16 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(0);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef(true);
-  const openPalette = useCallback(() => {
+  const openPalette = useCallback((initialQuery = "") => {
     // Reset the search in the same event batch that opens the dialog so
-    // stale results can never flash during the entrance animation.
+    // stale results can never flash during the entrance animation. An
+    // optional seed lets the Studio Bar's inline field hand off its text.
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     restoreFocusRef.current = true;
-    setQuery("");
+    setQuery(initialQuery);
     setChips([]);
     setActive(0);
     setOpen(true);
