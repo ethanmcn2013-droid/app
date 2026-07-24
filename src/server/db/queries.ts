@@ -161,7 +161,11 @@ export async function getSubtasks(
         eq(tasks.parentTaskId, parentTaskId),
       ),
     )
-    .orderBy(asc(tasks.createdAt))
+    // Position-first (the board's ordering contract), createdAt as the
+    // stable tiebreak — so the detail-panel checklist can be reordered and
+    // the new order persists. Subtasks already carry a position from
+    // creation (nextPositionForLane), so pre-reorder order is unchanged.
+    .orderBy(asc(tasks.position), asc(tasks.createdAt))
     // Bound the detail-panel subtask list. One level of nesting only; a
     // task with hundreds of subtasks is already pathological, cap so a
     // runaway parent can't balloon the panel payload.

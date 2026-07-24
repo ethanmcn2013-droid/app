@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Task } from "@/lib/data";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { ReorderList, positionForDrop } from "@/components/ui/reorder-list";
 import {
   addTaskAction,
   getSubtasksAction,
@@ -136,6 +137,37 @@ export function SubtasksSection({ task }: { task: Task }) {
     [task.id],
   );
 
+  // Drag / keyboard reorder the checklist. Optimistic local order, then
+  // persist the moved row's gap-numbered position via the existing
+  // updateTaskAction (the board's position contract — no new backend).
+  // Temp (optimistic) rows have no server id yet, so they reorder locally
+  // only; the next refetch resolves their real order.
+  const reorder = useCallback(
+    (
+      next: (Task & { label: string })[],
+      moved: { id: string; from: number; to: number },
+    ) => {
+      const position = positionForDrop(
+        next.map((s) => s.position),
+        moved.to,
+      );
+      setSubtasks(
+        next.map((s) => (s.id === moved.id ? { ...s, position } : s)),
+      );
+      if (moved.id.startsWith("temp-")) return;
+      startServerSync(async () => {
+        try {
+          await updateTaskAction(moved.id, { position });
+        } catch (err) {
+          console.warn("subtasks: reorder failed; reverting", err);
+          const fresh = await getSubtasksAction(task.id);
+          setSubtasks(fresh);
+        }
+      });
+    },
+    [task.id],
+  );
+
   // Loading: render nothing rather than flashing an empty header, the
   // first paint after the parent loads is fast enough that a skeleton
   // would be more distracting than helpful.
@@ -163,16 +195,18 @@ export function SubtasksSection({ task }: { task: Task }) {
           {done} of {total} done
         </span>
       </div>
-      <ul className="flex flex-col">
-        {subtasks.map((sub) => (
+      <ReorderList
+        items={subtasks.map((s) => ({ ...s, label: s.title }))}
+        onReorder={reorder}
+        ariaLabel="Subtasks, reorderable"
+        renderItem={(sub) => (
           <SubtaskRow
-            key={sub.id}
             subtask={sub}
             onToggle={() => toggle(sub)}
             onOpen={() => openTask(sub.id)}
           />
-        ))}
-      </ul>
+        )}
+      />
       <div className="mt-1.5">
         <SubtaskComposer onAdd={add} />
       </div>
@@ -193,7 +227,7 @@ function SubtaskRow({
   // Temp (optimistic) rows aren't openable, they have no real id yet.
   const openable = !subtask.id.startsWith("temp-");
   return (
-    <li className="group flex items-center gap-2 rounded-md py-[5px]">
+    <div className="group flex items-center gap-2 py-[5px]">
       <button
         type="button"
         onClick={onToggle}
@@ -219,7 +253,7 @@ function SubtaskRow({
       >
         {subtask.title}
       </button>
-    </li>
+    </div>
   );
 }
 
