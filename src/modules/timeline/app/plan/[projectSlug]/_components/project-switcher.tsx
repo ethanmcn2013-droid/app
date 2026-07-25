@@ -4,7 +4,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FocusEvent,
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
@@ -128,19 +127,8 @@ export function ProjectSwitcher({
     }
   }
 
-  function handleBlur(event: FocusEvent<HTMLDivElement>) {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setOpen(false);
-    }
-  }
-
   return (
-    <div
-      ref={rootRef}
-      className="relative"
-      onBlur={handleBlur}
-      data-project-switcher
-    >
+    <div ref={rootRef} className="relative" data-project-switcher>
       <button
         ref={triggerRef}
         type="button"

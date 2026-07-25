@@ -18,6 +18,15 @@ test.describe("Timeline project switcher", () => {
     await switcher().click();
     const options = page.getByRole("menuitem");
     await expect(options.first()).toHaveText("All projects");
+    const currentOption = page.getByRole("menuitem", {
+      name: /Product Roadmap/,
+    });
+    await expect(currentOption).toBeFocused();
+    await currentOption.dispatchEvent("focusout", {
+      bubbles: true,
+      relatedTarget: null,
+    });
+    await expect(page.getByRole("menu")).toBeVisible();
     await page.getByRole("menuitem", { name: "Launch", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/plan\/launch\?workspaceId=tasks$/);
     await expect(
