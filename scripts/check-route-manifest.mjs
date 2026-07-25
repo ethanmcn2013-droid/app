@@ -4,8 +4,8 @@
  * Route-manifest characterisation gate — guards every known route segment
  * directory under src/app against silent deletion.
  *
- * The manifest is the full set of route directories that existed when this
- * gate was written (migration/unified-app, 2026-07-20). If any listed
+ * The manifest is the full set of canonical route directories after the
+ * one-app product URL migration (2026-07-25). If any listed
  * directory stops existing the gate fails, surfacing the accidental drop
  * before it reaches CI or a phase merge.
  *
@@ -36,19 +36,23 @@ const MANIFEST = [
   // ── Product /app routes ──────────────────────────────────────────────────
   "app",
   "app/archived",
-  "app/board",
-  "app/brief",
-  "app/calendar",
   "app/import",
   "app/inbox",
-  "app/list",
   "app/my-tasks",
   "app/notes",
-  "app/plan",
-  "app/plan/[projectSlug]",
-  "app/plan/audience",
   "app/settings",
+  "app/signal",
+  "app/signal/onboarding",
+  "app/signal/settings",
+  "app/signal/settings/notifications",
+  "app/tasks",
+  "app/tasks/calendar",
+  "app/tasks/list",
+  "app/tasks/timeline",
   "app/timeline",
+  "app/timeline/[projectSlug]",
+  "app/timeline/audience",
+  "app/timeline/audience/[publicationId]",
   "app/your-work",
 
   // ── Sharing / collaboration surface routes ───────────────────────────────
