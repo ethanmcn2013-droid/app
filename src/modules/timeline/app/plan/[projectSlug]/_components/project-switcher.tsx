@@ -29,7 +29,7 @@ export function ProjectSwitcher({
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const optionRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const currentIndex = Math.max(
     1,
     projects.findIndex((project) => project.slug === currentProject.slug) + 1,
@@ -177,17 +177,18 @@ export function ProjectSwitcher({
         >
           {options.map((option, index) => {
             const isCurrent = option?.slug === currentProject.slug;
+            const href = buildTimelineProjectHref(option?.slug ?? null, context);
             return (
-              <button
+              <Link
                 key={option?.slug ?? "all-projects"}
+                href={href}
                 ref={(node) => {
                   optionRefs.current[index] = node;
                 }}
                 role="menuitem"
-                type="button"
                 aria-current={isCurrent ? "page" : undefined}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => choose(index)}
+                onClick={() => setOpen(false)}
                 className="flex min-h-11 w-full items-center justify-between gap-5 rounded-lg px-3 text-left text-[13px] text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus:bg-bg-sunken focus:text-ink"
               >
                 <span className="truncate">
@@ -199,7 +200,7 @@ export function ProjectSwitcher({
                     className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand"
                   />
                 ) : null}
-              </button>
+              </Link>
             );
           })}
         </div>
