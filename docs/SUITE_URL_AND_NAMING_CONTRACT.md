@@ -22,12 +22,23 @@ Use the full name on marketing pages and at first reference in longer public cop
 | Intent | Notes | Tasks | Timeline | Signal |
 |---|---|---|---|---|
 | Marketing | `https://signalstudio.ie/notes` | `https://signalstudio.ie/tasks` | `https://signalstudio.ie/timeline` | `https://signalstudio.ie/signal` |
-| In-app | `https://app.signalstudio.ie/app/notes` | `https://app.signalstudio.ie/app/board` | `https://app.signalstudio.ie/app/plan` | `https://app.signalstudio.ie/app/brief` |
+| In-app | `https://app.signalstudio.ie/app/notes` | `https://app.signalstudio.ie/app/tasks` | `https://app.signalstudio.ie/app/timeline` | `https://app.signalstudio.ie/app/signal` |
 
 `https://signalstudio.ie` is the single marketing origin.  
 `https://app.signalstudio.ie` is the single signed-in app origin.
 
 Product marketing pages are paths, not URL fragments and not separate marketing sites. Cross-product navigation inside the app stays on `app.signalstudio.ie`.
+
+Tasks views live below the Tasks product entry:
+
+- Board: `/app/tasks`
+- List: `/app/tasks/list`
+- Timeline view: `/app/tasks/timeline`
+- Calendar: `/app/tasks/calendar`
+
+“Timeline” without the Tasks namespace always means the Signal Timeline
+product. “Signal” is the product name; “brief” is a view inside Signal, not a
+route or product label.
 
 ## Narrow public and service hosts
 
@@ -68,3 +79,17 @@ For any future URL move:
 4. preserve public artifact routes and tokens;
 5. test signed-out, signed-in, mobile, direct reload, and back/forward behavior;
 6. update this file, the Studio contract, and the executable URL constants together.
+
+The 2026-07-25 canonical migration is:
+
+| Retired path | Canonical path |
+|---|---|
+| `/app/board` | `/app/tasks` |
+| `/app/list` | `/app/tasks/list` |
+| `/app/calendar` | `/app/tasks/calendar` |
+| `/app/plan/*` | `/app/timeline/*` |
+| `/app/brief/*` | `/app/signal/*` |
+
+The former Tasks view at `/app/timeline` moved to `/app/tasks/timeline`; that
+one collision cannot redirect because the product route now owns the canonical
+path.

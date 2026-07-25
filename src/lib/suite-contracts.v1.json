@@ -25,7 +25,7 @@
       "name": "Signal Tasks",
       "canonicalUrl": "https://signalstudio.ie/tasks",
       "marketingUrl": "https://signalstudio.ie/tasks",
-      "appUrl": "https://app.signalstudio.ie/app/board",
+      "appUrl": "https://app.signalstudio.ie/app/tasks",
       "publicOrigin": "https://tasks.signalstudio.ie",
       "legacyOrigins": ["https://tasks.signalstudio.ie"],
       "surface": "execution",
@@ -35,7 +35,7 @@
       "name": "Signal Timeline",
       "canonicalUrl": "https://signalstudio.ie/timeline",
       "marketingUrl": "https://signalstudio.ie/timeline",
-      "appUrl": "https://app.signalstudio.ie/app/plan",
+      "appUrl": "https://app.signalstudio.ie/app/timeline",
       "publicOrigin": "https://timeline.signalstudio.ie",
       "legacyOrigins": [
         "https://timeline.signalstudio.ie",
@@ -48,7 +48,7 @@
       "name": "Signal",
       "canonicalUrl": "https://signalstudio.ie/signal",
       "marketingUrl": "https://signalstudio.ie/signal",
-      "appUrl": "https://app.signalstudio.ie/app/brief",
+      "appUrl": "https://app.signalstudio.ie/app/signal",
       "legacyOrigins": [
         "https://signal.signalstudio.ie",
         "https://analytics.signalstudio.ie"

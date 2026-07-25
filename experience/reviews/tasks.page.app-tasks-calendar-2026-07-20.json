@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-tasks-calendar",
+  "source": "tasks/src/app/app/tasks/calendar/page.tsx",
+  "materialityHash": "e6572d73e8304e38",
+  "reviewedAt": "2026-07-25",
+  "reviewer": "Codex canonical route review",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-b59dd8742aedb3163db41802-c1ad0ae47f53a684.json",
+    "attestationSha256": "17bbe3644cc907a29a354bf6f24dc1df04a8f18f9987b83389969805b46a07ac",
+    "runId": "tasks-playwright-b59dd8742aedb3163db41802",
+    "canonicalEvidenceSha256": "b59dd8742aedb3163db4180285c1cc5c9ef9692166c5e7d1c14ab5dd639fe95e",
+    "rawArtifactSha256": "c1ad0ae47f53a684e63c8d328fbc9adb49282b2fb07732e81154f63133f8eaeb",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "desktop"
+    ]
+  },
+  "reviewedChange": "Canonical Signal Studio product routes and compatibility redirects; approved Tasks interiors remain unchanged.",
+  "decision": "Accepted after the production-build browser matrix passed all 60 mobile and desktop cases."
+}

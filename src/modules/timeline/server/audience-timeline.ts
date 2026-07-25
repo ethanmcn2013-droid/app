@@ -49,6 +49,7 @@ export function audienceTimelineEnabled(): boolean {
 
 export type AudienceOwnerItem = Readonly<{
   publicId: string;
+  sourceRelation: string;
   title: string;
   calendarDate: string | null;
   state: AudienceItemState;
@@ -198,6 +199,7 @@ const DEMO_OWNER_PUBLICATION: AudienceOwnerPublication = {
   items: DEMO_AUDIENCE_DTO.sections.flatMap((section) =>
     section.items.map((item, sortOrder) => ({
       publicId: item.publicId,
+      sourceRelation: `tasks-product-${String((sortOrder % 7) + 1).padStart(3, "0")}`,
       title: item.title,
       calendarDate: item.date ?? null,
       state: item.state,
@@ -455,6 +457,7 @@ export async function getOwnerAudiencePublications(
       .select({
         publicId: timelinePublicationItems.publicId,
         publicationId: timelinePublicationItems.publicationId,
+        sourceRelation: timelinePublicationItems.sourceRelation,
         title: timelinePublicationItems.title,
         calendarDate: timelinePublicationItems.calendarDate,
         state: timelinePublicationItems.state,
@@ -488,6 +491,7 @@ export async function getOwnerAudiencePublications(
       .filter((item) => item.publicationId === publication.id)
       .map((item) => ({
         publicId: item.publicId,
+        sourceRelation: item.sourceRelation,
         title: item.title,
         calendarDate: item.calendarDate,
         state: item.state,

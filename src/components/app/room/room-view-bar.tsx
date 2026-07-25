@@ -29,10 +29,10 @@ import styles from "./option-b.module.css";
 import shared from "./room-shared.module.css";
 
 const TABS: Array<{ href: string; view: RoomView; label: string; purpose: string }> = [
-  { href: "/app/board", view: "board", label: "Board", purpose: "Move and prioritize work by status" },
-  { href: "/app/list", view: "list", label: "List", purpose: "Scan and edit operational task fields" },
-  { href: "/app/timeline", view: "timeline", label: "Timeline", purpose: "Plan dated work and explicit unscheduled tasks" },
-  { href: "/app/calendar", view: "calendar", label: "Calendar", purpose: "Review commitments by day, week, or agenda" },
+  { href: "/app/tasks", view: "board", label: "Board", purpose: "Move and prioritize work by status" },
+  { href: "/app/tasks/list", view: "list", label: "List", purpose: "Scan and edit operational task fields" },
+  { href: "/app/tasks/timeline", view: "timeline", label: "Timeline", purpose: "Plan dated work and explicit unscheduled tasks" },
+  { href: "/app/tasks/calendar", view: "calendar", label: "Calendar", purpose: "Review commitments by day, week, or agenda" },
 ];
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
@@ -54,9 +54,9 @@ const labButtonWrap =
 type ToolPanel = "filter" | "sort" | "save" | null;
 
 function currentView(pathname: string): RoomView {
-  if (pathname.startsWith("/app/list")) return "list";
-  if (pathname.startsWith("/app/timeline")) return "timeline";
-  if (pathname.startsWith("/app/calendar")) return "calendar";
+  if (pathname.startsWith("/app/tasks/list")) return "list";
+  if (pathname.startsWith("/app/tasks/timeline")) return "timeline";
+  if (pathname.startsWith("/app/tasks/calendar")) return "calendar";
   return "board";
 }
 
@@ -104,7 +104,7 @@ function ToolPanelShell({
 }
 
 export function RoomViewBar() {
-  const pathname = usePathname() ?? "/app/board";
+  const pathname = usePathname() ?? "/app/tasks";
   const view = currentView(pathname);
   const {
     priority,

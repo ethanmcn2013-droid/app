@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
  * we say so plainly.
  *
  * The accept itself is a client-island button (`<AcceptInviteButton>`)
- * that calls `acceptInviteAction` and routes to `/app/board` on success.
+ * that calls `acceptInviteAction` and routes to `/app/tasks` on success.
  */
 
 type InvitePreview =
@@ -95,7 +95,7 @@ export default async function InviteAcceptPage({
 
   // If the invite is already accepted, send the user straight to the app.
   if (preview.state === "accepted") {
-    redirect("/app/board?invite=already-accepted");
+    redirect("/app/tasks?invite=already-accepted");
   }
 
   const me = await getCurrentUserOrNull();

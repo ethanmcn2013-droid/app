@@ -1,6 +1,15 @@
-import { HybridWorkspace } from "@/components/hybrid/hybrid-workspace";
+import "@/modules/timeline/timeline.css";
+import { requireAppAccess } from "@/server/require-app-access";
+import { TimelineHome } from "@/modules/timeline";
 
-// Hybrid parity (T·99, 2026-07-19): see list/page.tsx.
-export default function TimelinePage() {
-  return <HybridWorkspace view="timeline" />;
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Timeline · Signal Studio" };
+
+export default async function TimelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
+}) {
+  await requireAppAccess();
+  return <TimelineHome searchParams={searchParams} />;
 }

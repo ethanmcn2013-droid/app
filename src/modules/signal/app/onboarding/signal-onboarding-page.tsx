@@ -13,7 +13,7 @@ import { SignalOnboardingPicker } from "./signal-onboarding-picker";
  *
  * S1: self-referential "come back" href updated to /app/brief/onboarding.
  *     Redirect after onboarding goes to /app/brief (via completeOnboarding).
- * S5: TASKS_URL external link → /app/board (in-app board, internal path).
+ * S5: TASKS_URL external link → /app/tasks (in-app board, internal path).
  * S3: no SendTestButton.
  * Demo: isDemoMode() bypasses auth + DB, serves mock candidates.
  */
@@ -30,7 +30,7 @@ export async function SignalOnboardingPage() {
     if (!userId) redirect("/sign-in");
 
     if (await isOnboarded(userId)) {
-      redirect("/app/brief");
+      redirect("/app/signal");
     }
 
     const me = await currentUser();
@@ -95,9 +95,9 @@ export async function SignalOnboardingPage() {
             background: "var(--bg-elev)",
           }}
         >
-          {/* S5: TASKS_URL rewritten to in-app /app/board */}
+          {/* S5: TASKS_URL rewritten to in-app /app/tasks */}
           <a
-            href="/app/board"
+            href="/app/tasks"
             style={{
               fontSize: 14,
               color: "var(--brand)",
@@ -117,7 +117,7 @@ export async function SignalOnboardingPage() {
           >
             Once you have a workspace,{" "}
             <a
-              href="/app/brief/onboarding"
+              href="/app/signal/onboarding"
               style={{ color: "var(--ink-soft)", textDecoration: "underline" }}
             >
               come back to this tab and try again

@@ -66,8 +66,9 @@ function markCell() {
  */
 const MODULE_IDENTITY: ReadonlyArray<{ prefix: string; word: string; home: string }> = [
   { prefix: "/app/notes", word: "notes", home: "/app/notes" },
-  { prefix: "/app/plan", word: "timeline", home: "/app/plan" },
-  { prefix: "/app/brief", word: "signal", home: "/app/brief" },
+  { prefix: "/app/tasks", word: "tasks", home: "/app/tasks" },
+  { prefix: "/app/timeline", word: "timeline", home: "/app/timeline" },
+  { prefix: "/app/signal", word: "signal", home: "/app/signal" },
 ];
 
 function activeModuleIdentity(pathname: string): { word: string; home: string; label: string } {
@@ -76,7 +77,7 @@ function activeModuleIdentity(pathname: string): { word: string; home: string; l
       return { word: m.word, home: m.home, label: m.word[0].toUpperCase() + m.word.slice(1) };
     }
   }
-  return { word: "tasks", home: "/app/board", label: "Tasks" };
+  return { word: "tasks", home: "/app/tasks", label: "Tasks" };
 }
 
 /**
@@ -125,6 +126,11 @@ function useCommandKeyLabel(): string {
 export function StudioBar() {
   const { data } = useStudioChrome();
   const keyLabel = useCommandKeyLabel();
+  const pathname = usePathname() ?? "";
+  const tasksSurface =
+    !pathname.startsWith("/app/notes") &&
+    !pathname.startsWith("/app/timeline") &&
+    !pathname.startsWith("/app/signal");
 
   return (
     <header
@@ -199,27 +205,29 @@ export function StudioBar() {
           </svg>
         </button>
 
-        <button
-          type="button"
-          title="New task (C)"
-          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-          className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[12px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)]"
-        >
-          <svg
-            aria-hidden="true"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
+        {tasksSurface ? (
+          <button
+            type="button"
+            title="New task (C)"
+            onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
+            className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[12px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)]"
           >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span className="hidden sm:block">New task</span>
-        </button>
+            <svg
+              aria-hidden="true"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span className="hidden sm:block">New task</span>
+          </button>
+        ) : null}
         {/* Account avatar. On desktop (md+) it lives at the foot of the
             product rail (bottom-left of the L-frame); here it renders only
             below md, where the rail is hidden and the bar owns account

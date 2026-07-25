@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       taskId: existing.id,
       workspaceName: ws?.name ?? "Tasks",
       workspaceSlug: ws?.slug ?? "",
-      taskUrl: `${siteOrigin()}/app/board?taskId=${encodeURIComponent(existing.id)}`,
+      taskUrl: `${siteOrigin()}/app/tasks?taskId=${encodeURIComponent(existing.id)}`,
       created: false,
     });
   }
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
     taskId,
     workspaceName: ws?.name ?? "Tasks",
     workspaceSlug: ws?.slug ?? "",
-    taskUrl: `${siteOrigin()}/app/board?taskId=${encodeURIComponent(taskId)}`,
+    taskUrl: `${siteOrigin()}/app/tasks?taskId=${encodeURIComponent(taskId)}`,
     created: true,
   });
 }

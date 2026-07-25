@@ -16,10 +16,10 @@ import {
  *
  * Two modes:
  *   - `apply` (default): adds the template's tasks to the user's
- *     active workspace, then routes to `/app/board?templated=<id>`.
+ *     active workspace, then routes to `/app/tasks?templated=<id>`.
  *   - `remix`: mints a fresh workspace seeded with the template,
  *     flips the active-workspace cookie to it, then routes to
- *     `/app/board?remixed=<id>`. Lets users keep templates as
+ *     `/app/tasks?remixed=<id>`. Lets users keep templates as
  *     personal copies they can edit freely without polluting their
  *     real working list.
  */
@@ -53,12 +53,12 @@ export function ApplyTemplateButton({
         if (mode === "remix") {
           await remixTemplateAction(templateId);
           router.push(
-            `/app/board?remixed=${encodeURIComponent(templateId)}`,
+            `/app/tasks?remixed=${encodeURIComponent(templateId)}`,
           );
         } else {
           await applyTemplateAction(templateId);
           router.push(
-            `/app/board?templated=${encodeURIComponent(templateId)}`,
+            `/app/tasks?templated=${encodeURIComponent(templateId)}`,
           );
         }
       } catch (e) {

@@ -22,7 +22,7 @@ export function DemoAuthCard({ mode }: { mode: "sign-in" | "sign-up" }) {
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
         <Link
-          href="/app/board"
+          href="/app/tasks"
           className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-[13.5px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           Open the demo workspace

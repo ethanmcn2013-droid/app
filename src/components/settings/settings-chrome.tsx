@@ -26,7 +26,7 @@ export function SettingsChrome({ children }: { children: React.ReactNode }) {
           <span className="text-[13px] text-ink-soft">Settings</span>
           <div className="flex-1" />
           <Link
-            href="/app/board"
+            href="/app/tasks"
             className="hidden text-[12.5px] text-ink-quiet transition-colors hover:text-ink md:inline-flex"
           >
             Back to workspace

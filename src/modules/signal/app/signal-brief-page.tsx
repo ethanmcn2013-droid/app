@@ -47,7 +47,7 @@ export async function SignalBriefPage({
   );
   const chrome = buildSignalPageChrome(context, result.navigation);
   const makeEvidenceHref = (id: string) =>
-    evidenceHref("/app/brief", params, id);
+    evidenceHref("/app/signal", params, id);
 
   return (
     <div data-signal-module>
@@ -61,7 +61,7 @@ export async function SignalBriefPage({
         ownerOptions={chrome.ownerOptions}
         statusOptions={chrome.statusOptions}
         evidence={evidenceState(
-          "/app/brief",
+          "/app/signal",
           params,
           result.evidence,
           chrome.ownerNames,

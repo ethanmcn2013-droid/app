@@ -25,7 +25,7 @@ export default async function TaskFocusPage({
           It may have been deleted, or the link is stale.
         </div>
         <Link
-          href="/app/board"
+          href="/app/tasks"
           className="mt-2 text-[12.5px] text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
         >
           Back to board
@@ -50,7 +50,7 @@ export default async function TaskFocusPage({
             Open archive
           </Link>
           <Link
-            href="/app/board"
+            href="/app/tasks"
             className="text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
           >
             Back to board

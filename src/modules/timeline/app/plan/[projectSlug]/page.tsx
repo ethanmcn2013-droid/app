@@ -9,7 +9,6 @@ import {
 import {
   getProjectsForWorkspace,
   getEffectiveNodesForWorkspace,
-  isWorkspacePublished,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
@@ -17,7 +16,6 @@ import {
   buildTimelineProjectHref,
   toAuthorizedProjectOptions,
 } from "@/modules/timeline/lib/project-switcher-model";
-import { TIMELINE_PUBLIC_ORIGIN } from "@/lib/product-urls";
 
 export async function generateMetadata({
   params,
@@ -25,7 +23,7 @@ export async function generateMetadata({
   params: Promise<{ projectSlug: string }>;
 }) {
   const { projectSlug } = await params;
-  return { title: `Plan, ${projectSlug}, Timeline` };
+  return { title: `${projectSlug} · Timeline · Signal Studio` };
 }
 
 export const dynamic = "force-dynamic";
@@ -62,10 +60,14 @@ export default async function PlanPage({
     planningPeriodId: context?.planningPeriodId,
   };
 
-  // T3: NEXT_PUBLIC_TIMELINE_SITE_URL points at the public Timeline deployment.
-  const publicBase =
-    process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN;
-  const publicUrl = `${publicBase}/${workspace.slug}`;
+  const shareQuery = new URLSearchParams({ project: project.slug });
+  if (queryContext.workspaceId) {
+    shareQuery.set("workspaceId", queryContext.workspaceId);
+  }
+  if (queryContext.planningPeriodId) {
+    shareQuery.set("planningPeriodId", queryContext.planningPeriodId);
+  }
+  const shareHref = `/app/timeline/audience?${shareQuery.toString()}`;
 
   return (
     <div data-timeline-module className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10">
@@ -91,19 +93,32 @@ export default async function PlanPage({
       </nav>
 
       {/* Heading, renders immediately */}
-      <div className="mb-8">
-        <h1
-          className="text-2xl font-semibold"
-          style={{ letterSpacing: "-0.025em", color: "var(--ink)" }}
+      <div className="mb-8 flex flex-col justify-between gap-5 border-b border-line-soft pb-7 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
+            Private owner view
+          </p>
+          <h1
+            className="mt-2 text-3xl font-semibold"
+            style={{ letterSpacing: "-0.035em", color: "var(--ink)" }}
+          >
+            {project.name}
+          </h1>
+          <p
+            className="mt-2 max-w-xl text-sm leading-6"
+            style={{ color: "var(--ink-soft)" }}
+          >
+            Milestone tasks sync into this draft. Refine their labels, dates,
+            order and visibility here; nothing changes for viewers until you
+            publish a frozen copy.
+          </p>
+        </div>
+        <Link
+          href={shareHref}
+          className="inline-flex min-h-11 flex-none items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
-          {project.name}
-        </h1>
-        <p
-          className="mt-1 text-sm"
-          style={{ color: "var(--ink-soft)" }}
-        >
-          Curate your milestones. Use the eye icon to hide items from your public link.
-        </p>
+          Preview & publish
+        </Link>
       </div>
 
       {/* T7: scoped Suspense split — breadcrumb + heading above are immediate,
@@ -112,7 +127,7 @@ export default async function PlanPage({
         <PlanPageContent
           workspaceSlug={workspace.slug}
           projectSlug={projectSlug}
-          publicUrl={publicUrl}
+          shareHref={shareHref}
         />
       </Suspense>
     </div>
@@ -124,16 +139,13 @@ export default async function PlanPage({
 async function PlanPageContent({
   workspaceSlug,
   projectSlug,
-  publicUrl,
+  shareHref,
 }: {
   workspaceSlug: string;
   projectSlug: string;
-  publicUrl: string;
+  shareHref: string;
 }) {
-  const [effectiveNodes, workspacePublished] = await Promise.all([
-    getEffectiveNodesForWorkspace(workspaceSlug),
-    isWorkspacePublished(workspaceSlug),
-  ]);
+  const effectiveNodes = await getEffectiveNodesForWorkspace(workspaceSlug);
 
   return (
     <CurationSurface
@@ -142,8 +154,7 @@ async function PlanPageContent({
       )}
       workspaceSlug={workspaceSlug}
       projectSlug={projectSlug}
-      isPublished={workspacePublished}
-      publicUrl={publicUrl}
+      shareHref={shareHref}
     />
   );
 }

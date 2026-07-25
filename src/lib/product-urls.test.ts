@@ -32,19 +32,19 @@ describe("Signal Studio URL contract", () => {
     });
   });
 
-  it("keeps one app origin and stable module paths", () => {
+  it("keeps one app origin and product-named module paths", () => {
     assert.equal(suiteContracts.origins.app, "https://app.signalstudio.ie");
     assert.deepEqual(PRODUCT_APP_PATHS, {
       notes: "/app/notes",
-      tasks: "/app/board",
-      timeline: "/app/plan",
-      signal: "/app/brief",
+      tasks: "/app/tasks",
+      timeline: "/app/timeline",
+      signal: "/app/signal",
     });
     assert.deepEqual(PRODUCT_APP_URLS, {
       notes: `${APP_ORIGIN}/app/notes`,
-      tasks: `${APP_ORIGIN}/app/board`,
-      timeline: `${APP_ORIGIN}/app/plan`,
-      signal: `${APP_ORIGIN}/app/brief`,
+      tasks: `${APP_ORIGIN}/app/tasks`,
+      timeline: `${APP_ORIGIN}/app/timeline`,
+      signal: `${APP_ORIGIN}/app/signal`,
     });
   });
 
@@ -61,11 +61,30 @@ describe("Signal Studio URL contract", () => {
 
     assert.match(
       nextConfig,
-      /source: "\/app"[\s\S]*?tasks\.signalstudio\.ie[\s\S]*?https:\/\/app\.signalstudio\.ie\/app\/board/,
+      /source: "\/app"[\s\S]*?tasks\.signalstudio\.ie[\s\S]*?https:\/\/app\.signalstudio\.ie\/app\/tasks/,
     );
     assert.match(
       nextConfig,
       /source: "\/app\/:path\*"[\s\S]*?tasks\.signalstudio\.ie[\s\S]*?https:\/\/app\.signalstudio\.ie\/app\/:path\*/,
     );
+  });
+
+  it("keeps every legacy product entry on one canonical destination", () => {
+    const nextConfig = readFileSync(
+      new URL("../../next.config.ts", import.meta.url),
+      "utf8",
+    );
+
+    for (const [source, destination] of [
+      ["/app/board", "/app/tasks"],
+      ["/app/list", "/app/tasks/list"],
+      ["/app/calendar", "/app/tasks/calendar"],
+      ["/app/plan/:path*", "/app/timeline/:path*"],
+      ["/app/brief/:path*", "/app/signal/:path*"],
+    ]) {
+      assert.match(nextConfig, new RegExp(
+        `source: "${source.replaceAll("/", "\\/").replaceAll("*", "\\*")}"[\\s\\S]*?destination: "${destination.replaceAll("/", "\\/").replaceAll("*", "\\*")}"`,
+      ));
+    }
   });
 });

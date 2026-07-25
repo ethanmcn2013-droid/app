@@ -17,10 +17,10 @@ import {
 import type { ShareView } from "@/server/actions/share";
 
 const TABS = [
-  { href: "/app/board", label: "Board" },
-  { href: "/app/list", label: "List" },
-  { href: "/app/timeline", label: "Timeline" },
-  { href: "/app/calendar", label: "Calendar" },
+  { href: "/app/tasks", label: "Board" },
+  { href: "/app/tasks/list", label: "List" },
+  { href: "/app/tasks/timeline", label: "Timeline" },
+  { href: "/app/tasks/calendar", label: "Calendar" },
 ];
 
 /** Pull the part of the workspace title before " · " for the H1.
@@ -31,17 +31,17 @@ function shortenTitle(t: string): string {
 }
 
 function inferShareView(pathname: string): ShareView {
-  if (pathname.startsWith("/app/list")) return "list";
-  if (pathname.startsWith("/app/timeline")) return "timeline";
-  if (pathname.startsWith("/app/calendar")) return "calendar";
+  if (pathname.startsWith("/app/tasks/list")) return "list";
+  if (pathname.startsWith("/app/tasks/timeline")) return "timeline";
+  if (pathname.startsWith("/app/tasks/calendar")) return "calendar";
   return "board";
 }
 
 /** Map the current lens path to its /print equivalent. */
 function inferPrintPath(pathname: string): string {
-  if (pathname.startsWith("/app/list")) return "/print/list";
-  if (pathname.startsWith("/app/timeline")) return "/print/timeline";
-  if (pathname.startsWith("/app/calendar")) return "/print/calendar";
+  if (pathname.startsWith("/app/tasks/list")) return "/print/list";
+  if (pathname.startsWith("/app/tasks/timeline")) return "/print/timeline";
+  if (pathname.startsWith("/app/tasks/calendar")) return "/print/calendar";
   return "/print/board";
 }
 
@@ -80,8 +80,8 @@ export function AppPageHeader({
   const showWorkspaceTabs = !isInbox && !isMyTasks && !isArchived;
   const showShare = !isInbox && !isMyTasks && !isArchived;
 
-  const shareView = inferShareView(pathname ?? "/app/board");
-  const printPath = inferPrintPath(pathname ?? "/app/board");
+  const shareView = inferShareView(pathname ?? "/app/tasks");
+  const printPath = inferPrintPath(pathname ?? "/app/tasks");
 
   // T·95 lab parity: workspace views render the Editorial Project Room
   // header — the full-bleed brief band, then the 52px room view bar

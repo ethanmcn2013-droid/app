@@ -674,7 +674,7 @@ function ManualAddForm({
       "In flight": "in-flight",
       "Shipped": "shipped",
     };
-    const nodeId = `ms-manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const nodeId = `manual:${encodeURIComponent(projectSlug)}:${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     onWriteStart();
     startTransition(async () => {
       try {
@@ -1037,14 +1037,12 @@ export function CurationSurface({
   initialNodes,
   workspaceSlug,
   projectSlug,
-  isPublished,
-  publicUrl,
+  shareHref,
 }: {
   initialNodes: EffectiveNode[];
   workspaceSlug: string;
   projectSlug: string;
-  isPublished: boolean;
-  publicUrl: string;
+  shareHref: string;
 }) {
   const router = useRouter();
   const [nodes, setNodes] = useState(initialNodes);
@@ -1127,7 +1125,7 @@ export function CurationSurface({
 
   // D11 auto-sync on load: pulls Tasks milestones into the private draft.
   // D6 two-gate is preserved, syncMilestonesAction only revalidates /app and
-  // /app/plan/[slug], never the public /{workspaceSlug} path.
+  // /app/timeline/[slug], never the public /{workspaceSlug} path.
   useEffect(() => {
     if (didAutoSync.current) return;
     didAutoSync.current = true;
@@ -1242,73 +1240,20 @@ export function CurationSurface({
 
   return (
     <div>
-      {/* Plan-state banner, single element for both published and unpublished-with-nodes states.
-          M4: when unpublished and ≥1 visible node exists, show a quiet nudge. Same element,
-          two states, no second competing banner. Kept quiet: no coloured bar, no loud CTA. */}
-      {isPublished ? (
-        <div
-          style={{
-            marginBottom: 24,
-            padding: "10px 14px",
-            borderRadius: 8,
-            border: "1px solid var(--hairline)",
-            background: "var(--paper-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
+      <div
+        className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 sm:flex-row sm:items-center"
+      >
+        <span className="text-xs leading-5 text-ink-soft">
+          Owner draft · changes stay private until you create or update a
+          shared artifact.
+        </span>
+        <Link
+          href={shareHref}
+          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
-          <span style={{ fontSize: 12, color: "var(--ink-soft)" }}>
-            Published, anyone with the link can read this.
-          </span>
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontSize: 11,
-              color: "var(--ink-quiet)",
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            View public roadmap
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </a>
-        </div>
-      ) : nodes.filter((n) => !n.hidden).length > 0 ? (
-        /* M4 unpublished-with-nodes nudge, quiet, declarative, same visual register as published banner */
-        <div
-          style={{
-            marginBottom: 24,
-            padding: "10px 14px",
-            borderRadius: 8,
-            border: "1px solid var(--hairline)",
-            background: "var(--paper-soft)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <span style={{ fontSize: 12, color: "var(--ink-quiet)" }}>
-            Not published yet.{" "}
-            <Link
-              href="/app#publish"
-              style={{ color: "var(--ink-soft)", textDecoration: "underline", textUnderlineOffset: "2px" }}
-            >
-              Publish it from your dashboard.
-            </Link>
-          </span>
-        </div>
-      ) : null}
+          Preview public copy
+        </Link>
+      </div>
 
       {/* Toolbar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>

@@ -24,9 +24,9 @@ export const PRODUCT_MARKETING_URLS: Readonly<Record<ProductId, string>> =
 export const PRODUCT_APP_PATHS: Readonly<Record<ProductId, string>> =
   Object.freeze({
     notes: "/app/notes",
-    tasks: "/app/board",
-    timeline: "/app/plan",
-    signal: "/app/brief",
+    tasks: "/app/tasks",
+    timeline: "/app/timeline",
+    signal: "/app/signal",
   });
 
 export const PRODUCT_APP_URLS: Readonly<Record<ProductId, string>> =

@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function YourWorkPage() {
-  if (!resolvePlanningFeatureFlags().planningPeriods) redirect("/app/board");
+  if (!resolvePlanningFeatureFlags().planningPeriods) redirect("/app/tasks");
   const data = await listYourWorkForCurrentUser();
   return <YourWorkView data={data} />;
 }

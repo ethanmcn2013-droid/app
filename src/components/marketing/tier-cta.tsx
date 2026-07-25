@@ -60,7 +60,7 @@ export function TierCta({ label, href, tier, accent }: Props) {
   }
 
   return (
-    <Link href={href ?? "/app/board"} className={cls}>
+    <Link href={href ?? "/app/tasks"} className={cls}>
       {label}
     </Link>
   );

@@ -45,7 +45,7 @@ recovery, flag, and acceptance contract is in `docs/planning-periods.md`.
 2. Clerk fires `user.created` webhook → `/api/webhooks/clerk` (Svix-signed).
 3. Webhook handler: `INSERT INTO users (id, clerk_id, email, name, color, initials)`. If first-time, also creates a default workspace + workspace_members row.
 4. PostHog `signup_completed` event fires from the welcome page.
-5. `/welcome` runs through onboarding; user enters `/app/board`.
+5. `/welcome` runs through onboarding; user enters `/app/tasks`.
 
 Total round-trip: <500ms in steady-state. Workspace seed runs on first request hit.
 

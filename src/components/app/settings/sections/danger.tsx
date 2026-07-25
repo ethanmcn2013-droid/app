@@ -71,7 +71,7 @@ export function DangerSection({
         toast("Workspace deleted", { tone: "success" });
         // Bounce to /app, the layout will re-resolve the active
         // workspace (or punt to /welcome for fresh users).
-        router.push("/app/board");
+        router.push("/app/tasks");
         router.refresh();
       } catch (e) {
         toast("Couldn't delete", {

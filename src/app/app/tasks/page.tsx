@@ -13,10 +13,7 @@ import {
   DEMO_WORKSPACE_SLUG,
 } from "@/server/demo/tasks-demo";
 
-// Hybrid parity (T·99, 2026-07-19): the board view renders the approved
-// design-lab "hybrid" interior 1:1. Production's left rail and top header
-// remain; the venue-welcome + templated-toast overlays are preserved.
-export default async function BoardPage({
+export default async function TasksPage({
   searchParams,
 }: {
   searchParams: Promise<{ welcome?: string }>;
@@ -33,14 +30,11 @@ export default async function BoardPage({
       const me = await getCurrentUser();
       venue = await detectVenueWelcome(me);
       if (venue) {
-        // Stamp the entitlement's reached_board_at on first venue-welcome
-        // render. Idempotent, subsequent visits leave the original
-        // timestamp in place. Fires the /hq/partners "Reached board"
-        // signal without an event-log table.
         await markVenueEntitlementReached(me);
       }
     }
   }
+
   return (
     <>
       <HybridWorkspace view="board" />

@@ -20,5 +20,5 @@ export async function updateCadenceAction(cadence: Cadence): Promise<void> {
   }
 
   await setCadence(cadence);
-  revalidatePath("/app/brief/settings/notifications");
+  revalidatePath("/app/signal/settings/notifications");
 }

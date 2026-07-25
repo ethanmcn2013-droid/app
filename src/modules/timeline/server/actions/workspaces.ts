@@ -156,8 +156,8 @@ export async function createWorkspaceAction(
     await seedWorkspaceFromTemplate({ workspaceSlug: slug, template });
   }
 
-  revalidatePath("/app/plan");
-  redirect(template ? `/${slug}` : "/app/plan");
+  revalidatePath("/app/timeline");
+  redirect(template ? `/${slug}` : "/app/timeline");
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +211,7 @@ export async function createProjectAction(
   const publishedAt = workspaceIsPublished ? new Date() : null;
   await createProject({ slug, name, workspaceSlug, publishedAt });
 
-  revalidatePath("/app/plan");
+  revalidatePath("/app/timeline");
   return { ok: true, slug };
 }
 
@@ -295,8 +295,8 @@ export async function syncMilestonesAction(
   await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones);
 
   // Revalidate private draft only, NOT the public URL (D6 two-gate)
-  revalidatePath("/app/plan");
-  revalidatePath(`/app/plan/${targetProject.slug}`);
+  revalidatePath("/app/timeline");
+  revalidatePath(`/app/timeline/${targetProject.slug}`);
 
   return { ok: true, count: milestones.length };
 }
@@ -318,6 +318,10 @@ export async function upsertNodeOverlayAction(
   if (!workspace || workspace.ownerUserId !== userId) {
     return { error: "Something went wrong. Reload the page and try again." };
   }
+  const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
+  if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
+    return { error: "That project is no longer available." };
+  }
 
   try {
     await upsertNodeOverlay(workspaceSlug, overlay);
@@ -326,7 +330,7 @@ export async function upsertNodeOverlayAction(
   }
 
   // Revalidate curation view only, public URL not touched until Publish
-  revalidatePath(`/app/plan/${projectSlug}`);
+  revalidatePath(`/app/timeline/${projectSlug}`);
 
   return { ok: true };
 }
@@ -345,8 +349,8 @@ export type ReorderNodesResult = { ok: true } | { error: string };
  * values. Fixes the BV-2 defect where sibling nodes reverted to Tasks DB
  * order on the next page load.
  *
- * D6 invariant: revalidates only /app (dashboard) and /app/plan/… (curation
- * view). Never touches /{workspaceSlug}, publish remains the only gate.
+ * D6 invariant: revalidates only authenticated /app/timeline owner routes.
+ * Never touches /{workspaceSlug}; publication remains the only public gate.
  */
 export async function reorderNodesAction(
   workspaceSlug: string,
@@ -371,8 +375,8 @@ export async function reorderNodesAction(
   }
 
   // Revalidate private curation view only, D6 invariant preserved
-  revalidatePath("/app/plan");
-  revalidatePath(`/app/plan/${projectSlug}`);
+  revalidatePath("/app/timeline");
+  revalidatePath(`/app/timeline/${projectSlug}`);
 
   return { ok: true };
 }
@@ -426,7 +430,7 @@ export async function publishWorkspaceAction(
 
   await publishWorkspace(workspaceSlug);
   // Revalidate the authed dashboard in the unified app.
-  revalidatePath("/app/plan");
+  revalidatePath("/app/timeline");
   // PARITY NOTE (manifest §revalidation contracts): the DB write above sets
   // publishedAt on the Timeline Turso row. The PUBLIC deployment at
   // timeline.signalstudio.ie is a separate Next.js app — this unified app
@@ -453,7 +457,7 @@ export async function unpublishWorkspaceAction(
   }
   await unpublishWorkspace(workspaceSlug);
   // Revalidate the authed dashboard in the unified app.
-  revalidatePath("/app/plan");
+  revalidatePath("/app/timeline");
   // PARITY NOTE: same as publishWorkspaceAction — DB write is sufficient.
   // Public Timeline deployment picks up the unpublished state within its
   // own ISR window. See cutover runbook.

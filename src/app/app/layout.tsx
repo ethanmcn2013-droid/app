@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import AppLoading from "./loading";
-import { AppSidebar } from "@/components/app/sidebar";
+import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { StudioBar } from "@/components/studio-bar/studio-bar";
 import { StudioRail } from "@/components/studio-bar/studio-rail";
 import {
@@ -23,7 +23,6 @@ import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
 import { DomainProvider } from "@/lib/domain-context";
 import { CurrentUserProvider } from "@/lib/auth-context";
 import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
-import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getProjectsTreeData } from "@/server/actions/projects-tree";
 import { getBoardName, getColumnConfig } from "@/server/actions/board";
@@ -199,16 +198,12 @@ async function AppShell({ children }: { children: React.ReactNode }) {
                     edition={edition}
                   />
                   <StudioChromeBridge />
-                  <RoomToolsProvider>
-                    <AppSidebar activeWorkspaceId={ws} tree={projectsTree} />
-                    {/* The lab's projectRoom wash: canvas 72% / surface mix. */}
-                    {/* min-h-0 lets the board area shrink to the viewport so
-                        each Kanban column can scroll independently (Phase 4)
-                        instead of the whole page moving. */}
-                    <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[color-mix(in_srgb,var(--x-task-canvas)_72%,var(--x-task-surface))] pb-[60px] md:pb-0">
-                      {children}
-                    </main>
-                  </RoomToolsProvider>
+                  <ProductWorkspaceShell
+                    activeWorkspaceId={ws}
+                    tree={projectsTree}
+                  >
+                    {children}
+                  </ProductWorkspaceShell>
                   <TaskDetailPanel />
                   <CrossWorkspaceOverdue />
                   <CrossWorkspaceSearch />

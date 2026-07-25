@@ -93,7 +93,7 @@ export function validateTrustedTaskId(value: unknown): string {
 
 export function buildTrustedTaskUrl(taskId: string): string {
   const trustedId = validateTrustedTaskId(taskId);
-  return `${APP_ORIGIN}/app/board?taskId=${encodeURIComponent(trustedId)}`;
+  return `${APP_ORIGIN}/app/tasks?taskId=${encodeURIComponent(trustedId)}`;
 }
 
 function boundedLabel(value: unknown, fallback: string): string {

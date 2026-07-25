@@ -55,7 +55,7 @@ export function RedeemResultCard({
     // are already applied server-side in redeemCompCodeAction.
     // Non-venue success falls back to /welcome (picker flow).
     const href = result.sponsorSlug
-      ? `/app/board?welcome=venue&v=${encodeURIComponent(result.sponsorSlug)}`
+      ? `/app/tasks?welcome=venue&v=${encodeURIComponent(result.sponsorSlug)}`
       : "/welcome";
     return (
       <motion.div

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("Timeline project switcher", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/app/plan/product?workspaceId=tasks");
+    await page.goto("/app/timeline/product?workspaceId=tasks");
     await expect(
       page.getByRole("heading", { name: "Product Roadmap", exact: true }),
     ).toBeVisible();

@@ -33,9 +33,9 @@ import styles from "./signal-shell.module.css";
 /** Internal route for each product module within the unified app. */
 const CORE_PRODUCTS: Array<{ key: RailIconName; label: string; href: string; activePrefix: string }> = [
   { key: "notes",    label: "Notes",    href: "/app/notes", activePrefix: "/app/notes" },
-  { key: "tasks",    label: "Tasks",    href: "/app/board", activePrefix: "/app" },
-  { key: "timeline", label: "Timeline", href: "/app/plan",  activePrefix: "/app/plan" },
-  { key: "signal",   label: "Signal",   href: "/app/brief", activePrefix: "/app/brief" },
+  { key: "tasks",    label: "Tasks",    href: "/app/tasks", activePrefix: "/app/tasks" },
+  { key: "timeline", label: "Timeline", href: "/app/timeline", activePrefix: "/app/timeline" },
+  { key: "signal",   label: "Signal",   href: "/app/signal", activePrefix: "/app/signal" },
 ];
 
 /**
@@ -49,8 +49,8 @@ function isActive(key: RailIconName, activePrefix: string, pathname: string): bo
   if (key === "tasks") {
     return (
       !pathname.startsWith("/app/notes") &&
-      !pathname.startsWith("/app/plan") &&
-      !pathname.startsWith("/app/brief")
+      !pathname.startsWith("/app/timeline") &&
+      !pathname.startsWith("/app/signal")
     );
   }
   return pathname.startsWith(activePrefix);

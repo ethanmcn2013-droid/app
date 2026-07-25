@@ -191,6 +191,14 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
       unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
     });
   }
+}, {
+  // Clerk's dashboard allowlist mirrors these two production origins.
+  // app.signalstudio.ie is canonical; tasks.signalstudio.ie remains a
+  // temporary compatibility/service host while its app URLs redirect.
+  authorizedParties: [
+    "https://app.signalstudio.ie",
+    "https://tasks.signalstudio.ie",
+  ],
 });
 
 export default function proxy(req: NextRequest, event: NextFetchEvent) {

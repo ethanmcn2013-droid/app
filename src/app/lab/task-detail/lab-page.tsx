@@ -249,10 +249,10 @@ function LabChrome({
         <span className="hidden items-center gap-1.5 text-[11px] text-ink-quiet sm:flex">
           Compare with{" "}
           <a
-            href="/app/board"
+            href="/app/tasks"
             className="font-medium text-[var(--accent)] underline underline-offset-2 hover:opacity-80 transition-opacity"
           >
-            /app/board
+            /app/tasks
           </a>
         </span>
       </div>

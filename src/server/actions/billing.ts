@@ -66,7 +66,7 @@ export async function createCheckoutSessionAction(
   interval: BillingInterval = "monthly",
 ): Promise<{ url: string }> {
   if (isDemoMode()) {
-    return { url: `${siteUrl()}/app/board?checkout=review&tier=${tier}` };
+    return { url: `${siteUrl()}/app/tasks?checkout=review&tier=${tier}` };
   }
   const me = await getCurrentUser();
   const ws = await getActiveWorkspace();
@@ -92,7 +92,7 @@ export async function createCheckoutSessionAction(
         tier === "wedding" ? null : interval === "annual" ? 365 : 30,
       notes: `dev:no-stripe${interval === "annual" ? ":annual" : ""}`,
     });
-    return { url: `${siteUrl()}/app/board?upgrade=ok&dev=1` };
+    return { url: `${siteUrl()}/app/tasks?upgrade=ok&dev=1` };
   }
 
   const priceId = configuredPriceId;
@@ -108,7 +108,7 @@ export async function createCheckoutSessionAction(
   const session = await stripe.checkout.sessions.create({
     mode: tier === "wedding" ? "payment" : "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${siteUrl()}/app/board?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
+    success_url: `${siteUrl()}/app/tasks?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
     cancel_url: `${siteUrl()}/pricing?upgrade=cancel`,
     client_reference_id: `${me}::${metadataWorkspaceId}`,
     metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },

@@ -13,8 +13,8 @@ export function buildTimelineProjectHref(
   context: TimelineQueryContext = {},
 ): string {
   const path = projectSlug
-    ? `/app/plan/${encodeURIComponent(projectSlug)}`
-    : "/app/plan";
+    ? `/app/timeline/${encodeURIComponent(projectSlug)}`
+    : "/app/timeline";
   const query = new URLSearchParams();
   const workspaceId = context.workspaceId?.trim();
   const planningPeriodId = context.planningPeriodId?.trim();

@@ -20,7 +20,7 @@ import {
  * Global ⌘. (Cmd+Period on macOS, Ctrl+Period elsewhere) toggles a
  * popover showing every overdue task across every workspace the user
  * belongs to. Clicking an item sets that workspace as active and
- * navigates to /app/board.
+ * navigates to /app/tasks.
  *
  * Mounted once at the app layout level so the shortcut is live on
  * every /app/* page. Skips the listener when focus is inside an
@@ -102,10 +102,10 @@ export function CrossWorkspaceOverdue() {
           await selectWorkspaceAction(item.workspaceId);
         } catch {
           // Best-effort: even if the cookie write throws, navigating
-          // to /app/board lands the user on whichever workspace
+          // to /app/tasks lands the user on whichever workspace
           // resolves, strictly better than freezing.
         }
-        router.push("/app/board");
+        router.push("/app/tasks");
         router.refresh();
       });
     },

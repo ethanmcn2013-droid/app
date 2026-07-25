@@ -187,7 +187,7 @@ const nextConfig: NextConfig = {
       {
         source: "/app",
         has: [{ type: "host", value: "tasks.signalstudio.ie" }],
-        destination: "https://app.signalstudio.ie/app/board",
+        destination: "https://app.signalstudio.ie/app/tasks",
         permanent: true,
       },
       {
@@ -195,6 +195,46 @@ const nextConfig: NextConfig = {
         has: [{ type: "host", value: "tasks.signalstudio.ie" }],
         destination: "https://app.signalstudio.ie/app/:path*",
         permanent: true,
+      },
+      {
+        source: "/app/board",
+        destination: "/app/tasks",
+        permanent: false,
+      },
+      {
+        source: "/app/tasks/board",
+        destination: "/app/tasks",
+        permanent: false,
+      },
+      {
+        source: "/app/list",
+        destination: "/app/tasks/list",
+        permanent: false,
+      },
+      {
+        source: "/app/calendar",
+        destination: "/app/tasks/calendar",
+        permanent: false,
+      },
+      {
+        source: "/app/plan",
+        destination: "/app/timeline",
+        permanent: false,
+      },
+      {
+        source: "/app/plan/:path*",
+        destination: "/app/timeline/:path*",
+        permanent: false,
+      },
+      {
+        source: "/app/brief",
+        destination: "/app/signal",
+        permanent: false,
+      },
+      {
+        source: "/app/brief/:path*",
+        destination: "/app/signal/:path*",
+        permanent: false,
       },
       { source: "/templates/final-paper-sprint", destination: "/templates/final-paper-push", permanent: true },
       { source: "/templates/job-application-sprint", destination: "/templates/job-application-push", permanent: true },

@@ -57,7 +57,7 @@ export async function applyTemplateAction(
  * user inside it.
  *
  * Returns the new workspace's id and slug so the client can route to
- * `/app/board?remixed=<templateId>` for the toast in a follow-up cycle.
+ * `/app/tasks?remixed=<templateId>` for the toast in a follow-up cycle.
  */
 export async function remixTemplateAction(
   templateId: string,

@@ -52,13 +52,13 @@ describe("timeline public-url contract", () => {
     }
   });
 
-  it("publish/unpublish revalidate only authed /app/plan paths", () => {
+  it("publish/unpublish revalidate only authed /app/timeline paths", () => {
     const source = read("server/actions/workspaces.ts");
     const calls = [...source.matchAll(/revalidatePath\(\s*(["'`])([^"'`]*)\1/g)];
     assert.ok(calls.length > 0, "expected revalidatePath calls in workspaces.ts");
     for (const call of calls) {
       assert.ok(
-        call[2].startsWith("/app/plan"),
+        call[2].startsWith("/app/timeline"),
         `revalidatePath("${call[2]}") targets a non-owner path; bearer-link artifacts are dynamic and must not enter revalidation calls`,
       );
     }

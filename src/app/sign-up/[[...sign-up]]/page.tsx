@@ -9,7 +9,7 @@ import {
   segmentFromParam,
 } from "@/lib/onboarding/segments";
 
-export const metadata = { title: "Sign up, Tasks" };
+export const metadata = { title: "Sign up · Signal Studio" };
 
 const REDEEM_PATH = /^\/redeem\/([A-Za-z0-9-]+)\/?$/;
 

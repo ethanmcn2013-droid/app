@@ -12,14 +12,14 @@ describe("Timeline project switcher model", () => {
         workspaceId: "workspace-1",
         planningPeriodId: "period-7",
       }),
-      "/app/plan/venue%20launch?workspaceId=workspace-1&planningPeriodId=period-7",
+      "/app/timeline/venue%20launch?workspaceId=workspace-1&planningPeriodId=period-7",
     );
     assert.equal(
       buildTimelineProjectHref(null, {
         workspaceId: "workspace-1",
         planningPeriodId: "period-7",
       }),
-      "/app/plan?workspaceId=workspace-1&planningPeriodId=period-7",
+      "/app/timeline?workspaceId=workspace-1&planningPeriodId=period-7",
     );
   });
 
@@ -28,7 +28,7 @@ describe("Timeline project switcher model", () => {
       buildTimelineProjectHref("spring", {
         planningPeriodId: "period-without-workspace",
       }),
-      "/app/plan/spring",
+      "/app/timeline/spring",
     );
   });
 

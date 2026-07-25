@@ -753,7 +753,7 @@ export type Entitlement = {
   expiresAt: Date | null;
   /** Free-form note, e.g. the comp code id, the .edu domain. */
   notes: string | null;
-  /** First time the user reached /app/board after this entitlement
+  /** First time the user reached /app/tasks after this entitlement
    *  activated. Null until they actually land. Powers the Venue
    *  Editions "did the next person finish?" signal on /hq/partners
    *  without a separate event-log table. Set idempotently from the

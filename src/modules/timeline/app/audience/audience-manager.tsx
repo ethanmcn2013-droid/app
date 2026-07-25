@@ -83,12 +83,16 @@ export function AudienceManager({
   enabled,
   sourceNodes,
   publications,
+  defaultLabel,
+  projectName,
 }: {
   workspaceSlug: string;
   suiteWorkspaceId: string | null;
   enabled: boolean;
   sourceNodes: readonly SourceNode[];
   publications: readonly AudienceOwnerPublication[];
+  defaultLabel?: string;
+  projectName?: string;
 }) {
   const [connectState, connectAction, connectPending] = useActionState(
     connectSuiteWorkspaceAction,
@@ -170,7 +174,7 @@ export function AudienceManager({
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Frozen projection</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
-              Create a shared timeline
+              {projectName ? `Publish ${projectName}` : "Create a shared timeline"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
               Choose the exact milestone labels, dates, and completion states to copy. Notes, people, attachments, and source IDs never appear to viewers.
@@ -181,7 +185,14 @@ export function AudienceManager({
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-ink-soft">
                 Timeline title
-                <input className={`${fieldClass} mt-1.5`} name="label" required maxLength={120} placeholder="Module timeline" />
+                <input
+                  className={`${fieldClass} mt-1.5`}
+                  name="label"
+                  required
+                  maxLength={120}
+                  placeholder="Project timeline"
+                  defaultValue={defaultLabel}
+                />
               </label>
               <label className="text-sm font-medium text-ink-soft">
                 Named audience
@@ -229,6 +240,7 @@ export function AudienceManager({
                         type="checkbox"
                         name="sourceId"
                         value={node.id}
+                        defaultChecked={Boolean(projectName)}
                         className="h-4 w-4 rounded border-line-soft accent-indigo-600"
                       />
                       <span className="min-w-0 flex-1 text-sm text-ink">{node.title}</span>
@@ -269,7 +281,7 @@ export function AudienceManager({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <Link
-                        href={`/app/plan/audience/${encodeURIComponent(publication.id)}`}
+                        href={`/app/timeline/audience/${encodeURIComponent(publication.id)}`}
                         className={primaryButton}
                       >
                         View artifact studio

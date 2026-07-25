@@ -136,7 +136,7 @@ function task(
     linkedDecisionIds: [],
     linkedMilestoneIds: [],
     workType: "task",
-    deepLink: `/app/board?task=${id}`,
+    deepLink: `/app/tasks?task=${id}`,
     updatedAt: "2026-07-12T09:00:00.000Z",
     ...overrides,
   };

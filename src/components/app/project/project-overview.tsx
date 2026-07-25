@@ -494,7 +494,7 @@ export function ProjectOverview({ data }: { data: ProjectOverviewData }) {
                           <MilestoneDot />
                         </span>
                         <Link
-                          href={`/app/board?task=${m.id}`}
+                          href={`/app/tasks?task=${m.id}`}
                           className="truncate text-[13px] font-medium text-ink underline-offset-2 hover:text-ink-soft hover:underline"
                         >
                           {m.title}

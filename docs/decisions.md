@@ -100,7 +100,7 @@ Last revised: 2026-07-25.
 
 ## D9 · Product URL architecture — one marketing origin, one app origin
 
-**Picked:** `signalstudio.ie` is the marketing origin and carries the four product homes at `/notes`, `/tasks`, `/timeline`, and `/signal`. `app.signalstudio.ie` is the only signed-in app origin and carries the stable module routes `/app/notes`, `/app/board`, `/app/plan`, and `/app/brief`.
+**Picked:** `signalstudio.ie` is the marketing origin and carries the four product homes at `/notes`, `/tasks`, `/timeline`, and `/signal`. `app.signalstudio.ie` is the only signed-in app origin and carries the stable module routes `/app/notes`, `/app/tasks`, `/app/timeline`, and `/app/signal`. Tasks views are nested under `/app/tasks/*`.
 
 **Why:** Signal Studio is one app with four products. Paths keep the marketing story coherent and discoverable; one app origin keeps authentication, navigation, and tenant context coherent. Product subdomains remain only where a public artifact or service contract needs a narrow boundary.
 

@@ -18,7 +18,7 @@ type PendingTemplate = { id: string; name: string };
  * Renders once, until either a starter pack is chosen or the user
  * clicks "skip and start blank," after which the
  * `firstRunCompletedAt` meta row is set and /welcome redirects back
- * to /app/board for all future visits.
+ * to /app/tasks for all future visits.
  *
  * T1.2, if a template was applied to this workspace before first
  * run (via the Tasks templates flow), `pendingTemplate` is set and
@@ -42,7 +42,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: seed failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 
@@ -55,7 +55,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: mark-first-run failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 
@@ -67,7 +67,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: mark-first-run failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 

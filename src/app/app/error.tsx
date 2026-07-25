@@ -48,7 +48,7 @@ export default function AppError({
             Try again
           </button>
           <Link
-            href="/app/board"
+            href="/app/tasks"
             className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
           >
             Back to board

@@ -513,7 +513,7 @@ function AllClear({
       >
         Your next briefing builds tomorrow, 6am.{" "}
         <a
-          href="/app/board"
+          href="/app/tasks"
           className="underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand)]"
           style={{ color: "var(--ink-soft)" }}
         >
