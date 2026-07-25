@@ -184,6 +184,18 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      {
+        source: "/app",
+        has: [{ type: "host", value: "tasks.signalstudio.ie" }],
+        destination: "https://app.signalstudio.ie/app/board",
+        permanent: true,
+      },
+      {
+        source: "/app/:path*",
+        has: [{ type: "host", value: "tasks.signalstudio.ie" }],
+        destination: "https://app.signalstudio.ie/app/:path*",
+        permanent: true,
+      },
       { source: "/templates/final-paper-sprint", destination: "/templates/final-paper-push", permanent: true },
       { source: "/templates/job-application-sprint", destination: "/templates/job-application-push", permanent: true },
       ...retiredMarketingRedirects(),

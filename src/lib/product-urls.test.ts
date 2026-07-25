@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import suiteContracts from "./suite-contracts.v1.json";
 import {
@@ -50,5 +51,21 @@ describe("Signal Studio URL contract", () => {
   it("reserves product subdomains for narrow public surfaces", () => {
     assert.equal(TASKS_PUBLIC_ORIGIN, "https://tasks.signalstudio.ie");
     assert.equal(TIMELINE_PUBLIC_ORIGIN, "https://timeline.signalstudio.ie");
+  });
+
+  it("redirects legacy Tasks app paths to the one app origin", () => {
+    const nextConfig = readFileSync(
+      new URL("../../next.config.ts", import.meta.url),
+      "utf8",
+    );
+
+    assert.match(
+      nextConfig,
+      /source: "\/app"[\s\S]*?tasks\.signalstudio\.ie[\s\S]*?https:\/\/app\.signalstudio\.ie\/app\/board/,
+    );
+    assert.match(
+      nextConfig,
+      /source: "\/app\/:path\*"[\s\S]*?tasks\.signalstudio\.ie[\s\S]*?https:\/\/app\.signalstudio\.ie\/app\/:path\*/,
+    );
   });
 });
