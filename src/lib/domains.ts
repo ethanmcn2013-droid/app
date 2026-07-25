@@ -1,5 +1,5 @@
 import type { LaneId, Priority, Task, UserId } from "@/lib/data";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 export type DomainId =
   | "marketing"
@@ -55,7 +55,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "launch plays · campaigns · analytics",
     workspaceTitle: "Q3 Launch · Plays in motion",
     workspaceCrumb: "Marketing",
-    workspaceUrl: `${TASKS_DOMAIN}/team/marketing`,
+    workspaceUrl: `${TASKS_PUBLIC_DOMAIN}/team/marketing`,
     demoCommentText: "Hero animation looks great, shipping today.",
     emptyStateHeadline: "This is where your launch plan goes.",
     emptyStateBody:
@@ -117,7 +117,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "papers · midterms · group projects",
     workspaceTitle: "Spring semester · Junior year",
     workspaceCrumb: "School",
-    workspaceUrl: `${TASKS_DOMAIN}/me/school`,
+    workspaceUrl: `${TASKS_PUBLIC_DOMAIN}/me/school`,
     demoCommentText: "Group's meeting at the library tonight at 7.",
     emptyStateHeadline: "This is where your semester comes together.",
     emptyStateBody:
@@ -176,7 +176,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "brief · edit · deliver · invoice",
     workspaceTitle: "Q2 client work · Solo studio",
     workspaceCrumb: "Studio",
-    workspaceUrl: `${TASKS_DOMAIN}/me/studio`,
+    workspaceUrl: `${TASKS_PUBLIC_DOMAIN}/me/studio`,
     demoCommentText:
       "Final delivery sent · Coombe wedding gallery, invoice closed Friday.",
     emptyStateHeadline: "This is where the client work actually ships.",
@@ -281,7 +281,7 @@ export const DOMAINS: Record<DomainId, DomainPack> = {
     description: "calls · jobs · invoices · ladder back in the truck",
     workspaceTitle: "Wired Right · January route",
     workspaceCrumb: "Trades",
-    workspaceUrl: `${TASKS_DOMAIN}/me/trades`,
+    workspaceUrl: `${TASKS_PUBLIC_DOMAIN}/me/trades`,
     demoCommentText:
       "Panel upgrade priced, quote out to the Hartwells tonight.",
     emptyStateHeadline: "This is where the day's calls live.",

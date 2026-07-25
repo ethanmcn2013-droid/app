@@ -29,6 +29,26 @@ export const demoProjects: Project[] = [
     // Demo workspace is always published.
     publishedAt: createdAt,
   },
+  {
+    workspaceSlug: "tasks",
+    sourceTasksWorkspaceId: "tasks",
+    slug: "launch",
+    name: "Launch",
+    oneLiner: "The commitments between now and launch day.",
+    accent: "rgb(14 116 144)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 1,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "tasks",
+    sourceTasksWorkspaceId: "tasks",
+    slug: "venue-pilot",
+    name: "Venue pilot",
+    oneLiner: "A focused pilot plan for Glenmara House.",
+    accent: "rgb(180 83 9)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 2,
+    publishedAt: createdAt,
+  },
 ];
 
 export const demoTasks: Task[] = [

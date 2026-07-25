@@ -12,7 +12,12 @@ import {
   isWorkspacePublished,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
+import {
+  buildTimelineProjectHref,
+  toAuthorizedProjectOptions,
+} from "@/modules/timeline/lib/project-switcher-model";
+import { TIMELINE_PUBLIC_ORIGIN } from "@/lib/product-urls";
 
 export async function generateMetadata({
   params,
@@ -51,34 +56,38 @@ export default async function PlanPage({
   const projects = await getProjectsForWorkspace(workspace.slug);
   const project = projects.find((p) => p.slug === projectSlug);
   if (!project) notFound();
+  const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
+  const queryContext = {
+    workspaceId: context?.workspaceId,
+    planningPeriodId: context?.planningPeriodId,
+  };
 
   // T3: NEXT_PUBLIC_TIMELINE_SITE_URL points at the public Timeline deployment.
-  const publicBase = process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL;
+  const publicBase =
+    process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN;
   const publicUrl = `${publicBase}/${workspace.slug}`;
-  const contextQuery = context
-    ? `?workspaceId=${encodeURIComponent(context.workspaceId)}${
-        context.planningPeriodId
-          ? `&planningPeriodId=${encodeURIComponent(context.planningPeriodId)}`
-          : ""
-      }`
-    : "";
 
   return (
     <div data-timeline-module className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10">
       {/* Breadcrumb, renders immediately; no data-dependent await below this point */}
       <nav
-        className="mb-6 flex items-center gap-1.5 text-xs"
+        aria-label="Timeline project"
+        className="mb-6 flex flex-wrap items-center gap-1.5 text-xs"
         style={{ color: "var(--ink-quiet)" }}
       >
         <Link
-          href={`/app/plan${contextQuery}`}
+          href={buildTimelineProjectHref(null, queryContext)}
           className="transition-colors hover:text-ink"
           style={{ color: "var(--ink-soft)" }}
         >
           {workspace.name}
         </Link>
         <span aria-hidden>/</span>
-        <span style={{ color: "var(--ink)" }}>{project.name}</span>
+        <ProjectSwitcher
+          currentProject={{ slug: project.slug, name: project.name }}
+          projects={projectOptions}
+          context={queryContext}
+        />
       </nav>
 
       {/* Heading, renders immediately */}
@@ -128,7 +137,9 @@ async function PlanPageContent({
 
   return (
     <CurationSurface
-      initialNodes={effectiveNodes}
+      initialNodes={effectiveNodes.filter(
+        (node) => node.projectSlug === projectSlug,
+      )}
       workspaceSlug={workspaceSlug}
       projectSlug={projectSlug}
       isPublished={workspacePublished}

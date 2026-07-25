@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  SIGNAL_URL,
-  NOTES_URL,
-  TIMELINE_URL,
-  STUDIO_URL,
-  TASKS_URL,
+  APP_ORIGIN,
+  PRODUCT_APP_URLS,
+  PRODUCT_MARKETING_URLS,
+  STUDIO_ORIGIN,
 } from "@/lib/product-urls";
 
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
@@ -26,38 +25,38 @@ const PRODUCTS: SuiteProduct[] = [
     slug: "notes",
     word: "notes",
     clarityLine: "Capture clarity",
-    marketingUrl: NOTES_URL,
-    appUrl: `${NOTES_URL}/app`,
+    marketingUrl: PRODUCT_MARKETING_URLS.notes,
+    appUrl: PRODUCT_APP_URLS.notes,
     gesture: "caret",
   },
   {
     slug: "tasks",
     word: "tasks",
     clarityLine: "Execution clarity",
-    marketingUrl: TASKS_URL,
-    appUrl: `${TASKS_URL}/app`,
+    marketingUrl: PRODUCT_MARKETING_URLS.tasks,
+    appUrl: PRODUCT_APP_URLS.tasks,
     gesture: "pulse",
   },
   {
     slug: "roadmap",
     word: "timeline",
     clarityLine: "Direction clarity",
-    marketingUrl: TIMELINE_URL,
-    appUrl: `${TIMELINE_URL}/app`,
+    marketingUrl: PRODUCT_MARKETING_URLS.timeline,
+    appUrl: PRODUCT_APP_URLS.timeline,
     gesture: "sweep",
   },
   {
     slug: "analytics",
     word: "signal",
     clarityLine: "Attention clarity",
-    marketingUrl: SIGNAL_URL,
-    appUrl: `${SIGNAL_URL}/app`,
+    marketingUrl: PRODUCT_MARKETING_URLS.signal,
+    appUrl: PRODUCT_APP_URLS.signal,
     gesture: "tick",
   },
 ];
 
 const INDIGO = "var(--indigo-600, var(--brand))";
-const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, TIMELINE_URL, SIGNAL_URL];
+const PRODUCT_ORIGINS = [APP_ORIGIN, STUDIO_ORIGIN];
 
 const SUITE_LAUNCHER_CSS = `
 .suite-launcher-root {
@@ -557,7 +556,7 @@ export function SuiteLauncher({
             })}
           </ul>
           <a
-            href={STUDIO_URL}
+            href={STUDIO_ORIGIN}
             target={isSignedIn ? undefined : "_blank"}
             rel={isSignedIn ? undefined : "noopener noreferrer"}
             onClick={() => setOpen(false)}
@@ -566,7 +565,7 @@ export function SuiteLauncher({
             <span>{isSignedIn ? "Back to Signal Studio" : "Visit signalstudio.ie"}</span>
           </a>
           <a
-            href={`${STUDIO_URL}/design`}
+            href={`${STUDIO_ORIGIN}/design`}
             target={isSignedIn ? undefined : "_blank"}
             rel={isSignedIn ? undefined : "noopener noreferrer"}
             onClick={() => setOpen(false)}

@@ -24,6 +24,7 @@ import {
   type UpsertOverlayResult,
 } from "@/modules/timeline/server/actions/workspaces";
 import { attentionReason } from "@/modules/timeline/lib/roadmap/needs-attention";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 const LANE_LABELS = ["Next", "In flight", "Shipped", "Later"] as const;
 type LaneLabel = typeof LANE_LABELS[number];
@@ -917,7 +918,7 @@ function SyncButton({
   const [result, setResult] = useState<"zero" | "count" | "error" | null>(null);
   const [syncCount, setSyncCount] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const tasksUrl = process.env.NEXT_PUBLIC_TASKS_URL ?? "https://tasks.signalstudio.ie";
+  const tasksUrl = PRODUCT_APP_URLS.tasks;
 
   function handleSync() {
     // Fix 2: clear previous result at the START of each sync so zero/error
@@ -1003,8 +1004,6 @@ function SyncButton({
           </span>{" "}
           <a
             href={tasksUrl}
-            target="_blank"
-            rel="noopener noreferrer"
             style={{
               color: "var(--indigo)",
               textDecoration: "none",
@@ -1436,9 +1435,7 @@ export function CurationSurface({
             {/* Fix 8: marginBottom 16 (was 12) */}
             <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
               <a
-                href={process.env.NEXT_PUBLIC_TASKS_URL ?? "https://tasks.signalstudio.ie"}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={PRODUCT_APP_URLS.tasks}
                 style={{
                   fontSize: 13,
                   fontWeight: 500,

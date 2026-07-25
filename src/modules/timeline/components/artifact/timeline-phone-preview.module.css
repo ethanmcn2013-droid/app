@@ -10,7 +10,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   margin-block-end: var(--space-4);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
 }
@@ -75,7 +75,7 @@
 .previewNote {
   max-width: 38ch;
   margin: var(--space-4) auto 0;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: var(--text-caption);
   line-height: var(--leading-body);
   text-align: center;

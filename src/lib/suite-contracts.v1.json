@@ -1,14 +1,79 @@
 {
   "version": 1,
+  "origins": {
+    "marketing": "https://signalstudio.ie",
+    "app": "https://app.signalstudio.ie"
+  },
   "products": {
-    "studio": { "name": "Signal Studio", "canonicalUrl": "https://signalstudio.ie", "surface": "umbrella", "access": "public-first" },
-    "tasks": { "name": "Signal Tasks", "canonicalUrl": "https://tasks.signalstudio.ie", "surface": "execution", "access": "collaboration-first" },
-    "timeline": { "name": "Signal Timeline", "canonicalUrl": "https://timeline.signalstudio.ie", "surface": "direction", "access": "public-first" },
-    "signal": { "name": "Signal", "canonicalUrl": "https://signal.signalstudio.ie", "surface": "attention", "access": "derived" },
-    "notes": { "name": "Signal Notes", "canonicalUrl": "https://notes.signalstudio.ie", "surface": "capture", "access": "private-first" }
+    "studio": {
+      "name": "Signal Studio",
+      "canonicalUrl": "https://signalstudio.ie",
+      "marketingUrl": "https://signalstudio.ie",
+      "surface": "umbrella",
+      "access": "public-first"
+    },
+    "notes": {
+      "name": "Signal Notes",
+      "canonicalUrl": "https://signalstudio.ie/notes",
+      "marketingUrl": "https://signalstudio.ie/notes",
+      "appUrl": "https://app.signalstudio.ie/app/notes",
+      "legacyOrigins": ["https://notes.signalstudio.ie"],
+      "surface": "capture",
+      "access": "private-first"
+    },
+    "tasks": {
+      "name": "Signal Tasks",
+      "canonicalUrl": "https://signalstudio.ie/tasks",
+      "marketingUrl": "https://signalstudio.ie/tasks",
+      "appUrl": "https://app.signalstudio.ie/app/board",
+      "publicOrigin": "https://tasks.signalstudio.ie",
+      "legacyOrigins": ["https://tasks.signalstudio.ie"],
+      "surface": "execution",
+      "access": "collaboration-first"
+    },
+    "timeline": {
+      "name": "Signal Timeline",
+      "canonicalUrl": "https://signalstudio.ie/timeline",
+      "marketingUrl": "https://signalstudio.ie/timeline",
+      "appUrl": "https://app.signalstudio.ie/app/plan",
+      "publicOrigin": "https://timeline.signalstudio.ie",
+      "legacyOrigins": [
+        "https://timeline.signalstudio.ie",
+        "https://roadmap.signalstudio.ie"
+      ],
+      "surface": "direction",
+      "access": "public-first"
+    },
+    "signal": {
+      "name": "Signal",
+      "canonicalUrl": "https://signalstudio.ie/signal",
+      "marketingUrl": "https://signalstudio.ie/signal",
+      "appUrl": "https://app.signalstudio.ie/app/brief",
+      "legacyOrigins": [
+        "https://signal.signalstudio.ie",
+        "https://analytics.signalstudio.ie"
+      ],
+      "surface": "attention",
+      "access": "derived"
+    }
   },
   "roles": ["owner", "admin", "member", "guest"],
-  "permissions": ["workspace.read", "workspace.write", "workspace.manage", "object.read", "object.write", "object.share"],
-  "objectRef": { "version": 1, "required": ["product", "type", "id", "canonicalUrl"], "optional": ["workspaceId", "sourceRef"] },
-  "context": { "version": 1, "required": ["sourceProduct"], "optional": ["workspaceId", "projectId", "objectRef", "returnUrl"] }
+  "permissions": [
+    "workspace.read",
+    "workspace.write",
+    "workspace.manage",
+    "object.read",
+    "object.write",
+    "object.share"
+  ],
+  "objectRef": {
+    "version": 1,
+    "required": ["product", "type", "id", "canonicalUrl"],
+    "optional": ["workspaceId", "sourceRef"]
+  },
+  "context": {
+    "version": 1,
+    "required": ["sourceProduct"],
+    "optional": ["workspaceId", "projectId", "objectRef", "returnUrl"]
+  }
 }

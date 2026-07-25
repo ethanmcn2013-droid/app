@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { TEMPLATES } from "@/lib/templates";
-import { TASKS_URL } from "@/lib/product-urls";
+import { TASKS_PUBLIC_ORIGIN } from "@/lib/product-urls";
 
-const BASE_URL = TASKS_URL;
+const BASE_URL = TASKS_PUBLIC_ORIGIN;
 
 /**
  * Sitemap. Every public marketing surface is enumerated here so

@@ -13,7 +13,7 @@ import type {
   TasksProvider,
   TasksProviderResult,
 } from "../../../lib/analytics/contracts";
-import { TASKS_URL } from "@/lib/product-urls";
+import { APP_ORIGIN } from "@/lib/product-urls";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
 import {
   activities,
@@ -152,7 +152,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         linkedDecisionIds: [],
         linkedMilestoneIds: [],
         workType: row.isMilestone ? "milestone" : null,
-        deepLink: `${TASKS_URL}/app/board?task=${encodeURIComponent(row.id)}`,
+        deepLink: `${APP_ORIGIN}/app/board?task=${encodeURIComponent(row.id)}`,
         updatedAt: iso(row.updatedAt),
       };
     });
@@ -258,7 +258,7 @@ export function projectsFromTasks(
         name: titleCase(id),
         ownerIds: Array.from(new Set(projectTasks.flatMap((task) => task.ownerIds))),
         state: "unknown",
-        deepLink: `${TASKS_URL}/app/board`,
+        deepLink: `${APP_ORIGIN}/app/board`,
         createdAt: sorted[0]?.createdAt ?? new Date().toISOString(),
         updatedAt: updated[0]?.updatedAt ?? new Date().toISOString(),
       };

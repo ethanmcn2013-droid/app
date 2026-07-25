@@ -5,7 +5,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { DevBanner } from "@/components/dev-banner";
 import { MotionProvider } from "@/components/motion-provider";
 import { isDemoMode } from "@/lib/access-mode";
-import { TASKS_URL } from "@/lib/product-urls";
+import { APP_ORIGIN } from "@/lib/product-urls";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   title: "Tasks · execution clarity",
   description:
     "Execution clarity for live work: four views of the same list, plain-English dates, and enough motion to show what changed.",
-  metadataBase: new URL(TASKS_URL),
+  metadataBase: new URL(APP_ORIGIN),
   alternates: { canonical: "/" },
   manifest: "/manifest.webmanifest",
   openGraph: {
@@ -83,12 +83,6 @@ export default async function RootLayout({
         <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
         {!bareArtifact ? (
           <>
-            <link rel="preconnect" href="https://timeline.signalstudio.ie" />
-            <link rel="dns-prefetch" href="https://timeline.signalstudio.ie" />
-            <link rel="preconnect" href="https://notes.signalstudio.ie" />
-            <link rel="dns-prefetch" href="https://notes.signalstudio.ie" />
-            <link rel="preconnect" href="https://signal.signalstudio.ie" />
-            <link rel="dns-prefetch" href="https://signal.signalstudio.ie" />
             <link rel="preconnect" href="https://signalstudio.ie" />
             <link rel="dns-prefetch" href="https://signalstudio.ie" />
           </>

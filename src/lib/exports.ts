@@ -1,6 +1,6 @@
 import type { LaneId, Task } from "@/lib/data";
 import { LANES, LANE_ORDER, PRIORITY_LABEL } from "@/lib/data";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 /**
  * Pure formatters that turn a workspace's tasks into clipboard-ready
@@ -94,7 +94,7 @@ export function formatTasksAsMarkdown(
   }
 
   lines.push("---");
-  lines.push(`Made with Signal Tasks · ${TASKS_DOMAIN}`);
+  lines.push(`Made with Signal Tasks · ${TASKS_PUBLIC_DOMAIN}`);
   return lines.join("\n");
 }
 

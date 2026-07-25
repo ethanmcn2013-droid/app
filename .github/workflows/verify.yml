@@ -27,4 +27,5 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm test:suite-url-and-switcher
       - run: pnpm build

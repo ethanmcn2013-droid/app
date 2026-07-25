@@ -10,7 +10,7 @@ import type {
   TimelineProvider,
   TimelineProviderResult,
 } from "../../../lib/analytics/contracts";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 import {
   timelineDependencyResolved,
   unresolvedTimelineDependencyIds,
@@ -140,7 +140,7 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
           ownerIds: assignee ? [assignee] : [],
           date: analyticsDateValue(row.target_date),
           blockedMilestoneIds: blockedMilestonesByDependency.get(id) ?? [],
-          deepLink: `${TIMELINE_URL}/${encodeURIComponent(workspaceSlug)}/${encodeURIComponent(projectId)}/${encodeURIComponent(id)}`,
+          deepLink: timelineProjectLink(projectId, query.scope.workspaceId),
           createdAt,
           updatedAt,
         }];
@@ -224,7 +224,7 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
         linkedTaskIds: linkedTaskId ? [linkedTaskId] : [],
         linkedDecisionIds: [],
         ownerIds: assignee ? [assignee] : [],
-        deepLink: `${TIMELINE_URL}/${encodeURIComponent(workspaceSlug)}/${encodeURIComponent(projectId)}/${encodeURIComponent(id)}`,
+        deepLink: timelineProjectLink(projectId, query.scope.workspaceId),
         createdAt,
         updatedAt,
       }];
@@ -268,6 +268,14 @@ function syncedTaskId(milestoneId: string, tasksWorkspaceId: string): string | n
   return milestoneId.startsWith(prefix) && milestoneId.length > prefix.length
     ? milestoneId.slice(prefix.length)
     : null;
+}
+
+function timelineProjectLink(projectSlug: string, workspaceId: string): string {
+  const url = new URL(
+    `${PRODUCT_APP_URLS.timeline}/${encodeURIComponent(projectSlug)}`,
+  );
+  url.searchParams.set("workspaceId", workspaceId);
+  return url.toString();
 }
 
 function milestoneState(status: string | null): MilestoneRecord["state"] {

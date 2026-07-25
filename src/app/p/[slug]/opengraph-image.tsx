@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getPublishedWorkspaceBySlug } from "@/server/db/queries";
 import { DOMAINS, type DomainId } from "@/lib/domains";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 // nodejs runtime (not edge), this OG image reads the workspace via
 // `getPublishedWorkspaceBySlug`, which transitively imports the libSQL
@@ -187,7 +187,7 @@ export default async function PublishedWorkspaceOG({
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/p/{ws.slug}</div>
+          <div style={{ display: "flex" }}>{TASKS_PUBLIC_DOMAIN}/p/{ws.slug}</div>
           <div style={{ display: "flex" }}>Made with Signal Tasks</div>
         </div>
       </div>

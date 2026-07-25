@@ -94,6 +94,44 @@ const audienceArtifactHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
 ];
 
+const productionAppHosts = [
+  "app.signalstudio.ie",
+  "tasks.signalstudio.ie",
+] as const;
+
+function retiredMarketingRedirects() {
+  const paths = [
+    {
+      source: "/features",
+      destination: "https://signalstudio.ie/tasks",
+    },
+    {
+      source: "/pricing",
+      destination: "https://signalstudio.ie/pricing",
+    },
+    {
+      source: "/changelog",
+      destination: "https://signalstudio.ie/dispatch",
+    },
+    {
+      source: "/about",
+      destination: "https://signalstudio.ie/about",
+    },
+    {
+      source: "/roadmap",
+      destination: "https://signalstudio.ie/timeline",
+    },
+  ] as const;
+
+  return productionAppHosts.flatMap((host) =>
+    paths.map((route) => ({
+      ...route,
+      has: [{ type: "host" as const, value: host }],
+      permanent: true,
+    })),
+  );
+}
+
 // AD-012: /embed/[slug] is a documented framable surface — partners and venue
 // pages iframe it to show a live task board. A blocking X-Frame-Options on
 // /embed cannot be neutralised by CSP frame-ancestors while the CSP ships
@@ -148,6 +186,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/templates/final-paper-sprint", destination: "/templates/final-paper-push", permanent: true },
       { source: "/templates/job-application-sprint", destination: "/templates/job-application-push", permanent: true },
+      ...retiredMarketingRedirects(),
     ];
   },
 };

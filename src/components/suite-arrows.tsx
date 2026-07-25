@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  NOTES_URL,
-  TASKS_URL,
-  TIMELINE_URL,
-  SIGNAL_URL,
-} from "@/lib/product-urls";
+import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 
 type Slug = "notes" | "tasks" | "roadmap" | "analytics";
 
@@ -26,10 +21,10 @@ type Slug = "notes" | "tasks" | "roadmap" | "analytics";
  * it feeling instant on the dominant (warm-cache) path.
  */
 const ORDER: { slug: Slug; word: string; url: string }[] = [
-  { slug: "notes", word: "notes", url: NOTES_URL },
-  { slug: "tasks", word: "tasks", url: TASKS_URL },
-  { slug: "roadmap", word: "timeline", url: TIMELINE_URL },
-  { slug: "analytics", word: "signal", url: SIGNAL_URL },
+  { slug: "notes", word: "notes", url: PRODUCT_MARKETING_URLS.notes },
+  { slug: "tasks", word: "tasks", url: PRODUCT_MARKETING_URLS.tasks },
+  { slug: "roadmap", word: "timeline", url: PRODUCT_MARKETING_URLS.timeline },
+  { slug: "analytics", word: "signal", url: PRODUCT_MARKETING_URLS.signal },
 ];
 
 function prefetch(url: string) {

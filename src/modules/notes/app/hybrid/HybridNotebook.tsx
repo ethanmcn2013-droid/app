@@ -18,7 +18,7 @@ import {
 } from "@/modules/notes/app/FirstCaptureMoment";
 import { useVoiceCapture } from "@/modules/notes/app/notebook/hooks";
 import { NoteProvenanceChip } from "@/modules/notes/components/NoteProvenanceChip";
-import { TASKS_URL } from "@/lib/product-urls";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 import {
   MAX_APPROVED_EXTRACT_CHARS,
   MAX_NOTE_BODY_CHARS,
@@ -41,7 +41,7 @@ import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-per
 
 import styles from "./hybrid-notebook.module.css";
 
-const TASKS_APP_URL = `${TASKS_URL.replace(/\/+$/, "")}/app`;
+const TASKS_APP_URL = PRODUCT_APP_URLS.tasks;
 const RECOVERY_DRAFT_PREFIX = "signal-notes.hybrid-draft.v2";
 const RECOVERY_CAPTURES_PREFIX = "signal-notes.hybrid-pending-captures.v2";
 const RECOVERY_EDITS_PREFIX = "signal-notes.hybrid-detail-edits.v2";
