@@ -83,8 +83,8 @@ export function ProjectSwitcher({
   function choose(index: number) {
     const option = options[index];
     const href = buildTimelineProjectHref(option?.slug ?? null, context);
-    setOpen(false);
     router.push(href);
+    setOpen(false);
   }
 
   function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
@@ -188,7 +188,6 @@ export function ProjectSwitcher({
                 role="menuitem"
                 aria-current={isCurrent ? "page" : undefined}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => setOpen(false)}
                 className="flex min-h-11 w-full items-center justify-between gap-5 rounded-lg px-3 text-left text-[13px] text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus:bg-bg-sunken focus:text-ink"
               >
                 <span className="truncate">
