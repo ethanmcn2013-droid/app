@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-25 · T·102 · tightens · the old Tasks door enters the one app
+
+**A saved `tasks.signalstudio.ie/app` link now crosses to the canonical Signal
+Studio app instead of keeping sign-in on the retired product host.** The Tasks
+home lands on the board; deeper app routes keep their path on
+`app.signalstudio.ie`. Public boards, templates, invites, and service traffic
+stay on the Tasks hostname where they belong.
+
 ## 2026-07-25 · T·101 · tightens · four products, one address book
 
 **Signal Studio now has one explicit URL grammar: four marketing paths on `signalstudio.ie`, four signed-in module routes on `app.signalstudio.ie`, and product subdomains reserved for the public artifacts and service traffic that genuinely need them.** The consolidated app stops linking to its former sibling deployments as if Notes, Tasks, Timeline, and Signal were separate apps; typed marketing, app, and public origins make link intent reviewable, old marketing routes redirect to the new homes, and the public wedding Timeline is restored at its established address.
