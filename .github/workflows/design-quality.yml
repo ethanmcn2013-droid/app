@@ -88,6 +88,9 @@ jobs:
       - name: Capture critical rendered evidence
         run: pnpm experience:test
 
+      - name: Verify Timeline project switching
+        run: pnpm experience:test:timeline-switcher
+
       - name: Upload rendered evidence
         if: always()
         uses: actions/upload-artifact@v4

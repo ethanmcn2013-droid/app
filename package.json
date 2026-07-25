@@ -16,6 +16,7 @@
     "experience:review": "node scripts/experience/review-materiality.mjs",
     "experience:validate": "node scripts/experience/validate.mjs",
     "experience:test": "playwright test --config experience/playwright.config.ts && node scripts/experience/attest-playwright.mjs --verify-receipts",
+    "experience:test:timeline-switcher": "playwright test --config experience/timeline-switcher.playwright.config.ts",
     "experience:attest": "node scripts/experience/attest-playwright.mjs",
     "experience:quality": "pnpm experience:self-test && pnpm experience:fixtures && pnpm experience:validate && pnpm ds:check && pnpm experience:test",
     "db:migrate": "node scripts/db/migrate.mjs migrate",
