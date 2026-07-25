@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Signal Studio consolidated app
 
-## Getting Started
+This Next.js repository serves the one Signal Studio web app. Its four products are Notes, Tasks, Timeline, and Signal.
 
-First, run the development server:
+## URL contract
+
+- Marketing: `https://signalstudio.ie/{notes|tasks|timeline|signal}`
+- App: `https://app.signalstudio.ie/app/{notes|board|plan|brief}`
+- Narrow public/service hosts: `tasks.signalstudio.ie` and `timeline.signalstudio.ie`
+
+Read `docs/SUITE_URL_AND_NAMING_CONTRACT.md` before changing navigation, domains, auth callbacks, marketing redirects, or public links. Use `src/lib/product-urls.ts` rather than hard-coded cross-product URLs.
+
+## Local development
+
+Install and run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app defaults to port 3000. Review/demo mode uses deterministic fixtures and never queries production tenant data.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test
+pnpm build
+pnpm experience:quality
+```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The repository contract in `AGENTS.md` and the local Next.js documentation in `node_modules/next/dist/docs/` are authoritative for implementation work.

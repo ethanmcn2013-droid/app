@@ -15,7 +15,7 @@ import { CreateWorkspaceForm } from "@/modules/timeline/app/_components/create-w
 import { CreateProjectForm } from "@/modules/timeline/app/_components/create-project-form";
 import { PublishControl } from "@/modules/timeline/app/_components/publish-control";
 import { AnchorChip } from "@/modules/timeline/app/_components/anchor-countdown";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { TIMELINE_PUBLIC_ORIGIN } from "@/lib/product-urls";
 import { getRequestTime } from "@/modules/timeline/lib/request-time";
 
 export const metadata = { title: "Dashboard, Timeline" };
@@ -68,7 +68,8 @@ export default async function AppPage({
     ]);
   // T3: NEXT_PUBLIC_TIMELINE_SITE_URL is the public Timeline deployment base URL.
   // Falls back to the suite constant so a missing env var degrades gracefully.
-  const publicBase = process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL;
+  const publicBase =
+    process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN;
 
   const anchorCandidates = effectiveNodes.filter((n) => !n.hidden);
   const now = getRequestTime();

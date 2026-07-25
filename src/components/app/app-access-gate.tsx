@@ -12,7 +12,7 @@ import { requireAppAccess } from "@/server/require-app-access";
  *     <AppAccessGate>{children}</AppAccessGate>
  *   </Suspense>
  *
- * Copied byte-identical across the four product repos.
+ * One gate for all four product modules in the consolidated app.
  */
 export async function AppAccessGate({
   children,

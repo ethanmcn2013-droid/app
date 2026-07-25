@@ -3,7 +3,7 @@ import { TEMPLATES } from "@/lib/templates";
 import { getTemplateEssay } from "@/lib/template-essays";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { templateGlyphForOg } from "@/components/marketing/template-glyph";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 // nodejs runtime, keeps this OG aligned with the others
 // (`/p/[slug]/opengraph-image`, `/share-card/[workspaceId]/opengraph-image`).
@@ -172,7 +172,9 @@ export default async function TemplateOG({
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/templates/{template.id}</div>
+          <div style={{ display: "flex" }}>
+            {TASKS_PUBLIC_DOMAIN}/templates/{template.id}
+          </div>
           <div style={{ display: "flex" }}>Free on every tier</div>
         </div>
       </div>

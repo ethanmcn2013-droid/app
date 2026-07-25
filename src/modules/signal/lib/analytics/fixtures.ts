@@ -11,6 +11,7 @@ import type {
   TaskRecord,
 } from "./contracts";
 import { resolvePeriod } from "./time";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 // This module is pure and has no persistence hooks. Importing it can never seed a database.
 // Production services must not select fixtures; the demo/development boundary owns that choice.
@@ -104,7 +105,7 @@ function project(
     name,
     ownerIds,
     state: "unknown",
-    deepLink: `https://timeline.signalstudio.ie/${FIXTURE_WORKSPACE_ID}/${id}`,
+    deepLink: `${PRODUCT_APP_URLS.timeline}/${id}?workspaceId=${FIXTURE_WORKSPACE_ID}`,
     createdAt: "2026-01-01T09:00:00.000Z",
     updatedAt: FIXTURE_NOW,
   };
@@ -183,7 +184,7 @@ function decision(id: string, title: string): NoteRecord {
     completedAt: null,
     linkedTaskIds: [],
     linkedMilestoneIds: ["milestone-friday"],
-    deepLink: `https://notes.signalstudio.ie/app?note=${id}`,
+    deepLink: `${PRODUCT_APP_URLS.notes}?note=${id}`,
     exposure: "approved_extract",
   };
 }
@@ -284,7 +285,7 @@ function signatureFixture(): AnalyticsFixture {
     linkedTaskIds: blocked.map((record) => record.id),
     linkedDecisionIds: decisions.map((record) => record.id),
     ownerIds: ["user-owner"],
-    deepLink: "https://timeline.signalstudio.ie/fixture/launch?milestone=milestone-friday",
+    deepLink: `${PRODUCT_APP_URLS.timeline}/launch?workspaceId=${FIXTURE_WORKSPACE_ID}&milestone=milestone-friday`,
     createdAt: "2026-04-01T09:00:00.000Z",
     updatedAt: "2026-07-11T12:00:00.000Z",
   };

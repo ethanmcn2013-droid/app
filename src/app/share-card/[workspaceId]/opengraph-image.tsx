@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { tasks, workspaces } from "@/server/db/schema";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   DEMO_WORKSPACE_ID,
@@ -230,7 +230,7 @@ export default async function ShareCardOG({
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/p/{ws.slug}</div>
+          <div style={{ display: "flex" }}>{TASKS_PUBLIC_DOMAIN}/p/{ws.slug}</div>
           <div style={{ display: "flex" }}>Made with Signal Tasks</div>
         </div>
       </div>

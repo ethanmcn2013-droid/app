@@ -6,6 +6,11 @@ import {
   SUITE_CONTEXT_STORAGE_KEY,
 } from "@/components/app/suite-context-publisher";
 import {
+  APP_ORIGIN,
+  PRODUCT_APP_URLS,
+  STUDIO_ORIGIN,
+} from "@/lib/product-urls";
+import {
   isSuiteContextId,
   withSuiteContext,
   type SuiteContextV2,
@@ -47,29 +52,18 @@ import {
  * → analytics. Authed deep-links land on each product's /app entry.
  */
 
-const STUDIO_URL =
-  process.env.NEXT_PUBLIC_STUDIO_URL ?? "https://signalstudio.ie";
-const NOTES_URL =
-  process.env.NEXT_PUBLIC_NOTES_URL ?? "https://notes.signalstudio.ie";
-const TASKS_URL =
-  process.env.NEXT_PUBLIC_TASKS_URL ?? "https://tasks.signalstudio.ie";
-const TIMELINE_URL =
-  process.env.NEXT_PUBLIC_TIMELINE_URL ?? "https://timeline.signalstudio.ie";
-const SIGNAL_URL =
-  process.env.NEXT_PUBLIC_SIGNAL_URL ?? "https://signal.signalstudio.ie";
-
 const INDIGO = "#4f46e5";
 
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 
 const PRODUCTS: { slug: ProductSlug; word: string; appUrl: string }[] = [
-  { slug: "notes", word: "notes", appUrl: `${NOTES_URL}/app` },
-  { slug: "tasks", word: "tasks", appUrl: `${TASKS_URL}/app` },
-  { slug: "roadmap", word: "timeline", appUrl: `${TIMELINE_URL}/app` },
-  { slug: "analytics", word: "signal", appUrl: `${SIGNAL_URL}/app` },
+  { slug: "notes", word: "notes", appUrl: PRODUCT_APP_URLS.notes },
+  { slug: "tasks", word: "tasks", appUrl: PRODUCT_APP_URLS.tasks },
+  { slug: "roadmap", word: "timeline", appUrl: PRODUCT_APP_URLS.timeline },
+  { slug: "analytics", word: "signal", appUrl: PRODUCT_APP_URLS.signal },
 ];
 
-const PRODUCT_ORIGINS = [NOTES_URL, TASKS_URL, TIMELINE_URL, SIGNAL_URL];
+const PRODUCT_ORIGINS = [APP_ORIGIN];
 
 /**
  * Phase 3 (instant-jump): warm a sibling product on hover/focus so the
@@ -220,7 +214,7 @@ export function SuiteSwitcher({
       {showUmbrella ? (
         <>
           <a
-            href={STUDIO_URL}
+            href={STUDIO_ORIGIN}
             aria-label="Signal Studio"
             className="suitesw-anchor"
             style={{ marginRight: 8 }}

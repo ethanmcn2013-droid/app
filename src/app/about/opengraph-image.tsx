@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
 export const alt = "Signal Tasks, execution clarity";
@@ -106,7 +106,7 @@ export default async function AboutOG() {
             marginTop: 32,
           }}
         >
-          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/about</div>
+          <div style={{ display: "flex" }}>{TASKS_PUBLIC_DOMAIN}/about</div>
           <div style={{ display: "flex" }}>jargon out · tool in</div>
         </div>
       </div>

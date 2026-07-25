@@ -1,7 +1,7 @@
 import { SiteNavServer } from "@/components/marketing/site-nav-server";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { AboutManifesto } from "@/components/marketing/about-manifesto";
-import { TIMELINE_URL, STUDIO_URL } from "@/lib/product-urls";
+import { PRODUCT_MARKETING_URLS, STUDIO_URL } from "@/lib/product-urls";
 
 export const metadata = {
   title: "About · Signal Tasks",
@@ -38,17 +38,13 @@ export default function AboutPage() {
               Signal Tasks is one of four products from{" "}
               <a
                 href={`${STUDIO_URL}/about`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
                 Signal Studio.
               </a>{" "}
               We also make{" "}
               <a
-                href={TIMELINE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={PRODUCT_MARKETING_URLS.timeline}
                 className="font-medium text-ink transition-colors hover:text-brand"
               >
                 Signal Timeline

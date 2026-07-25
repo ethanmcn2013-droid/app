@@ -7,7 +7,8 @@ import path from "node:path";
  * Static source contracts from the Phase 5 Opus review.
  *
  * MAJOR-1: every public-facing URL the Timeline module builds must anchor on
- * the TIMELINE public origin (NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL),
+ * the Timeline public origin
+ * (NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN),
  * never the unified app's own NEXT_PUBLIC_SITE_URL. The stable branded
  * timeline.signalstudio.ie link hands `/s/[token]` to the unified app while
  * preserving the opaque path and its privacy headers (AD-009).
@@ -30,8 +31,10 @@ describe("timeline public-url contract", () => {
   it("audience share links anchor on the timeline public origin", () => {
     const source = read("server/actions/audience-timeline.ts");
     assert.ok(
-      source.includes("NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL"),
-      "audience-timeline.ts must build share links from NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL",
+      source.includes(
+        "NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN",
+      ),
+      "audience-timeline.ts must build share links from the explicit Timeline public origin",
     );
     assert.ok(
       !source.includes("process.env.NEXT_PUBLIC_SITE_URL"),

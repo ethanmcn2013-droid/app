@@ -13,7 +13,7 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
 import { recordActivity } from "@/server/db/activity";
 import { emailConfigured, sendEmail } from "@/server/email";
-import { TASKS_URL } from "@/lib/product-urls";
+import { APP_ORIGIN } from "@/lib/product-urls";
 
 function newNotificationId(): string {
   const raw =
@@ -56,7 +56,7 @@ function nudgeEmailHtml(input: {
           </p>
           <a href="${escapeHtml(taskUrl)}" style="display:inline-block;background:#14151a;color:#ffffff;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;text-decoration:none;">Open task</a>
           <p style="font-size:12px;color:#94a3b8;margin:24px 0 0;">
-            You can turn off nudge notifications in your <a href="${escapeHtml(TASKS_URL)}/app/settings" style="color:#94a3b8;">notification settings</a>.
+            You can turn off nudge notifications in your <a href="${escapeHtml(APP_ORIGIN)}/app/settings" style="color:#94a3b8;">notification settings</a>.
           </p>
         </td></tr>
       </table>
@@ -201,7 +201,7 @@ export async function sendNudgeAction(taskId: string): Promise<
           .where(eq(users.id, toUserId));
 
         if (recipientRow?.email) {
-          const taskUrl = `${TASKS_URL}/app/board?task=${encodeURIComponent(taskId)}`;
+          const taskUrl = `${APP_ORIGIN}/app/board?task=${encodeURIComponent(taskId)}`;
           const html = nudgeEmailHtml({
             senderName,
             taskTitle: task.title,

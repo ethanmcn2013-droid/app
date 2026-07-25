@@ -4,6 +4,12 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-25 · T·101 · tightens · four products, one address book
+
+**Signal Studio now has one explicit URL grammar: four marketing paths on `signalstudio.ie`, four signed-in module routes on `app.signalstudio.ie`, and product subdomains reserved for the public artifacts and service traffic that genuinely need them.** The consolidated app stops linking to its former sibling deployments as if Notes, Tasks, Timeline, and Signal were separate apps; typed marketing, app, and public origins make link intent reviewable, old marketing routes redirect to the new homes, and the public wedding Timeline is restored at its established address.
+
+Timeline also gains local project switching where the project context belongs. The current project stays visible in the breadcrumb, an authorised workspace list moves directly among projects while preserving validated context, and All projects is always the first exit. The interaction is covered for tenant filtering, query preservation, three-project browser history, keyboard use, mobile targets, direct reload, and reduced motion.
+
 ## 2026-07-20 · T·100 · tightens · the working row sheds what the frame already carries
 
 **The hybrid interior's control row drops the second search box, the All-tasks filter, the Manual-order sort, the Planning button and the live "N shown" count, keeping only Fields, density and Add task — the black Studio Bar already owns search, and the row had started saying things twice.** The one-to-one hybrid port brought the lab's full control row back with it, so the founder's earlier row cleanup had to land again on the new interior; this re-applies it. The controls that stay wear the Signal Studio rail-icon set — fields, density, more, search, sort, filter and settings — repointed through the one icon wrapper, so the whole app moves to the same glyphs at once.

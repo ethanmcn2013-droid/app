@@ -3,6 +3,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { isDemoMode } from "@/lib/access-mode";
 import { isBareArtifactPath } from "@/lib/bare-artifact-path";
+import {
+  APP_ORIGIN,
+  PRODUCT_MARKETING_URLS,
+} from "@/lib/product-urls";
 
 /**
  * Next.js 16 renamed middleware → proxy. Same shape, same matcher
@@ -71,6 +75,31 @@ function marketingToAppRedirect(
   return NextResponse.redirect(new URL(APP_ENTRY, request.url), 307);
 }
 
+/**
+ * Production has one marketing origin and one app origin. The legacy Tasks
+ * hostname remains available for embeds, published workspaces, invites, and
+ * service traffic, but its root is no longer a separate marketing home.
+ */
+function productRootRedirect(
+  request: NextRequest,
+  isAuthed: boolean,
+): NextResponse | null {
+  if (request.nextUrl.pathname !== "/") return null;
+
+  const host = request.headers
+    .get("host")
+    ?.split(":", 1)[0]
+    ?.toLowerCase();
+  if (host !== "app.signalstudio.ie" && host !== "tasks.signalstudio.ie") {
+    return null;
+  }
+
+  const destination = isAuthed
+    ? `${APP_ORIGIN}/app`
+    : PRODUCT_MARKETING_URLS.tasks;
+  return NextResponse.redirect(destination, isAuthed ? 307 : 308);
+}
+
 const isPublicRoute = createRouteMatcher([
   "/",
   "/about",
@@ -91,6 +120,7 @@ const isPublicRoute = createRouteMatcher([
   "/p/(.*)",
   "/share/(.*)",
   "/s/(.*)",
+  "/the-wedding",
   "/redeem/(.*)",
   "/invite/(.*)",
   "/embed.js",
@@ -146,6 +176,9 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   // __session cookie no longer bounces a signed-out visitor into the /app
   // sign-in wall. Genuine sessions still land in the workspace.
   const { userId } = await auth();
+  const productRoot = productRootRedirect(req, Boolean(userId));
+  if (productRoot) return productRoot;
+
   const redirect = marketingToAppRedirect(req, Boolean(userId));
   if (redirect) return redirect;
 
@@ -186,6 +219,7 @@ export const config = {
     "/changelog",
     "/app/:path*",
     "/s/:path*",
+    "/the-wedding",
     "/api/:path*",
     "/sign-in/:path*",
     "/sign-up/:path*",

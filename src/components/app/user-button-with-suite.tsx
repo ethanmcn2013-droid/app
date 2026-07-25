@@ -5,12 +5,7 @@ import Link from "next/link";
 import { UserButton, useUser, useClerk } from "@clerk/nextjs";
 import { isDemoMode } from "@/lib/access-mode";
 import { useHydrated } from "@/lib/use-hydrated";
-import {
-  SIGNAL_URL,
-  NOTES_URL,
-  TIMELINE_URL,
-  TASKS_URL,
-} from "@/lib/product-urls";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
 
@@ -49,10 +44,10 @@ function clearPreviewCookie() {
  * The current product is excluded via the filter below.
  */
 const PRODUCTS: { slug: ProductSlug; label: string; url: string }[] = [
-  { slug: "notes",     label: "Open notes",     url: `${NOTES_URL}/app` },
-  { slug: "tasks",     label: "Open tasks",     url: `${TASKS_URL}/app` },
-  { slug: "roadmap",   label: "Open timeline",   url: `${TIMELINE_URL}/app` },
-  { slug: "analytics", label: "Open signal", url: `${SIGNAL_URL}/app` },
+  { slug: "notes",     label: "Open notes",    url: PRODUCT_APP_URLS.notes },
+  { slug: "tasks",     label: "Open tasks",    url: PRODUCT_APP_URLS.tasks },
+  { slug: "roadmap",   label: "Open timeline", url: PRODUCT_APP_URLS.timeline },
+  { slug: "analytics", label: "Open signal",   url: PRODUCT_APP_URLS.signal },
 ];
 
 function ArrowIcon() {

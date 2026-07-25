@@ -2,7 +2,7 @@
 
 The technical and business decisions that locked in. Each entry: what we picked, what we considered, why it landed there, and what would change our mind.
 
-Last revised: 2026-05-07.
+Last revised: 2026-07-25.
 
 ---
 
@@ -98,13 +98,15 @@ Last revised: 2026-05-07.
 
 ---
 
-## D9 · Domain registrar — Vercel domains for the apex, optional Cloudflare in front
+## D9 · Product URL architecture — one marketing origin, one app origin
 
-**Picked (planned):** `tasks.app` (or alternative) registered through Vercel Domains for one-step DNS. Cloudflare optionally in front as DNS-only first; flip to proxy mode only if launch-day traffic warrants WAF.
+**Picked:** `signalstudio.ie` is the marketing origin and carries the four product homes at `/notes`, `/tasks`, `/timeline`, and `/signal`. `app.signalstudio.ie` is the only signed-in app origin and carries the stable module routes `/app/notes`, `/app/board`, `/app/plan`, and `/app/brief`.
 
-**Why:** Vercel Domains keeps DNS + cert + deploy in one console. Cloudflare-as-proxy is overkill at launch; the WAF/DDoS protection isn't free latency.
+**Why:** Signal Studio is one app with four products. Paths keep the marketing story coherent and discoverable; one app origin keeps authentication, navigation, and tenant context coherent. Product subdomains remain only where a public artifact or service contract needs a narrow boundary.
 
-**What changes our mind:** Show HN front page traffic exceeds Vercel's free-tier rate limits. Then Cloudflare proxy mode, with cache rules tuned for `/templates` and `/p/{slug}`.
+**Compatibility:** `tasks.signalstudio.ie` continues to serve Tasks embeds, published workspaces, invitations, webhooks, and service endpoints. `timeline.signalstudio.ie` continues to serve published and bearer-linked Timeline artifacts. Retired product roots permanently redirect to their canonical marketing page.
+
+**What changes our mind:** a proven security or isolation requirement that cannot be satisfied by route-level boundaries. Any change requires a migration map, permanent redirects, auth callback review, and protection of existing public artifact URLs. Full contract: `docs/SUITE_URL_AND_NAMING_CONTRACT.md`.
 
 ---
 

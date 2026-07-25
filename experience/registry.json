@@ -61,7 +61,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "7452dd790f3a8f6e"
+      "materialityHash": "c199785a0312181f"
     },
     {
       "id": "tasks.page.app",
@@ -1570,7 +1570,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "cc476460b7830d2c"
+      "materialityHash": "3f719c2c450f48f4"
     },
     {
       "id": "tasks.page.root",
@@ -2293,7 +2293,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "12caf3712e48e2f4"
+      "materialityHash": "dbe79371612be2b9"
     },
     {
       "id": "tasks.page.welcome",
@@ -2650,7 +2650,7 @@
       "lastReviewedAt": "2026-07-22",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "49177db2d36d5d8c"
+      "materialityHash": "25a196c4368348a8"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -3608,6 +3608,51 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "257cbd064fa4bf9f"
+    },
+    {
+      "id": "tasks.page.the-wedding",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/the-wedding",
+      "source": "tasks/src/app/the-wedding/page.tsx",
+      "parentJourney": "public-discovery-and-proof",
+      "archetype": "public-information-and-proof",
+      "primaryJob": "Read a deterministic public wedding Timeline without seeing private work.",
+      "primaryAction": "Open the Signal Timeline product page.",
+      "roles": [
+        "public"
+      ],
+      "requiredStates": [
+        "populated",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [
+        "public-timeline-artifact"
+      ],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "c475f960caf7dacc"
     },
     {
       "id": "tasks.state.s-by-token-not-found",

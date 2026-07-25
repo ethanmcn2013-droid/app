@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/components/primitives/toast";
 import { TEMPLATES } from "@/lib/templates";
 import { SYNCED_TEMPLATE_IDS } from "@/lib/templates.generated";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 /**
  * Reads `?templated={id}` or `?remixed={id}` from the URL on `/app/board`
@@ -14,8 +14,7 @@ import { TIMELINE_URL } from "@/lib/product-urls";
  *
  * `?templated` (apply path): "{Template name} applied · N tasks."
  * `?remixed` (remix path): same headline, but for canonical workspace
- *   templates the toast carries a "Create a Roadmap for this" action
- *   that opens the synced from-template route on roadmap. Specialty
+ *   templates the toast carries an "Open Timeline" action. Specialty
  *   Tasks-only templates skip the action.
  *
  * Mounted as a leaf inside the board's page chrome, pure side-effect
@@ -50,9 +49,8 @@ export function TemplatedToast() {
         action:
           isRemix && isCanonical
             ? {
-                href: `${TIMELINE_URL}/onboarding/from-template/${encodeURIComponent(templateId)}`,
-                label: "Create a Roadmap for this",
-                external: true,
+                href: PRODUCT_APP_URLS.timeline,
+                label: "Open Timeline",
               }
             : undefined,
       });

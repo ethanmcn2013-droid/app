@@ -8,7 +8,10 @@
  * page just teaches the patterns.
  */
 import Link from "next/link";
-import { TASKS_DOMAIN, TASKS_URL } from "@/lib/product-urls";
+import {
+  TASKS_PUBLIC_DOMAIN,
+  TASKS_PUBLIC_ORIGIN,
+} from "@/lib/product-urls";
 
 export function EmbedGuide() {
   return (
@@ -43,7 +46,7 @@ export function EmbedGuide() {
         <p className="mt-6 text-[17px] leading-[1.55] text-ink-soft">
           Once you publish a workspace at{" "}
           <code className="rounded bg-bg-sunken/70 px-1.5 py-0.5 font-mono text-[15px]">
-            {TASKS_DOMAIN}/p/{"{slug}"}
+            {TASKS_PUBLIC_DOMAIN}/p/{"{slug}"}
           </code>
           , you can drop it into a blog post, a Notion page, a Google
           Site, a Substack, a Webflow project, anywhere that accepts
@@ -66,7 +69,7 @@ export function EmbedGuide() {
         </p>
         <pre className="mt-4 overflow-x-auto rounded-xl border border-line-soft bg-bg-sunken/40 px-5 py-4 font-mono text-[12.5px] leading-[1.55] text-ink">
 {`<iframe
-  src="${TASKS_URL}/embed/your-slug"
+  src="${TASKS_PUBLIC_ORIGIN}/embed/your-slug"
   width="100%"
   height="480"
   style="border: 0; border-radius: 12px"
@@ -79,7 +82,9 @@ export function EmbedGuide() {
           the slug shown in your workspace settings (Settings &rarr;
           Workspace &rarr; Identity &rarr; URL slug). The published-workspace
           URL must already be live —{" "}
-          <code className="font-mono">{TASKS_DOMAIN}/p/{"{slug}"}</code>{" "}
+          <code className="font-mono">
+            {TASKS_PUBLIC_DOMAIN}/p/{"{slug}"}
+          </code>{" "}
           should return your workspace.
         </p>
 
@@ -101,7 +106,7 @@ export function EmbedGuide() {
 <div data-tasks-workspace="other-slug"
      data-tasks-height="320"></div>
 
-<script src="${TASKS_URL}/embed.js" async></script>`}
+<script src="${TASKS_PUBLIC_ORIGIN}/embed.js" async></script>`}
         </pre>
         <p className="mt-3 text-[13px] leading-[1.55] text-ink-quiet">
           Per-element overrides:{" "}
@@ -120,7 +125,7 @@ export function EmbedGuide() {
         />
         <ToolBlock
           name="Notion"
-          notes={`Type /embed → paste the published URL directly (${TASKS_DOMAIN}/p/your-slug). Notion's embed block handles iframe wrapping automatically. The script-tag version doesn't apply here.`}
+          notes={`Type /embed → paste the published URL directly (${TASKS_PUBLIC_DOMAIN}/p/your-slug). Notion's embed block handles iframe wrapping automatically. The script-tag version doesn't apply here.`}
         />
         <ToolBlock
           name="Substack / Ghost / blogs"

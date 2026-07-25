@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHmac, randomUUID } from "node:crypto";
 import type { TimelinePromotionCommand } from "@/modules/notes/lib/timeline-promotion";
+import { APP_ORIGIN } from "@/lib/product-urls";
 
 export type TimelinePromotionReceipt =
   | { status: "sent"; publicationId: string; url: string }
@@ -14,7 +15,7 @@ export async function sendTimelinePromotionCommand(
   const endpoint =
     process.env.TIMELINE_PROMOTION_API_URL?.trim() ??
     (process.env.VERCEL_ENV === "production"
-      ? "https://timeline.signalstudio.ie/api/internal/notes-timeline"
+      ? `${APP_ORIGIN}/api/internal/notes-timeline`
       : null);
   const secret = process.env.NOTES_TO_TIMELINE_SECRET;
   if (!endpoint || !secret) {

@@ -2,11 +2,8 @@ import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
 import {
   IOS_APP_URL,
-  SIGNAL_URL,
-  NOTES_URL,
-  TIMELINE_URL,
+  PRODUCT_MARKETING_URLS,
   STUDIO_URL,
-  TASKS_URL,
 } from "@/lib/product-urls";
 
 type FooterLink = {
@@ -88,10 +85,10 @@ export function SiteFooter() {
           heading="Suite"
           links={[
             { href: STUDIO_URL, label: "Signal Studio", external: true },
-            { href: NOTES_URL, label: "Notes", external: true },
-            { href: TASKS_URL, label: "Tasks", external: true },
-            { href: TIMELINE_URL, label: "Timeline", external: true },
-            { href: SIGNAL_URL, label: "Signal", external: true },
+            { href: PRODUCT_MARKETING_URLS.notes, label: "Notes", external: true },
+            { href: PRODUCT_MARKETING_URLS.tasks, label: "Tasks", external: true },
+            { href: PRODUCT_MARKETING_URLS.timeline, label: "Timeline", external: true },
+            { href: PRODUCT_MARKETING_URLS.signal, label: "Signal", external: true },
           ]}
         />
       </div>

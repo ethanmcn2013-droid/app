@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 export const runtime = "edge";
 export const alt = "Tasks, the student rate.";
@@ -72,7 +72,7 @@ export default async function StudentsOG() {
             letterSpacing: "0.04em",
           }}
         >
-          <div style={{ display: "flex" }}>{TASKS_DOMAIN}/students</div>
+          <div style={{ display: "flex" }}>{TASKS_PUBLIC_DOMAIN}/students</div>
           <div style={{ display: "flex" }}>·</div>
           <div style={{ display: "flex" }}>€9.99 / year · verified student</div>
         </div>

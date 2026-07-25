@@ -57,6 +57,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Suite URL and Timeline switcher contracts
+        run: pnpm test:suite-url-and-switcher
+
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser
         continue-on-error: true

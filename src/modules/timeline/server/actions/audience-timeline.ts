@@ -22,7 +22,7 @@ import {
   type AudienceItemState,
   type AudienceKind,
 } from "@/modules/timeline/lib/audience-timeline";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { TIMELINE_PUBLIC_ORIGIN } from "@/lib/product-urls";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
 import { withFreshAudienceMutationAuthority } from "@/modules/timeline/server/audience-authority";
 import { isDemoMode } from "@/lib/access-mode";
@@ -117,7 +117,9 @@ function errorState(error: unknown): AudienceActionState {
 }
 
 function shareUrl(rawToken: string): string {
-  const base = (process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_URL).replace(/\/$/, "");
+  const base = (
+    process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ?? TIMELINE_PUBLIC_ORIGIN
+  ).replace(/\/$/, "");
   return `${base}/s/${rawToken}`;
 }
 

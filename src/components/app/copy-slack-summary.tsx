@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useToast } from "@/components/primitives/toast";
-import { TASKS_DOMAIN } from "@/lib/product-urls";
+import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 /**
  * "Copy as Slack" button.
@@ -58,7 +58,7 @@ export function CopySlackSummary({
         `• + ${remaining} more closed`,
       );
     }
-    const link = `Made with Signal Tasks → ${TASKS_DOMAIN}/p/${workspaceSlug}`;
+    const link = `Made with Signal Tasks → ${TASKS_PUBLIC_DOMAIN}/p/${workspaceSlug}`;
 
     return [
       `*This week in ${workspaceName}*`,

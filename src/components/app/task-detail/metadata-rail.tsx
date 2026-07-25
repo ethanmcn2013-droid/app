@@ -14,7 +14,7 @@ import type { Task } from "@/lib/data";
 import { useDomain } from "@/lib/domain-context";
 import { useHydrated } from "@/lib/use-hydrated";
 import { formatRelativeTime } from "@/lib/utils";
-import { TIMELINE_URL } from "@/lib/product-urls";
+import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 import {
   AssigneesRow,
   DueRow,
@@ -138,9 +138,7 @@ export function MetadataRail({
       {task.isMilestone ? (
         <MetaField label="Milestone" colSpan2={compact}>
           <a
-            href={`${TIMELINE_URL}/app`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={PRODUCT_APP_URLS.timeline}
             className="inline-flex items-center gap-1 text-[12px] text-ink-quiet transition-colors hover:text-ink-soft"
           >
             See it in your plan
