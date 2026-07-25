@@ -3,27 +3,21 @@
 import { useState } from "react";
 import type { UserResource } from "@clerk/shared/types";
 import { SettingsRow } from "@/components/settings/section";
-
-type Provider = {
-  id: "oauth_google" | "oauth_apple" | "oauth_github";
-  label: string;
-};
-
-const PROVIDERS: Provider[] = [
-  { id: "oauth_google", label: "Google" },
-  { id: "oauth_apple", label: "Apple" },
-  { id: "oauth_github", label: "GitHub" },
-];
+import {
+  enabledSocialProviders,
+  type SocialProviderId,
+} from "@/lib/auth/social-providers";
 
 export function OAuthRow({ user }: { user: UserResource }) {
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const providers = enabledSocialProviders();
 
   const hasPassword = user.passwordEnabled;
   const accounts = user.externalAccounts;
   const onlyAuthMethod = !hasPassword && accounts.length <= 1;
 
-  async function connect(p: Provider) {
+  async function connect(p: (typeof providers)[number]) {
     setPending(p.id);
     setError(null);
     try {
@@ -38,12 +32,10 @@ export function OAuthRow({ user }: { user: UserResource }) {
   }
 
   async function disconnect(accountId: string, label: string) {
-    if (
-      onlyAuthMethod &&
-      !confirm(
-        `${label} is your only way to sign in. Set a password first if you want to keep your account.`,
-      )
-    ) {
+    if (onlyAuthMethod) {
+      setError(
+        `${label} is your only way to sign in. Add another method before disconnecting it.`,
+      );
       return;
     }
     setPending(accountId);
@@ -63,12 +55,12 @@ export function OAuthRow({ user }: { user: UserResource }) {
       label="Connected accounts"
       hint={
         accounts.length === 0
-          ? "None yet. Connect Google or Apple if you'd rather not type passwords."
+          ? "None yet. Connect an enabled sign-in method if you'd rather not type passwords."
           : "Sign-in shortcuts. Disconnect any you don't use."
       }
       control={
         <div className="flex w-full flex-col gap-2">
-          {PROVIDERS.map((p) => {
+          {providers.map((p) => {
             const linked = accounts.find((a) => a.provider === providerSlug(p.id));
             const isPending = pending === p.id || pending === linked?.id;
             return (
@@ -92,8 +84,13 @@ export function OAuthRow({ user }: { user: UserResource }) {
                 {linked ? (
                   <button
                     type="button"
-                    disabled={isPending}
+                    disabled={isPending || onlyAuthMethod}
                     onClick={() => disconnect(linked.id, p.label)}
+                    title={
+                      onlyAuthMethod
+                        ? "Add another sign-in method before disconnecting this one."
+                        : undefined
+                    }
                     className="rounded px-2 py-1 text-[11.5px] text-ink-quiet transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
                   >
                     Disconnect
@@ -120,11 +117,11 @@ export function OAuthRow({ user }: { user: UserResource }) {
   );
 }
 
-function providerSlug(id: Provider["id"]): string {
+function providerSlug(id: SocialProviderId): string {
   return id.replace(/^oauth_/, "");
 }
 
-function ProviderGlyph({ id }: { id: Provider["id"] }) {
+function ProviderGlyph({ id }: { id: SocialProviderId }) {
   if (id === "oauth_google") {
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
