@@ -1,7 +1,7 @@
 import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import {
   getAnalyticsFixture,
   parseAnalyticsUrlState,
@@ -10,6 +10,7 @@ import {
 } from "../../lib/analytics";
 import { getAccessMode } from "@/lib/access-mode";
 import { normalizeSuiteContextForSignal } from "@/lib/suite-context";
+import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { getTasksDb } from "../tasks-db/signal-tasks-db-client";
 import { users, workspaceMembers, workspaces } from "../tasks-db/signal-tasks-db-schema";
 import { authorizeAnalyticsRequest, resolveLinkedAnalyticsWorkspace, type AuthorizedAnalyticsContext } from "./policy";
@@ -86,6 +87,11 @@ export async function resolveAnalyticsPageContext(
 
   const { userId } = await auth();
   if (!userId) return null;
+  // Signal can be the first product an authenticated suite user opens.
+  // Provision the shared Tasks identity here as well as on the Tasks board so
+  // the analytics workspace lookup never bounces between Signal and its
+  // onboarding route while waiting for a webhook or a Tasks visit.
+  await ensureUserProvisioned(userId);
   const candidates = await listWorkspaceOptions(userId);
   const linked = await resolveLinkedAnalyticsWorkspace(userId);
   const requested = normalizedParams.get("workspace_id") ?? undefined;
@@ -152,7 +158,7 @@ async function listWorkspaceOptions(clerkId: string): Promise<AnalyticsWorkspace
   const [identity] = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.clerkId, clerkId))
+    .where(or(eq(users.clerkId, clerkId), eq(users.id, clerkId)))
     .limit(1);
   if (!identity) return [];
   const [owned, memberships] = await Promise.all([

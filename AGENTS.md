@@ -13,9 +13,15 @@ This repo is part of the Signal Studio suite. Signal HQ lives in the Studio repo
 Signal Studio is one app containing Notes, Tasks, Timeline, and Signal. The load-bearing URL and naming rules are in `docs/SUITE_URL_AND_NAMING_CONTRACT.md`.
 
 - Marketing uses `signalstudio.ie/{notes|tasks|timeline|signal}`.
-- Signed-in product navigation uses `app.signalstudio.ie/app/{notes|board|plan|brief}`.
+- Signed-in product navigation uses
+  `app.signalstudio.ie/app/{notes|tasks|timeline|signal}`.
 - Product subdomains are narrow public/service compatibility surfaces, not separate apps or marketing homes.
 - Use the typed constants in `src/lib/product-urls.ts`; do not invent hostnames, fragment destinations, or alternate product names in components.
+
+Tasks views live beneath the Tasks product route: `/app/tasks`,
+`/app/tasks/list`, `/app/tasks/timeline`, and `/app/tasks/calendar`.
+`/app/board`, `/app/plan`, and `/app/brief` are retired compatibility inputs
+and must never be emitted by new UI, documentation, analytics, or email.
 
 When a change in Tasks affects product state, roadmap, launch readiness, GTM, messaging, campaigns, demos, templates, outreach, pilots, metrics, decisions, risks, or strategic learning, update Signal HQ before the task is complete.
 

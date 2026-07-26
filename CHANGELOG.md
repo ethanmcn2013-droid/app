@@ -4,6 +4,22 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-26 · T·103 · ships · the owner room and the briefing use the front door
+
+**Timeline now opens as a real owner workspace, and Signal opens as a briefing
+instead of an empty room.** The four products use the canonical Notes, Tasks,
+Timeline, and Signal routes throughout the app; Tasks keeps its board, list,
+timeline, and calendar as views beneath `/app/tasks`; the old board, plan, and
+brief paths only redirect.
+
+Each project Timeline now gathers its milestone tasks into a private owner
+draft with label, date, order, lane, and visibility controls, then publishes a
+separate frozen and revocable public copy. Signal can provision the shared
+suite identity even when it is the first product opened, and stale analytics
+onboarding links no longer create a redirect loop. The authenticated production
+journey, 262 tests, typecheck, production build, sixty rendered experience
+checks, and the mobile and desktop project-switching journey passed.
+
 ## 2026-07-25 · T·102 · tightens · the old Tasks door enters the one app
 
 **A saved `tasks.signalstudio.ie/app` link now crosses to the canonical Signal

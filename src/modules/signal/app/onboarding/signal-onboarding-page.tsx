@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
 import { isDemoMode } from "@/lib/access-mode";
 import { dataSource } from "../../lib/data/source";
-import { isOnboarded } from "../../server/onboarding/signal-onboarding-queries";
+import { getAnalyticsUser } from "../../server/onboarding/signal-onboarding-queries";
 import { requireSignalUser } from "../../server/signal-auth";
 import { SignalOnboardingPicker } from "./signal-onboarding-picker";
 
@@ -29,14 +29,18 @@ export async function SignalOnboardingPage() {
     const userId = await requireSignalUser();
     if (!userId) redirect("/sign-in");
 
-    if (await isOnboarded(userId)) {
-      redirect("/app/signal");
-    }
-
     const me = await currentUser();
     const email = me?.primaryEmailAddress?.emailAddress ?? null;
 
     candidates = await dataSource.listForUser({ clerkId: userId, email });
+    const analyticsUser = await getAnalyticsUser(userId);
+    const linkedWorkspaceStillExists = candidates.some(
+      (candidate) =>
+        candidate.workspaceId === analyticsUser?.linkedWorkspaceId,
+    );
+    if (linkedWorkspaceStillExists) {
+      redirect("/app/signal");
+    }
   }
 
   return (
