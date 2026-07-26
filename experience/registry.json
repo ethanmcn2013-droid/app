@@ -162,12 +162,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "58fc9b218b76a1a5",
-      "materialityReview": {
-        "materialityHash": "58fc9b218b76a1a5",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-tasks-2026-07-20.json"
-      }
+      "materialityHash": "58fc9b218b76a1a5"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -211,12 +206,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e6572d73e8304e38",
-      "materialityReview": {
-        "materialityHash": "e6572d73e8304e38",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-20.json"
-      }
+      "materialityHash": "e6572d73e8304e38"
     },
     {
       "id": "tasks.page.app-import",
@@ -368,12 +358,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "86ee3a76a13d8bc0",
-      "materialityReview": {
-        "materialityHash": "86ee3a76a13d8bc0",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-20.json"
-      }
+      "materialityHash": "86ee3a76a13d8bc0"
     },
     {
       "id": "tasks.page.app-my-tasks",
@@ -468,12 +453,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9335b240eb37bac0",
-      "materialityReview": {
-        "materialityHash": "9335b240eb37bac0",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-21.json"
-      }
+      "materialityHash": "9335b240eb37bac0"
     },
     {
       "id": "tasks.page.app-tasks-timeline",
@@ -517,12 +497,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f20fd2dc1b67ab0e",
-      "materialityReview": {
-        "materialityHash": "f20fd2dc1b67ab0e",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-20.json"
-      }
+      "materialityHash": "f20fd2dc1b67ab0e"
     },
     {
       "id": "tasks.page.app-your-work",
@@ -573,12 +548,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d94465a3f791a266",
-      "materialityReview": {
-        "materialityHash": "d94465a3f791a266",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-15.json"
-      }
+      "materialityHash": "d94465a3f791a266"
     },
     {
       "id": "tasks.page.app-archived",
@@ -1283,12 +1253,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9154b894aeb46365",
-      "materialityReview": {
-        "materialityHash": "9154b894aeb46365",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.print-board-2026-07-15.json"
-      }
+      "materialityHash": "9154b894aeb46365"
     },
     {
       "id": "tasks.page.print-calendar",
@@ -1331,12 +1296,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b9f94c73108490b0",
-      "materialityReview": {
-        "materialityHash": "b9f94c73108490b0",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-15.json"
-      }
+      "materialityHash": "b9f94c73108490b0"
     },
     {
       "id": "tasks.page.print-list",
@@ -1386,12 +1346,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a544e0ffbc8d363e",
-      "materialityReview": {
-        "materialityHash": "a544e0ffbc8d363e",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.print-list-2026-07-15.json"
-      }
+      "materialityHash": "a544e0ffbc8d363e"
     },
     {
       "id": "tasks.page.print-timeline",
@@ -1434,12 +1389,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d90764270932869e",
-      "materialityReview": {
-        "materialityHash": "d90764270932869e",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-15.json"
-      }
+      "materialityHash": "d90764270932869e"
     },
     {
       "id": "tasks.page.privacy",
@@ -1744,12 +1694,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ee2b4660f7b40532",
-      "materialityReview": {
-        "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-15.json"
-      }
+      "materialityHash": "ee2b4660f7b40532"
     },
     {
       "id": "tasks.page.settings-plan",
@@ -1793,12 +1738,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c2599ecd3d094b3d",
-      "materialityReview": {
-        "materialityHash": "c2599ecd3d094b3d",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-15.json"
-      }
+      "materialityHash": "c2599ecd3d094b3d"
     },
     {
       "id": "tasks.page.settings-profile",
@@ -1842,12 +1782,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a24a1b85fe91dad0",
-      "materialityReview": {
-        "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-15.json"
-      }
+      "materialityHash": "a24a1b85fe91dad0"
     },
     {
       "id": "tasks.page.share-by-token",
@@ -2338,12 +2273,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d9fe0d7f1603130c",
-      "materialityReview": {
-        "materialityHash": "d9fe0d7f1603130c",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-07-15.json"
-      }
+      "materialityHash": "d9fe0d7f1603130c"
     },
     {
       "id": "tasks.page.welcome-plan",
@@ -2389,12 +2319,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f532c7ecbb8ab980",
-      "materialityReview": {
-        "materialityHash": "f532c7ecbb8ab980",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-15.json"
-      }
+      "materialityHash": "f532c7ecbb8ab980"
     },
     {
       "id": "tasks.state.app-error",
@@ -2650,7 +2575,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "25a196c4368348a8"
+      "materialityHash": "31eb72936ce4e965"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2836,12 +2761,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "36c47fbab79ad4f1",
-      "materialityReview": {
-        "materialityHash": "36c47fbab79ad4f1",
-        "reviewedAt": "2026-07-26",
-        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-25.json"
-      }
+      "materialityHash": "36c47fbab79ad4f1"
     },
     {
       "id": "tasks.state.app-task-by-id-loading",
