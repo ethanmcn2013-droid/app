@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CreateProjectForm } from "@/modules/timeline/app/_components/create-project-form";
+import TimelineProjectPage from "@/modules/timeline/app/plan/[projectSlug]/page";
 import {
   getCurrentWorkspace,
   requireUser,
@@ -16,20 +16,8 @@ type SearchParams = {
   planningPeriodId?: string;
   project?: string;
   projectSlug?: string;
+  mode?: string;
 };
-
-function contextHref(
-  pathname: string,
-  context: { workspaceId?: string; planningPeriodId?: string },
-) {
-  const query = new URLSearchParams();
-  if (context.workspaceId) query.set("workspaceId", context.workspaceId);
-  if (context.planningPeriodId) {
-    query.set("planningPeriodId", context.planningPeriodId);
-  }
-  const encoded = query.toString();
-  return encoded ? `${pathname}?${encoded}` : pathname;
-}
 
 /**
  * Timeline is project-first. Returning owners land in a real timeline, not a
@@ -91,18 +79,15 @@ export default async function TimelineOwnerHome({
   const project =
     projects.find((candidate) => candidate.slug === requestedProjectSlug) ??
     projects[0];
-  const context = {
-    workspaceId: resolvedContext?.workspaceId,
-    planningPeriodId: resolvedContext?.planningPeriodId ?? undefined,
-  };
-
   if (project) {
-    redirect(
-      contextHref(
-        `/app/timeline/${encodeURIComponent(project.slug)}`,
-        context,
-      ),
-    );
+    return TimelineProjectPage({
+      params: Promise.resolve({ projectSlug: project.slug }),
+      searchParams: Promise.resolve({
+        workspaceId: resolvedContext?.workspaceId,
+        planningPeriodId: resolvedContext?.planningPeriodId ?? undefined,
+        mode: requested.mode,
+      }),
+    });
   }
 
   return (

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
 import { TimelineArtifact } from "@/modules/timeline/components/artifact";
@@ -90,6 +89,12 @@ export default async function TimelineProjectPage({
     shareQuery.set("planningPeriodId", queryContext.planningPeriodId);
   }
   const shareHref = `/app/timeline/audience?${shareQuery.toString()}`;
+  const content = await TimelineProjectContent({
+    mode,
+    project,
+    workspace,
+    shareHref,
+  });
 
   return (
     <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
@@ -113,6 +118,7 @@ export default async function TimelineProjectPage({
             >
               <Link
                 href={modeHref(project.slug, queryContext, "view")}
+                aria-label="View timeline"
                 aria-current={mode === "view" ? "page" : undefined}
                 className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   mode === "view"
@@ -124,6 +130,7 @@ export default async function TimelineProjectPage({
               </Link>
               <Link
                 href={modeHref(project.slug, queryContext, "edit")}
+                aria-label="Edit milestones"
                 aria-current={mode === "edit" ? "page" : undefined}
                 className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   mode === "edit"
@@ -136,6 +143,7 @@ export default async function TimelineProjectPage({
             </nav>
             <Link
               href={shareHref}
+              aria-label="Preview and share"
               className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             >
               <span className="sm:hidden">Share</span>
@@ -145,14 +153,7 @@ export default async function TimelineProjectPage({
         </div>
       </header>
 
-      <Suspense fallback={<TimelineOwnerSkeleton mode={mode} />}>
-        <TimelineProjectContent
-          mode={mode}
-          project={project}
-          workspace={workspace}
-          shareHref={shareHref}
-        />
-      </Suspense>
+      {content}
     </div>
   );
 }
@@ -267,23 +268,6 @@ async function TimelineProjectContent({
   return (
     <div className="w-full flex-1 bg-white">
       <TimelineArtifact timeline={timeline} />
-    </div>
-  );
-}
-
-function TimelineOwnerSkeleton({ mode }: { mode: OwnerMode }) {
-  return (
-    <div
-      aria-hidden
-      className={`mx-auto w-full ${
-        mode === "edit"
-          ? "max-w-5xl px-4 py-8 sm:px-6 lg:px-8"
-          : "max-w-[1600px] px-6 py-10"
-      }`}
-    >
-      <div className="tl-skeleton-shimmer h-4 w-28 rounded" />
-      <div className="tl-skeleton-shimmer mt-5 h-14 w-64 max-w-full rounded" />
-      <div className="tl-skeleton-shimmer mt-10 h-72 w-full rounded-2xl" />
     </div>
   );
 }
