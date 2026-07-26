@@ -54,3 +54,57 @@ test("unclassified production build fails closed", () => {
     Object.assign(process.env, original);
   }
 });
+
+test("preview build with no explicit mode defaults to review", () => {
+  const original = { ...process.env };
+  try {
+    Object.assign(process.env, { NODE_ENV: "production" });
+    process.env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV = "preview";
+    delete process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE;
+    delete process.env.SIGNAL_ACCESS_MODE;
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+    delete process.env.DEMO_MODE;
+    assert.equal(getAccessMode(), "review");
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in original)) delete process.env[key];
+    }
+    Object.assign(process.env, original);
+  }
+});
+
+test("production build with no explicit mode stays production", () => {
+  const original = { ...process.env };
+  try {
+    Object.assign(process.env, { NODE_ENV: "production" });
+    process.env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV = "production";
+    delete process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE;
+    delete process.env.SIGNAL_ACCESS_MODE;
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+    delete process.env.DEMO_MODE;
+    assert.equal(getAccessMode(), "production");
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in original)) delete process.env[key];
+    }
+    Object.assign(process.env, original);
+  }
+});
+
+test("local non-production build is development", () => {
+  const original = { ...process.env };
+  try {
+    Object.assign(process.env, { NODE_ENV: "development" });
+    delete process.env.NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV;
+    delete process.env.NEXT_PUBLIC_SIGNAL_ACCESS_MODE;
+    delete process.env.SIGNAL_ACCESS_MODE;
+    delete process.env.NEXT_PUBLIC_DEMO_MODE;
+    delete process.env.DEMO_MODE;
+    assert.equal(getAccessMode(), "development");
+  } finally {
+    for (const key of Object.keys(process.env)) {
+      if (!(key in original)) delete process.env[key];
+    }
+    Object.assign(process.env, original);
+  }
+});

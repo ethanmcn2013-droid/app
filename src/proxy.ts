@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
-import { isDemoMode } from "@/lib/access-mode";
+import { isDemoMode, isProductionMode } from "@/lib/access-mode";
 import { isBareArtifactPath } from "@/lib/bare-artifact-path";
 import {
   APP_ORIGIN,
@@ -212,6 +212,17 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
     return response;
   }
   if (isDemoMode()) return NextResponse.next();
+  if (!clerkConfigured) {
+    // Do not invoke Clerk without credentials. A genuine production
+    // deployment fails closed; classified previews and local development may
+    // continue only through their non-production, seed-data access posture.
+    if (isProductionMode()) {
+      return new NextResponse("Authentication is not configured.", {
+        status: 503,
+      });
+    }
+    return NextResponse.next();
+  }
   return productionProxy(req, event);
 }
 

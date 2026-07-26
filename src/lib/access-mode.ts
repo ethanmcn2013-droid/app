@@ -16,7 +16,9 @@
  * Resolution (server can read both vars; the browser only sees NEXT_PUBLIC_*):
  *   1. SIGNAL_ACCESS_MODE / NEXT_PUBLIC_SIGNAL_ACCESS_MODE, explicit, wins.
  *   2. NEXT_PUBLIC_DEMO_MODE=true (legacy/ergonomic alias) → "demo".
- *   3. Fallback: "production" when NODE_ENV==="production", else "development".
+ *   3. Fallback: genuine Vercel production → "production"; Vercel preview →
+ *      "review"; local non-production → "development". An unclassified
+ *      production build fails closed as "production".
  *
  * SAFETY INVARIANT (load-bearing): demo/review never unlock the real DB. The
  * auth layer swaps in DEMO_USER_ID and the data layer short-circuits to seed
@@ -56,7 +58,13 @@ export function getAccessMode(): AccessMode {
     process.env.DEMO_MODE === "true";
   if (legacyDemo) return isProductionDeployment() ? "production" : "demo";
 
-  return process.env.NODE_ENV === "production" ? "production" : "development";
+  // Vercel sets NODE_ENV=production on every build, previews included, so
+  // NODE_ENV alone cannot tell a preview from production. Only a genuine
+  // production deployment defaults to the locked production posture. A
+  // classified preview defaults to the seed-data review posture instead of
+  // attempting to initialise production-only providers without credentials.
+  if (process.env.NODE_ENV !== "production") return "development";
+  return isProductionDeployment() ? "production" : "review";
 }
 
 /** Production deployments never accept the public demo/review posture. */
