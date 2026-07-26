@@ -28,7 +28,7 @@ test.describe("Timeline project switcher", () => {
     });
     await expect(page.getByRole("menu")).toBeVisible();
     await page.getByRole("menuitem", { name: "Launch", exact: true }).click();
-    await expect(page).toHaveURL(/\/app\/plan\/launch\?workspaceId=tasks$/);
+    await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
     await expect(
       page.getByRole("heading", { name: "Launch", exact: true }),
     ).toBeVisible();
@@ -38,18 +38,18 @@ test.describe("Timeline project switcher", () => {
       .getByRole("menuitem", { name: "Venue pilot", exact: true })
       .click();
     await expect(page).toHaveURL(
-      /\/app\/plan\/venue-pilot\?workspaceId=tasks$/,
+      /\/app\/timeline\/venue-pilot\?workspaceId=tasks$/,
     );
     await expect(
       page.getByRole("heading", { name: "Venue pilot", exact: true }),
     ).toBeVisible();
 
     await page.goBack();
-    await expect(page).toHaveURL(/\/app\/plan\/launch\?workspaceId=tasks$/);
+    await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
     await page.goBack();
-    await expect(page).toHaveURL(/\/app\/plan\/product\?workspaceId=tasks$/);
+    await expect(page).toHaveURL(/\/app\/timeline\/product\?workspaceId=tasks$/);
     await page.goForward();
-    await expect(page).toHaveURL(/\/app\/plan\/launch\?workspaceId=tasks$/);
+    await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
 
     await page.reload();
     await expect(
@@ -82,7 +82,7 @@ test.describe("Timeline project switcher", () => {
     await switcher.press(" ");
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/app\/plan\/launch\?workspaceId=tasks$/);
+    await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
     await expect(
       page.getByRole("heading", { name: "Launch", exact: true }),
     ).toBeVisible();
