@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
-import { LAB_TODAY } from "../dates";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import type { CalendarDate } from "../types";
 import { useLabStore } from "../store";
 import { STATUS_LABELS, TASK_STATUSES } from "../types";
 import { Icon } from "./icons";
@@ -35,6 +36,7 @@ export function useTaskContextMenu() {
 
 export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: () => void }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const firstRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const task = menu ? store.taskById(menu.taskId) : undefined;
@@ -88,7 +90,7 @@ export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: (
       ))}
       <div className={styles.menuDivider} />
       {task.schedule.kind === "unscheduled" ? (
-        <button disabled={store.readOnly} onClick={() => run(() => store.scheduleOn(task.id, LAB_TODAY))} role="menuitem" type="button"><Icon name="calendar" size={15} />Schedule for today</button>
+        <button disabled={store.readOnly} onClick={() => run(() => store.scheduleOn(task.id, calendar.today as CalendarDate))} role="menuitem" type="button"><Icon name="calendar" size={15} />Schedule for today</button>
       ) : (
         <button disabled={store.readOnly} onClick={() => run(() => store.unscheduleTask(task.id))} role="menuitem" type="button"><Icon name="calendar" size={15} />Unschedule</button>
       )}

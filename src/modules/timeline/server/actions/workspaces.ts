@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
@@ -28,6 +29,10 @@ import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
 import { tierAtLeast } from "@/lib/entitlements-shared/tiers";
 import { isDemoMode } from "@/lib/access-mode";
 import { demoEffectiveNodes } from "@/modules/timeline/lib/roadmap/demo-data";
+import type {
+  AudienceItemState,
+  Status,
+} from "@/modules/timeline/server/db/timeline-schema";
 
 /** Translate a denied RateLimitResult into the correct user-facing error string. */
 function rateLimitError(result: RateLimitResult & { allowed: false }): string {
@@ -307,11 +312,83 @@ export async function syncMilestonesAction(
 
 export type UpsertOverlayResult = { ok: true } | { error: string };
 
+const AUDIENCE_STATES: readonly AudienceItemState[] = [
+  "covered",
+  "now",
+  "next",
+  "later",
+  "cancelled",
+];
+
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+}
+
+function validateOverlayInput(overlay: NodeOverlayInput): string | null {
+  if (
+    typeof overlay?.nodeId !== "string" ||
+    !overlay.nodeId ||
+    overlay.nodeId.length > 240
+  ) {
+    return "That milestone is not valid.";
+  }
+  if (
+    overlay.labelOverride !== undefined &&
+    overlay.labelOverride !== null &&
+    (typeof overlay.labelOverride !== "string" ||
+      overlay.labelOverride.length > 120)
+  ) {
+    return "Milestone labels must be 120 characters or fewer.";
+  }
+  if (
+    overlay.audienceStateOverride !== undefined &&
+    overlay.audienceStateOverride !== null &&
+    !AUDIENCE_STATES.includes(overlay.audienceStateOverride)
+  ) {
+    return "Choose a valid public milestone state.";
+  }
+  if (
+    overlay.dateOverrideMode !== undefined &&
+    !["inherit", "date", "undated"].includes(overlay.dateOverrideMode)
+  ) {
+    return "Choose a valid date setting.";
+  }
+  if (
+    overlay.dateOverrideMode === "date" &&
+    (typeof overlay.dateOverride !== "string" ||
+      !isCalendarDate(overlay.dateOverride))
+  ) {
+    return "Choose a real calendar date.";
+  }
+  if (
+    (overlay.dateOverrideMode === "inherit" ||
+      overlay.dateOverrideMode === "undated") &&
+    overlay.dateOverride !== null
+  ) {
+    return "That date setting is incomplete. Reload and try again.";
+  }
+  if (
+    overlay.dateOverride !== undefined &&
+    overlay.dateOverride !== null &&
+    overlay.dateOverrideMode !== "date"
+  ) {
+    return "Choose how this date should be displayed.";
+  }
+  return null;
+}
+
 export async function upsertNodeOverlayAction(
   workspaceSlug: string,
   projectSlug: string,
   overlay: NodeOverlayInput,
 ): Promise<UpsertOverlayResult> {
+  const inputError = validateOverlayInput(overlay);
+  if (inputError) return { error: inputError };
   const userId = await requireUser();
 
   const workspace = await getWorkspace(workspaceSlug);
@@ -321,6 +398,14 @@ export async function upsertNodeOverlayAction(
   const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
     return { error: "That project is no longer available." };
+  }
+  const projectNodes = (await getEffectiveNodesForWorkspace(workspaceSlug))
+    .filter((node) => node.projectSlug === projectSlug);
+  const isExistingProjectNode = projectNodes.some(
+    (node) => node.id === overlay.nodeId,
+  );
+  if (!isExistingProjectNode) {
+    return { error: "That milestone is no longer part of this project." };
   }
 
   try {
@@ -333,6 +418,69 @@ export async function upsertNodeOverlayAction(
   revalidatePath(`/app/timeline/${projectSlug}`);
 
   return { ok: true };
+}
+
+export type CreateManualMilestoneResult =
+  | { ok: true; nodeId: string }
+  | { error: string };
+
+export async function createManualMilestoneAction(
+  workspaceSlug: string,
+  projectSlug: string,
+  input: {
+    title: string;
+    state: AudienceItemState;
+    date: string | null;
+  },
+): Promise<CreateManualMilestoneResult> {
+  const title = input.title?.trim();
+  if (!title || title.length > 80) {
+    return { error: "Milestone titles must be between 1 and 80 characters." };
+  }
+  if (!AUDIENCE_STATES.includes(input.state)) {
+    return { error: "Choose a valid public milestone state." };
+  }
+  if (input.date !== null && !isCalendarDate(input.date)) {
+    return { error: "Choose a real calendar date." };
+  }
+
+  const userId = await requireUser();
+  const workspace = await getWorkspace(workspaceSlug);
+  if (!workspace || workspace.ownerUserId !== userId) {
+    return { error: "Something went wrong. Reload the page and try again." };
+  }
+  const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
+  if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
+    return { error: "That project is no longer available." };
+  }
+
+  const statusByState: Record<AudienceItemState, Status> = {
+    covered: "shipped",
+    now: "in-flight",
+    next: "next",
+    later: "next",
+    cancelled: "refused",
+  };
+  const nodeId = `manual:${encodeURIComponent(projectSlug)}:${randomUUID()}`;
+
+  try {
+    await upsertNodeOverlay(workspaceSlug, {
+      nodeId,
+      source: "manual",
+      manualTitle: title,
+      manualStatus: statusByState[input.state],
+      manualTargetDate: input.date,
+      audienceStateOverride: input.state,
+      dateOverrideMode: "inherit",
+    });
+  } catch {
+    return {
+      error: "Couldn't add that milestone. Check your connection and try again.",
+    };
+  }
+
+  revalidatePath(`/app/timeline/${projectSlug}`);
+  return { ok: true, nodeId };
 }
 
 // ---------------------------------------------------------------------------
@@ -362,6 +510,24 @@ export async function reorderNodesAction(
   const workspace = await getWorkspace(workspaceSlug);
   if (!workspace || workspace.ownerUserId !== userId) {
     return { error: "Workspace not found." };
+  }
+  const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
+  if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
+    return { error: "That project is no longer available." };
+  }
+  if (
+    orderedNodeIds.length > 200 ||
+    new Set(orderedNodeIds).size !== orderedNodeIds.length
+  ) {
+    return { error: "That milestone order is not valid. Reload and try again." };
+  }
+  const allowedNodeIds = new Set(
+    (await getEffectiveNodesForWorkspace(workspaceSlug))
+      .filter((node) => node.projectSlug === projectSlug)
+      .map((node) => node.id),
+  );
+  if (orderedNodeIds.some((nodeId) => !allowedNodeIds.has(nodeId))) {
+    return { error: "That milestone order includes another project." };
   }
 
   const entries = orderedNodeIds.map((nodeId, i) => ({ nodeId, sortOverride: i }));

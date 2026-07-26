@@ -10,6 +10,7 @@
 // preview, inline-edit target, drag) live in a small local reducer here.
 
 import { useCallback, useMemo, useReducer, type ReactNode } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
@@ -125,11 +126,12 @@ export function HybridStoreProvider({
   const { tasks: prodTasks } = useTasksState();
   const prod = useTasksDispatch();
   const taskPanel = useTaskPanel();
+  const calendar = useCalendarFrame();
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
 
   const labTasks = useMemo<LabTask[]>(
-    () => prodTasks.map((task, index) => taskToLab(task, index)),
-    [prodTasks],
+    () => prodTasks.map((task, index) => taskToLab(task, index, calendar)),
+    [calendar, prodTasks],
   );
 
   const prodById = useMemo(() => {
@@ -154,7 +156,7 @@ export function HybridStoreProvider({
   const applySchedule = useCallback(
     (id: string, schedule: TaskSchedule) => {
       if (readOnly) return;
-      prod.updateTask(id, scheduleToPatch(schedule));
+      prod.updateTask(id, scheduleToPatch(schedule, calendar));
       const current = prodById.get(id);
       const wantMilestone = schedule.kind === "milestone";
       if (current && Boolean(current.isMilestone) !== wantMilestone) {
@@ -162,7 +164,7 @@ export function HybridStoreProvider({
         void setTaskMilestoneAction(id, wantMilestone);
       }
     },
-    [prod, prodById, readOnly],
+    [calendar, prod, prodById, readOnly],
   );
 
   const value = useMemo<LabStore>(() => {
@@ -217,7 +219,7 @@ export function HybridStoreProvider({
       // ---- mutations → production dispatchers ----
       updateTask: (id, fields: UpdateFields) => {
         if (readOnly) return;
-        const patch = fieldsPatch(fields);
+        const patch = fieldsPatch(fields, calendar);
         if (patch) prod.updateTask(id, patch);
       },
       updateTitle: (id, title) => !readOnly && prod.updateTask(id, { title }),
@@ -231,14 +233,14 @@ export function HybridStoreProvider({
       moveScheduleByDays: (id, days) => {
         const task = prodById.get(id);
         if (!task) return;
-        const schedule = taskToSchedule(task);
+        const schedule = taskToSchedule(task, calendar);
         if (schedule.kind === "unscheduled") return;
         applySchedule(id, moveSchedule(schedule, days));
       },
       resizeScheduleByDays: (id, days) => {
         const task = prodById.get(id);
         if (!task) return;
-        const schedule = taskToSchedule(task);
+        const schedule = taskToSchedule(task, calendar);
         if (schedule.kind !== "range") return;
         applySchedule(id, resizeScheduleEnd(schedule, days));
       },
@@ -261,7 +263,7 @@ export function HybridStoreProvider({
       addTask: (status, schedule?: TaskSchedule) => {
         if (readOnly) return;
         const lane = status === "waiting" ? "todo" : statusToLane(status);
-        const patch = schedule ? scheduleToPatch(schedule) : {};
+        const patch = schedule ? scheduleToPatch(schedule, calendar) : {};
         const created = prod.addTask({
           title: "Untitled task",
           lane,
@@ -279,7 +281,7 @@ export function HybridStoreProvider({
       archiveTask: (id: string) => { if (!readOnly) prod.archiveTask(id); },
       makeSubtaskOf: (id: string, parentId: string | null) => { if (!readOnly) prod.setParent(id, parentId); },
     };
-  }, [applySchedule, labTasks, openTask, prod, prodById, readOnly, ui]);
+  }, [applySchedule, calendar, labTasks, openTask, prod, prodById, readOnly, ui]);
 
   return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }

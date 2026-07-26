@@ -3,6 +3,10 @@ import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { isDemoMode, getAccessMode } from "@/lib/access-mode";
+import {
+  isReviewSuiteWorkspaceId,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 import { DEMO_USER_ID, demoWorkspace } from "@/modules/timeline/lib/roadmap/demo-data";
 import { getWorkspacesForUser, getWorkspaceForSuiteIdForUser } from "@/modules/timeline/server/db/timeline-queries";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
@@ -117,16 +121,19 @@ export async function resolveTimelineContext(
 ): Promise<ResolvedTimelineContext | null> {
   // Demo/review is a self-contained fixture boundary.
   if (isDemoMode()) {
+    const planningPeriodId = requestedPlanningPeriodId?.trim();
     if (
-      requestedWorkspaceId.trim() !== demoWorkspace.slug ||
-      requestedPlanningPeriodId?.trim()
+      !isReviewSuiteWorkspaceId(requestedWorkspaceId) ||
+      (planningPeriodId &&
+        planningPeriodId !==
+          REVIEW_SUITE_FIXTURE.workspace.planningPeriodId)
     ) {
       return null;
     }
     return {
       workspace: demoWorkspace,
-      workspaceId: demoWorkspace.slug,
-      planningPeriodId: null,
+      workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+      planningPeriodId: planningPeriodId ?? null,
     };
   }
 

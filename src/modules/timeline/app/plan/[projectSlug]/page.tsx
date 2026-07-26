@@ -4,6 +4,8 @@ import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_comp
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
 import { TimelineArtifact } from "@/modules/timeline/components/artifact";
 import { ownerProjectToTimelineDto } from "@/modules/timeline/lib/owner-artifact";
+import { isDemoMode } from "@/lib/access-mode";
+import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 import {
   buildTimelineProjectHref,
   toAuthorizedProjectOptions,
@@ -120,7 +122,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "view")}
                 aria-label="View timeline"
                 aria-current={mode === "view" ? "page" : undefined}
-                className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   mode === "view"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -132,7 +134,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "edit")}
                 aria-label="Edit milestones"
                 aria-current={mode === "edit" ? "page" : undefined}
-                className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   mode === "edit"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -263,11 +265,14 @@ async function TimelineProjectContent({
           timezone: latestPublication.timezone,
         }
       : undefined,
+    now: isDemoMode()
+      ? new Date(`${REVIEW_SUITE_FIXTURE.reviewToday}T12:00:00.000Z`)
+      : undefined,
   });
 
   return (
     <div className="w-full flex-1 bg-white">
-      <TimelineArtifact timeline={timeline} />
+      <TimelineArtifact timeline={timeline} embedded />
     </div>
   );
 }

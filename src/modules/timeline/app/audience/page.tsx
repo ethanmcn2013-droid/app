@@ -59,6 +59,17 @@ export default async function AudienceTimelineManagerPage({
   const eligibleNodes = nodes.filter(
     (node) => !node.hidden && (!project || node.projectSlug === project.slug),
   );
+  const eligibleNodeIds = new Set(eligibleNodes.map((node) => node.id));
+  const projectPublications = project
+    ? publications.filter(
+        (publication) =>
+          publication.projectSlug === project.slug ||
+          (publication.projectSlug === null &&
+            publication.items.some((item) =>
+              eligibleNodeIds.has(item.sourceRelation),
+            )),
+      )
+    : publications;
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
@@ -99,9 +110,10 @@ export default async function AudienceTimelineManagerPage({
             targetDate: node.targetDate,
             lane: node.lane,
           }))}
-        publications={publications}
+        publications={projectPublications}
         defaultLabel={project?.name}
         projectName={project?.name}
+        projectSlug={project?.slug}
       />
     </div>
   );

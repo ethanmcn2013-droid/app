@@ -85,6 +85,7 @@ The 2026-07-25 canonical migration is:
 | Retired path | Canonical path |
 |---|---|
 | `/app/board` | `/app/tasks` |
+| `/app/tasks/board` | `/app/tasks` |
 | `/app/list` | `/app/tasks/list` |
 | `/app/calendar` | `/app/tasks/calendar` |
 | `/app/plan/*` | `/app/timeline/*` |
@@ -92,4 +93,5 @@ The 2026-07-25 canonical migration is:
 
 The former Tasks view at `/app/timeline` moved to `/app/tasks/timeline`; that
 one collision cannot redirect because the product route now owns the canonical
-path.
+path. Application code must emit only the canonical destinations above;
+retired paths are compatibility inputs, never navigation outputs.

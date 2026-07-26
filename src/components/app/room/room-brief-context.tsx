@@ -7,6 +7,10 @@
 
 import { createContext, useContext } from "react";
 import type { RoomBriefData } from "@/server/actions/room";
+import {
+  PINNED_REVIEW_CALENDAR_FRAME,
+  type CalendarFrame,
+} from "@/lib/calendar-frame";
 
 const RoomBriefContext = createContext<RoomBriefData | null>(null);
 
@@ -26,4 +30,12 @@ export function RoomBriefProvider({
 
 export function useRoomBrief(): RoomBriefData | null {
   return useContext(RoomBriefContext);
+}
+
+/**
+ * App routes always receive a request-derived frame through RoomBriefProvider.
+ * The deterministic fallback exists solely for isolated design-lab mounts.
+ */
+export function useCalendarFrame(): CalendarFrame {
+  return useRoomBrief()?.calendarFrame ?? PINNED_REVIEW_CALENDAR_FRAME;
 }

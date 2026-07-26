@@ -91,6 +91,12 @@ jobs:
       - name: Verify Timeline project switching
         run: pnpm experience:test:timeline-switcher
 
+      - name: Prepare the current council review matrix
+        run: pnpm experience:council:prepare
+
+      - name: Enforce the 50 of 52 council evidence gate
+        run: pnpm experience:council
+
       - name: Upload rendered evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -99,6 +105,7 @@ jobs:
           path: |
             experience/output/critical-evidence.json
             experience/output/evidence-attestation.json
+            experience/output/quality-council-input.json
             experience/output/playwright-report
             experience/output/playwright-results
           if-no-files-found: ignore

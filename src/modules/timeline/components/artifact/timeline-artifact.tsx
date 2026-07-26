@@ -11,6 +11,7 @@ import {
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
+import { useHydrated } from "@/lib/use-hydrated";
 import {
   buildTimelineArtifactModel,
   buildTimelineCountdown,
@@ -43,9 +44,23 @@ type PositionStyle = CSSProperties & {
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
 
+/**
+ * Motion's media-query hook can know the browser preference on the first
+ * client render while the server cannot. Gate that value behind React's
+ * hydration snapshot so SSR and the first hydration pass always choose the
+ * same motion props and subtree. The real preference takes effect immediately
+ * after hydration.
+ */
+function useArtifactReducedMotion(): boolean {
+  const hydrated = useHydrated();
+  const prefersReducedMotion = useReducedMotion();
+  return hydrated && Boolean(prefersReducedMotion);
+}
+
 export type TimelineArtifactProps = Readonly<{
   timeline: AudienceTimelineDto;
   compact?: boolean;
+  embedded?: boolean;
   className?: string;
   onCopyLink?: () => void | Promise<void>;
   copyLinkLabel?: string;
@@ -118,7 +133,7 @@ function TimeLens({
   timeline: AudienceTimelineDto;
   model: TimelineArtifactModel;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useArtifactReducedMotion();
   const countdown = buildTimelineCountdown(timeline.primaryDate?.date, timeline.today);
   const canCountDown = countdown?.kind === "future" || countdown?.kind === "today";
   const [requestedMode, setRequestedMode] = useState<MetricMode>("progress");
@@ -138,34 +153,36 @@ function TimeLens({
   const face = (
     <>
       <span className={styles.metricViewport}>
-        {reduceMotion ? (
-          <span className={styles.metricMotion}><MetricFace fact={active} /></span>
-        ) : (
-          <AnimatePresence initial={false} mode="wait" custom={direction}>
-            <motion.span
-              className={styles.metricMotion}
-              key={mode}
-              custom={direction}
-              initial={{ opacity: 0, x: direction * 14 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction * -10 }}
-              transition={{ duration: 0.14, ease: METRIC_EASE }}
-            >
-              <MetricFace fact={active} />
-            </motion.span>
-          </AnimatePresence>
-        )}
-        {!reduceMotion ? (
+        <AnimatePresence initial={false} mode="wait" custom={direction}>
           <motion.span
-            className={styles.metricSweep}
-            data-direction={direction > 0 ? "forward" : "back"}
-            key={`sweep-${mode}`}
-            initial={{ opacity: 0.32, scaleX: 0 }}
-            animate={{ opacity: [0.32, 0.18, 0], scaleX: [0, 1, 1] }}
-            transition={{ duration: 0.22, ease: METRIC_EASE, times: [0, 0.72, 1] }}
-            aria-hidden="true"
-          />
-        ) : null}
+            className={styles.metricMotion}
+            key={mode}
+            custom={direction}
+            initial={reduceMotion ? false : { opacity: 0, x: direction * 14 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={reduceMotion ? undefined : { opacity: 0, x: direction * -10 }}
+            transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
+          >
+            <MetricFace fact={active} />
+          </motion.span>
+        </AnimatePresence>
+        <motion.span
+          className={styles.metricSweep}
+          data-direction={direction > 0 ? "forward" : "back"}
+          key={`sweep-${mode}`}
+          initial={reduceMotion ? false : { opacity: 0.32, scaleX: 0 }}
+          animate={
+            reduceMotion
+              ? { opacity: 0, scaleX: 1 }
+              : { opacity: [0.32, 0.18, 0], scaleX: [0, 1, 1] }
+          }
+          transition={{
+            duration: reduceMotion ? 0 : 0.22,
+            ease: METRIC_EASE,
+            times: reduceMotion ? undefined : [0, 0.72, 1],
+          }}
+          aria-hidden="true"
+        />
       </span>
       {alternate ? (
         <span className={styles.metricAlternateViewport} aria-hidden="true">
@@ -285,7 +302,7 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
     <span className={styles.milestoneLabel} aria-hidden="true">
       <span>{timelinePointStatus(point)}</span>
       <strong>{point.item.title}</strong>
-      <small>{point.item.date ? formatTimelineDate(point.item.date) : "Date to come"}</small>
+      <small>{point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}</small>
     </span>
   );
 }
@@ -305,7 +322,7 @@ function MilestoneDetail({
   detailId: string;
   titleId: string;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useArtifactReducedMotion();
 
   return (
     <section
@@ -335,7 +352,7 @@ function MilestoneDetail({
               <dd>
                 {point.item.date ? (
                   <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time>
-                ) : "Date to come"}
+                ) : "Timing not set"}
               </dd>
             </div>
             <div>
@@ -358,7 +375,7 @@ function Journey({
   model: TimelineArtifactModel;
   idPrefix: string;
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useArtifactReducedMotion();
   const [selectedId, setSelectedId] = useState(model.defaultSelectedId);
   const [focusIndex, setFocusIndex] = useState(() => Math.max(
     0,
@@ -383,10 +400,7 @@ function Journey({
     const viewport = viewportRef.current;
     const point = model.points[index];
     if (!viewport || !point) return;
-    if (viewport.scrollWidth <= viewport.clientWidth) {
-      pointRefs.current[index]?.scrollIntoView({ block: "center", behavior });
-      return;
-    }
+    if (viewport.scrollWidth <= viewport.clientWidth) return;
     const target = (point.position / 100) * viewport.scrollWidth - viewport.clientWidth / 2;
     viewport.scrollTo({ left: Math.max(0, target), behavior });
   };
@@ -437,12 +451,15 @@ function Journey({
   const todayLabel = model.todayPosition === null
     ? null
     : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
+  const instructions = model.todayPosition === null
+    ? "Milestones without dates are arranged in plan order. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail."
+    : "The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.";
 
   return (
     <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
       <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>Project timeline</h2>
       <p className={styles.screenReaderOnly} id={instructionsId}>
-        The highlighted point is the project&apos;s next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.
+        {instructions}
       </p>
       <div className={styles.railFrame}>
         <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
@@ -498,7 +515,7 @@ function Journey({
                     || index === Math.max(0, firstUnfinished - 1)
                     || index === model.points.length - 1;
                   const pointStyle: PositionStyle = { "--timeline-position": `${point.position}%` };
-                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Date to come";
+                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
 
                   return (
                     <li
@@ -547,7 +564,10 @@ function Journey({
                 })}
               </ol>
             ) : (
-              <p className={styles.empty}>The first milestone will appear here.</p>
+              <p className={styles.empty}>
+                <strong>No milestones shared yet.</strong>
+                <span>Milestones will appear here when they are ready.</span>
+              </p>
             )}
 
             <span className={styles.startCap} aria-hidden="true">Start</span>
@@ -593,11 +613,12 @@ function PlanningDecisions({ timeline, model }: { timeline: AudienceTimelineDto;
 export function TimelineArtifact({
   timeline,
   compact = false,
+  embedded = false,
   className,
   onCopyLink,
   copyLinkLabel,
 }: TimelineArtifactProps) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useArtifactReducedMotion();
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
 
@@ -606,6 +627,8 @@ export function TimelineArtifact({
       className={[styles.artifact, className].filter(Boolean).join(" ")}
       data-timeline-artifact
       data-compact={compact ? "true" : undefined}
+      data-embedded={embedded ? "true" : undefined}
+      data-density={model.density}
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>

@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience/1",
-  "generatedAt": "2026-07-22",
+  "generatedAt": "2026-07-26",
   "breakpoints": {
     "mobile": {
       "width": 390,
@@ -109,7 +109,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "28526dda3e716a36"
@@ -148,17 +148,17 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "core",
+      "reviewTier": "critical",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
+      "implementationStatus": "live",
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
@@ -263,7 +263,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "2197b50963bdcfd6"
@@ -314,7 +314,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "17abdc26302306a7"
@@ -1057,7 +1057,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "00369662d92592ec"
@@ -1102,7 +1102,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "b9bb63051226703e"
@@ -1479,7 +1479,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "47bee2aabf4428be"
@@ -1524,7 +1524,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "82ed1dd0ed0bccd6"
@@ -1610,7 +1610,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d2d0cc13074d8d4c"
@@ -1653,7 +1653,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4cb383908ef9e546"
@@ -1890,7 +1890,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4f51148f9944c13c"
@@ -1935,7 +1935,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "645bc77c5ae2b7bc"
@@ -1980,7 +1980,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3dd9eb3d5e0e5d43"
@@ -2025,7 +2025,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3664af6396c14003"
@@ -2240,7 +2240,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "1f46b887e430bca9"
@@ -2433,7 +2433,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f1efac6ffd05f019"
@@ -2476,7 +2476,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "6542651ed3b2dab6"
@@ -2517,7 +2517,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "0a47bc47115bcca2"
@@ -2560,7 +2560,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f68afc574ba0541a"
@@ -2603,7 +2603,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4e5f36f361cca174"
@@ -2647,7 +2647,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "25a196c4368348a8"
@@ -2693,7 +2693,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "697b7a51f3979ba3"
@@ -2743,7 +2743,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "af686c391cbfd5b3"
@@ -2787,7 +2787,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "b0f425f5fd012ffb"
@@ -3058,7 +3058,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "8df643b292a9a8cc"
@@ -3104,7 +3104,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "5a57448960de5a04"
@@ -3148,7 +3148,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "eee37871592f6462"
@@ -3184,18 +3184,18 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "supporting",
+      "reviewTier": "critical",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
       "implementationStatus": "live",
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a0cce9d5b28d23e1"
@@ -3328,7 +3328,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "5e4b8a328d0df141"
@@ -3375,7 +3375,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "021c36852b11ea55"
@@ -3464,7 +3464,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "193de4597b1c5b9e"
@@ -3516,7 +3516,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "76e7e22e7dba2f0c"
@@ -3565,7 +3565,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "13aaa53c7f4e9ca9"
@@ -3609,7 +3609,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "257cbd064fa4bf9f"
@@ -3697,7 +3697,7 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-22",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4158f3cd5d9036eb"

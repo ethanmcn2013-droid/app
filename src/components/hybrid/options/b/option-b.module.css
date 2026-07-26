@@ -526,3 +526,190 @@
   .boardCard:hover { transform: none; }
   :where(.optionB) button:active:not(:disabled) { transform: none; }
 }
+
+.calendarView :is(button, input):focus-visible {
+  outline: 2px solid var(--x-task-focus);
+  outline-offset: 2px;
+}
+
+/*
+ * The mobile calendar keeps its detail rail and every mode/action available,
+ * but contains the seven-column grid in its own horizontal scroller.
+ */
+@media (max-width: 767px) {
+  .workspaceBrief,
+  .workspaceBrief[data-milestones="off"] {
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    padding: 12px;
+  }
+
+  [data-density] .workspaceBrief {
+    min-height: 0;
+    padding-block: 12px;
+  }
+
+  .workspaceIdentity h1,
+  [data-density] .workspaceIdentity h1 {
+    font-size: 20px;
+    margin-top: 8px;
+  }
+
+  .workspaceIdentity > p {
+    display: -webkit-box;
+    font-size: 11px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .workspaceProgress {
+    align-items: center;
+    border-left: 0;
+    border-top: 1px solid var(--x-task-border);
+    display: grid;
+    gap: 8px 12px;
+    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+    padding: 10px 0 0;
+  }
+
+  .workspaceProgress progress {
+    margin: 0;
+  }
+
+  .workspaceProgress dl {
+    display: grid;
+    gap: 8px;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workspaceProgress dl > div {
+    gap: 3px;
+  }
+
+  .calendarView {
+    overflow-x: hidden;
+    padding: 8px 8px 18px;
+  }
+
+  .calendarToolbar {
+    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    min-height: 0;
+    padding: 6px;
+    top: -8px;
+  }
+
+  .calendarToolbar h2 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    overflow: hidden;
+    padding: 3px 4px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calendarNavigation,
+  .calendarModeSwitch {
+    width: 100%;
+  }
+
+  .calendarToolbar button {
+    flex: 1 1 0;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .calendarWorkspace {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .calendarPrimary {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .calendarTable {
+    min-width: 680px;
+  }
+
+  .selectedAgenda {
+    max-height: none;
+    min-height: 0;
+    position: static;
+    width: 100%;
+  }
+
+  .selectedAgenda > header button,
+  .agendaTaskLead > button,
+  .calendarPreview > div button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .calendarOverflowPopover {
+    left: 8px;
+    max-height: min(65dvh, 480px);
+    right: 8px;
+    top: 144px;
+    width: auto;
+  }
+
+  .calendarOverflowPopover header button,
+  .calendarOverflowPopover li button,
+  .calendarMoreButton {
+    min-height: 44px;
+  }
+
+  .unscheduledTray,
+  .unscheduledTrayCompact {
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
+    margin: 10px 0 0;
+  }
+
+  .unscheduledTray > header {
+    border-bottom: 1px solid var(--x-task-border);
+    border-right: 0;
+    padding: 0 0 8px;
+  }
+
+  .trayTaskList,
+  .unscheduledTrayCompact .trayTaskList {
+    grid-auto-columns: min(78vw, 270px);
+  }
+
+  .trayScheduleForm input,
+  .trayScheduleForm button,
+  .agendaDateEditor input,
+  .agendaSingleDate input {
+    height: 44px;
+  }
+}
+
+@media (pointer: coarse) {
+  .calendarDayHeader button,
+  .calendarTaskChip,
+  .calendarExtendButton,
+  .calendarMoreButton,
+  .calendarOverflowPopover header button,
+  .calendarOverflowPopover li button,
+  .selectedAgenda > header button,
+  .agendaTaskLead > button,
+  .trayScheduleForm input,
+  .trayScheduleForm button {
+    min-height: 44px;
+  }
+
+  .calendarDayHeader button,
+  .calendarExtendButton,
+  .calendarOverflowPopover header button,
+  .agendaTaskLead > button {
+    min-width: 44px;
+  }
+}

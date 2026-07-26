@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { UserButton, useUser, useClerk } from "@clerk/nextjs";
+import { useSuiteContext } from "@/components/app/use-suite-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { useHydrated } from "@/lib/use-hydrated";
-import { PRODUCT_APP_URLS } from "@/lib/product-urls";
-
-type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
+import { PRODUCT_APP_PATHS, type ProductId } from "@/lib/product-urls";
+import { withSuiteContext } from "@/lib/suite-context";
 
 /**
  * L3 escape hatch cookie name (DESIGN.md §14).
@@ -38,16 +38,20 @@ function clearPreviewCookie() {
 /**
  * Cross-product links, IA_COHERENCE.md §1G + §4B canon.
  *
- * Order: notes → tasks → roadmap → analytics (operator-directed 2026-05-18).
+ * Order: notes → tasks → timeline → signal (operator-directed 2026-05-18).
  * Labels: "Open [product]" where [product] is the lowercase wordmark name.
- * "Open Tasks" / "Open Roadmap" (Title Case) are retired; lowercase is canon.
+ * Retired capability labels and title-cased product links must not return.
  * The current product is excluded via the filter below.
  */
-const PRODUCTS: { slug: ProductSlug; label: string; url: string }[] = [
-  { slug: "notes",     label: "Open notes",    url: PRODUCT_APP_URLS.notes },
-  { slug: "tasks",     label: "Open tasks",    url: PRODUCT_APP_URLS.tasks },
-  { slug: "roadmap",   label: "Open timeline", url: PRODUCT_APP_URLS.timeline },
-  { slug: "analytics", label: "Open signal",   url: PRODUCT_APP_URLS.signal },
+const PRODUCTS: { slug: ProductId; label: string; path: string }[] = [
+  { slug: "notes", label: "Open notes", path: PRODUCT_APP_PATHS.notes },
+  { slug: "tasks", label: "Open tasks", path: PRODUCT_APP_PATHS.tasks },
+  {
+    slug: "timeline",
+    label: "Open timeline",
+    path: PRODUCT_APP_PATHS.timeline,
+  },
+  { slug: "signal", label: "Open signal", path: PRODUCT_APP_PATHS.signal },
 ];
 
 function ArrowIcon() {
@@ -135,9 +139,10 @@ function DemoUserButtonWithSuite({
   current,
   placement = "bar",
 }: {
-  current: ProductSlug;
+  current: ProductId;
   placement?: "bar" | "rail";
 }) {
+  const suiteContext = useSuiteContext();
   // In the bar (top-right) the menu drops down-right; at the foot of the
   // left product rail it must fly up and to the right so it never clips the
   // viewport edge below or the rail edge to the left.
@@ -149,7 +154,12 @@ function DemoUserButtonWithSuite({
     <details className="group relative">
       <summary
         aria-label="Open demo account menu"
-        className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ink [&::-webkit-details-marker]:hidden"
+        className={[
+          "flex cursor-pointer list-none items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ink [&::-webkit-details-marker]:hidden",
+          placement === "bar"
+            ? "h-11 w-11 md:h-8 md:w-8 md:pointer-coarse:h-11 md:pointer-coarse:w-11"
+            : "h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11",
+        ].join(" ")}
       >
         DO
       </summary>
@@ -161,7 +171,7 @@ function DemoUserButtonWithSuite({
           (product) => (
             <a
               key={product.slug}
-              href={product.url}
+              href={withSuiteContext(product.path, suiteContext)}
               className="flex min-h-11 items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
             >
               {product.label}
@@ -181,7 +191,14 @@ function DemoUserButtonWithSuite({
   );
 }
 
-function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
+function ClerkUserButtonWithSuite({
+  current,
+  placement,
+}: {
+  current: ProductId;
+  placement: "bar" | "rail";
+}) {
+  const suiteContext = useSuiteContext();
   const hydrated = useHydrated();
   const [previewCookie] = useState(readPreviewCookie);
   const isPreview = hydrated && previewCookie;
@@ -208,7 +225,10 @@ function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
     <UserButton
       appearance={{
         elements: {
-          avatarBox: "h-8 w-8 rounded-full",
+          avatarBox:
+            placement === "bar"
+              ? "h-11 w-11 rounded-full md:h-8 md:w-8 md:pointer-coarse:h-11 md:pointer-coarse:w-11"
+              : "h-8 w-8 rounded-full pointer-coarse:h-11 pointer-coarse:w-11",
           userButtonPopoverCard:
             "shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]",
         },
@@ -237,7 +257,7 @@ function ClerkUserButtonWithSuite({ current }: { current: ProductSlug }) {
           <UserButton.Link
             key={p.slug}
             label={p.label}
-            href={p.url}
+            href={withSuiteContext(p.path, suiteContext)}
             labelIcon={<ArrowIcon />}
           />
         ))}
@@ -259,7 +279,7 @@ export function UserButtonWithSuite({
   current,
   placement = "bar",
 }: {
-  current: ProductSlug;
+  current: ProductId;
   /** Where the avatar is mounted. "rail" flips the demo menu upward so it
    *  clears the viewport from the foot of the left product rail. The Clerk
    *  UserButton auto-positions its own popover, so it ignores this. */
@@ -268,6 +288,6 @@ export function UserButtonWithSuite({
   return isDemoMode() ? (
     <DemoUserButtonWithSuite current={current} placement={placement} />
   ) : (
-    <ClerkUserButtonWithSuite current={current} />
+    <ClerkUserButtonWithSuite current={current} placement={placement} />
   );
 }

@@ -2,6 +2,11 @@ import "server-only";
 
 import type { DomainId } from "@/lib/domains";
 import type { LaneId, Priority, Task, UserId } from "@/lib/data";
+import {
+  REVIEW_MENU_MILESTONE,
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 
 /**
  * In-memory demo dataset for Signal Tasks.
@@ -17,14 +22,17 @@ import type { LaneId, Priority, Task, UserId } from "@/lib/data";
  * software team's sprint board.
  */
 
-export const DEMO_USER_ID: UserId = "demo-user";
-export const DEMO_WORKSPACE_ID = "demo-ws";
-export const DEMO_WORKSPACE_SLUG = "the-orchard";
-export const DEMO_WORKSPACE_NAME = "The Orchard, events";
+export const DEMO_USER_ID: UserId = REVIEW_SUITE_FIXTURE.user.id;
+export const DEMO_WORKSPACE_ID = REVIEW_SUITE_FIXTURE.workspace.id;
+export const DEMO_WORKSPACE_SLUG = REVIEW_SUITE_FIXTURE.workspace.slug;
+export const DEMO_WORKSPACE_NAME = REVIEW_SUITE_FIXTURE.workspace.name;
 export const DEMO_SPONSOR_NAME = "The Orchard";
 export const DEMO_PRIMARY_USE_CASE = "venue";
 export const DEMO_DOMAIN: DomainId = "wedding";
 export const DEMO_SHARE_TOKEN = "review-the-orchard";
+export const DEMO_PRIMARY_PROJECT_ID = REVIEW_PRIMARY_PROJECT.id;
+export const DEMO_PRIMARY_PROJECT_SLUG = REVIEW_PRIMARY_PROJECT.slug;
+export const DEMO_PRIMARY_PROJECT_NAME = REVIEW_PRIMARY_PROJECT.name;
 
 const HOUR = 60 * 60 * 1000;
 const now = () => Date.now();
@@ -36,6 +44,9 @@ type Seed = {
   lane: LaneId;
   priority: Priority;
   due?: string;
+  dueAt?: string;
+  isMilestone?: boolean;
+  sourceNoteId?: string;
   tags?: string[];
   estimate?: number;
   comments?: number;
@@ -50,23 +61,27 @@ const SEED: Seed[] = [
     id: "demo-t-01",
     title: "Confirm marquee sides with the hire company",
     description:
-      "Maria + James, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
+      "Mara + Finn, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
     lane: "todo",
     priority: "p1",
     due: "Thu",
-    tags: ["maria-james"],
+    tags: ["mara-finn"],
     externalContactName: "County Marquee Hire",
     editedHoursAgo: 1,
   },
   {
-    id: "demo-t-02",
-    title: "Final stem count to the florist",
-    description: "Looser, wilder look, fewer roses, more foliage. Florist wants it Monday.",
-    lane: "todo",
-    priority: "p2",
-    due: "Mon",
-    tags: ["maria-james"],
-    externalContactName: "Aoife · Northlight Flowers",
+    id: REVIEW_MENU_MILESTONE.sourceId,
+    title: REVIEW_MENU_MILESTONE.title,
+    description:
+      "Mara and Finn confirmed the tasting. The venue team needs the final dietary list before service notes are locked.",
+    lane: "doing",
+    priority: "p1",
+    due: "1 Aug",
+    dueAt: REVIEW_MENU_MILESTONE.date ?? undefined,
+    isMilestone: true,
+    sourceNoteId: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
+    tags: [REVIEW_PRIMARY_PROJECT.slug],
+    externalContactName: "Mara Doyle",
     editedHoursAgo: 3,
   },
   {
@@ -97,7 +112,7 @@ const SEED: Seed[] = [
     lane: "doing",
     priority: "p1",
     due: "Fri",
-    tags: ["maria-james"],
+    tags: ["mara-finn"],
     comments: 2,
     editedHoursAgo: 2,
   },
@@ -120,7 +135,7 @@ const SEED: Seed[] = [
     description: "Top table moved away from the speakers, check sightlines to the arch.",
     lane: "review",
     priority: "p1",
-    tags: ["maria-james"],
+    tags: ["mara-finn"],
     comments: 1,
     editedHoursAgo: 5,
   },
@@ -145,11 +160,11 @@ const SEED: Seed[] = [
   },
   {
     id: "demo-t-10",
-    title: "Deposit invoice settled, Maria + James",
+    title: "Deposit invoice settled, Mara + Finn",
     lane: "done",
     priority: "p1",
-    tags: ["maria-james"],
-    externalContactName: "Maria Doyle",
+    tags: ["mara-finn"],
+    externalContactName: "Mara Doyle",
     cents: 150000,
     editedHoursAgo: 48,
   },
@@ -165,6 +180,9 @@ function toTask(s: Seed): Task {
     priority: s.priority,
     assignees: [DEMO_USER_ID],
     due: s.due,
+    dueAt: s.dueAt ? new Date(`${s.dueAt}T09:00:00.000Z`) : undefined,
+    isMilestone: s.isMilestone,
+    sourceNoteId: s.sourceNoteId ?? null,
     tags: s.tags,
     comments: s.comments,
     parentTaskId: null,

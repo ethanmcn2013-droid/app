@@ -1,6 +1,7 @@
 import suiteContracts from "./suite-contracts.v1.json";
 
 export type ProductId = "notes" | "tasks" | "timeline" | "signal";
+export type TasksViewId = "board" | "list" | "timeline" | "calendar";
 
 const suiteProducts = suiteContracts.products;
 
@@ -29,6 +30,20 @@ export const PRODUCT_APP_PATHS: Readonly<Record<ProductId, string>> =
     signal: "/app/signal",
   });
 
+/**
+ * Canonical Tasks view destinations.
+ *
+ * Keep this map explicit: `/app/timeline` belongs to the Timeline product,
+ * while the Tasks timeline view lives at `/app/tasks/timeline`.
+ */
+export const TASKS_VIEW_PATHS: Readonly<Record<TasksViewId, string>> =
+  Object.freeze({
+    board: PRODUCT_APP_PATHS.tasks,
+    list: `${PRODUCT_APP_PATHS.tasks}/list`,
+    timeline: `${PRODUCT_APP_PATHS.tasks}/timeline`,
+    calendar: `${PRODUCT_APP_PATHS.tasks}/calendar`,
+  });
+
 export const PRODUCT_APP_URLS: Readonly<Record<ProductId, string>> =
   Object.freeze({
     notes: `${APP_ORIGIN}${PRODUCT_APP_PATHS.notes}`,
@@ -52,6 +67,23 @@ export const IOS_APP_URL =
 export const CONTACT_EMAIL = "hello@signalstudio.ie";
 export const APP_DOMAIN = new URL(APP_ORIGIN).hostname;
 export const TASKS_PUBLIC_DOMAIN = new URL(TASKS_PUBLIC_ORIGIN).hostname;
+
+function ownsPath(pathname: string, productPath: string): boolean {
+  return pathname === productPath || pathname.startsWith(`${productPath}/`);
+}
+
+/**
+ * Resolve the active product from a signed-in app pathname.
+ *
+ * Tasks owns shared operational routes such as `/app/inbox` and
+ * `/app/settings`; sibling modules own only their explicit namespaces.
+ */
+export function productIdFromAppPath(pathname: string): ProductId {
+  for (const productId of ["notes", "timeline", "signal"] as const) {
+    if (ownsPath(pathname, PRODUCT_APP_PATHS[productId])) return productId;
+  }
+  return "tasks";
+}
 
 export function taskUrl(path = ""): string {
   if (!path) return APP_ORIGIN;

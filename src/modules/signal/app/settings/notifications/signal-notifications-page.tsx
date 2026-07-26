@@ -1,50 +1,39 @@
 import "server-only";
 
-import { isDemoMode } from "@/lib/access-mode";
-import { getOrCreatePreferences } from "../../../lib/signal-preferences";
-import { SignalCadenceForm } from "./signal-cadence-form";
+import Link from "next/link";
 
 /**
- * Notifications page — ported from
- * signal/src/app/app/settings/notifications/page.tsx.
- *
- * S3: SendTestButton and sendTestBriefingAction are NOT ported.
- * S1: revalidatePath targets /app/brief/settings/notifications (in cadence-actions).
- * Demo: synthetic prefs so the surface renders without a session.
+ * Signal's delivery provider is intentionally not active in the consolidated
+ * app. Keep this route as a truthful description of the in-app briefing until
+ * scheduled delivery has its own verified provider and release gate.
  */
-export async function SignalNotificationsPage() {
-  // Demo/Review: synthetic prefs so the surface renders without a real session.
-  const prefs = isDemoMode()
-    ? { email: "you@theorchard.example", cadence: "daily" as const }
-    : await getOrCreatePreferences();
-
+export function SignalNotificationsPage() {
   return (
-    <main className="mx-auto w-full max-w-[640px] px-6 py-16">
+    <section
+      aria-labelledby="signal-briefing-settings-title"
+      className="mx-auto w-full max-w-[640px] px-6 py-16"
+    >
       <p
         className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em]"
         style={{ color: "var(--ink-soft)" }}
       >
-        Settings · Notifications
+        Settings · Signal
       </p>
       <h1
+        id="signal-briefing-settings-title"
         className="mb-3 text-[32px] font-semibold leading-[1.15]"
         style={{ color: "var(--ink)" }}
       >
-        How often should the briefing land?
+        The briefing is ready when you open it.
       </h1>
       <p
         className="mb-8 text-[15px] leading-[1.6]"
         style={{ color: "var(--ink-soft)" }}
       >
-        Signal sends a short morning briefing to{" "}
-        <span style={{ color: "var(--ink)" }}>{prefs.email}</span>. You can
-        change this any time. The briefing is always one short read, never a
-        feed, never a dashboard. If a day has no real signal, no email is sent.
+        Signal builds one short in-app read from the work you can access. It
+        surfaces at most three findings and stays quiet when nothing crosses
+        the reviewed attention rules.
       </p>
-
-      <SignalCadenceForm initial={prefs.cadence as "daily" | "weekly" | "off"} />
-
-      {/* S3: SendTestButton intentionally omitted */}
 
       <div
         className="mt-12 rounded-xl border p-5"
@@ -57,18 +46,29 @@ export async function SignalNotificationsPage() {
           className="text-[12.5px] font-semibold uppercase tracking-[0.12em]"
           style={{ color: "var(--ink-soft)" }}
         >
-          Our promise
+          Current delivery
+        </p>
+        <p
+          className="mt-2 text-[17px] font-semibold"
+          style={{ color: "var(--ink)" }}
+        >
+          In app only
         </p>
         <p
           className="mt-2 text-[14px] leading-[1.6]"
           style={{ color: "var(--ink-soft)" }}
         >
-          Every email has a one-click off button in the footer, and a native
-          unsubscribe link in the email header (Gmail and Apple Mail surface
-          this at the top of the message). We never send anything else from
-          this address, no announcements, no upsells. Just the briefing.
+          No scheduled delivery service is active in this app. Open Signal
+          whenever you want a current read of the available work.
         </p>
+        <Link
+          href="/app/signal"
+          className="mt-4 inline-flex text-[13px] font-medium outline-none transition-colors hover:text-[color:var(--brand)] focus-visible:ring-2 focus-visible:ring-[color:var(--brand)]"
+          style={{ color: "var(--ink)" }}
+        >
+          Open Signal <span aria-hidden>&nbsp;→</span>
+        </Link>
       </div>
-    </main>
+    </section>
   );
 }

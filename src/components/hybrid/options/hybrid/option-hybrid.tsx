@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
 import { Icon } from "../../shared/icons";
@@ -12,13 +13,18 @@ import { BoardView } from "../a/board-view";
 import { ListFieldsPanel, ListView } from "../a/list-view";
 import { TimelineView } from "../a/timeline-view";
 import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-command-model";
+import type { CalendarDate } from "../../types";
 import styles from "../a/option-a.module.css";
 
 export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptionProps & { hideSuiteRail?: boolean }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const [columns, setColumns] = useState<ListColumn[]>(() => INITIAL_LIST_COLUMNS.map((column) => ({ ...column })));
   const [fieldsOpen, setFieldsOpen] = useState(false);
   const [planningCollapsed, setPlanningCollapsed] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<CalendarDate>(
+    () => calendar.today as CalendarDate,
+  );
 
   // Search, filtering, and sorting moved out of this row: the black Studio
   // Bar owns global search (⌘K), so the interior view stays in the workspace's
@@ -28,7 +34,13 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
   const view = route.view === "board" ? <BoardView tasks={visibleTasks} />
     : route.view === "list" ? <ListView columns={columns} group="status" setColumns={setColumns} tasks={visibleTasks} />
       : route.view === "timeline" ? <TimelineView tasks={visibleTasks} />
-        : <BCalendarView tasks={visibleTasks} />;
+        : (
+          <BCalendarView
+            onSelectedDateChange={setSelectedDate}
+            selectedDate={selectedDate}
+            tasks={visibleTasks}
+          />
+        );
 
   return (
     <div className={styles.optionA} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
@@ -46,7 +58,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
         {fieldsOpen && route.view === "list" ? <ListFieldsPanel columns={columns} onClose={() => setFieldsOpen(false)} setColumns={setColumns} /> : null}
         <section aria-label={`${route.view} view`} className={styles.activeView} data-view={route.view} data-work-surface="true">{view}</section>
       </section>
-      <PlanningRail collapsed={planningCollapsed} onSelectedDate={() => undefined} onToggle={() => setPlanningCollapsed((value) => !value)} selectedDate="2026-07-16" tasks={visibleTasks} view={route.view} />
+      <PlanningRail collapsed={planningCollapsed} onSelectedDate={setSelectedDate} onToggle={() => setPlanningCollapsed((value) => !value)} selectedDate={selectedDate} tasks={visibleTasks} view={route.view} />
     </div>
   );
 }

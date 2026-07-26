@@ -17,7 +17,10 @@ export function withSuiteContext(
   context: SuiteContextV2 | null,
 ): string {
   if (!context) return appUrl;
-  const url = new URL(appUrl);
+  const isAppPath = appUrl.startsWith("/");
+  const url = isAppPath
+    ? new URL(appUrl, "https://app.signalstudio.ie")
+    : new URL(appUrl);
   url.searchParams.set("sourceProduct", "tasks");
   url.searchParams.set("contextVersion", "2");
   url.searchParams.set("workspaceId", context.workspaceId);
@@ -27,7 +30,7 @@ export function withSuiteContext(
   if (context.projectId) {
     url.searchParams.set("projectId", context.projectId);
   }
-  return url.toString();
+  return isAppPath ? `${url.pathname}${url.search}${url.hash}` : url.toString();
 }
 
 // ── Signal module additions (Phase 6 port) ──────────────────────────────────

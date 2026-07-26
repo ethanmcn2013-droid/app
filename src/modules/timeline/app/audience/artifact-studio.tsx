@@ -77,7 +77,7 @@ export function TimelineArtifactStudio({
           </Link>
         </div>
         <div className={styles.canvas}>
-          <TimelineArtifact timeline={timeline} />
+          <TimelineArtifact timeline={timeline} embedded />
         </div>
       </section>
 

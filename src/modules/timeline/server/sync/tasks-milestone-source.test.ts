@@ -80,7 +80,11 @@ test("node id format: ms-{tasksWorkspaceId}-{tasksTaskId}", () => {
 
 // ── 3. Later lane (D7) ────────────────────────────────────────────────────────
 
-import { statusToLane } from "../db/timeline-queries.js";
+import {
+  resolveEffectiveAudienceState,
+  resolveEffectiveNodeDate,
+  statusToLane,
+} from "../db/timeline-queries.js";
 
 test("statusToLane, shipped → Shipped", () => {
   assert.equal(statusToLane("shipped", "2026-06-01"), "Shipped");
@@ -109,8 +113,8 @@ test("statusToLane, next + undefined date → Later", () => {
 
 type MinimalOverlay = {
   labelOverride: string | null;
-  dateOverride: string | null | undefined;
-  laneOverride: string | null;
+  dateOverride: string | null;
+  dateOverrideMode: "inherit" | "date" | "undated";
   hidden: boolean;
   source: "synced" | "manual";
 };
@@ -131,17 +135,17 @@ function applyOverlay(
     return { title: task.title, targetDate: task.targetDate, driftDetected: false };
   }
   const effectiveTitle = overlay.labelOverride ?? task.title;
-  const effectiveDate =
-    overlay.dateOverride !== undefined ? overlay.dateOverride : task.targetDate;
-  // An override is "active" only when actually set. labelOverride null/undefined
-  // = no override; dateOverride undefined = no override (null = explicit clear).
-  // Drift = an active override whose value diverges from the current Tasks value.
+  const effectiveDate = resolveEffectiveNodeDate(
+    task.targetDate,
+    overlay.dateOverrideMode,
+    overlay.dateOverride,
+  );
   const labelActive =
     overlay.labelOverride !== null && overlay.labelOverride !== undefined;
-  const dateActive = overlay.dateOverride !== undefined;
+  const dateActive = overlay.dateOverrideMode !== "inherit";
   const driftDetected = Boolean(
     (labelActive && overlay.labelOverride !== task.title) ||
-      (dateActive && overlay.dateOverride !== task.targetDate),
+      (dateActive && effectiveDate !== task.targetDate),
   );
   return { title: effectiveTitle, targetDate: effectiveDate ?? null, driftDetected };
 }
@@ -157,8 +161,8 @@ test("COALESCE, labelOverride set: overlay wins", () => {
   const task = { id: "t1", title: "Old title", status: "next", targetDate: "2026-06-12", sortOrder: 0 };
   const overlay: MinimalOverlay = {
     labelOverride: "Venue soft launch",
-    dateOverride: undefined,
-    laneOverride: null,
+    dateOverride: null,
+    dateOverrideMode: "inherit",
     hidden: false,
     source: "synced",
   };
@@ -170,8 +174,8 @@ test("COALESCE, labelOverride null: generated title flows through", () => {
   const task = { id: "t1", title: "Venue walkthrough", status: "next", targetDate: null, sortOrder: 0 };
   const overlay: MinimalOverlay = {
     labelOverride: null,
-    dateOverride: undefined,
-    laneOverride: null,
+    dateOverride: null,
+    dateOverrideMode: "inherit",
     hidden: false,
     source: "synced",
   };
@@ -183,8 +187,8 @@ test("COALESCE, drift detected when Tasks title changed after override", () => {
   const task = { id: "t1", title: "New title from Tasks", status: "next", targetDate: "2026-06-12", sortOrder: 0 };
   const overlay: MinimalOverlay = {
     labelOverride: "Old human override",
-    dateOverride: undefined,
-    laneOverride: null,
+    dateOverride: null,
+    dateOverrideMode: "inherit",
     hidden: false,
     source: "synced",
   };
@@ -197,13 +201,50 @@ test("COALESCE, no drift when override matches current Tasks value", () => {
   const task = { id: "t1", title: "Venue walkthrough", status: "next", targetDate: "2026-06-12", sortOrder: 0 };
   const overlay: MinimalOverlay = {
     labelOverride: "Venue walkthrough", // same as task.title
-    dateOverride: undefined,
-    laneOverride: null,
+    dateOverride: null,
+    dateOverrideMode: "inherit",
     hidden: false,
     source: "synced",
   };
   const result = applyOverlay(task, overlay);
   assert.equal(result.driftDetected, false);
+});
+
+test("a persisted NULL date remains inherited after unrelated overlay writes", () => {
+  assert.equal(
+    resolveEffectiveNodeDate(
+      "2026-06-12",
+      "inherit",
+      null,
+    ),
+    "2026-06-12",
+  );
+});
+
+test("intentional undated and custom date are explicit persisted states", () => {
+  assert.equal(
+    resolveEffectiveNodeDate("2026-06-12", "undated", null),
+    null,
+  );
+  assert.equal(
+    resolveEffectiveNodeDate(
+      "2026-06-12",
+      "date",
+      "2026-07-01",
+    ),
+    "2026-07-01",
+  );
+});
+
+test("audience state override wins without mutating the Tasks status", () => {
+  assert.equal(
+    resolveEffectiveAudienceState("next", "2026-06-12", "covered"),
+    "covered",
+  );
+  assert.equal(
+    resolveEffectiveAudienceState("next", "2026-06-12", null),
+    "next",
+  );
 });
 
 // ── 5. D6 two-gate: real action-level tests (BV-4) ────────────────────────────

@@ -6,9 +6,8 @@
  * in production every tile is a real destination, never a preview stub:
  *
  *   home     → the Signal Studio umbrella
- *   products → each sibling's module route within this app, or the Tasks
- *              board (Tasks is the current product; siblings are module
- *              placeholders until their migration completes)
+ *   products → each product's canonical module route within this app,
+ *              carrying allowlisted workspace context as navigation hints
  *   more     → the umbrella (all products)
  *   search   → the universal command palette
  *   updates  → /app/inbox (the daily digest surface)
@@ -24,37 +23,26 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { STUDIO_URL } from "@/lib/product-urls";
+import { useSuiteContext } from "@/components/app/use-suite-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
+import {
+  PRODUCT_APP_PATHS,
+  STUDIO_URL,
+  productIdFromAppPath,
+  type ProductId,
+} from "@/lib/product-urls";
+import { withSuiteContext } from "@/lib/suite-context";
 import { STUDIO_PALETTE_EVENT } from "./studio-chrome-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
 /** Internal route for each product module within the unified app. */
-const CORE_PRODUCTS: Array<{ key: RailIconName; label: string; href: string; activePrefix: string }> = [
-  { key: "notes",    label: "Notes",    href: "/app/notes", activePrefix: "/app/notes" },
-  { key: "tasks",    label: "Tasks",    href: "/app/tasks", activePrefix: "/app/tasks" },
-  { key: "timeline", label: "Timeline", href: "/app/timeline", activePrefix: "/app/timeline" },
-  { key: "signal",   label: "Signal",   href: "/app/signal", activePrefix: "/app/signal" },
+const CORE_PRODUCTS: Array<{ key: ProductId; label: string }> = [
+  { key: "notes", label: "Notes" },
+  { key: "tasks", label: "Tasks" },
+  { key: "timeline", label: "Timeline" },
+  { key: "signal", label: "Signal" },
 ];
-
-/**
- * Determine whether a product tile should be lit active for the current path.
- *
- * Tasks is active on all /app/* paths that are not owned by a sibling
- * module, so it stays lit on board/inbox/settings/etc. Sibling modules
- * (notes, timeline, signal) are active only on their own prefix.
- */
-function isActive(key: RailIconName, activePrefix: string, pathname: string): boolean {
-  if (key === "tasks") {
-    return (
-      !pathname.startsWith("/app/notes") &&
-      !pathname.startsWith("/app/timeline") &&
-      !pathname.startsWith("/app/signal")
-    );
-  }
-  return pathname.startsWith(activePrefix);
-}
 
 function ProductTile({ icon, label, active }: { icon: RailIconName; label: string; active?: boolean }) {
   return (
@@ -69,6 +57,8 @@ function ProductTile({ icon, label, active }: { icon: RailIconName; label: strin
 
 export function StudioRail() {
   const pathname = usePathname() ?? "";
+  const suiteContext = useSuiteContext();
+  const activeProduct = productIdFromAppPath(pathname);
 
   return (
     <aside aria-label="Signal Studio products" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
@@ -76,7 +66,11 @@ export function StudioRail() {
           top-left cell directly above this rail — no second dot here. */}
       <nav aria-label="Products" className={styles.railProducts}>
         {CORE_PRODUCTS.map((product) => {
-          const active = isActive(product.key, product.activePrefix, pathname);
+          const active = product.key === activeProduct;
+          const href = withSuiteContext(
+            PRODUCT_APP_PATHS[product.key],
+            suiteContext,
+          );
           return (
             <Link
               aria-current={active ? "page" : undefined}
@@ -84,7 +78,7 @@ export function StudioRail() {
               data-active={active ? "true" : undefined}
               data-product={product.key}
               data-tip={active ? `${product.label} · current` : `Open ${product.label}`}
-              href={product.href}
+              href={href}
               key={product.key}
             >
               <ProductTile active={active} icon={product.key} label={product.label} />
@@ -129,7 +123,7 @@ export function StudioRail() {
           so the top chrome reads as product identity, not account. The menu
           flies up-and-right via placement="rail" so it never clips. */}
       <span className={styles.railAccountSlot} data-tip="Account">
-        <UserButtonWithSuite current="tasks" placement="rail" />
+        <UserButtonWithSuite current={activeProduct} placement="rail" />
       </span>
     </aside>
   );

@@ -1,16 +1,14 @@
 "use client";
 
 import { useMemo, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
-import { differenceInDays, formatDate, formatDateLong, LAB_TODAY, scheduleIncludes, scheduleStart } from "../../dates";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
 import { useLabStore } from "../../store";
 import type { CalendarDate, LabTask, LabView } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { ScheduleText, TaskOpenButton, TaskSelection } from "../../shared/task-ui";
 import styles from "./option-c.module.css";
-
-const PERIOD_START = "2026-07-06" as CalendarDate;
-const PERIOD_END = "2026-08-14" as CalendarDate;
 
 export function PlanningRail({
   collapsed,
@@ -28,6 +26,7 @@ export function PlanningRail({
   view: LabView;
 }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const menu = useTaskContextMenu();
   const [unscheduledOpen, setUnscheduledOpen] = useState(true);
   const orderedIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
@@ -35,11 +34,33 @@ export function PlanningRail({
   const selectedDayTasks = tasks.filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, selectedDate));
   const completed = tasks.filter((task) => task.completed).length;
   const milestones = tasks
-    .filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= LAB_TODAY)
+    .filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= calendar.today)
     .sort((a, b) => (scheduleStart(a.schedule) ?? "").localeCompare(scheduleStart(b.schedule) ?? ""));
   const planningView = view === "timeline" || view === "calendar";
-  const periodDays = differenceInDays(PERIOD_START, PERIOD_END);
-  const todayPosition = `${Math.max(0, Math.min(100, differenceInDays(PERIOD_START, LAB_TODAY) / periodDays * 100))}%`;
+  const sourcePeriod = calendar.planningPeriod;
+  const period = sourcePeriod?.startDate && sourcePeriod.endDate
+    ? {
+        ...sourcePeriod,
+        startDate: sourcePeriod.startDate as CalendarDate,
+        endDate: sourcePeriod.endDate as CalendarDate,
+      }
+    : null;
+  const periodSpan = period
+    ? Math.max(1, differenceInDays(period.startDate, period.endDate))
+    : 0;
+  const todayOffset = period
+    ? differenceInDays(period.startDate, calendar.today)
+    : 0;
+  const todayPosition = period
+    ? `${Math.max(0, Math.min(100, todayOffset / periodSpan * 100))}%`
+    : "0%";
+  const positionLabel = period
+    ? calendar.today < period.startDate
+      ? `Starts in ${Math.abs(todayOffset)} days`
+      : calendar.today > period.endDate
+        ? `Ended ${differenceInDays(period.endDate, calendar.today)} days ago`
+        : `Day ${todayOffset + 1} of ${periodSpan + 1}`
+    : null;
 
   const unscheduledKeyDown = (event: KeyboardEvent<HTMLElement>, task: LabTask) => {
     if (event.shiftKey && event.key === "F10") {
@@ -72,17 +93,26 @@ export function PlanningRail({
   return (
     <aside aria-label="Planning rail" className={styles.planningRail} id="c-planning-rail">
       <header className={styles.planningRailHeader}>
-        <div><span>Planning period</span><strong>Public launch</strong></div>
+        <div><span>Planning period</span><strong>{sourcePeriod?.name ?? "Dates not set"}</strong></div>
         <button aria-expanded="true" aria-label="Collapse planning rail" onClick={onToggle} type="button"><Icon name="arrow-right" size={15} /></button>
       </header>
 
-      <section className={styles.currentPosition}>
-        <header><span>Current position</span><strong>{formatDate(LAB_TODAY, { weekday: "short", day: "numeric", month: "short" })}</strong></header>
-        <div aria-label={`Today is ${differenceInDays(PERIOD_START, LAB_TODAY) + 1} days into the planning period`} className={styles.periodTrack}>
-          <span className={styles.periodStart}>6 Jul</span><span className={styles.periodEnd}>14 Aug</span><i aria-hidden="true" style={{ left: todayPosition }} /><b aria-hidden="true" style={{ left: todayPosition }} />
-        </div>
-        <div className={styles.periodStats}><span><strong>{completed}</strong> complete</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unplanned</span></div>
-      </section>
+      {period ? (
+        <section className={styles.currentPosition}>
+          <header><span>Current position</span><strong>{formatDate(calendar.today, { weekday: "short", day: "numeric", month: "short" })}</strong></header>
+          <div aria-label={positionLabel ?? undefined} className={styles.periodTrack}>
+            <span className={styles.periodStart}>{formatDate(period.startDate)}</span><span className={styles.periodEnd}>{formatDate(period.endDate)}</span><i aria-hidden="true" style={{ left: todayPosition }} /><b aria-hidden="true" style={{ left: todayPosition }} />
+          </div>
+          <p className={styles.periodPositionLabel}>{positionLabel}</p>
+          <div className={styles.periodStats}><span><strong>{completed}</strong> complete</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unplanned</span></div>
+        </section>
+      ) : (
+        <section className={styles.currentPosition} data-empty="true">
+          <header><span>Calendar position</span><strong>Not available</strong></header>
+          <p>Add a start and end date to the project planning period to see time position. Tasks keep only dates you choose.</p>
+          <div className={styles.periodStats}><span><strong>{completed}</strong> complete</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unplanned</span></div>
+        </section>
+      )}
 
       {view === "calendar" ? (
         <section className={styles.selectedDayPanel}>
@@ -133,7 +163,7 @@ export function PlanningRail({
 
       <section className={styles.nextMilestone}>
         <span>Next milestone</span>
-        {milestones[0] ? <TaskOpenButton task={milestones[0]}><strong>{milestones[0].title}</strong><small>{formatDateLong(milestones[0].schedule.kind === "milestone" ? milestones[0].schedule.on : LAB_TODAY)}</small></TaskOpenButton> : <p>No upcoming milestone in this filter.</p>}
+        {milestones[0] && milestones[0].schedule.kind === "milestone" ? <TaskOpenButton task={milestones[0]}><strong>{milestones[0].title}</strong><small>{formatDateLong(milestones[0].schedule.on)}</small></TaskOpenButton> : <p>No upcoming milestone in this filter.</p>}
       </section>
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </aside>

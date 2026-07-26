@@ -15,8 +15,16 @@
       "viewport": { "width": 390, "height": 844 }
     },
     {
+      "name": "tablet",
+      "viewport": { "width": 768, "height": 1024 }
+    },
+    {
       "name": "desktop",
       "viewport": { "width": 1280, "height": 900 }
+    },
+    {
+      "name": "wide",
+      "viewport": { "width": 1440, "height": 960 }
     }
   ]
 }

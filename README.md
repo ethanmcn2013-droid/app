@@ -5,7 +5,8 @@ This Next.js repository serves the one Signal Studio web app. Its four products 
 ## URL contract
 
 - Marketing: `https://signalstudio.ie/{notes|tasks|timeline|signal}`
-- App: `https://app.signalstudio.ie/app/{notes|board|plan|brief}`
+- App products: `https://app.signalstudio.ie/app/{notes|tasks|timeline|signal}`
+- Tasks views: `/app/tasks`, `/app/tasks/list`, `/app/tasks/timeline`, `/app/tasks/calendar`
 - Narrow public/service hosts: `tasks.signalstudio.ie` and `timeline.signalstudio.ie`
 
 Read `docs/SUITE_URL_AND_NAMING_CONTRACT.md` before changing navigation, domains, auth callbacks, marketing redirects, or public links. Use `src/lib/product-urls.ts` rather than hard-coded cross-product URLs.

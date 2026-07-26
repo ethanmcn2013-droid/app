@@ -28,7 +28,12 @@
 
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
-import { STUDIO_URL } from "@/lib/product-urls";
+import {
+  PRODUCT_APP_PATHS,
+  STUDIO_URL,
+  productIdFromAppPath,
+  type ProductId,
+} from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
   STUDIO_CREATE_EVENT,
@@ -64,20 +69,20 @@ function markCell() {
  * the string and its home link change. Tasks remains the default for all
  * Tasks-owned routes.
  */
-const MODULE_IDENTITY: ReadonlyArray<{ prefix: string; word: string; home: string }> = [
-  { prefix: "/app/notes", word: "notes", home: "/app/notes" },
-  { prefix: "/app/tasks", word: "tasks", home: "/app/tasks" },
-  { prefix: "/app/timeline", word: "timeline", home: "/app/timeline" },
-  { prefix: "/app/signal", word: "signal", home: "/app/signal" },
-];
+const MODULE_LABELS: Readonly<Record<ProductId, string>> = Object.freeze({
+  notes: "Notes",
+  tasks: "Tasks",
+  timeline: "Timeline",
+  signal: "Signal",
+});
 
 function activeModuleIdentity(pathname: string): { word: string; home: string; label: string } {
-  for (const m of MODULE_IDENTITY) {
-    if (pathname === m.prefix || pathname.startsWith(m.prefix + "/")) {
-      return { word: m.word, home: m.home, label: m.word[0].toUpperCase() + m.word.slice(1) };
-    }
-  }
-  return { word: "tasks", home: "/app/tasks", label: "Tasks" };
+  const productId = productIdFromAppPath(pathname);
+  return {
+    word: productId,
+    home: PRODUCT_APP_PATHS[productId],
+    label: MODULE_LABELS[productId],
+  };
 }
 
 /**
@@ -91,11 +96,11 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="hidden h-full w-[248px] flex-none items-center gap-2.5 border-r border-white/[0.07] px-4 md:flex">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 border-r border-white/[0.07] px-3 md:w-[248px] md:px-4">
       <a
         href={identity.home}
         aria-label={identity.label}
-        className="flex-none select-none rounded text-[27px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white"
+        className="inline-flex min-h-11 flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-11"
         style={{ letterSpacing: "-0.05em" }}
       >
         {identity.word}
@@ -127,28 +132,23 @@ export function StudioBar() {
   const { data } = useStudioChrome();
   const keyLabel = useCommandKeyLabel();
   const pathname = usePathname() ?? "";
+  const activeProduct = productIdFromAppPath(pathname);
   const tasksSurface =
     !pathname.startsWith("/app/notes") &&
     !pathname.startsWith("/app/timeline") &&
     !pathname.startsWith("/app/signal");
+  const commandLabel = tasksSurface
+    ? "Search, jump or create"
+    : "Jump across Signal Studio";
 
   return (
     <header
       role="banner"
-      className="relative z-40 flex h-10 w-full flex-none items-stretch bg-[var(--x-studio-chrome)]"
+      className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
     >
       {markCell()}
 
-      {data ? (
-        <IdentityCell edition={data.edition} />
-      ) : (
-        <div
-          aria-hidden="true"
-          className="hidden h-full w-[248px] flex-none items-center border-r border-white/[0.07] px-4 md:flex"
-        >
-          <span className="h-2.5 w-12 animate-pulse rounded bg-white/[0.08]" />
-        </div>
-      )}
+      <IdentityCell edition={data?.edition ?? null} />
 
       {/* Spacer. The reserved Signal pulse ("3 need you") docks at its right
           edge when it ships — deliberately empty space, deliberately no bell. */}
@@ -165,9 +165,9 @@ export function StudioBar() {
             the right action cluster beside create + account. */}
         <button
           type="button"
-          aria-label="Search, jump or create"
+          aria-label={commandLabel}
           onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] lg:w-[300px]"
+          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] pointer-coarse:h-11 lg:w-[300px]"
         >
           <svg
             aria-hidden="true"
@@ -185,7 +185,7 @@ export function StudioBar() {
           {/* soft ink (not quiet): placeholder + kbd are real text on the
               raised field surface and must hold ≥4.5:1 for the Axe gate. */}
           <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--x-studio-ink-soft)]">
-            Search, jump or create…
+            {commandLabel}…
           </span>
           <kbd className="flex h-[17px] flex-none select-none items-center rounded border border-white/[0.12] px-1 font-mono text-[9.5px] tracking-[0.02em] text-[var(--x-studio-ink-soft)]">
             {keyLabel}
@@ -195,9 +195,9 @@ export function StudioBar() {
         {/* Compact search trigger below md, where the full field is hidden. */}
         <button
           type="button"
-          aria-label="Search, jump or create"
+          aria-label={commandLabel}
           onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:hidden"
+          className="flex h-11 w-11 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:hidden"
         >
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="11" cy="11" r="8" />
@@ -210,7 +210,7 @@ export function StudioBar() {
             type="button"
             title="New task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-8 flex-none items-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[12px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)]"
+            className="flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[12px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
           >
             <svg
               aria-hidden="true"
@@ -233,7 +233,7 @@ export function StudioBar() {
             below md, where the rail is hidden and the bar owns account
             access. Quiet raised ring keeps the rail-account-chip register. */}
         <span className="flex flex-none items-center rounded-full bg-white/[0.06] p-px ring-1 ring-white/[0.12] md:hidden">
-          <UserButtonWithSuite current="tasks" />
+          <UserButtonWithSuite current={activeProduct} />
         </span>
       </div>
     </header>

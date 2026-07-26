@@ -18,21 +18,56 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { EffectiveNode } from "@/modules/timeline/server/db/timeline-queries";
 import {
+  createManualMilestoneAction,
   upsertNodeOverlayAction,
   syncMilestonesAction,
   reorderNodesAction,
   type UpsertOverlayResult,
 } from "@/modules/timeline/server/actions/workspaces";
 import { attentionReason } from "@/modules/timeline/lib/roadmap/needs-attention";
+import {
+  buildOwnerKeyboardReorder,
+  type OwnerReorderDirection,
+} from "@/modules/timeline/lib/owner-reorder";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
+import type { AudienceItemState } from "@/modules/timeline/server/db/timeline-schema";
 
-const LANE_LABELS = ["Next", "In flight", "Shipped", "Later"] as const;
-type LaneLabel = typeof LANE_LABELS[number];
+const PUBLIC_STATE_OPTIONS: ReadonlyArray<{
+  value: AudienceItemState;
+  label: string;
+}> = [
+  { value: "covered", label: "Complete" },
+  { value: "now", label: "Now" },
+  { value: "next", label: "Next" },
+  { value: "later", label: "Later" },
+  { value: "cancelled", label: "Not going ahead" },
+];
+
+function laneForAudienceState(
+  state: AudienceItemState,
+  targetDate: string | null,
+): EffectiveNode["lane"] {
+  if (state === "covered") return "Shipped";
+  if (state === "now") return "In flight";
+  if (state === "later" || state === "cancelled") return "Later";
+  return targetDate ? "Next" : "Later";
+}
+
+function sourceStateForDate(
+  node: EffectiveNode,
+  targetDate: string | null,
+): AudienceItemState {
+  if (node.audienceStateOverride) return node.audienceStateOverride;
+  if (node.status === "shipped") return "covered";
+  if (node.status === "refused") return "cancelled";
+  if (node.status === "in-flight" || node.status === "waiting") return "now";
+  return targetDate ? "next" : "later";
+}
 
 // ── Lane helpers ──────────────────────────────────────────────────────────────
 
 /** Human-readable eyebrow for a lane separator. Matches CREATIVE_SPEC §1.1. */
-function LaneSeparator({ lane }: { lane: LaneLabel }) {
+function LaneSeparator({ lane }: { lane: string }) {
   return (
     <div
       style={{
@@ -58,7 +93,13 @@ function LaneSeparator({ lane }: { lane: LaneLabel }) {
 
 // ── Status circle ─────────────────────────────────────────────────────────────
 
-function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boolean }) {
+function StatusCircle({
+  state,
+  isMilestone,
+}: {
+  state: AudienceItemState;
+  isMilestone: boolean;
+}) {
   const accentBorder = `1.5px solid var(--indigo)`;
   const ghostBorder = `1.5px solid var(--ink-ghost)`;
 
@@ -71,7 +112,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
     marginTop: 2,
   };
 
-  if (lane === "Shipped") {
+  if (state === "covered") {
     return (
       <span
         style={{
@@ -82,7 +123,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
       />
     );
   }
-  if (lane === "In flight") {
+  if (state === "now") {
     return (
       <span
         style={{
@@ -93,7 +134,7 @@ function StatusCircle({ lane, isMilestone }: { lane: LaneLabel; isMilestone: boo
       />
     );
   }
-  if (lane === "Later") {
+  if (state === "later" || state === "cancelled") {
     return (
       <span
         style={{
@@ -126,13 +167,19 @@ function NodeCard({
   onWriteStart,
   onWriteEnd,
   onError,
+  onOptimisticUpdate,
   onDragStart,
   onDragOver,
   onDrop,
   onPointerDragStart,
   onPointerDragOver,
   onPointerDrop,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
   isDraggingOver,
+  canReorder = true,
 }: {
   node: EffectiveNode;
   workspaceSlug: string;
@@ -142,17 +189,28 @@ function NodeCard({
   onWriteEnd: () => void;
   /** C2: surface a transient advisory message when an inline edit silently fails. */
   onError: (message: string) => void;
+  onOptimisticUpdate: (
+    nodeId: string,
+    patch: Partial<EffectiveNode>,
+  ) => void;
   onDragStart: (id: string) => void;
   onDragOver: (id: string) => void;
   onDrop: (targetId: string) => void;
   onPointerDragStart: (id: string) => void;
   onPointerDragOver: (id: string) => void;
   onPointerDrop: (targetId: string) => void;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
   isDraggingOver: boolean;
+  canReorder?: boolean;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(node.title);
   const [isPending, startTransition] = useTransition();
+  const [rowError, setRowError] = useState<string | null>(null);
+  const [retryAction, setRetryAction] = useState<(() => void) | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -165,35 +223,74 @@ function NodeCard({
   function handleEditResult(
     result: UpsertOverlayResult,
     onLocalRevert?: () => void,
+    retry?: () => void,
   ) {
     if ("error" in result) {
       onError(result.error);
       onLocalRevert?.();
+      setRetryAction(() => retry ?? null);
+      setRowError(result.error);
       return;
     }
+    setRetryAction(null);
+    setRowError(null);
     onUpdate();
   }
 
-  function commitTitle() {
-    if (titleValue.trim() === node.title) {
-      setEditingTitle(false);
-      return;
-    }
+  function saveTitle(nextTitle: string) {
+    const previousTitle = node.title;
+    const previousOverride = node.labelOverride;
+    onOptimisticUpdate(node.id, {
+      title: nextTitle,
+      labelOverride: nextTitle || null,
+    });
     onWriteStart();
     startTransition(async () => {
       try {
         const result = await upsertNodeOverlayAction(workspaceSlug, projectSlug, {
           nodeId: node.id,
-          labelOverride: titleValue.trim() || null,
+          labelOverride: nextTitle || null,
         });
-        handleEditResult(result, () => setTitleValue(node.title));
+        handleEditResult(
+          result,
+          () => {
+            setTitleValue(previousTitle);
+            onOptimisticUpdate(node.id, {
+              title: previousTitle,
+              labelOverride: previousOverride,
+            });
+          },
+          () => saveTitle(nextTitle),
+        );
       } catch {
-        onError("Couldn't save that change. Check your connection and try again.");
-        setTitleValue(node.title);
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => () => saveTitle(nextTitle));
+        setTitleValue(previousTitle);
+        onOptimisticUpdate(node.id, {
+          title: previousTitle,
+          labelOverride: previousOverride,
+        });
       } finally {
         onWriteEnd();
       }
     });
+  }
+
+  function commitTitle() {
+    const nextTitle = titleValue.trim();
+    if (!nextTitle) {
+      setTitleValue(node.title);
+      setEditingTitle(false);
+      return;
+    }
+    if (nextTitle === node.title) {
+      setEditingTitle(false);
+      return;
+    }
+    saveTitle(nextTitle);
     setEditingTitle(false);
   }
 
@@ -205,26 +302,56 @@ function NodeCard({
           nodeId: node.id,
           hidden: !node.hidden,
         });
-        handleEditResult(result);
+        handleEditResult(result, undefined, toggleHidden);
       } catch {
-        onError("Couldn't save that change. Check your connection and try again.");
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => toggleHidden);
       } finally {
         onWriteEnd();
       }
     });
   }
 
-  function setLane(lane: LaneLabel) {
+  function setPublicState(state: AudienceItemState) {
+    const previousState = node.audienceState;
+    const previousOverride = node.audienceStateOverride;
+    const previousLane = node.lane;
+    onOptimisticUpdate(node.id, {
+      audienceState: state,
+      audienceStateOverride: state,
+      lane: laneForAudienceState(state, node.targetDate),
+    });
     onWriteStart();
     startTransition(async () => {
       try {
         const result = await upsertNodeOverlayAction(workspaceSlug, projectSlug, {
           nodeId: node.id,
-          laneOverride: lane !== node.lane ? lane : null,
+          audienceStateOverride: state,
         });
-        handleEditResult(result);
+        handleEditResult(
+          result,
+          () =>
+            onOptimisticUpdate(node.id, {
+              audienceState: previousState,
+              audienceStateOverride: previousOverride,
+              lane: previousLane,
+            }),
+          () => setPublicState(state),
+        );
       } catch {
-        onError("Couldn't save that change. Check your connection and try again.");
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => () => setPublicState(state));
+        onOptimisticUpdate(node.id, {
+          audienceState: previousState,
+          audienceStateOverride: previousOverride,
+          lane: previousLane,
+        });
       } finally {
         onWriteEnd();
       }
@@ -232,23 +359,170 @@ function NodeCard({
   }
 
   function setDate(dateStr: string) {
+    const nextDate = dateStr || null;
+    const nextMode = dateStr ? "date" : "undated";
+    const previousDate = node.targetDate;
+    const previousDateOverride = node.dateOverride;
+    const previousDateMode = node.dateOverrideMode;
+    const previousState = node.audienceState;
+    const previousLane = node.lane;
+    const nextState = sourceStateForDate(node, nextDate);
+    onOptimisticUpdate(node.id, {
+      targetDate: nextDate,
+      dateOverride: nextDate,
+      dateOverrideMode: nextMode,
+      audienceState: nextState,
+      lane: laneForAudienceState(nextState, nextDate),
+    });
     onWriteStart();
     startTransition(async () => {
       try {
         const result = await upsertNodeOverlayAction(workspaceSlug, projectSlug, {
           nodeId: node.id,
-          dateOverride: dateStr || null,
+          dateOverride: nextDate,
+          dateOverrideMode: nextMode,
         });
-        handleEditResult(result);
+        handleEditResult(
+          result,
+          () =>
+            onOptimisticUpdate(node.id, {
+              targetDate: previousDate,
+              dateOverride: previousDateOverride,
+              dateOverrideMode: previousDateMode,
+              audienceState: previousState,
+              lane: previousLane,
+            }),
+          () => setDate(dateStr),
+        );
       } catch {
-        onError("Couldn't save that change. Check your connection and try again.");
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => () => setDate(dateStr));
+        onOptimisticUpdate(node.id, {
+          targetDate: previousDate,
+          dateOverride: previousDateOverride,
+          dateOverrideMode: previousDateMode,
+          audienceState: previousState,
+          lane: previousLane,
+        });
       } finally {
         onWriteEnd();
       }
     });
   }
 
-  const isShipped = node.lane === "Shipped";
+  function inheritDate() {
+    const previousDate = node.targetDate;
+    const previousDateOverride = node.dateOverride;
+    const previousDateMode = node.dateOverrideMode;
+    const previousState = node.audienceState;
+    const previousLane = node.lane;
+    const nextState = sourceStateForDate(node, node.sourceTargetDate);
+    onOptimisticUpdate(node.id, {
+      targetDate: node.sourceTargetDate,
+      dateOverride: null,
+      dateOverrideMode: "inherit",
+      audienceState: nextState,
+      lane: laneForAudienceState(nextState, node.sourceTargetDate),
+    });
+    onWriteStart();
+    startTransition(async () => {
+      try {
+        const result = await upsertNodeOverlayAction(
+          workspaceSlug,
+          projectSlug,
+          {
+            nodeId: node.id,
+            dateOverride: null,
+            dateOverrideMode: "inherit",
+          },
+        );
+        handleEditResult(
+          result,
+          () =>
+            onOptimisticUpdate(node.id, {
+              targetDate: previousDate,
+              dateOverride: previousDateOverride,
+              dateOverrideMode: previousDateMode,
+              audienceState: previousState,
+              lane: previousLane,
+            }),
+          inheritDate,
+        );
+      } catch {
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => inheritDate);
+        onOptimisticUpdate(node.id, {
+          targetDate: previousDate,
+          dateOverride: previousDateOverride,
+          dateOverrideMode: previousDateMode,
+          audienceState: previousState,
+          lane: previousLane,
+        });
+      } finally {
+        onWriteEnd();
+      }
+    });
+  }
+
+  function inheritPublicState() {
+    const previousState = node.audienceState;
+    const previousOverride = node.audienceStateOverride;
+    const previousLane = node.lane;
+    onOptimisticUpdate(node.id, {
+      audienceState: node.sourceAudienceState,
+      audienceStateOverride: null,
+      lane: laneForAudienceState(
+        node.sourceAudienceState,
+        node.targetDate,
+      ),
+    });
+    onWriteStart();
+    startTransition(async () => {
+      try {
+        const result = await upsertNodeOverlayAction(
+          workspaceSlug,
+          projectSlug,
+          {
+            nodeId: node.id,
+            audienceStateOverride: null,
+          },
+        );
+        handleEditResult(
+          result,
+          () =>
+            onOptimisticUpdate(node.id, {
+              audienceState: previousState,
+              audienceStateOverride: previousOverride,
+              lane: previousLane,
+            }),
+          inheritPublicState,
+        );
+      } catch {
+        const message =
+          "Couldn't save that change. Check your connection and try again.";
+        onError(message);
+        setRowError(message);
+        setRetryAction(() => inheritPublicState);
+        onOptimisticUpdate(node.id, {
+          audienceState: previousState,
+          audienceStateOverride: previousOverride,
+          lane: previousLane,
+        });
+      } finally {
+        onWriteEnd();
+      }
+    });
+  }
+
+  const isShipped =
+    node.audienceState === "covered" ||
+    node.audienceState === "cancelled";
   const [attentionNow] = useState(Date.now);
 
   // Tier 3 attention signal, surface drift at edit time (R·22). Calendar-day
@@ -263,10 +537,20 @@ function NodeCard({
   return (
     <div
       data-node-id={node.id}
-      draggable
-      onDragStart={() => onDragStart(node.id)}
-      onDragOver={(e) => { e.preventDefault(); onDragOver(node.id); }}
-      onDrop={(e) => { e.preventDefault(); onDrop(node.id); }}
+      draggable={canReorder}
+      onDragStart={() => {
+        if (canReorder) onDragStart(node.id);
+      }}
+      onDragOver={(e) => {
+        if (!canReorder) return;
+        e.preventDefault();
+        onDragOver(node.id);
+      }}
+      onDrop={(e) => {
+        if (!canReorder) return;
+        e.preventDefault();
+        onDrop(node.id);
+      }}
       style={{
         paddingBlock: 12,
         paddingInline: 16,
@@ -277,7 +561,7 @@ function NodeCard({
           ? "2px solid var(--indigo)"
           : "2px solid var(--indigo-soft)",
         background: isDraggingOver ? "var(--paper-soft)" : "var(--paper)",
-        cursor: "grab",
+        cursor: canReorder ? "grab" : "default",
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -285,12 +569,14 @@ function NodeCard({
         <span
           aria-hidden
           onPointerDown={(e) => {
+            if (!canReorder) return;
             // Only primary button / first touch
             if (e.pointerType === "mouse" && e.button !== 0) return;
             e.currentTarget.setPointerCapture(e.pointerId);
             onPointerDragStart(node.id);
           }}
           onPointerMove={(e) => {
+            if (!canReorder) return;
             if (e.buttons === 0 && e.pointerType === "mouse") return;
             // Find the element under the pointer (excluding the handle itself)
             const target = document.elementFromPoint(e.clientX, e.clientY);
@@ -299,6 +585,7 @@ function NodeCard({
             if (targetId && targetId !== node.id) onPointerDragOver(targetId);
           }}
           onPointerUp={(e) => {
+            if (!canReorder) return;
             const target = document.elementFromPoint(e.clientX, e.clientY);
             const card = target?.closest("[data-node-id]");
             const targetId = card?.getAttribute("data-node-id");
@@ -309,7 +596,8 @@ function NodeCard({
             flexShrink: 0,
             marginTop: 4,
             color: "var(--ink-faint)",
-            cursor: "grab",
+            cursor: canReorder ? "grab" : "default",
+            visibility: canReorder ? "visible" : "hidden",
             lineHeight: 1,
             fontSize: 10,
             letterSpacing: "0.1em",
@@ -320,7 +608,7 @@ function NodeCard({
           ⠿
         </span>
         {/* Status circle */}
-        <StatusCircle lane={node.lane} isMilestone />
+        <StatusCircle state={node.audienceState} isMilestone />
 
         {/* Main content */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -359,7 +647,10 @@ function NodeCard({
           ) : (
             <button
               type="button"
-              onClick={() => setEditingTitle(true)}
+              onClick={() => {
+                setTitleValue(node.title);
+                setEditingTitle(true);
+              }}
               style={{
                 fontSize: 14,
                 fontWeight: 600,
@@ -467,10 +758,10 @@ function NodeCard({
               alignItems: "center",
             }}
           >
-            {/* Lane segmented control */}
+            {/* Public-state segmented control */}
             <div
               role="radiogroup"
-              aria-label="Lane"
+              aria-label={`Public state for ${node.title}`}
               style={{
                 display: "flex",
                 gap: 0,
@@ -479,34 +770,55 @@ function NodeCard({
                 overflow: "hidden",
               }}
             >
-              {LANE_LABELS.map((l) => (
+              {PUBLIC_STATE_OPTIONS.map((option) => (
                 <button
-                  key={l}
+                  key={option.value}
                   type="button"
                   role="radio"
-                  aria-checked={node.lane === l}
-                  onClick={() => setLane(l)}
+                  aria-checked={node.audienceState === option.value}
+                  disabled={isPending}
+                  onClick={() => setPublicState(option.value)}
                   style={{
                     fontSize: 11,
                     padding: "4px 10px",
                     border: "none",
                     background:
-                      node.lane === l
+                      node.audienceState === option.value
                         ? "var(--ink)"
                         : "transparent",
                     color:
-                      node.lane === l
+                      node.audienceState === option.value
                         ? "var(--paper)"
                         : "var(--ink-quiet)",
                     cursor: "pointer",
-                    fontWeight: node.lane === l ? 500 : 400,
+                    fontWeight:
+                      node.audienceState === option.value ? 500 : 400,
                     transition: "background 120ms, color 120ms",
                   }}
                 >
-                  {l}
+                  {option.label}
                 </button>
               ))}
             </div>
+            {node.audienceStateOverride ? (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={inheritPublicState}
+                className="quiet-link-hover"
+                style={{
+                  minHeight: 32,
+                  border: 0,
+                  padding: "4px 6px",
+                  background: "transparent",
+                  color: "var(--ink-quiet)",
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                Use Tasks state
+              </button>
+            ) : null}
 
             {/* Date input, M2/fix3: same .date-input-wrapper/.date-input-custom treatment
                 as ManualAddForm. Button wraps the SVG and calls showPicker?.(). */}
@@ -517,6 +829,7 @@ function NodeCard({
                 aria-label={`Target date for ${node.title}`}
                 value={node.targetDate ?? ""}
                 onChange={(e) => setDate(e.target.value)}
+                disabled={isPending}
                 className="date-input-custom"
                 style={{
                   fontSize: 11,
@@ -558,6 +871,25 @@ function NodeCard({
                 </svg>
               </button>
             </div>
+            {node.dateOverrideMode !== "inherit" ? (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={inheritDate}
+                className="quiet-link-hover"
+                style={{
+                  minHeight: 32,
+                  border: 0,
+                  padding: "4px 6px",
+                  background: "transparent",
+                  color: "var(--ink-quiet)",
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                Use Tasks date
+              </button>
+            ) : null}
 
             {/* Source indicator, chain-link icon per CREATIVE_SPEC (DRAG: replace ⇄ glyph) */}
             {node.source === "synced" && (
@@ -581,41 +913,164 @@ function NodeCard({
               </span>
             )}
           </div>
+          {rowError ? (
+            <div
+              role="alert"
+              style={{
+                marginTop: 8,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 8,
+                color: "var(--alarm)",
+                fontSize: 11,
+              }}
+            >
+              <span>{rowError}</span>
+              {retryAction ? (
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={retryAction}
+                  style={{
+                    minHeight: 32,
+                    border: "1px solid currentColor",
+                    borderRadius: 6,
+                    padding: "4px 9px",
+                    background: "transparent",
+                    color: "inherit",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Retry
+                </button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        {/* Right: hide toggle */}
-        <button
-          type="button"
-          onClick={toggleHidden}
-          aria-label={node.hidden ? "Show this milestone" : "Hide this milestone"}
-          title={node.hidden ? "Show" : "Hide from public roadmap"}
+        <div
           style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: node.hidden ? "var(--indigo)" : "var(--ink-ghost)",
-            padding: 4,
-            borderRadius: 4,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
             flexShrink: 0,
-            fontSize: 13,
-            lineHeight: 1,
-            transition: "color 120ms",
           }}
         >
-          {node.hidden ? (
-            // Eye-slash
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-              <line x1="1" y1="1" x2="23" y2="23"/>
-            </svg>
-          ) : (
-            // Eye
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          )}
-        </button>
+          {canReorder ? (
+            <div
+              role="group"
+              aria-label={`Reorder ${node.title}`}
+              style={{ display: "inline-flex", gap: 2 }}
+            >
+              <button
+                type="button"
+                disabled={isPending || !canMoveUp}
+                onClick={() => onMoveUp(node.id)}
+                aria-label={`Move ${node.title} up`}
+                title="Move up"
+                style={{
+                  width: 32,
+                  minHeight: 32,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 6,
+                  background: "var(--paper)",
+                  color: "var(--ink-quiet)",
+                  cursor: canMoveUp ? "pointer" : "not-allowed",
+                  opacity: canMoveUp ? 1 : 0.38,
+                }}
+              >
+                <svg
+                  aria-hidden
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m18 15-6-6-6 6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                disabled={isPending || !canMoveDown}
+                onClick={() => onMoveDown(node.id)}
+                aria-label={`Move ${node.title} down`}
+                title="Move down"
+                style={{
+                  width: 32,
+                  minHeight: 32,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid var(--hairline)",
+                  borderRadius: 6,
+                  background: "var(--paper)",
+                  color: "var(--ink-quiet)",
+                  cursor: canMoveDown ? "pointer" : "not-allowed",
+                  opacity: canMoveDown ? 1 : 0.38,
+                }}
+              >
+                <svg
+                  aria-hidden
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+            </div>
+          ) : null}
+
+          {/* Right: hide toggle */}
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={toggleHidden}
+            aria-label={node.hidden ? "Show this milestone" : "Hide this milestone"}
+            title={node.hidden ? "Show" : "Hide from public roadmap"}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: node.hidden ? "var(--indigo)" : "var(--ink-ghost)",
+              padding: 4,
+              borderRadius: 4,
+              flexShrink: 0,
+              fontSize: 13,
+              lineHeight: 1,
+              transition: "color 120ms",
+            }}
+          >
+            {node.hidden ? (
+              // Eye-slash
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+              </svg>
+            ) : (
+              // Eye
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -652,7 +1107,7 @@ function ManualAddForm({
   onAdd: () => void;
   onWriteStart: () => void;
   onWriteEnd: () => void;
-  onClose: () => void;
+  onClose: (reason: "complete" | "cancel") => void;
   title: string;
   setTitle: (v: string) => void;
   lane: "Next" | "In flight" | "Shipped";
@@ -669,22 +1124,26 @@ function ManualAddForm({
       setError("What's the milestone?");
       return;
     }
-    const laneToStatus: Record<string, "next" | "in-flight" | "shipped"> = {
+    const laneToState: Record<
+      string,
+      "next" | "now" | "covered"
+    > = {
       "Next": "next",
-      "In flight": "in-flight",
-      "Shipped": "shipped",
+      "In flight": "now",
+      "Shipped": "covered",
     };
-    const nodeId = `manual:${encodeURIComponent(projectSlug)}:${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     onWriteStart();
     startTransition(async () => {
       try {
-        const result = await upsertNodeOverlayAction(workspaceSlug, projectSlug, {
-          nodeId,
-          source: "manual",
-          manualTitle: title.trim(),
-          manualStatus: laneToStatus[lane],
-          manualTargetDate: date || null,
-        });
+        const result = await createManualMilestoneAction(
+          workspaceSlug,
+          projectSlug,
+          {
+            title: title.trim(),
+            state: laneToState[lane],
+            date: date || null,
+          },
+        );
         if ("error" in result) {
           setError(result.error);
           // C1d: keep form open with fields intact, do NOT call onClose or reset.
@@ -697,7 +1156,11 @@ function ManualAddForm({
         setLane("Next");
         setError(null);
         onAdd();
-        onClose();
+        onClose("complete");
+      } catch {
+        setError(
+          "Couldn't add that milestone. Check your connection and try again.",
+        );
       } finally {
         onWriteEnd();
       }
@@ -718,12 +1181,13 @@ function ManualAddForm({
         {/* Title */}
         <div>
           <label
-            htmlFor="manual-milestone-date"
+            htmlFor="manual-milestone-title"
             style={{ fontSize: 11, color: "var(--ink-quiet)", display: "block", marginBottom: 4 }}
           >
             What&apos;s the milestone?
           </label>
           <input
+            id="manual-milestone-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -860,6 +1324,7 @@ function ManualAddForm({
               fontSize: 12,
               fontWeight: 500,
               padding: "6px 14px",
+              minHeight: 44,
               borderRadius: 999,
               background: "var(--ink)",
               color: "var(--paper)",
@@ -878,11 +1343,12 @@ function ManualAddForm({
               setDate("");
               setLane("Next");
               setError(null);
-              onClose();
+              onClose("cancel");
             }}
             style={{
               fontSize: 12,
               padding: "6px 14px",
+              minHeight: 44,
               borderRadius: 999,
               background: "transparent",
               color: "var(--ink-quiet)",
@@ -926,21 +1392,28 @@ function SyncButton({
     setResult(null);
     setErrorMsg(null);
     startTransition(async () => {
-      const res = await syncMilestonesAction(workspaceSlug, projectSlug);
-      if ("error" in res) {
-        setErrorMsg(res.error);
+      try {
+        const res = await syncMilestonesAction(workspaceSlug, projectSlug);
+        if ("error" in res) {
+          setErrorMsg(res.error);
+          setResult("error");
+          // Fix 2: error persists, NO auto-clear timer. User must re-trigger sync.
+        } else if (res.count === 0) {
+          setResult("zero");
+          onSync();
+          // Fix 2: zero persists, NO auto-clear timer. User must re-trigger sync.
+        } else {
+          setSyncCount(res.count);
+          setResult("count");
+          onSync();
+          // Fix 2: ONLY the success-count result auto-clears after 5s.
+          setTimeout(() => { setResult(null); }, 5000);
+        }
+      } catch {
+        setErrorMsg(
+          "Timeline couldn't refresh milestones from Tasks. Check your connection and try again.",
+        );
         setResult("error");
-        // Fix 2: error persists, NO auto-clear timer. User must re-trigger sync.
-      } else if (res.count === 0) {
-        setResult("zero");
-        onSync();
-        // Fix 2: zero persists, NO auto-clear timer. User must re-trigger sync.
-      } else {
-        setSyncCount(res.count);
-        setResult("count");
-        onSync();
-        // Fix 2: ONLY the success-count result auto-clears after 5s.
-        setTimeout(() => { setResult(null); }, 5000);
       }
     });
   }
@@ -1018,14 +1491,14 @@ function SyncButton({
 
       {/* Count confirmation */}
       {result === "count" && (
-        <span style={{ fontSize: 11, color: "var(--ink-quiet)" }}>
+        <span role="status" style={{ fontSize: 11, color: "var(--ink-quiet)" }}>
           {syncCount} milestone{syncCount === 1 ? "" : "s"} synced.
         </span>
       )}
 
       {/* Error state uses the shared alarm token. */}
       {result === "error" && (
-        <span style={{ fontSize: 11, color: "var(--alarm)" }}>{errorMsg}</span>
+        <span role="alert" style={{ fontSize: 11, color: "var(--alarm)" }}>{errorMsg}</span>
       )}
     </div>
   );
@@ -1051,15 +1524,22 @@ export function CurationSurface({
   // empty-state container in situ. When nodes exist, the bottom affordance also
   // drives this state. ManualAddForm has no internal open gate.
   const [manualAddOpen, setManualAddOpen] = useState(false);
+  const manualAddTriggerRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusAfterNodeCount = useRef<number | null>(null);
   // Fix 1: hoisted draft state, survives isEmpty branch swap mid-typing.
   const [draftTitle, setDraftTitle] = useState("");
   const [draftLane, setDraftLane] = useState<"Next" | "In flight" | "Shipped">("Next");
   const [draftDate, setDraftDate] = useState("");
   // C1c: track in-flight upsert writes; RSC prop sync is suppressed while > 0
   const pendingWriteCount = useRef(0);
+  const refreshAfterWrites = useRef(false);
   const [, startTransition] = useTransition();
   // D11 auto-sync: fires once on mount (pull-on-visit). Does NOT publish.
-  const [autoSyncing, setAutoSyncing] = useState(false);
+  const [autoSyncState, setAutoSyncState] = useState<
+    | { status: "idle" }
+    | { status: "syncing" }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
   const didAutoSync = useRef(false);
   // "Saved" tick DRAG: shows for 1.5s after any successful overlay upsert
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -1076,6 +1556,7 @@ export function CurationSurface({
   const dragNodeId = useRef<string | null>(null);
   const pointerDragNodeId = useRef<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [reorderAnnouncement, setReorderAnnouncement] = useState("");
 
   // UX-2: router.refresh() instead of window.location.reload()
   const refresh = useCallback(() => {
@@ -1083,6 +1564,54 @@ export function CurationSurface({
       router.refresh();
     });
   }, [router]);
+
+  const requestRefreshAfterWrite = useCallback(() => {
+    refreshAfterWrites.current = true;
+    if (pendingWriteCount.current === 0) {
+      refreshAfterWrites.current = false;
+      refresh();
+    }
+  }, [refresh]);
+
+  const openManualAdd = useCallback(() => {
+    setManualAddOpen(true);
+  }, []);
+
+  const closeManualAdd = useCallback((reason: "complete" | "cancel") => {
+    restoreFocusAfterNodeCount.current =
+      reason === "complete" ? nodes.length : null;
+    setManualAddOpen(false);
+    requestAnimationFrame(() => {
+      manualAddTriggerRef.current?.focus();
+    });
+  }, [nodes.length]);
+
+  useEffect(() => {
+    const previousCount = restoreFocusAfterNodeCount.current;
+    if (
+      manualAddOpen ||
+      previousCount === null ||
+      nodes.length === previousCount
+    ) {
+      return;
+    }
+    restoreFocusAfterNodeCount.current = null;
+    const frame = requestAnimationFrame(() => {
+      manualAddTriggerRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [manualAddOpen, nodes.length]);
+
+  const handleOptimisticUpdate = useCallback(
+    (nodeId: string, patch: Partial<EffectiveNode>) => {
+      setNodes((current) =>
+        current.map((node) =>
+          node.id === nodeId ? { ...node, ...patch } : node,
+        ),
+      );
+    },
+    [],
+  );
 
   // "Saved" tick helper
   const flashSaved = useCallback(() => {
@@ -1111,8 +1640,15 @@ export function CurationSurface({
   // once the count returns to 0 the next RSC push (from router.refresh()) applies.
   useEffect(() => {
     if (pendingWriteCount.current === 0) setNodes(initialNodes);
-    return () => { pendingWriteCount.current = 0; };
   }, [initialNodes]);
+
+  useEffect(
+    () => () => {
+      pendingWriteCount.current = 0;
+      refreshAfterWrites.current = false;
+    },
+    [],
+  );
 
   // C1c write-count helpers, passed into NodeCard and ManualAddForm
   const handleWriteStart = useCallback(() => {
@@ -1121,7 +1657,35 @@ export function CurationSurface({
 
   const handleWriteEnd = useCallback(() => {
     pendingWriteCount.current = Math.max(0, pendingWriteCount.current - 1);
-  }, []);
+    if (
+      pendingWriteCount.current === 0 &&
+      refreshAfterWrites.current
+    ) {
+      refreshAfterWrites.current = false;
+      refresh();
+    }
+  }, [refresh]);
+
+  const runAutoSync = useCallback(async () => {
+    setAutoSyncState({ status: "syncing" });
+    try {
+      const result = await syncMilestonesAction(workspaceSlug, projectSlug);
+      if ("error" in result) {
+        setAutoSyncState({ status: "error", message: result.error });
+        return;
+      }
+      setAutoSyncState({ status: "idle" });
+      // C1c: defer the refresh while owner writes are settling so the synced
+      // server result cannot replace optimistic edits with an older RSC tree.
+      requestRefreshAfterWrite();
+    } catch {
+      setAutoSyncState({
+        status: "error",
+        message:
+          "Timeline couldn't refresh milestones from Tasks. Check your connection and try again.",
+      });
+    }
+  }, [projectSlug, requestRefreshAfterWrite, workspaceSlug]);
 
   // D11 auto-sync on load: pulls Tasks milestones into the private draft.
   // D6 two-gate is preserved, syncMilestonesAction only revalidates /app and
@@ -1129,18 +1693,8 @@ export function CurationSurface({
   useEffect(() => {
     if (didAutoSync.current) return;
     didAutoSync.current = true;
-    setAutoSyncing(true);
-    syncMilestonesAction(workspaceSlug, projectSlug).then(() => {
-      setAutoSyncing(false);
-      // C1c: only refresh if no writes are in flight, avoids clobbering
-      // optimistic state mid-write with stale RSC data.
-      if (pendingWriteCount.current === 0) {
-        router.refresh();
-      }
-    }).catch(() => {
-      setAutoSyncing(false);
-    });
-  }, [workspaceSlug, projectSlug, router]);
+    void runAutoSync();
+  }, [runAutoSync]);
 
   // DRAG: justPublished localStorage persistence
   // Initialise from localStorage so the chip animation fires on first load
@@ -1148,6 +1702,45 @@ export function CurationSurface({
   // ── Shared reorder logic ────────────────────────────────────────────────────
   // Used by both HTML5 drag and Pointer Events paths. Computes the new order,
   // updates optimistic state, then batch-writes ALL sortOverride values (BV-2).
+
+  function persistReorderedNodes(
+    updated: EffectiveNode[],
+    previousNodes: EffectiveNode[],
+    successAnnouncement?: string,
+  ) {
+    setNodes(updated);
+    startTransition(async () => {
+      try {
+        const result = await reorderNodesAction(
+          workspaceSlug,
+          projectSlug,
+          updated.map((node) => node.id),
+        );
+        if ("error" in result) {
+          flashError(result.error);
+          setNodes(previousNodes);
+          if (successAnnouncement) {
+            setReorderAnnouncement(
+              "The milestone could not be moved. The previous order was restored.",
+            );
+          }
+          return;
+        }
+        flashSaved();
+        if (successAnnouncement) {
+          setReorderAnnouncement(successAnnouncement);
+        }
+      } catch {
+        flashError("Couldn't save that reorder. Check your connection and try again.");
+        setNodes(previousNodes);
+        if (successAnnouncement) {
+          setReorderAnnouncement(
+            "The milestone could not be moved. The previous order was restored.",
+          );
+        }
+      }
+    });
+  }
 
   function applyReorder(sourceId: string, targetId: string) {
     if (!sourceId || sourceId === targetId) return;
@@ -1166,28 +1759,29 @@ export function CurationSurface({
     // C2: snapshot before the optimistic mutation so a failed write can revert
     // to the exact prior order. Same shape as the NodeCard inline-edit pattern.
     const previousNodes = nodes;
-    setNodes(updated);
-
     // BV-2: batch-write ALL sibling sortOverrides so reload order is deterministic.
-    // reorderNodesAction writes every node in the ordered list, not just the moved one.
-    startTransition(async () => {
-      try {
-        const result = await reorderNodesAction(
-          workspaceSlug,
-          projectSlug,
-          updated.map((n) => n.id),
-        );
-        if ("error" in result) {
-          flashError(result.error);
-          setNodes(previousNodes);
-          return;
-        }
-        flashSaved();
-      } catch {
-        flashError("Couldn't save that reorder. Check your connection and try again.");
-        setNodes(previousNodes);
-      }
-    });
+    persistReorderedNodes(updated, previousNodes);
+  }
+
+  function moveNodeByKeyboard(
+    sourceId: string,
+    direction: OwnerReorderDirection,
+  ) {
+    const result = buildOwnerKeyboardReorder(nodes, sourceId, direction);
+    if (!result) return;
+
+    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const updated = result.orderedIds.map((id, index) => ({
+      ...byId.get(id)!,
+      sortOrder: index,
+    }));
+    const directionLabel = result.direction === "up" ? "up" : "down";
+    setReorderAnnouncement(`Moving ${result.title} ${directionLabel}.`);
+    persistReorderedNodes(
+      updated,
+      nodes,
+      `Moved ${result.title} ${directionLabel}. Position ${result.position} of ${result.siblingCount}.`,
+    );
   }
 
   // ── HTML5 drag handlers (mouse / desktop) ───────────────────────────────────
@@ -1228,9 +1822,13 @@ export function CurationSurface({
     applyReorder(sourceId, targetId);
   }
 
-  // Group by lane for display
-  const lanes = LANE_LABELS.filter((l) =>
-    nodes.some((n) => n.lane === l && !n.hidden),
+  // Group by the exact state the signed artifact will render.
+  const publicStates = PUBLIC_STATE_OPTIONS.filter((option) =>
+    nodes.some(
+      (node) =>
+        node.audienceState === option.value &&
+        !node.hidden,
+    ),
   );
   const hiddenNodes = nodes.filter((n) => n.hidden);
 
@@ -1249,7 +1847,7 @@ export function CurationSurface({
         </span>
         <Link
           href={shareHref}
-          className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
         >
           Preview public copy
         </Link>
@@ -1311,7 +1909,7 @@ export function CurationSurface({
               {errorFlash.message}
             </span>
           )}
-          {autoSyncing && (
+          {autoSyncState.status === "syncing" && (
             <span style={{ fontSize: 10, color: "var(--ink-faint)" }}>
               Syncing…
             </span>
@@ -1320,9 +1918,35 @@ export function CurationSurface({
         <SyncButton
           workspaceSlug={workspaceSlug}
           projectSlug={projectSlug}
-          onSync={refresh}
+          onSync={() => {
+            setAutoSyncState({ status: "idle" });
+            refresh();
+          }}
         />
       </div>
+
+      <p className="sr-only" role="status" aria-live="polite">
+        {reorderAnnouncement}
+      </p>
+
+      {autoSyncState.status === "error" ? (
+        <div
+          role="alert"
+          className="mb-5 flex flex-col gap-3 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between"
+        >
+          <span>
+            Tasks milestones could not refresh automatically.{" "}
+            {autoSyncState.message}
+          </span>
+          <button
+            type="button"
+            onClick={() => void runAutoSync()}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-line-soft bg-white px-3 font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            Retry sync
+          </button>
+        </div>
+      ) : null}
 
       {/* Empty state, H2: single primary CTA + quiet inline manual-add link.
           When manualAddOpen, ManualAddForm replaces the container in situ.
@@ -1335,10 +1959,13 @@ export function CurationSurface({
             <ManualAddForm
               workspaceSlug={workspaceSlug}
               projectSlug={projectSlug}
-              onAdd={() => { flashSaved(); refresh(); }}
+              onAdd={() => {
+                flashSaved();
+                requestRefreshAfterWrite();
+              }}
               onWriteStart={handleWriteStart}
               onWriteEnd={handleWriteEnd}
-              onClose={() => setManualAddOpen(false)}
+              onClose={closeManualAdd}
               title={draftTitle}
               setTitle={setDraftTitle}
               lane={draftLane}
@@ -1385,10 +2012,13 @@ export function CurationSurface({
                   fontSize: 13,
                   fontWeight: 500,
                   padding: "8px 18px",
+                  minHeight: 44,
                   borderRadius: 999,
                   background: "var(--ink)",
                   color: "var(--paper)",
                   textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
                 }}
               >
                 Open Tasks
@@ -1397,8 +2027,9 @@ export function CurationSurface({
             {/* Quiet inline manual-add link, no background, no border, no pill.
                 Fix 9: hover underline via className. */}
             <button
+              ref={manualAddTriggerRef}
               type="button"
-              onClick={() => setManualAddOpen(true)}
+              onClick={openManualAdd}
               className="quiet-link-hover"
               style={{
                 fontSize: 13,
@@ -1406,8 +2037,9 @@ export function CurationSurface({
                 background: "none",
                 border: "none",
                 cursor: "pointer",
-                padding: 0,
+                padding: "8px 0",
                 lineHeight: 1.5,
+                minHeight: 44,
               }}
             >
               or add one manually
@@ -1424,13 +2056,17 @@ export function CurationSurface({
               overflow: "hidden",
             }}
           >
-            {lanes.map((lane, li) => {
-              const laneNodes = nodes.filter((n) => n.lane === lane && !n.hidden);
+            {publicStates.map((stateOption, li) => {
+              const stateNodes = nodes.filter(
+                (node) =>
+                  node.audienceState === stateOption.value &&
+                  !node.hidden,
+              );
               return (
-                <div key={lane}>
+                <div key={stateOption.value}>
                   {li > 0 && (
                     <div style={{ paddingInline: 16 }}>
-                      <LaneSeparator lane={lane} />
+                      <LaneSeparator lane={stateOption.label} />
                     </div>
                   )}
                   {li === 0 && (
@@ -1444,26 +2080,34 @@ export function CurationSurface({
                           color: "var(--ink-quiet)",
                         }}
                       >
-                        {lane}
+                        {stateOption.label}
                       </span>
                     </div>
                   )}
-                  {laneNodes.map((node) => (
+                  {stateNodes.map((node, nodeIndex) => (
                     <NodeCard
                       key={node.id}
                       node={node}
                       workspaceSlug={workspaceSlug}
                       projectSlug={projectSlug}
-                      onUpdate={() => { flashSaved(); refresh(); }}
+                      onUpdate={() => {
+                        flashSaved();
+                        requestRefreshAfterWrite();
+                      }}
                       onWriteStart={handleWriteStart}
                       onWriteEnd={handleWriteEnd}
                       onError={flashError}
+                      onOptimisticUpdate={handleOptimisticUpdate}
                       onDragStart={handleDragStart}
                       onDragOver={handleDragOver}
                       onDrop={handleDrop}
                       onPointerDragStart={handlePointerDragStart}
                       onPointerDragOver={handlePointerDragOver}
                       onPointerDrop={handlePointerDrop}
+                      onMoveUp={(id) => moveNodeByKeyboard(id, "up")}
+                      onMoveDown={(id) => moveNodeByKeyboard(id, "down")}
+                      canMoveUp={nodeIndex > 0}
+                      canMoveDown={nodeIndex < stateNodes.length - 1}
                       isDraggingOver={dragOverId === node.id}
                     />
                   ))}
@@ -1472,18 +2116,71 @@ export function CurationSurface({
             })}
           </div>
 
-          {/* Hidden nodes count */}
+          {/* Hidden milestones remain recoverable from the owner surface. */}
           {hiddenNodes.length > 0 && (
-            <p
+            <details
               style={{
-                fontSize: 11,
-                color: "var(--ink-quiet)",
                 marginTop: 12,
-                textAlign: "center",
+                border: "1px solid var(--hairline)",
+                borderRadius: 10,
+                overflow: "hidden",
               }}
             >
-              {hiddenNodes.length} hidden
-            </p>
+              <summary
+                style={{
+                  minHeight: 44,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "0 16px",
+                  cursor: "pointer",
+                  color: "var(--ink-soft)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}
+              >
+                <span>Hidden milestones</span>
+                <span
+                  style={{
+                    color: "var(--ink-quiet)",
+                    fontFamily: "var(--font-mono-stack)",
+                    fontWeight: 400,
+                  }}
+                >
+                  {hiddenNodes.length}
+                </span>
+              </summary>
+              <div style={{ borderTop: "1px solid var(--hairline)" }}>
+                {hiddenNodes.map((node) => (
+                  <NodeCard
+                    key={node.id}
+                    node={node}
+                    workspaceSlug={workspaceSlug}
+                    projectSlug={projectSlug}
+                    onUpdate={() => {
+                      flashSaved();
+                      requestRefreshAfterWrite();
+                    }}
+                    onWriteStart={handleWriteStart}
+                    onWriteEnd={handleWriteEnd}
+                    onError={flashError}
+                    onOptimisticUpdate={handleOptimisticUpdate}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onPointerDragStart={handlePointerDragStart}
+                    onPointerDragOver={handlePointerDragOver}
+                    onPointerDrop={handlePointerDrop}
+                    onMoveUp={(id) => moveNodeByKeyboard(id, "up")}
+                    onMoveDown={(id) => moveNodeByKeyboard(id, "down")}
+                    canMoveUp={false}
+                    canMoveDown={false}
+                    isDraggingOver={false}
+                    canReorder={false}
+                  />
+                ))}
+              </div>
+            </details>
           )}
         </>
       )}
@@ -1499,10 +2196,13 @@ export function CurationSurface({
             <ManualAddForm
               workspaceSlug={workspaceSlug}
               projectSlug={projectSlug}
-              onAdd={() => { flashSaved(); refresh(); }}
+              onAdd={() => {
+                flashSaved();
+                requestRefreshAfterWrite();
+              }}
               onWriteStart={handleWriteStart}
               onWriteEnd={handleWriteEnd}
-              onClose={() => setManualAddOpen(false)}
+              onClose={closeManualAdd}
               title={draftTitle}
               setTitle={setDraftTitle}
               lane={draftLane}
@@ -1513,8 +2213,9 @@ export function CurationSurface({
           ) : (
             /* Fix 9: hover underline via className */
             <button
+              ref={manualAddTriggerRef}
               type="button"
-              onClick={() => setManualAddOpen(true)}
+              onClick={openManualAdd}
               className="quiet-link-hover"
               style={{
                 fontSize: 12,
@@ -1524,6 +2225,7 @@ export function CurationSurface({
                 cursor: "pointer",
                 padding: "8px 0",
                 display: "block",
+                minHeight: 44,
               }}
             >
               + Add a milestone

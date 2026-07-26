@@ -48,8 +48,8 @@ export default function NotebookError({
             marginBottom: "1.25rem",
           }}
         >
-          Nothing was lost, your notes are saved. This was a loading
-          hiccup, not a deletion.
+          Notes could not confirm the notebook state from this screen. Try
+          loading it again before making any further changes.
         </p>
         {error.digest ? (
           <p

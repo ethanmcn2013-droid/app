@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTagDefs } from "@/lib/domain-context";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { HybridStoreProvider } from "./hybrid-store";
 import { useLabStore } from "./store";
 import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
@@ -90,7 +91,9 @@ export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) 
   const onRouteChange = useCallback(
     (patch: Partial<LabRouteState>) => {
       if (patch.density) setDensity(patch.density);
-      if (patch.view && patch.view !== view) router.push(`/app/${patch.view}`);
+      if (patch.view && patch.view !== view) {
+        router.push(TASKS_VIEW_PATHS[patch.view]);
+      }
     },
     [router, view],
   );

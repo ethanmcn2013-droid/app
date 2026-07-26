@@ -219,11 +219,10 @@
 
 /* Board */
 .boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-/* The board scrolls horizontally between columns; vertical scroll lives inside
-   each lane (see .laneList) so hovering a column and scrolling moves only that
-   column, never the page. */
-.boardScroll { display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; scrollbar-width: thin; }
-.boardLane { background: var(--x-task-canvas); border-right: 1px solid var(--x-task-border); display: flex; flex: 0 0 272px; flex-direction: column; height: 100%; min-height: 0; min-width: 248px; }
+/* One canvas owns both axes. Lane headers remain sticky, but users no longer
+   have to discover and operate five independent vertical scrollbars. */
+.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.boardLane { align-self: stretch; background: var(--x-task-canvas); border-right: 1px solid var(--x-task-border); display: flex; flex: 1 0 248px; flex-direction: column; min-height: 100%; min-width: 248px; }
 .boardLane[data-done] { background: color-mix(in srgb, var(--x-task-canvas) 88%, var(--x-task-surface)); }
 .laneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 38px; justify-content: space-between; padding: 0 9px 0 11px; position: sticky; top: 0; z-index: 4; }
 .laneHeader > div { align-items: center; display: flex; gap: 6px; min-width: 0; }
@@ -231,7 +230,7 @@
 .laneCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 8px; }
 .wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 7px; }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
-.laneList { display: flex; flex: 1; flex-direction: column; gap: 6px; list-style: none; margin: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 7px; scrollbar-width: thin; }
+.laneList { display: flex; flex: 0 0 auto; flex-direction: column; gap: 6px; list-style: none; margin: 0; min-height: 0; overflow: visible; padding: 7px; }
 .laneList > li { min-width: 0; }
 .boardCard { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; cursor: default; padding: 7px 8px 8px; position: relative; }
 .boardCard:hover { border-color: var(--x-task-border-strong); }
@@ -270,7 +269,7 @@
 .boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; font: inherit; font-size: 11px; font-weight: 620; line-height: 1.35; margin: 4px 0 7px; min-height: 30px; overflow: hidden; padding: 0; text-align: left; width: 100%; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .boardCard[data-completed] .boardTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
 .boardTitleEdit { margin: 4px 0 7px; }
-.cardLabels { min-height: 20px; overflow: hidden; }
+.cardLabels { margin-top: 2px; overflow: hidden; }
 .cardSchedule { align-items: center; display: flex; justify-content: space-between; margin-top: 8px; min-width: 0; }
 .boardCard > footer { align-items: center; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 8px; justify-content: space-between; margin-top: 7px; padding-top: 7px; }
 .boardInsertion { background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -2px 2px 4px; position: relative; }
@@ -278,7 +277,7 @@
 .emptyLane { align-items: center; border: 1px dashed var(--x-task-border-strong); border-radius: 6px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 4px; justify-content: center; min-height: 116px; padding: 16px; text-align: center; }
 .emptyLane span { color: var(--x-task-text-secondary); font-size: 10px; font-weight: 620; }
 .emptyLane small { font-size: 8px; }
-.laneAdd { align-items: center; background: transparent; border: 0; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); cursor: pointer; display: flex; flex: 0 0 33px; font: inherit; font-size: 9px; gap: 5px; padding: 0 10px; text-align: left; }
+.laneAdd { align-items: center; background: var(--x-task-canvas); border: 0; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); cursor: pointer; display: flex; flex: 0 0 33px; font: inherit; font-size: 9px; gap: 5px; margin-top: auto; padding: 0 10px; text-align: left; }
 .laneAdd:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneAdd:disabled { cursor: not-allowed; opacity: .5; }
 
@@ -535,4 +534,136 @@
   .timelineRange,
   .calendarTask,
   .taskPeek { scroll-behavior: auto; transition: none; }
+}
+
+/*
+ * Phone layout: keep every Tasks view/action reachable without letting the
+ * dense desktop canvas set the viewport width. Schedule itself remains a
+ * horizontally scrollable work surface; its controls become a calm stack.
+ */
+@media (max-width: 767px) {
+  .viewBar {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .tabsScroll {
+    border-bottom: 1px solid var(--x-task-border);
+    min-width: 0;
+    overflow-x: auto;
+    padding: 3px 6px;
+  }
+
+  .functionalTools {
+    margin-left: 0;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 4px 6px;
+  }
+
+  .functionalTools > button,
+  .densityControl {
+    flex: 0 0 auto;
+    height: 44px;
+  }
+
+  .fieldsPanel {
+    left: 8px;
+    max-height: min(68dvh, 520px);
+    overflow-y: auto;
+    right: 8px;
+    top: auto;
+    width: auto;
+  }
+
+  .timelineToolbar {
+    display: grid;
+    flex: 0 0 auto;
+    gap: 5px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 6px 8px;
+  }
+
+  .timelineToolbar > strong {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rangeNavigation,
+  .zoomControl {
+    margin-left: 0;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .rangeNavigation button,
+  .zoomControl button {
+    flex: 1 1 0;
+    height: 44px;
+  }
+
+  .unscheduledTray {
+    padding: 7px 8px;
+  }
+
+  .unscheduledTray > header {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .unscheduledTray > header small {
+    max-width: 48%;
+    text-align: right;
+  }
+
+  .unscheduledItem {
+    flex-basis: min(78vw, 270px);
+    min-height: 48px;
+  }
+
+  .unscheduledItem > button:last-child {
+    height: 44px;
+  }
+
+  .timelineCanvas {
+    min-width: calc(168px + var(--timeline-width));
+  }
+
+  .timelineHeaderRow,
+  .timelineRow {
+    grid-template-columns: 168px var(--timeline-width);
+  }
+
+  .timelinePaneHeader,
+  .timelineTaskPane {
+    min-width: 168px;
+  }
+
+  .timelineTaskPane,
+  .timelineGeometry,
+  .timelineRow {
+    min-height: 44px;
+  }
+}
+
+@media (pointer: coarse) {
+  .timelineToolbar {
+    flex-basis: auto;
+    min-height: 52px;
+  }
+
+  .functionalTools > button,
+  .densityControl,
+  .rangeNavigation button,
+  .zoomControl button,
+  .laneAdd {
+    min-height: 44px;
+  }
 }

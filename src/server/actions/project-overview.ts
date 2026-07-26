@@ -37,6 +37,11 @@ import {
   DEMO_WORKSPACE_NAME,
   DEMO_WORKSPACE_SLUG,
 } from "@/server/demo/tasks-demo";
+import {
+  REVIEW_MENU_MILESTONE,
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 
 // ── Status type ───────────────────────────────────────────────────────
 
@@ -180,7 +185,7 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
       slug: DEMO_WORKSPACE_SLUG,
       displayName: DEMO_WORKSPACE_NAME,
       purpose:
-        "Every vendor, payment, and family task for the Hartwell wedding in one calm place. Nothing lives in a group chat.",
+        `Run ${REVIEW_PRIMARY_PROJECT.name}'s wedding from one clear venue workspace, with every supplier, date, and decision accounted for.`,
       createdAt: "2026-01-01T00:00:00.000Z",
       ownerUserId: DEMO_USER_ID,
       isOwner: true,
@@ -203,13 +208,13 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
       milestones: [
         {
           id: "demo-milestone-1",
-          title: "Venue deposit paid",
-          dueAt: "2026-07-30T00:00:00.000Z",
+          title: REVIEW_MENU_MILESTONE.title,
+          dueAt: `${REVIEW_MENU_MILESTONE.date}T00:00:00.000Z`,
         },
         {
           id: "demo-milestone-2",
-          title: "Catering confirmed",
-          dueAt: "2026-08-15T00:00:00.000Z",
+          title: "Wedding day",
+          dueAt: `${REVIEW_SUITE_FIXTURE.primaryDate.date}T00:00:00.000Z`,
         },
       ],
       recentEvents: [
@@ -221,10 +226,10 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
         },
       ],
       declaredStatus: "on-track",
-      targetDate: "2026-09-12",
+      targetDate: REVIEW_SUITE_FIXTURE.primaryDate.date,
       program: {
         name: "Wedding season",
-        dateRange: "12 Sep 2026",
+        dateRange: "3 Oct 2026",
       },
     };
   }

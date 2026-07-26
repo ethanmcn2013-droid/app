@@ -23,13 +23,14 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { Priority, Task } from "@/lib/data";
+import { TASKS_VIEW_PATHS, type TasksViewId } from "@/lib/product-urls";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useActiveWorkspace } from "@/lib/domain-context";
 
 export type RoomSortMode = "manual" | "date" | "title";
 export type RoomOwnerFilter = "all" | "assigned" | "unassigned";
 export type RoomDensity = "compact" | "comfortable";
-export type RoomView = "board" | "list" | "timeline" | "calendar";
+export type RoomView = TasksViewId;
 
 export type SavedRoomView = Readonly<{
   id: string;
@@ -151,7 +152,7 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       setOwner(entry.owner);
       setSort(entry.sort);
       setDensity(entry.density);
-      router.push(`/app/${entry.view}`);
+      router.push(TASKS_VIEW_PATHS[entry.view]);
     },
     [router, savedViews],
   );

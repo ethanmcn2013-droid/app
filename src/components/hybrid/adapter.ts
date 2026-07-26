@@ -10,8 +10,8 @@
 // not value) so no schema/type migration is needed.
 
 import type { LaneId, Priority, Task } from "@/lib/data";
+import type { CalendarFrame } from "@/lib/calendar-frame";
 import { addDays, asCalendarDate, differenceInDays } from "./dates";
-import { LAB_TODAY } from "./dates";
 import type {
   CalendarDate,
   LabLabel,
@@ -21,11 +21,6 @@ import type {
   TaskSchedule,
   TaskStatus,
 } from "./types";
-
-// The lab anchors its calendar/timeline windows on LAB_TODAY. Production
-// timeline positions are relative day offsets (startDay 0-13); we anchor them
-// to LAB_TODAY so real work lands inside the window the founder approved.
-const ANCHOR: CalendarDate = LAB_TODAY;
 
 export const LANE_TO_STATUS: Record<string, TaskStatus> = {
   todo: "queued",
@@ -86,13 +81,25 @@ function toCalendarDate(value: Date | string | null | undefined): CalendarDate |
 }
 
 // Production date fields → lab schedule union.
-export function taskToSchedule(task: Task): TaskSchedule {
+export function taskToSchedule(
+  task: Task,
+  calendar?: CalendarFrame,
+): TaskSchedule {
   const dueDate = toCalendarDate(task.dueAt ?? null);
   if (task.isMilestone && dueDate) {
     return { kind: "milestone", on: dueDate };
   }
-  if (typeof task.startDay === "number") {
-    const startOn = addDays(ANCHOR, task.startDay);
+  if (dueDate && typeof task.durationDays === "number" && task.durationDays > 1) {
+    const span = Math.max(1, task.durationDays);
+    return {
+      kind: "range",
+      startOn: addDays(dueDate, -(span - 1)),
+      dueOn: dueDate,
+    };
+  }
+  const periodStart = calendar?.planningPeriod?.startDate ?? null;
+  if (periodStart && typeof task.startDay === "number") {
+    const startOn = addDays(periodStart as CalendarDate, task.startDay);
     const span = Math.max(1, task.durationDays ?? 1);
     const dueOn = addDays(startOn, span - 1);
     return { kind: "range", startOn, dueOn };
@@ -107,7 +114,11 @@ export function taskToSchedule(task: Task): TaskSchedule {
 // isMilestone is a structural column stripped by updateTaskAction, so milestone
 // scheduling persists its date via dueAt and the flag is handled separately by
 // the store bridge through setTaskMilestoneAction when needed.
-export function scheduleToPatch(schedule: TaskSchedule): Partial<Task> {
+export function scheduleToPatch(
+  schedule: TaskSchedule,
+  calendar?: CalendarFrame,
+): Partial<Task> {
+  const periodStart = calendar?.planningPeriod?.startDate ?? null;
   switch (schedule.kind) {
     case "unscheduled":
       return { startDay: null as unknown as undefined, durationDays: null as unknown as undefined, dueAt: null as unknown as undefined };
@@ -126,10 +137,11 @@ export function scheduleToPatch(schedule: TaskSchedule): Partial<Task> {
         due: schedule.on,
       };
     case "range": {
-      const startDay = differenceInDays(ANCHOR, schedule.startOn);
       const durationDays = Math.max(1, differenceInDays(schedule.startOn, schedule.dueOn) + 1);
       return {
-        startDay,
+        startDay: periodStart
+          ? differenceInDays(periodStart as CalendarDate, schedule.startOn)
+          : null as unknown as undefined,
         durationDays,
         dueAt: new Date(`${schedule.dueOn}T09:00:00.000Z`),
         due: schedule.dueOn,
@@ -155,8 +167,7 @@ export function userToPerson(userId: string, meta?: { name?: string; initials?: 
   };
 }
 
-const LABEL_TONES = ["neutral", "accent", "success", "warning", "danger"] as const;
-type LabelTone = (typeof LABEL_TONES)[number];
+type LabelTone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 const COLOR_TO_TONE: Record<string, LabelTone> = {
   neutral: "neutral",
@@ -176,7 +187,11 @@ export function tagToLabel(name: string, color?: string): LabLabel {
 
 // ---- Task mapping -----------------------------------------------------------
 
-export function taskToLab(task: Task, order: number): LabTask {
+export function taskToLab(
+  task: Task,
+  order: number,
+  calendar?: CalendarFrame,
+): LabTask {
   const subtaskCount = task.subtaskCount ?? 0;
   const subtaskDone = task.subtaskDone ?? 0;
   // The list/board render subtask ratios from the subtasks array length; we
@@ -195,7 +210,7 @@ export function taskToLab(task: Task, order: number): LabTask {
     status: laneToStatus(task.lane),
     priority: priorityToLab(task.priority),
     assigneeIds: task.assignees ?? [],
-    schedule: taskToSchedule(task),
+    schedule: taskToSchedule(task, calendar),
     estimate: typeof task.estimate === "number" ? `${task.estimate}h` : undefined,
     labelIds: task.tags ?? [],
     subtasks,
@@ -216,7 +231,10 @@ export function taskToLab(task: Task, order: number): LabTask {
 
 // General lab UpdateFields patch → production Task patch. Returns null when
 // nothing maps to a persistable column.
-export function fieldsPatch(fields: Partial<LabTask>): Partial<Task> | null {
+export function fieldsPatch(
+  fields: Partial<LabTask>,
+  calendar?: CalendarFrame,
+): Partial<Task> | null {
   const patch: Partial<Task> = {};
   if (fields.title !== undefined) patch.title = fields.title;
   if (fields.description !== undefined) patch.description = fields.description;
@@ -225,7 +243,9 @@ export function fieldsPatch(fields: Partial<LabTask>): Partial<Task> | null {
   if (fields.assigneeIds !== undefined) patch.assignees = fields.assigneeIds;
   if (fields.labelIds !== undefined) patch.tags = fields.labelIds;
   if (fields.blockedByIds !== undefined) patch.blockedBy = fields.blockedByIds;
-  if (fields.schedule !== undefined) Object.assign(patch, scheduleToPatch(fields.schedule));
+  if (fields.schedule !== undefined) {
+    Object.assign(patch, scheduleToPatch(fields.schedule, calendar));
+  }
   if (fields.completed !== undefined) patch.lane = fields.completed ? "done" : "doing";
   return Object.keys(patch).length > 0 ? patch : null;
 }

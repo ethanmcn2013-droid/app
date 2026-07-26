@@ -1,9 +1,6 @@
 import type { CalendarDate, LabTask, TaskSchedule } from "./types";
 
-export const LAB_NOW = "2026-07-16T09:00:00+01:00";
-export const LAB_TODAY = "2026-07-16" as CalendarDate;
-export const LAB_LOCALE = "en-GB";
-export const LAB_TIME_ZONE = "Europe/London";
+const DEFAULT_LOCALE = "en-GB";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -51,9 +48,10 @@ export function startOfMonthGrid(value: CalendarDate): CalendarDate {
 export function formatDate(
   value: CalendarDate,
   options: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" },
+  locale = DEFAULT_LOCALE,
 ): string {
-  return new Intl.DateTimeFormat(LAB_LOCALE, {
-    timeZone: LAB_TIME_ZONE,
+  return new Intl.DateTimeFormat(locale, {
+    timeZone: "UTC",
     ...options,
   }).format(toUtcDate(value));
 }
@@ -133,10 +131,10 @@ export function resizeScheduleEnd(schedule: TaskSchedule, days: number): TaskSch
   };
 }
 
-export function isTaskOverdue(task: LabTask): boolean {
+export function isTaskOverdue(task: LabTask, today: CalendarDate): boolean {
   if (task.completed) return false;
   const end = scheduleEnd(task.schedule);
-  return end !== null && compareDates(end, LAB_TODAY) < 0;
+  return end !== null && compareDates(end, today) < 0;
 }
 
 export function monthTitle(value: CalendarDate): string {

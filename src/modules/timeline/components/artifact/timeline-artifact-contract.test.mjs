@@ -9,6 +9,14 @@ const studioStyles = readFileSync(
   new URL("../../app/audience/artifact-studio.module.css", import.meta.url),
   "utf8",
 );
+const ownerProject = readFileSync(
+  new URL("../../app/plan/[projectSlug]/page.tsx", import.meta.url),
+  "utf8",
+);
+const artifactStudio = readFileSync(
+  new URL("../../app/audience/artifact-studio.tsx", import.meta.url),
+  "utf8",
+);
 
 test("the artifact keeps the locked Option D identity and line-first hierarchy", () => {
   assert.match(artifact, /data-timeline-wordmark/);
@@ -39,6 +47,8 @@ test("the milestone rail exposes roving keyboard navigation and touch-safe targe
   assert.match(artifact, /completedRailVertical/);
   assert.match(styles, /\.completedRailVertical/);
   assert.match(styles, /overflow-x:\s*hidden/);
+  assert.doesNotMatch(artifact, /scrollIntoView/);
+  assert.match(artifact, /viewport\.scrollTo/);
 });
 
 test("motion has a reduced-motion path and the metric swaps as a single face", () => {
@@ -47,8 +57,48 @@ test("motion has a reduced-motion path and the metric swaps as a single face", (
   assert.match(styles, /prefers-reduced-motion:\s*reduce/);
 });
 
+test("motion preference is hydration-safe and never changes the initial metric subtree", () => {
+  assert.match(artifact, /import \{ useHydrated \} from "@\/lib\/use-hydrated"/);
+  assert.match(artifact, /function useArtifactReducedMotion\(\): boolean/);
+  assert.match(artifact, /return hydrated && Boolean\(prefersReducedMotion\)/);
+  assert.equal(
+    (artifact.match(/useReducedMotion\(\)/g) ?? []).length,
+    1,
+    "only the hydration-safe wrapper may read the browser motion preference",
+  );
+  assert.doesNotMatch(
+    artifact,
+    /\{reduceMotion \? \(\s*<span className=\{styles\.metricMotion\}/,
+  );
+  assert.doesNotMatch(artifact, /\{!reduceMotion \? \(\s*<motion\.span/);
+});
+
 test("the owner studio owns vertical scrolling inside the app shell", () => {
   assert.match(studioStyles, /\.studio\s*\{[\s\S]*?height:\s*100%;/);
   assert.match(studioStyles, /\.studio\s*\{[\s\S]*?min-height:\s*0;/);
   assert.match(studioStyles, /\.studio\s*\{[\s\S]*?overflow-y:\s*auto;/);
+});
+
+test("owner surfaces embed the exact artifact without claiming a document-height viewport", () => {
+  assert.match(ownerProject, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
+  assert.match(artifactStudio, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
+  assert.match(artifact, /data-embedded=\{embedded \? "true" : undefined\}/);
+  assert.match(styles, /\.artifact\[data-embedded="true"\]\s*\{[\s\S]*?min-height:\s*auto;/);
+});
+
+test("low-information timelines receive density-only refinements after the generic mobile rules", () => {
+  const genericMobileRule = styles.indexOf("@container timeline-artifact (max-width: 620px)");
+  const densityRules = styles.indexOf('.artifact[data-density="empty"]');
+
+  assert.match(artifact, /data-density=\{model\.density\}/);
+  assert.ok(genericMobileRule >= 0);
+  assert.ok(densityRules > genericMobileRule);
+  assert.match(styles, /\.artifact\[data-density="single"\]/);
+  assert.match(styles, /\.artifact\[data-density="sparse"\]/);
+  assert.doesNotMatch(styles, /data-density="standard"/);
+});
+
+test("undated milestone copy states the truth without implying a future date", () => {
+  assert.match(artifact, /Timing not set/);
+  assert.doesNotMatch(artifact, /Date to come/);
 });

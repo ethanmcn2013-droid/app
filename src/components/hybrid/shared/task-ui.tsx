@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { formatSchedule, isTaskOverdue } from "../dates";
 import { labelById, personById } from "../fixtures";
 import { useLabStore } from "../store";
@@ -61,10 +62,11 @@ export function PriorityMark({ task, withLabel = false }: { task: LabTask; withL
 }
 
 export function ScheduleText({ task, compact = false }: { task: LabTask; compact?: boolean }) {
+  const calendar = useCalendarFrame();
   return (
     <span
       className={styles.schedule}
-      data-overdue={isTaskOverdue(task) || undefined}
+      data-overdue={isTaskOverdue(task, calendar.today) || undefined}
       data-unscheduled={task.schedule.kind === "unscheduled" || undefined}
       title={formatSchedule(task.schedule)}
     >

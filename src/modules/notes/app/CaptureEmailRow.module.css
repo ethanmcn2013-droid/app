@@ -1,0 +1,105 @@
+.root {
+  display: inline-flex;
+  min-inline-size: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  margin: 0;
+  color: var(--ink-faint, var(--color-ink-soft));
+  font-size: var(--text-caption, 0.75rem);
+  line-height: 1.35;
+}
+
+.label {
+  color: var(--ink-soft, var(--color-ink-soft));
+  font-weight: var(--weight-medium, 500);
+}
+
+.label::after {
+  margin-inline-start: 0.55rem;
+  color: var(--hairline, var(--color-line-strong));
+  content: "/";
+  font-weight: 400;
+}
+
+.detail {
+  min-inline-size: 0;
+}
+
+.detail a {
+  color: var(--ink-soft, var(--color-ink));
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.detail a:hover {
+  color: var(--ink, var(--color-ink));
+}
+
+.address {
+  display: inline-flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft, var(--color-ink));
+  cursor: pointer;
+}
+
+.address code {
+  overflow: hidden;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.address:hover code {
+  color: var(--ink, var(--color-ink));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.16em;
+}
+
+.hint {
+  flex: 0 0 auto;
+  color: var(--ink-faint, var(--color-ink-soft));
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.fallbackInput {
+  inline-size: min(21rem, 100%);
+  min-block-size: 1.75rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--hairline, var(--color-line-strong));
+  border-radius: var(--radius-sm, 0.25rem);
+  background: var(--paper, white);
+  color: var(--ink, var(--color-ink));
+  font: inherit;
+}
+
+.fallbackInput:focus-visible {
+  outline: 2px solid var(--accent, var(--color-signal));
+  outline-offset: 2px;
+}
+
+@media (max-width: 40rem) {
+  .root {
+    inline-size: 100%;
+  }
+
+  .address {
+    max-inline-size: 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .address,
+  .fallbackInput {
+    border: 1px solid ButtonText;
+  }
+}

@@ -2,6 +2,11 @@ import "server-only";
 
 import type { NoteRead } from "@/modules/notes/server/actions/notes";
 import type { DemoFixtureId } from "@/modules/notes/server/demo/notes-fixtures";
+import {
+  REVIEW_MENU_MILESTONE,
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 
 /**
  * In-memory demo dataset for Signal Notes.
@@ -42,15 +47,17 @@ type Seed = {
 const ACTIVE: Seed[] = [
   {
     id: "demo_n_01",
-    body: "Saturday wedding, Maria + James. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
+    body: "Saturday wedding, Mara + Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
     ago: 35 * MIN,
     extractBody: "Confirm marquee sides with hire company before Thursday",
     promotedTaskId: "demo_task_marquee",
   },
   {
-    id: "demo_n_02",
-    body: "Florist can do the arch but wants final stem count Monday. Maria leaning toward the looser, wilder look, fewer roses, more foliage.",
+    id: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
+    body: `${REVIEW_PRIMARY_PROJECT.name}'s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.`,
     ago: 2 * HOUR,
+    extractBody: REVIEW_MENU_MILESTONE.title,
+    promotedTaskId: REVIEW_MENU_MILESTONE.sourceId,
   },
   {
     id: "demo_n_03",
@@ -102,7 +109,7 @@ const ACTIVE: Seed[] = [
 const LONG_CONTENT: Seed[] = [
   {
     id: "demo_n_long_01",
-    body: "Post-event debrief for Maria and James. The orchard ceremony moved inside at 13:20 when the rain line reached the west gate, so the team reset eighty-four chairs in eighteen minutes and kept the terrace drinks plan intact. What worked: Aoife held family photographs until the room settled; the bar moved one person to the entrance before guests arrived; the florist reused the aisle foliage around the fireplace without needing another decision. What to change next time: keep a printed wet-weather sequence in the duty folder, confirm who owns the accessibility route before opening the side doors, and label the supplier crate for the extraordinarily long North Coast Botanical Installations and Seasonal Hire Company name so it does not disappear into general storage. Follow up with Maria on Thursday, send the revised room-turn checklist to the Saturday team, and keep this note as the source for the winter brochure case study.",
+    body: "Post-event debrief for Mara and Finn. The orchard ceremony moved inside at 13:20 when the rain line reached the west gate, so the team reset eighty-four chairs in eighteen minutes and kept the terrace drinks plan intact. What worked: Aoife held family photographs until the room settled; the bar moved one person to the entrance before guests arrived; the florist reused the aisle foliage around the fireplace without needing another decision. What to change next time: keep a printed wet-weather sequence in the duty folder, confirm who owns the accessibility route before opening the side doors, and label the supplier crate for the extraordinarily long North Coast Botanical Installations and Seasonal Hire Company name so it does not disappear into general storage. Follow up with Mara on Thursday, send the revised room-turn checklist to the Saturday team, and keep this note as the source for the winter brochure case study.",
     ago: 18 * MIN,
     extractBody: "Write the wet-weather room-turn checklist and share it with the Saturday team",
   },
@@ -128,7 +135,7 @@ const DENSE: Seed[] = Array.from({ length: 36 }, (_, index) => {
 const ARCHIVED: Seed[] = [
   {
     id: "demo_n_a1",
-    body: "Maria asked about a late checkout for the bridal suite, Sunday 11am instead of 9. Said yes in principle, just needs to clear housekeeping.",
+    body: "Mara asked about a late checkout for the bridal suite, Sunday 11am instead of 9. Said yes in principle, just needs to clear housekeeping.",
     ago: 1 * DAY + 8 * HOUR,
     extractBody: "Clear Sunday 11am late checkout with housekeeping",
     promotedTaskId: "demo_task_checkout",

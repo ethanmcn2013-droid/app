@@ -8,7 +8,7 @@ import {
   type RuntimeWatch,
 } from "../../experience/runtime-policy";
 
-const pageUrl = "http://localhost:4342/app/board";
+const pageUrl = "http://localhost:4342/app/tasks";
 const eventSourceAbort: RuntimeIssue = {
   kind: "requestfailed",
   resourceType: "eventsource",

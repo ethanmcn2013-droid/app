@@ -147,7 +147,7 @@
 .inspectorHeader { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 52px; justify-content: space-between; padding: 0 14px 0 18px; }
 .inspectorHeader > div:first-child { display: flex; flex-direction: column; min-width: 0; }
 .inspectorHeader > div:first-child span { color: var(--x-task-text-muted); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
-.inspectorHeader > div:first-child strong { font-family: var(--font-geist-mono), monospace; font-size: 9px; font-weight: 520; margin-top: 2px; }
+.inspectorHeader > div:first-child h2 { font-size: 11px; font-weight: 620; margin: 2px 0 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspectorHeader > div:last-child { align-items: center; display: flex; gap: 4px; }
 .inspectorHeader button { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 32px; justify-content: center; width: 32px; }
 .inspectorHeader button:hover { background: var(--x-task-hover); }
@@ -254,6 +254,86 @@
   .viewTools > button:nth-of-type(3) { font-size: 0; width: 32px; }
   .viewTools > button:nth-of-type(2) svg,
   .viewTools > button:nth-of-type(3) svg { margin: auto; }
+}
+
+@media (max-width: 767px) {
+  .viewTabs button {
+    min-height: 44px;
+  }
+
+  .inspector,
+  .inspectorFull {
+    border-left: 0;
+    bottom: calc(64px + env(safe-area-inset-bottom));
+    left: 0;
+    max-width: none;
+    right: 0;
+    top: 56px;
+    transform: none;
+    width: 100%;
+  }
+
+  .inspectorHeader {
+    flex-basis: 56px;
+    padding-left: 14px;
+  }
+
+  .inspectorHeader > div:first-child h2 {
+    max-width: min(52vw, 260px);
+  }
+
+  .inspectorHeader button {
+    height: 44px;
+    width: 44px;
+  }
+
+  .inspectorBody {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .inspectorFields,
+  .scheduleEditor,
+  .assigneeEditor > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inspectorField select,
+  .inspectorField input,
+  .inspectorFieldWide select,
+  .inspectorFieldWide input,
+  .commentComposer button {
+    min-height: 44px;
+  }
+
+  .bulkToolbar {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    left: 8px;
+    max-width: calc(100vw - 16px);
+    overflow-x: auto;
+    transform: none;
+  }
+
+  .bulkToolbar button,
+  .bulkToolbar select,
+  .contextMenu button {
+    min-height: 44px;
+  }
+
+  .commandPalette {
+    width: calc(100vw - 24px);
+  }
+}
+
+@media (pointer: coarse) {
+  .viewTabs button,
+  .inspectorHeader button,
+  .bulkToolbar button,
+  .bulkToolbar select,
+  .contextMenu button,
+  .commentComposer button {
+    min-height: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

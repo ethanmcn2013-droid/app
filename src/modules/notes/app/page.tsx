@@ -44,10 +44,11 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   // Demo/Review mode skips the sign-in gate entirely, the notebook renders
   // from the in-memory seed (listNotes/listArchivedNotes short-circuit).
   const demoMode = isDemoMode();
-  // Server-only, fail-off release switch. The legacy notebook stays compiled
-  // and immediately reachable by removing this flag and redeploying.
+  // Hybrid is the founder-approved canonical notebook. The legacy renderer
+  // remains an explicit, server-only rollback path for one release window;
+  // an absent environment variable must never silently restore the old UI.
   const hybridNotebookEnabled =
-    process.env.NOTES_HYBRID_NOTEBOOK_ENABLED === "1";
+    process.env.NOTES_LEGACY_NOTEBOOK_ENABLED !== "1";
   const params = await searchParams;
   const fixture = demoMode ? resolveDemoFixture(params.fixture) : "populated";
 
@@ -150,6 +151,7 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
           <EarlyCaptureBootstrap />
           <HybridNotebook
             {...notebookProps}
+            captureEmailState={captureState}
             initialPendingApprovedTaskSends={pendingApprovedTaskSends}
             demoMode={demoMode}
           />
@@ -163,7 +165,9 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
           ready, and you can keep writing.
         </aside>
       ) : null}
-      {captureState ? <CaptureEmailRow state={captureState} /> : null}
+      {!hybridNotebookEnabled && captureState ? (
+        <CaptureEmailRow state={captureState} />
+      ) : null}
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { LAB_TODAY } from "../../dates";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useLabStore } from "../../store";
 import { STATUS_LABELS, type CalendarDate, type LabTask } from "../../types";
 import { Icon } from "../../shared/icons";
@@ -106,8 +106,11 @@ function readDate(value: string): CalendarDate | null {
 
 export function DateCommand({ task, label = "Date controls" }: { task: LabTask | undefined; label?: string }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const [draftSchedule, setDraftSchedule] = useState<{ taskId: string; date: CalendarDate } | null>(null);
-  const draftDate = task && draftSchedule?.taskId === task.id ? draftSchedule.date : LAB_TODAY;
+  const draftDate = task && draftSchedule?.taskId === task.id
+    ? draftSchedule.date
+    : calendar.today as CalendarDate;
 
   if (!task) {
     return <div className={styles.dateCommandEmpty}><Icon name="calendar" size={14} />Focus a task for explicit date controls</div>;
