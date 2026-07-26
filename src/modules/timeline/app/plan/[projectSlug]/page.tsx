@@ -1,21 +1,26 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import {
-  requireUser,
-  getCurrentWorkspace,
-  resolveTimelineContext,
-} from "@/modules/timeline/server/auth";
-import {
-  getProjectsForWorkspace,
-  getEffectiveNodesForWorkspace,
-} from "@/modules/timeline/server/db/timeline-queries";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
+import { TimelineArtifact } from "@/modules/timeline/components/artifact";
+import { ownerProjectToTimelineDto } from "@/modules/timeline/lib/owner-artifact";
 import {
   buildTimelineProjectHref,
   toAuthorizedProjectOptions,
 } from "@/modules/timeline/lib/project-switcher-model";
+import {
+  getCurrentWorkspace,
+  requireUser,
+  resolveTimelineContext,
+} from "@/modules/timeline/server/auth";
+import { getOwnerAudiencePublications } from "@/modules/timeline/server/audience-timeline";
+import {
+  getEffectiveNodesForWorkspace,
+  getProjectsForWorkspace,
+} from "@/modules/timeline/server/db/timeline-queries";
+
+type OwnerMode = "view" | "edit";
 
 export async function generateMetadata({
   params,
@@ -28,16 +33,34 @@ export async function generateMetadata({
 
 export const dynamic = "force-dynamic";
 
-export default async function PlanPage({
+function modeHref(
+  projectSlug: string,
+  context: { workspaceId?: string | null; planningPeriodId?: string | null },
+  mode: OwnerMode,
+) {
+  const href = buildTimelineProjectHref(projectSlug, context);
+  if (mode === "view") return href;
+  const [pathname, query = ""] = href.split("?");
+  const params = new URLSearchParams(query);
+  params.set("mode", mode);
+  return `${pathname}?${params.toString()}`;
+}
+
+export default async function TimelineProjectPage({
   params,
   searchParams,
 }: {
   params: Promise<{ projectSlug: string }>;
-  searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
+  searchParams: Promise<{
+    workspaceId?: string;
+    planningPeriodId?: string;
+    mode?: string;
+  }>;
 }) {
   const { projectSlug } = await params;
   const userId = await requireUser();
   const requested = await searchParams;
+  const mode: OwnerMode = requested.mode === "edit" ? "edit" : "view";
   const requestedWorkspaceId = requested.workspaceId?.trim();
   const context = requestedWorkspaceId
     ? await resolveTimelineContext(
@@ -48,18 +71,17 @@ export default async function PlanPage({
     : null;
   if (requestedWorkspaceId && !context) notFound();
   const workspace = context?.workspace ?? (await getCurrentWorkspace(userId));
-
   if (!workspace) notFound();
 
   const projects = await getProjectsForWorkspace(workspace.slug);
-  const project = projects.find((p) => p.slug === projectSlug);
+  const project = projects.find((candidate) => candidate.slug === projectSlug);
   if (!project) notFound();
+
   const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
   const queryContext = {
     workspaceId: context?.workspaceId,
     planningPeriodId: context?.planningPeriodId,
   };
-
   const shareQuery = new URLSearchParams({ project: project.slug });
   if (queryContext.workspaceId) {
     shareQuery.set("workspaceId", queryContext.workspaceId);
@@ -70,63 +92,64 @@ export default async function PlanPage({
   const shareHref = `/app/timeline/audience?${shareQuery.toString()}`;
 
   return (
-    <div data-timeline-module className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-10">
-      {/* Breadcrumb, renders immediately; no data-dependent await below this point */}
-      <nav
-        aria-label="Timeline project"
-        className="mb-6 flex flex-wrap items-center gap-1.5 text-xs"
-        style={{ color: "var(--ink-quiet)" }}
-      >
-        <Link
-          href={buildTimelineProjectHref(null, queryContext)}
-          className="transition-colors hover:text-ink"
-          style={{ color: "var(--ink-soft)" }}
-        >
-          {workspace.name}
-        </Link>
-        <span aria-hidden>/</span>
-        <ProjectSwitcher
-          currentProject={{ slug: project.slug, name: project.name }}
-          projects={projectOptions}
-          context={queryContext}
-        />
-      </nav>
+    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
+      <header className="relative z-30 border-b border-line-soft bg-white">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="hidden text-xs font-semibold uppercase tracking-[0.13em] text-ink-quiet sm:inline">
+              Project timeline
+            </span>
+            <ProjectSwitcher
+              currentProject={{ slug: project.slug, name: project.name }}
+              projects={projectOptions}
+              context={queryContext}
+            />
+          </div>
 
-      {/* Heading, renders immediately */}
-      <div className="mb-8 flex flex-col justify-between gap-5 border-b border-line-soft pb-7 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
-            Private owner view
-          </p>
-          <h1
-            className="mt-2 text-3xl font-semibold"
-            style={{ letterSpacing: "-0.035em", color: "var(--ink)" }}
-          >
-            {project.name}
-          </h1>
-          <p
-            className="mt-2 max-w-xl text-sm leading-6"
-            style={{ color: "var(--ink-soft)" }}
-          >
-            Milestone tasks sync into this draft. Refine their labels, dates,
-            order and visibility here; nothing changes for viewers until you
-            publish a frozen copy.
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <nav
+              aria-label="Timeline owner mode"
+              className="inline-flex rounded-lg border border-line-soft bg-bg-sunken p-1"
+            >
+              <Link
+                href={modeHref(project.slug, queryContext, "view")}
+                aria-current={mode === "view" ? "page" : undefined}
+                className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  mode === "view"
+                    ? "bg-white text-ink shadow-sm"
+                    : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                View<span className="hidden sm:inline">&nbsp;timeline</span>
+              </Link>
+              <Link
+                href={modeHref(project.slug, queryContext, "edit")}
+                aria-current={mode === "edit" ? "page" : undefined}
+                className={`inline-flex min-h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  mode === "edit"
+                    ? "bg-white text-ink shadow-sm"
+                    : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                Edit<span className="hidden sm:inline">&nbsp;milestones</span>
+              </Link>
+            </nav>
+            <Link
+              href={shareHref}
+              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              <span className="sm:hidden">Share</span>
+              <span className="hidden sm:inline">Preview and share</span>
+            </Link>
+          </div>
         </div>
-        <Link
-          href={shareHref}
-          className="inline-flex min-h-11 flex-none items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
-        >
-          Preview & publish
-        </Link>
-      </div>
+      </header>
 
-      {/* T7: scoped Suspense split — breadcrumb + heading above are immediate,
-          only the data-heavy curation surface is behind Suspense. */}
-      <Suspense fallback={<CurationSurfaceSkeleton />}>
-        <PlanPageContent
-          workspaceSlug={workspace.slug}
-          projectSlug={projectSlug}
+      <Suspense fallback={<TimelineOwnerSkeleton mode={mode} />}>
+        <TimelineProjectContent
+          mode={mode}
+          project={project}
+          workspace={workspace}
           shareHref={shareHref}
         />
       </Suspense>
@@ -134,49 +157,133 @@ export default async function PlanPage({
   );
 }
 
-// ── Async data component, deferred behind Suspense ───────────────────────────
-
-async function PlanPageContent({
-  workspaceSlug,
-  projectSlug,
+async function TimelineProjectContent({
+  mode,
+  project,
+  workspace,
   shareHref,
 }: {
-  workspaceSlug: string;
-  projectSlug: string;
+  mode: OwnerMode;
+  project: Awaited<ReturnType<typeof getProjectsForWorkspace>>[number];
+  workspace: NonNullable<Awaited<ReturnType<typeof getCurrentWorkspace>>>;
   shareHref: string;
 }) {
-  const effectiveNodes = await getEffectiveNodesForWorkspace(workspaceSlug);
+  const [effectiveNodes, publications] = await Promise.all([
+    getEffectiveNodesForWorkspace(workspace.slug),
+    getOwnerAudiencePublications(workspace.slug),
+  ]);
+  const projectNodes = effectiveNodes.filter(
+    (node) => node.projectSlug === project.slug,
+  );
+
+  if (mode === "edit") {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <div className="mb-7 border-b border-line-soft pb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-indigo-700">
+            Private owner edit
+          </p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-ink">
+            Shape {project.name}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
+            Milestone tasks sync into this draft. Refine the labels, dates,
+            order, lane, and visibility here. View timeline shows the exact
+            artifact your audience will receive.
+          </p>
+        </div>
+        <CurationSurface
+          initialNodes={projectNodes}
+          workspaceSlug={workspace.slug}
+          projectSlug={project.slug}
+          shareHref={shareHref}
+        />
+      </div>
+    );
+  }
+
+  const sourceIds = new Set(projectNodes.map((node) => node.id));
+  const latestPublication = publications
+    .filter((publication) =>
+      publication.items.some((item) => sourceIds.has(item.sourceRelation)),
+    )
+    .sort(
+      (left, right) =>
+        right.lastUpdatedAt.getTime() - left.lastUpdatedAt.getTime(),
+    )[0];
+  const visibleNodes = projectNodes.filter((node) => !node.hidden);
+
+  if (visibleNodes.length === 0) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8">
+        <section className="w-full rounded-2xl border border-dashed border-line-soft bg-bg-sunken p-7 text-center sm:p-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-indigo-700">
+            {project.name}
+          </p>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">
+            No visible milestones yet.
+          </h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-soft">
+            Mark tasks as milestones, or add a manual milestone in the owner
+            edit. This project stays private until you deliberately publish a
+            frozen share link.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <Link
+              href={`/app/timeline/${encodeURIComponent(project.slug)}?mode=edit`}
+              className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              Edit milestones
+            </Link>
+            <Link
+              href="/app/tasks"
+              className="inline-flex min-h-11 items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              Open Tasks
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const timeline = ownerProjectToTimelineDto({
+    project,
+    workspace,
+    nodes: projectNodes,
+    settings: latestPublication
+      ? {
+          publicationId: latestPublication.id,
+          label: latestPublication.label,
+          audienceKind: latestPublication.audienceKind,
+          ownerDisplayLabel: latestPublication.ownerDisplayLabel,
+          primaryDateLabel: latestPublication.primaryDateLabel,
+          primaryDate: latestPublication.primaryDate,
+          timezone: latestPublication.timezone,
+        }
+      : undefined,
+  });
 
   return (
-    <CurationSurface
-      initialNodes={effectiveNodes.filter(
-        (node) => node.projectSlug === projectSlug,
-      )}
-      workspaceSlug={workspaceSlug}
-      projectSlug={projectSlug}
-      shareHref={shareHref}
-    />
+    <div className="w-full flex-1 bg-white">
+      <TimelineArtifact timeline={timeline} />
+    </div>
   );
 }
 
-// ── Skeleton fallback ─────────────────────────────────────────────────────────
-
-function CurationSurfaceSkeleton() {
+function TimelineOwnerSkeleton({ mode }: { mode: OwnerMode }) {
   return (
-    <div aria-hidden className="flex flex-col gap-3">
-      {[1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="flex items-center justify-between rounded-xl border px-4 py-3.5"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <div className="flex flex-col gap-1.5">
-            <div className="tl-skeleton-shimmer h-3.5 w-48 rounded" />
-            <div className="tl-skeleton-shimmer h-3 w-24 rounded" />
-          </div>
-          <div className="tl-skeleton-shimmer h-5 w-5 rounded" />
-        </div>
-      ))}
+    <div
+      aria-hidden
+      className={`mx-auto w-full ${
+        mode === "edit"
+          ? "max-w-5xl px-4 py-8 sm:px-6 lg:px-8"
+          : "max-w-[1600px] px-6 py-10"
+      }`}
+    >
+      <div className="tl-skeleton-shimmer h-4 w-28 rounded" />
+      <div className="tl-skeleton-shimmer mt-5 h-14 w-64 max-w-full rounded" />
+      <div className="tl-skeleton-shimmer mt-10 h-72 w-full rounded-2xl" />
     </div>
   );
 }

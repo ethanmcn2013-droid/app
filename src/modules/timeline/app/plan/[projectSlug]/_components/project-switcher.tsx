@@ -30,8 +30,8 @@ export function ProjectSwitcher({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const currentIndex = Math.max(
-    1,
-    projects.findIndex((project) => project.slug === currentProject.slug) + 1,
+    0,
+    projects.findIndex((project) => project.slug === currentProject.slug),
   );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(currentIndex);
@@ -51,28 +51,17 @@ export function ProjectSwitcher({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
-  const allProjectsHref = buildTimelineProjectHref(null, context);
-
   if (projects.length <= 1) {
     return (
-      <span className="inline-flex min-h-11 items-center gap-2">
+      <span className="inline-flex min-h-[44px] items-center">
         <span className="font-medium text-ink" aria-current="page">
           {currentProject.name}
         </span>
-        <span aria-hidden className="text-ink-faint">
-          ·
-        </span>
-        <Link
-          href={allProjectsHref}
-          className="inline-flex min-h-11 items-center text-ink-soft underline decoration-line-soft underline-offset-4 transition-colors hover:text-ink"
-        >
-          All projects
-        </Link>
       </span>
     );
   }
 
-  const options: Array<ProjectSwitcherOption | null> = [null, ...projects];
+  const options = projects;
 
   function openMenu(index = currentIndex) {
     setActiveIndex(index);
@@ -81,7 +70,7 @@ export function ProjectSwitcher({
 
   function choose(index: number) {
     const option = options[index];
-    const href = buildTimelineProjectHref(option?.slug ?? null, context);
+    const href = buildTimelineProjectHref(option.slug, context);
     router.push(href);
     setOpen(false);
   }
@@ -137,7 +126,7 @@ export function ProjectSwitcher({
         aria-label={`Current project: ${currentProject.name}. Switch project.`}
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleTriggerKeyDown}
-        className="inline-flex min-h-11 max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-white px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-white px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
       >
         <span className="truncate">{currentProject.name}</span>
         <svg
@@ -164,11 +153,11 @@ export function ProjectSwitcher({
           className="absolute left-0 z-40 mt-2 max-h-[min(360px,60vh)] min-w-[min(320px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_18px_50px_-22px_rgba(20,21,26,0.45)]"
         >
           {options.map((option, index) => {
-            const isCurrent = option?.slug === currentProject.slug;
-            const href = buildTimelineProjectHref(option?.slug ?? null, context);
+            const isCurrent = option.slug === currentProject.slug;
+            const href = buildTimelineProjectHref(option.slug, context);
             return (
               <Link
-                key={option?.slug ?? "all-projects"}
+                key={option.slug}
                 href={href}
                 ref={(node) => {
                   optionRefs.current[index] = node;
@@ -176,10 +165,10 @@ export function ProjectSwitcher({
                 role="menuitem"
                 aria-current={isCurrent ? "page" : undefined}
                 onMouseEnter={() => setActiveIndex(index)}
-                className="flex min-h-11 w-full items-center justify-between gap-5 rounded-lg px-3 text-left text-[13px] text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus:bg-bg-sunken focus:text-ink"
+                className="flex min-h-[44px] w-full items-center justify-between gap-5 rounded-lg px-3 text-left text-[13px] text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus:bg-bg-sunken focus:text-ink"
               >
                 <span className="truncate">
-                  {option?.name ?? "All projects"}
+                  {option.name}
                 </span>
                 {isCurrent ? (
                   <span
