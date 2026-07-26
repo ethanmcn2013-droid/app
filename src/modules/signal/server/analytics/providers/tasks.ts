@@ -152,7 +152,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         linkedDecisionIds: [],
         linkedMilestoneIds: [],
         workType: row.isMilestone ? "milestone" : null,
-        deepLink: `${APP_ORIGIN}/app/board?task=${encodeURIComponent(row.id)}`,
+        deepLink: `${APP_ORIGIN}/app/tasks?task=${encodeURIComponent(row.id)}`,
         updatedAt: iso(row.updatedAt),
       };
     });
@@ -258,7 +258,7 @@ export function projectsFromTasks(
         name: titleCase(id),
         ownerIds: Array.from(new Set(projectTasks.flatMap((task) => task.ownerIds))),
         state: "unknown",
-        deepLink: `${APP_ORIGIN}/app/board`,
+        deepLink: `${APP_ORIGIN}/app/tasks`,
         createdAt: sorted[0]?.createdAt ?? new Date().toISOString(),
         updatedAt: updated[0]?.updatedAt ?? new Date().toISOString(),
       };

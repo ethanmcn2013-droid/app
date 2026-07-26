@@ -749,11 +749,24 @@ export type EffectiveNode = {
   updatedAt: Date;
 };
 
+function manualNodeProjectSlug(
+  nodeId: string,
+  fallbackProjectSlug: string,
+): string {
+  if (!nodeId.startsWith("manual:")) return fallbackProjectSlug;
+  const encoded = nodeId.slice("manual:".length).split(":", 1)[0];
+  try {
+    return decodeURIComponent(encoded) || fallbackProjectSlug;
+  } catch {
+    return fallbackProjectSlug;
+  }
+}
+
 export const getEffectiveNodesForWorkspace = cache(async (
   workspaceSlug: string,
 ): Promise<EffectiveNode[]> => {
   if (isDemoMode()) return demoEffectiveNodes(workspaceSlug);
-  const [allMilestoneTasks, allOverlays] = await Promise.all([
+  const [allMilestoneTasks, allOverlays, workspaceProjects] = await Promise.all([
     db
       .select()
       .from(tasks)
@@ -765,7 +778,9 @@ export const getEffectiveNodesForWorkspace = cache(async (
       )
       .orderBy(asc(tasks.sortOrder)),
     getNodeOverlaysForWorkspace(workspaceSlug),
+    getProjectsForWorkspace(workspaceSlug),
   ]);
+  const fallbackProjectSlug = workspaceProjects[0]?.slug ?? workspaceSlug;
 
   const overlayMap = new Map<string, NodeOverlay>(
     allOverlays.map((o) => [o.nodeId, o]),
@@ -778,7 +793,10 @@ export const getEffectiveNodesForWorkspace = cache(async (
       const status: Status = o.manualStatus ?? "next";
       return {
         id: o.nodeId,
-        projectSlug: workspaceSlug, // manual nodes inherit first project slug via caller
+        projectSlug: manualNodeProjectSlug(
+          o.nodeId,
+          fallbackProjectSlug,
+        ),
         workspaceSlug,
         title: o.manualTitle ?? "(untitled)",
         status,

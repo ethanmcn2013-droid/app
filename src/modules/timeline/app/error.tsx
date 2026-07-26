@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 
 /**
- * Error boundary for the Timeline /app/plan/* routes.
+ * Error boundary for the Timeline /app/timeline/* routes.
  * Keeps a per-user DB failure recoverable and scopes "go back" to the dashboard.
  */
 export default function AppError({
@@ -54,7 +54,7 @@ export default function AppError({
           Try again
         </button>
         <Link
-          href="/app/plan"
+          href="/app/timeline"
           className="rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
           style={{ borderColor: "var(--border)", color: "var(--ink-soft)" }}
         >

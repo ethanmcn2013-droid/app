@@ -168,7 +168,7 @@ export async function getOverdueAcrossWorkspacesAction(): Promise<
 
 /**
  * Set the active-workspace cookie so a subsequent navigation to
- * `/app/board` resolves into the chosen workspace. Validates
+ * `/app/tasks` resolves into the chosen workspace. Validates
  * membership server-side, a hand-crafted call with someone else's
  * id is silently ignored. Returns `{ ok: true }` regardless to keep
  * the client path simple; the navigation that follows will land

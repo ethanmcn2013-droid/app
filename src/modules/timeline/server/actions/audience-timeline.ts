@@ -152,7 +152,7 @@ export async function connectSuiteWorkspaceAction(
     }
     const updated = await connectSuiteWorkspace(workspace.slug, userId, suiteWorkspaceId);
     if (!updated) throw new TypeError("Workspace not found");
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return { status: "success", message: "Canonical workspace connected." };
   } catch (error) {
     return errorState(error);
@@ -197,7 +197,7 @@ export async function createAudiencePublicationAction(
         });
       },
     );
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: "Draft created. Preview the exact fields below before sharing.",
@@ -227,7 +227,7 @@ export async function publishAudiencePublicationAction(
         expiryInstant(formData),
       ),
     );
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: "Published. Copy this link now; it will not be shown again.",
@@ -258,7 +258,7 @@ export async function rotateAudienceShareAction(
         expiryInstant(formData),
       ),
     );
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: "Link rotated. Every earlier link is inactive immediately.",
@@ -280,7 +280,7 @@ export async function revokeAudienceShareAction(
     const { workspace } = await ownerWorkspace(formData);
     const publicationId = requiredText(formData, "publicationId", 80);
     await revokeAudienceShares(publicationId, workspace.slug);
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return { status: "success", message: "Every active link is revoked.", publicationId };
   } catch (error) {
     return errorState(error);
@@ -297,7 +297,7 @@ export async function unpublishAudiencePublicationAction(
     const { workspace } = await ownerWorkspace(formData);
     const publicationId = requiredText(formData, "publicationId", 80);
     await unpublishAudiencePublication(publicationId, workspace.slug);
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: "Timeline unpublished and every active link revoked.",
@@ -329,7 +329,7 @@ export async function updateAudiencePublicationItemAction(
       calendarDate: optionalCalendarDate(formData, "calendarDate"),
       state: stateValue as AudienceItemState,
     });
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: "Public item updated. The source was not changed.",
@@ -350,7 +350,7 @@ export async function refreshAudienceDivergenceAction(
     const { workspace } = await ownerWorkspace(formData);
     const publicationId = requiredText(formData, "publicationId", 80);
     const count = await refreshAudienceDivergence(publicationId, workspace.slug);
-    revalidatePath("/app/plan/audience");
+    revalidatePath("/app/timeline/audience");
     return {
       status: "success",
       message: count === 0 ? "No new source changes." : `${count} source change${count === 1 ? "" : "s"} marked. Public fields stayed frozen.`,

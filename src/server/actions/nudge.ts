@@ -201,7 +201,7 @@ export async function sendNudgeAction(taskId: string): Promise<
           .where(eq(users.id, toUserId));
 
         if (recipientRow?.email) {
-          const taskUrl = `${APP_ORIGIN}/app/board?task=${encodeURIComponent(taskId)}`;
+          const taskUrl = `${APP_ORIGIN}/app/tasks?task=${encodeURIComponent(taskId)}`;
           const html = nudgeEmailHtml({
             senderName,
             taskTitle: task.title,

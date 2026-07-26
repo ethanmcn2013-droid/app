@@ -155,7 +155,7 @@ gate is considered complete. See `drizzle/MIGRATIONS.md` for the full contract.
 - [ ] Generate a magic link → another tab/incognito visits → renders
   read-only
 - [ ] Pricing CTA → Stripe Checkout (use test card `4242 4242 4242
-  4242`) → success → entitlement granted → `/app/board` renders
+  4242`) → success → entitlement granted → `/app/tasks` renders
 - [ ] Daily digest cron fires (manually trigger via `curl -H
   "Authorization: Bearer $CRON_SECRET" $URL/api/cron/digest?send=1`)
   → email lands in `RESEND_FROM`'s test inbox

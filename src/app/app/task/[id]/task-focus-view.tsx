@@ -51,7 +51,7 @@ export function TaskFocusView({
   // The ?task= param opens production's panel on arrival; no pushState
   // gymnastics on the focus URL first.
   function collapseToPanel() {
-    router.push(`/app/board?task=${taskId}`);
+    router.push(`/app/tasks?task=${taskId}`);
   }
 
   return (

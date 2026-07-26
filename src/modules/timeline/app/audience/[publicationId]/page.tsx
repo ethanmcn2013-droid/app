@@ -54,7 +54,7 @@ export default async function TimelineArtifactStudioPage({
     <TimelineArtifactStudio
       publication={publication}
       timeline={ownerPublicationToTimelineDto(publication)}
-      managerHref={`/app/plan/audience${contextQuery}`}
+      managerHref={`/app/timeline/audience${contextQuery}`}
     />
   );
 }

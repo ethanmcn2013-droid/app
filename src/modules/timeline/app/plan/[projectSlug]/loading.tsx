@@ -1,5 +1,5 @@
 /**
- * Loading boundary for /app/plan/[projectSlug].
+ * Loading boundary for /app/timeline/[projectSlug].
  *
  * Renders in normal document flow below the persistent StudioBar shell.
  * Skeleton uses tl-skeleton-shimmer (T4: scoped in timeline.css).

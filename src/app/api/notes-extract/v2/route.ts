@@ -98,7 +98,7 @@ async function success(
     taskId: task.id,
     workspaceName: ws?.name ?? "Tasks",
     workspaceSlug: ws?.slug ?? "",
-    taskUrl: `${siteOrigin()}/app/board?taskId=${encodeURIComponent(task.id)}`,
+    taskUrl: `${siteOrigin()}/app/tasks?taskId=${encodeURIComponent(task.id)}`,
     acceptedBodySha256: task.sourceNoteExtractSha256,
     created,
   });

@@ -7,7 +7,7 @@ import type { MetadataRoute } from "next";
  * app/manifest.ts auto-emits the link tag, so the static file was
  * removed in this cycle to avoid duplicate-source confusion.
  *
- * start_url goes to /app/board because that's the post-auth work
+ * start_url goes to /app/tasks because that's the post-auth work
  * surface, a home-screen tap should land on the board, not the
  * marketing homepage.
  *
@@ -27,7 +27,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Signal Tasks",
     short_name: "Tasks",
     description: "A live task workspace built for momentum.",
-    start_url: "/app/board",
+    start_url: "/app/tasks",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
@@ -60,19 +60,19 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Board",
         short_name: "Board",
-        url: "/app/board",
+        url: "/app/tasks",
         description: "Cards across statuses.",
       },
       {
         name: "List",
         short_name: "List",
-        url: "/app/list",
+        url: "/app/tasks/list",
         description: "Flat list of everything.",
       },
       {
         name: "Timeline",
         short_name: "Timeline",
-        url: "/app/timeline",
+        url: "/app/tasks/timeline",
         description: "Dates on a line.",
       },
     ],

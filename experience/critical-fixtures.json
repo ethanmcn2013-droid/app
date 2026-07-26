@@ -22,7 +22,7 @@
           "path": "/app",
           "states": ["populated", "reduced-motion", "keyboard-only"],
           "assertions": [
-            { "kind": "url", "pathname": "/app/board", "proves": ["populated"] },
+            { "kind": "url", "pathname": "/app/tasks", "proves": ["populated"] },
             { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["populated"] }
           ]
         }
@@ -128,7 +128,7 @@
           "states": ["default", "success", "keyboard-only"],
           "assertions": [
             { "kind": "text", "text": "Redeemed", "proves": ["default", "success"] },
-            { "kind": "role", "role": "link", "name": "Open the workspace", "href": "/app/board?welcome=venue&v=the-orchard", "proves": ["success"] }
+            { "kind": "role", "role": "link", "name": "Open the workspace", "href": "/app/tasks?welcome=venue&v=the-orchard", "proves": ["success"] }
           ]
         },
         {
@@ -190,7 +190,7 @@
           "states": ["default", "read-only", "long-content", "reduced-motion", "keyboard-only"],
           "assertions": [
             { "kind": "text", "text": "Read-only · Shared link", "proves": ["default", "read-only"] },
-            { "kind": "role", "role": "link", "name": "Make this yours", "href": "/app/board", "proves": ["read-only"] },
+            { "kind": "role", "role": "link", "name": "Make this yours", "href": "/app/tasks", "proves": ["read-only"] },
             { "kind": "role", "role": "button", "name": "New task", "count": 0, "proves": ["read-only"] }
           ]
         }
@@ -276,7 +276,7 @@
       "sourceAssertions": [
         { "label": "friendly recovery copy", "contains": "The workspace took a wrong turn." },
         { "label": "retry action", "contains": "Try again" },
-        { "label": "board escape", "contains": "href=\"/app/board\"" },
+        { "label": "board escape", "contains": "href=\"/app/tasks\"" },
         { "label": "Sentry capture", "contains": "Sentry.captureException(error)" }
       ],
       "remainingStates": ["error", "keyboard-only"]
@@ -379,15 +379,15 @@
       "remainingStates": []
     },
     {
-      "id": "tasks.page.app-brief",
+      "id": "tasks.page.app-signal",
       "evidence": "rendered",
       "cases": [
         {
           "name": "demo morning briefing",
-          "path": "/app/brief",
+          "path": "/app/signal",
           "states": ["default", "reduced-motion", "keyboard-only"],
           "assertions": [
-            { "kind": "url", "pathname": "/app/brief", "proves": ["default"] },
+            { "kind": "url", "pathname": "/app/signal", "proves": ["default"] },
             { "kind": "text", "text": "Daily Signal · Wednesday 08:42", "proves": ["default"] }
           ]
         }
@@ -395,12 +395,12 @@
       "remainingStates": ["loading"]
     },
     {
-      "id": "tasks.page.app-brief-onboarding",
+      "id": "tasks.page.app-signal-onboarding",
       "evidence": "rendered",
       "cases": [
         {
           "name": "demo workspace onboarding",
-          "path": "/app/brief/onboarding",
+          "path": "/app/signal/onboarding",
           "states": ["first-use", "populated", "reduced-motion", "keyboard-only"],
           "assertions": [
             { "kind": "role", "role": "heading", "name": "We found your workspace.", "proves": ["first-use", "populated"] }
@@ -410,12 +410,12 @@
       "remainingStates": ["empty", "loading"]
     },
     {
-      "id": "tasks.page.app-brief-settings-notifications",
+      "id": "tasks.page.app-signal-settings-notifications",
       "evidence": "rendered",
       "cases": [
         {
           "name": "demo briefing cadence",
-          "path": "/app/brief/settings/notifications",
+          "path": "/app/signal/settings/notifications",
           "states": ["default", "reduced-motion", "keyboard-only"],
           "assertions": [
             { "kind": "role", "role": "heading", "name": "How often should the briefing land?", "proves": ["default"] }
@@ -425,15 +425,15 @@
       "remainingStates": ["loading"]
     },
     {
-      "id": "tasks.page.app-plan",
+      "id": "tasks.page.app-timeline",
       "evidence": "rendered",
       "cases": [
         {
           "name": "demo workspace dashboard",
-          "path": "/app/plan",
+          "path": "/app/timeline",
           "states": ["populated", "reduced-motion", "keyboard-only"],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Tasks · Product Roadmap", "proves": ["populated"] },
+            { "kind": "role", "role": "heading", "name": "Shape the story before you share it.", "proves": ["populated"] },
             { "kind": "text", "text": "Workspace", "proves": ["populated"] }
           ]
         }
@@ -441,18 +441,18 @@
       "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted"]
     },
     {
-      "id": "tasks.page.app-plan-by-project-slug",
+      "id": "tasks.page.app-timeline-by-project-slug",
       "evidence": "source-contract",
       "sourceAssertions": [
         { "label": "force-dynamic export", "contains": "force-dynamic" },
         { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
-        { "label": "Timeline curation module boundary", "contains": "PlanProjectPage" },
+        { "label": "Timeline curation module boundary", "contains": "TimelineProjectPage" },
         { "label": "defence-in-depth call", "contains": "await requireAppAccess()" }
       ],
       "remainingStates": ["default", "populated", "loading", "error", "empty", "reduced-motion", "keyboard-only"]
     },
     {
-      "id": "tasks.page.app-plan-audience",
+      "id": "tasks.page.app-timeline-audience",
       "evidence": "source-contract",
       "sourceAssertions": [
         { "label": "force-dynamic export", "contains": "force-dynamic" },
@@ -462,12 +462,12 @@
       "remainingStates": ["default", "populated", "empty", "loading", "error", "reduced-motion", "keyboard-only"]
     },
     {
-      "id": "tasks.page.app-plan-audience-by-publication-id",
+      "id": "tasks.page.app-timeline-audience-by-publication-id",
       "evidence": "rendered",
       "cases": [
         {
           "name": "owner artifact and live phone preview",
-          "path": "/app/plan/audience/demo-audience-publication",
+          "path": "/app/timeline/audience/demo-audience-publication",
           "states": ["populated", "empty", "reduced-motion", "keyboard-only"],
           "assertions": [
             { "kind": "role", "role": "heading", "name": "See the story they will see.", "proves": ["populated"] },
@@ -528,6 +528,6 @@
     "Production Clerk sign-in and sign-up states require a real review identity and provider email flows.",
     "Production invite acceptance and redemption mutations require an isolated review tenant and expendable codes.",
     "Visual baseline approval remains founder-owned; generated screenshots are evidence, not approval.",
-    "Timeline /app/plan demo workspace (create-workspace gate) renders because demo mode short-circuits auth; full authed states require Clerk + Timeline Turso in production."
+    "Timeline /app/timeline demo workspace (create-workspace gate) renders because demo mode short-circuits auth; full authed states require Clerk + Timeline Turso in production."
   ]
 }

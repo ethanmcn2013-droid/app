@@ -16,7 +16,7 @@ import {
  * `/templates` gallery. Each card carries the template name, a short
  * description, an icon, the task-count, and a single "Use this
  * template" CTA. Apply runs the server action and bounces to
- * `/app/board` with a `?templated=<id>` query so the consumer can
+ * `/app/tasks` with a `?templated=<id>` query so the consumer can
  * surface a confirmation toast on first paint.
  *
  * The action grants the entitlement-equivalent local-write path even
@@ -203,7 +203,7 @@ function TemplateCard({ template }: { template: Template }) {
     startTransition(async () => {
       try {
         await applyTemplateAction(template.id);
-        router.push(`/app/board?templated=${encodeURIComponent(template.id)}`);
+        router.push(`/app/tasks?templated=${encodeURIComponent(template.id)}`);
       } catch (e) {
         setError((e as Error).message);
       }

@@ -19,6 +19,7 @@ const publication: AudienceOwnerPublication = {
   items: [
     {
       publicId: "later",
+      sourceRelation: "tasks-milestone-later",
       title: "Wedding day",
       calendarDate: "2026-10-03",
       state: "later",
@@ -27,6 +28,7 @@ const publication: AudienceOwnerPublication = {
     },
     {
       publicId: "done",
+      sourceRelation: "tasks-milestone-done",
       title: "Venue chosen",
       calendarDate: "2026-05-12",
       state: "covered",

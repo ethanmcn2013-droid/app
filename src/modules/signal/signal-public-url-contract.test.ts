@@ -6,7 +6,7 @@ import path from "node:path";
 
 /**
  * S5 URL contract — asserts that no Signal module file contains:
- *   1. The hardcoded external URL "tasks.signalstudio.ie" (must use /app/board).
+ *   1. The hardcoded external URL "tasks.signalstudio.ie" (must use /app/tasks).
  *   2. A process.env.NEXT_PUBLIC_SITE_URL reference for in-module links.
  *
  * Excluded: this test file itself.
@@ -50,7 +50,7 @@ describe("S5 URL contract: no hardcoded external URLs in Signal module", () => {
     assert.deepEqual(
       hits,
       [],
-      `Found hardcoded tasks.signalstudio.ie in: ${hits.join(", ")} — use /app/board instead (S5)`,
+      `Found hardcoded tasks.signalstudio.ie in: ${hits.join(", ")} — use /app/tasks instead (S5)`,
     );
   });
 

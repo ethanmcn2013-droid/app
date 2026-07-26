@@ -58,7 +58,7 @@ export function ShareTargetQuickAdd({
     startTransition(async () => {
       try {
         await addTaskAction({ title: trimmed });
-        router.replace("/app/board?from=share");
+        router.replace("/app/tasks?from=share");
       } catch {
         setError("Couldn’t save that. Try again.");
       }
@@ -111,7 +111,7 @@ export function ShareTargetQuickAdd({
 
         <div className="mt-5 flex items-center justify-between">
           <Link
-            href="/app/board"
+            href="/app/tasks"
             className="text-[13px] text-ink-quiet underline-offset-4 hover:text-ink hover:underline"
           >
             Discard

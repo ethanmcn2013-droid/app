@@ -39,7 +39,7 @@ export function SiteNav({ isAuthed = false }: { isAuthed?: boolean }) {
       account={
         demoMode ? (
           <Link
-            href="/app/board"
+            href="/app/tasks"
             className="inline-flex min-h-8 items-center rounded-full bg-ink px-3.5 text-[12px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             Demo workspace

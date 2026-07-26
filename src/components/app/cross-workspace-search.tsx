@@ -21,7 +21,7 @@ import type { LaneId } from "@/lib/data";
 /**
  * Global ⌘⇧K (Cmd+Shift+K on macOS, Ctrl+Shift+K elsewhere) toggles a search
  * popover that hits every workspace the user belongs to. Clicking a
- * result sets that workspace as active, navigates to /app/board, and
+ * result sets that workspace as active, navigates to /app/tasks, and
  * opens the task in the detail panel via `?task=<id>`.
  *
  * Mounted once at the app layout level, alongside `<CrossWorkspaceOverdue />`,
@@ -157,7 +157,7 @@ export function CrossWorkspaceSearch() {
         } catch {
           // Best-effort, proceed with navigation regardless.
         }
-        router.push(`/app/board?task=${encodeURIComponent(item.taskId)}`);
+        router.push(`/app/tasks?task=${encodeURIComponent(item.taskId)}`);
         router.refresh();
       });
     },

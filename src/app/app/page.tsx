@@ -31,6 +31,6 @@ export default async function AppIndex({
   redirect(
     resolvePlanningFeatureFlags().planningPeriods
       ? "/app/your-work"
-      : "/app/board",
+      : "/app/tasks",
   );
 }

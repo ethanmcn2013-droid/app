@@ -284,7 +284,7 @@ async function auditTimelineContract(
   response: Response | null,
   evidence: TimelineRuntimeEvidence,
 ) {
-  if (experienceId === "tasks.page.app-plan-audience-by-publication-id") {
+  if (experienceId === "tasks.page.app-timeline-audience-by-publication-id") {
     await expect(page.locator("[data-timeline-phone-preview]")).toBeVisible();
     await expect(page.locator("[data-timeline-artifact]")).toHaveCount(2);
     await page.waitForTimeout(2_100);
@@ -389,7 +389,7 @@ for (const fixture of routeCases) {
     expect(response).not.toBeNull();
     expect(response?.status()).toBe(fixture.expectedStatus ?? 200);
     if (fixture.experienceId === "tasks.page.app") {
-      await page.waitForURL("**/app/board");
+      await page.waitForURL("**/app/tasks");
       await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
     }
     await enterDeterministicMotionMode(page);
@@ -419,7 +419,7 @@ test("tasks.surface.command-palette / keyboard search", async ({ page }, testInf
   );
   expect(fixture?.assertions).toBeDefined();
   await test.step("load the hydrated demo workspace", async () => {
-    await page.goto("/app/board", { waitUntil: "domcontentloaded" });
+    await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
     await expect(
       page.getByRole("heading", { name: "The Orchard, events" }),
     ).toBeVisible();
@@ -462,7 +462,7 @@ test("tasks.surface.quick-create / long natural-language task", async ({ page },
     (entry) => entry.id === "tasks.surface.quick-create",
   );
   expect(fixture?.assertions).toBeDefined();
-  await page.goto("/app/board", { waitUntil: "domcontentloaded" });
+  await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("c");
@@ -495,7 +495,7 @@ test("tasks.surface.task-detail-panel / populated task", async ({ page }, testIn
     (entry) => entry.id === "tasks.surface.task-detail-panel",
   );
   expect(fixture?.assertions).toBeDefined();
-  await page.goto("/app/board", { waitUntil: "domcontentloaded" });
+  await page.goto("/app/tasks", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
   await enterDeterministicMotionMode(page);
   await page.keyboard.press("Enter");

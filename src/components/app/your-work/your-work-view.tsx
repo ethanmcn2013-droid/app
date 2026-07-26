@@ -385,7 +385,7 @@ function WorkspaceRow({
           onClick={() =>
             mutate(async () => {
               await selectWorkspaceAction(workspace.id);
-              router.push("/app/board");
+              router.push("/app/tasks");
             }, `${contextLabel} selected.`)
           }
           className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:cursor-default"

@@ -240,11 +240,11 @@ test("D6 two-gate, syncRevalidationPaths contains only /app-prefixed paths", () 
     );
   }
   // Must include the dashboard and the curation view
-  // Unified-app: dashboard is /app/plan (not bare /app), curation is /app/plan/{slug}
-  assert.ok(paths.includes("/app/plan"), "sync must revalidate /app/plan (dashboard)");
+  // Unified app: dashboard is /app/timeline, curation is /app/timeline/{slug}.
+  assert.ok(paths.includes("/app/timeline"), "sync must revalidate /app/timeline (dashboard)");
   assert.ok(
-    paths.some((p) => p.startsWith("/app/plan/")),
-    "sync must revalidate /app/plan/... (curation view)",
+    paths.some((p) => p.startsWith("/app/timeline/")),
+    "sync must revalidate /app/timeline/... (curation view)",
   );
 });
 
@@ -255,11 +255,14 @@ test("D6 two-gate, publishRevalidationPaths unified-app ISR contract", () => {
   // public page picks up the change within its ISR window (~5 min).
   //
   // Therefore publishRevalidationPaths must NOT include the public /{workspaceSlug}
-  // path — only the authed /app/plan path is revalidated in this app.
+  // path — only the authenticated /app/timeline path is revalidated here.
   // This is intentional and documented in timeline-revalidation-contracts.ts.
   const paths = publishRevalidationPaths("glenmara-weddings");
   // Must revalidate the authed dashboard so the published state is reflected
-  assert.ok(paths.includes("/app/plan"), "publish must revalidate /app/plan (authed dashboard)");
+  assert.ok(
+    paths.includes("/app/timeline"),
+    "publish must revalidate /app/timeline (authenticated dashboard)",
+  );
   // Must NOT attempt to revalidate the public URL (different Next.js app, would be a no-op or error)
   assert.ok(
     !paths.includes("/glenmara-weddings"),

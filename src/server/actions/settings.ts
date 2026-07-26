@@ -431,7 +431,7 @@ function mintEventId(): string {
  *  - Records workspace_events {kind:'inviteAccepted', payload:{userId, role}}.
  *
  *  Returns the workspace slug so the page can redirect to
- *  `/app/board` with the right active context. */
+ *  `/app/tasks` with the right active context. */
 export async function acceptInviteAction(token: string): Promise<{
   ok: true;
   workspaceId: string;
@@ -532,7 +532,7 @@ export async function acceptInviteAction(token: string): Promise<{
     createdAt: Math.floor(Date.now() / 1000),
   });
 
-  // Flip the active-workspace cookie so /app/board lands the user
+  // Flip the active-workspace cookie so /app/tasks lands the user
   // in the freshly-joined workspace.
   const c = await cookies();
   c.set(ACTIVE_WORKSPACE_COOKIE_NAME, invite.workspaceId, {

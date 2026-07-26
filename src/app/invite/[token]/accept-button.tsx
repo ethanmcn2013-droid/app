@@ -23,7 +23,7 @@ export function AcceptInviteButton({ token }: { token: string }) {
           tone: "success",
           body: "Open the board, you're in.",
         });
-        router.push("/app/board?invite=accepted");
+        router.push("/app/tasks?invite=accepted");
       } catch (e) {
         setError((e as Error).message);
       }

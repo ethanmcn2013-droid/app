@@ -15,8 +15,8 @@
  *      its own route segment (src/app/app/<segment>/**) or by other files
  *      inside the same module. Concretely:
  *        - src/modules/notes   → only src/app/app/notes/** or src/modules/notes/**
- *        - src/modules/timeline → only src/app/app/plan/** or src/modules/timeline/**
- *        - src/modules/signal  → only src/app/app/brief/** or src/modules/signal/**
+ *        - src/modules/timeline → only src/app/app/timeline/** or src/modules/timeline/**
+ *        - src/modules/signal  → only src/app/app/signal/** or src/modules/signal/**
  *
  *   3. Route gate presence. Each of the three module pages must contain a
  *      literal call to requireAppAccess() for defence-in-depth (AD-005).
@@ -89,8 +89,8 @@ const MODULES = ["notes", "timeline", "signal"];
 // Map: module name → the app route segment that is allowed to import it.
 const MODULE_ROUTE_SEGMENT = {
   notes: "notes",
-  timeline: "plan",
-  signal: "brief",
+  timeline: "timeline",
+  signal: "signal",
 };
 
 const srcDir = path.join(root, "src");
@@ -241,8 +241,8 @@ for (const mod of MODULES) {
 
 // EVERY page.tsx under a module's route segment must gate access — not just
 // the top-level page (Phase 5 Opus review MINOR-1: sub-routes like
-// /app/plan/[projectSlug] and /app/plan/audience are module entries too).
-const MODULE_SEGMENTS = ["notes", "plan", "brief"];
+// /app/timeline/[projectSlug] and /app/timeline/audience are module entries too).
+const MODULE_SEGMENTS = ["notes", "timeline", "signal"];
 
 const modulePages = [];
 for (const segment of MODULE_SEGMENTS) {

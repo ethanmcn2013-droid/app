@@ -8,7 +8,7 @@ import { SYNCED_TEMPLATE_IDS } from "@/lib/templates.generated";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 /**
- * Reads `?templated={id}` or `?remixed={id}` from the URL on `/app/board`
+ * Reads `?templated={id}` or `?remixed={id}` from the URL on `/app/tasks`
  * and surfaces a single brand-toned toast. Strips the query so
  * refreshing doesn't refire.
  *

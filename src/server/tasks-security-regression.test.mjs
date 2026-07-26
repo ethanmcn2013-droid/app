@@ -32,7 +32,7 @@ const crossWorkspaceSearchActions = readFileSync(
   "utf8",
 );
 const boardPage = readFileSync(
-  join(serverDir, "..", "app", "app", "board", "page.tsx"),
+  join(serverDir, "..", "app", "app", "tasks", "page.tsx"),
   "utf8",
 );
 const inboxPage = readFileSync(

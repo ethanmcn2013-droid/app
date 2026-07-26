@@ -1,5 +1,5 @@
 /**
- * /app/brief loading boundary, Signal Briefing Assembly skeleton.
+ * /app/signal loading boundary, Signal Briefing Assembly skeleton.
  *
  * Loading canon (2026-07-01 review, pitch 10): once chrome exists,
  * loading stays inside the content region, no full-screen takeover

@@ -218,7 +218,7 @@ export function OnboardingFlow({
       } catch (e) {
         console.warn("onboarding: complete failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 
@@ -229,7 +229,7 @@ export function OnboardingFlow({
       } catch (e) {
         console.warn("onboarding: mark-first-run failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 
@@ -240,7 +240,7 @@ export function OnboardingFlow({
       } catch (e) {
         console.warn("onboarding: skip failed", e);
       }
-      router.push("/app/board");
+      router.push("/app/tasks");
     });
   };
 

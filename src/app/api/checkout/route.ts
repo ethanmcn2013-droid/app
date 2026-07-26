@@ -59,7 +59,7 @@ export async function GET(req: Request) {
 
   if (isDemoMode()) {
     return NextResponse.redirect(
-      new URL(`/app/board?checkout=review&tier=${tier}`, req.url),
+      new URL(`/app/tasks?checkout=review&tier=${tier}`, req.url),
     );
   }
 

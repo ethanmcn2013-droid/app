@@ -3,7 +3,7 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { DemoAuthCard } from "@/components/auth/demo-auth-card";
 import { isDemoMode } from "@/lib/access-mode";
 
-export const metadata = { title: "Sign in, Tasks" };
+export const metadata = { title: "Sign in · Signal Studio" };
 
 export default function SignInPage() {
   return (

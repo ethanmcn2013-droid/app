@@ -41,8 +41,11 @@ session and no Turso DB. To restore production auth, set both back to
 
 ## Review routes
 
-- `/app` → `/app/board` (seeded venue board)
-- `/app/list`, `/app/timeline`, `/app/calendar`, `/app/inbox` — same seed
+- `/app` → `/app/tasks` (seeded venue board)
+- `/app/tasks/list`, `/app/tasks/timeline`, `/app/tasks/calendar`, and
+  `/app/inbox` use the same seed
+- `/app/timeline` is the separate Timeline product owner workspace
+- `/app/signal` is the Signal briefing product
 - `/` marketing homepage; `/for/*` audience pages (already public)
 - `/sign-in` and `/sign-up`, inert auth review cards; no Clerk session
 - `/invite/review-valid`, `/invite/review-expired`, invite states

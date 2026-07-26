@@ -26,16 +26,16 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Tasks · execution clarity",
+  title: "Signal Studio",
   description:
-    "Execution clarity for live work: four views of the same list, plain-English dates, and enough motion to show what changed.",
+    "Notes, tasks, timelines, and the signal that matters in one calm workspace.",
   metadataBase: new URL(APP_ORIGIN),
   alternates: { canonical: "/" },
   manifest: "/manifest.webmanifest",
   openGraph: {
-    title: "Tasks · execution clarity",
+    title: "Signal Studio",
     description:
-      "Four views of the same list, real-time when it matters, plain-English dates - free to start.",
+      "Notes, tasks, timelines, and the signal that matters.",
     type: "website",
   },
 };

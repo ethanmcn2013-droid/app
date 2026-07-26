@@ -223,7 +223,7 @@ export function ImportApp({ workspaceName }: { workspaceName: string }) {
         toast(`Imported ${result.inserted} tasks. Go give one a kick.`, {
           tone: "success",
         });
-        router.push("/app/board");
+        router.push("/app/tasks");
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Import hit a snag.";

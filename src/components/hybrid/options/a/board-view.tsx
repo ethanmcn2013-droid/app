@@ -72,7 +72,7 @@ function buildTaskActions(
       label: "Copy link",
       group: "open",
       onSelect: () => {
-        const url = `${typeof window !== "undefined" ? window.location.origin : ""}/app/board?task=${task.id}`;
+        const url = `${typeof window !== "undefined" ? window.location.origin : ""}/app/tasks?task=${task.id}`;
         navigator.clipboard?.writeText(url).catch(() => undefined);
       },
     },

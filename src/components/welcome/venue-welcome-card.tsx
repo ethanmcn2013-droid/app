@@ -13,7 +13,7 @@ const DISMISS_PREFIX_OLD = "venue-welcome-dismissed:";
 
 /**
  * One-time dismissible card shown after a venue-edition redemption
- * lands the user on /app/board. Persists dismissal in localStorage,
+ * lands the user on /app/tasks. Persists dismissal in localStorage,
  * keyed by sponsor slug so a future venue (Lamb's Hill → Glin Castle)
  * gets its own card. Copy locked in BRAND.md voice; do not edit at
  * venue boundary.

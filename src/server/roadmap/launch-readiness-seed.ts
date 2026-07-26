@@ -156,7 +156,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
   { id: "AI-test-sso-friend", category: "Auth", title: "Have a friend test sign-up via Google SSO end-to-end", description: "Independent device, independent Google account. Confirm full flow + workspace creation works without your shoulder over them.", blockerId: "B-domain", priority: "P0" },
   { id: "AI-test-signin", category: "Auth", title: "Test sign-in flow (existing user)", description: "Sign out, sign back in; confirm session restored, last workspace selected.", blockerId: null, priority: "P0" },
   { id: "AI-test-password-reset", category: "Auth", title: "Test password reset flow", description: "Trigger Clerk's reset email; click link; set new password; sign in.", blockerId: null, priority: "P1" },
-  { id: "AI-test-app-redirect", category: "Auth", title: "Test /app/* → /sign-in redirect (signed-out)", description: "Incognito window, hit /app/board; expect 302 → /sign-in. The proxy.ts fix should do this in prod when Clerk env is set.", blockerId: null, priority: "P0" },
+  { id: "AI-test-app-redirect", category: "Auth", title: "Test /app/* → /sign-in redirect (signed-out)", description: "Incognito window, hit /app/tasks; expect 302 → /sign-in. The proxy.ts fix should do this in prod when Clerk env is set.", blockerId: null, priority: "P0" },
   { id: "AI-test-signout", category: "Auth", title: "Test sign-out behavior", description: "Click sign out; verify session destroyed; verify /app/* redirect kicks in immediately.", blockerId: null, priority: "P1" },
   { id: "AI-clerk-tier-check", category: "Auth", title: "Confirm Clerk pricing tier supports launch traffic", description: "Free tier caps at 10k MAU. Show HN + PH may push past on launch week. Watch the dashboard MAU counter daily.", blockerId: null, priority: "P1" },
 
@@ -202,15 +202,15 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Mobile UX ────────────────────────────────────────────────────
   { id: "AI-mobile-overlap-audit", category: "Mobile", title: "Audit mobile breakpoints across all marketing pages", description: "/, /pricing, /principles, /about, /changelog, /templates, /for/*. Look for clipped headlines, overlapping CTAs, broken grids.", blockerId: null, priority: "P0" },
-  { id: "AI-mobile-app-board", category: "Mobile", title: "Audit /app/board on mobile (≤768px)", description: "Mobile tabbar visible; drag-drop disabled; 'Move to' popover replaces it; cards readable.", blockerId: null, priority: "P0" },
-  { id: "AI-mobile-app-list", category: "Mobile", title: "Audit /app/list on mobile", description: "Bulk-select shift-click works on touch (long-press alt?); rows tappable; sticky bottom action bar respects safe-area.", blockerId: null, priority: "P0" },
-  { id: "AI-mobile-app-timeline", category: "Mobile", title: "Audit /app/timeline on mobile", description: "Horizontal scroll feels right; bars readable; pinch-zoom works.", blockerId: null, priority: "P1" },
-  { id: "AI-mobile-app-calendar", category: "Mobile", title: "Audit /app/calendar on mobile", description: "Month view fits viewport; tap-day opens detail.", blockerId: null, priority: "P1" },
+  { id: "AI-mobile-app-board", category: "Mobile", title: "Audit /app/tasks on mobile (≤768px)", description: "Mobile tabbar visible; drag-drop disabled; 'Move to' popover replaces it; cards readable.", blockerId: null, priority: "P0" },
+  { id: "AI-mobile-app-list", category: "Mobile", title: "Audit /app/tasks/list on mobile", description: "Bulk-select shift-click works on touch (long-press alt?); rows tappable; sticky bottom action bar respects safe-area.", blockerId: null, priority: "P0" },
+  { id: "AI-mobile-app-timeline", category: "Mobile", title: "Audit /app/tasks/timeline on mobile", description: "Horizontal scroll feels right; bars readable; pinch-zoom works.", blockerId: null, priority: "P1" },
+  { id: "AI-mobile-app-calendar", category: "Mobile", title: "Audit /app/tasks/calendar on mobile", description: "Month view fits viewport; tap-day opens detail.", blockerId: null, priority: "P1" },
   { id: "AI-mobile-detail-panel", category: "Mobile", title: "Audit detail panel on mobile (slide-up sheet)", description: "Verify it doesn't overlay the tabbar; close gesture works; content scrolls inside the sheet.", blockerId: null, priority: "P0" },
   { id: "AI-mobile-settings", category: "Mobile", title: "Audit /app/settings on mobile", description: "All 5 tabs (workspace/members/billing/notifications/danger) usable on a 390px width.", blockerId: null, priority: "P1" },
   { id: "AI-mobile-forms", category: "Mobile", title: "Audit forms on mobile (sign-in, comment, settings)", description: "Inputs zoom-trigger correctly; keyboard doesn't overlap submit button; autocomplete attributes set.", blockerId: null, priority: "P1" },
   { id: "AI-mobile-safe-area", category: "Mobile", title: "Test safe-area insets on iPhone notch", description: "iPhone 14+ Safari; verify bottom tabbar sits above home indicator; top nav clears notch.", blockerId: null, priority: "P1" },
-  { id: "AI-mobile-orientation", category: "Mobile", title: "Test orientation change on mobile", description: "Rotate device while on /app/board; verify layout reflows; verify no scroll position lost.", blockerId: null, priority: "P2" },
+  { id: "AI-mobile-orientation", category: "Mobile", title: "Test orientation change on mobile", description: "Rotate device while on /app/tasks; verify layout reflows; verify no scroll position lost.", blockerId: null, priority: "P2" },
 
   // ─── Demo polish ──────────────────────────────────────────────────
   { id: "AI-demo-first-paint", category: "Demo polish", title: "Cinematic demo paints cleanly on first load", description: "No CLS jank; no flash of unstyled content; cursors render before the loop starts.", blockerId: null, priority: "P0" },
@@ -222,7 +222,7 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Performance ──────────────────────────────────────────────────
   { id: "AI-perf-lh-mobile-home", category: "Performance", title: "Lighthouse mobile ≥90 on /", description: "Run twice; record LCP, INP, CLS; flag any below 90 with the offending audit.", blockerId: null, priority: "P0" },
-  { id: "AI-perf-lh-mobile-app", category: "Performance", title: "Lighthouse mobile ≥85 on /app/board (signed-in)", description: "Authenticated audits are flakier; aim 85 not 90.", blockerId: null, priority: "P1" },
+  { id: "AI-perf-lh-mobile-app", category: "Performance", title: "Lighthouse mobile ≥85 on /app/tasks (signed-in)", description: "Authenticated audits are flakier; aim 85 not 90.", blockerId: null, priority: "P1" },
   { id: "AI-perf-bundle-budget", category: "Performance", title: "Marketing bundle <300KB JS", description: "Use `next-bundle-analyzer` or Vercel's bundle inspection. Cap is generous; if breached, hunt the dep.", blockerId: null, priority: "P1" },
   { id: "AI-perf-image-opt", category: "Performance", title: "All marketing images use next/image", description: "Audit /, /pricing, /templates, /for/*. No raw <img> tags except OG card-emitted ones.", blockerId: null, priority: "P1" },
   { id: "AI-perf-fonts", category: "Performance", title: "Geist fonts load with display:swap", description: "next/font does this by default; verify no FOIT in real-device profiling.", blockerId: null, priority: "P1" },
@@ -285,13 +285,13 @@ const SEED_ACTION_ITEMS: SeedActionItem[] = [
 
   // ─── Accessibility ────────────────────────────────────────────────
   { id: "AI-a11y-contrast", category: "A11y", title: "WCAG AA color contrast audit", description: "Use Lighthouse + axe DevTools. Fix anything below 4.5:1 on body text.", blockerId: null, priority: "P0" },
-  { id: "AI-a11y-keyboard-nav", category: "A11y", title: "Keyboard nav across the app", description: "Tab through /, /pricing, /app/board. Verify focus rings; verify all interactive elements reachable.", blockerId: null, priority: "P1" },
+  { id: "AI-a11y-keyboard-nav", category: "A11y", title: "Keyboard nav across the app", description: "Tab through /, /pricing, /app/tasks. Verify focus rings; verify all interactive elements reachable.", blockerId: null, priority: "P1" },
   { id: "AI-a11y-screen-reader", category: "A11y", title: "Screen reader test on board / list / timeline", description: "VoiceOver on macOS. Aria labels on all icon-only buttons; table semantics on list view.", blockerId: null, priority: "P1" },
   { id: "AI-a11y-skip-link", category: "A11y", title: "Skip-to-content link on every page", description: "Hidden until focused; jumps over the nav.", blockerId: null, priority: "P2" },
 
   // ─── Pre-launch QA (D-1) ──────────────────────────────────────────
   { id: "AI-qa-marketing-200", category: "Pre-launch QA", title: "All marketing routes return 200", description: "Curl /, /about, /principles, /pricing, /changelog, /templates, /templates/*, /for/*. Run on prod, the morning of 06-15.", blockerId: null, priority: "P0" },
-  { id: "AI-qa-app-routes", category: "Pre-launch QA", title: "All /app/* routes work signed-in", description: "Manual walk-through, signed in. /app/board, /list, /timeline, /calendar, /inbox, /settings. Look for broken state, console errors.", blockerId: null, priority: "P0" },
+  { id: "AI-qa-app-routes", category: "Pre-launch QA", title: "All /app/* routes work signed-in", description: "Manual walk-through, signed in. /app/tasks, /list, /timeline, /calendar, /inbox, /settings. Look for broken state, console errors.", blockerId: null, priority: "P0" },
   { id: "AI-qa-real-purchase-79", category: "Pre-launch QA", title: "One real €89 Event purchase tested in prod", description: "Use a real card; refund yourself after. Want to feel the actual flow, not the test-mode flow.", blockerId: null, priority: "P0" },
   { id: "AI-qa-real-purchase-995", category: "Pre-launch QA", title: "One real €12 Workspace purchase tested in prod", description: "Same drill. Refund after.", blockerId: null, priority: "P0" },
   { id: "AI-qa-status-page", category: "Pre-launch QA", title: "/status page shows green", description: "Verify it actually checks the right downstreams (DB, Clerk, Stripe webhook receipt).", blockerId: null, priority: "P1" },

@@ -69,7 +69,7 @@ export async function requireUser(): Promise<string> {
 /**
  * Hard guard: redirects to /sign-in if there is no authenticated user.
  * Returns the userId so callers don't need to re-check.
- * Use at the top of any /app/plan/* server component loader.
+ * Use at the top of any /app/timeline/* server component loader.
  */
 export async function requireUserOrRedirect(): Promise<string> {
   try {

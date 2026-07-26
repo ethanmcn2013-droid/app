@@ -5,9 +5,9 @@
  * Do not import from internal module paths; use this barrel only.
  *
  * Routes:
- *   /app/brief                      → SignalBriefPage
- *   /app/brief/onboarding           → SignalOnboardingPage
- *   /app/brief/settings/notifications → SignalNotificationsPage
+ *   /app/signal                         → SignalBriefPage
+ *   /app/signal/onboarding              → SignalOnboardingPage
+ *   /app/signal/settings/notifications  → SignalNotificationsPage
  */
 export { SignalBriefPage } from "./app/signal-brief-page";
 export { SignalOnboardingPage } from "./app/onboarding/signal-onboarding-page";

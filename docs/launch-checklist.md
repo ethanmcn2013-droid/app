@@ -45,7 +45,7 @@ Last revised: 2026-05-07.
 ### Mobile (P0)
 
 - [ ] All marketing pages audited at 390px width.
-- [ ] `/app/board` mobile drag-drop disabled, "Move to" popover works.
+- [ ] `/app/tasks` mobile drag-drop disabled, "Move to" popover works.
 - [ ] Detail panel slide-up doesn't overlay tabbar.
 - [ ] iPhone notch safe-area respected.
 

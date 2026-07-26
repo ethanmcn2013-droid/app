@@ -94,7 +94,7 @@ export type RedeemResult =
       notes: string | null;
       /** Set when the redeemed code is a venue-edition wedding comp.
        *  Result card uses it to deep-link straight to
-       *  /app/board?welcome=venue&v=<slug>, skipping /welcome. */
+       *  /app/tasks?welcome=venue&v=<slug>, skipping /welcome. */
       sponsorSlug?: string;
     }
   | {

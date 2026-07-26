@@ -3,7 +3,7 @@
  *
  * Ported from src/server/actions/revalidation-contracts.ts on the timeline
  * source (origin/main @ e9f7a9a). The module version rewrites all
- * revalidated paths to the unified-app route prefix /app/plan (T1, T7).
+ * revalidated paths to the unified-app route prefix /app/timeline (T1, T7).
  *
  * Kept in a separate module (no "use server", no Next.js imports) so they
  * can be imported directly in the Node.js test runner without pulling in
@@ -20,13 +20,14 @@
 
 /**
  * The exact set of paths syncMilestonesAction revalidates.
- * All paths begin with /app/plan, none are public /{workspaceSlug} paths.
+ * All paths begin with /app/timeline, none are public /{workspaceSlug} paths.
  * Invariant: sync NEVER touches the public ISR cache (D6 two-gate).
  *
- * Unified-app rewrite: /app → /app/plan, /app/plan/{slug} → /app/plan/{slug}.
+ * Unified-app rewrite: owner dashboard → /app/timeline and project curation
+ * → /app/timeline/{slug}.
  */
 export function syncRevalidationPaths(projectSlug: string): string[] {
-  return ["/app/plan", `/app/plan/${projectSlug}`];
+  return ["/app/timeline", `/app/timeline/${projectSlug}`];
 }
 
 /**
@@ -34,11 +35,12 @@ export function syncRevalidationPaths(projectSlug: string): string[] {
  *
  * Unified-app rewrite: the public /{workspaceSlug} path is intentionally
  * EXCLUDED here because the unified app cannot revalidate the public Timeline
- * deployment (different app). Only the authed /app/plan path is revalidated.
+ * deployment (different app). Only the authenticated /app/timeline path is
+ * revalidated.
  * The public page picks up the publishedAt DB write within its ISR window.
  *
  * See PARITY NOTE above.
  */
 export function publishRevalidationPaths(_workspaceSlug: string): string[] {
-  return ["/app/plan"];
+  return ["/app/timeline"];
 }

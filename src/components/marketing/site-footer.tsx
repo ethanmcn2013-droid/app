@@ -55,7 +55,7 @@ export function SiteFooter() {
           links={[
             { href: "/#demo", label: "Demo" },
             { href: "/#anatomy", label: "Anatomy" },
-            { href: "/app/board", label: "Workspace" },
+            { href: "/app/tasks", label: "Workspace" },
             { href: "/templates", label: "Templates" },
             { href: "/status", label: "Status" },
           ]}

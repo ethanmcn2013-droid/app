@@ -1,5 +1,5 @@
 /**
- * In-app loading boundary for the Timeline dashboard (/app/plan).
+ * In-app loading boundary for the Timeline owner dashboard (/app/timeline).
  *
  * Renders in normal document flow, no fixed positioning, no z-index override.
  * The StudioBar shell (host) remains visible above this content well.

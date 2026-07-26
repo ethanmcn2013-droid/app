@@ -30,7 +30,7 @@ export async function SignalLegacyBriefing({
   if (!demo) {
     if (!userId) redirect("/sign-in");
     const onboarded = await isOnboarded(userId);
-    if (!onboarded) redirect("/app/brief/onboarding");
+    if (!onboarded) redirect("/app/signal/onboarding");
   }
 
   const hintedScope: SignalScope | undefined =
@@ -49,7 +49,7 @@ export async function SignalLegacyBriefing({
     cadence: "daily",
     scope: hintedScope,
   });
-  if (result.kind === "no-workspace") redirect("/app/brief/onboarding");
+  if (result.kind === "no-workspace") redirect("/app/signal/onboarding");
 
   if (result.authorizedScope.scope.kind === "planningPeriod") {
     await recordPlanningEvent({

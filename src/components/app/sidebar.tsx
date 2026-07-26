@@ -11,10 +11,10 @@ import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
 import type { ProjectsTreeData } from "@/server/actions/projects-tree";
 
 const VIEWS = [
-  { href: "/app/board", label: "Board", icon: "board" },
-  { href: "/app/list", label: "List", icon: "list" },
-  { href: "/app/timeline", label: "Timeline", icon: "timeline" },
-  { href: "/app/calendar", label: "Calendar", icon: "calendar" },
+  { href: "/app/tasks", label: "Board", icon: "board" },
+  { href: "/app/tasks/list", label: "List", icon: "list" },
+  { href: "/app/tasks/timeline", label: "Timeline", icon: "timeline" },
+  { href: "/app/tasks/calendar", label: "Calendar", icon: "calendar" },
 ];
 
 // TEAMS removed 2026-05-19: Teams was never built, the const was a

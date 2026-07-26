@@ -53,7 +53,7 @@ export default async function SharePage({
             </span>
             <div className="flex flex-col items-end gap-0.5">
               <a
-                href="/app/board"
+                href="/app/tasks"
                 className="inline-flex items-center gap-1.5 rounded-full bg-ink px-3 py-1 text-[12px] font-medium text-white transition-transform hover:-translate-y-px"
               >
                 Make this yours

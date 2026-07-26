@@ -7,7 +7,7 @@ import { completeOnboarding } from "./signal-onboarding-actions";
 /**
  * Workspace picker — ported from signal/src/app/app/onboarding/picker.tsx.
  *
- * S5 link rewrite: TASKS_URL external link → /app/board (in-app board).
+ * S5 link rewrite: TASKS_URL external link → /app/tasks (in-app board).
  */
 export function SignalOnboardingPicker({
   candidates,

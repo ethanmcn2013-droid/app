@@ -82,7 +82,7 @@ export async function GET(
         summary: t.title,
         description: descParts.join(" · "),
         start: t.dueAt,
-        url: `/app/board?task=${encodeURIComponent(t.id)}`,
+        url: `/app/tasks?task=${encodeURIComponent(t.id)}`,
       };
     });
 
