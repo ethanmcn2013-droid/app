@@ -284,6 +284,11 @@ async function auditTimelineContract(
   response: Response | null,
   evidence: TimelineRuntimeEvidence,
 ) {
+  if (experienceId === "tasks.page.app-timeline") {
+    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(1);
+    expect(evidence.viewRequests).toEqual([]);
+    return;
+  }
   if (experienceId === "tasks.page.app-timeline-audience-by-publication-id") {
     await expect(page.locator("[data-timeline-phone-preview]")).toBeVisible();
     await expect(page.locator("[data-timeline-artifact]")).toHaveCount(2);

@@ -429,12 +429,14 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "demo workspace dashboard",
+          "name": "project-first owner artifact",
           "path": "/app/timeline",
           "states": ["populated", "reduced-motion", "keyboard-only"],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Shape the story before you share it.", "proves": ["populated"] },
-            { "kind": "text", "text": "Workspace", "proves": ["populated"] }
+            { "kind": "role", "role": "heading", "name": "Mara & Finn", "proves": ["populated"] },
+            { "kind": "role", "role": "button", "name": "Current project: Product Roadmap. Switch project.", "proves": ["populated"] },
+            { "kind": "role", "role": "link", "name": "Edit milestones", "proves": ["populated"] },
+            { "kind": "role", "role": "link", "name": "Preview and share", "proves": ["populated"] }
           ]
         }
       ],

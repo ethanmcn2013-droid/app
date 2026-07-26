@@ -4,6 +4,23 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-26 · T·104 · corrects · Timeline opens on the timeline
+
+**Opening Timeline now opens the current project artifact, not a dashboard of
+cards that asks the owner to choose the work twice.** The signed Mara and Finn
+artifact remains the visual source of truth inside the consolidated app. A
+project switcher moves directly among every authorised project; View shows the
+real responsive and interactive timeline, Edit exposes the existing milestone
+curation controls, and Preview and share opens the frozen publication flow.
+
+The owner preview is built through the same strict public DTO boundary as the
+bearer link. Hidden milestones, source ids, workspace ids, descriptions,
+comments, and private task metadata cannot cross into the artifact. Wedding
+workspaces retain couple framing and existing publication settings; other
+projects receive neutral module framing until the owner configures a share.
+The empty state sends the owner straight to milestone creation rather than
+inventing a second project-management surface.
+
 ## 2026-07-26 · T·103 · ships · the owner room and the briefing use the front door
 
 **Timeline now opens as a real owner workspace, and Signal opens as a briefing

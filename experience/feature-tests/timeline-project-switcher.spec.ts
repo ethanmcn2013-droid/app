@@ -5,7 +5,14 @@ test.describe("Timeline project switcher", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/app/timeline/product?workspaceId=tasks");
     await expect(
-      page.getByRole("heading", { name: "Product Roadmap", exact: true }),
+      page.getByRole("button", {
+        name: "Current project: Product Roadmap. Switch project.",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.locator("[data-timeline-artifact]")).toHaveCount(1);
+    await expect(
+      page.getByRole("heading", { name: "Mara & Finn", exact: true }),
     ).toBeVisible();
   });
 
@@ -17,7 +24,11 @@ test.describe("Timeline project switcher", () => {
 
     await switcher().click();
     const options = page.getByRole("menuitem");
-    await expect(options.first()).toHaveText("All projects");
+    await expect(options).toHaveCount(3);
+    await expect(options.first()).toContainText("Product Roadmap");
+    await expect(
+      page.getByRole("menuitem", { name: "All projects", exact: true }),
+    ).toHaveCount(0);
     const currentOption = page.getByRole("menuitem", {
       name: /Product Roadmap/,
     });
@@ -30,7 +41,16 @@ test.describe("Timeline project switcher", () => {
     await page.getByRole("menuitem", { name: "Launch", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
     await expect(
-      page.getByRole("heading", { name: "Launch", exact: true }),
+      page.getByRole("button", {
+        name: "Current project: Launch. Switch project.",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "No visible milestones yet.",
+        exact: true,
+      }),
     ).toBeVisible();
 
     await switcher().click();
@@ -41,7 +61,10 @@ test.describe("Timeline project switcher", () => {
       /\/app\/timeline\/venue-pilot\?workspaceId=tasks$/,
     );
     await expect(
-      page.getByRole("heading", { name: "Venue pilot", exact: true }),
+      page.getByRole("button", {
+        name: "Current project: Venue pilot. Switch project.",
+        exact: true,
+      }),
     ).toBeVisible();
 
     await page.goBack();
@@ -53,7 +76,10 @@ test.describe("Timeline project switcher", () => {
 
     await page.reload();
     await expect(
-      page.getByRole("heading", { name: "Launch", exact: true }),
+      page.getByRole("button", {
+        name: "Current project: Launch. Switch project.",
+        exact: true,
+      }),
     ).toBeVisible();
 
     const box = await switcher().boundingBox();
@@ -84,7 +110,10 @@ test.describe("Timeline project switcher", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/app\/timeline\/launch\?workspaceId=tasks$/);
     await expect(
-      page.getByRole("heading", { name: "Launch", exact: true }),
+      page.getByRole("button", {
+        name: "Current project: Launch. Switch project.",
+        exact: true,
+      }),
     ).toBeVisible();
   });
 });
