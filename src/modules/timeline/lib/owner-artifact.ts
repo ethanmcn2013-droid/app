@@ -3,7 +3,6 @@ import {
   AUDIENCE_TIMELINE_DTO_VERSION,
   SECTION_LABELS,
   calendarDateInTimeZone,
-  safeAudienceItemState,
   validateAudienceTimelineDto,
   type AudienceKind,
   type AudienceTimelineDto,
@@ -152,7 +151,7 @@ export function ownerProjectToTimelineDto(input: {
           publicId: `owner-preview-${index + 1}`,
           title: node.title,
           ...(node.targetDate ? { date: node.targetDate } : {}),
-          state: safeAudienceItemState(node.status, node.targetDate),
+          state: node.audienceState,
         }))
         .filter((item) => item.state === state),
     })).filter((section) => section.items.length > 0),

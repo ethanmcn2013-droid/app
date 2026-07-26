@@ -1,6 +1,6 @@
 {
   "schemaVersion": "signal-experience-fixtures/1",
-  "generatedAt": "2026-07-22",
+  "generatedAt": "2026-07-26",
   "product": "tasks",
   "determinism": {
     "accessMode": "demo",
@@ -11,7 +11,7 @@
     "reducedMotion": "reduce",
     "animationPolicy": "disabled"
   },
-  "breakpoints": ["mobile", "desktop"],
+  "breakpoints": ["mobile", "tablet", "desktop", "wide"],
   "experiences": [
     {
       "id": "tasks.page.app",
@@ -28,6 +28,22 @@
         }
       ],
       "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted", "dense", "long-content"]
+    },
+    {
+      "id": "tasks.page.app-tasks",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "canonical populated Tasks workspace",
+          "path": "/app/tasks",
+          "states": ["default", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "url", "pathname": "/app/tasks", "proves": ["default"] },
+            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["default"] }
+          ]
+        }
+      ],
+      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved", "long-content"]
     },
     {
       "id": "tasks.page.app-inbox",
@@ -425,6 +441,22 @@
       "remainingStates": ["loading"]
     },
     {
+      "id": "tasks.page.app-notes",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "canonical populated private notebook",
+          "path": "/app/notes",
+          "states": ["default", "populated", "reduced-motion", "keyboard-only"],
+          "assertions": [
+            { "kind": "url", "pathname": "/app/notes", "proves": ["default"] },
+            { "kind": "role", "role": "heading", "name": "Notebook", "proves": ["populated"] }
+          ]
+        }
+      ],
+      "remainingStates": ["empty", "loading", "error"]
+    },
+    {
       "id": "tasks.page.app-timeline",
       "evidence": "rendered",
       "cases": [
@@ -433,8 +465,8 @@
           "path": "/app/timeline",
           "states": ["populated", "reduced-motion", "keyboard-only"],
           "assertions": [
+            { "kind": "url", "pathname": "/app/timeline", "proves": ["populated"] },
             { "kind": "role", "role": "heading", "name": "Mara & Finn", "proves": ["populated"] },
-            { "kind": "role", "role": "button", "name": "Current project: Product Roadmap. Switch project.", "proves": ["populated"] },
             { "kind": "role", "role": "link", "name": "Edit milestones", "proves": ["populated"] },
             { "kind": "role", "role": "link", "name": "Preview and share", "proves": ["populated"] }
           ]

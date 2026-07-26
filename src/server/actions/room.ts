@@ -16,7 +16,21 @@ import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { meta, planningPeriods, users, workspaces } from "@/server/db/schema";
 import { getActiveWorkspace } from "@/server/auth";
-import { isDemoMode } from "@/lib/access-mode";
+import { getAccessMode, isDemoMode } from "@/lib/access-mode";
+import {
+  createCalendarFrame,
+  PINNED_REVIEW_CALENDAR_FRAME,
+  type CalendarFrame,
+  type CalendarPlanningPeriod,
+} from "@/lib/calendar-frame";
+import {
+  assertIanaTimeZone,
+  isCalendarDate,
+} from "@/lib/planning/dates";
+import {
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 
 const MAX_PURPOSE_LEN = 280;
 
@@ -32,6 +46,8 @@ export type RoomBriefData = {
   ownerName: string | null;
   /** Operator-authored purpose line; null until one is saved. */
   purpose: string | null;
+  /** Request-derived, serializable calendar truth for all Tasks views. */
+  calendarFrame: CalendarFrame;
 };
 
 function formatCalendarDate(value: string): string {
@@ -51,12 +67,17 @@ function formatCalendarDate(value: string): string {
  */
 export async function getRoomBriefData(): Promise<RoomBriefData> {
   if (isDemoMode()) {
+    const accessMode = getAccessMode();
     return {
       periodName: "Wedding season",
-      dateWindow: "The big day · 12 Sep 2026",
-      ownerName: "Hartwell & Co.",
+      dateWindow: "Wedding day · 3 Oct 2026",
+      ownerName: REVIEW_SUITE_FIXTURE.workspace.ownerName,
+      calendarFrame: {
+        ...PINNED_REVIEW_CALENDAR_FRAME,
+        source: accessMode === "demo" ? "demo" : "review",
+      },
       purpose:
-        "Every vendor, payment, and family task for the Hartwell wedding in one calm place — nothing lives in a group chat.",
+        `Run ${REVIEW_PRIMARY_PROJECT.name}'s wedding from one clear venue workspace, with every supplier, date, and decision accounted for.`,
     };
   }
 
@@ -75,18 +96,35 @@ export async function getRoomBriefData(): Promise<RoomBriefData> {
   let periodName: string | null = null;
   let dateWindow: string | null = null;
   let ownerName: string | null = null;
+  let periodTimeZone = "UTC";
+  let calendarPeriod: CalendarPlanningPeriod | null = null;
 
   if (ws?.planningPeriodId) {
     const [period] = await db
       .select({
+        id: planningPeriods.id,
         name: planningPeriods.name,
         startDate: planningPeriods.startDate,
         endDate: planningPeriods.endDate,
+        timezone: planningPeriods.timezone,
       })
       .from(planningPeriods)
       .where(eq(planningPeriods.id, ws.planningPeriodId));
     if (period) {
       periodName = period.name;
+      try {
+        assertIanaTimeZone(period.timezone);
+        periodTimeZone = period.timezone;
+      } catch {
+        // A corrupt legacy timezone must not make the workspace unusable.
+        periodTimeZone = "UTC";
+      }
+      calendarPeriod = {
+        id: period.id,
+        name: period.name,
+        startDate: isCalendarDate(period.startDate) ? period.startDate : null,
+        endDate: isCalendarDate(period.endDate) ? period.endDate : null,
+      };
       if (period.startDate && period.endDate) {
         dateWindow = `${formatCalendarDate(period.startDate)} to ${formatCalendarDate(period.endDate)}`;
       }
@@ -118,6 +156,12 @@ export async function getRoomBriefData(): Promise<RoomBriefData> {
     dateWindow,
     ownerName,
     purpose: purposeRow?.value?.trim() ? purposeRow.value : null,
+    calendarFrame: createCalendarFrame({
+      now: new Date(),
+      locale: "en-GB",
+      timeZone: periodTimeZone,
+      planningPeriod: calendarPeriod,
+    }),
   };
 }
 

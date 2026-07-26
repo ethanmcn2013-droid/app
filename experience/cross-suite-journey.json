@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "signal-cross-suite-journey/1",
+  "generatedAt": "2026-07-26",
+  "id": "signal-studio.note-to-signal",
+  "status": "required-not-yet-evidenced",
+  "proofMode": {
+    "browser": "continuous-read-only-preseeded-traversal",
+    "mutation": "separate-real-server-action-temp-db-reports",
+    "browserPersistenceClaim": "none"
+  },
+  "claimBoundary": [
+    "The browser traversal proves visible identity and context continuity across pre-seeded review surfaces only.",
+    "The review browser fixture is read-only and must not be cited as evidence that a mutation persisted between products.",
+    "Mutation, idempotency, replay, and provenance claims require separately hashed reports from real server actions executed against isolated temporary databases."
+  ],
+  "fixtureContext": {
+    "workspace": {
+      "id": "demo-ws",
+      "slug": "the-orchard",
+      "name": "The Orchard, events",
+      "ownerName": "Orla"
+    },
+    "project": {
+      "id": "demo-project-mara-finn",
+      "slug": "mara-finn",
+      "name": "Mara & Finn"
+    },
+    "sourceNote": {
+      "id": "demo-note-menu-tasting",
+      "body": "Mara & Finn's menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes."
+    },
+    "task": {
+      "id": "demo-task-menu-tasting",
+      "title": "Menu tasting at The Orchard",
+      "dueDate": "2026-08-01",
+      "sourceNoteId": "demo-note-menu-tasting"
+    },
+    "milestone": {
+      "id": "demo-audience-item-menu",
+      "title": "Menu tasting at The Orchard",
+      "date": "2026-08-01",
+      "sourceTaskId": "demo-task-menu-tasting"
+    }
+  },
+  "reviewEvidenceAssociations": {
+    "schemaVersion": "signal-review-evidence-associations/1",
+    "scope": "review-only",
+    "taskToPublicTimelineMilestone": [
+      {
+        "associationId": "demo-task-to-timeline-menu-tasting",
+        "sourceTaskId": "demo-task-menu-tasting",
+        "publicationId": "demo-audience-publication",
+        "publicMilestoneId": "demo-audience-item-menu"
+      }
+    ]
+  },
+  "contextInvariants": [
+    "The same workspace and project identities are used in every product.",
+    "Product switching uses only /app/notes, /app/tasks, /app/timeline, and /app/signal.",
+    "Switching products preserves the active workspace and project context.",
+    "Every derived object retains a durable reference to its immediate source.",
+    "Signal evidence resolves back to the exact task and milestone; it is not synthetic summary copy."
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "product": "notes",
+      "path": "/app/notes",
+      "action": "inspect-preseeded-source-note",
+      "expected": [
+        "The exact private source note is visible and selected.",
+        "Its existing Tasks receipt names demo-task-menu-tasting.",
+        "No browser mutation or cross-product persistence is claimed."
+      ]
+    },
+    {
+      "order": 2,
+      "product": "notes",
+      "path": "/app/notes",
+      "action": "follow-preseeded-task-receipt",
+      "expected": [
+        "The receipt opens the canonical Tasks route in the same app.",
+        "The task query resolves demo-task-menu-tasting exactly.",
+        "Workspace and project context remain The Orchard, events and Mara & Finn."
+      ]
+    },
+    {
+      "order": 3,
+      "product": "tasks",
+      "path": "/app/tasks",
+      "action": "inspect-preseeded-task-and-milestone-provenance",
+      "expected": [
+        "The exact pre-seeded task appears once in the active project.",
+        "Its title, date, source-note receipt, and existing milestone state match the fixture contract.",
+        "The browser does not claim to create or promote this task."
+      ]
+    },
+    {
+      "order": 4,
+      "product": "timeline",
+      "path": "/app/timeline",
+      "action": "inspect-owner-timeline",
+      "expected": [
+        "The active project opens directly in its owner artifact.",
+        "The public milestone associated in the review evidence report appears once at the correct date.",
+        "Preview and share do not mutate the owner timeline."
+      ]
+    },
+    {
+      "order": 5,
+      "product": "signal",
+      "path": "/app/signal",
+      "action": "inspect-briefing-evidence",
+      "expected": [
+        "The briefing describes only evidence available from the active project.",
+        "The observation links back to the exact task and milestone.",
+        "Partial provider failure is disclosed rather than silently replaced."
+      ]
+    }
+  ],
+  "requiredViewports": [
+    "mobile",
+    "tablet",
+    "desktop",
+    "wide"
+  ],
+  "requiredEvidence": [
+    "one continuous deterministic read-only browser traversal per viewport",
+    "full-page screenshot at every step",
+    "approved baseline and visual diff for every screenshot",
+    "separately hashed real server-action and temporary-database mutation reports",
+    "network and runtime issue log",
+    "keyboard-only completion trace",
+    "council scorecard using experience/quality-council-gate.json",
+    "receipt hashes bound to the exact commit and fixture manifest"
+  ],
+  "mutationEvidence": {
+    "status": "required-not-yet-evidenced",
+    "executionMode": "real-server-actions-against-isolated-temporary-databases",
+    "requiredReports": [
+      {
+        "id": "notes-source-create-and-exact-task-send",
+        "proves": [
+          "the source note is created once",
+          "the exact approved extract creates one task",
+          "the task retains the exact source-note identity"
+        ],
+        "hashRequired": true
+      },
+      {
+        "id": "notes-task-send-idempotency-and-replay",
+        "proves": [
+          "an identical retry replays the same task receipt",
+          "a retry does not create a duplicate task",
+          "a changed destination or approved body is rejected"
+        ],
+        "hashRequired": true
+      },
+      {
+        "id": "task-milestone-promotion-and-timeline-provenance",
+        "proves": [
+          "the exact task is promoted to a milestone",
+          "the owner-side Timeline source relation retains the task identity",
+          "the frozen public DTO omits the private source relation"
+        ],
+        "hashRequired": true
+      },
+      {
+        "id": "signal-opaque-evidence-resolution",
+        "proves": [
+          "the opaque Signal entry resolves server-side to the exact task",
+          "the rebuilt evidence remains scoped to the authorised workspace and project",
+          "the review evidence report associates that task with the public milestone without adding source identity to the public DTO"
+        ],
+        "hashRequired": true
+      }
+    ]
+  },
+  "evidenceReceipts": [
+    "experience/council-reviews/journeys/signal-studio.note-to-signal.mobile.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-signal.tablet.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-signal.desktop.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-signal.wide.json"
+  ],
+  "certification": {
+    "status": "not-assessed",
+    "achieved": false,
+    "reason": "The fixture structure defines a truthful hybrid proof, but neither the continuous read-only browser traversals nor the separately hashed server-action and temporary-database mutation reports have been captured."
+  }
+}

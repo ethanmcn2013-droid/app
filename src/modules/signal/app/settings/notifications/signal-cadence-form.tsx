@@ -5,10 +5,9 @@ import type { Cadence } from "../../../lib/db/signal-prefs-schema";
 import { updateCadenceAction } from "./signal-cadence-actions";
 
 /**
- * CadenceForm — ported from signal/src/app/app/settings/notifications/cadence-form.tsx.
- *
- * S3: sendTestBriefingAction / SendTestButton are NOT ported.
- * Import path updated to module-local signal-cadence-actions.
+ * Retained for a future provider-gated delivery release. The consolidated app
+ * does not currently render this control because these stored preferences do
+ * not change the in-app briefing.
  */
 
 const OPTIONS: {
@@ -20,19 +19,19 @@ const OPTIONS: {
     value: "weekly",
     label: "Weekly",
     description:
-      "Every Monday morning. The short read of what's drifting, what's moving, and what to do next.",
+      "Saved delivery preference. The in-app briefing still refreshes only when you open Signal.",
   },
   {
     value: "daily",
     label: "Daily",
     description:
-      "Every morning at 06:00 UTC. The same one short read, every day there's a real signal.",
+      "Saved delivery preference. No scheduled delivery service is active in this app.",
   },
   {
     value: "off",
     label: "Off",
     description:
-      "No emails. You'll still see the briefing in the app whenever you open it.",
+      "Turns the stored delivery preference off. Signal remains available in the app.",
   },
 ];
 

@@ -13,6 +13,12 @@ export type TimelineArtifactPointState =
   | "upcoming"
   | "overdue";
 
+export type TimelineArtifactDensity =
+  | "empty"
+  | "single"
+  | "sparse"
+  | "standard";
+
 export type TimelineArtifactPoint = Readonly<{
   item: AudienceTimelineItemDto;
   position: number;
@@ -21,6 +27,7 @@ export type TimelineArtifactPoint = Readonly<{
 }>;
 
 export type TimelineArtifactModel = Readonly<{
+  density: TimelineArtifactDensity;
   points: readonly TimelineArtifactPoint[];
   cancelled: readonly AudienceTimelineItemDto[];
   completedCount: number;
@@ -129,6 +136,13 @@ function ordinalPositions(count: number): number[] {
   return Array.from({ length: count }, (_, index) => (index / (count - 1)) * 100);
 }
 
+function artifactDensity(count: number): TimelineArtifactDensity {
+  if (count === 0) return "empty";
+  if (count === 1) return "single";
+  if (count <= 3) return "sparse";
+  return "standard";
+}
+
 function calendarPositions(
   items: readonly AudienceTimelineItemDto[],
   today: string,
@@ -138,13 +152,18 @@ function calendarPositions(
   const primaryDay = calendarDay(primaryDate);
   const itemDays = items.map((item) => calendarDay(item.date));
   const datedItemDays = itemDays.filter((day): day is number => day !== null);
+  if (datedItemDays.length === 0) {
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+  }
+
   const axisDays = [
     ...datedItemDays,
     ...(todayDay === null ? [] : [todayDay]),
     ...(primaryDay === null ? [] : [primaryDay]),
   ];
+  const distinctAxisDays = new Set(axisDays);
 
-  if (axisDays.length < 2) {
+  if (distinctAxisDays.size < 2) {
     return { pointPositions: ordinalPositions(items.length), todayPosition: null };
   }
 
@@ -208,6 +227,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
   const defaultPoint = points.find((point) => point.isNext) ?? points.at(-1) ?? null;
 
   return {
+    density: artifactDensity(totalCount),
     points,
     cancelled,
     completedCount,

@@ -186,6 +186,7 @@ export async function createAudiencePublicationAction(
         }
         return createAudiencePublication({
           workspaceSlug: workspace.slug,
+          projectSlug: optionalText(formData, "projectSlug", 120),
           sourceAuthority,
           label: requiredText(formData, "label", 120),
           audienceKind: kindValue as AudienceKind,

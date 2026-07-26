@@ -19,9 +19,18 @@ import {
   activity,
   nodeOverlays,
 } from "./timeline-schema";
-import type { Workspace, Project, ProjectSource, Task, Activity, NodeOverlay } from "./timeline-schema";
+import type {
+  Workspace,
+  Project,
+  ProjectSource,
+  Task,
+  Activity,
+  NodeOverlay,
+  AudienceItemState,
+} from "./timeline-schema";
 import type { Status } from "./timeline-schema";
 import { isDemoMode } from "@/lib/access-mode";
+import { safeAudienceItemState } from "@/modules/timeline/lib/audience-timeline";
 import {
   demoWorkspace,
   demoEffectiveNodes,
@@ -53,14 +62,72 @@ export type NodeOverlayInput = {
   nodeId: string;
   hidden?: boolean;
   labelOverride?: string | null;
+  /** @deprecated Legacy display-lane override. Use audienceStateOverride. */
   laneOverride?: string | null;
   dateOverride?: string | null;
+  dateOverrideMode?: "inherit" | "date" | "undated";
+  audienceStateOverride?: AudienceItemState | null;
   sortOverride?: number | null;
   source?: "synced" | "manual";
   manualTitle?: string | null;
   manualStatus?: Status | null;
   manualTargetDate?: string | null;
 };
+
+const UNDATED_DATE_OVERRIDE = "__signal_timeline_undated__";
+const AUDIENCE_STATE_PREFIX = "audience:";
+
+export function encodePersistedDateOverride(input: {
+  mode: "inherit" | "date" | "undated";
+  date?: string | null;
+}): string | null {
+  if (input.mode === "inherit") return null;
+  if (input.mode === "undated") return UNDATED_DATE_OVERRIDE;
+  return input.date ?? null;
+}
+
+export function decodePersistedDateOverride(
+  value: string | null,
+): {
+  mode: "inherit" | "date" | "undated";
+  date: string | null;
+} {
+  if (value === null) return { mode: "inherit", date: null };
+  if (value === UNDATED_DATE_OVERRIDE) {
+    return { mode: "undated", date: null };
+  }
+  return { mode: "date", date: value };
+}
+
+export function encodePersistedAudienceState(
+  state: AudienceItemState | null,
+): string | null {
+  return state ? `${AUDIENCE_STATE_PREFIX}${state}` : null;
+}
+
+export function decodePersistedAudienceState(
+  value: string | null,
+): AudienceItemState | null {
+  if (!value) return null;
+  if (value.startsWith(AUDIENCE_STATE_PREFIX)) {
+    const state = value.slice(AUDIENCE_STATE_PREFIX.length);
+    if (
+      state === "covered" ||
+      state === "now" ||
+      state === "next" ||
+      state === "later" ||
+      state === "cancelled"
+    ) {
+      return state;
+    }
+    return null;
+  }
+  if (value === "Shipped") return "covered";
+  if (value === "In flight") return "now";
+  if (value === "Next") return "next";
+  if (value === "Later") return "later";
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Workspace queries
@@ -628,6 +695,17 @@ export async function upsertNodeOverlay(
   input: NodeOverlayInput,
 ): Promise<void> {
   const now = new Date();
+  const persistedDateOverride =
+    input.dateOverrideMode !== undefined
+      ? encodePersistedDateOverride({
+          mode: input.dateOverrideMode,
+          date: input.dateOverride,
+        })
+      : input.dateOverride ?? null;
+  const persistedStateOverride =
+    input.audienceStateOverride !== undefined
+      ? encodePersistedAudienceState(input.audienceStateOverride)
+      : input.laneOverride ?? null;
   await db
     .insert(nodeOverlays)
     .values({
@@ -635,8 +713,8 @@ export async function upsertNodeOverlay(
       nodeId: input.nodeId,
       hidden: input.hidden ?? false,
       labelOverride: input.labelOverride ?? null,
-      laneOverride: input.laneOverride ?? null,
-      dateOverride: input.dateOverride ?? null,
+      laneOverride: persistedStateOverride,
+      dateOverride: persistedDateOverride,
       sortOverride: input.sortOverride ?? null,
       source: input.source ?? "synced",
       manualTitle: input.manualTitle ?? null,
@@ -649,8 +727,16 @@ export async function upsertNodeOverlay(
       set: {
         hidden: input.hidden !== undefined ? input.hidden : sql`hidden`,
         labelOverride: input.labelOverride !== undefined ? input.labelOverride : sql`label_override`,
-        laneOverride: input.laneOverride !== undefined ? input.laneOverride : sql`lane_override`,
-        dateOverride: input.dateOverride !== undefined ? input.dateOverride : sql`date_override`,
+        laneOverride:
+          input.audienceStateOverride !== undefined ||
+          input.laneOverride !== undefined
+            ? persistedStateOverride
+            : sql`lane_override`,
+        dateOverride:
+          input.dateOverrideMode !== undefined ||
+          input.dateOverride !== undefined
+            ? persistedDateOverride
+            : sql`date_override`,
         sortOverride: input.sortOverride !== undefined ? input.sortOverride : sql`sort_override`,
         manualTitle: input.manualTitle !== undefined ? input.manualTitle : sql`manual_title`,
         manualStatus: input.manualStatus !== undefined ? input.manualStatus : sql`manual_status`,
@@ -732,13 +818,22 @@ export type EffectiveNode = {
   workspaceSlug: string;
   title: string;          // COALESCE(labelOverride, generated title)
   status: Status;         // generated (Tasks is source of truth)
-  targetDate: string | null; // COALESCE(dateOverride, generated targetDate)
+  /** Effective date after applying explicit inherit/date/undated intent. */
+  targetDate: string | null;
+  /** Date from Tasks or the manual milestone before presentation overrides. */
+  sourceTargetDate: string | null;
   sortOrder: number;      // COALESCE(sortOverride, generated sortOrder)
   lane: "Next" | "In flight" | "Shipped" | "Later"; // display string
+  /** Effective state consumed by the signed owner/public artifact. */
+  audienceState: AudienceItemState;
+  /** State derived from Tasks/manual source before an owner override. */
+  sourceAudienceState: AudienceItemState;
+  audienceStateOverride: AudienceItemState | null;
   hidden: boolean;        // from overlay (default false)
   laneOverride: string | null;
   labelOverride: string | null;
   dateOverride: string | null;
+  dateOverrideMode: "inherit" | "date" | "undated";
   source: "synced" | "manual";
   /** True when Tasks updated title/status/date AFTER a human override was set */
   driftDetected: boolean;
@@ -748,6 +843,24 @@ export type EffectiveNode = {
    *  so drift is visible at edit time (R·22). */
   updatedAt: Date;
 };
+
+export function resolveEffectiveNodeDate(
+  sourceDate: string | null,
+  mode: "inherit" | "date" | "undated",
+  overrideDate: string | null,
+): string | null {
+  if (mode === "undated") return null;
+  if (mode === "date") return overrideDate;
+  return sourceDate;
+}
+
+export function resolveEffectiveAudienceState(
+  status: Status,
+  effectiveDate: string | null,
+  override: AudienceItemState | null,
+): AudienceItemState {
+  return override ?? safeAudienceItemState(status, effectiveDate);
+}
 
 function manualNodeProjectSlug(
   nodeId: string,
@@ -791,22 +904,43 @@ export const getEffectiveNodesForWorkspace = cache(async (
     .filter((o) => o.source === "manual")
     .map((o) => {
       const status: Status = o.manualStatus ?? "next";
+      const sourceTargetDate = o.manualTargetDate ?? null;
+      const dateIntent = decodePersistedDateOverride(o.dateOverride);
+      const audienceStateOverride = decodePersistedAudienceState(
+        o.laneOverride,
+      );
+      const effectiveDate = resolveEffectiveNodeDate(
+        sourceTargetDate,
+        dateIntent.mode,
+        dateIntent.date,
+      );
+      const sourceAudienceState = safeAudienceItemState(
+        status,
+        sourceTargetDate,
+      );
+      const audienceState = resolveEffectiveAudienceState(
+        status,
+        effectiveDate,
+        audienceStateOverride,
+      );
       return {
         id: o.nodeId,
-        projectSlug: manualNodeProjectSlug(
-          o.nodeId,
-          fallbackProjectSlug,
-        ),
+        projectSlug: manualNodeProjectSlug(o.nodeId, fallbackProjectSlug),
         workspaceSlug,
-        title: o.manualTitle ?? "(untitled)",
+        title: o.labelOverride ?? o.manualTitle ?? "(untitled)",
         status,
-        targetDate: o.manualTargetDate ?? null,
+        targetDate: effectiveDate,
+        sourceTargetDate,
         sortOrder: o.sortOverride ?? 9999,
-        lane: statusToLane(status, o.manualTargetDate),
+        lane: audienceStateToLane(audienceState, effectiveDate),
+        audienceState,
+        sourceAudienceState,
+        audienceStateOverride,
         hidden: o.hidden,
         laneOverride: o.laneOverride,
         labelOverride: o.labelOverride,
-        dateOverride: o.dateOverride,
+        dateOverride: dateIntent.date,
+        dateOverrideMode: dateIntent.mode,
         source: "manual",
         driftDetected: false,
         updatedAt: o.updatedAt,
@@ -814,25 +948,40 @@ export const getEffectiveNodesForWorkspace = cache(async (
     });
 
   const syncedNodes: EffectiveNode[] = allMilestoneTasks.map((t) => {
-    const o = overlayMap.get(t.id);
+    const candidateOverlay = overlayMap.get(t.id);
+    const o = candidateOverlay;
     const effectiveTitle = o?.labelOverride ?? t.title;
-    const effectiveDate = o?.dateOverride !== undefined ? o.dateOverride : t.targetDate;
+    const dateIntent = decodePersistedDateOverride(o?.dateOverride ?? null);
+    const dateOverrideMode = dateIntent.mode;
+    const audienceStateOverride = decodePersistedAudienceState(
+      o?.laneOverride ?? null,
+    );
+    const effectiveDate = resolveEffectiveNodeDate(
+      t.targetDate,
+      dateOverrideMode,
+      dateIntent.date,
+    );
     const effectiveSort = o?.sortOverride ?? t.sortOrder;
     const hidden = o?.hidden ?? false;
-    const lane = o?.laneOverride
-      ? (o.laneOverride as EffectiveNode["lane"])
-      : statusToLane(t.status, effectiveDate);
+    const sourceAudienceState = safeAudienceItemState(t.status, t.targetDate);
+    const audienceState = resolveEffectiveAudienceState(
+      t.status,
+      effectiveDate,
+      audienceStateOverride,
+    );
+    const lane = audienceStateToLane(audienceState, effectiveDate);
 
     // Drift: Tasks changed a field the owner had ACTIVELY overridden.
-    // labelOverride null/undefined = no override; dateOverride undefined = no
-    // override (null = explicit clear). Only an active override that diverges
-    // from the current Tasks value is drift, a matching override is not.
+    // Only an explicitly persisted override can drift. A NULL SQL value no
+    // longer doubles as both "inherit" and "intentionally undated".
     const labelActive =
       o != null && o.labelOverride !== null && o.labelOverride !== undefined;
-    const dateActive = o != null && o.dateOverride !== undefined;
+    const dateActive = dateOverrideMode !== "inherit";
+    const stateActive = audienceStateOverride != null;
     const driftDetected = Boolean(
       (labelActive && o!.labelOverride !== t.title) ||
-        (dateActive && o!.dateOverride !== t.targetDate),
+        (dateActive && effectiveDate !== t.targetDate) ||
+        (stateActive && audienceState !== sourceAudienceState),
     );
 
     return {
@@ -842,12 +991,17 @@ export const getEffectiveNodesForWorkspace = cache(async (
       title: effectiveTitle,
       status: t.status,
       targetDate: effectiveDate ?? null,
+      sourceTargetDate: t.targetDate,
       sortOrder: effectiveSort,
       lane,
+      audienceState,
+      sourceAudienceState,
+      audienceStateOverride,
       hidden,
       laneOverride: o?.laneOverride ?? null,
       labelOverride: o?.labelOverride ?? null,
-      dateOverride: o?.dateOverride ?? null,
+      dateOverride: dateIntent.date,
+      dateOverrideMode,
       source: "synced",
       driftDetected,
       updatedAt: t.updatedAt,
@@ -867,6 +1021,16 @@ export function statusToLane(
   if (status === "in-flight") return "In flight";
   if (!targetDate) return "Later"; // presentational, D7
   return "Next";
+}
+
+export function audienceStateToLane(
+  state: AudienceItemState,
+  targetDate: string | null | undefined,
+): EffectiveNode["lane"] {
+  if (state === "covered") return "Shipped";
+  if (state === "now") return "In flight";
+  if (state === "later" || state === "cancelled") return "Later";
+  return targetDate ? "Next" : "Later";
 }
 
 // ---------------------------------------------------------------------------

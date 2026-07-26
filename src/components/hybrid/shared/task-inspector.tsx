@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { addDays, asCalendarDate, formatDateLong, formatSchedule, LAB_TODAY } from "../dates";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { addDays, asCalendarDate, formatDateLong, formatSchedule } from "../dates";
 import { LAB_PEOPLE, personById } from "../fixtures";
 import { useLabStore } from "../store";
 import {
@@ -55,12 +56,13 @@ function EditableText({ value, onCommit, multiline = false, label, disabled = fa
 
 function ScheduleEditor({ task }: { task: LabTask }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const schedule = task.schedule;
   const changeKind = (kind: TaskSchedule["kind"]) => {
     const next: TaskSchedule = kind === "unscheduled" ? { kind: "unscheduled" }
-      : kind === "due" ? { kind: "due", dueOn: LAB_TODAY }
-        : kind === "milestone" ? { kind: "milestone", on: LAB_TODAY }
-          : { kind: "range", startOn: LAB_TODAY, dueOn: addDays(LAB_TODAY, 2) };
+      : kind === "due" ? { kind: "due", dueOn: calendar.today }
+        : kind === "milestone" ? { kind: "milestone", on: calendar.today }
+          : { kind: "range", startOn: calendar.today, dueOn: addDays(calendar.today, 2) };
     store.scheduleTask(task.id, next);
   };
   return (
@@ -138,6 +140,7 @@ function RelationshipSection({ task }: { task: LabTask }) {
 
 function InspectorBody({ task }: { task: LabTask }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const [commentDraft, setCommentDraft] = useState("");
   return (
     <div className={styles.inspectorBody}>
@@ -194,7 +197,7 @@ function InspectorBody({ task }: { task: LabTask }) {
           event.preventDefault();
           const body = commentDraft.trim();
           if (!body || store.readOnly) return;
-          store.updateTask(task.id, { comments: [...task.comments, { id: `${task.id}-comment-${task.comments.length + 1}`, authorId: "ethan", body, createdAt: "2026-07-16T09:00:00+01:00" }] }, "Comment added");
+          store.updateTask(task.id, { comments: [...task.comments, { id: `${task.id}-comment-${task.comments.length + 1}`, authorId: "ethan", body, createdAt: calendar.nowIso }] }, "Comment added");
           setCommentDraft("");
         }}>
           <textarea aria-label="Add a comment" disabled={store.readOnly} onChange={(event) => setCommentDraft(event.target.value)} placeholder="Add a comment…" rows={2} value={commentDraft} />
@@ -273,7 +276,7 @@ export function TaskInspector() {
       role={fullScreen ? "dialog" : undefined}
     >
       <header className={styles.inspectorHeader}>
-        <div><span>Task inspector</span><strong id={titleId}>{task?.id ?? "Task unavailable"}</strong></div>
+        <div><span>Task inspector</span><h2 id={titleId}>{task?.title ?? "Task unavailable"}</h2></div>
         <div>
           {store.readOnly ? <span className={styles.readOnlyPill}>Read-only</span> : null}
           <button aria-label={fullScreen ? "Dock task inspector" : "Open full-screen task mode"} onClick={() => setFullScreen((value) => !value)} title={fullScreen ? "Dock inspector" : "Full-screen task mode"} type="button"><Icon name="focus" size={16} /></button>

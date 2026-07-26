@@ -33,8 +33,8 @@ export default function AppError({
         Your workspace hit a snag.
       </h1>
       <p className="mb-6 text-sm leading-relaxed" style={{ color: "var(--ink-soft)" }}>
-        Nothing was lost, the last load failed. Try again, or head back to
-        your dashboard.
+        Timeline could not finish loading. Try again, or return to your
+        projects.
       </p>
       {error.digest ? (
         <p
@@ -48,17 +48,17 @@ export default function AppError({
         <button
           type="button"
           onClick={reset}
-          className="rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all"
+          className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium text-white transition-all"
           style={{ background: "var(--brand)" }}
         >
           Try again
         </button>
         <Link
           href="/app/timeline"
-          className="rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors"
+          className="inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-medium transition-colors"
           style={{ borderColor: "var(--border)", color: "var(--ink-soft)" }}
         >
-          Back to dashboard
+          Back to timelines
         </Link>
       </div>
     </div>

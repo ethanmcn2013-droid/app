@@ -10,11 +10,14 @@
  * field behaviour (popovers, optimistic updates, nudge) is identical.
  */
 
+import Link from "next/link";
+import { useSuiteContext } from "@/components/app/use-suite-context";
 import type { Task } from "@/lib/data";
 import { useDomain } from "@/lib/domain-context";
 import { useHydrated } from "@/lib/use-hydrated";
 import { formatRelativeTime } from "@/lib/utils";
-import { PRODUCT_APP_URLS } from "@/lib/product-urls";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import { withSuiteContext } from "@/lib/suite-context";
 import {
   AssigneesRow,
   DueRow,
@@ -70,7 +73,12 @@ export function MetadataRail({
   compact?: boolean;
 }) {
   const { boardName } = useDomain();
+  const suiteContext = useSuiteContext();
   const projectLabel = boardName ?? "Workspace";
+  const timelineHref = withSuiteContext(
+    PRODUCT_APP_PATHS.timeline,
+    suiteContext,
+  );
 
   const wrapClass = compact
     ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]"
@@ -137,8 +145,8 @@ export function MetadataRail({
       {/* Milestone cross-link — only when flagged */}
       {task.isMilestone ? (
         <MetaField label="Milestone" colSpan2={compact}>
-          <a
-            href={PRODUCT_APP_URLS.timeline}
+          <Link
+            href={timelineHref}
             className="inline-flex items-center gap-1 text-[12px] text-ink-quiet transition-colors hover:text-ink-soft"
           >
             See it in your plan
@@ -155,7 +163,7 @@ export function MetadataRail({
             >
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
-          </a>
+          </Link>
         </MetaField>
       ) : null}
 

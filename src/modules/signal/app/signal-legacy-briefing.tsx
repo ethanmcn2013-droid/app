@@ -1,13 +1,14 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
-import { BriefingView } from "../components/brief/briefing-view";
+import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
 import { SignalScopeSwitcher } from "../components/brief/scope-switcher";
 import { isDemoMode } from "@/lib/access-mode";
 import { briefingTimestampLabel } from "../lib/briefing/calendar-time";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
 import type { SignalScope } from "../lib/planning-periods/scope";
 import { buildBriefingForUser } from "../server/briefing/signal-build-for-user";
+import { buildLegacyLedgerDTO } from "../server/analytics/build-ledger-dto";
 import { isOnboarded } from "../server/onboarding/signal-onboarding-queries";
 import { requireSignalUser } from "../server/signal-auth";
 import { recordPlanningEvent } from "../server/signal-planning-events";
@@ -34,7 +35,7 @@ export async function SignalLegacyBriefing({
   }
 
   const hintedScope: SignalScope | undefined =
-    planningPeriodsEnabled() && typeof searchParams.workspaceId === "string"
+    typeof searchParams.workspaceId === "string"
       ? { kind: "workspace", workspaceId: searchParams.workspaceId }
       : planningPeriodsEnabled() &&
           typeof searchParams.planningPeriodId === "string"
@@ -59,6 +60,15 @@ export async function SignalLegacyBriefing({
     });
   }
 
+  const ledger = buildLegacyLedgerDTO(result.briefing, {
+    generatedAtLabel: briefingTimestampLabel(
+      result.briefing.generatedAt,
+      result.authorizedScope.timezone,
+    ),
+    scopeLabel: result.authorizedScope.label,
+    scopeKind: result.authorizedScope.scope.kind,
+  });
+
   return (
     <div data-signal-module>
       {planningPeriodsEnabled() ? (
@@ -68,16 +78,7 @@ export async function SignalLegacyBriefing({
           demo={demo}
         />
       ) : null}
-      <BriefingView
-        briefing={result.briefing}
-        generatedAtLabel={briefingTimestampLabel(
-          result.briefing.generatedAt,
-          result.authorizedScope.timezone,
-        )}
-        firstName={null}
-        scopeLabel={result.authorizedScope.label}
-        scopeKind={result.authorizedScope.scope.kind}
-      />
+      <QuietBriefingLedger ledger={ledger} />
     </div>
   );
 }

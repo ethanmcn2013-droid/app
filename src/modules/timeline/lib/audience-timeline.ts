@@ -309,14 +309,20 @@ export function digestSourceFields(input: {
 }
 
 /** Copies the three allowlisted fields and no private source payload. */
-export function freezeAudienceItem(source: FrozenSourceItem, expectedWorkspaceId: string): FrozenAudienceItem {
+export function freezeAudienceItem(
+  source: FrozenSourceItem,
+  expectedWorkspaceId: string,
+  audienceStateOverride?: AudienceItemState,
+): FrozenAudienceItem {
   assertSameWorkspace(source, expectedWorkspaceId);
   return {
     sourceRelation: source.id,
     sourceDigest: digestSourceFields(source),
     title: source.title,
     calendarDate: source.date,
-    state: safeAudienceItemState(source.completionState, source.date),
+    state:
+      audienceStateOverride ??
+      safeAudienceItemState(source.completionState, source.date),
   };
 }
 

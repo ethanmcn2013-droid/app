@@ -14,9 +14,9 @@
  * Suspense boundary:
  *
  *   data  → StudioChromeProvider holds state above the bar;
- *           StudioChromePublisher (mounted in AppShell) fills it after
- *           the server data resolves. Until then the bar renders its
- *           quiet skeleton cells.
+ *           StudioChromePublisher (mounted in the Tasks runtime) fills it
+ *           after server data resolves. Module identity is pathname-owned
+ *           and remains visible even when this optional Tasks data is null.
  *   action → the bar dispatches window CustomEvents; StudioChromeBridge
  *           (mounted inside PaletteRoot + AddTaskRoot) listens and calls
  *           the real openers. Same pub/sub grammar as ToastBridge and
@@ -31,7 +31,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useDomain } from "@/lib/domain-context";
 import { usePalette } from "@/components/app/palette/command-palette";
 import { useAddTask } from "@/components/app/add-task/add-task-context";
 
@@ -85,28 +84,49 @@ function shortenTitle(t: string): string {
 }
 
 /**
- * Mounted inside AppShell once the server data resolves. Reads the
- * workspace title from the domain pack (client context) so the server
- * only ships what it uniquely knows.
+ * Mounted inside the Tasks runtime once its authorised server data resolves.
+ * The workspace identity comes from the real workspace row; domain packs are
+ * vocabulary, never a source of account identity.
  */
 export function StudioChromePublisher({
   workspaces,
   activeWorkspaceId,
   periodName,
+  workspaceTitle,
   edition = null,
 }: {
   workspaces: readonly StudioWorkspaceOption[];
   activeWorkspaceId: string;
   periodName: string | null;
+  /** The authorised workspace's real name, not a domain-pack example. */
+  workspaceTitle: string;
   /** Licence edition label; null when the account has no named edition. */
   edition?: string | null;
 }) {
   const { setData } = useStudioChrome();
-  const pack = useDomain();
-  const workspaceTitle = shortenTitle(pack.workspaceTitle);
+  const shortWorkspaceTitle = shortenTitle(workspaceTitle);
   useEffect(() => {
-    setData({ workspaces, activeWorkspaceId, periodName, workspaceTitle, edition });
-  }, [setData, workspaces, activeWorkspaceId, periodName, workspaceTitle, edition]);
+    setData({
+      workspaces,
+      activeWorkspaceId,
+      periodName,
+      workspaceTitle: shortWorkspaceTitle,
+      edition,
+    });
+    return () => {
+      // Tasks is the only product that publishes this optional workspace
+      // metadata. Clear it when that runtime unmounts so an edition or scope
+      // from Tasks can never leak into Notes, Timeline, or Signal.
+      setData(null);
+    };
+  }, [
+    setData,
+    workspaces,
+    activeWorkspaceId,
+    periodName,
+    shortWorkspaceTitle,
+    edition,
+  ]);
   return null;
 }
 

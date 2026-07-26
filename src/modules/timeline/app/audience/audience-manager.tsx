@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import {
   connectSuiteWorkspaceAction,
   createAudiencePublicationAction,
@@ -21,7 +21,7 @@ const fieldClass =
 const quietButton =
   "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 const primaryButton =
-  "min-h-10 rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 
 type SourceNode = Readonly<{
   id: string;
@@ -44,8 +44,31 @@ function ActionNotice({ state }: { state: AudienceActionState }) {
 }
 
 function ShareReceipt({ state }: { state: AudienceActionState }) {
-  const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<
+    "idle" | "copied" | "manual"
+  >("idle");
+  const inputRef = useRef<HTMLInputElement>(null);
   if (!state.shareUrl) return null;
+
+  function selectLink() {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }
+
+  async function copyLink() {
+    setCopyStatus("idle");
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(state.shareUrl!);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("manual");
+      requestAnimationFrame(selectLink);
+    }
+  }
+
   return (
     <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
       <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
@@ -53,6 +76,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
       </p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
+          ref={inputRef}
           aria-label="New Audience Timeline share link"
           readOnly
           value={state.shareUrl}
@@ -62,14 +86,35 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
         <button
           type="button"
           className={quietButton}
-          onClick={async () => {
-            await navigator.clipboard.writeText(state.shareUrl!);
-            setCopied(true);
-          }}
+          onClick={() => void copyLink()}
         >
-          {copied ? "Copied" : "Copy link"}
+          {copyStatus === "copied" ? "Copied" : "Copy link"}
         </button>
       </div>
+      <p
+        role="status"
+        aria-live="polite"
+        className={
+          copyStatus === "idle"
+            ? "sr-only"
+            : "mt-2 text-xs text-indigo-800"
+        }
+      >
+        {copyStatus === "copied"
+          ? "Share link copied."
+          : copyStatus === "manual"
+            ? "Automatic copy was blocked. The link is selected; use your device's copy command."
+            : ""}
+      </p>
+      {copyStatus === "manual" ? (
+        <button
+          type="button"
+          className={`${quietButton} mt-2`}
+          onClick={selectLink}
+        >
+          Select link again
+        </button>
+      ) : null}
       <p className="mt-2 text-xs text-indigo-800">
         Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
       </p>
@@ -85,6 +130,7 @@ export function AudienceManager({
   publications,
   defaultLabel,
   projectName,
+  projectSlug,
 }: {
   workspaceSlug: string;
   suiteWorkspaceId: string | null;
@@ -93,6 +139,7 @@ export function AudienceManager({
   publications: readonly AudienceOwnerPublication[];
   defaultLabel?: string;
   projectName?: string;
+  projectSlug?: string;
 }) {
   const [connectState, connectAction, connectPending] = useActionState(
     connectSuiteWorkspaceAction,
@@ -182,6 +229,9 @@ export function AudienceManager({
           </div>
           <form action={createAction} className="mt-5 rounded-xl border border-line-soft bg-white p-5">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+            {projectSlug ? (
+              <input type="hidden" name="projectSlug" value={projectSlug} />
+            ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-medium text-ink-soft">
                 Timeline title

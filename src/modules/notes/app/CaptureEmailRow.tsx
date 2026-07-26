@@ -2,17 +2,18 @@
 
 import { useRef, useState } from "react";
 
-type CaptureState =
+import styles from "./CaptureEmailRow.module.css";
+
+export type CaptureState =
   | { tier: "entitled"; address: string }
   | { tier: "free" };
 
 const PRICING_URL = "https://signalstudio.ie/pricing";
 
 /**
- * Inline footer-row beneath the stream surface. Reveals the user's
- * capture-by-email address (workspace+ tier) or the upgrade pitch
- * (free tier). Deliberately quiet, capture-by-email is a power-
- * user surface and shouldn't compete with the capture field.
+ * Quiet companion to the primary capture field. Reveals the user's
+ * capture-by-email address (workspace+ tier) or the upgrade path
+ * (free tier) without turning an alternate input method into a CTA.
  *
  * Click-to-copy mirrors the PRODUCT.md §5 budget: power users
  * already in muscle memory shouldn't need a modal.
@@ -28,10 +29,11 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
     return (
       <aside
         aria-label="Email capture availability"
-        className="capture-email capture-email--free"
+        className={styles.root}
+        data-tier="free"
       >
-        <span aria-hidden>✉</span>
-        <span>Send notes by email. Available on the <a href={PRICING_URL} target="_blank" rel="noopener noreferrer">Workspace plan</a>.</span>
+        <span className={styles.label}>Capture by email</span>
+        <span className={styles.detail}>Available on the <a href={PRICING_URL} target="_blank" rel="noopener noreferrer">Workspace plan</a></span>
       </aside>
     );
   }
@@ -60,10 +62,10 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
   return (
     <aside
       aria-label="Email capture address"
-      className="capture-email capture-email--entitled"
+      className={styles.root}
+      data-tier="entitled"
     >
-      <span aria-hidden>✉</span>
-      <span>Email a note: </span>
+      <span className={styles.label}>Capture by email</span>
       {showFallback ? (
         <input
           ref={fallbackRef}
@@ -71,7 +73,7 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
           readOnly
           value={address}
           aria-label="Capture email address, select to copy"
-          className="capture-email__fallback-input"
+          className={styles.fallbackInput}
           onBlur={() => setShowFallback(false)}
         />
       ) : (
@@ -79,10 +81,10 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
           type="button"
           onClick={onCopy}
           aria-label="Copy capture email address"
-          className="capture-email__address"
+          className={styles.address}
         >
           <code>{address}</code>
-          <span className="capture-email__hint">{copied ? "copied" : "copy"}</span>
+          <span className={styles.hint}>{copied ? "Copied" : "Copy"}</span>
         </button>
       )}
     </aside>

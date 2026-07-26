@@ -28,7 +28,7 @@ import {
 import { getBriefingEmptyCopy } from "../../lib/onboarding/personalization";
 import { isDemoMode } from "@/lib/access-mode";
 import {
-  mockBriefingSource,
+  createMockBriefingSource,
   mockPlanningPeriodBriefingSource,
 } from "../../lib/briefing/mock-source";
 import {
@@ -43,6 +43,7 @@ import {
   calendarDayDifference,
   dateOnlyToTimestamp,
 } from "../../lib/briefing/calendar-time";
+import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 
 export type BriefingForUserResult =
   | {
@@ -66,10 +67,11 @@ export async function buildBriefingForUser(opts: {
 }): Promise<BriefingForUserResult> {
   const { clerkId } = opts;
 
-  // Demo/Review: build a real briefing from the in-memory Wedding 2026 mock
-  // signals via the pure buildBriefing engine. No DB touch.
+  // Demo/Review: build a real briefing from the shared suite fixture through
+  // the pure buildBriefing engine. No DB touch.
   if (isDemoMode()) {
-    const catalog: PlanningCatalog = {
+    const periodScopeEnabled = planningPeriodsEnabled();
+    const planningCatalog: PlanningCatalog = {
       periods: [
         {
           id: "period_demo_school",
@@ -111,22 +113,48 @@ export async function buildBriefingForUser(opts: {
       ],
       planningSchemaAvailable: true,
     };
+    const workspaceCatalog: PlanningCatalog = {
+      periods: [],
+      workspaces: [
+        {
+          id: REVIEW_SUITE_FIXTURE.workspace.id,
+          name: REVIEW_SUITE_FIXTURE.workspace.name,
+          role: "owner",
+          planningPeriodId: null,
+          contextType: "wedding",
+          primaryDate: REVIEW_SUITE_FIXTURE.primaryDate.date,
+          primaryDateLabel: REVIEW_SUITE_FIXTURE.primaryDate.label,
+        },
+      ],
+      planningSchemaAvailable: false,
+    };
+    const catalog = periodScopeEnabled ? planningCatalog : workspaceCatalog;
+    const defaultScope: SignalScope = periodScopeEnabled
+      ? {
+          kind: "planningPeriod",
+          planningPeriodId: "period_demo_school",
+        }
+      : {
+          kind: "workspace",
+          workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+        };
+    const requestedScope =
+      opts.scope?.kind === "workspace" || periodScopeEnabled
+        ? opts.scope
+        : undefined;
     const authorizedScope =
       authorizeSignalScope(
         catalog,
-        opts.scope ?? {
-          kind: "planningPeriod",
-          planningPeriodId: "period_demo_school",
-        },
+        requestedScope ?? defaultScope,
         "Europe/Dublin",
       ) ??
       authorizeSignalScope(
         catalog,
-        { kind: "planningPeriod", planningPeriodId: "period_demo_school" },
+        defaultScope,
         "Europe/Dublin",
       );
     if (!authorizedScope) return { kind: "no-workspace" };
-    const demoSource: BriefingSource = planningPeriodsEnabled()
+    const demoSource: BriefingSource = periodScopeEnabled
       ? {
           getSignalsForUser: async (context) => {
             const signals =
@@ -140,14 +168,18 @@ export async function buildBriefingForUser(opts: {
               : signals;
           },
         }
-      : mockBriefingSource;
+      : createMockBriefingSource({
+          now: DEMO_BRIEFING_NOW,
+          workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+          sourceLabel: `Tasks · ${REVIEW_SUITE_FIXTURE.workspace.name} · Mara & Finn`,
+        });
     const briefing = await buildBriefing(
       demoSource,
       { userId: clerkId || "demo-user", email: "" },
       DEMO_BRIEFING_NOW,
     );
     const emptyCopy = getBriefingEmptyCopy({
-      primaryUseCase: planningPeriodsEnabled() ? "student" : "venue",
+      primaryUseCase: periodScopeEnabled ? "student" : "venue",
     });
     return {
       kind: "ok",
@@ -181,9 +213,11 @@ export async function buildBriefingForUser(opts: {
         : null;
   const requestedScope = planningPeriodsEnabled()
     ? opts.scope ?? persistedScope
-    : prefs?.workspaceId
-      ? { kind: "workspace" as const, workspaceId: prefs.workspaceId }
-      : null;
+    : opts.scope?.kind === "workspace"
+      ? opts.scope
+      : prefs?.workspaceId
+        ? { kind: "workspace" as const, workspaceId: prefs.workspaceId }
+        : null;
   if (!requestedScope) return { kind: "no-workspace" };
 
   const catalog = await listPlanningCatalogForUser({

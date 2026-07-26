@@ -1,0 +1,398 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://signalstudio.ie/schemas/quality-council-journey-receipt.schema.json",
+  "title": "Signal Studio quality council cross-suite journey receipt",
+  "description": "One fail-closed receipt for a continuous Notes to Tasks to Timeline to Signal journey at one required viewport. The repository validator is authoritative for exact steps, hashes, score arithmetic, and hard blockers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "journeyId",
+    "viewport",
+    "reviewedAt",
+    "sourceGitCommitSha",
+    "sourceTreeSha256",
+    "contractHashes",
+    "reviewers",
+    "continuousTrace",
+    "steps",
+    "evidence",
+    "metrics",
+    "dimensions",
+    "rawScore",
+    "decision"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "signal-quality-council-journey-receipt/1"
+    },
+    "journeyId": {
+      "const": "signal-studio.note-to-signal"
+    },
+    "viewport": {
+      "enum": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ]
+    },
+    "reviewedAt": {
+      "type": "string",
+      "format": "date"
+    },
+    "sourceGitCommitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "sourceTreeSha256": {
+      "$ref": "#/$defs/hash"
+    },
+    "contractHashes": {
+      "$ref": "#/$defs/contractHashes"
+    },
+    "reviewers": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/reviewer"
+      }
+    },
+    "continuousTrace": {
+      "$ref": "#/$defs/artifact"
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "evidence": {
+      "$ref": "#/$defs/journeyEvidence"
+    },
+    "metrics": {
+      "$ref": "#/$defs/metrics"
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "items": {
+        "$ref": "#/$defs/dimension"
+      }
+    },
+    "rawScore": {
+      "type": "integer",
+      "minimum": 50,
+      "maximum": 52
+    },
+    "decision": {
+      "const": "pass"
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^experience/council-evidence/"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "contractHashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "qualityCouncilGateSha256",
+        "crossSuiteJourneySha256",
+        "browserContractSha256",
+        "registrySha256",
+        "fixtureManifestSha256",
+        "playwrightConfigSha256",
+        "playwrightSpecSha256",
+        "validatorSha256",
+        "productReceiptSchemaSha256",
+        "journeyReceiptSchemaSha256"
+      ],
+      "properties": {
+        "qualityCouncilGateSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "crossSuiteJourneySha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "browserContractSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "registrySha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "fixtureManifestSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "playwrightConfigSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "playwrightSpecSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "validatorSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "productReceiptSchemaSha256": {
+          "$ref": "#/$defs/hash"
+        },
+        "journeyReceiptSchemaSha256": {
+          "$ref": "#/$defs/hash"
+        }
+      }
+    },
+    "reviewer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "lens",
+        "kind",
+        "independentReview"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2
+        },
+        "lens": {
+          "type": "string",
+          "minLength": 2
+        },
+        "kind": {
+          "enum": [
+            "human",
+            "agent"
+          ]
+        },
+        "independentReview": {
+          "$ref": "#/$defs/artifact"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "product",
+        "path",
+        "action",
+        "screenshot",
+        "objectIdentityEvidence"
+      ],
+      "properties": {
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "product": {
+          "enum": [
+            "notes",
+            "tasks",
+            "timeline",
+            "signal"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/app/(notes|tasks|timeline|signal)$"
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "screenshot": {
+          "$ref": "#/$defs/artifact"
+        },
+        "objectIdentityEvidence": {
+          "$ref": "#/$defs/artifact"
+        }
+      }
+    },
+    "journeyEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "networkLog",
+        "runtimeLog",
+        "routeAssertions",
+        "keyboardTrace",
+        "accessibilityReport",
+        "performanceReport",
+        "sourceReview"
+      ],
+      "properties": {
+        "networkLog": {
+          "$ref": "#/$defs/artifact"
+        },
+        "runtimeLog": {
+          "$ref": "#/$defs/artifact"
+        },
+        "routeAssertions": {
+          "$ref": "#/$defs/artifact"
+        },
+        "keyboardTrace": {
+          "$ref": "#/$defs/artifact"
+        },
+        "accessibilityReport": {
+          "$ref": "#/$defs/artifact"
+        },
+        "performanceReport": {
+          "$ref": "#/$defs/artifact"
+        },
+        "sourceReview": {
+          "$ref": "#/$defs/artifact"
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stepsCompleted",
+        "duplicateMutations",
+        "brokenSourceReferences",
+        "contextBreaks",
+        "axeSeriousViolations",
+        "axeCriticalViolations",
+        "uncaughtPageErrors",
+        "consoleErrors",
+        "failedRequests",
+        "unexpectedHttpErrors",
+        "keyboardOnly",
+        "releaseBlockingFindings",
+        "highSeverityFindings",
+        "canonicalRouteAndContext"
+      ],
+      "properties": {
+        "stepsCompleted": {
+          "const": 5
+        },
+        "duplicateMutations": {
+          "const": 0
+        },
+        "brokenSourceReferences": {
+          "const": 0
+        },
+        "contextBreaks": {
+          "const": 0
+        },
+        "axeSeriousViolations": {
+          "const": 0
+        },
+        "axeCriticalViolations": {
+          "const": 0
+        },
+        "uncaughtPageErrors": {
+          "const": 0
+        },
+        "consoleErrors": {
+          "const": 0
+        },
+        "failedRequests": {
+          "const": 0
+        },
+        "unexpectedHttpErrors": {
+          "const": 0
+        },
+        "keyboardOnly": {
+          "const": "pass"
+        },
+        "releaseBlockingFindings": {
+          "const": 0
+        },
+        "highSeverityFindings": {
+          "const": 0
+        },
+        "canonicalRouteAndContext": {
+          "const": "pass"
+        }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "score",
+        "reviewerId",
+        "rationale",
+        "positiveEvidence",
+        "evidenceKeys"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "purpose-and-task-clarity",
+            "information-architecture",
+            "visual-hierarchy",
+            "typography-and-content",
+            "layout-and-composition",
+            "interaction-quality",
+            "state-completeness",
+            "accessibility",
+            "responsive-adaptability",
+            "performance-and-perceived-speed",
+            "design-system-coherence",
+            "brand-distinction-and-craft",
+            "implementation-fidelity"
+          ]
+        },
+        "score": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 4
+        },
+        "reviewerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 20
+        },
+        "positiveEvidence": {
+          "type": "string",
+          "minLength": 20
+        },
+        "evidenceKeys": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

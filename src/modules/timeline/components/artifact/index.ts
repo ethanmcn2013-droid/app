@@ -8,6 +8,7 @@ export {
   buildTimelineCountdown,
   formatTimelineDate,
   timelinePointStatus,
+  type TimelineArtifactDensity,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
   type TimelineArtifactPointState,

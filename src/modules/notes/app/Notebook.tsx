@@ -34,16 +34,16 @@ import {
 } from "@/modules/notes/server/actions/notes";
 import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-personalization";
 import { promoteSelectedExtractToTimeline } from "@/modules/notes/server/actions/timeline";
-import { PRODUCT_APP_URLS } from "@/lib/product-urls";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 
 // The Tasks app entry, the destination of the one-way edge. Used as the
 // always-available "Open in Tasks" target for promoted notes whose precise
 // task URL isn't in this session's sentResults (e.g. after a reload), so the
 // ecosystem hop is never a dead end.
-const TASKS_APP_URL = PRODUCT_APP_URLS.tasks;
+const TASKS_APP_URL = PRODUCT_APP_PATHS.tasks;
 
 /**
- * Warm the cross-subdomain hop on intent (hover/focus) so moving from the
+ * Warm the same-origin product hop on intent (hover/focus) so moving from the
  * notebook into Tasks feels instant, the suite-arrows pattern, applied to
  * the "Open in Tasks" edge. Idempotent; safe to call repeatedly.
  */

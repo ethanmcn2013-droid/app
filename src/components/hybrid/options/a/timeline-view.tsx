@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import {
-  LAB_TODAY,
   addDays,
   differenceInDays,
   eachDate,
   formatDate,
   formatSchedule,
   scheduleStart,
+  startOfWeek,
 } from "../../dates";
 import { scheduleFromDrop, useLabStore } from "../../store";
 import type { CalendarDate, LabTask } from "../../types";
@@ -39,9 +40,12 @@ function within(date: CalendarDate, dates: CalendarDate[]): boolean {
 
 export function TimelineView({ tasks }: { tasks: LabTask[] }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const context = useTaskContextMenu();
   const [zoom, setZoom] = useState<TimelineZoom>("week");
-  const [start, setStart] = useState<CalendarDate>("2026-07-06");
+  const fitStart = (calendar.planningPeriod?.startDate ??
+    startOfWeek(calendar.today)) as CalendarDate;
+  const [start, setStart] = useState<CalendarDate>(() => fitStart);
   const resizeTask = useRef<string | null>(null);
   const config = ZOOM[zoom];
   const dates = useMemo(() => eachDate(start, addDays(start, config.days - 1)), [config.days, start]);
@@ -52,7 +56,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
   const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
   const orderedIds = [...scheduled, ...unscheduled].map((task) => task.id);
   const activeTask = store.activeId ? store.taskById(store.activeId) : undefined;
-  const todayIndex = differenceInDays(start, LAB_TODAY);
+  const todayIndex = differenceInDays(start, calendar.today);
 
   const dropAtDate = (event: DragEvent, date: CalendarDate) => {
     event.preventDefault();
@@ -217,11 +221,11 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       <header className={styles.timelineToolbar}>
         <div className={styles.rangeNavigation}>
           <button aria-label="Previous timeline range" onClick={() => setStart(addDays(start, -config.shift))} type="button"><Icon name="arrow-left" size={14} /></button>
-          <button onClick={() => { setStart("2026-07-06"); setZoom("month"); }} type="button">Fit</button>
+          <button onClick={() => { setStart(fitStart); setZoom("month"); }} type="button">Fit</button>
           <button aria-label="Next timeline range" onClick={() => setStart(addDays(start, config.shift))} type="button"><Icon name="arrow-right" size={14} /></button>
         </div>
         <strong>{formatDate(dates[0], { day: "numeric", month: "short", year: "numeric" })} - {formatDate(dates[dates.length - 1], { day: "numeric", month: "short", year: "numeric" })}</strong>
-        <div aria-label="Timeline zoom" className={styles.zoomControl} role="group">
+        <div aria-label="Schedule zoom" className={styles.zoomControl} role="group">
           {(["day", "week", "month"] as TimelineZoom[]).map((level) => <button aria-pressed={zoom === level} key={level} onClick={() => setZoom(level)} type="button">{level[0].toUpperCase() + level.slice(1)}</button>)}
         </div>
       </header>
@@ -262,7 +266,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       </section>
 
       {scheduled.length ? (
-        <div aria-label="Timeline planning surface" className={styles.timelineScroller} role="region">
+        <div aria-label="Schedule planning surface" className={styles.timelineScroller} role="region">
           <div className={styles.timelineCanvas} style={{ "--timeline-cell": `${config.cell}px`, "--timeline-width": `${gridWidth}px` } as CSSProperties}>
             <div className={styles.timelineHeaderRow}>
               <div className={styles.timelinePaneHeader}><span>Task</span><span>{scheduled.length} scheduled</span></div>
@@ -270,7 +274,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
                 {dates.map((date) => (
                   <div
                     className={styles.timelineDate}
-                    data-today={date === LAB_TODAY || undefined}
+                    data-today={date === calendar.today || undefined}
                     key={date}
                     onDragOver={(event) => { if (!store.readOnly) event.preventDefault(); }}
                     onDrop={(event) => dropAtDate(event, date)}
@@ -312,7 +316,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
         </div>
       ) : <SurfaceEmpty body="Scheduled tasks will appear here as distinct ranges, due markers, and milestones." title="No scheduled work" />}
 
-      <DateCommand label="Timeline dates" task={activeTask} />
+      <DateCommand label="Schedule dates" task={activeTask} />
       <KeyboardLegend>Alt + Left or Right moves one day. Add Shift to resize a range. Drag uses the same shared schedule.</KeyboardLegend>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
     </div>

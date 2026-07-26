@@ -45,6 +45,6 @@ test("completed historical work is not labelled overdue", () => {
     completed: true,
     schedule: { kind: "due", dueOn: "2026-07-01" } as const,
   };
-  assert.equal(isTaskOverdue(task), false);
-  assert.equal(isTaskOverdue({ ...task, completed: false }), true);
+  assert.equal(isTaskOverdue(task, "2026-07-16"), false);
+  assert.equal(isTaskOverdue({ ...task, completed: false }, "2026-07-16"), true);
 });

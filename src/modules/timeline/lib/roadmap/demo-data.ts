@@ -1,265 +1,79 @@
 import type { Project, Task, Workspace } from "@/modules/timeline/server/db/timeline-schema";
+import {
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_SUITE_FIXTURE,
+  REVIEW_TIMELINE_MILESTONES,
+  type ReviewTimelineState,
+} from "@/lib/review-suite-fixture";
 
-const createdAt = new Date("2026-05-11T07:00:00Z");
+const createdAt = new Date(REVIEW_SUITE_FIXTURE.lastUpdatedAt);
+
+/**
+ * Synthetic user id used by access-mode demo/review (see lib/access-mode.ts).
+ * The Tasks and Timeline fixtures deliberately share this immutable identity.
+ */
+export const DEMO_USER_ID = REVIEW_SUITE_FIXTURE.user.id;
 
 export const demoWorkspace: Workspace = {
-  slug: "tasks",
-  name: "Tasks · Product Roadmap",
-  description: "What we're building next, written in plain English.",
-  ownerUserId: "seed-demo-user",
-  suiteWorkspaceId: "tasks",
-  ownerName: "Ethan McNamara",
-  ownerEmail: "hello@signalstudio.ie",
+  slug: REVIEW_SUITE_FIXTURE.workspace.slug,
+  name: REVIEW_SUITE_FIXTURE.workspace.name,
+  description:
+    "One venue workspace for the weddings being planned at The Orchard.",
+  ownerUserId: DEMO_USER_ID,
+  suiteWorkspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+  ownerName: REVIEW_SUITE_FIXTURE.workspace.ownerName,
+  ownerEmail: "orla@theorchard.example",
   plan: "free",
   createdAt,
   updatedAt: createdAt,
-  templateId: null,
+  templateId: REVIEW_SUITE_FIXTURE.workspace.templateId,
   isDemo: true,
 };
 
-export const demoProjects: Project[] = [
-  {
-    workspaceSlug: "tasks",
-    sourceTasksWorkspaceId: "tasks",
-    slug: "product",
-    name: "Product Roadmap",
-    oneLiner: "What we're building, and what we said no to.",
+export const demoProjects: Project[] = REVIEW_SUITE_FIXTURE.projects.map(
+  (project, index) => ({
+    workspaceSlug: demoWorkspace.slug,
+    sourceTasksWorkspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+    slug: project.slug,
+    name: project.name,
+    oneLiner: project.oneLiner,
     accent: "rgb(79 70 229)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
-    sortOrder: 0,
-    // Demo workspace is always published.
+    sortOrder: index,
+    // Review projects are deliberately available to the authorised demo owner.
     publishedAt: createdAt,
-  },
-  {
-    workspaceSlug: "tasks",
-    sourceTasksWorkspaceId: "tasks",
-    slug: "launch",
-    name: "Launch",
-    oneLiner: "The commitments between now and launch day.",
-    accent: "rgb(14 116 144)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
-    sortOrder: 1,
-    publishedAt: createdAt,
-  },
-  {
-    workspaceSlug: "tasks",
-    sourceTasksWorkspaceId: "tasks",
-    slug: "venue-pilot",
-    name: "Venue pilot",
-    oneLiner: "A focused pilot plan for Glenmara House.",
-    accent: "rgb(180 83 9)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
-    sortOrder: 2,
-    publishedAt: createdAt,
-  },
-];
+  }),
+);
 
-export const demoTasks: Task[] = [
-  {
-    id: "tasks-product-001",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "Workspace onboarding, first-run experience",
-    description:
-      "First-run experience for new workspaces. Mark tasks as milestones in Signal Tasks and they appear in your plan automatically.",
-    status: "in-flight",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: "2026-05-14",
-    sortOrder: 1,
-    kind: "cycle",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: null,
-  },
-  {
-    id: "tasks-product-002",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "Proof card on the marketing homepage",
-    description:
-      "A live screenshot of the demo workspace embedded in the homepage hero, so the product sells itself without a separate demo page. Blocked on screenshot infra.",
-    status: "waiting",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: "2026-05-15",
-    sortOrder: 2,
-    kind: "cycle",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: null,
-  },
-  {
-    id: "tasks-product-003",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "Invite-only beta",
-    description:
-      "Gated signup behind an invite code. Small cohort, high-signal feedback. No public self-serve until the onboarding is solid.",
-    status: "in-flight",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: "2026-05-18",
-    sortOrder: 3,
-    kind: "cycle",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: null,
-  },
-  {
-    id: "tasks-product-004",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "Comment threads on roadmap items",
-    description:
-      "Not shipping. Conversations belong in the work, not bolted onto a status page. Replying lands in your email, that's the channel.",
-    status: "refused",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: null,
-    sortOrder: 4,
-    kind: "refusal",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: null,
-  },
-  {
-    id: "tasks-product-005",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "Per-workspace project slugs",
-    description:
-      'Project slugs are now scoped per workspace, two separate plans can each have a "blog" project without colliding. Schema migration shipped cleanly.',
-    status: "shipped",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: "2026-05-08",
-    sortOrder: 5,
-    kind: "cycle",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: new Date("2026-05-08T09:00:00Z"),
-  },
-  {
-    id: "tasks-product-006",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "studio. brand integration in nav + footer",
-    description:
-      "The studio. parent brand whisper is now in the nav and footer, links Tasks and Roadmap under one roof without making it a big deal.",
-    status: "shipped",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: "2026-05-10",
-    sortOrder: 6,
-    kind: "cycle",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: new Date("2026-05-10T09:00:00Z"),
-  },
-  {
-    id: "tasks-product-007",
-    projectSlug: "product",
-    workspaceSlug: "tasks",
-    title: "AI-generated roadmap items",
-    description:
-      "Not this year. The product's value is structured clarity, not generated content. If we ship AI suggestions before the manual workflow is proven, we're solving the wrong problem.",
-    status: "refused",
-    phase: null,
-    tier: null,
-    assignee: "claude-code",
-    cycleLabel: null,
-    targetDate: null,
-    sortOrder: 7,
-    kind: "refusal",
-    category: null,
-    priority: null,
-    blockerId: null,
-    unblocks: null,
-    weekHeading: null,
-    channel: null,
-    isLaunch: false,
-    day: null,
-    postingTime: null,
-    createdAt,
-    updatedAt: createdAt,
-    completedAt: null,
-  },
-];
+function statusForReviewState(state: ReviewTimelineState): Task["status"] {
+  if (state === "covered") return "shipped";
+  if (state === "now") return "in-flight";
+  if (state === "cancelled") return "refused";
+  return "next";
+}
+
+export const demoTasks: Task[] = REVIEW_TIMELINE_MILESTONES.map(
+  (milestone, index) =>
+    makeDemoTask({
+      id: milestone.sourceId,
+      workspaceSlug: demoWorkspace.slug,
+      projectSlug: REVIEW_PRIMARY_PROJECT.slug,
+      title: milestone.title,
+      description:
+        "A curated milestone from the authorised The Orchard wedding workspace.",
+      status: statusForReviewState(milestone.state),
+      targetDate: milestone.date,
+      sortOrder: index,
+      kind: milestone.state === "cancelled" ? "refusal" : "cycle",
+      completedAt:
+        milestone.state === "covered"
+          ? new Date(`${milestone.date}T09:00:00.000Z`)
+          : null,
+    }),
+);
 
 export const demoUpcomingTasks = demoTasks.filter(
   (task) => task.status !== "shipped" && task.status !== "refused",
 );
-
-/**
- * Synthetic user id used by access-mode demo/review (see lib/access-mode.ts).
- * In that mode the auth layer resolves to this id and the data layer serves
- * the in-memory demo workspace above, the real DB is never queried.
- */
-export const DEMO_USER_ID = "seed-demo-user";
 
 /**
  * Demo plan nodes for the /app curation surface. Maps the demo tasks to the
@@ -277,6 +91,26 @@ function demoLane(
   return "Next";
 }
 
+const reviewAudienceStateBySourceId = new Map(
+  REVIEW_TIMELINE_MILESTONES.map((milestone) => [
+    milestone.sourceId,
+    milestone.state,
+  ]),
+);
+
+function demoAudienceState(
+  sourceId: string,
+  status: string,
+  targetDate: string | null,
+): "covered" | "now" | "next" | "later" | "cancelled" {
+  const curatedState = reviewAudienceStateBySourceId.get(sourceId);
+  if (curatedState) return curatedState;
+  if (status === "shipped") return "covered";
+  if (status === "refused") return "cancelled";
+  if (status === "in-flight" || status === "waiting") return "now";
+  return targetDate ? "next" : "later";
+}
+
 export function demoEffectiveNodes(workspaceSlug = demoWorkspace.slug) {
   const dataset = getDemoSharedUpdateDataset(workspaceSlug);
   if (!dataset) return [];
@@ -288,12 +122,17 @@ export function demoEffectiveNodes(workspaceSlug = demoWorkspace.slug) {
     title: t.title,
     status: t.status,
     targetDate: t.targetDate ?? null,
+    sourceTargetDate: t.targetDate ?? null,
     sortOrder: t.sortOrder ?? i,
     lane: demoLane(t.status, t.targetDate ?? null),
+    audienceState: demoAudienceState(t.id, t.status, t.targetDate ?? null),
+    sourceAudienceState: demoAudienceState(t.id, t.status, t.targetDate ?? null),
+    audienceStateOverride: null,
     hidden: false,
     laneOverride: null,
     labelOverride: null,
     dateOverride: null,
+    dateOverrideMode: "inherit" as const,
     source: "synced" as const,
     driftDetected: false,
     updatedAt: t.updatedAt,

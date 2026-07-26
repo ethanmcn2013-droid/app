@@ -8,6 +8,7 @@ import {
   useReducer,
   type ReactNode,
 } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { addDays, formatSchedule, moveSchedule, resizeScheduleEnd } from "./dates";
 import type {
   CalendarDate,
@@ -53,7 +54,7 @@ type Action =
   | { type: "MOVE_SCHEDULE"; id: string; days: number }
   | { type: "RESIZE_SCHEDULE"; id: string; days: number }
   | { type: "BULK_STATUS"; status: TaskStatus }
-  | { type: "BULK_COMPLETE"; completed: boolean }
+  | { type: "BULK_COMPLETE"; completed: boolean; nowIso: string }
   | { type: "BULK_DELETE" }
   | { type: "ADD_TASK"; status: TaskStatus; schedule?: TaskSchedule }
   | { type: "DELETE_TASK"; id: string }
@@ -179,7 +180,7 @@ function reducer(state: StoreState, action: Action): StoreState {
           ...task,
           completed: action.completed,
           status: action.completed ? "done" : task.status === "done" ? "active" : task.status,
-          completedAt: action.completed ? "2026-07-16T09:00:00+01:00" : undefined,
+          completedAt: action.completed ? action.nowIso : undefined,
         } : task),
         announcement: `${selected.size} tasks ${action.completed ? "completed" : "reopened"}`,
       };
@@ -339,6 +340,7 @@ export function LabStoreProvider({
   readOnly: boolean;
   onInspectedChange: (id: string | null) => void;
 }) {
+  const calendar = useCalendarFrame();
   const [state, dispatch] = useReducer(reducer, {
     tasks: structuredClone(initialTasks),
     initialTasks: structuredClone(initialTasks),
@@ -387,7 +389,11 @@ export function LabStoreProvider({
     moveScheduleByDays: (id, days) => dispatch({ type: "MOVE_SCHEDULE", id, days }),
     resizeScheduleByDays: (id, days) => dispatch({ type: "RESIZE_SCHEDULE", id, days }),
     bulkStatus: (status) => dispatch({ type: "BULK_STATUS", status }),
-    bulkComplete: (completed = true) => dispatch({ type: "BULK_COMPLETE", completed }),
+    bulkComplete: (completed = true) => dispatch({
+      type: "BULK_COMPLETE",
+      completed,
+      nowIso: calendar.nowIso,
+    }),
     bulkDelete: () => dispatch({ type: "BULK_DELETE" }),
     toggleComplete: (id) => {
       const task = state.tasks.find((item) => item.id === id);
@@ -398,7 +404,7 @@ export function LabStoreProvider({
         fields: {
           completed: !task.completed,
           status: !task.completed ? "done" : "active",
-          completedAt: !task.completed ? "2026-07-16T09:00:00+01:00" : undefined,
+          completedAt: !task.completed ? calendar.nowIso : undefined,
         },
         label: !task.completed ? "Completed" : "Reopened",
       });
@@ -409,7 +415,7 @@ export function LabStoreProvider({
     saveView: (key) => dispatch({ type: "SAVE_VIEW", key }),
     undoLast: () => dispatch({ type: "UNDO" }),
     reset: () => dispatch({ type: "RESET" }),
-  }), [openTask, setPreview, state]);
+  }), [calendar.nowIso, openTask, setPreview, state]);
 
   return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }

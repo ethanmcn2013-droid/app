@@ -57,6 +57,58 @@ test("five of twenty-three active milestones reads as 22 percent at a glance", (
   assert.equal(model.remainingCount, 18);
   assert.equal(model.percent, 22);
   assert.equal(model.cancelled.length, 1);
+  assert.equal(model.density, "standard");
+});
+
+test("artifact density adapts only below the four-milestone standard threshold", () => {
+  assert.equal(buildTimelineArtifactModel(timeline([])).density, "empty");
+  assert.equal(buildTimelineArtifactModel(timeline([
+    item("only", "now"),
+  ])).density, "single");
+  assert.equal(buildTimelineArtifactModel(timeline([
+    item("first", "covered"),
+    item("second", "now"),
+  ])).density, "sparse");
+  assert.equal(buildTimelineArtifactModel(timeline([
+    item("first", "covered"),
+    item("second", "now"),
+    item("third", "later"),
+  ])).density, "sparse");
+  assert.equal(buildTimelineArtifactModel(timeline([
+    item("first", "covered"),
+    item("second", "now"),
+    item("third", "next"),
+    item("fourth", "later"),
+  ])).density, "standard");
+});
+
+test("undated milestones use an ordinal axis and never invent a Today marker", () => {
+  const empty = buildTimelineArtifactModel(timeline([]));
+  const sparse = buildTimelineArtifactModel(timeline([
+    item("first", "covered"),
+    item("second", "now"),
+    item("third", "later"),
+  ]));
+
+  assert.equal(empty.todayPosition, null);
+  assert.equal(sparse.todayPosition, null);
+  assert.deepEqual(sparse.points.map((point) => point.position), [0, 50, 100]);
+});
+
+test("one dated milestone uses calendar geometry only with a distinct date boundary", () => {
+  const withoutBoundary = buildTimelineArtifactModel({
+    ...timeline([item("only", "now", "2026-07-22")]),
+    today: "2026-07-22",
+    primaryDate: { label: "Wedding day", date: "2026-07-22" },
+  });
+  const withBoundary = buildTimelineArtifactModel({
+    ...timeline([item("only", "now", "2026-07-22")]),
+    today: "2026-07-22",
+    primaryDate: { label: "Wedding day", date: "2026-10-03" },
+  });
+
+  assert.equal(withoutBoundary.todayPosition, null);
+  assert.equal(withBoundary.todayPosition, 4);
 });
 
 test("the next milestone prefers now, then next, then later", () => {

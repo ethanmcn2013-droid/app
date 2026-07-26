@@ -723,6 +723,10 @@ button.timeLens:focus-visible .metricAlternate {
   padding-block-end: var(--space-6);
 }
 
+.artifact[data-embedded="true"] {
+  min-height: auto;
+}
+
 .artifact[data-compact="true"] .productHeader {
   min-height: 3.5rem;
 }
@@ -1049,6 +1053,61 @@ button.timeLens:focus-visible .metricAlternate {
   .detailInner {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-6);
+  }
+}
+
+.artifact[data-density="empty"] .journey {
+  margin-block-start: clamp(var(--space-7), 4vw, var(--space-9));
+}
+
+.artifact[data-density="empty"] .stage {
+  min-width: 100%;
+  min-height: clamp(12rem, 18vw, 15rem);
+}
+
+.artifact[data-density="single"] .stage {
+  min-width: 100%;
+  min-height: clamp(15rem, 20vw, 18rem);
+}
+
+.artifact[data-density="sparse"] .stage {
+  min-width: 100%;
+  min-height: clamp(16rem, 22vw, 19rem);
+}
+
+.artifact[data-density="empty"] .empty {
+  display: grid;
+  max-width: 24rem;
+  gap: var(--space-1);
+}
+
+.artifact[data-density="empty"] .empty strong {
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+.artifact[data-density="empty"] .empty span {
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+}
+
+@container timeline-artifact (max-width: 620px) {
+  .artifact[data-density="empty"] .stage {
+    min-height: 13rem;
+  }
+
+  .artifact[data-density="single"] .stage {
+    min-height: 20rem;
+  }
+
+  .artifact[data-density="sparse"] .stage {
+    min-height: calc(var(--timeline-point-count) * 6.5rem + 7rem);
+  }
+
+  .artifact[data-density="single"] .milestone,
+  .artifact[data-density="sparse"] .milestone {
+    inset-block-start: clamp(3.5rem, var(--timeline-position), calc(100% - 3.5rem));
   }
 }
 

@@ -1,20 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  SUITE_CONTEXT_EVENT,
-  SUITE_CONTEXT_STORAGE_KEY,
-} from "@/components/app/suite-context-publisher";
+import { useEffect } from "react";
+import { useSuiteContext } from "@/components/app/use-suite-context";
 import {
   APP_ORIGIN,
   PRODUCT_APP_URLS,
   STUDIO_ORIGIN,
+  type ProductId,
 } from "@/lib/product-urls";
-import {
-  isSuiteContextId,
-  withSuiteContext,
-  type SuiteContextV2,
-} from "@/lib/suite-context";
+import { withSuiteContext } from "@/lib/suite-context";
 
 /**
  * SuiteSwitcher, canonical always-visible 4-product pill switcher.
@@ -48,19 +42,17 @@ import {
  * scoped <style> for :hover. No Tailwind/token dependency, so the byte
  * for byte copy works in every repo regardless of its CSS config.
  *
- * Product order (operator-directed 2026-05-18): notes → tasks → roadmap
- * → analytics. Authed deep-links land on each product's /app entry.
+ * Product order (operator-directed 2026-05-18): notes → tasks → timeline
+ * → signal. Authed deep-links land on each product's /app entry.
  */
 
 const INDIGO = "#4f46e5";
 
-type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
-
-const PRODUCTS: { slug: ProductSlug; word: string; appUrl: string }[] = [
+const PRODUCTS: { slug: ProductId; word: string; appUrl: string }[] = [
   { slug: "notes", word: "notes", appUrl: PRODUCT_APP_URLS.notes },
   { slug: "tasks", word: "tasks", appUrl: PRODUCT_APP_URLS.tasks },
-  { slug: "roadmap", word: "timeline", appUrl: PRODUCT_APP_URLS.timeline },
-  { slug: "analytics", word: "signal", appUrl: PRODUCT_APP_URLS.signal },
+  { slug: "timeline", word: "timeline", appUrl: PRODUCT_APP_URLS.timeline },
+  { slug: "signal", word: "signal", appUrl: PRODUCT_APP_URLS.signal },
 ];
 
 const PRODUCT_ORIGINS = [APP_ORIGIN];
@@ -150,45 +142,10 @@ export function SuiteSwitcher({
 }: {
   /** The product the user is in. Omit on the umbrella launcher (no
    *  product is "current" there, every pill is an equal jump target). */
-  current?: ProductSlug;
+  current?: ProductId;
   showUmbrella?: boolean;
 }) {
-  const [suiteContext, setSuiteContext] = useState<SuiteContextV2 | null>(null);
-
-  useEffect(() => {
-    const readStored = () => {
-      try {
-        const parsed = JSON.parse(
-          window.localStorage.getItem(SUITE_CONTEXT_STORAGE_KEY) ?? "null",
-        ) as Partial<SuiteContextV2> | null;
-        setSuiteContext(
-          parsed?.version === 2 &&
-            isSuiteContextId(parsed.workspaceId) &&
-            (parsed.planningPeriodId === undefined ||
-              isSuiteContextId(parsed.planningPeriodId)) &&
-            (parsed.projectId === undefined || isSuiteContextId(parsed.projectId))
-            ? {
-                version: 2,
-                workspaceId: parsed.workspaceId,
-                ...(parsed.planningPeriodId
-                  ? { planningPeriodId: parsed.planningPeriodId }
-                  : {}),
-                ...(parsed.projectId ? { projectId: parsed.projectId } : {}),
-              }
-            : null,
-        );
-      } catch {
-        setSuiteContext(null);
-      }
-    };
-    const onContext = (event: Event) => {
-      const detail = (event as CustomEvent<SuiteContextV2 | null>).detail;
-      setSuiteContext(detail);
-    };
-    readStored();
-    window.addEventListener(SUITE_CONTEXT_EVENT, onContext);
-    return () => window.removeEventListener(SUITE_CONTEXT_EVENT, onContext);
-  }, []);
+  const suiteContext = useSuiteContext();
 
   // Phase 3 (instant-jump): preconnect every sibling origin on mount so
   // the first cross-product hop has a warm TLS connection ready. The

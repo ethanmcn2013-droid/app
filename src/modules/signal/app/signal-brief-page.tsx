@@ -1,6 +1,8 @@
-import { BriefingView } from "../components/signal/briefing-view";
-import { SignalAppShell } from "../components/signal/signal-app-shell";
+import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
+import { EvidenceDrawer } from "../components/signal/evidence-drawer";
+import { formatInstant } from "../components/signal/format";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
+import { buildProgressiveLedgerDTO } from "../server/analytics/build-ledger-dto";
 import { isSignalAnalyticsEnabled } from "../server/analytics/feature-flag";
 import { calculateSignalView } from "../server/analytics/service";
 import { SignalLegacyBriefing } from "./signal-legacy-briefing";
@@ -48,33 +50,36 @@ export async function SignalBriefPage({
   const chrome = buildSignalPageChrome(context, result.navigation);
   const makeEvidenceHref = (id: string) =>
     evidenceHref("/app/signal", params, id);
+  const ledger = buildProgressiveLedgerDTO(result.view, {
+    generatedAtLabel: formatInstant(
+      result.view.meta.calculatedAt,
+      result.view.meta.period.timezone,
+    ),
+    scopeLabel: chrome.scopeLabel,
+    evidenceHref: makeEvidenceHref,
+  });
+  const selectedEvidence = evidenceState(
+    "/app/signal",
+    params,
+    result.evidence,
+    chrome.ownerNames,
+    chrome.projectNames,
+    context.state.query.scope,
+  );
 
   return (
     <div data-signal-module>
-      <SignalAppShell
-        view="briefing"
-        heading="What genuinely needs you today"
-        subheading="Show me the two or three things that genuinely need me today."
-        scopeLabel={chrome.scopeLabel}
-        meta={{ ...result.view.meta, scope: context.state.query.scope }}
-        scopes={chrome.scopes}
-        ownerOptions={chrome.ownerOptions}
-        statusOptions={chrome.statusOptions}
-        evidence={evidenceState(
-          "/app/signal",
-          params,
-          result.evidence,
-          chrome.ownerNames,
-          chrome.projectNames,
-          context.state.query.scope,
-        )}
-      >
-        <BriefingView
-          briefing={result.view}
-          evidenceHref={makeEvidenceHref}
-          scopeLabel={chrome.scopeLabel}
+      <section id="signal-main-content" tabIndex={-1}>
+        <QuietBriefingLedger ledger={ledger} />
+      </section>
+      {selectedEvidence ? (
+        <EvidenceDrawer
+          evidence={selectedEvidence.response}
+          closeHref={selectedEvidence.closeHref}
+          ownerNames={selectedEvidence.ownerNames}
+          projectNames={selectedEvidence.projectNames}
         />
-      </SignalAppShell>
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type DragEvent } from "react";
-import { LAB_TODAY } from "../../dates";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useLabStore } from "../../store";
 import type { CalendarDate, LabTask } from "../../types";
 import { Icon } from "../../shared/icons";
@@ -10,7 +10,10 @@ import styles from "./option-b.module.css";
 
 function UnscheduledItem({ task, source }: { task: LabTask; source: "timeline-tray" | "calendar" }) {
   const store = useLabStore();
-  const [date, setDate] = useState<CalendarDate>(LAB_TODAY);
+  const calendar = useCalendarFrame();
+  const [date, setDate] = useState<CalendarDate>(
+    () => calendar.today as CalendarDate,
+  );
   const startDrag = (event: DragEvent<HTMLElement>) => {
     if (store.readOnly) return;
     event.dataTransfer.effectAllowed = "move";

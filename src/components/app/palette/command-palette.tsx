@@ -5,20 +5,22 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { LANES, type Task } from "@/lib/data";
 import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
-import {
-  PRODUCT_APP_URLS,
-} from "@/lib/product-urls";
+import { useSuiteContext } from "@/components/app/use-suite-context";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import { withSuiteContext } from "@/lib/suite-context";
 
 type Ctx = { open: boolean; openPalette: () => void; closePalette: () => void };
 const PaletteContext = createContext<Ctx | null>(null);
@@ -38,17 +40,43 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  const restoreFocusRef = useRef(true);
   const openPalette = useCallback(() => {
     // Reset the search in the same event batch that opens the dialog so
     // stale results can never flash during the entrance animation.
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    restoreFocusRef.current = true;
     setQuery("");
     setActiveTaskId(null);
     setOpen(true);
   }, []);
-  const closePalette = useCallback(() => setOpen(false), []);
+  const closePalette = useCallback(() => {
+    restoreFocusRef.current = true;
+    setOpen(false);
+  }, []);
+  const dismissPalette = useCallback(() => {
+    restoreFocusRef.current = false;
+    setOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    return () => {
+      if (!restoreFocusRef.current) return;
+      const returnTarget = returnFocusRef.current;
+      window.setTimeout(() => {
+        if (returnTarget?.isConnected) returnTarget.focus({ preventScroll: true });
+      }, 0);
+    };
+  }, [open]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
+      if (e.defaultPrevented) return;
       const meta = e.metaKey || e.ctrlKey;
       // ⌘K is the universal "Search, jump or create" field (Studio Bar,
       // T·94) — the cross-app convention (Slack, Notion, Linear) where
@@ -82,6 +110,7 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
       <Palette
         open={open}
         onClose={closePalette}
+        onDismiss={dismissPalette}
         query={query}
         onQueryChange={setQuery}
         activeTaskId={activeTaskId}
@@ -104,6 +133,7 @@ export function usePalette(): Ctx {
 function Palette({
   open,
   onClose,
+  onDismiss,
   query,
   onQueryChange,
   activeTaskId,
@@ -111,41 +141,67 @@ function Palette({
 }: {
   open: boolean;
   onClose: () => void;
+  onDismiss: () => void;
   query: string;
   onQueryChange: (query: string) => void;
   activeTaskId: string | null;
   onActiveTaskChange: (taskId: string | null) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+  const reduceMotion = useReducedMotion();
   const state = useTasksState();
   const { openTask } = useTaskPanel();
   // "…or create": the palette is the Studio Bar's universal field (T·94),
   // so creating is a first-class exit. AddTaskRoot wraps PaletteRoot.
   const { openDialog } = useAddTask();
   const createTask = useCallback(() => {
-    onClose();
+    onDismiss();
     openDialog();
-  }, [onClose, openDialog]);
+  }, [onDismiss, openDialog]);
 
-  // Query/selection are reset by PaletteRoot in the same event batch as
-  // `open`. Focus may follow after commit without exposing stale content.
+  // Isolate the app while the modal is open. aria-modal alone does not remove
+  // the background from keyboard or assistive-technology navigation.
   useEffect(() => {
     if (!open) return;
-    inputRef.current?.focus();
-  }, [open]);
-
-  // Esc handler + backdrop click handled by the wrapper.
-  useEffect(() => {
-    if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
+    const layer = document.querySelector<HTMLElement>(
+      "[data-tasks-command-palette-layer]",
+    );
+    const isolated = Array.from(document.body.children)
+      .filter(
+        (child): child is HTMLElement =>
+          child instanceof HTMLElement &&
+          child !== layer &&
+          !["SCRIPT", "STYLE", "LINK"].includes(child.tagName),
+      )
+      .map((element) => ({
+        element,
+        inert: element.inert,
+        ariaHidden: element.getAttribute("aria-hidden"),
+      }));
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    for (const snapshot of isolated) {
+      snapshot.element.inert = true;
+      snapshot.element.setAttribute("aria-hidden", "true");
     }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    const frame = window.requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.body.style.overflow = previousOverflow;
+      for (const snapshot of isolated) {
+        snapshot.element.inert = snapshot.inert;
+        if (snapshot.ariaHidden === null) {
+          snapshot.element.removeAttribute("aria-hidden");
+        } else {
+          snapshot.element.setAttribute("aria-hidden", snapshot.ariaHidden);
+        }
+      }
+    };
+  }, [open]);
 
   const results = useMemo(() => searchTasks(state.tasks, query), [
     state.tasks,
@@ -177,33 +233,71 @@ function Palette({
     (taskId?: string) => {
       const id = taskId ?? results[activeIdx]?.id;
       if (!id) return;
-      onClose();
+      onDismiss();
       openTask(id);
     },
-    [activeIdx, onClose, openTask, results],
+    [activeIdx, onDismiss, openTask, results],
   );
 
-  return (
+  const activeOptionId =
+    results.length > 0 ? `${listboxId}-option-${activeIdx}` : undefined;
+  const palette = (
     <AnimatePresence>
       {open ? (
         <motion.div
-          initial={{ opacity: 0 }}
+          data-tasks-command-palette-layer
+          initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          transition={
+            reduceMotion
+              ? { duration: 0 }
+              : { duration: 0.16, ease: [0.16, 1, 0.3, 1] }
+          }
           className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/15 px-4 pt-[14vh] backdrop-blur-[2px]"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
         >
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            initial={
+              reduceMotion ? false : { opacity: 0, y: -6, scale: 0.98 }
+            }
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.985 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            transition={
+              reduceMotion
+                ? { duration: 0 }
+                : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
+            }
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                event.stopPropagation();
+                onClose();
+                return;
+              }
+              if (event.key !== "Tab") return;
+              const focusable = Array.from(
+                dialogRef.current?.querySelectorAll<HTMLElement>(
+                  'input:not([disabled]), button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+                ) ?? [],
+              ).filter((element) => !element.hidden);
+              if (focusable.length === 0) return;
+              const first = focusable[0];
+              const last = focusable[focusable.length - 1];
+              if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+              } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+              }
+            }}
             className="w-full max-w-[640px] overflow-hidden rounded-2xl border border-line-soft bg-bg-elevated shadow-[0_36px_80px_-30px_rgba(20,21,26,0.4)]"
           >
             <div className="flex items-center gap-2 border-b border-line-soft px-4 py-3.5">
@@ -221,6 +315,11 @@ function Palette({
               </svg>
               <input
                 ref={inputRef}
+                aria-activedescendant={activeOptionId}
+                aria-autocomplete="list"
+                aria-controls={listboxId}
+                aria-expanded="true"
+                aria-label="Search tasks"
                 type="text"
                 value={query}
                 onChange={(e) => {
@@ -241,6 +340,7 @@ function Palette({
                 }}
                 placeholder="Search, jump or create…"
                 autoComplete="off"
+                role="combobox"
                 spellCheck={false}
                 className="block w-full bg-transparent text-[15px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
               />
@@ -250,12 +350,10 @@ function Palette({
             </div>
 
             <div className="thin-scroll max-h-[60vh] overflow-y-auto py-1">
-              {results.length === 0 ? (
-                <Empty query={query} onCreate={createTask} />
-              ) : (
-                <ul role="listbox">
-                  {results.map((task, idx) => (
+              <ul aria-label="Task results" id={listboxId} role="listbox">
+                {results.map((task, idx) => (
                     <ResultRow
+                      id={`${listboxId}-option-${idx}`}
                       key={task.id}
                       task={task}
                       query={query}
@@ -263,9 +361,11 @@ function Palette({
                       onHover={() => onActiveTaskChange(task.id)}
                       onClick={() => commit(task.id)}
                     />
-                  ))}
-                </ul>
-              )}
+                ))}
+              </ul>
+              {results.length === 0 ? (
+                <Empty query={query} onCreate={createTask} />
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between border-t border-line-soft bg-bg-sunken/30 px-4 py-2 text-[10.5px] text-ink-quiet">
@@ -283,6 +383,8 @@ function Palette({
       ) : null}
     </AnimatePresence>
   );
+  if (typeof document === "undefined") return null;
+  return createPortal(palette, document.body);
 }
 
 function CreateRow({ onCreate }: { onCreate: () => void }) {
@@ -353,14 +455,27 @@ function Empty({ query, onCreate }: { query: string; onCreate: () => void }) {
   );
 }
 
-const SUITE_JUMPS: { word: string; tagline: string; url: string }[] = [
-  { word: "timeline", tagline: "Direction clarity", url: PRODUCT_APP_URLS.timeline },
-  { word: "notes", tagline: "Capture clarity", url: PRODUCT_APP_URLS.notes },
-  { word: "signal", tagline: "Attention clarity", url: PRODUCT_APP_URLS.signal },
+const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
+  {
+    word: "timeline",
+    tagline: "Direction clarity",
+    path: PRODUCT_APP_PATHS.timeline,
+  },
+  {
+    word: "notes",
+    tagline: "Capture clarity",
+    path: PRODUCT_APP_PATHS.notes,
+  },
+  {
+    word: "signal",
+    tagline: "Attention clarity",
+    path: PRODUCT_APP_PATHS.signal,
+  },
 ];
 
 function SuiteJumps({ only }: { only?: typeof SUITE_JUMPS }) {
   const items = only ?? SUITE_JUMPS;
+  const suiteContext = useSuiteContext();
   return (
     <div className="mt-4 border-t border-line-soft/70 pt-2">
       <div className="px-4 pb-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
@@ -370,9 +485,7 @@ function SuiteJumps({ only }: { only?: typeof SUITE_JUMPS }) {
         {items.map((j) => (
           <li key={j.word}>
             <a
-              href={j.url}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={withSuiteContext(j.path, suiteContext)}
               className="flex items-center justify-between gap-3 rounded-md px-3 py-2 no-underline transition-colors hover:bg-bg-sunken/50"
             >
               <div>
@@ -418,12 +531,14 @@ function Hint({ kbd, children }: { kbd: string; children: ReactNode }) {
 }
 
 function ResultRow({
+  id,
   task,
   query,
   active,
   onHover,
   onClick,
 }: {
+  id: string;
   task: Task;
   query: string;
   active: boolean;
@@ -433,10 +548,13 @@ function ResultRow({
   const lane = LANES[task.lane];
   return (
     <li
+      id={id}
       role="option"
       aria-selected={active}
       onMouseEnter={onHover}
+      onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
+      tabIndex={-1}
       className={
         "flex cursor-pointer items-center gap-3 px-4 py-2 transition-colors " +
         (active ? "bg-brand-soft/40" : "hover:bg-bg-sunken/40")

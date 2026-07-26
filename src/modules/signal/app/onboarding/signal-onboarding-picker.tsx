@@ -16,6 +16,7 @@ export function SignalOnboardingPicker({
 }) {
   const [selected, setSelected] = useState(candidates[0]?.workspaceId ?? "");
   const [timezone, setTimezone] = useState("");
+  const [failure, setFailure] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -38,8 +39,15 @@ export function SignalOnboardingPicker({
   return (
     <form
       action={(formData) => {
-        startTransition(() => {
-          completeOnboarding(formData);
+        startTransition(async () => {
+          setFailure(null);
+          try {
+            await completeOnboarding(formData);
+          } catch {
+            setFailure(
+              "Signal could not link this workspace. Check your connection and try again.",
+            );
+          }
         });
       }}
     >
@@ -114,7 +122,10 @@ export function SignalOnboardingPicker({
                   name="workspaceId"
                   value={c.workspaceId}
                   checked={active}
-                  onChange={() => setSelected(c.workspaceId)}
+                  onChange={() => {
+                    setFailure(null);
+                    setSelected(c.workspaceId);
+                  }}
                   style={{ accentColor: "var(--brand)" }}
                 />
                 <div style={{ flex: 1 }}>
@@ -158,6 +169,7 @@ export function SignalOnboardingPicker({
                 : "Continue to briefing"
         }
         style={{
+          minHeight: 44,
           padding: "10px 18px",
           borderRadius: "999px",
           border: "1px solid var(--ink)",
@@ -180,6 +192,8 @@ export function SignalOnboardingPicker({
       </button>
 
       <p
+        role="status"
+        aria-live="polite"
         style={{
           marginTop: 16,
           fontSize: 12,
@@ -188,8 +202,23 @@ export function SignalOnboardingPicker({
           letterSpacing: "0.02em",
         }}
       >
-        Time zone: {timezone || "detecting…"}
+        {pending
+          ? "Linking this workspace…"
+          : `Time zone: ${timezone || "detecting…"}`}
       </p>
+      {failure ? (
+        <p
+          role="alert"
+          style={{
+            marginTop: 12,
+            fontSize: 13,
+            lineHeight: 1.5,
+            color: "var(--status-blocked)",
+          }}
+        >
+          {failure}
+        </p>
+      ) : null}
     </form>
   );
 }

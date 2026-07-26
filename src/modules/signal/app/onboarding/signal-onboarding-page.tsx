@@ -7,6 +7,7 @@ import { dataSource } from "../../lib/data/source";
 import { getAnalyticsUser } from "../../server/onboarding/signal-onboarding-queries";
 import { requireSignalUser } from "../../server/signal-auth";
 import { SignalOnboardingPicker } from "./signal-onboarding-picker";
+import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
 
 /**
  * Onboarding page — ported from signal/src/app/app/onboarding/page.tsx.
@@ -24,7 +25,11 @@ export async function SignalOnboardingPage() {
 
   if (demo) {
     // Demo mode: serve mock workspace, no auth, no DB.
-    candidates = [{ workspaceId: "ws_demo", name: "Demo workspace", role: "owner" as const }];
+    candidates = [{
+      workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
+      name: REVIEW_SUITE_FIXTURE.workspace.name,
+      role: "owner" as const,
+    }];
   } else {
     const userId = await requireSignalUser();
     if (!userId) redirect("/sign-in");
@@ -87,7 +92,7 @@ export async function SignalOnboardingPage() {
       >
         {candidates.length === 0
           ? "Your briefing reads from a Signal Tasks workspace. Sign up at Tasks or get added to one, then come back."
-          : "Your briefing reads from this workspace each morning. You can change it later."}
+          : "Signal reads this workspace when you open the briefing. You can change it later."}
       </p>
 
       {candidates.length === 0 ? (

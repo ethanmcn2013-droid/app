@@ -15,6 +15,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PRIORITY_LABEL, type Priority } from "@/lib/data";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -29,10 +30,10 @@ import styles from "./option-b.module.css";
 import shared from "./room-shared.module.css";
 
 const TABS: Array<{ href: string; view: RoomView; label: string; purpose: string }> = [
-  { href: "/app/tasks", view: "board", label: "Board", purpose: "Move and prioritize work by status" },
-  { href: "/app/tasks/list", view: "list", label: "List", purpose: "Scan and edit operational task fields" },
-  { href: "/app/tasks/timeline", view: "timeline", label: "Timeline", purpose: "Plan dated work and explicit unscheduled tasks" },
-  { href: "/app/tasks/calendar", view: "calendar", label: "Calendar", purpose: "Review commitments by day, week, or agenda" },
+  { href: TASKS_VIEW_PATHS.board, view: "board", label: "Board", purpose: "Move and prioritize work by status" },
+  { href: TASKS_VIEW_PATHS.list, view: "list", label: "List", purpose: "Scan and edit operational task fields" },
+  { href: TASKS_VIEW_PATHS.timeline, view: "timeline", label: "Schedule", purpose: "Plan dated work and explicit unscheduled tasks" },
+  { href: TASKS_VIEW_PATHS.calendar, view: "calendar", label: "Calendar", purpose: "Review commitments by day, week, or agenda" },
 ];
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];

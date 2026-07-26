@@ -1,236 +1,28 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
-import AppLoading from "./loading";
+import { MobileSuiteNav } from "@/components/app/mobile-suite-nav";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
+import { SuiteCommandRoot } from "@/components/app/suite-command-root";
+import { SuiteLoading } from "@/components/app/suite-loading";
 import { StudioBar } from "@/components/studio-bar/studio-bar";
 import { StudioRail } from "@/components/studio-bar/studio-rail";
-import {
-  StudioChromeBridge,
-  StudioChromeProvider,
-  StudioChromePublisher,
-} from "@/components/studio-bar/studio-chrome-context";
-import { FirstCompletionMoment } from "@/components/app/done-dopamine/first-completion-moment";
-import { TasksProvider } from "@/lib/tasks/tasks-context";
-import { TaskDetailPanel } from "@/components/app/detail-panel/task-detail-panel";
-import { AddTaskRoot } from "@/components/app/add-task/add-task-context";
-import { PaletteRoot } from "@/components/app/palette/command-palette";
-import { CrossWorkspaceOverdue } from "@/components/app/cross-workspace-overdue";
-import { CrossWorkspaceSearch } from "@/components/app/cross-workspace-search";
-import { FocusMode } from "@/components/app/focus-mode";
-import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
-import { ToastBridge, ToastRoot } from "@/components/primitives/toast";
-import { DomainProvider } from "@/lib/domain-context";
-import { CurrentUserProvider } from "@/lib/auth-context";
-import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
-import { getRoomBriefData } from "@/server/actions/room";
-import { getProjectsTreeData } from "@/server/actions/projects-tree";
-import { getBoardName, getColumnConfig } from "@/server/actions/board";
-import { getTagDefs } from "@/server/actions/tags";
-import { eq } from "drizzle-orm";
-import { db } from "@/server/db";
-import { workspaces } from "@/server/db/schema";
-import {
-  getTasks,
-  getActiveDomain,
-  isFirstRun,
-} from "@/server/db/queries";
-import {
-  getActiveWorkspace,
-  getCurrentUser,
-  listMyWorkspaces,
-} from "@/server/auth";
-import { getUserPreferences } from "@/server/db/preferences";
-// D-018: use the Tasks-local wrapper that extends the shared allowlist gate
-// with a membership check (accepted-invite users pass even if not allowlisted).
-// require-app-access.ts is a byte-identical four-repo copy; do not edit it.
-import { requireAppAccessTasks } from "@/server/app-access";
-import { getWorkspacePersonalization } from "@/lib/onboarding/personalization";
-import {
-  editionLabel,
-  resolveEntitlement,
-  type EntitlementSource,
-} from "@/lib/entitlements-shared";
+import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-context";
 import { isDemoMode } from "@/lib/access-mode";
-import {
-  DEMO_PRIMARY_USE_CASE,
-  DEMO_WORKSPACE_SLUG,
-} from "@/server/demo/tasks-demo";
+import { requireAppAccess } from "@/server/require-app-access";
 
-// Layout reads from a runtime DB; mark dynamic so Next doesn't try
-// to prerender app routes against a build-time empty DB.
 export const dynamic = "force-dynamic";
 
-/**
- * AppShell, async server component that holds all auth-dependent data
- * fetching. Lives inside a Suspense boundary so the loading.tsx dot paints
- * while auth() + DB reads resolve.
- *
- * DECISIONS.md D5: auth() must not block the layout, it prevents
- * loading.tsx from painting (Next 16.2 fact: a layout awaiting runtime
- * data blocks the segment loading boundary entirely).
- *
- * StudioBar + StudioRail (no auth deps, client components) stay at layout
- * level and render instantly, "chrome lives in layout (instant, never
- * re-blanks)". Their auth-dependent cells hydrate via StudioChromePublisher.
- */
-async function AppShell({ children }: { children: React.ReactNode }) {
-  // Closed-beta gate: only allowlisted accounts reach /app (production only;
-  // demo/dev unaffected). Runs inside this Suspense boundary so the wordmark
-  // loader paints during the check and no protected content shows before a
-  // non-allowlisted account is redirected to /waitlist.
-  // D-018: Tasks-local wrapper also passes invited members (membership row).
-  await requireAppAccessTasks();
-
-  const ws = await getActiveWorkspace();
-  // First-run gate: redirect to /welcome until user has a starter workspace.
-  // /welcome reverse-redirects returning users so a stale bookmark can't trap.
-  if (await isFirstRun(ws)) {
-    redirect("/welcome");
-  }
-  const [tasks, domain, currentUser, wsRow, myWorkspaces, roomBrief, projectsTree, boardName, columnConfig, tagDefs, userPrefs] = await Promise.all([
-    getTasks(ws),
-    getActiveDomain(ws),
-    getCurrentUser(),
-    // Demo/Review: synthesize the workspace row instead of hitting the DB.
-    isDemoMode()
-      ? Promise.resolve({
-          slug: DEMO_WORKSPACE_SLUG,
-          primaryUseCase: DEMO_PRIMARY_USE_CASE,
-          planningPeriodId: "demo-planning-period",
-        })
-      : db
-          .select({
-            slug: workspaces.slug,
-            primaryUseCase: workspaces.primaryUseCase,
-            planningPeriodId: workspaces.planningPeriodId,
-          })
-          .from(workspaces)
-          .where(eq(workspaces.id, ws))
-          .then((rows) => rows[0]),
-    listMyWorkspaces(),
-    // Editorial Project Room facts (Option B): purpose, date window,
-    // period name, owner. Fetched here per DECISIONS.md D4 so the view
-    // pages stay synchronous and never re-suspend against loading.tsx.
-    getRoomBriefData(),
-    // Projects sidebar tree (T·95 lab parity): periods → workspaces → counts.
-    getProjectsTreeData(),
-    // Editable workspace title (T·97): per-workspace name override from meta
-    // KV. Null when unset; the brief falls back to shortenTitle(workspaceTitle).
-    getBoardName(ws),
-    // Full column config (renames, custom columns, colours, descriptions,
-    // order) so the board's persisted layout is server-rendered and survives
-    // a reload (Phase 2). Null when nothing has been customised.
-    getColumnConfig(ws),
-    // Reusable tag definitions (name + colour) so chips render in colour on
-    // first paint (Phase 3A).
-    getTagDefs(ws),
-    // Theme preference (D-013): one extra parallel PK lookup in this
-    // Promise.all — never serial. getCurrentUser() is called again here
-    // because currentUser is not yet resolved at this point; Next.js
-    // caches auth() so the second call is not a duplicate network round-trip.
-    // Null in DB resolves to "system" in getUserPreferences (the DEFAULTS).
-    // Demo/Review: the demo DB has no tables — never reach it (same guard
-    // shape as the workspace-row read above).
-    isDemoMode()
-      ? Promise.resolve(null)
-      : getCurrentUser().then((uid) => getUserPreferences(uid)),
-  ]);
-  const slug = wsRow?.slug ?? ws;
-  // Header licence slot (Phase 1): resolve the account's edition from the
-  // shared entitlements DB and derive a label. Failure-safe (resolveEntitlement
-  // returns `free` with a null source on any error) and skipped in demo mode,
-  // so a licence read never takes the board down. Only named editions
-  // (student_edu → School Edition, venue_edition → Venue Edition) produce a
-  // label; everyone else gets null and the slot renders nothing.
-  const edition = isDemoMode()
-    ? null
-    : editionLabel(
-        (await resolveEntitlement(currentUser)).source as EntitlementSource | null,
-      );
-  const personalization = getWorkspacePersonalization({
-    primaryUseCase: wsRow?.primaryUseCase,
-    activeDomain: domain,
-  });
-  const themeMode = userPrefs?.themeMode ?? "system";
-  // data-theme lives on this div, below the Suspense boundary in AppShell.
-  // Acceptable only while dark is unselectable (D-013): the loading fallback
-  // paints with :root tokens and there is no flash because "system" and "light"
-  // both resolve to the light palette. A cookie-based html-level read is the
-  // recorded path if dark ever ships (would need to move above Suspense).
-  return (
-    <div
-      data-theme={themeMode}
-      // color-scheme stays "light" for BOTH modes today: "system" has no dark
-      // palette to resolve to (D-013), and advertising "light dark" would let
-      // an OS-dark browser render dark form controls and scrollbars against
-      // our light tokens. Follow the theme here when dark ships.
-      style={{ colorScheme: "light" }}
-      className="contents"
-    >
-      <CurrentUserProvider user={currentUser}>
-        <DomainProvider
-          domain={domain}
-          workspaceId={ws}
-          workspaceSlug={slug}
-          boardName={boardName}
-          columnConfig={columnConfig}
-          tagDefs={tagDefs}
-          personalization={personalization}
-        >
-          <TasksProvider initialTasks={tasks}>
-            <RoomBriefProvider value={roomBrief}>
-            <ToastRoot>
-              <SuiteContextPublisher
-                planningPeriodId={wsRow?.planningPeriodId ?? null}
-                workspaceId={ws}
-              />
-              <AddTaskRoot>
-                <PaletteRoot>
-                  {/* T·94: workspace switching + scope moved up into the
-                      Studio Bar (layout level). Publisher fills the bar's
-                      cells; Bridge routes its command-field / create events
-                      into PaletteRoot + AddTaskRoot. */}
-                  <StudioChromePublisher
-                    workspaces={myWorkspaces}
-                    activeWorkspaceId={ws}
-                    periodName={roomBrief?.periodName ?? null}
-                    edition={edition}
-                  />
-                  <StudioChromeBridge />
-                  <ProductWorkspaceShell
-                    activeWorkspaceId={ws}
-                    tree={projectsTree}
-                  >
-                    {children}
-                  </ProductWorkspaceShell>
-                  <TaskDetailPanel />
-                  <CrossWorkspaceOverdue />
-                  <CrossWorkspaceSearch />
-                  <FocusMode />
-                  <ToastBridge />
-                </PaletteRoot>
-              </AddTaskRoot>
-            </ToastRoot>
-            </RoomBriefProvider>
-          </TasksProvider>
-        </DomainProvider>
-      </CurrentUserProvider>
-    </div>
-  );
+async function SharedAppGate({ children }: { children: React.ReactNode }) {
+  await requireAppAccess();
+  return children;
 }
 
 /**
- * AppLayout, the /app segment layout.
+ * Shared Signal Studio application frame.
  *
- * The Studio Bar and product rail render synchronously at this level
- * (client components, no auth deps) so the black L-frame is always
- * painted and never re-blanks, the monotonic reveal contract from
- * LOADING_SYSTEM.md §4.
- *
- * AppShell (auth + DB reads) wraps in Suspense so loading.tsx paints
- * while data resolves. Board mounts exactly once: Suspense resolves into
- * AppShell; AppShell never unmounts (layout is stable).
+ * This boundary deliberately owns only common access and chrome. Tasks data,
+ * providers, first-run logic, panels, and project navigation live in the
+ * Tasks-only nested runtime so one product cannot block its siblings.
  */
 export default function AppLayout({
   children,
@@ -238,42 +30,28 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const shell = (
-    /*
-     * L4, persistent top chrome (DESIGN.md §14, amended by the Studio Bar
-     * contract 2026-07-17). The 48px Studio Bar spans the top; the 60px
-     * product rail runs down the left; together they draw the Signal
-     * Studio L-frame around the white canvas. flex-col wraps bar +
-     * flex-row (rail + sidebar + content); overflow-hidden on the inner
-     * row so the content area clips correctly under the fixed-height bar.
-     *
-     * P1-2/P1-4 fix (DECISIONS.md D5): chrome rendered at this
-     * synchronous layout level; auth/data moved into <AppShell> under
-     * <Suspense> so loading.tsx boundary can paint. Board mounts once.
-     *
-     * Fallback = <AppLoading /> (the wordmark identity loader from
-     * ./loading.tsx). The prior `fallback={null}` left the body blank
-     * beneath SuiteChrome during AppShell's auth+DB fetch, which read
-     * as a white flash between "chrome paints" and "board arrives".
-     * Sharing the loader with the segment-level boundary means the
-     * same wordmark holds the moment either way, no re-blank.
-     */
     <StudioChromeProvider>
-        <div className="flex h-screen w-full flex-col bg-bg">
-        {/* T·94: the 48px Studio Bar replaces SuiteChrome + the
-            WorkspaceContextBar row. Bar (top) + rail (left) render at
-            this synchronous level so the black L-frame paints instantly
-            and never re-blanks; the bar's live cells hydrate from
-            <StudioChromePublisher> once AppShell resolves. */}
+      <div className="flex h-dvh w-full flex-col bg-[var(--paper)]">
+        <a
+          href="#app-main-content"
+          className="fixed left-3 top-3 z-[200] -translate-y-[calc(100%+1rem)] rounded-md bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white shadow-lg outline-none transition-transform focus:translate-y-0 focus-visible:ring-2 focus-visible:ring-[var(--x-studio-accent)] focus-visible:ring-offset-2"
+        >
+          Skip to main content
+        </a>
         <StudioBar />
-        <FirstCompletionMoment />
-        <div className="flex min-w-0 flex-1 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
           <StudioRail />
-          <Suspense fallback={<AppLoading />}>
-            <AppShell>{children}</AppShell>
+          <Suspense fallback={<SuiteLoading />}>
+            <SharedAppGate>
+              <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
+            </SharedAppGate>
           </Suspense>
         </div>
-        </div>
+        <MobileSuiteNav />
+        <SuiteCommandRoot />
+      </div>
     </StudioChromeProvider>
   );
+
   return isDemoMode() ? shell : <ClerkRuntimeProvider>{shell}</ClerkRuntimeProvider>;
 }

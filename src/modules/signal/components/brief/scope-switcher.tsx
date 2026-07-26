@@ -59,7 +59,7 @@ export function SignalScopeSwitcher({
             }
           : undefined
       }
-      className="mx-auto flex w-full max-w-[640px] items-end gap-3 px-6 pt-8"
+      className="mx-auto flex w-full max-w-[960px] items-end gap-3 px-6 pt-8 sm:px-8"
       aria-label="Signal scope"
     >
       <label className="grid flex-1 gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--ink-quiet)]">

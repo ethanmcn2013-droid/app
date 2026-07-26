@@ -54,11 +54,8 @@ jobs:
       - name: Design-system drift gate
         run: pnpm run ds:check
 
-      - name: Test
+      - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
-
-      - name: Suite URL and Timeline switcher contracts
-        run: pnpm test:suite-url-and-switcher
 
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser

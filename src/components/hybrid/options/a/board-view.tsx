@@ -424,6 +424,15 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               >
                 {laneTasks.map((task, index) => {
                   const actions = buildTaskActions(task, store);
+                  const hasPriority = task.priority === "urgent" || task.priority === "high";
+                  const hasLabels = task.labelIds.length > 0;
+                  const hasSchedule = task.schedule.kind !== "unscheduled";
+                  const hasSignals = task.subtasks.length > 0 ||
+                    task.comments.length > 0 ||
+                    task.attachments.length > 0 ||
+                    task.blockedByIds.length > 0 ||
+                    task.blockerIds.length > 0;
+                  const hasFooter = task.assigneeIds.length > 0 || Boolean(task.estimate);
                   return (
                     <li key={task.id}>
                       {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
@@ -468,7 +477,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                           >
                             <div className={styles.cardTopline}>
                               <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
-                              <PriorityMark task={task} />
+                              {hasPriority ? <PriorityMark task={task} /> : null}
                               <span className={styles.cardSpacer} />
                               <ActionsDropdown
                                 items={actions}
@@ -482,9 +491,19 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                             ) : (
                               <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
                             )}
-                            <div className={styles.cardLabels}><LabelList task={task} /></div>
-                            <div className={styles.cardSchedule}><ScheduleText compact task={task} /><TaskSignals task={task} /></div>
-                            <footer><AvatarStack task={task} /><span>{task.estimate ?? "No estimate"}</span></footer>
+                            {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
+                            {hasSchedule || hasSignals ? (
+                              <div className={styles.cardSchedule}>
+                                {hasSchedule ? <ScheduleText compact task={task} /> : <span />}
+                                {hasSignals ? <TaskSignals task={task} /> : null}
+                              </div>
+                            ) : null}
+                            {hasFooter ? (
+                              <footer>
+                                <AvatarStack showUnassigned={false} task={task} />
+                                {task.estimate ? <span>{task.estimate}</span> : null}
+                              </footer>
+                            ) : null}
                           </article>
                         }
                       />

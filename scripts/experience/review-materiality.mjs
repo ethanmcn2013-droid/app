@@ -173,14 +173,14 @@ function runSelfTest() {
   const root = mkdtempSync(path.join(tmpdir(), "signal-tasks-materiality-review-"));
   try {
     for (const directory of [
-      "src/app/app/board",
+      "src/app/app/tasks",
       "src/app",
       "experience/reviews",
       "experience/evidence-runs",
       "experience/output",
       "experience/tests",
     ]) mkdirSync(path.join(root, ...directory.split("/")), { recursive: true });
-    const sourceFile = path.join(root, "src", "app", "app", "board", "page.tsx");
+    const sourceFile = path.join(root, "src", "app", "app", "tasks", "page.tsx");
     writeFileSync(sourceFile, "export default function Board(){return null}\n");
     writeFileSync(path.join(root, "src", "app", "page.tsx"), "export default function Root(){return null}\n");
     writeFileSync(
@@ -226,13 +226,13 @@ function runSelfTest() {
     const evidence = "experience/reviews/self-test.json";
     const registry = {
       experiences: [
-        { id: "tasks.page.app-board", source: "tasks/src/app/app/board/page.tsx" },
+        { id: "tasks.page.app-tasks", source: "tasks/src/app/app/tasks/page.tsx" },
         { id: "tasks.page.root", source: "tasks/src/app/page.tsx" },
       ],
     };
     const fixtures = JSON.parse(readFileSync(path.join(root, "experience", "critical-fixtures.json"), "utf8"));
     const commonArgs = {
-      id: "tasks.page.app-board",
+      id: "tasks.page.app-tasks",
       evidence,
       attestation: attestationPath,
       fixtureId: "tasks.page.app",

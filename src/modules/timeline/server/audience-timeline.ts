@@ -38,7 +38,12 @@ import {
   assertAudienceSourceAuthority,
   type AudienceSourceAuthority,
 } from "@/modules/timeline/server/audience-authority";
+import { REVIEW_AUDIENCE_TIMELINE_DTO } from "@/modules/timeline/lib/review-audience-fixture";
 import { isDemoMode } from "@/lib/access-mode";
+import {
+  REVIEW_PRIMARY_PROJECT,
+  REVIEW_TIMELINE_MILESTONES,
+} from "@/lib/review-suite-fixture";
 import { demoWorkspace } from "@/modules/timeline/lib/roadmap/demo-data";
 
 export function audienceTimelineEnabled(): boolean {
@@ -59,6 +64,7 @@ export type AudienceOwnerItem = Readonly<{
 
 export type AudienceOwnerPublication = Readonly<{
   id: string;
+  projectSlug: string | null;
   label: string;
   audienceKind: AudienceKind;
   ownerDisplayLabel: string | null;
@@ -81,110 +87,11 @@ export type AudienceOwnerPublication = Readonly<{
 export const DEMO_AUDIENCE_TOKEN =
   "DemoAudienceTimelineToken2026Fixed000000000";
 
-const DEMO_AUDIENCE_DTO = validateAudienceTimelineDto({
-  version: AUDIENCE_TIMELINE_DTO_VERSION,
-  audienceKind: "couple",
-  publicationId: "demo-audience-publication",
-  label: "Mara & Finn",
-  ownerDisplayLabel: "Shared by Mara & Finn",
-  primaryDate: { label: "Wedding day", date: "2026-10-03" },
-  lastUpdatedAt: "2026-07-21T18:30:00.000Z",
-  today: "2026-07-22",
-  sections: [
-    {
-      state: "covered",
-      label: SECTION_LABELS.covered,
-      items: [
-        {
-          publicId: "demo-audience-item-yes",
-          title: "We said yes",
-          date: "2026-01-02",
-          state: "covered",
-        },
-        {
-          publicId: "demo-audience-item-venue",
-          title: "The Orchard reserved",
-          date: "2026-04-18",
-          state: "covered",
-        },
-      ],
-    },
-    {
-      state: "now",
-      label: SECTION_LABELS.now,
-      items: [
-        {
-          publicId: "demo-audience-item-menu",
-          title: "Menu tasting at The Orchard",
-          date: "2026-08-01",
-          state: "now",
-        },
-      ],
-    },
-    {
-      state: "next",
-      label: SECTION_LABELS.next,
-      items: [
-        {
-          publicId: "demo-audience-item-invitations",
-          title: "Send the invitations",
-          date: "2026-08-08",
-          state: "next",
-        },
-        {
-          publicId: "demo-audience-item-fitting",
-          title: "Final dress fitting",
-          date: "2026-08-22",
-          state: "next",
-        },
-        {
-          publicId: "demo-audience-item-music",
-          title: "Choose the evening music",
-          date: "2026-08-29",
-          state: "next",
-        },
-      ],
-    },
-    {
-      state: "later",
-      label: SECTION_LABELS.later,
-      items: [
-        {
-          publicId: "demo-audience-item-guests",
-          title: "Final guest numbers",
-          date: "2026-09-05",
-          state: "later",
-        },
-        {
-          publicId: "demo-audience-item-walkthrough",
-          title: "Venue walk-through",
-          date: "2026-09-19",
-          state: "later",
-        },
-        {
-          publicId: "demo-audience-item-wedding",
-          title: "Wedding day",
-          date: "2026-10-03",
-          state: "later",
-        },
-      ],
-    },
-    {
-      state: "cancelled",
-      label: SECTION_LABELS.cancelled,
-      items: [
-        {
-          publicId: "demo-audience-item-hotel",
-          title: "City hotel shortlist",
-          state: "cancelled",
-        },
-      ],
-    },
-  ],
-});
+export const DEMO_AUDIENCE_DTO = REVIEW_AUDIENCE_TIMELINE_DTO;
 
 const DEMO_OWNER_PUBLICATION: AudienceOwnerPublication = {
   id: DEMO_AUDIENCE_DTO.publicationId,
+  projectSlug: REVIEW_PRIMARY_PROJECT.slug,
   label: DEMO_AUDIENCE_DTO.label,
   audienceKind: DEMO_AUDIENCE_DTO.audienceKind,
   ownerDisplayLabel: DEMO_AUDIENCE_DTO.ownerDisplayLabel ?? null,
@@ -196,17 +103,15 @@ const DEMO_OWNER_PUBLICATION: AudienceOwnerPublication = {
   qualifiedViewCount: 0,
   lastQualifiedViewAt: null,
   activeShareCount: 1,
-  items: DEMO_AUDIENCE_DTO.sections.flatMap((section) =>
-    section.items.map((item, sortOrder) => ({
-      publicId: item.publicId,
-      sourceRelation: `tasks-product-${String((sortOrder % 7) + 1).padStart(3, "0")}`,
-      title: item.title,
-      calendarDate: item.date ?? null,
-      state: item.state,
-      sortOrder,
-      divergedAt: null,
-    })),
-  ),
+  items: REVIEW_TIMELINE_MILESTONES.map((milestone, sortOrder) => ({
+    publicId: milestone.publicId,
+    sourceRelation: milestone.sourceId,
+    title: milestone.title,
+    calendarDate: milestone.date,
+    state: milestone.state,
+    sortOrder,
+    divergedAt: null,
+  })),
 };
 
 export async function connectSuiteWorkspace(
@@ -229,6 +134,7 @@ export async function connectSuiteWorkspace(
 
 export async function createAudiencePublication(input: {
   workspaceSlug: string;
+  projectSlug: string | null;
   sourceAuthority: AudienceSourceAuthority;
   label: string;
   audienceKind: AudienceKind;
@@ -248,9 +154,27 @@ export async function createAudiencePublication(input: {
   if (uniqueIds.length === 0) throw new TypeError("Select at least one milestone");
   if (uniqueIds.length > 100) throw new TypeError("An Audience Timeline can contain at most 100 items");
 
-  const frozen = uniqueIds.map((id) => {
+  const selectedNodes = uniqueIds.map((id) => {
     const node = nodeMap.get(id);
     if (!node || node.hidden) throw new TypeError("A selected milestone is not available in this workspace");
+    return node;
+  });
+  const selectedProjectSlugs = new Set(
+    selectedNodes.map((node) => node.projectSlug),
+  );
+  if (selectedProjectSlugs.size !== 1) {
+    throw new TypeError(
+      "A shared timeline can contain milestones from one project only",
+    );
+  }
+  const projectSlug = [...selectedProjectSlugs][0]!;
+  if (input.projectSlug && input.projectSlug !== projectSlug) {
+    throw new TypeError(
+      "A selected milestone is outside the project being shared",
+    );
+  }
+
+  const frozen = selectedNodes.map((node) => {
     const project = node.source === "synced" ? projectMap.get(node.projectSlug) : null;
     if (node.source === "synced" && !project) {
       throw new TypeError("A selected milestone has no local project provenance");
@@ -268,9 +192,10 @@ export async function createAudiencePublication(input: {
         workspaceId: input.sourceAuthority.sourceWorkspaceId,
         title: node.title,
         date: node.targetDate,
-        completionState: node.status,
+        completionState: node.audienceState,
       },
       input.sourceAuthority.sourceWorkspaceId,
+      node.audienceState,
     );
   });
 
@@ -484,6 +409,7 @@ export async function getOwnerAudiencePublications(
 
   return publications.map((publication) => ({
     ...publication,
+    projectSlug: null,
     activeShareCount: activeShares.filter(
       (share) => share.publicationId === publication.id,
     ).length,
@@ -736,7 +662,7 @@ export async function refreshAudienceDivergence(
       ? digestSourceFields({
           title: source.title,
           date: source.targetDate,
-          completionState: source.status,
+          completionState: source.audienceState,
         })
       : null;
     const diverged = currentDigest === null || !hashesEqual(item.sourceDigest, currentDigest);

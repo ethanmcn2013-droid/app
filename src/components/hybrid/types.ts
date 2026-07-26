@@ -127,7 +127,7 @@ export const OPTION_LABELS: Record<LabOption, string> = {
 export const VIEW_LABELS: Record<LabView, string> = {
   board: "Board",
   list: "List",
-  timeline: "Timeline",
+  timeline: "Schedule",
   calendar: "Calendar",
 };
 

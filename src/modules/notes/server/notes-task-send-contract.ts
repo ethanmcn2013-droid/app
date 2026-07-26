@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { APP_ORIGIN } from "@/lib/product-urls";
+import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 
 export type TrustedTasksSendReceipt = {
   taskId: string;
@@ -93,7 +93,7 @@ export function validateTrustedTaskId(value: unknown): string {
 
 export function buildTrustedTaskUrl(taskId: string): string {
   const trustedId = validateTrustedTaskId(taskId);
-  return `${APP_ORIGIN}/app/tasks?taskId=${encodeURIComponent(trustedId)}`;
+  return `${PRODUCT_APP_PATHS.tasks}?task=${encodeURIComponent(trustedId)}`;
 }
 
 function boundedLabel(value: unknown, fallback: string): string {
@@ -105,7 +105,7 @@ function boundedLabel(value: unknown, fallback: string): string {
 
 /**
  * Parse only receipt metadata. The upstream taskUrl is deliberately ignored;
- * links are always rebuilt from the canonical configured Tasks origin.
+ * links are always rebuilt as same-origin canonical Tasks paths.
  */
 export function parseTrustedTasksSendReceipt(
   raw: unknown,

@@ -4,7 +4,7 @@ import type { Briefing, TriggerKind } from "./types";
  * Single source of truth for the briefing's voice helpers. Used by:
  *   - `src/lib/email/briefing-email.tsx` (HTML email)
  *   - `src/lib/email/plain-text.ts`      (text/plain email body)
- *   - `src/components/brief/briefing-view.tsx` (web /app render)
+ *   - `components/brief/quiet-briefing-ledger.tsx` through the protected DTO
  *
  * Previously these three callers each carried verbatim copies of
  * greeting/summaryLine/graceNote, voice changes drifted between them.
@@ -48,7 +48,7 @@ export function summaryLine(b: Briefing): string {
   const risks = b.quietRisks.length;
   if (att === 0 && risks === 0) {
     // Nothing pulling. The summary line says nothing. EmptyState
-    // (briefing-view) carries the frame on these days.
+    // QuietBriefingLedger carries the frame on these days.
     return "";
   }
   if (att === 0 && risks > 0) {

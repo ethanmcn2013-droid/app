@@ -138,7 +138,7 @@ async function throwTasksSendBindingMutationError(
 }
 
 function refuseLegacyTasksSendWhenHybridEnabled(): void {
-  if (process.env.NOTES_HYBRID_NOTEBOOK_ENABLED === "1") {
+  if (process.env.NOTES_LEGACY_NOTEBOOK_ENABLED !== "1") {
     throw new Error(
       "This Tasks send flow was replaced. Refresh Notes and approve an exact selection.",
     );

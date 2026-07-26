@@ -6,6 +6,7 @@
 // with its own chrome. Renders the real workspace name from DomainProvider.
 
 import { useEffect, useRef } from "react";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useDomain } from "@/lib/domain-context";
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
@@ -108,10 +109,11 @@ function EditableText({
 
 export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTask[]; showMilestones?: boolean }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
   const domain = useDomain();
   const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
   const completed = store.tasks.filter((task) => task.completed).length;
-  const overdue = store.tasks.filter(isTaskOverdue).length;
+  const overdue = store.tasks.filter((task) => isTaskOverdue(task, calendar.today)).length;
   const unscheduled = store.tasks.filter((task) => task.schedule.kind === "unscheduled").length;
   const milestones = store.tasks.filter((task) => task.schedule.kind === "milestone").sort((a, b) => {
     const aDate = a.schedule.kind === "milestone" ? a.schedule.on : "";

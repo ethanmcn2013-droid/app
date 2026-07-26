@@ -1,0 +1,247 @@
+{
+  "schemaVersion": "signal-quality-council-gate/1",
+  "generatedAt": "2026-07-26",
+  "scope": {
+    "suite": "Signal Studio",
+    "deployable": "tasks",
+    "products": [
+      {
+        "id": "notes",
+        "canonicalPath": "/app/notes",
+        "criticalExperienceId": "tasks.page.app-notes",
+        "requiredStateSource": "experience/registry.json#tasks.page.app-notes.requiredStates",
+        "requiredStates": [
+          "default",
+          "empty",
+          "populated",
+          "loading",
+          "error",
+          "reduced-motion",
+          "keyboard-only"
+        ],
+        "receiptPath": "experience/council-reviews/products/notes.json"
+      },
+      {
+        "id": "tasks",
+        "canonicalPath": "/app/tasks",
+        "criticalExperienceId": "tasks.page.app-tasks",
+        "requiredStateSource": "experience/registry.json#tasks.page.app-tasks.requiredStates",
+        "requiredStates": [
+          "default",
+          "loading",
+          "error",
+          "success",
+          "disabled",
+          "saved",
+          "unsaved",
+          "long-content",
+          "reduced-motion",
+          "keyboard-only"
+        ],
+        "receiptPath": "experience/council-reviews/products/tasks.json"
+      },
+      {
+        "id": "timeline",
+        "canonicalPath": "/app/timeline",
+        "criticalExperienceId": "tasks.page.app-timeline",
+        "requiredStateSource": "experience/registry.json#tasks.page.app-timeline.requiredStates",
+        "requiredStates": [
+          "first-use",
+          "empty",
+          "populated",
+          "loading",
+          "partial-failure",
+          "error",
+          "restricted",
+          "reduced-motion",
+          "keyboard-only"
+        ],
+        "receiptPath": "experience/council-reviews/products/timeline.json"
+      },
+      {
+        "id": "signal",
+        "canonicalPath": "/app/signal",
+        "criticalExperienceId": "tasks.page.app-signal",
+        "requiredStateSource": "experience/registry.json#tasks.page.app-signal.requiredStates",
+        "requiredStates": [
+          "default",
+          "loading",
+          "reduced-motion",
+          "keyboard-only"
+        ],
+        "receiptPath": "experience/council-reviews/products/signal.json"
+      }
+    ],
+    "requiredViewports": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "scoring": {
+    "dimensionScale": {
+      "minimum": 0,
+      "maximum": 4,
+      "integerOnly": true
+    },
+    "dimensionCount": 13,
+    "maximumRawScore": 52,
+    "minimumPassingRawScore": 50,
+    "normalizedTenPointFormula": "(rawScore / 52) * 10",
+    "requestedTenPointThreshold": 9.5,
+    "effectiveMinimumTenPointScore": 9.6153846154,
+    "minimumDimensionScore": 3,
+    "maximumDimensionsAtThree": 2,
+    "assessmentUnit": "required-state-by-required-viewport",
+    "surfaceScore": "minimum of every assessment unit for the surface",
+    "productScore": "minimum of every required surface score for the product",
+    "suiteScore": "minimum of all product scores and the cross-suite journey score",
+    "missingEvidenceBehavior": "fail",
+    "roundingPolicy": "rounding is display-only and cannot create a pass",
+    "averagingAcrossUnits": false
+  },
+  "dimensions": [
+    {
+      "id": "purpose-and-task-clarity",
+      "owner": "product-experience",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "information-architecture",
+      "owner": "product-experience",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "visual-hierarchy",
+      "owner": "product-taste",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "typography-and-content",
+      "owner": "product-taste",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "layout-and-composition",
+      "owner": "product-taste",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "interaction-quality",
+      "owner": "interaction-design",
+      "evidenceMode": "council-and-automated"
+    },
+    {
+      "id": "state-completeness",
+      "owner": "product-experience",
+      "evidenceMode": "council-and-automated"
+    },
+    {
+      "id": "accessibility",
+      "owner": "accessibility",
+      "evidenceMode": "council-and-automated"
+    },
+    {
+      "id": "responsive-adaptability",
+      "owner": "interaction-design",
+      "evidenceMode": "council-and-automated"
+    },
+    {
+      "id": "performance-and-perceived-speed",
+      "owner": "engineering",
+      "evidenceMode": "measured-and-rendered"
+    },
+    {
+      "id": "design-system-coherence",
+      "owner": "product-taste",
+      "evidenceMode": "council-and-source"
+    },
+    {
+      "id": "brand-distinction-and-craft",
+      "owner": "product-taste",
+      "evidenceMode": "council-and-rendered"
+    },
+    {
+      "id": "implementation-fidelity",
+      "owner": "engineering",
+      "evidenceMode": "council-and-automated"
+    }
+  ],
+  "hardBlockers": [
+    "any dimension below 3",
+    "any assessment unit below 50 of 52",
+    "missing required state or viewport",
+    "missing or hash-mismatched evidence",
+    "unapproved or missing visual baseline",
+    "screenshot diff beyond policy without an approved intentional-change receipt",
+    "serious or critical accessibility violation",
+    "uncaught page error, console error, failed request, or unexpected HTTP error",
+    "document overflow at a required viewport",
+    "primary job cannot be completed with keyboard only",
+    "reduced-motion contract failure",
+    "primary mobile touch target below 44 CSS pixels",
+    "release-blocking or high-severity open finding",
+    "canonical route or cross-suite context contract failure"
+  ],
+  "evidenceContract": {
+    "receiptSchemas": {
+      "product": "experience/schemas/quality-council-product-receipt.schema.json",
+      "crossSuiteJourney": "experience/schemas/quality-council-journey-receipt.schema.json"
+    },
+    "checkedInEvidenceRoot": "experience/council-evidence",
+    "sourceIntegrity": {
+      "algorithm": "sha256 of sorted forward-slash path plus normalized file SHA-256",
+      "inputs": [
+        "src",
+        "public",
+        "drizzle",
+        "package.json",
+        "pnpm-lock.yaml",
+        "next.config.ts",
+        "tsconfig.json"
+      ]
+    },
+    "requiredPerAssessmentUnit": [
+      "rendered full-page screenshot",
+      "approved baseline SHA-256",
+      "candidate screenshot SHA-256",
+      "visual diff image SHA-256",
+      "visual diff pixel ratio",
+      "Axe serious and critical violation counts",
+      "runtime issue log",
+      "URL and route assertions",
+      "keyboard-only result",
+      "reduced-motion result",
+      "responsive overflow result",
+      "council scores with written positive evidence for every score of 4"
+    ],
+    "visualDiff": {
+      "comparison": "pixelmatch",
+      "threshold": 0.1,
+      "maximumDiffPixelRatio": 0.0025,
+      "baselineStatusRequired": "approved",
+      "missingBaselineBehavior": "fail"
+    },
+    "receiptIntegrity": {
+      "requiredHashes": [
+        "gitCommitSha",
+        "browserContractSha256",
+        "fixtureManifestSha256",
+        "playwrightConfigSha256",
+        "playwrightSpecSha256",
+        "baselineSha256",
+        "candidateSha256",
+        "diffSha256"
+      ],
+      "councilReviewRequired": true,
+      "automationMayAwardTasteScores": false,
+      "changedHashInvalidatesReceipt": true
+    }
+  },
+  "certification": {
+    "status": "not-assessed",
+    "achieved": false,
+    "reason": "No current state-by-viewport council scorecard, approved visual baselines, or screenshot-diff receipts are recorded by this contract."
+  }
+}

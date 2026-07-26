@@ -22,10 +22,20 @@ const browserContract = JSON.parse(
 export default defineConfig({
   testDir: "./tests",
   outputDir: "./output/playwright-results",
+  snapshotPathTemplate:
+    "./baselines/{testFilePath}/{projectName}/{arg}{ext}",
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,
-  expect: { timeout: 8_000 },
+  expect: {
+    timeout: 8_000,
+    toHaveScreenshot: {
+      animations: "disabled",
+      caret: "hide",
+      maxDiffPixelRatio: 0.0025,
+      threshold: 0.1,
+    },
+  },
   reporter: [
     ["list"],
     ["json", { outputFile: "./output/critical-evidence.json" }],

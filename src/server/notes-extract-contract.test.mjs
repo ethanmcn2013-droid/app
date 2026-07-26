@@ -26,6 +26,13 @@ const assertion = fs.readFileSync(
   new URL("./cross-product-assertion.ts", import.meta.url),
   "utf8",
 );
+const sendContract = fs.readFileSync(
+  new URL(
+    "../modules/notes/server/notes-task-send-contract.ts",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const proxy = fs.readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
 
 test("Notes extract requires an explicit destination workspace", () => {
@@ -112,4 +119,13 @@ test("Notes extract rechecks membership before an idempotent replay", () => {
     route,
     /if \(access\.kind === "denied"\) \{\s*return bad\("Unauthorized", 401\);\s*\}/,
   );
+});
+
+test("Notes receipts open the canonical Tasks detail query", () => {
+  assert.match(
+    sendContract,
+    /\$\{PRODUCT_APP_PATHS\.tasks\}\?task=\$\{encodeURIComponent\(trustedId\)\}/,
+  );
+  assert.doesNotMatch(sendContract, /\/app\/tasks\?taskId=/);
+  assert.doesNotMatch(sendContract, /APP_ORIGIN/);
 });

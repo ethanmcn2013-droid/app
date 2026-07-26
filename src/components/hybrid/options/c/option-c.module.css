@@ -588,6 +588,8 @@ thead .listTitleCell { z-index: 14; }
 .periodEnd { right: 0; }
 .periodTrack i { border-left: 1px solid var(--x-task-accent); height: 13px; position: absolute; top: -7px; }
 .periodTrack b { background: var(--x-task-accent); border: 2px solid var(--x-task-surface); border-radius: 50%; height: 8px; position: absolute; top: -5px; transform: translateX(-3px); width: 8px; }
+.periodPositionLabel { color: var(--x-task-text-muted); font-size: 7px; margin: -4px 0 9px; }
+.currentPosition[data-empty] > p { color: var(--x-task-text-muted); font-size: 8px; line-height: 1.45; margin: 10px 0 13px; }
 .periodStats { display: grid; gap: 4px; grid-template-columns: repeat(3, 1fr); }
 .periodStats span { color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 7px; }
 .periodStats strong { color: var(--x-task-text); font-size: 10px; margin-bottom: 2px; }
@@ -670,6 +672,20 @@ thead .listTitleCell { z-index: 14; }
 @media (min-width: 1380px) {
   .spatialRoot[data-inspector-open] { grid-template-columns: 176px minmax(0, 1fr) 0; padding-right: min(430px, 42vw); }
   .spatialRoot[data-inspector-open] > .planningRail { display: none; }
+}
+
+@media (max-width: 767px) {
+  .planningRailCollapsed {
+    flex: 0 0 48px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .planningRailExpand,
+  .planningRailHeader button {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

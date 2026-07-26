@@ -1,122 +1,146 @@
 import type { BriefingSource } from "./source";
 import type { TaskSignal } from "./types";
+import {
+  REVIEW_MENU_MILESTONE,
+  REVIEW_SUITE_FIXTURE,
+} from "@/lib/review-suite-fixture";
 
 const DAY = 86_400_000;
 
 /**
- * Mock signals shaped to match the marketing demo (Wedding 2026
- * workspace). Used in development and as a fallback when the Tasks
+ * Mock signals shaped to match the suite-wide The Orchard / Mara & Finn
+ * review story. Used in development and as a fallback when the Tasks
  * read token isn't set. Phase B.2 will replace this with a real
  * Tasks DB read; the interface (BriefingSource) won't change.
  */
-function makeMockSignals(now: number): TaskSignal[] {
-  const sourceLabel = "Tasks · Wedding 2026";
+function makeMockSignals(
+  now: number,
+  workspaceId: string = REVIEW_SUITE_FIXTURE.workspace.id,
+  sourceLabel: string =
+    `Tasks · ${REVIEW_SUITE_FIXTURE.workspace.name} · Mara & Finn`,
+): TaskSignal[] {
+  const scoped = (
+    signal: Omit<TaskSignal, "sourceLabel" | "workspaceId">,
+  ): TaskSignal => ({
+    ...signal,
+    sourceLabel,
+    workspaceId,
+  });
+
   return [
-    {
-      id: "t-florist",
-      title: "Florist deposit",
+    scoped({
+      id: "demo-t-01",
+      title: "Confirm marquee sides with the hire company",
       lane: "in-flight",
       priority: 0,
       dueAt: null,
       idleDays: 18,
       commentCount: 2,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: null,
-    },
-    {
-      id: "t-catering-headcount",
-      title: "Catering headcount",
-      lane: "next",
-      priority: 1,
-      dueAt: now + 3 * DAY, // due Friday-ish
-      idleDays: 4,
-      commentCount: 5,
-      blockedBy: [],
-      sourceLabel,
-      movedToShippedAt: null,
-    },
-    {
-      id: "t-invitations",
-      title: "Send invitations",
+    }),
+    scoped({
+      id: REVIEW_MENU_MILESTONE.sourceId,
+      title: REVIEW_MENU_MILESTONE.title,
+      // This is the shared review journey's current milestone. Keeping its
+      // stalled in-flight state here makes Signal surface the same grounded
+      // work object the user just visited in Tasks and Timeline.
       lane: "in-flight",
       priority: 1,
-      dueAt: now - 14 * DAY, // 14 days overdue
+      dueAt: Date.parse(`${REVIEW_MENU_MILESTONE.date}T09:00:00.000Z`),
+      idleDays: 11,
+      commentCount: 5,
+      blockedBy: [],
+      movedToShippedAt: null,
+    }),
+    scoped({
+      id: "demo-t-07",
+      title: "Approve the final seating plan",
+      lane: "in-flight",
+      priority: 1,
+      dueAt: now - 2 * DAY,
       idleDays: 6,
       commentCount: 1,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: null,
-    },
-    {
-      id: "t-music-supplier",
-      title: "Music supplier",
+    }),
+    scoped({
+      id: "demo-t-05",
+      title: "Build the Saturday run-sheet",
       lane: "in-flight",
       priority: 2,
       dueAt: null,
       idleDays: 9,
       commentCount: 0,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: null,
-    },
-    {
-      id: "t-hmu-overlap",
-      title: "Hair-and-makeup trial",
+    }),
+    scoped({
+      id: "demo-t-06",
+      title: "Order tonic + the good olives",
       lane: "in-flight",
       priority: 2,
       dueAt: now + 12 * DAY,
       idleDays: 2,
       commentCount: 3,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: null,
-    },
-    {
-      id: "t-honeymoon-flights",
-      title: "Honeymoon flights",
+    }),
+    scoped({
+      id: "demo-t-04",
+      title: "Send midweek rate to the June 2027 walk-in couple",
       lane: "next",
       priority: 2,
       dueAt: now + 47 * DAY,
       idleDays: 12,
       commentCount: 0,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: null,
-    },
+    }),
     // Moving well
-    {
-      id: "t-save-the-dates",
-      title: "Save-the-dates",
+    scoped({
+      id: "demo-t-09",
+      title: "Open day, nine couples through",
       lane: "shipped",
       priority: 1,
       dueAt: null,
       idleDays: 0,
       commentCount: 8,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: now - 0.5 * DAY,
-    },
-    {
-      id: "t-venue-signed",
-      title: "Venue contract",
+    }),
+    scoped({
+      id: "demo-t-10",
+      title: "Deposit invoice settled, Mara + Finn",
       lane: "shipped",
       priority: 0,
       dueAt: null,
       idleDays: 0,
       commentCount: 4,
       blockedBy: [],
-      sourceLabel,
       movedToShippedAt: now - 1.2 * DAY,
-    },
+    }),
   ];
 }
 
-export const mockBriefingSource: BriefingSource = {
-  async getSignalsForUser() {
-    return makeMockSignals(Date.now());
-  },
-};
+export function createMockBriefingSource(input?: {
+  now?: number;
+  workspaceId?: string;
+  sourceLabel?: string;
+}): BriefingSource {
+  return {
+    async getSignalsForUser() {
+      return makeMockSignals(
+        input?.now ?? Date.now(),
+        input?.workspaceId,
+        input?.sourceLabel,
+      );
+    },
+  };
+}
+
+export const mockBriefingSource: BriefingSource =
+  createMockBriefingSource();
 
 function makePlanningPeriodMockSignals(now: number): TaskSignal[] {
   return [

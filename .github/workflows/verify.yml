@@ -26,6 +26,6 @@ jobs:
       - run: pnpm db:contract
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm test:suite-url-and-switcher
+      - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
+        run: pnpm test
       - run: pnpm build

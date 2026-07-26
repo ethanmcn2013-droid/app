@@ -10,9 +10,9 @@
  * renders are reserved. The default web brief renders "Needs attention"
  * and "Quiet risks", those real headings appear; everything else is
  * abstract structure. No fake items, no fake counts, no shimmer
- * (shimmer is Timeline-canonical only, DESIGN.md §13).
+ * (shimmer is Timeline-canonical only, DESIGN.md section 13).
  *
- * Container mirrors BriefingView: mx-auto max-w-[640px] px-6 py-12.
+ * Container mirrors QuietBriefingLedger: mx-auto max-w-[960px] px-6 py-8.
  *
  * Server Component, zero JS. Static blocks satisfy reduced motion
  * without a media query.
@@ -20,58 +20,93 @@
 export default function BriefLoading() {
   return (
     <div
-      aria-hidden
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
       style={{
         margin: "0 auto",
         width: "100%",
-        maxWidth: 640,
-        padding: "48px 24px",
+        maxWidth: 960,
+        padding: "32px 24px",
       }}
     >
-      {/* Stamp line */}
+      <span className="sr-only">Building your Signal briefing.</span>
+      <div aria-hidden>
+        {/* Dateline */}
       <div
         style={{
-          height: 12,
-          width: 180,
+          height: 11,
+          width: 168,
           borderRadius: 6,
-          background: "var(--bg-deep)",
-          marginBottom: 20,
-        }}
-      />
-      {/* Greeting line */}
-      <div
-        style={{
-          height: 30,
-          width: "62%",
-          borderRadius: 8,
           background: "var(--bg-deep)",
           marginBottom: 10,
         }}
       />
       <div
         style={{
-          height: 16,
-          width: "84%",
+          height: 12,
+          width: 120,
           borderRadius: 6,
           background: "var(--bg-deep)",
-          marginBottom: 40,
+          marginBottom: 26,
         }}
       />
 
-      {["Needs attention", "Quiet risks"].map((label) => (
-        <section key={label} style={{ marginBottom: 36 }}>
+        {/* Ledger heading */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 24,
+          borderBottom: "1px solid var(--hairline)",
+          paddingBottom: 20,
+          marginBottom: 32,
+        }}
+      >
+        <div style={{ width: "min(520px, 72%)" }}>
+          <div
+            style={{
+              height: 10,
+              width: 96,
+              borderRadius: 6,
+              background: "var(--bg-deep)",
+              marginBottom: 10,
+            }}
+          />
+          <div
+            style={{
+              height: 21,
+              width: "72%",
+              borderRadius: 7,
+              background: "var(--bg-deep)",
+            }}
+          />
+        </div>
+        <div
+          style={{
+            height: 10,
+            width: 112,
+            borderRadius: 6,
+            background: "var(--bg-deep)",
+          }}
+        />
+      </div>
+
+      {["Needs attention", "Quiet risks"].map((label, sectionIndex) => (
+        <section key={label} style={{ marginBottom: 32 }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              marginBottom: 14,
+              gap: 10,
+              marginBottom: 8,
             }}
           >
             <span
               style={{
-                width: 8,
-                height: 8,
+                width: 6,
+                height: 6,
                 borderRadius: "50%",
                 background: "var(--brand)",
                 flexShrink: 0,
@@ -79,38 +114,44 @@ export default function BriefLoading() {
             />
             <span
               style={{
-                fontSize: 13,
+                fontSize: 11,
                 fontWeight: 600,
-                letterSpacing: "-0.01em",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
                 color: "var(--ink-soft)",
               }}
             >
               {label}
             </span>
           </div>
-          {[1, 2].map((i) => (
+
+          {[1, 2].map((row) => (
             <div
-              key={i}
+              key={row}
               style={{
-                border: "1px solid var(--border-soft, rgba(17,17,17,0.06))",
-                borderRadius: 10,
-                padding: 14,
-                marginBottom: 8,
+                borderBottom: "1px solid var(--hairline-soft)",
+                padding: "16px 12px",
               }}
             >
               <div
                 style={{
                   height: 14,
-                  width: i === 1 ? "72%" : "58%",
+                  width:
+                    sectionIndex === 0 && row === 1
+                      ? "68%"
+                      : row === 1
+                        ? "58%"
+                        : "74%",
+                  maxWidth: 620,
                   borderRadius: 6,
                   background: "var(--bg-deep)",
-                  marginBottom: 8,
+                  marginBottom: 9,
                 }}
               />
               <div
                 style={{
-                  height: 12,
-                  width: i === 1 ? "88%" : "76%",
+                  height: 11,
+                  width: row === 1 ? 210 : 176,
                   borderRadius: 6,
                   background: "var(--bg-deep)",
                 }}
@@ -119,6 +160,17 @@ export default function BriefLoading() {
           ))}
         </section>
       ))}
+
+      <div
+        style={{
+          height: 10,
+          width: 196,
+          borderRadius: 6,
+          background: "var(--bg-deep)",
+          marginTop: 48,
+        }}
+      />
+      </div>
     </div>
   );
 }
