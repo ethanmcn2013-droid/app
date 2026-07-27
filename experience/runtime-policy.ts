@@ -118,6 +118,33 @@ function isCompletedQualifiedViewAbort(
   );
 }
 
+/**
+ * A cancelled request for immutable build output on the page's own origin.
+ *
+ * The browser cancels in-flight chunk and prefetch requests when a navigation
+ * moves on, which happens constantly in a suite that drives real interactions.
+ * The abort says the page changed its mind, not that the app broke: a chunk
+ * that genuinely did not exist would arrive as an HTTP 404, which stays fatal
+ * below.
+ *
+ * Deliberately narrow. Only `/_next/static/`, only same-origin, only an abort.
+ */
+function isCancelledBuildAsset(issue: RuntimeIssue, currentPageUrl: string) {
+  if (issue.kind !== "requestfailed") return false;
+  if (issue.message !== "net::ERR_ABORTED") return false;
+  if (issue.resourceType !== "script" && issue.resourceType !== "stylesheet") return false;
+  try {
+    const requestUrl = new URL(issue.url);
+    const pageUrl = new URL(currentPageUrl);
+    return (
+      requestUrl.origin === pageUrl.origin &&
+      requestUrl.pathname.startsWith("/_next/static/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function runtimeFailures(
   runtime: RuntimeWatch,
   allowance: MainDocumentAllowance,
@@ -151,6 +178,7 @@ export function runtimeFailures(
           // Malformed URLs remain fatal below.
         }
       }
+      if (isCancelledBuildAsset(issue, currentPageUrl)) return false;
       if (isIntentionalEventSourceTeardown(issue, runtime, currentPageUrl)) return false;
       if (isCompletedQualifiedViewAbort(issue, runtime, currentPageUrl)) return false;
       if (!allowance || !mainUrl) return true;

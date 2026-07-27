@@ -19,6 +19,7 @@ import {
   requireSignalUser,
   UnauthorizedError,
 } from "../server/signal-auth";
+import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
 
 const OPAQUE_LEDGER_ID = /^signal-[a-z0-9]+$/;
 
@@ -57,6 +58,35 @@ export async function openSignalLedgerEntry(formData: FormData): Promise<void> {
   });
   if (result.kind === "no-workspace") {
     redirect(PRODUCT_APP_PATHS.tasks);
+  }
+
+  // Signal's one honest deliberate-open moment.
+  //
+  // The dictionary excludes automatic landings, prefetch, refresh, and
+  // operator view-as, and every other candidate in this module is one of
+  // those: the page render is automatic, `recordSurfaced` records what the
+  // system showed, and the planning event is literally a view. Opening a
+  // ledger entry cannot happen without a person choosing it, and reaching this
+  // line proves the briefing resolved and the scope was authorised — the
+  // guards above redirect away otherwise.
+  //
+  // Demo and review sessions are excluded: `clerkId` is a placeholder there and
+  // attribution would be meaningless.
+  if (!demoMode) {
+    const openedWorkspaceId =
+      result.authorizedScope.scope.kind === "workspace"
+        ? result.authorizedScope.scope.workspaceId
+        : result.authorizedScope.workspaces[0]?.id;
+    await recordSponsoredUse(
+      {
+        product: "signal",
+        kind: "briefing_deliberately_opened",
+        objectKey: "briefing",
+        subjectId: clerkId,
+        workspaceId: openedWorkspaceId,
+      },
+      true,
+    );
   }
 
   const navigationContext = demoMode

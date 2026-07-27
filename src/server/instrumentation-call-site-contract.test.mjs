@@ -19,6 +19,7 @@ const read = (relative) =>
 const notes = read("src/modules/notes/server/actions/notes.ts");
 const tasks = read("src/server/actions/tasks.ts");
 const timeline = read("src/modules/timeline/server/actions/workspaces.ts");
+const signal = read("src/modules/signal/app/signal-ledger-actions.ts");
 const callSite = read("src/lib/account/instrumentation/call-site.ts");
 const sink = read("src/lib/account/instrumentation/sink.ts");
 const contract = JSON.parse(
@@ -34,6 +35,7 @@ test("every wired kind belongs to its product in the frozen contract", () => {
     ["timeline", "timeline_published"],
     ["timeline", "timeline_visibility_changed"],
     ["timeline", "timeline_curated"],
+    ["signal", "briefing_deliberately_opened"],
   ];
   for (const [product, kind] of wired) {
     assert.ok(
@@ -134,11 +136,30 @@ test("the flag and retention match the frozen contract", () => {
   assert.equal(contract.suppression.rateMinimumWorkspaces, 5);
 });
 
-test("the kinds with no honest commit point stay unmapped and say why", () => {
-  assert.ok(contract.unmappedKinds.briefing_deliberately_opened);
+test("Signal measures a deliberate gesture, not an automatic landing", () => {
+  // Opening a ledger entry cannot happen without a person choosing it, and the
+  // guards above the emit redirect away unless the briefing resolved.
+  assert.match(signal, /briefing_deliberately_opened/);
+  assert.match(signal, /if \(!demoMode\) \{/);
+  // The excluded candidates must stay excluded as *calls*. They are named in
+  // the comment above the emit, which is the point: the reasoning is recorded
+  // where the next person will look.
+  assert.ok(!/recordSurfaced\s*\(/.test(signal), "the surfaced record is a system event");
+  assert.ok(!/recordPlanningEvent\s*\(/.test(signal), "the planning event is a view");
+});
+
+test("demo and review sessions are excluded from Signal attribution", () => {
+  const emitIndex = signal.indexOf("briefing_deliberately_opened");
+  const guardIndex = signal.lastIndexOf("if (!demoMode) {", emitIndex);
+  assert.ok(guardIndex > 0 && guardIndex < emitIndex, "the emit must sit inside the guard");
+});
+
+test("acknowledgement stays unmapped, and the contract says exactly why", () => {
   assert.ok(contract.unmappedKinds.briefing_acknowledged);
-  const signalWired = ["briefing_deliberately_opened", "briefing_acknowledged"].some(
-    (kind) => notes.includes(kind) || tasks.includes(kind) || timeline.includes(kind),
+  assert.match(contract.unmappedKinds.briefing_acknowledged, /no caller/);
+  assert.equal(
+    contract.unmappedKinds.briefing_deliberately_opened,
+    undefined,
+    "the deliberate open is mapped now, so it must not still be listed as unmapped",
   );
-  assert.equal(signalWired, false, "Signal must report partial rather than invent a point");
 });

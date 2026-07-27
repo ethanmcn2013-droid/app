@@ -132,6 +132,14 @@ test.describe("Timeline project switcher", () => {
     await expect(switcher).toBeFocused();
 
     await switcher.press(" ");
+    // The Enter path above waits for the menu before sending keys; this path
+    // did not, so on a slow runner ArrowDown landed before the menu existed and
+    // the selection went nowhere. Wait for the same thing, and for the item the
+    // arrow key is about to move onto.
+    await expect(page.getByRole("menu")).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: /Nora & Cian/ }),
+    ).toBeVisible();
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(

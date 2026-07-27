@@ -16,7 +16,10 @@
     "workspaceIdHash"
   ],
   "kinds": {
-    "notes": ["note_created", "note_materially_edited"],
+    "notes": [
+      "note_created",
+      "note_materially_edited"
+    ],
     "tasks": [
       "task_created",
       "task_completed",
@@ -30,7 +33,10 @@
       "timeline_visibility_changed",
       "timeline_published"
     ],
-    "signal": ["briefing_deliberately_opened", "briefing_acknowledged"]
+    "signal": [
+      "briefing_deliberately_opened",
+      "briefing_acknowledged"
+    ]
   },
   "forbiddenFields": [
     "title",
@@ -79,7 +85,6 @@
   },
   "emissionRule": "after the transaction commits; page views never qualify",
   "unmappedKinds": {
-    "briefing_deliberately_opened": "No deliberate-open commit point exists in the Signal module. Every candidate is an automatic render, a system-surfaced record, or a redirect with no write. Signal reports partial rather than inventing one.",
-    "briefing_acknowledged": "briefingFeedback commits cleanly but is keyed on (clerk_id, item_key) with no workspace, so the event cannot carry a workspace hash."
+    "briefing_acknowledged": "The feedback action commits cleanly but has no caller anywhere in the app, so instrumenting it would create a metric that is structurally always zero. That is worse than unavailable. Map it when the acknowledgement affordance actually ships."
   }
 }
