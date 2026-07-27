@@ -50,6 +50,7 @@ import {
   demoNotes,
   demoSearchNotes,
 } from "@/modules/notes/server/demo/notes-demo";
+import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
 
 function makeId() {
   return `n_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -1245,7 +1246,22 @@ export async function createNoteIdempotent(
     .onConflictDoNothing()
     .returning(hybridNoteSelection);
 
-  if (inserted[0]) return inserted[0];
+  if (inserted[0]) {
+    // Only a real insert counts. The replay path below reconciles a lost
+    // response and writes nothing, so it must not look like new work.
+    await recordSponsoredUse(
+      {
+        product: "notes",
+        kind: "note_created",
+        objectKey: id,
+        subjectId: userId,
+        workspaceId,
+        occurredAt: now,
+      },
+      true,
+    );
+    return inserted[0];
+  }
 
   // Reconcile only through the signed-in owner scope. A collision belonging
   // to another account is deliberately indistinguishable from any other id
@@ -1289,7 +1305,24 @@ export async function updateNoteWithVersion(
     )
     .returning(hybridNoteSelection);
 
-  if (updated[0]) return { status: "saved", note: updated[0] };
+  if (updated[0]) {
+    // Only the compare-and-swap that actually wrote counts. The lost-response
+    // retry below returns "saved" without writing, and an autosave timer means
+    // this path fires often; the day-bucketed event id collapses a day of
+    // saves on one note into a single edit.
+    await recordSponsoredUse(
+      {
+        product: "notes",
+        kind: "note_materially_edited",
+        objectKey: id,
+        subjectId: userId,
+        workspaceId: updated[0].workspaceId,
+        occurredAt: updatedAt,
+      },
+      true,
+    );
+    return { status: "saved", note: updated[0] };
+  }
 
   const remote = await readOwnedNote(userId, id);
   if (!remote) throw new Error("Note not found");
