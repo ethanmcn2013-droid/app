@@ -17,7 +17,16 @@ const errors = [];
 const textExtensions = new Set([".js", ".jsx", ".mjs", ".ts", ".tsx"]);
 const infrastructureStates = new Set(["keyboard-only", "long-content", "reduced-motion"]);
 const assertionKinds = new Set(["role", "text", "url"]);
-const assertionRoles = new Set(["button", "dialog", "heading", "link", "textbox"]);
+// `combobox` covers the search-with-listbox pattern the command palette and
+// the Studio Bar field both use; a plain textbox assertion cannot describe it.
+const assertionRoles = new Set([
+  "button",
+  "combobox",
+  "dialog",
+  "heading",
+  "link",
+  "textbox",
+]);
 
 function hashFile(file) {
   const bytes = readFileSync(file);

@@ -2575,7 +2575,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "31eb72936ce4e965"
+      "materialityHash": "c3b5937ac5f7c86e"
     },
     {
       "id": "tasks.surface.empty-workspace",
