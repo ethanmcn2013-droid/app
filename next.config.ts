@@ -180,6 +180,14 @@ const nextConfig: NextConfig = {
         source: "/s/:path*",
         headers: audienceArtifactHeaders,
       },
+      {
+        source: "/design-lab/:path*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
     ];
   },
   async redirects() {
