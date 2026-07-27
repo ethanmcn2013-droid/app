@@ -162,6 +162,75 @@ assert.equal(
   "an abort without a recorded 204 must remain fatal",
 );
 
+
+// ── Cancelled build output ────────────────────────────────────────────────
+// The flake this closes: a chunk request cancelled when a navigation moved on
+// was being reported as a runtime failure. An abort is the page changing its
+// mind; a missing chunk arrives as a 404 and must stay fatal.
+const appPageUrl = "http://localhost:4342/app/tasks";
+const cancelledChunk: RuntimeIssue = {
+  kind: "requestfailed",
+  resourceType: "script",
+  message: "net::ERR_ABORTED",
+  url: "http://localhost:4342/_next/static/chunks/08mja6y39q~b4.js",
+};
+
+assert.deepEqual(
+  runtimeFailures(
+    {
+      issues: [cancelledChunk],
+      intentionalEventSourceTeardowns: new Set(),
+      completedQualifiedViewWrites: new Set(),
+    },
+    null,
+    appPageUrl,
+  ),
+  [],
+  "a cancelled same-origin build asset must be benign",
+);
+
+for (const [label, issue] of [
+  [
+    "a chunk that 404s",
+    {
+      kind: "http",
+      status: 404,
+      resourceType: "script",
+      url: cancelledChunk.url,
+    } as RuntimeIssue,
+  ],
+  [
+    "a cancelled application request",
+    { ...cancelledChunk, url: "http://localhost:4342/app/tasks/data" },
+  ],
+  [
+    "a cancelled asset on another origin",
+    { ...cancelledChunk, url: "https://cdn.example.com/_next/static/chunks/a.js" },
+  ],
+  [
+    "a chunk that failed to connect",
+    { ...cancelledChunk, message: "net::ERR_CONNECTION_REFUSED" },
+  ],
+  [
+    "a cancelled document",
+    { ...cancelledChunk, resourceType: "document" },
+  ],
+] as const) {
+  assert.equal(
+    runtimeFailures(
+      {
+        issues: [issue],
+        intentionalEventSourceTeardowns: new Set(),
+        completedQualifiedViewWrites: new Set(),
+      },
+      null,
+      appPageUrl,
+    ).length,
+    1,
+    `${label} must remain fatal`,
+  );
+}
+
 console.log(
-  "experience:runtime-policy:self-test: pass - only marked realtime teardown and an exact qualified-view POST 204 abort are benign",
+  "experience:runtime-policy:self-test: pass - only a marked realtime teardown, an exact qualified-view POST 204 abort, and a cancelled same-origin build asset are benign",
 );
