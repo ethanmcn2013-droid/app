@@ -4,6 +4,36 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-27 · T·105 · ships · the palette learns to narrow, and the record stops drifting
+
+**Search now takes a scope before it takes a query, subtasks reorder by hand or
+by keyboard, and a mention finds the person where the caret already is.** ⌘K
+accepts `@assignee`, `#tag`, and `status:` chips built from the workspace you
+are actually in, so a long board narrows before the typing starts. On mobile the
+Studio Bar's search icon opens into a real field instead of a dead end.
+Subtasks reorder with a pointer or with the keyboard alone, narrated for anyone
+listening rather than looking, and the order persists through the position
+contract the board already used. The conversation composer anchors its mention
+list to the caret, and the name it inserts feeds the mention notifications that
+already existed.
+
+This work was cut on 24 July and stranded when the route consolidation landed
+the next day. Bringing it forward kept the canonical `/app` routing and the
+focus and modal-isolation behaviour that arrived in between, and the search
+field now keeps its list in the accessibility tree even when the list is empty,
+so the control it points at is never a dangling reference.
+
+The evidence around it needed repair before any of this could be trusted. Two
+critical fixtures had drifted from the surfaces they audit and were already
+failing before this cycle, and fourteen of fifteen stored evidence records
+described a suite that no longer runs. Both are corrected: 128 of 128 browser
+checks pass across mobile, tablet, desktop, and wide, up from 120. The T·98
+dispatch had also lost its heading and had been reading as loose prose since
+July. Honest edge: the retry-failed-upload slice from the same 24 July run is
+not here. It patched an attachments view that has since been replaced by the
+Resources section on a storage seam with quota enforcement, where a quota
+failure must not retry like a dropped connection.
+
 ## 2026-07-26 · T·104 · tightens · Timeline opens on the timeline
 
 **Opening Timeline now opens the current project artifact, not a dashboard of
