@@ -21,6 +21,10 @@ import {
   type UpdateField,
   type UserId,
 } from "@/lib/data";
+import {
+  classifyLaneTransition,
+  recordSponsoredUse,
+} from "@/lib/account/instrumentation/call-site";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -88,7 +92,9 @@ export async function moveTaskAction(
 ): Promise<Task[]> {
   if (!id || !LANE_ORDER.includes(toLane)) return [];
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  // Same Promise.all shape as toggleCompleteAction, so resolving the subject
+  // adds no serial round-trip to a write path.
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
   // Pre-read prior lane, workspace guard on the read so a caller who
   // knows a foreign task id gets a silent no-op instead of leaking the
   // lane value (or worse, re-parking the task).
@@ -109,6 +115,16 @@ export async function moveTaskAction(
     from: row.lane,
     to: toLane,
   }, { workspaceId: ws });
+  {
+    // The no-op guard above already returned, so any transition here is real.
+    const transition = classifyLaneTransition(row.lane, toLane);
+    if (transition) {
+      await recordSponsoredUse(
+        { product: "tasks", kind: transition, objectKey: id, subjectId: me, workspaceId: ws },
+        true,
+      );
+    }
+  }
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -142,6 +158,16 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     await recordActivity(id, { kind: "toggleComplete", to: "done" }, { workspaceId: ws });
     // Recurrence path always records a completion — award milestones accordingly.
     await maybeAwardCompletionMilestone(me, id).catch(() => {});
+    await recordSponsoredUse(
+      {
+        product: "tasks",
+        kind: "task_completed",
+        objectKey: id,
+        subjectId: me,
+        workspaceId: ws,
+      },
+      true,
+    );
     revalidatePath("/app", "layout");
     emitTasksChanged({ kind: "tasks" });
     return getTasks(ws);
@@ -156,6 +182,15 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     kind: "toggleComplete",
     to: target === "done" ? "done" : "open",
   }, { workspaceId: ws });
+  {
+    const transition = classifyLaneTransition(row.lane, target);
+    if (transition) {
+      await recordSponsoredUse(
+        { product: "tasks", kind: transition, objectKey: id, subjectId: me, workspaceId: ws },
+        true,
+      );
+    }
+  }
   // Only award a milestone when the task actually became done.
   if (target === "done") {
     await maybeAwardCompletionMilestone(me, id).catch(() => {});
@@ -313,12 +348,24 @@ export async function updateTaskAction(
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
   // Resolve the target through the caller's tenant before doing any
   // side-effects. Without this read, a foreign id is a no-op update but
   // still emits activity against the foreign task.
+  //
+  // The extra columns are for the sponsored-use diff: a patch that rewrites
+  // identical values is not a reassignment or a reschedule, and comparing
+  // costs nothing on a read this function already performs.
   const [ownedTask] = await db
-    .select({ id: tasks.id })
+    .select({
+      id: tasks.id,
+      lane: tasks.lane,
+      assignees: tasks.assignees,
+      due: tasks.due,
+      dueAt: tasks.dueAt,
+      startDay: tasks.startDay,
+      durationDays: tasks.durationDays,
+    })
     .from(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!ownedTask) return getTasks(ws);
@@ -357,6 +404,34 @@ export async function updateTaskAction(
     ),
   );
 
+  // One gesture can be several facts: a patch may move a lane and reschedule.
+  // Each is emitted once, and only when the value genuinely changed.
+  {
+    const changed = (key: keyof typeof ownedTask) =>
+      key in cleaned &&
+      JSON.stringify((cleaned as Record<string, unknown>)[key]) !==
+        JSON.stringify(ownedTask[key]);
+
+    const emits: Array<"task_reassigned" | "task_rescheduled" | "task_completed" | "task_reopened" | "task_status_changed"> = [];
+    if (changed("assignees")) emits.push("task_reassigned");
+    if (["due", "dueAt", "startDay", "durationDays"].some((k) => changed(k as keyof typeof ownedTask))) {
+      emits.push("task_rescheduled");
+    }
+    if (changed("lane")) {
+      const transition = classifyLaneTransition(
+        ownedTask.lane,
+        (cleaned as { lane?: string }).lane,
+      );
+      if (transition) emits.push(transition);
+    }
+    for (const kind of emits) {
+      await recordSponsoredUse(
+        { product: "tasks", kind, objectKey: id, subjectId: me, workspaceId: ws },
+        true,
+      );
+    }
+  }
+
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);
@@ -392,7 +467,7 @@ export async function addTaskAction(input: {
   parentTaskId?: string | null;
 }): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
@@ -442,6 +517,10 @@ export async function addTaskAction(input: {
     kind: "taskAdd",
     lane: input.lane ?? "todo",
   }, { workspaceId: ws });
+  await recordSponsoredUse(
+    { product: "tasks", kind: "task_created", objectKey: id, subjectId: me, workspaceId: ws },
+    true,
+  );
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);

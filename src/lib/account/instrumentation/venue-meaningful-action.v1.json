@@ -1,0 +1,85 @@
+{
+  "contract": "venue-meaningful-action.v1",
+  "instrumentationVersion": "instrumentation.v1",
+  "metricDictionaryVersion": "venue-metrics.v1",
+  "canonicalSource": "studio/src/lib/account/instrumentation/event-schema.ts",
+  "consumers": [
+    "tasks/src/lib/account/instrumentation/venue-meaningful-action.v1.json"
+  ],
+  "fields": [
+    "eventId",
+    "instrumentationVersion",
+    "product",
+    "kind",
+    "occurredAt",
+    "subjectIdHash",
+    "workspaceIdHash"
+  ],
+  "kinds": {
+    "notes": ["note_created", "note_materially_edited"],
+    "tasks": [
+      "task_created",
+      "task_completed",
+      "task_reopened",
+      "task_reassigned",
+      "task_rescheduled",
+      "task_status_changed"
+    ],
+    "timeline": [
+      "timeline_curated",
+      "timeline_visibility_changed",
+      "timeline_published"
+    ],
+    "signal": ["briefing_deliberately_opened", "briefing_acknowledged"]
+  },
+  "forbiddenFields": [
+    "title",
+    "name",
+    "body",
+    "content",
+    "text",
+    "description",
+    "note",
+    "comment",
+    "email",
+    "emailaddress",
+    "phone",
+    "url",
+    "href",
+    "path",
+    "slug",
+    "filename",
+    "attachment",
+    "clerkid",
+    "userid",
+    "workspaceid",
+    "subjectid",
+    "code",
+    "accesscode",
+    "token",
+    "secret",
+    "ip",
+    "useragent"
+  ],
+  "identityHash": {
+    "algorithm": "sha256",
+    "input": "<salt>:<id>",
+    "encoding": "hex",
+    "length": 32,
+    "saltEnv": "SPONSOR_USAGE_HASH_SALT",
+    "minimumSaltLength": 16
+  },
+  "subjectIdSource": "clerk-user-id",
+  "featureFlagEnv": "SPONSOR_USAGE_EVENTS",
+  "retentionDays": 35,
+  "suppression": {
+    "behaviouralMinimumWorkspaces": 3,
+    "rateMinimumWorkspaces": 5,
+    "absentRendersAs": "unavailable"
+  },
+  "emissionRule": "after the transaction commits; page views never qualify",
+  "unmappedKinds": {
+    "briefing_deliberately_opened": "No deliberate-open commit point exists in the Signal module. Every candidate is an automatic render, a system-surfaced record, or a redirect with no write. Signal reports partial rather than inventing one.",
+    "briefing_acknowledged": "briefingFeedback commits cleanly but is keyed on (clerk_id, item_key) with no workspace, so the event cannot carry a workspace hash."
+  }
+}

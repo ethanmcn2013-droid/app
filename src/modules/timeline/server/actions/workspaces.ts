@@ -33,6 +33,7 @@ import type {
   AudienceItemState,
   Status,
 } from "@/modules/timeline/server/db/timeline-schema";
+import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
 
 /** Translate a denied RateLimitResult into the correct user-facing error string. */
 function rateLimitError(result: RateLimitResult & { allowed: false }): string {
@@ -414,6 +415,18 @@ export async function upsertNodeOverlayAction(
     return { error: "Couldn't save that milestone. Check your connection and try again." };
   }
 
+  // The catch above returns on failure, so reaching here proves the write.
+  await recordSponsoredUse(
+    {
+      product: "timeline",
+      kind: "timeline_curated",
+      objectKey: `${workspaceSlug}/${projectSlug}`,
+      subjectId: userId,
+      workspaceId: workspace.suiteWorkspaceId,
+    },
+    true,
+  );
+
   // Revalidate curation view only, public URL not touched until Publish
   revalidatePath(`/app/timeline/${projectSlug}`);
 
@@ -595,6 +608,18 @@ export async function publishWorkspaceAction(
   }
 
   await publishWorkspace(workspaceSlug);
+  // Both empty-content guards above returned before this point, so reaching
+  // here means a real publish committed.
+  await recordSponsoredUse(
+    {
+      product: "timeline",
+      kind: "timeline_published",
+      objectKey: workspaceSlug,
+      subjectId: userId,
+      workspaceId: workspace.suiteWorkspaceId,
+    },
+    true,
+  );
   // Revalidate the authed dashboard in the unified app.
   revalidatePath("/app/timeline");
   // PARITY NOTE (manifest §revalidation contracts): the DB write above sets
@@ -622,6 +647,16 @@ export async function unpublishWorkspaceAction(
     return { error: "Workspace not found." };
   }
   await unpublishWorkspace(workspaceSlug);
+  await recordSponsoredUse(
+    {
+      product: "timeline",
+      kind: "timeline_visibility_changed",
+      objectKey: workspaceSlug,
+      subjectId: userId,
+      workspaceId: workspace.suiteWorkspaceId,
+    },
+    true,
+  );
   // Revalidate the authed dashboard in the unified app.
   revalidatePath("/app/timeline");
   // PARITY NOTE: same as publishWorkspaceAction — DB write is sufficient.
