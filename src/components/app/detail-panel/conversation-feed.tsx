@@ -8,6 +8,7 @@ import {
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useTransition,
@@ -20,9 +21,11 @@ import {
   type ActivityPayload,
   type Comment,
   type LaneId,
+  type UserId,
 } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
+import { MentionField, toMentionPeople, type MentionPerson } from "@/components/ui/mention-field";
 import { formatRelativeTime } from "@/lib/utils";
 import {
   addCommentAction,
@@ -40,6 +43,9 @@ const SUMMARIZE_MIN_MESSAGES = 6;
 type Props = {
   taskId: string;
   initialItems: ConversationItem[];
+  /** People to offer for @mentions — the task's assignees. Participants who
+   *  have already commented are folded in from the live feed. */
+  assigneeIds?: UserId[];
 };
 
 /**
@@ -51,11 +57,22 @@ type Props = {
  * Optimistic adds use `temp-<n>` ids so deletes that haven't been
  * acknowledged by the server are pure local removes.
  */
-export function ConversationFeed({ taskId, initialItems }: Props) {
+export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Props) {
   const [items, setItems] = useState<ConversationItem[]>(initialItems);
   const [, startTransition] = useTransition();
   const [pending, setPending] = useState(false);
   const me = useCurrentUser();
+
+  // Mention pool: the task's assignees plus everyone who has spoken in the
+  // thread, resolved through the seed USERS map (real names, never raw ids).
+  // Names carry into the posted body as "@Name" — the server's existing
+  // mention scan turns those into notifications.
+  const people: MentionPerson[] = useMemo(() => {
+    const commentAuthors = items
+      .filter((it) => it.kind === "comment")
+      .map((it) => it.comment.userId);
+    return toMentionPeople([...assigneeIds, ...commentAuthors], (id) => USERS[id]);
+  }, [assigneeIds, items]);
 
   const handleAdd = useCallback(
     (body: string) => {
@@ -166,6 +183,7 @@ export function ConversationFeed({ taskId, initialItems }: Props) {
       <Composer
         me={me}
         taskId={taskId}
+        people={people}
         disabled={!taskId}
         isPending={pending}
         onSubmit={handleAdd}
@@ -390,12 +408,14 @@ function formatBytesShort(bytes: number): string {
 function Composer({
   me,
   taskId,
+  people,
   disabled,
   isPending,
   onSubmit,
 }: {
   me: import("@/lib/data").UserId;
   taskId: string;
+  people: MentionPerson[];
   disabled: boolean;
   isPending: boolean;
   onSubmit: (body: string) => void;
@@ -444,10 +464,11 @@ function Composer({
       data-comment-composer
     >
       <Avatar user={me} size={22} />
-      <textarea
+      <MentionField
         ref={ref}
         value={draft}
-        onChange={(e) => setDraft(e.target.value)}
+        onChange={setDraft}
+        people={people}
         onKeyDown={(e) => {
           if (
             e.key === "Enter" &&
@@ -459,9 +480,9 @@ function Composer({
           }
         }}
         rows={1}
-        placeholder="Reply or comment"
+        placeholder="Reply or comment, @ to mention"
         disabled={disabled || isPending}
-        className="block min-h-[22px] flex-1 resize-none bg-transparent text-[13px] leading-[1.55] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
+        className="block min-h-[22px] w-full resize-none bg-transparent text-[13px] leading-[1.55] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
       />
       <div className="flex items-center gap-1.5">
         <DraftReplyButton

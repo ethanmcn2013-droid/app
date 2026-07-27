@@ -9,7 +9,13 @@ function read(relativePath) {
 const hybridWorkspace = read("src/components/hybrid/hybrid-workspace.tsx");
 const appLayout = read("src/app/app/layout.tsx");
 const mobileSuiteNav = read("src/components/app/mobile-suite-nav.tsx");
-const commandPalette = read("src/components/app/palette/command-palette.tsx");
+const commandPaletteFile = read("src/components/app/palette/command-palette.tsx");
+// The palette composes its search field from the shared scope-search
+// primitive, so the combobox lifecycle spans both files. Read them as one
+// surface; the contract is about what the palette renders, not which file
+// the JSX happens to live in.
+const scopeSearch = read("src/components/ui/scope-search.tsx");
+const commandPalette = `${commandPaletteFile}\n${scopeSearch}`;
 const productWorkspaceShell = read(
   "src/components/app/product-workspace-shell.tsx",
 );

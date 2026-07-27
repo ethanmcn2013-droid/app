@@ -13,7 +13,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { LANES, type Task } from "@/lib/data";
+import { LANES, LANE_ORDER, USERS, type Task } from "@/lib/data";
 import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
@@ -21,8 +21,25 @@ import { AvatarStack } from "@/components/showcase/avatar";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
+import {
+  ScopeChipRow,
+  ScopeOptionRow,
+  ScopeFacetLegend,
+  chipsPredicate,
+  optionToChip,
+  useScopeSearch,
+  type ScopeChip,
+  type ScopeFacet,
+  type ScopeOption,
+} from "@/components/ui/scope-search";
 
-type Ctx = { open: boolean; openPalette: () => void; closePalette: () => void };
+type Ctx = {
+  open: boolean;
+  /** Optionally seed the search field (e.g. from the Studio Bar's inline
+   *  Search-Expand affordance handing off what the user typed). */
+  openPalette: (initialQuery?: string) => void;
+  closePalette: () => void;
+};
 const PaletteContext = createContext<Ctx | null>(null);
 
 /**
@@ -31,27 +48,32 @@ const PaletteContext = createContext<Ctx | null>(null);
  * any future "search" affordance can call `usePalette().openPalette()`
  * to surface it without re-binding the shortcut themselves.
  *
- * The palette itself is intentionally minimal, title-substring match
- * across tasks. Tags + description match are bonuses; ranking is
- * "starts-with > contains > tag/desc match" so the typed prefix
- * jumps to the most likely target.
+ * The palette matches task titles (with tag + description bonuses), and —
+ * Delight Layer Phase 1 — accepts typed argument chips over that search:
+ * `@assignee`, `#tag`, and `status:` narrow the list to a live facet of the
+ * current workspace before the free text ranks what's left. Ranking is
+ * "starts-with > contains > tag/desc match" so the typed prefix jumps to
+ * the most likely target.
  */
 export function PaletteRoot({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [chips, setChips] = useState<ScopeChip[]>([]);
+  const [active, setActive] = useState(0);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef(true);
-  const openPalette = useCallback(() => {
+  const openPalette = useCallback((initialQuery = "") => {
     // Reset the search in the same event batch that opens the dialog so
-    // stale results can never flash during the entrance animation.
+    // stale results can never flash during the entrance animation. An
+    // optional seed lets the Studio Bar's inline field hand off its text.
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     restoreFocusRef.current = true;
-    setQuery("");
-    setActiveTaskId(null);
+    setQuery(initialQuery);
+    setChips([]);
+    setActive(0);
     setOpen(true);
   }, []);
   const closePalette = useCallback(() => {
@@ -113,8 +135,10 @@ export function PaletteRoot({ children }: { children: ReactNode }) {
         onDismiss={dismissPalette}
         query={query}
         onQueryChange={setQuery}
-        activeTaskId={activeTaskId}
-        onActiveTaskChange={setActiveTaskId}
+        chips={chips}
+        onChipsChange={setChips}
+        active={active}
+        onActiveChange={setActive}
       />
     </PaletteContext.Provider>
   );
@@ -127,6 +151,67 @@ export function usePalette(): Ctx {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Facets — derived live from the current workspace's tasks
+// ────────────────────────────────────────────────────────────────────
+
+function useTaskFacets(tasks: Task[]): ScopeFacet[] {
+  return useMemo(() => {
+    const assigneeIds = new Set<string>();
+    const tagSet = new Set<string>();
+    for (const t of tasks) {
+      t.assignees.forEach((id) => assigneeIds.add(id));
+      (t.tags ?? []).forEach((tag) => tagSet.add(tag));
+    }
+    const assignees: ScopeOption[] = [...assigneeIds]
+      .map((id) => {
+        const u = USERS[id];
+        return {
+          value: id,
+          label: u?.name ?? "Someone",
+          initials: u?.initials ?? "?",
+        };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+    const tags: ScopeOption[] = [...tagSet]
+      .sort((a, b) => a.localeCompare(b))
+      .map((tag) => ({ value: tag, label: tag }));
+    const statuses: ScopeOption[] = LANE_ORDER.map((id) => ({
+      value: id,
+      label: LANES[id].name,
+      dot: LANES[id].dot,
+    }));
+    return [
+      {
+        key: "assignee",
+        label: "Assignee",
+        prompt: "Filter by assignee",
+        kind: "person",
+        options: assignees,
+        triggers: ["assignee", "owner"],
+        sigil: "@",
+      },
+      {
+        key: "tag",
+        label: "Tag",
+        prompt: "Filter by tag",
+        kind: "plain",
+        options: tags,
+        triggers: ["tag", "label"],
+        sigil: "#",
+      },
+      {
+        key: "status",
+        label: "Status",
+        prompt: "Filter by status",
+        kind: "dot",
+        options: statuses,
+        triggers: ["status", "is"],
+      },
+    ];
+  }, [tasks]);
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Palette UI
 // ────────────────────────────────────────────────────────────────────
 
@@ -136,19 +221,24 @@ function Palette({
   onDismiss,
   query,
   onQueryChange,
-  activeTaskId,
-  onActiveTaskChange,
+  chips,
+  onChipsChange,
+  active,
+  onActiveChange,
 }: {
   open: boolean;
   onClose: () => void;
   onDismiss: () => void;
   query: string;
   onQueryChange: (query: string) => void;
-  activeTaskId: string | null;
-  onActiveTaskChange: (taskId: string | null) => void;
+  chips: ScopeChip[];
+  onChipsChange: (chips: ScopeChip[]) => void;
+  active: number;
+  onActiveChange: (index: number) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
   const listboxId = useId();
   const reduceMotion = useReducedMotion();
   const state = useTasksState();
@@ -203,30 +293,35 @@ function Palette({
     };
   }, [open]);
 
-  const results = useMemo(() => searchTasks(state.tasks, query), [
-    state.tasks,
-    query,
-  ]);
+  const facets = useTaskFacets(state.tasks);
+  const { pending, options } = useScopeSearch(facets, chips, query);
 
-  // Store selection by identity, not a positional index. When results
-  // shrink, expand, or reorder, the effective index is always valid and
-  // falls back to the first result if the selected task disappeared.
-  const selectedResultIdx = activeTaskId
-    ? results.findIndex((task) => task.id === activeTaskId)
-    : -1;
-  const activeIdx = selectedResultIdx >= 0 ? selectedResultIdx : 0;
+  const results = useMemo(
+    () => filterTasks(state.tasks, chips, query, Boolean(pending)),
+    [state.tasks, chips, query, pending],
+  );
 
-  const onArrow = useCallback(
-    (dir: 1 | -1) => {
-      const n = results.length;
-      if (n === 0) {
-        onActiveTaskChange(null);
-        return;
-      }
-      const next = (activeIdx + dir + n) % n;
-      onActiveTaskChange(results[next].id);
+  // In facet mode the list is options; otherwise it's task results. One
+  // active index serves both; it resets to the top whenever the visible
+  // list changes (query, chips, or the mode itself).
+  const listLength = pending ? options.length : results.length;
+  const activeIdx = Math.min(active, Math.max(0, listLength - 1));
+
+  const addChip = useCallback(
+    (facet: ScopeFacet, option: ScopeOption) => {
+      onChipsChange([...chips, optionToChip(facet, option)]);
+      onQueryChange("");
+      onActiveChange(0);
     },
-    [activeIdx, onActiveTaskChange, results],
+    [chips, onChipsChange, onQueryChange, onActiveChange],
+  );
+
+  const removeChip = useCallback(
+    (index: number) => {
+      onChipsChange(chips.filter((_, i) => i !== index));
+      onActiveChange(0);
+    },
+    [chips, onChipsChange, onActiveChange],
   );
 
   const commit = useCallback(
@@ -239,8 +334,68 @@ function Palette({
     [activeIdx, onDismiss, openTask, results],
   );
 
+  const onArrow = useCallback(
+    (dir: 1 | -1) => {
+      if (listLength === 0) return;
+      onActiveChange((activeIdx + dir + listLength) % listLength);
+    },
+    [activeIdx, listLength, onActiveChange],
+  );
+
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        onArrow(1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        onArrow(-1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (pending) {
+          const option = options[activeIdx];
+          if (option) addChip(pending.facet, option);
+        } else {
+          commit();
+        }
+      } else if (e.key === "Backspace" && query === "" && chips.length > 0) {
+        e.preventDefault();
+        removeChip(chips.length - 1);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (query !== "") onQueryChange("");
+        else onClose();
+      }
+    },
+    [
+      pending,
+      options,
+      activeIdx,
+      addChip,
+      commit,
+      query,
+      chips.length,
+      removeChip,
+      onArrow,
+      onQueryChange,
+      onClose,
+    ],
+  );
+
+  // Keep the active row in view inside the capped list.
+  useEffect(() => {
+    if (!open) return;
+    const el = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+    el?.scrollIntoView({ block: "nearest" });
+  }, [activeIdx, open, pending]);
+
+  const showTasks = !pending;
+
+  // The listbox owns one active descendant across both modes.
   const activeOptionId =
-    results.length > 0 ? `${listboxId}-option-${activeIdx}` : undefined;
+    listLength > 0 ? `${listboxId}-option-${activeIdx}` : undefined;
+
   const palette = (
     <AnimatePresence>
       {open ? (
@@ -300,82 +455,81 @@ function Palette({
             }}
             className="w-full max-w-[640px] overflow-hidden rounded-2xl border border-line-soft bg-bg-elevated shadow-[0_36px_80px_-30px_rgba(20,21,26,0.4)]"
           >
-            <div className="flex items-center gap-2 border-b border-line-soft px-4 py-3.5">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-ink-quiet"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <input
-                ref={inputRef}
-                aria-activedescendant={activeOptionId}
-                aria-autocomplete="list"
-                aria-controls={listboxId}
-                aria-expanded="true"
-                aria-label="Search tasks"
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  onQueryChange(e.target.value);
-                  onActiveTaskChange(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    onArrow(1);
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    onArrow(-1);
-                  } else if (e.key === "Enter") {
-                    e.preventDefault();
-                    commit();
-                  }
-                }}
-                placeholder="Search, jump or create…"
-                autoComplete="off"
-                role="combobox"
-                spellCheck={false}
-                className="block w-full bg-transparent text-[15px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
-              />
-              <kbd className="inline-flex h-5 select-none items-center rounded border border-line-soft bg-white px-1.5 text-[10.5px] font-mono text-ink-quiet">
-                Esc
-              </kbd>
-            </div>
+            <ScopeChipRow
+              facets={facets}
+              chips={chips}
+              query={query}
+              onQueryChange={(v) => {
+                onQueryChange(v);
+                onActiveChange(0);
+              }}
+              onRemoveChip={removeChip}
+              onKeyDown={onKeyDown}
+              inputRef={inputRef}
+              listId={listboxId}
+              activeOptionId={activeOptionId}
+              placeholder="Search, jump or create…"
+              trailing={
+                <kbd className="inline-flex h-5 flex-none select-none items-center rounded border border-line-soft bg-white px-1.5 text-[10.5px] font-mono text-ink-quiet">
+                  Esc
+                </kbd>
+              }
+            />
 
+            {/* The listbox always renders, empty or not: the field's
+                aria-controls points at this id, and a dangling reference is
+                an invalid ARIA value. Empty copy sits beside the list. */}
             <div className="thin-scroll max-h-[60vh] overflow-y-auto py-1">
-              <ul aria-label="Task results" id={listboxId} role="listbox">
-                {results.map((task, idx) => (
-                    <ResultRow
-                      id={`${listboxId}-option-${idx}`}
-                      key={task.id}
-                      task={task}
-                      query={query}
-                      active={idx === activeIdx}
-                      onHover={() => onActiveTaskChange(task.id)}
-                      onClick={() => commit(task.id)}
-                    />
-                ))}
+              <ul
+                id={listboxId}
+                role="listbox"
+                aria-label={pending ? pending.facet.prompt : "Task results"}
+                ref={listRef}
+              >
+                {pending
+                  ? options.map((option, idx) => (
+                      <ScopeOptionRow
+                        id={`${listboxId}-option-${idx}`}
+                        key={option.value}
+                        facet={pending.facet}
+                        option={option}
+                        active={idx === activeIdx}
+                        onHover={() => onActiveChange(idx)}
+                        onClick={() => addChip(pending.facet, option)}
+                      />
+                    ))
+                  : results.map((task, idx) => (
+                      <ResultRow
+                        id={`${listboxId}-option-${idx}`}
+                        key={task.id}
+                        task={task}
+                        query={query}
+                        active={idx === activeIdx}
+                        onHover={() => onActiveChange(idx)}
+                        onClick={() => commit(task.id)}
+                      />
+                    ))}
               </ul>
-              {results.length === 0 ? (
-                <Empty query={query} onCreate={createTask} />
+              {pending && options.length === 0 ? (
+                <div className="px-4 py-6 text-center text-[12.5px] text-ink-faint">
+                  No {pending.facet.label.toLowerCase()} matches.
+                </div>
+              ) : null}
+              {showTasks && results.length === 0 ? (
+                <Empty query={query} chips={chips} onCreate={createTask} />
               ) : null}
             </div>
 
             <div className="flex items-center justify-between border-t border-line-soft bg-bg-sunken/30 px-4 py-2 text-[10.5px] text-ink-quiet">
               <span className="flex items-center gap-3">
                 <Hint kbd="↑↓">navigate</Hint>
-                <Hint kbd="↵">open</Hint>
-                <Hint kbd="esc">close</Hint>
+                <Hint kbd="↵">{pending ? "add filter" : "open"}</Hint>
+                <Hint kbd="esc">{query ? "clear" : "close"}</Hint>
               </span>
               <span className="tabular-nums">
-                {results.length} {results.length === 1 ? "match" : "matches"}
+                {pending
+                  ? `${options.length} ${options.length === 1 ? "option" : "options"}`
+                  : `${results.length} ${results.length === 1 ? "match" : "matches"}`}
               </span>
             </div>
           </motion.div>
@@ -408,9 +562,30 @@ function CreateRow({ onCreate }: { onCreate: () => void }) {
   );
 }
 
-function Empty({ query, onCreate }: { query: string; onCreate: () => void }) {
+function Empty({
+  query,
+  chips,
+  onCreate,
+}: {
+  query: string;
+  chips: ScopeChip[];
+  onCreate: () => void;
+}) {
   const q = query.trim();
   if (!q) {
+    // Chips applied but nothing under them: a real empty result, not a prompt.
+    if (chips.length > 0) {
+      return (
+        <div className="px-4 py-8 text-center">
+          <div className="text-[13.5px] font-medium text-ink-soft">
+            Nothing under these filters.
+          </div>
+          <div className="mx-auto mt-1 max-w-[36ch] text-[12px] leading-[1.5] text-ink-faint">
+            Backspace removes the last filter, or type to search across them.
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="py-1.5">
         <div className="px-4 pt-2 pb-1 text-[13px] font-medium text-ink-soft">
@@ -419,6 +594,9 @@ function Empty({ query, onCreate }: { query: string; onCreate: () => void }) {
         <div className="px-4 text-[11.5px] leading-[1.5] text-ink-faint">
           Searches title, tags, and description across every task in the
           workspace.
+        </div>
+        <div className="px-4 pt-1.5 text-[11.5px] leading-[1.5] text-ink-faint">
+          Add a filter: <ScopeFacetLegend facets={FACET_LEGEND} />
         </div>
         <div className="mt-2 border-t border-line-soft/70 pt-1.5">
           <CreateRow onCreate={onCreate} />
@@ -454,6 +632,14 @@ function Empty({ query, onCreate }: { query: string; onCreate: () => void }) {
     </div>
   );
 }
+
+// Legend uses the same shapes the palette derives; kept static so the empty
+// state renders identical triggers even before any task carries the facet.
+const FACET_LEGEND: ScopeFacet[] = [
+  { key: "assignee", label: "Assignee", prompt: "", kind: "person", options: [], triggers: ["assignee"], sigil: "@" },
+  { key: "tag", label: "Tag", prompt: "", kind: "plain", options: [], triggers: ["tag"], sigil: "#" },
+  { key: "status", label: "Status", prompt: "", kind: "dot", options: [], triggers: ["status"] },
+];
 
 const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
   {
@@ -638,12 +824,42 @@ function score(task: Task, q: string): number {
   return 0;
 }
 
-function searchTasks(tasks: Task[], query: string): Task[] {
+/**
+ * Filter by the applied chips first (AND across facets, OR within one),
+ * then rank the remainder by the free-text query. Chips alone are enough
+ * to produce a list; with no chips and no query the palette shows its
+ * prompt instead. `pending` suppresses task results while the user is
+ * still choosing a facet's value.
+ */
+function filterTasks(
+  tasks: Task[],
+  chips: ScopeChip[],
+  query: string,
+  pending: boolean,
+): Task[] {
+  if (pending) return [];
+  const pred = chipsPredicate<Task>(chips, (facetKey, t) => {
+    if (facetKey === "assignee") return t.assignees;
+    if (facetKey === "tag") return t.tags ?? [];
+    if (facetKey === "status") return [t.lane];
+    return [];
+  });
+  const scoped = tasks.filter(pred);
   const q = query.trim();
-  if (!q) return [];
-  const scored: Scored[] = tasks
+  if (!q) {
+    if (chips.length === 0) return [];
+    return scoped
+      .slice()
+      .sort(
+        (a, b) =>
+          LANE_ORDER.indexOf(a.lane) - LANE_ORDER.indexOf(b.lane) ||
+          b.updatedAt.getTime() - a.updatedAt.getTime(),
+      )
+      .slice(0, 20);
+  }
+  const ranked: Scored[] = scoped
     .map((task) => ({ task, score: score(task, q) }))
     .filter((s) => s.score > 0);
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, 20).map((s) => s.task);
+  ranked.sort((a, b) => b.score - a.score);
+  return ranked.slice(0, 20).map((s) => s.task);
 }

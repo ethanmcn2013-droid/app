@@ -35,6 +35,7 @@ import {
   type ProductId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
+import { StudioBarSearch } from "./studio-bar-search";
 import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
@@ -192,18 +193,9 @@ export function StudioBar() {
           </kbd>
         </button>
 
-        {/* Compact search trigger below md, where the full field is hidden. */}
-        <button
-          type="button"
-          aria-label={commandLabel}
-          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="flex h-11 w-11 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:hidden"
-        >
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
+        {/* Search-Expand affordance below md, where the full field is hidden:
+            the icon morphs into an inline field that seeds the palette. */}
+        <StudioBarSearch label={commandLabel} />
 
         {tasksSurface ? (
           <button

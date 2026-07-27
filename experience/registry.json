@@ -203,10 +203,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e6572d73e8304e38"
+      "materialityHash": "e6572d73e8304e38",
+      "materialityReview": {
+        "materialityHash": "e6572d73e8304e38",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.app-import",
@@ -355,10 +360,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "86ee3a76a13d8bc0"
+      "materialityHash": "86ee3a76a13d8bc0",
+      "materialityReview": {
+        "materialityHash": "86ee3a76a13d8bc0",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.app-my-tasks",
@@ -450,10 +460,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9335b240eb37bac0"
+      "materialityHash": "9335b240eb37bac0",
+      "materialityReview": {
+        "materialityHash": "9335b240eb37bac0",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.app-tasks-timeline",
@@ -494,10 +509,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f20fd2dc1b67ab0e"
+      "materialityHash": "f20fd2dc1b67ab0e",
+      "materialityReview": {
+        "materialityHash": "f20fd2dc1b67ab0e",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.app-your-work",
@@ -545,10 +565,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d94465a3f791a266"
+      "materialityHash": "d94465a3f791a266",
+      "materialityReview": {
+        "materialityHash": "d94465a3f791a266",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.app-archived",
@@ -1250,10 +1275,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9154b894aeb46365"
+      "materialityHash": "9154b894aeb46365",
+      "materialityReview": {
+        "materialityHash": "9154b894aeb46365",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.print-board-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.print-calendar",
@@ -1293,10 +1323,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b9f94c73108490b0"
+      "materialityHash": "b9f94c73108490b0",
+      "materialityReview": {
+        "materialityHash": "b9f94c73108490b0",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.print-list",
@@ -1343,10 +1378,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a544e0ffbc8d363e"
+      "materialityHash": "a544e0ffbc8d363e",
+      "materialityReview": {
+        "materialityHash": "a544e0ffbc8d363e",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.print-list-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.print-timeline",
@@ -1386,10 +1426,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d90764270932869e"
+      "materialityHash": "d90764270932869e",
+      "materialityReview": {
+        "materialityHash": "d90764270932869e",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.privacy",
@@ -1691,10 +1736,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ee2b4660f7b40532"
+      "materialityHash": "ee2b4660f7b40532",
+      "materialityReview": {
+        "materialityHash": "ee2b4660f7b40532",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.settings-plan",
@@ -1735,10 +1785,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c2599ecd3d094b3d"
+      "materialityHash": "c2599ecd3d094b3d",
+      "materialityReview": {
+        "materialityHash": "c2599ecd3d094b3d",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.settings-profile",
@@ -1779,10 +1834,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a24a1b85fe91dad0"
+      "materialityHash": "a24a1b85fe91dad0",
+      "materialityReview": {
+        "materialityHash": "a24a1b85fe91dad0",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.share-by-token",
@@ -2270,10 +2330,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d9fe0d7f1603130c"
+      "materialityHash": "d9fe0d7f1603130c",
+      "materialityReview": {
+        "materialityHash": "d9fe0d7f1603130c",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.welcome-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.page.welcome-plan",
@@ -2316,10 +2381,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f532c7ecbb8ab980"
+      "materialityHash": "f532c7ecbb8ab980",
+      "materialityReview": {
+        "materialityHash": "f532c7ecbb8ab980",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.state.app-error",
@@ -2575,7 +2645,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "31eb72936ce4e965"
+      "materialityHash": "c3b5937ac5f7c86e"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2758,10 +2828,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-07-27",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "36c47fbab79ad4f1"
+      "materialityHash": "36c47fbab79ad4f1",
+      "materialityReview": {
+        "materialityHash": "36c47fbab79ad4f1",
+        "reviewedAt": "2026-07-27",
+        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-27.json"
+      }
     },
     {
       "id": "tasks.state.app-task-by-id-loading",
