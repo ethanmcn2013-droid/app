@@ -4,7 +4,7 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-07-26 · T·104 · corrects · Timeline opens on the timeline
+## 2026-07-26 · T·104 · tightens · Timeline opens on the timeline
 
 **Opening Timeline now opens the current project artifact, not a dashboard of
 cards that asks the owner to choose the work twice.** The signed Mara and Finn
@@ -67,6 +67,8 @@ The whole design-lab component tree is ported in unchanged. It renders pixel-ide
 
 The frame stays production's own. The command palette, quick-create and the task detail panel remain the globally mounted production surfaces, so their behaviour and keyboard contracts are unchanged; the brief reads the real workspace name. The T·98 board rework, the Option B/C shells and the lab ribbon are dropped in line with the one-to-one decision. Typecheck, the production build, the design-system gate, the materiality gate with a refreshed four-view review, and forty-six of forty-six browser experience checks at both breakpoints all pass. Live at tasks.signalstudio.ie.
 
+
+## 2026-07-19 · T·98 · ships · the board becomes a real working surface
 
 **The board becomes a real working surface: four named standard columns you can recolour and describe, custom columns you can create, reorder and safely remove, colour-coded tags and an overdue flag on the cards, a full quick-action menu behind the card ellipsis, and columns that finally scroll on their own — all on the Claude Design icon set.** The header sheds its clutter first: the upper-left reads as a static "Tasks" wordmark instead of a workspace dropdown, the date-window and "workspace owner" line under the purpose are gone with the gap they left, search moves to the right of the black bar, and a licence slot on the left binds to real entitlement data — School Edition or Venue Edition when the account carries one, nothing when it doesn't.
 
