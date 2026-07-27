@@ -476,20 +476,18 @@ function Palette({
               }
             />
 
+            {/* The listbox always renders, empty or not: the field's
+                aria-controls points at this id, and a dangling reference is
+                an invalid ARIA value. Empty copy sits beside the list. */}
             <div className="thin-scroll max-h-[60vh] overflow-y-auto py-1">
-              {pending ? (
-                options.length === 0 ? (
-                  <div className="px-4 py-6 text-center text-[12.5px] text-ink-faint">
-                    No {pending.facet.label.toLowerCase()} matches.
-                  </div>
-                ) : (
-                  <ul
-                    id={listboxId}
-                    role="listbox"
-                    aria-label={pending.facet.prompt}
-                    ref={listRef}
-                  >
-                    {options.map((option, idx) => (
+              <ul
+                id={listboxId}
+                role="listbox"
+                aria-label={pending ? pending.facet.prompt : "Task results"}
+                ref={listRef}
+              >
+                {pending
+                  ? options.map((option, idx) => (
                       <ScopeOptionRow
                         id={`${listboxId}-option-${idx}`}
                         key={option.value}
@@ -499,31 +497,27 @@ function Palette({
                         onHover={() => onActiveChange(idx)}
                         onClick={() => addChip(pending.facet, option)}
                       />
+                    ))
+                  : results.map((task, idx) => (
+                      <ResultRow
+                        id={`${listboxId}-option-${idx}`}
+                        key={task.id}
+                        task={task}
+                        query={query}
+                        active={idx === activeIdx}
+                        onHover={() => onActiveChange(idx)}
+                        onClick={() => commit(task.id)}
+                      />
                     ))}
-                  </ul>
-                )
-              ) : showTasks && results.length === 0 ? (
+              </ul>
+              {pending && options.length === 0 ? (
+                <div className="px-4 py-6 text-center text-[12.5px] text-ink-faint">
+                  No {pending.facet.label.toLowerCase()} matches.
+                </div>
+              ) : null}
+              {showTasks && results.length === 0 ? (
                 <Empty query={query} chips={chips} onCreate={createTask} />
-              ) : (
-                <ul
-                  id={listboxId}
-                  role="listbox"
-                  aria-label="Task results"
-                  ref={listRef}
-                >
-                  {results.map((task, idx) => (
-                    <ResultRow
-                      id={`${listboxId}-option-${idx}`}
-                      key={task.id}
-                      task={task}
-                      query={query}
-                      active={idx === activeIdx}
-                      onHover={() => onActiveChange(idx)}
-                      onClick={() => commit(task.id)}
-                    />
-                  ))}
-                </ul>
-              )}
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between border-t border-line-soft bg-bg-sunken/30 px-4 py-2 text-[10.5px] text-ink-quiet">

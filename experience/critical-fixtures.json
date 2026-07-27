@@ -11,7 +11,12 @@
     "reducedMotion": "reduce",
     "animationPolicy": "disabled"
   },
-  "breakpoints": ["mobile", "tablet", "desktop", "wide"],
+  "breakpoints": [
+    "mobile",
+    "tablet",
+    "desktop",
+    "wide"
+  ],
   "experiences": [
     {
       "id": "tasks.page.app",
@@ -20,14 +25,40 @@
         {
           "name": "populated demo workspace",
           "path": "/app",
-          "states": ["populated", "reduced-motion", "keyboard-only"],
+          "states": [
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "url", "pathname": "/app/tasks", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["populated"] }
+            {
+              "kind": "url",
+              "pathname": "/app/tasks",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The Orchard, events",
+              "proves": [
+                "populated"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted", "dense", "long-content"]
+      "remainingStates": [
+        "first-use",
+        "empty",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted",
+        "dense",
+        "long-content"
+      ]
     },
     {
       "id": "tasks.page.app-tasks",
@@ -36,14 +67,39 @@
         {
           "name": "canonical populated Tasks workspace",
           "path": "/app/tasks",
-          "states": ["default", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "url", "pathname": "/app/tasks", "proves": ["default"] },
-            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["default"] }
+            {
+              "kind": "url",
+              "pathname": "/app/tasks",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The Orchard, events",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved", "long-content"]
+      "remainingStates": [
+        "loading",
+        "error",
+        "success",
+        "disabled",
+        "saved",
+        "unsaved",
+        "long-content"
+      ]
     },
     {
       "id": "tasks.page.app-inbox",
@@ -52,15 +108,49 @@
         {
           "name": "demo digest with empty direct alerts",
           "path": "/app/inbox",
-          "states": ["empty", "populated", "reduced-motion", "keyboard-only"],
+          "states": [
+            "empty",
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Inbox", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "Good morning, Orla.", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "Inbox zero. Quiet here on purpose.", "proves": ["empty"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Inbox",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Good morning, Orla.",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Inbox zero. Quiet here on purpose.",
+              "proves": [
+                "empty"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["first-use", "loading", "partial-failure", "error", "restricted", "dense", "long-content"]
+      "remainingStates": [
+        "first-use",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted",
+        "dense",
+        "long-content"
+      ]
     },
     {
       "id": "tasks.page.app-import",
@@ -69,14 +159,39 @@
         {
           "name": "empty CSV import start",
           "path": "/app/import",
-          "states": ["default", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Bring your tasks in from somewhere else", "proves": ["default"] },
-            { "kind": "text", "text": "Drop a CSV here, or click to choose", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Bring your tasks in from somewhere else",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Drop a CSV here, or click to choose",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved", "long-content"]
+      "remainingStates": [
+        "loading",
+        "error",
+        "success",
+        "disabled",
+        "saved",
+        "unsaved",
+        "long-content"
+      ]
     },
     {
       "id": "tasks.page.invite-by-token",
@@ -85,23 +200,60 @@
         {
           "name": "valid invite without mutation",
           "path": "/invite/review-valid",
-          "states": ["default", "disabled", "keyboard-only"],
+          "states": [
+            "default",
+            "disabled",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Niamh O’Connell added you to The Orchard, events.", "proves": ["default"] },
-            { "kind": "role", "role": "button", "name": "Accept invite", "disabled": true, "proves": ["disabled"] },
-            { "kind": "text", "text": "Disabled in review mode. No workspace will be changed.", "proves": ["disabled"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Niamh O’Connell added you to The Orchard, events.",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Accept invite",
+              "disabled": true,
+              "proves": [
+                "disabled"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Disabled in review mode. No workspace will be changed.",
+              "proves": [
+                "disabled"
+              ]
+            }
           ]
         },
         {
           "name": "expired invite",
           "path": "/invite/review-expired",
-          "states": ["error"],
+          "states": [
+            "error"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "This invite has expired.", "proves": ["error"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "This invite has expired.",
+              "proves": [
+                "error"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "success"]
+      "remainingStates": [
+        "loading",
+        "success"
+      ]
     },
     {
       "id": "tasks.page.privacy",
@@ -110,9 +262,21 @@
         {
           "name": "published privacy notice",
           "path": "/privacy",
-          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "What we collect, and why.", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "What we collect, and why.",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -125,10 +289,28 @@
         {
           "name": "published demo workspace",
           "path": "/p/the-orchard",
-          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "The Orchard, events", "proves": ["default"] },
-            { "kind": "text", "text": "10 things in motion, gathered with care", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The Orchard, events",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "10 things in motion, gathered with care",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -141,30 +323,69 @@
         {
           "name": "successful wedding entitlement",
           "path": "/redeem/REVIEW-SUCCESS",
-          "states": ["default", "success", "keyboard-only"],
+          "states": [
+            "default",
+            "success",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "text", "text": "Redeemed", "proves": ["default", "success"] },
-            { "kind": "role", "role": "link", "name": "Open the workspace", "href": "/app/tasks?welcome=venue&v=the-orchard", "proves": ["success"] }
+            {
+              "kind": "text",
+              "text": "Redeemed",
+              "proves": [
+                "default",
+                "success"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "Open the workspace",
+              "href": "/app/tasks?welcome=venue&v=the-orchard",
+              "proves": [
+                "success"
+              ]
+            }
           ]
         },
         {
           "name": "expired code",
           "path": "/redeem/REVIEW-EXPIRED",
-          "states": ["error"],
+          "states": [
+            "error"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "This code has expired.", "proves": ["error"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "This code has expired.",
+              "proves": [
+                "error"
+              ]
+            }
           ]
         },
         {
           "name": "already used code",
           "path": "/redeem/REVIEW-USED",
-          "states": ["disabled"],
+          "states": [
+            "disabled"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "You've already redeemed this one.", "proves": ["disabled"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "You've already redeemed this one.",
+              "proves": [
+                "disabled"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading"]
+      "remainingStates": [
+        "loading"
+      ]
     },
     {
       "id": "tasks.page.root",
@@ -173,9 +394,21 @@
         {
           "name": "customer-facing homepage",
           "path": "/",
-          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Execution clarity for live work.", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Execution clarity for live work.",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -188,9 +421,21 @@
         {
           "name": "published security notice",
           "path": "/security",
-          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "How the thing is built.", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "How the thing is built.",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -203,11 +448,40 @@
         {
           "name": "read-only shared board",
           "path": "/share/review-the-orchard",
-          "states": ["default", "read-only", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "read-only",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "text", "text": "Read-only · Shared link", "proves": ["default", "read-only"] },
-            { "kind": "role", "role": "link", "name": "Make this yours", "href": "/app/tasks", "proves": ["read-only"] },
-            { "kind": "role", "role": "button", "name": "New task", "count": 0, "proves": ["read-only"] }
+            {
+              "kind": "text",
+              "text": "Read-only · Shared link",
+              "proves": [
+                "default",
+                "read-only"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "Make this yours",
+              "href": "/app/tasks",
+              "proves": [
+                "read-only"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "New task",
+              "count": 0,
+              "proves": [
+                "read-only"
+              ]
+            }
           ]
         }
       ],
@@ -220,20 +494,65 @@
         {
           "name": "captured page and link",
           "path": "/share-target?title=Saturday%20supplier%20brief&url=https%3A%2F%2Fexample.com%2Fbrief",
-          "states": ["default", "long-content", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Save what you saw.", "proves": ["default"] },
-            { "kind": "role", "role": "textbox", "name": "Task", "value": "Saturday supplier brief, https://example.com/brief", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Save what you saw.",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "textbox",
+              "name": "Task",
+              "value": "Saturday supplier brief, https://example.com/brief",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         },
         {
           "name": "empty share payload",
           "path": "/share-target",
-          "states": ["default", "reduced-motion"],
+          "states": [
+            "default",
+            "reduced-motion"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Save what you saw.", "proves": ["default"] },
-            { "kind": "role", "role": "textbox", "name": "Task", "value": "", "proves": ["default"] },
-            { "kind": "role", "role": "button", "name": "Save", "disabled": true, "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Save what you saw.",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "textbox",
+              "name": "Task",
+              "value": "",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Save",
+              "disabled": true,
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -246,14 +565,37 @@
         {
           "name": "review-mode sign in",
           "path": "/sign-in",
-          "states": ["default", "disabled", "keyboard-only"],
+          "states": [
+            "default",
+            "disabled",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "You’re already signed in here.", "proves": ["default", "disabled"] },
-            { "kind": "role", "role": "textbox", "count": 0, "proves": ["disabled"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "You’re already signed in here.",
+              "proves": [
+                "default",
+                "disabled"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "textbox",
+              "count": 0,
+              "proves": [
+                "disabled"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "error", "success"]
+      "remainingStates": [
+        "loading",
+        "error",
+        "success"
+      ]
     },
     {
       "id": "tasks.page.sign-up-by-sign-up",
@@ -262,14 +604,37 @@
         {
           "name": "review-mode sign up",
           "path": "/sign-up?use=wedding",
-          "states": ["default", "disabled", "keyboard-only"],
+          "states": [
+            "default",
+            "disabled",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "No account is needed here.", "proves": ["default", "disabled"] },
-            { "kind": "role", "role": "textbox", "count": 0, "proves": ["disabled"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "No account is needed here.",
+              "proves": [
+                "default",
+                "disabled"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "textbox",
+              "count": 0,
+              "proves": [
+                "disabled"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "error", "success"]
+      "remainingStates": [
+        "loading",
+        "error",
+        "success"
+      ]
     },
     {
       "id": "tasks.page.terms",
@@ -278,9 +643,21 @@
         {
           "name": "published terms",
           "path": "/terms",
-          "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "The deal, in plain words.", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The deal, in plain words.",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
@@ -290,22 +667,50 @@
       "id": "tasks.state.app-error",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "friendly recovery copy", "contains": "The workspace took a wrong turn." },
-        { "label": "retry action", "contains": "Try again" },
-        { "label": "board escape", "contains": "href=\"/app/tasks\"" },
-        { "label": "Sentry capture", "contains": "Sentry.captureException(error)" }
+        {
+          "label": "friendly recovery copy",
+          "contains": "The workspace took a wrong turn."
+        },
+        {
+          "label": "retry action",
+          "contains": "Try again"
+        },
+        {
+          "label": "board escape",
+          "contains": "href=\"/app/tasks\""
+        },
+        {
+          "label": "Sentry capture",
+          "contains": "Sentry.captureException(error)"
+        }
       ],
-      "remainingStates": ["error", "keyboard-only"]
+      "remainingStates": [
+        "error",
+        "keyboard-only"
+      ]
     },
     {
       "id": "tasks.state.app-loading",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "stable product identity", "contains": "[\"t\", \"a\", \"s\", \"k\", \"s\"].map" },
-        { "label": "reduced-motion fallback", "contains": "@media (prefers-reduced-motion: reduce)" },
-        { "label": "live status semantics", "contains": "<LongWaitStatus line=\"Opening the workspace\" />" }
+        {
+          "label": "stable product identity",
+          "contains": "[\"t\", \"a\", \"s\", \"k\", \"s\"].map"
+        },
+        {
+          "label": "reduced-motion fallback",
+          "contains": "@media (prefers-reduced-motion: reduce)"
+        },
+        {
+          "label": "live status semantics",
+          "contains": "<LongWaitStatus line=\"Opening the workspace\" />"
+        }
       ],
-      "remainingStates": ["loading", "slow-loading", "reduced-motion"]
+      "remainingStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ]
     },
     {
       "id": "tasks.state.root-not-found",
@@ -314,10 +719,20 @@
         {
           "name": "unknown route",
           "path": "/review-route-that-does-not-exist",
-          "states": ["error", "keyboard-only"],
+          "states": [
+            "error",
+            "keyboard-only"
+          ],
           "expectedStatus": 404,
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Couldn’t find that one. The link, the task, or both.", "proves": ["error"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Couldn’t find that one. The link, the task, or both.",
+              "proves": [
+                "error"
+              ]
+            }
           ]
         }
       ],
@@ -330,10 +745,20 @@
         {
           "name": "unknown share token",
           "path": "/share/review-missing",
-          "states": ["error", "keyboard-only"],
+          "states": [
+            "error",
+            "keyboard-only"
+          ],
           "expectedStatus": 404,
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "This share link doesn’t exist.", "proves": ["error"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "This share link doesn’t exist.",
+              "proves": [
+                "error"
+              ]
+            }
           ]
         }
       ],
@@ -343,22 +768,57 @@
       "id": "tasks.state.share-error",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "plain failure copy", "contains": "Something with this link isn&rsquo;t right." },
-        { "label": "retry action", "contains": "Try again" },
-        { "label": "home escape", "contains": "href=\"/\"" },
-        { "label": "Sentry capture", "contains": "Sentry.captureException(error)" }
+        {
+          "label": "plain failure copy",
+          "contains": "Something with this link isn&rsquo;t right."
+        },
+        {
+          "label": "retry action",
+          "contains": "Try again"
+        },
+        {
+          "label": "home escape",
+          "contains": "href=\"/\""
+        },
+        {
+          "label": "Sentry capture",
+          "contains": "Sentry.captureException(error)"
+        }
       ],
-      "remainingStates": ["error", "keyboard-only"]
+      "remainingStates": [
+        "error",
+        "keyboard-only"
+      ]
     },
     {
       "id": "tasks.surface.command-palette",
       "evidence": "rendered",
       "interaction": "command-palette",
       "caseName": "keyboard search",
-      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+      "states": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
       "assertions": [
-        { "kind": "role", "role": "dialog", "name": "Command palette", "proves": ["default"] },
-        { "kind": "role", "role": "textbox", "name": "Search, jump or create…", "value": "recommended suppliers", "proves": ["default"] }
+        {
+          "kind": "role",
+          "role": "dialog",
+          "name": "Command palette",
+          "proves": [
+            "default"
+          ]
+        },
+        {
+          "kind": "role",
+          "role": "combobox",
+          "name": "Search, jump or create…",
+          "value": "recommended suppliers",
+          "proves": [
+            "default"
+          ]
+        }
       ],
       "remainingStates": []
     },
@@ -366,31 +826,79 @@
       "id": "tasks.surface.empty-workspace",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "first-use default action", "contains": "primaryLabel = \"Add your first task\"" },
-        { "label": "keyboard shortcut hint", "contains": "<kbd className=" },
-        { "label": "starter-pack recovery copy", "contains": "That didn&rsquo;t take, check your connection and try again." }
+        {
+          "label": "first-use default action",
+          "contains": "primaryLabel = \"Add your first task\""
+        },
+        {
+          "label": "keyboard shortcut hint",
+          "contains": "<kbd className="
+        },
+        {
+          "label": "starter-pack recovery copy",
+          "contains": "That didn&rsquo;t take, check your connection and try again."
+        }
       ],
-      "remainingStates": ["default", "error", "success", "restricted", "reduced-motion", "keyboard-only"]
+      "remainingStates": [
+        "default",
+        "error",
+        "success",
+        "restricted",
+        "reduced-motion",
+        "keyboard-only"
+      ]
     },
     {
       "id": "tasks.surface.quick-create",
       "evidence": "rendered",
       "interaction": "quick-create",
       "caseName": "long natural-language task",
-      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
-      "assertions": [
-        { "kind": "role", "role": "textbox", "name": "Name a task, try: Confirm catering tasting menu by Friday", "value": "Confirm the final supplier arrival plan with every Saturday contact next Thursday #maria-james", "proves": ["default"] }
+      "states": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
       ],
-      "remainingStates": ["loading", "error", "success", "disabled", "saved", "unsaved"]
+      "assertions": [
+        {
+          "kind": "role",
+          "role": "textbox",
+          "name": "Name a task, try: Confirm catering tasting menu by Friday",
+          "value": "Confirm the final supplier arrival plan with every Saturday contact next Thursday #maria-james",
+          "proves": [
+            "default"
+          ]
+        }
+      ],
+      "remainingStates": [
+        "loading",
+        "error",
+        "success",
+        "disabled",
+        "saved",
+        "unsaved"
+      ]
     },
     {
       "id": "tasks.surface.task-detail-panel",
       "evidence": "rendered",
       "interaction": "task-detail-panel",
       "caseName": "populated task",
-      "states": ["default", "long-content", "reduced-motion", "keyboard-only"],
+      "states": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
       "assertions": [
-        { "kind": "role", "role": "dialog", "name": "Confirm marquee sides with the hire company", "proves": ["default"] }
+        {
+          "kind": "role",
+          "role": "dialog",
+          "name": "Confirm marquee sides with the hire company",
+          "proves": [
+            "default"
+          ]
+        }
       ],
       "remainingStates": []
     },
@@ -401,14 +909,32 @@
         {
           "name": "demo morning briefing",
           "path": "/app/signal",
-          "states": ["default", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "url", "pathname": "/app/signal", "proves": ["default"] },
-            { "kind": "text", "text": "Daily Signal · Wednesday 08:42", "proves": ["default"] }
+            {
+              "kind": "url",
+              "pathname": "/app/signal",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Daily Signal · Wednesday 08:42",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading"]
+      "remainingStates": [
+        "loading"
+      ]
     },
     {
       "id": "tasks.page.app-signal-onboarding",
@@ -417,13 +943,29 @@
         {
           "name": "demo workspace onboarding",
           "path": "/app/signal/onboarding",
-          "states": ["first-use", "populated", "reduced-motion", "keyboard-only"],
+          "states": [
+            "first-use",
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "We found your workspace.", "proves": ["first-use", "populated"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "We found your workspace.",
+              "proves": [
+                "first-use",
+                "populated"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["empty", "loading"]
+      "remainingStates": [
+        "empty",
+        "loading"
+      ]
     },
     {
       "id": "tasks.page.app-signal-settings-notifications",
@@ -432,13 +974,26 @@
         {
           "name": "demo briefing cadence",
           "path": "/app/signal/settings/notifications",
-          "states": ["default", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "How often should the briefing land?", "proves": ["default"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The briefing is ready when you open it.",
+              "proves": [
+                "default"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading"]
+      "remainingStates": [
+        "loading"
+      ]
     },
     {
       "id": "tasks.page.app-notes",
@@ -447,14 +1002,36 @@
         {
           "name": "canonical populated private notebook",
           "path": "/app/notes",
-          "states": ["default", "populated", "reduced-motion", "keyboard-only"],
+          "states": [
+            "default",
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "url", "pathname": "/app/notes", "proves": ["default"] },
-            { "kind": "role", "role": "heading", "name": "Notebook", "proves": ["populated"] }
+            {
+              "kind": "url",
+              "pathname": "/app/notes",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Notebook",
+              "proves": [
+                "populated"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["empty", "loading", "error"]
+      "remainingStates": [
+        "empty",
+        "loading",
+        "error"
+      ]
     },
     {
       "id": "tasks.page.app-timeline",
@@ -463,37 +1040,112 @@
         {
           "name": "project-first owner artifact",
           "path": "/app/timeline",
-          "states": ["populated", "reduced-motion", "keyboard-only"],
+          "states": [
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "url", "pathname": "/app/timeline", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "Mara & Finn", "proves": ["populated"] },
-            { "kind": "role", "role": "link", "name": "Edit milestones", "proves": ["populated"] },
-            { "kind": "role", "role": "link", "name": "Preview and share", "proves": ["populated"] }
+            {
+              "kind": "url",
+              "pathname": "/app/timeline",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Mara & Finn",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "Edit milestones",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "link",
+              "name": "Preview and share",
+              "proves": [
+                "populated"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["first-use", "empty", "loading", "partial-failure", "error", "restricted"]
+      "remainingStates": [
+        "first-use",
+        "empty",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted"
+      ]
     },
     {
       "id": "tasks.page.app-timeline-by-project-slug",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "force-dynamic export", "contains": "force-dynamic" },
-        { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
-        { "label": "Timeline curation module boundary", "contains": "TimelineProjectPage" },
-        { "label": "defence-in-depth call", "contains": "await requireAppAccess()" }
+        {
+          "label": "force-dynamic export",
+          "contains": "force-dynamic"
+        },
+        {
+          "label": "requireAppAccess gate",
+          "contains": "requireAppAccess"
+        },
+        {
+          "label": "Timeline curation module boundary",
+          "contains": "TimelineProjectPage"
+        },
+        {
+          "label": "defence-in-depth call",
+          "contains": "await requireAppAccess()"
+        }
       ],
-      "remainingStates": ["default", "populated", "loading", "error", "empty", "reduced-motion", "keyboard-only"]
+      "remainingStates": [
+        "default",
+        "populated",
+        "loading",
+        "error",
+        "empty",
+        "reduced-motion",
+        "keyboard-only"
+      ]
     },
     {
       "id": "tasks.page.app-timeline-audience",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "force-dynamic export", "contains": "force-dynamic" },
-        { "label": "requireAppAccess gate", "contains": "requireAppAccess" },
-        { "label": "audience manager module boundary", "contains": "AudiencePage" }
+        {
+          "label": "force-dynamic export",
+          "contains": "force-dynamic"
+        },
+        {
+          "label": "requireAppAccess gate",
+          "contains": "requireAppAccess"
+        },
+        {
+          "label": "audience manager module boundary",
+          "contains": "AudiencePage"
+        }
       ],
-      "remainingStates": ["default", "populated", "empty", "loading", "error", "reduced-motion", "keyboard-only"]
+      "remainingStates": [
+        "default",
+        "populated",
+        "empty",
+        "loading",
+        "error",
+        "reduced-motion",
+        "keyboard-only"
+      ]
     },
     {
       "id": "tasks.page.app-timeline-audience-by-publication-id",
@@ -502,15 +1154,44 @@
         {
           "name": "owner artifact and live phone preview",
           "path": "/app/timeline/audience/demo-audience-publication",
-          "states": ["populated", "empty", "reduced-motion", "keyboard-only"],
+          "states": [
+            "populated",
+            "empty",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "See the story they will see.", "proves": ["populated"] },
-            { "kind": "role", "role": "heading", "name": "The same story, in their hand.", "proves": ["populated"] },
-            { "kind": "text", "text": "Preview only · this does not add a view", "proves": ["empty"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "See the story they will see.",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The same story, in their hand.",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Preview only · this does not add a view",
+              "proves": [
+                "empty"
+              ]
+            }
           ]
         }
       ],
-      "remainingStates": ["loading", "error", "restricted"]
+      "remainingStates": [
+        "loading",
+        "error",
+        "restricted"
+      ]
     },
     {
       "id": "tasks.page.s-by-token",
@@ -519,19 +1200,54 @@
         {
           "name": "link-only wedding artifact",
           "path": "/s/DemoAudienceTimelineToken2026Fixed000000000",
-          "states": ["populated", "long-content", "reduced-motion", "keyboard-only"],
+          "states": [
+            "populated",
+            "long-content",
+            "reduced-motion",
+            "keyboard-only"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "Mara & Finn", "proves": ["populated"] },
-            { "kind": "role", "role": "button", "name": "Share this timeline", "proves": ["populated"] },
-            { "kind": "role", "role": "button", "name": "Menu tasting at The Orchard. Our next milestone. 1 August 2026. Milestone 3 of 9.", "proves": ["populated"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Mara & Finn",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Share this timeline",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Menu tasting at The Orchard. Our next milestone. 1 August 2026. Milestone 3 of 9.",
+              "proves": [
+                "populated"
+              ]
+            }
           ]
         },
         {
           "name": "invalid bearer link",
           "path": "/s/invalid",
-          "states": ["error"],
+          "states": [
+            "error"
+          ],
           "assertions": [
-            { "kind": "role", "role": "heading", "name": "This link has reached its end.", "proves": ["error"] }
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "This link has reached its end.",
+              "proves": [
+                "error"
+              ]
+            }
           ]
         }
       ],
@@ -541,21 +1257,46 @@
       "id": "tasks.state.s-by-token-loading",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "private Timeline loading identity", "contains": "Loading shared timeline" },
-        { "label": "semantic paper surface", "contains": "bg-paper" },
-        { "label": "reduced-motion fallback", "contains": "motion-reduce:animate-none" }
+        {
+          "label": "private Timeline loading identity",
+          "contains": "Loading shared timeline"
+        },
+        {
+          "label": "semantic paper surface",
+          "contains": "bg-paper"
+        },
+        {
+          "label": "reduced-motion fallback",
+          "contains": "motion-reduce:animate-none"
+        }
       ],
-      "remainingStates": ["loading", "slow-loading", "reduced-motion"]
+      "remainingStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ]
     },
     {
       "id": "tasks.state.s-by-token-not-found",
       "evidence": "source-contract",
       "sourceAssertions": [
-        { "label": "generic unavailable-link headline", "contains": "This link has reached its end." },
-        { "label": "non-oracular recovery copy", "contains": "rotated, revoked or unpublished" },
-        { "label": "standalone paper surface", "contains": "bg-paper" }
+        {
+          "label": "generic unavailable-link headline",
+          "contains": "This link has reached its end."
+        },
+        {
+          "label": "non-oracular recovery copy",
+          "contains": "rotated, revoked or unpublished"
+        },
+        {
+          "label": "standalone paper surface",
+          "contains": "bg-paper"
+        }
       ],
-      "remainingStates": ["error", "keyboard-only"]
+      "remainingStates": [
+        "error",
+        "keyboard-only"
+      ]
     }
   ],
   "operatorBlocked": [
