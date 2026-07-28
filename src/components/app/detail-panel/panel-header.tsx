@@ -17,7 +17,7 @@ export function PanelHeader({
     <header className="px-6 pb-3 pt-5">
       <div className="flex items-center justify-between gap-2 text-[11px] text-ink-quiet">
         <div className="flex items-center gap-1.5">
-          <TaskIdChip id={task.id} />
+          <TaskIdChip id={task.id} seq={task.seq} />
           <EditedStamp updatedAt={task.updatedAt} />
           {task.sourceNoteId ? <FromNotesChip /> : null}
         </div>
@@ -113,10 +113,15 @@ export function FromNotesChip() {
   );
 }
 
-export function TaskIdChip({ id }: { id: string }) {
+export function TaskIdChip({ id, seq }: { id: string; seq?: number | null }) {
   const [copied, setCopied] = useState(false);
-  // Format t-101 → T-101 (uppercase, reads as a clean task id)
-  const display = id.replace(/^t-/, "T-").toUpperCase();
+  // The human number ("T-14") when the row has one — a per-workspace
+  // counter allocated at insert (drizzle/0021). The hex id remains the
+  // stable reference and the fallback display for unnumbered rows.
+  const display =
+    typeof seq === "number" && seq > 0
+      ? `T-${seq}`
+      : id.replace(/^t-/, "T-").toUpperCase();
   return (
     <button
       type="button"

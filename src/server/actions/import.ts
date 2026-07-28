@@ -3,6 +3,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import { tasks, workspaces } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -141,6 +142,7 @@ export async function importCsvAction(
         .values({
           id,
           workspaceId: ws,
+          seq: nextTaskSeq(ws),
           title,
           lane,
           priority,

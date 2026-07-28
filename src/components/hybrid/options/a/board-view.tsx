@@ -1,8 +1,10 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
 import { useLabStore } from "../../store";
-import { STATUS_LABELS, TASK_STATUSES, type LabTask, type TaskStatus } from "../../types";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { STATUS_LABELS, TASK_STATUSES, type CalendarDate, type LabTask, type TaskStatus } from "../../types";
 import { ActionsDropdown, ContextActions, type ActionItem } from "@/components/primitives/context-actions";
 import { Icon } from "../../shared/icons";
 import {
@@ -10,24 +12,20 @@ import {
   LabelList,
   PriorityMark,
   ScheduleText,
+  TaskCompletion,
   TaskOpenButton,
-  TaskSelection,
   TaskSignals,
 } from "../../shared/task-ui";
 import { InlineTaskTitle, KeyboardLegend } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
 import styles from "./option-a.module.css";
-import { listPeople } from "../../fixtures";
-import { asCalendarDate, addDays } from "../../dates";
+import { labelById, listPeople, personById } from "../../fixtures";
+import { addDays } from "../../dates";
 
-/** Convert the current wall-clock date to a CalendarDate (YYYY-MM-DD). */
-function todayCalendarDate() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return asCalendarDate(`${y}-${m}-${d}`);
-}
+// The board's "today" comes from the server calendar frame, never the
+// browser clock (see lib/calendar-frame.ts). Reading the wall clock here made
+// the Today/Tomorrow presets disagree with the same card's own due label,
+// which is only invisible in production because the frame tracks real time.
 
 const WIP_LIMITS: Partial<Record<TaskStatus, number>> = {
   queued: 12,
@@ -36,9 +34,60 @@ const WIP_LIMITS: Partial<Record<TaskStatus, number>> = {
   waiting: 6,
 };
 
-function statusOffset(status: TaskStatus, amount: number): TaskStatus {
-  const index = TASK_STATUSES.indexOf(status);
-  return TASK_STATUSES[Math.max(0, Math.min(TASK_STATUSES.length - 1, index + amount))];
+/**
+ * The schedule a milestone toggle produces.
+ *
+ * A milestone is a dated thing, so toggling it on keeps the task's own date
+ * when it has one and anchors to today when it doesn't; toggling it off
+ * demotes back to an ordinary due date rather than losing the date. The
+ * hybrid store persists the structural isMilestone flag as part of applying
+ * a milestone-kind schedule, so this is the complete toggle.
+ */
+function toggledMilestoneSchedule(task: LabTask, today: CalendarDate) {
+  const schedule = task.schedule;
+  if (schedule.kind === "milestone") return { kind: "due", dueOn: schedule.on } as const;
+  if (schedule.kind === "due") return { kind: "milestone", on: schedule.dueOn } as const;
+  if (schedule.kind === "range") return { kind: "milestone", on: schedule.dueOn } as const;
+  return { kind: "milestone", on: today } as const;
+}
+
+/** Collapsed lanes are a view preference, not workspace data, so one key. */
+const COLLAPSE_STORAGE_KEY = "signal-tasks.board.collapsed";
+
+type CollapsedLanes = Partial<Record<TaskStatus, boolean>>;
+
+/**
+ * Which lanes are folded to a rail, persisted across sessions.
+ *
+ * Read after mount rather than during render: `localStorage` does not exist
+ * on the server, and seeding state from it in the render pass would make the
+ * first client paint disagree with the markup React streamed.
+ */
+function useCollapsedLanes() {
+  const [collapsed, setCollapsed] = useState<CollapsedLanes>({});
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+      if (stored) setCollapsed(JSON.parse(stored) as CollapsedLanes);
+    } catch {
+      /* private mode, or a malformed value — every lane starts expanded */
+    }
+  }, []);
+
+  const toggle = useCallback((status: TaskStatus) => {
+    setCollapsed((current) => {
+      const next = { ...current, [status]: !current[status] };
+      try {
+        window.localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore persistence failure — the fold still holds for this session */
+      }
+      return next;
+    });
+  }, []);
+
+  return [collapsed, toggle] as const;
 }
 
 /**
@@ -54,6 +103,7 @@ function statusOffset(status: TaskStatus, amount: number): TaskStatus {
 function buildTaskActions(
   task: LabTask,
   store: ReturnType<typeof useLabStore>,
+  today: CalendarDate,
 ): ActionItem[] {
   const ro = store.readOnly;
 
@@ -135,7 +185,7 @@ function buildTaskActions(
       group: "workflow" as ActionItem["group"],
       disabled: ro,
       disabledReason: ro ? "Read-only workspace" : undefined,
-      onSelect: () => { if (!ro) store.scheduleOn(task.id, todayCalendarDate()); },
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, today); },
     },
     {
       id: "due-tomorrow",
@@ -143,7 +193,7 @@ function buildTaskActions(
       group: "workflow" as ActionItem["group"],
       disabled: ro,
       disabledReason: ro ? "Read-only workspace" : undefined,
-      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 1)); },
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(today, 1)); },
     },
     {
       id: "due-next-week",
@@ -151,7 +201,7 @@ function buildTaskActions(
       group: "workflow" as ActionItem["group"],
       disabled: ro,
       disabledReason: ro ? "Read-only workspace" : undefined,
-      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(todayCalendarDate(), 7)); },
+      onSelect: () => { if (!ro) store.scheduleOn(task.id, addDays(today, 7)); },
     },
     ...(hasSchedule
       ? [
@@ -214,6 +264,15 @@ function buildTaskActions(
       disabledReason: ro ? "Read-only workspace" : undefined,
       submenu: dueDateSubmenu,
       onSelect: () => undefined,
+    },
+    {
+      id: "toggle-milestone",
+      label: task.schedule.kind === "milestone" ? "Remove milestone" : "Make milestone",
+      icon: <Icon name="milestone" size={14} />,
+      group: "workflow",
+      disabled: ro,
+      disabledReason: ro ? "Read-only workspace" : undefined,
+      onSelect: () => { if (!ro) store.scheduleTask(task.id, toggledMilestoneSchedule(task, today)); },
     },
   ];
 
@@ -320,13 +379,92 @@ function buildTaskActions(
   return [...openItems, ...workflowItems, ...organisationItems, ...destructiveItems];
 }
 
+/**
+ * Inline task composer, mounted in the lane's add-row slot.
+ *
+ * Typing a title and pressing Enter creates the task in place and keeps the
+ * composer open for the next one — the panel does not open, because the
+ * author is composing a list, not inspecting a task. Before this, "Add task"
+ * spawned an "Untitled task" AND slid the full detail panel over the board:
+ * every add began with a broken promise and a context switch.
+ */
+function LaneComposer({
+  status,
+  onCommit,
+  onDismiss,
+}: {
+  status: TaskStatus;
+  onCommit: (title: string) => void;
+  onDismiss: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus({ preventScroll: false });
+  }, []);
+
+  const commit = () => {
+    const trimmed = title.trim();
+    if (trimmed) onCommit(trimmed);
+    setTitle("");
+  };
+
+  return (
+    <input
+      aria-label={`New task title for ${STATUS_LABELS[status]}`}
+      className={styles.laneComposer}
+      onBlur={() => {
+        const trimmed = title.trim();
+        if (trimmed) onCommit(trimmed);
+        onDismiss();
+      }}
+      onChange={(event) => setTitle(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          setTitle("");
+          onDismiss();
+        }
+      }}
+      placeholder="Task title, then Enter"
+      ref={inputRef}
+      value={title}
+    />
+  );
+}
+
 export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const store = useLabStore();
+  const calendar = useCalendarFrame();
+  const [collapsed, toggleCollapsed] = useCollapsedLanes();
+  const [composing, setComposing] = useState<TaskStatus | null>(null);
   const orderedIds = tasks.map((task) => task.id);
 
   const tasksInLane = (status: TaskStatus) => tasks
     .filter((task) => task.status === status)
     .sort((a, b) => a.order - b.order);
+
+  /**
+   * Walk to the next lane that is actually on screen.
+   *
+   * Both arrow navigation and Alt+arrow moves use this. Landing focus in a
+   * folded lane would put the caret somewhere with no rendered card, and
+   * moving a card into one would make it vanish without explanation.
+   */
+  const nextVisibleStatus = (status: TaskStatus, direction: 1 | -1): TaskStatus => {
+    let index = TASK_STATUSES.indexOf(status);
+    for (let step = 0; step < TASK_STATUSES.length; step += 1) {
+      index += direction;
+      if (index < 0 || index >= TASK_STATUSES.length) return status;
+      const candidate = TASK_STATUSES[index];
+      if (!collapsed[candidate]) return candidate;
+    }
+    return status;
+  };
 
   const dropTask = (event: DragEvent, status: TaskStatus, index: number) => {
     event.preventDefault();
@@ -369,7 +507,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     }
     if (event.altKey && !store.readOnly && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
       event.preventDefault();
-      const targetStatus = statusOffset(task.status, event.key === "ArrowLeft" ? -1 : 1);
+      const targetStatus = nextVisibleStatus(task.status, event.key === "ArrowLeft" ? -1 : 1);
       if (targetStatus !== task.status) store.moveStatus(task.id, targetStatus);
       focusTask(task.id);
       return;
@@ -382,15 +520,22 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     }
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
-      const targetStatus = statusOffset(task.status, event.key === "ArrowLeft" ? -1 : 1);
+      const targetStatus = nextVisibleStatus(task.status, event.key === "ArrowLeft" ? -1 : 1);
       const targetLane = tasksInLane(targetStatus);
       const target = targetLane[Math.min(laneIndex, Math.max(0, targetLane.length - 1))];
       if (target) focusTask(target.id);
     }
   };
 
+  /**
+   * The card checkbox now completes a task rather than selecting it, so the
+   * card body carries selection: modifier-click starts or extends a set, and
+   * a plain click continues to extend one that is already open. Space on a
+   * focused card does the same thing from the keyboard.
+   */
   const cardClick = (event: MouseEvent<HTMLElement>, task: LabTask) => {
-    if (store.selectedIds.length === 0) return;
+    const modifier = event.shiftKey || event.metaKey || event.ctrlKey;
+    if (store.selectedIds.length === 0 && !modifier) return;
     if ((event.target as Element).closest("button, input, select, textarea")) return;
     store.toggleSelected(task.id, orderedIds, event.shiftKey);
   };
@@ -402,15 +547,74 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           const laneTasks = tasksInLane(status);
           const limit = WIP_LIMITS[status];
           const overLimit = limit !== undefined && laneTasks.length > limit;
-          return (
-            <section aria-labelledby={`a-lane-${status}`} className={styles.boardLane} data-done={status === "done" || undefined} data-status={status} key={status}>
-              <header className={styles.laneHeader}>
-                <div>
+          const nearLimit = limit !== undefined && !overLimit && laneTasks.length >= Math.ceil(limit * 0.8);
+          const isCollapsed = Boolean(collapsed[status]);
+          const label = STATUS_LABELS[status];
+          // The backlog lane carries no tone. Emitting the attribute with a
+          // key the stylesheet does not define would still match the
+          // tinted-pip rule and blank the pip to transparent.
+          const tone = status === "queued" ? undefined : status;
+          const countLabel = limit !== undefined
+            ? `${laneTasks.length} of ${limit} tasks in ${label}`
+            : `${laneTasks.length} tasks in ${label}`;
+
+          if (isCollapsed) {
+            return (
+              <section
+                aria-labelledby={`a-lane-${status}`}
+                className={styles.boardLane}
+                data-collapsed=""
+                data-done={status === "done" || undefined}
+                data-lane-tone={tone}
+                data-status={status}
+                key={status}
+              >
+                <button
+                  aria-expanded={false}
+                  className={styles.laneRail}
+                  onClick={() => toggleCollapsed(status)}
+                  title={`Expand ${label}`}
+                  type="button"
+                >
+                  <Icon name="chevron-right" size={14} />
                   <span className={styles.statusPip} data-status={status} />
-                  <h2 id={`a-lane-${status}`}>{STATUS_LABELS[status]}</h2>
-                  <span className={styles.laneCount}>{laneTasks.length}</span>
+                  <span className={styles.railName} id={`a-lane-${status}`}>{label}</span>
+                  <span aria-label={countLabel} className={styles.railCount}>{laneTasks.length}</span>
+                </button>
+              </section>
+            );
+          }
+
+          return (
+            <section aria-labelledby={`a-lane-${status}`} className={styles.boardLane} data-done={status === "done" || undefined} data-lane-tone={tone} data-status={status} key={status}>
+              <header className={styles.laneHeader}>
+                <div className={styles.laneIdentity}>
+                  <button
+                    aria-expanded
+                    className={`${styles.laneIconButton} ${styles.laneCollapse}`}
+                    onClick={() => toggleCollapsed(status)}
+                    title={`Collapse ${label}`}
+                    type="button"
+                  >
+                    <Icon name="chevron-right" size={14} />
+                  </button>
+                  <span className={styles.statusPip} data-status={status} />
+                  <h2 id={`a-lane-${status}`}>{label}</h2>
                 </div>
-                {limit !== undefined ? <span aria-label={`${laneTasks.length} of ${limit} work in progress`} className={styles.wipCount} data-over={overLimit || undefined}>WIP {laneTasks.length}/{limit}</span> : <span className={styles.wipCount}>Archive</span>}
+                <div className={styles.laneActions}>
+                  <span aria-label={countLabel} className={styles.wipCount} data-near={nearLimit || undefined} data-over={overLimit || undefined}>
+                    {limit !== undefined ? `${laneTasks.length}/${limit}` : laneTasks.length}
+                  </span>
+                  <button
+                    className={styles.laneIconButton}
+                    disabled={store.readOnly}
+                    onClick={() => setComposing(status)}
+                    title={`Add a task to ${label}`}
+                    type="button"
+                  >
+                    <Icon name="add" size={14} />
+                  </button>
+                </div>
               </header>
               <ul
                 aria-label={`${STATUS_LABELS[status]} tasks`}
@@ -423,16 +627,24 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 onDrop={(event) => dropTask(event, status, laneTasks.length)}
               >
                 {laneTasks.map((task, index) => {
-                  const actions = buildTaskActions(task, store);
+                  const actions = buildTaskActions(task, store, calendar.today as CalendarDate);
                   const hasPriority = task.priority === "urgent" || task.priority === "high";
-                  const hasLabels = task.labelIds.length > 0;
+                  // Same trap as the footer below: LabelList drops ids it
+                  // cannot resolve, so counting raw ids reserved a 24px band
+                  // under every card title and rendered nothing into it.
+                  // That empty band was the board's "unfinished card" look.
+                  const hasLabels = task.labelIds.some((id) => labelById(id));
                   const hasSchedule = task.schedule.kind !== "unscheduled";
                   const hasSignals = task.subtasks.length > 0 ||
                     task.comments.length > 0 ||
                     task.attachments.length > 0 ||
                     task.blockedByIds.length > 0 ||
                     task.blockerIds.length > 0;
-                  const hasFooter = task.assigneeIds.length > 0 || Boolean(task.estimate);
+                  // AvatarStack drops assignee ids it cannot resolve to a
+                  // person, so counting raw ids rendered a footer — and its
+                  // border — above nothing at all whenever an id was stale.
+                  const shownAssignees = task.assigneeIds.filter((id) => personById(id));
+                  const hasFooter = shownAssignees.length > 0 || Boolean(task.estimate);
                   return (
                     <li key={task.id}>
                       {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
@@ -476,9 +688,30 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                             tabIndex={0}
                           >
                             <div className={styles.cardTopline}>
-                              <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                              <TaskCompletion disabled={store.readOnly} task={task} />
                               {hasPriority ? <PriorityMark task={task} /> : null}
                               <span className={styles.cardSpacer} />
+                              {/*
+                                Milestone toggle. Quiet like the ••• trigger
+                                until the card is hovered — except when the
+                                task IS a milestone, where the filled diamond
+                                stays on as the card's badge of it.
+                              */}
+                              <button
+                                aria-label={task.schedule.kind === "milestone" ? `Remove milestone from ${task.title}` : `Make ${task.title} a milestone`}
+                                aria-pressed={task.schedule.kind === "milestone"}
+                                className={styles.cardMilestone}
+                                data-active={task.schedule.kind === "milestone" || undefined}
+                                disabled={store.readOnly}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  if (!store.readOnly) store.scheduleTask(task.id, toggledMilestoneSchedule(task, calendar.today as CalendarDate));
+                                }}
+                                title={task.schedule.kind === "milestone" ? "Remove milestone" : "Make milestone"}
+                                type="button"
+                              >
+                                <Icon name="milestone" size={13} />
+                              </button>
                               <ActionsDropdown
                                 items={actions}
                                 trigger={<Icon name="more" size={15} />}
@@ -514,12 +747,30 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
                     <Icon name="inbox" size={18} />
-                    <span>No tasks here</span>
-                    <small>Move work here or add a task.</small>
+                    <span>Nothing here yet</span>
+                    <small>Drag a task across, or add one below.</small>
                   </li>
                 ) : null}
+                {/*
+                  The add row lives inside the scroll region, directly under
+                  the last card. Pinned to the bottom of the lane it could sit
+                  600px from the work it was adding to, so the new card
+                  appeared nowhere near the click that made it. Clicking it
+                  swaps in the inline composer rather than spawning an
+                  "Untitled task" and opening the panel.
+                */}
+                <li className={styles.laneAddRow}>
+                  {composing === status ? (
+                    <LaneComposer
+                      onCommit={(title) => store.addTask(status, undefined, title)}
+                      onDismiss={() => setComposing(null)}
+                      status={status}
+                    />
+                  ) : (
+                    <button className={styles.laneAdd} disabled={store.readOnly} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
+                  )}
+                </li>
               </ul>
-              <button className={styles.laneAdd} disabled={store.readOnly} onClick={() => store.addTask(status)} type="button"><Icon name="add" size={14} />Add task</button>
             </section>
           );
         })}

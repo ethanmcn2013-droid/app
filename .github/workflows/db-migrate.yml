@@ -1,0 +1,60 @@
+name: db-migrate
+
+# Receipt-backed production migration runner, dispatch-only.
+#
+# Applying migrations stays a deliberate operator/agent action, never a
+# side effect of a merge (db-migration-drift.yml remains the read-only
+# alarm for the gap). This workflow exists so the apply step can run from
+# CI, where the production credentials already live as repo secrets,
+# instead of requiring the Turso credentials on a local machine.
+#
+# The runner is scripts/db/migrate.mjs: it verifies every ledger hash and
+# receipt, applies only registered `forward` migrations in order inside
+# the ledger's transactional envelope, and executes each receipt's
+# machine-verifiable proofs. It refuses to run ahead of the ledger.
+#
+# Dispatch it from the ref whose drizzle/ ledger you intend to apply:
+#   gh workflow run db-migrate --ref <branch>
+# and confirm with the drift alarm (or `status` here) afterwards.
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Runner command"
+        type: choice
+        options: [status, migrate]
+        default: status
+
+concurrency:
+  group: db-migrate-production
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: ${{ inputs.command }} production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: ${{ inputs.command }}
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+        run: node scripts/db/migrate.mjs ${{ inputs.command }}

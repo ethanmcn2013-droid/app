@@ -16,6 +16,7 @@ import {
   type ExistingNotesExtractIdentity,
 } from "@/server/notes-extract-idempotency";
 import { insertOrReadNotesExtractTask } from "@/server/notes-extract-store";
+import { nextTaskSeq } from "@/server/db/task-seq";
 
 /**
  * Cross-repo Notes -> Tasks exact extract endpoint (v2,
@@ -201,6 +202,7 @@ export async function POST(req: Request) {
     values: {
       id: taskId,
       workspaceId,
+      seq: nextTaskSeq(workspaceId),
       title: parsed.title || body,
       lane: "todo",
       priority: "p2",

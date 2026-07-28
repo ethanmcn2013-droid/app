@@ -204,6 +204,11 @@ export type Task = {
    *  Server actions guard writes on this column to keep updates and
    *  deletes inside the caller's active workspace. */
   workspaceId?: string | null;
+  /** Human-readable per-workspace counter ("T-14"). Display + reference
+   *  only — `id` is the stable key in every link and action. Absent on
+   *  legacy/seed rows and on writers that skip allocation; the id chip
+   *  falls back to the hex id. */
+  seq?: number | null;
   title: string;
   description?: string;
   lane: LaneId;

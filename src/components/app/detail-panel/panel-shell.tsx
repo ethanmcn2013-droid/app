@@ -112,16 +112,22 @@ export function PanelShell({
             role="dialog"
             aria-modal="true"
             aria-labelledby="task-panel-title"
-            initial={{ x: 24, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 24, opacity: 0 }}
+            // A real entrance: the sheet travels in from the right edge and
+            // settles on the glide spring. The previous 24px opacity-drift
+            // was so subtle it read as the panel simply appearing. Exit is
+            // faster than enter — leaving should feel lighter than arriving.
+            initial={{ x: "110%" }}
+            animate={{ x: 0 }}
+            exit={{
+              x: "110%",
+              transition: reduce
+                ? { duration: 0 }
+                : { duration: 0.26, ease: [0.32, 0.72, 0, 1] },
+            }}
             transition={
               reduce
                 ? { duration: 0 }
-                : {
-                    x: { duration: 0.48, ease: [0.16, 1, 0.3, 1] },
-                    opacity: { duration: 0.36, ease: [0.16, 1, 0.3, 1] },
-                  }
+                : { x: { duration: 0.42, ease: [0.16, 1, 0.3, 1] } }
             }
             className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-auto"
             style={{

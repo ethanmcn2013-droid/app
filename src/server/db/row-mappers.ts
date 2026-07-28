@@ -15,6 +15,7 @@ type TaskRow = typeof tasks.$inferSelect & {
 export function rowToTask(row: TaskRow): Task {
   return {
     id: row.id,
+    seq: row.seq ?? undefined,
     title: row.title,
     description: row.description ?? undefined,
     lane: row.lane,

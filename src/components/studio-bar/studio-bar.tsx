@@ -185,10 +185,10 @@ export function StudioBar() {
           </svg>
           {/* soft ink (not quiet): placeholder + kbd are real text on the
               raised field surface and must hold ≥4.5:1 for the Axe gate. */}
-          <span className="min-w-0 flex-1 truncate text-[12px] text-[var(--x-studio-ink-soft)]">
+          <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--x-studio-ink-soft)]">
             {commandLabel}…
           </span>
-          <kbd className="flex h-[17px] flex-none select-none items-center rounded border border-white/[0.12] px-1 font-mono text-[9.5px] tracking-[0.02em] text-[var(--x-studio-ink-soft)]">
+          <kbd className="flex h-[18px] flex-none select-none items-center rounded border border-white/[0.12] px-1 font-mono text-[10px] tracking-[0.02em] text-[var(--x-studio-ink-soft)]">
             {keyLabel}
           </kbd>
         </button>
@@ -202,7 +202,7 @@ export function StudioBar() {
             type="button"
             title="New task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[12px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
+            className="flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
           >
             <svg
               aria-hidden="true"

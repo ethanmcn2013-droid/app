@@ -56,7 +56,7 @@ type Action =
   | { type: "BULK_STATUS"; status: TaskStatus }
   | { type: "BULK_COMPLETE"; completed: boolean; nowIso: string }
   | { type: "BULK_DELETE" }
-  | { type: "ADD_TASK"; status: TaskStatus; schedule?: TaskSchedule }
+  | { type: "ADD_TASK"; status: TaskStatus; schedule?: TaskSchedule; title?: string }
   | { type: "DELETE_TASK"; id: string }
   | { type: "DUPLICATE_TASK"; id: string }
   | { type: "SAVE_VIEW"; key: string }
@@ -202,9 +202,10 @@ function reducer(state: StoreState, action: Action): StoreState {
       if (state.readOnly) return { ...state, announcement: "Read-only prototype: changes are disabled" };
       const count = state.tasks.filter((task) => task.id.startsWith("session-")).length + 1;
       const id = `session-${count}`;
+      const titled = Boolean(action.title?.trim());
       const task: LabTask = {
         id,
-        title: "Untitled task",
+        title: action.title?.trim() || "Untitled task",
         description: "Session-only design-lab task.",
         status: action.status,
         priority: "normal",
@@ -225,9 +226,12 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, "Add task"),
         tasks: [...state.tasks, task],
-        inspectedId: id,
+        // A titled add comes from the inline composer: the author is mid-flow
+        // on the board and the panel must not steal the keyboard. Untitled
+        // adds (list/calendar affordances) still open for naming.
+        inspectedId: titled ? state.inspectedId : id,
         activeId: id,
-        announcement: `Untitled task added to ${STATUS_LABELS[action.status]}`,
+        announcement: `${task.title} added to ${STATUS_LABELS[action.status]}`,
       };
     }
     case "DELETE_TASK": {
@@ -316,7 +320,7 @@ export type LabStore = StoreState & {
   bulkComplete: (completed?: boolean) => void;
   bulkDelete: () => void;
   toggleComplete: (id: string) => void;
-  addTask: (status: TaskStatus, schedule?: TaskSchedule) => void;
+  addTask: (status: TaskStatus, schedule?: TaskSchedule, title?: string) => void;
   deleteTask: (id: string) => void;
   duplicateTask: (id: string) => void;
   saveView: (key: string) => void;
@@ -409,7 +413,7 @@ export function LabStoreProvider({
         label: !task.completed ? "Completed" : "Reopened",
       });
     },
-    addTask: (status, schedule) => dispatch({ type: "ADD_TASK", status, schedule }),
+    addTask: (status, schedule, title) => dispatch({ type: "ADD_TASK", status, schedule, title }),
     deleteTask: (id) => dispatch({ type: "DELETE_TASK", id }),
     duplicateTask: (id) => dispatch({ type: "DUPLICATE_TASK", id }),
     saveView: (key) => dispatch({ type: "SAVE_VIEW", key }),

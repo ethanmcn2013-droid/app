@@ -42,7 +42,21 @@ function sameDay(a: Date, b: Date): boolean {
  *  formatDueLabelForStorage so the chip reads the same whether the date was
  *  typed-then-parsed or clicked here. */
 export function formatDueLabel(d: Date): string {
-  const now = startOfDay(new Date());
+  return formatDueLabelOn(d, startOfDay(new Date()));
+}
+
+/**
+ * Same labels, but "today" is supplied rather than read from the browser.
+ *
+ * Client views are contracted to take today from the server calendar frame
+ * (see `lib/calendar-frame.ts`) so SSR and hydration agree and review
+ * captures can pin a date. Anything rendering a stored due date should use
+ * this and pass the frame's today; `formatDueLabel` above stays for the
+ * write path, where the browser clock is the right answer because the user
+ * is choosing a date now.
+ */
+export function formatDueLabelOn(d: Date, today: Date): string {
+  const now = startOfDay(today);
   const day = startOfDay(d);
   const delta = Math.round((day.getTime() - now.getTime()) / 86_400_000);
   if (delta === 0) return "Today";

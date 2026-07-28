@@ -77,16 +77,44 @@ export function reorderItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
+/**
+ * Scope for the focus helpers below.
+ *
+ * These were written against the design lab, which wraps the views in
+ * `[data-option="a"]`. Production mounts the same views through
+ * HybridWorkspace, which has no such wrapper, so every one of these
+ * selectors silently matched nothing: arrow-key movement between cards
+ * looked implemented and did nothing in the shipped app. Fall back to the
+ * document when the lab wrapper is absent.
+ */
+function focusScope(): ParentNode {
+  return document.querySelector("[data-option='a']") ?? document;
+}
+
+function cssEscape(value: string): string {
+  return typeof CSS !== "undefined" && typeof CSS.escape === "function"
+    ? CSS.escape(value)
+    : value.replace(/["\\]/g, "\\$&");
+}
+
 export function focusTask(taskId: string): void {
   window.requestAnimationFrame(() => {
-    const target = document.querySelector<HTMLElement>(`[data-option="a"] [data-task-id="${taskId}"]`);
+    const matches = [
+      ...focusScope().querySelectorAll<HTMLElement>(`[data-task-id="${cssEscape(taskId)}"]`),
+    ];
+    // The workspace brief stamps `data-task-id` on its milestone rows too, so
+    // prefer a node that can actually take focus (cards and list rows carry
+    // tabindex; a plain <li> reports -1).
+    const target = matches.find((element) => element.tabIndex >= 0) ?? matches[0];
     target?.focus();
   });
 }
 
 export function focusCalendarDate(date: CalendarDate): void {
   window.requestAnimationFrame(() => {
-    document.querySelector<HTMLElement>(`[data-option="a"] [data-date-button="${date}"]`)?.focus();
+    focusScope()
+      .querySelector<HTMLElement>(`[data-date-button="${cssEscape(date)}"]`)
+      ?.focus();
   });
 }
 

@@ -13,6 +13,7 @@ import {
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import {
   planningOnboardingSessions,
   planningPeriods,
@@ -1108,6 +1109,7 @@ async function duplicateWorkspaceIntoPeriod(
       await tx.insert(tasks).values({
         id: task.id,
         workspaceId: id,
+        seq: nextTaskSeq(id),
         title: task.title,
         description: task.description,
         lane: task.lane,

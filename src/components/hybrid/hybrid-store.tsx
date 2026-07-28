@@ -14,7 +14,6 @@ import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { setTaskMilestoneAction } from "@/server/actions/tasks";
 import {
   fieldsPatch,
   labToPriority,
@@ -160,8 +159,10 @@ export function HybridStoreProvider({
       const current = prodById.get(id);
       const wantMilestone = schedule.kind === "milestone";
       if (current && Boolean(current.isMilestone) !== wantMilestone) {
-        // Structural flag is stripped by updateTaskAction; persist separately.
-        void setTaskMilestoneAction(id, wantMilestone);
+        // Structural flag is stripped by updateTaskAction; the dedicated
+        // dispatcher applies it optimistically and persists it separately,
+        // so the board's diamond flips the moment it is clicked.
+        prod.setMilestone(id, wantMilestone);
       }
     },
     [calendar, prod, prodById, readOnly],
@@ -260,12 +261,13 @@ export function HybridStoreProvider({
         dispatch({ type: "CLEAR_SELECTION" });
       },
       toggleComplete: (id) => !readOnly && prod.toggleComplete(id),
-      addTask: (status, schedule?: TaskSchedule) => {
+      addTask: (status, schedule?: TaskSchedule, title?: string) => {
         if (readOnly) return;
+        const trimmed = title?.trim();
         const lane = status === "waiting" ? "todo" : statusToLane(status);
         const patch = schedule ? scheduleToPatch(schedule, calendar) : {};
         const created = prod.addTask({
-          title: "Untitled task",
+          title: trimmed || "Untitled task",
           lane,
           priority: "p2",
           ...(patch.dueAt ? { dueAt: patch.dueAt, due: patch.due } : {}),
@@ -274,7 +276,10 @@ export function HybridStoreProvider({
         if (schedule && (patch.startDay != null || patch.durationDays != null)) {
           prod.updateTask(created.id, { startDay: patch.startDay, durationDays: patch.durationDays });
         }
-        openTask(created.id);
+        // Titled adds come from the board's inline composer: the author is
+        // mid-flow adding several tasks, so the panel must not steal focus.
+        // Untitled adds still open the panel to be named.
+        if (!trimmed) openTask(created.id);
       },
       deleteTask: (id) => !readOnly && prod.removeTask(id),
       duplicateTask: (id) => !readOnly && prod.duplicateTask(id),

@@ -354,7 +354,7 @@ function MobileTabBar({ active }: { active: string }) {
               <Link
                 aria-current={current ? "page" : undefined}
                 className={[
-                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[9.5px] font-semibold outline-none transition-colors",
+                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] font-semibold outline-none transition-colors",
                   current
                     ? "bg-brand-soft/60 text-brand"
                     : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",
@@ -378,7 +378,7 @@ function MobileTabBar({ active }: { active: string }) {
             aria-expanded={viewsOpen}
             aria-haspopup="menu"
             className={[
-              "flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[9.5px] font-semibold outline-none transition-colors",
+              "flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] font-semibold outline-none transition-colors",
               isViewActive || viewsOpen
                 ? "bg-brand-soft/60 text-brand"
                 : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",

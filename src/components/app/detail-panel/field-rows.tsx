@@ -15,9 +15,11 @@ import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { sendNudgeAction } from "@/server/actions/nudge";
+import { FIELD_CHIP, FIELD_CHIP_ACTIVE } from "./chip";
 import { Popover } from "./popover";
-import { DueCalendar } from "./due-calendar";
+import { DueCalendar, formatDueLabelOn } from "./due-calendar";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
 const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
@@ -102,6 +104,64 @@ export function StatusRow({ task }: { task: Task }) {
   );
 }
 
+/**
+ * Compact status value for the metadata rail: the current lane as a toned
+ * pill that opens a lane picker. Replaces the pill that used to sit beside
+ * the panel title, where its colour block dragged the title sideways —
+ * status is a property of the task, so it lives with the other properties.
+ */
+export function StatusPillRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const lane = LANES[task.lane];
+  return (
+    <Popover
+      width={200}
+      aria-label="Change task status"
+      trigger={({ onClick, ref, "aria-expanded": expanded }) => (
+        <button
+          ref={ref}
+          type="button"
+          onClick={onClick}
+          aria-expanded={expanded}
+          aria-haspopup="listbox"
+          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          style={{ background: lane.bg, color: lane.ink }}
+        >
+          <span className="block h-1.5 w-1.5 rounded-full" style={{ background: lane.dot }} aria-hidden />
+          {lane.name}
+        </button>
+      )}
+    >
+      {(close) => (
+        <ul className="text-[12.5px]" role="listbox" aria-label="Task status">
+          {LANE_ORDER.map((laneId) => {
+            const l = LANES[laneId];
+            const active = task.lane === laneId;
+            return (
+              <li key={laneId} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateTask(task.id, { lane: laneId });
+                    close();
+                  }}
+                  className={[
+                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken",
+                    active ? "font-medium text-ink" : "text-ink-soft",
+                  ].join(" ")}
+                >
+                  <span className="block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: l.dot }} aria-hidden />
+                  {l.name}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Popover>
+  );
+}
+
 export function PriorityRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = PRIORITY_LABEL[task.priority];
@@ -113,7 +173,7 @@ export function PriorityRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+          className={FIELD_CHIP}
         >
           <span
             className="block h-1.5 w-1.5 rounded-full"
@@ -305,11 +365,14 @@ function NudgeButton({ taskId }: { taskId: string }) {
   }
 
   const isDisabled = isPending || (rateLimited && sentAt !== null);
+  // The resting state used to carry no tooltip at all, so the one control on
+  // the panel that sends something to another person said nothing about what
+  // it would send. The accessible name and the hover text now agree.
   const tooltipText = rateLimited
     ? "You nudged this task in the last day."
     : isPending
       ? "Sending nudge…"
-      : undefined;
+      : "Sends the assignee a reminder about this task. Once a day at most.";
 
   if (sentAt && !rateLimited) {
     // Post-send success state: quiet confirmation, same size as the button.
@@ -398,12 +461,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className={
-            "inline-flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-[11.5px] font-medium transition-colors " +
-            (current
-              ? "border-brand/30 bg-brand-soft/40 text-brand hover:bg-brand-soft/60"
-              : "border-line-soft bg-white text-ink-soft hover:border-ink-soft/30 hover:text-ink")
-          }
+          className={current ? FIELD_CHIP_ACTIVE : FIELD_CHIP}
         >
           <svg
             width="11"
@@ -487,8 +545,19 @@ function sameRecurrence(
 
 export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
+  const frame = useCalendarFrame();
   const current = task.dueAt ? new Date(task.dueAt) : null;
-  const hasDate = Boolean(task.due);
+  const hasDate = Boolean(task.due || task.dueAt);
+  // `task.due` is a label denormalised at write time. Writers that bypass the
+  // picker — the Notes hand-off, imports — store the raw ISO date, and a label
+  // written last week ("Tomorrow") is wrong by the time it is read. The
+  // structured date is the truth, so derive from it whenever it exists.
+  // "Today" comes from the server calendar frame, not the browser clock, so
+  // this agrees with the board cards and survives SSR without a hydration
+  // guard.
+  const dueLabel = current
+    ? formatDueLabelOn(current, new Date(frame.nowIso))
+    : task.due;
   return (
     <Popover
       align="start"
@@ -501,10 +570,7 @@ export function DueRow({ task }: { task: Task }) {
           onClick={onClick}
           aria-expanded={expanded}
           aria-haspopup="dialog"
-          className={
-            "inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-[12.5px] transition-colors hover:border-line-soft focus:border-brand focus:outline-none " +
-            (hasDate ? "text-ink" : "text-ink-faint")
-          }
+          className={FIELD_CHIP + (hasDate ? "" : " text-ink-faint")}
         >
           <svg
             width="12"
@@ -523,7 +589,7 @@ export function DueRow({ task }: { task: Task }) {
             <line x1="8" y1="2.5" x2="8" y2="6" />
             <line x1="16" y1="2.5" x2="16" y2="6" />
           </svg>
-          {task.due || "No due date"}
+          {dueLabel || "No due date"}
         </button>
       )}
     >

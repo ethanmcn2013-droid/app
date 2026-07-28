@@ -12,7 +12,6 @@ import type { ActionItem } from "@/components/primitives/context-actions";
 import type { Task } from "@/lib/data";
 import { LANES, LANE_ORDER, PRIORITY_LABEL } from "@/lib/data";
 import type { TasksDispatchers } from "@/lib/tasks/tasks-context";
-import { setTaskMilestoneAction } from "@/server/actions/tasks";
 
 export type TaskDetailActionDeps = {
   dispatchers: TasksDispatchers;
@@ -132,7 +131,9 @@ export function buildTaskDetailActions(
       label: task.isMilestone ? "Remove milestone" : "Mark as milestone",
       group: "organisation" as const,
       onSelect: () => {
-        void setTaskMilestoneAction(task.id, !task.isMilestone);
+        // Optimistic via the dedicated dispatcher — the fire-and-forget
+        // server action gave no visual feedback until the next refetch.
+        dispatchers.setMilestone(task.id, !task.isMilestone);
       },
     },
     {

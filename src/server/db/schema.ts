@@ -39,6 +39,13 @@ export const tasks = sqliteTable("tasks", {
    *  NOT NULL after the legacy backfill lands. Cascade on workspace
    *  delete kills the workspace's whole task tree. */
   workspaceId: text("workspace_id"),
+  /** Human-readable per-workspace counter (T-14), display + reference
+   *  only — `id` stays the stable primary key everywhere. Allocated by
+   *  `nextTaskSeq()` (an atomic MAX+1 subquery inside the INSERT; the
+   *  unique (workspace_id, seq) index in 0021 is the concurrency
+   *  backstop). Nullable: legacy rows were backfilled by 0021, and a
+   *  writer that skips allocation degrades to the hex-id display. */
+  seq: integer("seq"),
   title: text("title").notNull(),
   description: text("description"),
   lane: text("lane").$type<LaneId>().notNull(),

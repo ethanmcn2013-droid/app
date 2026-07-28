@@ -4,6 +4,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import { tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
@@ -129,6 +130,7 @@ export async function duplicateTaskAction(
     return {
       id,
       workspaceId: source.workspaceId,
+      seq: source.workspaceId ? nextTaskSeq(source.workspaceId) : null,
       title: source.title,
       description: source.description ?? null,
       lane: source.lane,
