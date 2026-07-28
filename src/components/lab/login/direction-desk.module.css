@@ -1,0 +1,482 @@
+/* Direction A · Desk — split canvas, auth left, briefing right. */
+
+.page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  background: var(--paper);
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+@media (min-width: 1000px) {
+  .page {
+    grid-template-columns: minmax(460px, 0.85fr) 1.15fr;
+  }
+}
+
+/* ── Left · the auth column ────────────────────────────────────────────── */
+
+/* Gap stays modest: the column has to clear a 720px viewport without the
+   document itself starting to scroll. authBody centres in whatever is left. */
+.auth {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-7) var(--space-6) var(--space-6);
+}
+
+@media (min-width: 720px) {
+  .auth {
+    padding: var(--space-8) var(--space-10) var(--space-7);
+  }
+}
+
+.authHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.wordmarkLink {
+  text-decoration: none;
+}
+
+.switch {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.switch a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline);
+  text-underline-offset: 3px;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.switch a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+.authBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 380px;
+  width: 100%;
+}
+
+.headline {
+  margin: 0;
+  font-size: clamp(1.875rem, 1.5rem + 1.3vw, 2.5rem);
+  line-height: 1.08;
+  letter-spacing: var(--tracking-title);
+  font-weight: var(--weight-semibold);
+  text-wrap: balance;
+}
+
+.sub {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink-soft);
+  max-width: 34ch;
+}
+
+/* ── Providers ─────────────────────────────────────────────────────────── */
+
+.providers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-8);
+}
+
+.provider {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 46px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out);
+}
+
+.provider:hover {
+  border-color: var(--ink-ghost);
+  background: var(--paper-soft);
+}
+
+.provider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Divider ───────────────────────────────────────────────────────────── */
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hairline-soft);
+}
+
+/* ── Email form ────────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldLabel {
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+.input {
+  min-height: 46px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  font-family: inherit;
+  font-size: var(--text-body);
+  color: var(--ink);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.input:hover {
+  border-color: var(--ink-ghost);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.submit {
+  min-height: 46px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: inherit;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.submit:hover {
+  background: var(--accent);
+}
+
+.submit:active {
+  transform: translateY(1px);
+}
+
+.submit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.authFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+/* Only on the widths where the stage, and with it the QR, is gone. */
+.qrSlotNarrow {
+  display: flex;
+}
+
+@media (min-width: 1000px) {
+  .qrSlotNarrow {
+    display: none;
+  }
+}
+
+/* ── Right · the stage ─────────────────────────────────────────────────── */
+
+/* Two rows, so the QR owns its own band and can never land on the briefing
+   card at a short viewport height. */
+.stage {
+  position: relative;
+  display: none;
+  grid-template-rows: 1fr auto;
+  background: var(--paper-soft);
+  border-left: 1px solid var(--hairline-soft);
+  overflow: hidden;
+}
+
+@media (min-width: 1000px) {
+  .stage {
+    display: grid;
+  }
+}
+
+/* A very quiet grid, so the stage reads as a surface, not a void. */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--hairline-soft) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--hairline-soft) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 55% 40%, rgba(0, 0, 0, 0.55), transparent 72%);
+  pointer-events: none;
+}
+
+.stageInner {
+  position: relative;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-7) var(--space-10) var(--space-3);
+}
+
+/* ── The briefing card ─────────────────────────────────────────────────── */
+
+.brief {
+  width: min(440px, 100%);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-modal);
+  animation: brief-arrive var(--motion-slow) var(--ease-out) both;
+}
+
+@keyframes brief-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.briefHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.briefEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.briefDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  animation: brief-breath 3.6s var(--ease-in-out) infinite;
+}
+
+@keyframes brief-breath {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.briefTime {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-ghost);
+}
+
+.briefTitle {
+  margin: var(--space-5) 0 0;
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.briefBody {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+}
+
+.briefList {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.briefRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--hairline-soft);
+  font-size: var(--text-body-sm);
+  opacity: 0;
+  animation: row-arrive var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes row-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.briefTick {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--ink-ghost);
+  flex-shrink: 0;
+}
+
+.briefRowText {
+  flex: 1;
+  color: var(--ink);
+}
+
+.briefWhere {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.briefFoot {
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline-soft);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+/* ── The spine ─────────────────────────────────────────────────────────── */
+
+.spine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  animation: brief-arrive var(--motion-slow) var(--ease-out) 300ms both;
+}
+
+.spineItem {
+  position: relative;
+  font-size: var(--text-body-sm);
+  color: var(--ink-ghost);
+  padding-right: var(--space-4);
+}
+
+.spineItem::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: var(--space-2);
+  height: 1px;
+  background: var(--ink-ghost);
+}
+
+.spineItem:last-child {
+  padding-right: 0;
+}
+
+.spineItem:last-child::after {
+  display: none;
+}
+
+.spineItem[data-active] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+/* ── QR slot ───────────────────────────────────────────────────────────── */
+
+.qrSlot {
+  justify-self: end;
+  padding: 0 var(--space-7) var(--space-7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brief,
+  .briefRow,
+  .spine {
+    animation: none;
+    opacity: 1;
+  }
+  .briefDot {
+    animation: none;
+  }
+}

@@ -1,0 +1,101 @@
+/* Review chrome for /lab/login. Deliberately not part of any direction. */
+
+.bar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(23, 23, 26, 0.86);
+  backdrop-filter: blur(12px);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  /* Review chrome sits over the middle of a centred design at short viewport
+     heights. Rest quiet, come forward when reached for. Press h to drop it
+     entirely before taking a screenshot. */
+  opacity: 0.3;
+  transition: opacity var(--motion-base) var(--ease-out);
+}
+
+.bar:hover,
+.bar:focus-within {
+  opacity: 1;
+}
+
+.bar[data-hidden] {
+  display: none;
+}
+
+.index,
+.item,
+.theme {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  color: var(--x-studio-ink-soft);
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+.index:hover,
+.item:hover,
+.theme:hover {
+  color: var(--x-studio-ink);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.theme {
+  border: 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.theme svg {
+  color: var(--x-studio-focus);
+}
+
+.theme[data-active] {
+  color: var(--x-studio-ink-strong);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.item[data-current] {
+  color: var(--x-studio-ink-strong);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.letter {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--x-studio-focus);
+}
+
+.rule {
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 0 var(--space-1);
+}
+
+@media (max-width: 720px) {
+  .index {
+    display: none;
+  }
+  .bar {
+    font-size: var(--text-caption);
+  }
+}
