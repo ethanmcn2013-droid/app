@@ -100,7 +100,14 @@ function decodeValue(value) {
 }
 
 const copy = createClient({ url: `file:${dryRunDbPath}` });
+// The dump orders tables alphabetically, not topologically, so referential
+// enforcement must wait until the whole restore is in: FKs off for this
+// connection, and the guard triggers (which read across tables) are created
+// only after every row has landed. The migration dry run that follows runs
+// on its own connection with the runner's ordinary settings.
+await copy.execute("PRAGMA foreign_keys = OFF");
 for (const row of schemaRows) {
+  if (row.type === "trigger") continue;
   await copy.execute(String(row.sql));
 }
 for (const line of fs.readFileSync(backupPath, "utf8").trim().split("\n")) {
@@ -112,6 +119,10 @@ for (const line of fs.readFileSync(backupPath, "utf8").trim().split("\n")) {
     sql: `INSERT INTO "${entry.table}" (${quoted}) VALUES (${placeholders})`,
     args: entry.values.map(decodeValue),
   });
+}
+for (const row of schemaRows) {
+  if (row.type !== "trigger") continue;
+  await copy.execute(String(row.sql));
 }
 copy.close();
 
