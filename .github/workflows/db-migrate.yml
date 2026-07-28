@@ -21,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "Runner command"
+        description: "Runner command (execute = backup + dry run + receipt + apply)"
         type: choice
-        options: [status, migrate]
+        options: [status, execute]
         default: status
 
 concurrency:
@@ -53,11 +53,29 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: ${{ inputs.command }}
+      - name: status
+        if: ${{ inputs.command == 'status' }}
         env:
           TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
           TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
         # --confirm-production is the runner's own interlock for non-file
         # database URLs; the human confirmation this stands in for is the
         # deliberate workflow_dispatch above.
-        run: node scripts/db/migrate.mjs ${{ inputs.command }} --confirm-production=tasks
+        run: node scripts/db/migrate.mjs status --confirm-production=tasks
+
+      - name: execute (backup + dry run + receipt + apply)
+        if: ${{ inputs.command == 'execute' }}
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+          DB_EVIDENCE_DIR: .db-evidence
+        run: node scripts/db/execute-production-migration.mjs
+
+      - name: Retain backup + execution receipt
+        if: ${{ always() && inputs.command == 'execute' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-migration-evidence
+          path: .db-evidence/
+          if-no-files-found: ignore
+          retention-days: 90
