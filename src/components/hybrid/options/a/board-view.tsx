@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
 import { useLabStore } from "../../store";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
@@ -56,35 +56,75 @@ const COLLAPSE_STORAGE_KEY = "signal-tasks.board.collapsed";
 
 type CollapsedLanes = Partial<Record<TaskStatus, boolean>>;
 
+const NO_COLLAPSED_LANES: CollapsedLanes = {};
+
+// Parsed-snapshot cache: useSyncExternalStore requires getSnapshot to return
+// a stable reference for an unchanged store, so the JSON parse is memoised
+// on the raw string.
+let collapsedCache: { raw: string | null; value: CollapsedLanes } = {
+  raw: null,
+  value: NO_COLLAPSED_LANES,
+};
+
+function readCollapsedSnapshot(): CollapsedLanes {
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+  } catch {
+    /* private mode — every lane reads expanded */
+  }
+  if (raw !== collapsedCache.raw) {
+    let value: CollapsedLanes = NO_COLLAPSED_LANES;
+    if (raw) {
+      try {
+        value = JSON.parse(raw) as CollapsedLanes;
+      } catch {
+        /* malformed value — every lane reads expanded */
+      }
+    }
+    collapsedCache = { raw, value };
+  }
+  return collapsedCache.value;
+}
+
+const collapsedListeners = new Set<() => void>();
+
+function subscribeCollapsed(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === COLLAPSE_STORAGE_KEY) listener();
+  };
+  collapsedListeners.add(listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    collapsedListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
 /**
  * Which lanes are folded to a rail, persisted across sessions.
  *
- * Read after mount rather than during render: `localStorage` does not exist
- * on the server, and seeding state from it in the render pass would make the
- * first client paint disagree with the markup React streamed.
+ * An external-store read rather than effect-synced state: `localStorage`
+ * does not exist on the server (the server snapshot is the empty set), and
+ * useSyncExternalStore gives the post-hydration client read without a
+ * cascading setState-in-effect. The storage event keeps two tabs agreeing.
  */
 function useCollapsedLanes() {
-  const [collapsed, setCollapsed] = useState<CollapsedLanes>({});
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
-      if (stored) setCollapsed(JSON.parse(stored) as CollapsedLanes);
-    } catch {
-      /* private mode, or a malformed value — every lane starts expanded */
-    }
-  }, []);
+  const collapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    readCollapsedSnapshot,
+    () => NO_COLLAPSED_LANES,
+  );
 
   const toggle = useCallback((status: TaskStatus) => {
-    setCollapsed((current) => {
-      const next = { ...current, [status]: !current[status] };
-      try {
-        window.localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
-      } catch {
-        /* ignore persistence failure — the fold still holds for this session */
-      }
-      return next;
-    });
+    const next = { ...readCollapsedSnapshot(), [status]: !readCollapsedSnapshot()[status] };
+    try {
+      window.localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      /* persistence failed — still fold for this session via the cache */
+      collapsedCache = { raw: collapsedCache.raw, value: next };
+    }
+    collapsedListeners.forEach((notify) => notify());
   }, []);
 
   return [collapsed, toggle] as const;
