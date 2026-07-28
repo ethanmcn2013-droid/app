@@ -3,6 +3,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import {
   comments,
   tasks,
@@ -102,7 +103,7 @@ export async function seedDomainAction(domain: DomainId): Promise<Task[]> {
 
   const overlaid = applyDomainOverlay(SEED_TASKS, domain);
   for (const t of overlaid) {
-    await db.insert(tasks).values({ ...t, workspaceId: ws });
+    await db.insert(tasks).values({ ...t, workspaceId: ws, seq: nextTaskSeq(ws) });
   }
 
   // Seed comments using domain-flavored bodies (3 per task).

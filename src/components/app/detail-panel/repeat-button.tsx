@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { Task } from "@/lib/data";
 import { useToast } from "@/components/primitives/toast";
 import { duplicateTaskAction } from "@/server/actions/duplicate-task";
+import { FIELD_CHIP } from "./chip";
 import { Popover } from "./popover";
 
 /**
@@ -64,18 +65,19 @@ export function RepeatButton({ task }: { task: Task }) {
       // Footer-anchored: render upward so the popover doesn't clip
       // against the panel's bottom edge (`overflow-hidden` shell).
       className="!mt-0 bottom-full mb-1.5"
-      aria-label="Repeat this task"
+      aria-label="Make copies of this task"
       trigger={({ onClick, ref, "aria-expanded": expanded }) => (
         <button
           ref={ref}
           type="button"
           onClick={onClick}
           aria-expanded={expanded}
-          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
-          aria-label="Repeat this task"
+          className={FIELD_CHIP}
+          aria-label="Make copies of this task"
+          title="Creates a run of copies spaced a set number of days apart. It does not make the task recurring."
         >
           <RepeatGlyph />
-          Repeat
+          Make copies
         </button>
       )}
     >
@@ -156,7 +158,7 @@ function RepeatForm({
         onDone();
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Couldn’t repeat this task.";
+          err instanceof Error ? err.message : "Couldn’t create the copies.";
         toast(message, { tone: "error" });
       }
     });
@@ -170,11 +172,11 @@ function RepeatForm({
     <div className="flex flex-col gap-2.5 px-1.5 py-1.5">
       <div className="flex flex-col gap-0.5">
         <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
-          Repeat this task
+          Make copies
         </span>
         <p className="text-[11.5px] leading-[1.45] text-ink-soft">
-          Make a few copies, spaced a set number of days apart. Useful for
-          countdowns, reminders, anything that repeats.
+          A few copies of this task, spaced a set number of days apart. Useful
+          for countdowns and reminders. The original stays where it is.
         </p>
       </div>
       <div className="flex items-end gap-2">
@@ -234,7 +236,7 @@ function RepeatForm({
           disabled={isPending}
           className="rounded-md bg-ink px-2.5 py-1 text-[11.5px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
         >
-          {isPending ? "Repeating…" : "Repeat"}
+          {isPending ? "Creating…" : "Create copies"}
         </button>
       </div>
     </div>

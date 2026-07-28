@@ -111,7 +111,11 @@ const SEED: Seed[] = [
     description: "Ceremony 2pm orchard, drinks terrace, dinner 5:30. Share with the floor team.",
     lane: "doing",
     priority: "p1",
-    due: "Fri",
+    // Due on the review frame's pinned today (2026-07-16) so the board's
+    // relative labels ("Due today", warm treatment) are visible in review
+    // captures rather than only proven by the dates.test.ts assertions.
+    due: "Today",
+    dueAt: "2026-07-16",
     tags: ["mara-finn"],
     comments: 2,
     editedHoursAgo: 2,
@@ -122,7 +126,9 @@ const SEED: Seed[] = [
     description: "Two extra cases of tonic; last olive delivery was short.",
     lane: "doing",
     priority: "p2",
-    due: "Thu",
+    // Two days behind the pinned today: the overdue register on a card.
+    due: "Mon",
+    dueAt: "2026-07-14",
     tags: ["bar"],
     externalContactName: "Greenfield Wholesale",
     cents: 18400,
@@ -194,5 +200,5 @@ function toTask(s: Seed): Task {
 }
 
 export function demoTasks(): Task[] {
-  return SEED.map(toTask);
+  return SEED.map((s, index) => ({ ...toTask(s), seq: index + 1 }));
 }

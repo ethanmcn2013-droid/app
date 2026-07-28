@@ -1,3 +1,4 @@
+import type { SQL } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 
 import * as schema from "@/server/db/schema";
@@ -23,7 +24,10 @@ export async function insertOrReadNotesExtractTask(
   database: NotesExtractDatabase,
   input: {
     sourceNoteId: string;
-    values: typeof tasks.$inferInsert;
+    // `seq` may be the atomic MAX+1 allocation fragment (task-seq.ts);
+    // drizzle's .values() accepts SQL per column even though $inferInsert
+    // types the column as its plain value.
+    values: Omit<typeof tasks.$inferInsert, "seq"> & { seq?: number | SQL<number> | null };
   },
 ): Promise<Readonly<{
   created: boolean;

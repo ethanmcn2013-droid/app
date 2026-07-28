@@ -1,223 +1,233 @@
 {
-  "schemaVersion": "tasks-migration-ledger/1",
-  "dialect": "sqlite",
-  "journal": "drizzle/meta/_journal.json",
-  "databaseLedgerTable": "signal_schema_migrations",
-  "drizzleHighWaterTable": "__drizzle_migrations",
-  "entries": [
-    {
-      "ordinal": 0,
-      "id": "0000_flat_blur",
-      "file": "drizzle/0000_flat_blur.sql",
-      "when": 1778099863368,
-      "sha256": "b541b98d533c8383e91bfab8e390671f8f254d2eee07b859d1c249f2d359cf78",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 1,
-      "id": "0001_add_reached_board_at",
-      "file": "drizzle/0001_add_reached_board_at.sql",
-      "when": 1779235200000,
-      "sha256": "543b03298a24515397d7d66a950d8a2d8719cd4ec0a5aea3422aa1f19819f5ea",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 2,
-      "id": "0002_user_preferences",
-      "file": "drizzle/0002_user_preferences.sql",
-      "when": 1780487433002,
-      "sha256": "f75a51225363ab6a8508698f1043992dd21f49075b46832bfdcab400ca612b93",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 3,
-      "id": "0003_hot_indexes",
-      "file": "drizzle/0003_hot_indexes.sql",
-      "when": 1780487433003,
-      "sha256": "e0ab6f58f24e9a842cc8cd8155d9614685f8c97c15a061a18b89404d6f9f9848",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 4,
-      "id": "0004_add_source_note_id",
-      "file": "drizzle/0004_add_source_note_id.sql",
-      "when": 1780487433004,
-      "sha256": "a064c4a15e86c7b4a4969726952127262fdb748fd0cc9edc9792be587af49ada",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 5,
-      "id": "0005_workspace_id_backfill",
-      "file": "drizzle/0005_workspace_id_backfill.sql",
-      "when": 1780487433005,
-      "sha256": "85e01dd0a6fbba3ddf2f9b88c6ba25cfa7c6293fa73196ef4fd30186cfa277d8",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 6,
-      "id": "0006_add_is_milestone",
-      "file": "drizzle/0006_add_is_milestone.sql",
-      "when": 1780487433006,
-      "sha256": "315f2d92f45f7b118bcaa47d7ea3461a16794b66e8d7930844eb190be955cc7e",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 7,
-      "id": "0007_add_board_column_key",
-      "file": "drizzle/0007_add_board_column_key.sql",
-      "when": 1780487433007,
-      "sha256": "caec501520c08fe39f1a41b3b292dd63be14620520c92b32f1c62132eaf0d7fa",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 8,
-      "id": "0008_onboarding_segment",
-      "file": "drizzle/0008_onboarding_segment.sql",
-      "when": 1781377738000,
-      "sha256": "2821ff3df836f7fb2c66908ef34344f0672a42ae930789095970f23d96f1a293",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 9,
-      "id": "0009_tasks_milestone_index",
-      "file": "drizzle/0009_tasks_milestone_index.sql",
-      "when": 1782236414000,
-      "sha256": "3368e80ff9f857546527ae78a4613feaac9eab8c79c1a68d0b1bc75dfd1b27ec",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 10,
-      "id": "0010_parent_workspace_invariant",
-      "file": "drizzle/0010_parent_workspace_invariant.sql",
-      "when": 1783810410010,
-      "sha256": "468334c92132f71a72a238dd55c296e2c8ce7231b6758b9385e12c9901932a8f",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 11,
-      "id": "0011_source_note_id_unique",
-      "file": "drizzle/0011_source_note_id_unique.sql",
-      "when": 1783810410011,
-      "sha256": "9575a04f08b07ac578e452aa730aeaaeb052d2c3876ac13bc70bbf4b0ac3bb23",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 12,
-      "id": "0012_suite_outbox",
-      "file": "drizzle/0012_suite_outbox.sql",
-      "when": 1783810410012,
-      "sha256": "561d63f2571af19528b78049dbdf145e0f90d66c4212d1b36a86b740b5db2a41",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 13,
-      "id": "0013_planning_periods",
-      "file": "drizzle/0013_planning_periods.sql",
-      "when": 1783899362000,
-      "sha256": "acd71075b5d74d76e388b28e69f474062a57e05b68858832e276b1ccef68db35",
-      "policy": "legacy-adopt-only",
-      "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
-      "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
-    },
-    {
-      "ordinal": 14,
-      "id": "0014_current_schema_baseline",
-      "file": "drizzle/0014_current_schema_baseline.sql",
-      "when": 1784156994451,
-      "sha256": "8cc96bf8357d820e8e4bc99e5fd829a177645bd0c52579755bb4e21a9d8171ea",
-      "policy": "baseline",
-      "snapshot": "drizzle/meta/0014_snapshot.json",
-      "snapshotSha256": "6e253924090c0abd9738b2988752dbc970117a969923f83c6069bd1c96075bed",
-      "receipt": "drizzle/receipts/current-schema-baseline.json",
-      "receiptSha256": "1ec8652b81c83c14495463a49c43e8d81c883795057b2b59d999b53ec98f3107"
-    },
-    {
-      "ordinal": 15,
-      "id": "0015_notes_extract_exact_identity",
-      "file": "drizzle/0015_notes_extract_exact_identity.sql",
-      "when": 1784396022988,
-      "sha256": "67562e86ac54d8cfce5bb5c30e2eac1e884cef74c2becd7ffc95dde2aeacfb43",
-      "policy": "forward",
-      "snapshot": "drizzle/meta/0015_snapshot.json",
-      "snapshotSha256": "1cee89f0fdc466f8218ffd226d2e817ec4f7fae1feb1c7752e09e2645af3710b",
-      "receipt": "drizzle/receipts/notes-extract-exact-identity-2026-07-18.json",
-      "receiptSha256": "20ef9fd71045d84fe5d2b55784fdc43ef846800a1f3b36477063785514d41b49"
-    },
-    {
-      "ordinal": 16,
-      "id": "0016_tasks_archived_at",
-      "file": "drizzle/0016_tasks_archived_at.sql",
-      "when": 1784548800000,
-      "sha256": "bcfda865ffae2066029e8284b59f2cab21bb71c59eadd258b07dab5a590d49c0",
-      "policy": "forward",
-      "receipt": "drizzle/receipts/tasks-archived-at-2026-07-20.json",
-      "receiptSha256": "87b3d5319d4fd3fb8329ec6e1cb5a74e065fa1710e6d0195fe8e9bbc648bfce1"
-    },
-    {
-      "ordinal": 17,
-      "id": "0017_resources",
-      "file": "drizzle/0017_resources.sql",
-      "when": 1784592000000,
-      "sha256": "70acfb68112f42a096afe16c02578f265d782c435487368424f17414c5642828",
-      "policy": "forward",
-      "receipt": "drizzle/receipts/resources-2026-07-21.json",
-      "receiptSha256": "994cd7517368ea0c9d0fd250c53f722c07078c39772a0ba215f249f28b08e3f6"
-    },
-    {
-      "ordinal": 18,
-      "id": "0018_notification_prefs_nudges",
-      "file": "drizzle/0018_notification_prefs_nudges.sql",
-      "when": 1784678400000,
-      "sha256": "505c94e536fa4d11d665ea2972a2eb95974492da6eb0fd465b89dbd1f8737b5d",
-      "policy": "forward",
-      "receipt": "drizzle/receipts/notification-prefs-nudges-2026-07-21.json",
-      "receiptSha256": "383921aed8a676fc96d38d037a80736e3b7459971e77b85039821fbbc9ed9157"
-    },
-    {
-      "ordinal": 19,
-      "id": "0019_invites_and_workspace_events",
-      "file": "drizzle/0019_invites_and_workspace_events.sql",
-      "when": 1784764800000,
-      "sha256": "5835f200fe1b510a033738be9d38b293f757793c436e762c536890b7f745aebf",
-      "policy": "forward",
-      "receipt": "drizzle/receipts/invites-and-workspace-events-2026-07-21.json",
-      "receiptSha256": "f1d6f3a912ab1b5e514ffa188ff67b69c7a962cc0b6f411f08336107ecec5bbd"
-    },
-    {
-      "ordinal": 20,
-      "id": "0020_user_preferences_theme_mode",
-      "file": "drizzle/0020_user_preferences_theme_mode.sql",
-      "when": 1784851200000,
-      "sha256": "f372dd8df9fb132b58050d41bd9c02713783ff6ec961014d62cc9ff39a8efb46",
-      "policy": "forward",
-      "receipt": "drizzle/receipts/user-preferences-theme-mode-2026-07-21.json",
-      "receiptSha256": "e43df8972d80d671ee0b53bbca380be37604f77511f95c5b476184d61eeeab7c"
-    }
-  ]
+ "schemaVersion": "tasks-migration-ledger/1",
+ "dialect": "sqlite",
+ "journal": "drizzle/meta/_journal.json",
+ "databaseLedgerTable": "signal_schema_migrations",
+ "drizzleHighWaterTable": "__drizzle_migrations",
+ "entries": [
+  {
+   "ordinal": 0,
+   "id": "0000_flat_blur",
+   "file": "drizzle/0000_flat_blur.sql",
+   "when": 1778099863368,
+   "sha256": "b541b98d533c8383e91bfab8e390671f8f254d2eee07b859d1c249f2d359cf78",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 1,
+   "id": "0001_add_reached_board_at",
+   "file": "drizzle/0001_add_reached_board_at.sql",
+   "when": 1779235200000,
+   "sha256": "543b03298a24515397d7d66a950d8a2d8719cd4ec0a5aea3422aa1f19819f5ea",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 2,
+   "id": "0002_user_preferences",
+   "file": "drizzle/0002_user_preferences.sql",
+   "when": 1780487433002,
+   "sha256": "f75a51225363ab6a8508698f1043992dd21f49075b46832bfdcab400ca612b93",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 3,
+   "id": "0003_hot_indexes",
+   "file": "drizzle/0003_hot_indexes.sql",
+   "when": 1780487433003,
+   "sha256": "e0ab6f58f24e9a842cc8cd8155d9614685f8c97c15a061a18b89404d6f9f9848",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 4,
+   "id": "0004_add_source_note_id",
+   "file": "drizzle/0004_add_source_note_id.sql",
+   "when": 1780487433004,
+   "sha256": "a064c4a15e86c7b4a4969726952127262fdb748fd0cc9edc9792be587af49ada",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 5,
+   "id": "0005_workspace_id_backfill",
+   "file": "drizzle/0005_workspace_id_backfill.sql",
+   "when": 1780487433005,
+   "sha256": "85e01dd0a6fbba3ddf2f9b88c6ba25cfa7c6293fa73196ef4fd30186cfa277d8",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 6,
+   "id": "0006_add_is_milestone",
+   "file": "drizzle/0006_add_is_milestone.sql",
+   "when": 1780487433006,
+   "sha256": "315f2d92f45f7b118bcaa47d7ea3461a16794b66e8d7930844eb190be955cc7e",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 7,
+   "id": "0007_add_board_column_key",
+   "file": "drizzle/0007_add_board_column_key.sql",
+   "when": 1780487433007,
+   "sha256": "caec501520c08fe39f1a41b3b292dd63be14620520c92b32f1c62132eaf0d7fa",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 8,
+   "id": "0008_onboarding_segment",
+   "file": "drizzle/0008_onboarding_segment.sql",
+   "when": 1781377738000,
+   "sha256": "2821ff3df836f7fb2c66908ef34344f0672a42ae930789095970f23d96f1a293",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 9,
+   "id": "0009_tasks_milestone_index",
+   "file": "drizzle/0009_tasks_milestone_index.sql",
+   "when": 1782236414000,
+   "sha256": "3368e80ff9f857546527ae78a4613feaac9eab8c79c1a68d0b1bc75dfd1b27ec",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 10,
+   "id": "0010_parent_workspace_invariant",
+   "file": "drizzle/0010_parent_workspace_invariant.sql",
+   "when": 1783810410010,
+   "sha256": "468334c92132f71a72a238dd55c296e2c8ce7231b6758b9385e12c9901932a8f",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 11,
+   "id": "0011_source_note_id_unique",
+   "file": "drizzle/0011_source_note_id_unique.sql",
+   "when": 1783810410011,
+   "sha256": "9575a04f08b07ac578e452aa730aeaaeb052d2c3876ac13bc70bbf4b0ac3bb23",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 12,
+   "id": "0012_suite_outbox",
+   "file": "drizzle/0012_suite_outbox.sql",
+   "when": 1783810410012,
+   "sha256": "561d63f2571af19528b78049dbdf145e0f90d66c4212d1b36a86b740b5db2a41",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 13,
+   "id": "0013_planning_periods",
+   "file": "drizzle/0013_planning_periods.sql",
+   "when": 1783899362000,
+   "sha256": "acd71075b5d74d76e388b28e69f474062a57e05b68858832e276b1ccef68db35",
+   "policy": "legacy-adopt-only",
+   "receipt": "drizzle/receipts/reviewed-legacy-migrations.json",
+   "receiptSha256": "d5da925358f98f8952cc157fc55e11ae8cfc6dd150f9933ad6041a5cb1c1727a"
+  },
+  {
+   "ordinal": 14,
+   "id": "0014_current_schema_baseline",
+   "file": "drizzle/0014_current_schema_baseline.sql",
+   "when": 1784156994451,
+   "sha256": "8cc96bf8357d820e8e4bc99e5fd829a177645bd0c52579755bb4e21a9d8171ea",
+   "policy": "baseline",
+   "snapshot": "drizzle/meta/0014_snapshot.json",
+   "snapshotSha256": "6e253924090c0abd9738b2988752dbc970117a969923f83c6069bd1c96075bed",
+   "receipt": "drizzle/receipts/current-schema-baseline.json",
+   "receiptSha256": "1ec8652b81c83c14495463a49c43e8d81c883795057b2b59d999b53ec98f3107"
+  },
+  {
+   "ordinal": 15,
+   "id": "0015_notes_extract_exact_identity",
+   "file": "drizzle/0015_notes_extract_exact_identity.sql",
+   "when": 1784396022988,
+   "sha256": "67562e86ac54d8cfce5bb5c30e2eac1e884cef74c2becd7ffc95dde2aeacfb43",
+   "policy": "forward",
+   "snapshot": "drizzle/meta/0015_snapshot.json",
+   "snapshotSha256": "1cee89f0fdc466f8218ffd226d2e817ec4f7fae1feb1c7752e09e2645af3710b",
+   "receipt": "drizzle/receipts/notes-extract-exact-identity-2026-07-18.json",
+   "receiptSha256": "20ef9fd71045d84fe5d2b55784fdc43ef846800a1f3b36477063785514d41b49"
+  },
+  {
+   "ordinal": 16,
+   "id": "0016_tasks_archived_at",
+   "file": "drizzle/0016_tasks_archived_at.sql",
+   "when": 1784548800000,
+   "sha256": "bcfda865ffae2066029e8284b59f2cab21bb71c59eadd258b07dab5a590d49c0",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/tasks-archived-at-2026-07-20.json",
+   "receiptSha256": "87b3d5319d4fd3fb8329ec6e1cb5a74e065fa1710e6d0195fe8e9bbc648bfce1"
+  },
+  {
+   "ordinal": 17,
+   "id": "0017_resources",
+   "file": "drizzle/0017_resources.sql",
+   "when": 1784592000000,
+   "sha256": "70acfb68112f42a096afe16c02578f265d782c435487368424f17414c5642828",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/resources-2026-07-21.json",
+   "receiptSha256": "994cd7517368ea0c9d0fd250c53f722c07078c39772a0ba215f249f28b08e3f6"
+  },
+  {
+   "ordinal": 18,
+   "id": "0018_notification_prefs_nudges",
+   "file": "drizzle/0018_notification_prefs_nudges.sql",
+   "when": 1784678400000,
+   "sha256": "505c94e536fa4d11d665ea2972a2eb95974492da6eb0fd465b89dbd1f8737b5d",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/notification-prefs-nudges-2026-07-21.json",
+   "receiptSha256": "383921aed8a676fc96d38d037a80736e3b7459971e77b85039821fbbc9ed9157"
+  },
+  {
+   "ordinal": 19,
+   "id": "0019_invites_and_workspace_events",
+   "file": "drizzle/0019_invites_and_workspace_events.sql",
+   "when": 1784764800000,
+   "sha256": "5835f200fe1b510a033738be9d38b293f757793c436e762c536890b7f745aebf",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/invites-and-workspace-events-2026-07-21.json",
+   "receiptSha256": "f1d6f3a912ab1b5e514ffa188ff67b69c7a962cc0b6f411f08336107ecec5bbd"
+  },
+  {
+   "ordinal": 20,
+   "id": "0020_user_preferences_theme_mode",
+   "file": "drizzle/0020_user_preferences_theme_mode.sql",
+   "when": 1784851200000,
+   "sha256": "f372dd8df9fb132b58050d41bd9c02713783ff6ec961014d62cc9ff39a8efb46",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/user-preferences-theme-mode-2026-07-21.json",
+   "receiptSha256": "e43df8972d80d671ee0b53bbca380be37604f77511f95c5b476184d61eeeab7c"
+  },
+  {
+   "ordinal": 21,
+   "id": "0021_tasks_seq",
+   "file": "drizzle/0021_tasks_seq.sql",
+   "when": 1785196800000,
+   "sha256": "97f290913eecb62d3a60c412bb7c908d2a519512ef835727396551615725491b",
+   "policy": "forward",
+   "receipt": "drizzle/receipts/tasks-seq-2026-07-28.json",
+   "receiptSha256": "c29507098c928654cd1fb5a2cf4b6d069d5ee3a6bbaf9b2c4b73df8fd19b063d"
+  }
+ ]
 }

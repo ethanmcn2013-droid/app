@@ -121,29 +121,38 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
     return aDate.localeCompare(bDate);
   }).slice(0, 3);
   const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
+  // The milestones panel renders only when there is a milestone to show. An
+  // empty one used to draw a bordered column and a two-column "No date / No
+  // milestones yet" row, which read as a broken record rather than an
+  // absence, and cost the board ~120px to say nothing.
+  const renderMilestones = showMilestones && milestones.length > 0;
   return (
-    <header className={styles.workspaceBrief} data-milestones={showMilestones ? undefined : "off"}>
+    <header className={styles.workspaceBrief} data-milestones={renderMilestones ? "on" : undefined}>
       <div className={styles.workspaceIdentity}>
         <div className={styles.workspacePath}><span>Workspace</span><Icon name="chevron-right" size={12} /><strong>{workspaceName}</strong></div>
         <EditableText ariaLabel="Workspace name" fallback={workspaceName} storageKey={`signal-tasks.brief.title:${workspaceName}`} legacyStorageKey={`tasks:brief:title:${workspaceName}`} tag="h1" />
         <EditableText ariaLabel="Workspace description" fallback="Everything for this workspace in one view. Every task should leave a clear next handoff." storageKey={`signal-tasks.brief.subtitle:${workspaceName}`} legacyStorageKey={`tasks:brief:subtitle:${workspaceName}`} tag="p" />
       </div>
+      {/*
+        Progress reads as one number, one bar and one line. The old panel
+        spent three table rows on Complete / Overdue / No date — a dashboard
+        where a sentence does the same work in a quarter of the height.
+      */}
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
-        <div><span>Progress</span><strong>{progress}%</strong></div>
+        <div className={styles.progressHead}><strong>{progress}%</strong><span>Progress</span></div>
         <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
-        <dl>
-          <div><dt>Complete</dt><dd>{completed}/{store.tasks.length}</dd></div>
-          <div><dt>Overdue</dt><dd data-alert={overdue > 0 || undefined}>{overdue}</dd></div>
-          <div><dt>No date</dt><dd>{unscheduled}</dd></div>
-        </dl>
+        <p className={styles.progressFacts}>
+          {completed} of {store.tasks.length} done
+          {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
+          {unscheduled > 0 ? <> · {unscheduled} no date</> : null}
+        </p>
       </section>
-      {showMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
+      {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>
         <ol>
           {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? task.schedule.on.slice(5).replace("-", "/") : ""}</time><TaskOpenButton task={task} /></li>)}
-          {milestones.length === 0 ? <li><time>No date</time><strong>No milestones yet</strong></li> : null}
         </ol>
-        {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : <small>Purpose, progress, and commitments stay in view.</small>}
+        {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : null}
       </section> : null}
     </header>
   );

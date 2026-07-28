@@ -278,11 +278,7 @@ export function ResourcesSection({ task }: { task: Task }) {
       />
 
       {/* Resource list */}
-      {total === 0 && !dragging ? (
-        <div className="rounded-md border border-dashed border-line px-3 py-3 text-[12px] leading-snug text-ink-quiet">
-          Drop files or paste a link below.
-        </div>
-      ) : (
+      {total > 0 ? (
         <ul className="flex flex-col gap-1">
           <AnimatePresence initial={false}>
             {realItems.map((row) => (
@@ -297,10 +293,23 @@ export function ResourcesSection({ task }: { task: Task }) {
             ))}
           </AnimatePresence>
         </ul>
-      )}
+      ) : null}
 
-      {/* Inline "Paste a link" add-row */}
-      <div className="mt-3 flex items-center gap-1.5">
+      {/*
+        One affordance for both intake paths. The empty state used to stack
+        a dashed "drop files" message on top of a separate paste-link row —
+        two ways of saying "put things here" taking two rows to say it. The
+        link input IS the drop zone: dashed while empty, quiet once the
+        section holds items.
+      */}
+      <div
+        className={[
+          "flex items-center gap-1.5",
+          total === 0
+            ? "rounded-md border border-dashed border-line px-2.5 py-2"
+            : "mt-3",
+        ].join(" ")}
+      >
         <LinkGlyph />
         <input
           ref={linkInputRef}
@@ -313,9 +322,14 @@ export function ResourcesSection({ task }: { task: Task }) {
               handleAddLink();
             }
           }}
-          placeholder="Paste a link…"
+          placeholder={total === 0 ? "Drop files here, or paste a link…" : "Paste a link…"}
           disabled={linkPending}
-          className="min-w-0 flex-1 rounded-md border border-line px-2 py-1 text-[12px] text-ink placeholder:text-ink-faint focus:border-ink-soft focus:outline-none disabled:opacity-50"
+          className={[
+            "min-w-0 flex-1 text-[12px] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50",
+            total === 0
+              ? "bg-transparent"
+              : "rounded-md border border-line px-2 py-1 focus:border-ink-soft",
+          ].join(" ")}
         />
         {linkInput.trim() ? (
           <button

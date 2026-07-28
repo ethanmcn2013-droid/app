@@ -198,22 +198,28 @@ test("all TIPS have non-empty id, body, valid context, positive version", () => 
 // ── First eligible wins ───────────────────────────────────────────────────────
 
 test("first eligible tip in context is returned, not the second", () => {
-  const panelTips = TIPS.filter((t) => t.context === "task-panel");
-  assert.ok(panelTips.length >= 2, "Need at least 2 task-panel tips for this test");
+  // Derive the context to exercise rather than naming one. This test is
+  // about ordering, and hard-coding "task-panel" made it fail the moment a
+  // tip was retired from that context for editorial reasons.
+  const contexts = [...new Set(TIPS.map((tip) => tip.context))];
+  const contextTips = contexts
+    .map((context) => TIPS.filter((tip) => tip.context === context))
+    .sort((a, b) => b.length - a.length)[0]!;
+  assert.ok(contextTips.length >= 2, "Need a context with at least 2 tips for this test");
 
   // Mark all but the last as seen.
   const seen: Record<string, number> = {};
-  for (const tip of panelTips.slice(0, panelTips.length - 1)) {
+  for (const tip of contextTips.slice(0, contextTips.length - 1)) {
     seen[tip.id] = tip.version;
   }
 
   const result = nextTip({
-    context: "task-panel",
+    context: contextTips[0]!.context,
     seen,
     lastShownAt: null,
     now: NOW,
     sessionShown: false,
   });
-  const lastTip = panelTips[panelTips.length - 1]!;
+  const lastTip = contextTips[contextTips.length - 1]!;
   assert.equal(result?.id, lastTip.id, "Should return the only unseen tip");
 });

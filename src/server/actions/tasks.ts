@@ -4,6 +4,7 @@ import { unlink } from "node:fs/promises";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
@@ -496,6 +497,7 @@ export async function addTaskAction(input: {
   await db.insert(tasks).values({
     id,
     workspaceId: ws,
+    seq: nextTaskSeq(ws),
     title: input.title,
     description: input.description,
     lane,
@@ -741,6 +743,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
   await db.insert(tasks).values({
     id: newId,
     workspaceId: ws,
+    seq: nextTaskSeq(ws),
     title: source.title,
     description: source.description,
     lane: source.lane,
@@ -770,6 +773,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
     await db.insert(tasks).values({
       id: freshTaskId(),
       workspaceId: ws,
+      seq: nextTaskSeq(ws),
       title: child.title,
       description: child.description,
       lane: child.lane,

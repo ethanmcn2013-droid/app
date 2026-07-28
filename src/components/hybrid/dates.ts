@@ -73,6 +73,50 @@ export function formatSchedule(schedule: TaskSchedule): string {
   }
 }
 
+/**
+ * Board-facing schedule label, resolved against today.
+ *
+ * `formatSchedule` above gives the absolute date and stays the label for
+ * tooltips, live-region announcements and the Schedule view, where the exact
+ * date is the point. On a card the absolute date makes the reader do the
+ * arithmetic: a board that reads "Due 28 Jul" on the 28th of July is not
+ * telling you the thing is due today. Relative wins inside a week either
+ * side of today; beyond that the date carries more than a large day count.
+ */
+export function formatScheduleRelative(schedule: TaskSchedule, today: CalendarDate): string {
+  const end = scheduleEnd(schedule);
+  if (schedule.kind === "unscheduled" || end === null) return "Unscheduled";
+
+  const days = differenceInDays(today, end);
+  let relative: string | null = null;
+  if (days === 0) relative = "today";
+  else if (days === 1) relative = "tomorrow";
+  else if (days === -1) relative = "yesterday";
+  else if (days > 1 && days <= 7) relative = `in ${days} days`;
+  else if (days < -1 && days >= -7) relative = `${Math.abs(days)} days ago`;
+
+  switch (schedule.kind) {
+    case "due":
+      return relative ? `Due ${relative}` : `Due ${formatDate(schedule.dueOn)}`;
+    case "milestone":
+      return relative ? `Milestone · ${relative}` : `Milestone · ${formatDate(schedule.on)}`;
+    case "range":
+      // An overdue or long range keeps both ends: "ends yesterday" loses the
+      // fact that the work had a start date that has also passed.
+      return relative && days >= 0 ? `Ends ${relative}` : formatSchedule(schedule);
+  }
+}
+
+/**
+ * Due today and not yet done. Distinct from overdue: today is a nudge, not
+ * an alarm, and the board colours the two differently.
+ */
+export function isTaskDueToday(task: LabTask, today: CalendarDate): boolean {
+  if (task.completed) return false;
+  const end = scheduleEnd(task.schedule);
+  return end !== null && compareDates(end, today) === 0;
+}
+
 export function scheduleStart(schedule: TaskSchedule): CalendarDate | null {
   switch (schedule.kind) {
     case "unscheduled":

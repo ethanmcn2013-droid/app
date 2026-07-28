@@ -4,6 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import { tasks } from "./schema";
 import { recordActivity } from "./activity";
+import { nextTaskSeq } from "./task-seq";
 import { type LaneId } from "@/lib/data";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
 
@@ -46,6 +47,7 @@ export async function applyTemplateToWorkspace(
     await db.insert(tasks).values({
       id,
       workspaceId,
+      seq: nextTaskSeq(workspaceId),
       title: t.title,
       lane: t.lane,
       priority: t.priority,

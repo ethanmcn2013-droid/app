@@ -4,6 +4,38 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-29 · T·106 · ships · the board earns its colour, and a task gets a number a person can say
+
+**The board reads by hue, the panel reads as one system, and a task is now
+T-14 instead of a hex string.** Each lane carries its colour the way the
+marketing hero always promised: a 2px rule across the header, a wash that
+releases by 220px, and a full-strength pip, with the backlog staying
+deliberately plain. The same grammar follows the lanes into the List view's
+group bands, which also stop painting only a third of their row (a table cell
+had been quietly voiding its own colSpan). Lanes sit on paper instead of grey,
+scroll independently, collapse to a slim rail that keeps its colour and count,
+and animate the fold. Adding a task is now typing a title where the card will
+land, not renaming an "Untitled task" under a panel that stole the screen.
+
+The type across the app comes up to a 10px floor: sidebar, product rail,
+toolbar, and all four views were running 6 to 9px labels that read as a scale
+model of the product. Cards tell the truth about time ("Due today" warm,
+"Due 2 days ago" red) and agree with the panel, which previously read its
+clock from a different place than the board. The card checkbox now completes
+the task, because that is what a checkbox on a task card has always claimed
+to do; selection moved to modifier-click and Space. The detail panel opens
+with a real entrance, carries one chip grammar for every field, keeps status
+with the other properties, and shows optional fields only once they hold
+something. Milestones toggle from the card itself with a small diamond.
+
+Underneath, every task gains a human number: a per-workspace counter
+allocated atomically at insert (migration 0021, receipt-backed, with a
+partial unique index as the concurrency backstop), displayed as T-14 in the
+panel while the hex id stays the stable key in every link. Honest edge: the
+micro-interaction pass is deliberately not here. Forty sites are catalogued
+in docs/DELIGHT_CATALOG.md and stay unanimated until the reference review
+decides which of them earn motion and which earn restraint.
+
 ## 2026-07-27 · T·105 · ships · the palette learns to narrow, and the record stops drifting
 
 **Search now takes a scope before it takes a query, subtasks reorder by hand or

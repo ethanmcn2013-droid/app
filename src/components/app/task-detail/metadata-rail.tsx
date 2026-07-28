@@ -11,11 +11,10 @@
  */
 
 import Link from "next/link";
+import { useState } from "react";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import type { Task } from "@/lib/data";
 import { useDomain } from "@/lib/domain-context";
-import { useHydrated } from "@/lib/use-hydrated";
-import { formatRelativeTime } from "@/lib/utils";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import {
@@ -23,7 +22,9 @@ import {
   DueRow,
   PriorityRow,
   RecurrenceRow,
+  StatusPillRow,
 } from "@/components/app/detail-panel/field-rows";
+import { FIELD_TEXT } from "@/components/app/detail-panel/chip";
 import { ContactEditor } from "@/components/app/detail-panel/contact-editor";
 import { CentsEditor } from "@/components/app/detail-panel/cents-editor";
 import { RepeatButton } from "@/components/app/detail-panel/repeat-button";
@@ -49,20 +50,6 @@ function MetaField({
   );
 }
 
-// ─── UpdatedStamp: hydration-safe relative time ───────────────────────────────
-
-function UpdatedStamp({ updatedAt }: { updatedAt: Date }) {
-  const hydrated = useHydrated();
-  // The MetaField label already reads "Updated"; the value is just the
-  // relative time. Empty until hydration (relative time differs by clock).
-  if (!hydrated) return <span className="text-ink-faint">…</span>;
-  return (
-    <span className="text-ink-quiet" title={updatedAt.toLocaleString("en-US")}>
-      {formatRelativeTime(updatedAt)}
-    </span>
-  );
-}
-
 // ─── MetadataRail ─────────────────────────────────────────────────────────────
 
 export function MetadataRail({
@@ -80,12 +67,30 @@ export function MetadataRail({
     suiteContext,
   );
 
+  // Optional fields show when they hold something, or once asked for.
+  const [revealed, setRevealed] = useState({ contact: false, amount: false });
+  const hasContact = Boolean(
+    task.externalContactName?.trim() || task.externalContactEmail?.trim(),
+  );
+  const hasAmount = (task.cents ?? 0) > 0;
+  const showContact = hasContact || revealed.contact;
+  const showAmount = hasAmount || revealed.amount;
+  const hiddenFields = [
+    showContact ? null : { key: "contact" as const, label: "Contact" },
+    showAmount ? null : { key: "amount" as const, label: "Amount" },
+  ].filter((field): field is { key: "contact" | "amount"; label: string } => field !== null);
+
   const wrapClass = compact
     ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]"
     : "flex flex-col gap-4 text-[12.5px]";
 
   return (
     <dl className={wrapClass}>
+      {/* Status leads: it is the one property the board is organised by. */}
+      <MetaField label="Status">
+        <StatusPillRow task={task} />
+      </MetaField>
+
       {/* Assignees */}
       <MetaField label="Assignees">
         <AssigneesRow task={task} />
@@ -122,23 +127,45 @@ export function MetadataRail({
         </MetaField>
       ) : null}
 
-      {/* Contact — spans both columns in compact mode */}
-      <MetaField label="Contact" colSpan2={compact}>
-        <ContactEditor key={task.id} task={task} />
-      </MetaField>
+      {/*
+        Contact and Amount are optional fields most tasks never use. They
+        used to render as two permanently empty "Add contact" / "Add amount"
+        rows on every task, which put the panel's two rarest fields in front
+        of its most common ones. They appear once they hold something; until
+        then they live behind the single Add-field row below.
+      */}
+      {showContact ? (
+        <MetaField label="Contact" colSpan2={compact}>
+          <ContactEditor key={task.id} task={task} />
+        </MetaField>
+      ) : null}
 
-      {/* Amount — spans both columns in compact mode */}
-      <MetaField label="Amount" colSpan2={compact}>
-        <CentsEditor key={task.id} task={task} />
-      </MetaField>
+      {showAmount ? (
+        <MetaField label="Amount" colSpan2={compact}>
+          <CentsEditor key={task.id} task={task} />
+        </MetaField>
+      ) : null}
 
       {/* Project */}
       <MetaField label="Project">
-        <span className="text-ink-soft">{projectLabel}</span>
+        <span className={FIELD_TEXT}>{projectLabel}</span>
       </MetaField>
 
-      {/* Duplicate ahead (chain duplication, different from recurrence) */}
-      <MetaField label="Duplicate ahead">
+      {/* Provenance — used to crowd the header breadcrumb as a chip. */}
+      {task.sourceNoteId ? (
+        <MetaField label="Source">
+          <span className={FIELD_TEXT}>Drafted in Signal Notes</span>
+        </MetaField>
+      ) : null}
+
+      {/*
+        Chain duplication — makes N one-off copies spaced D days apart. It is
+        not recurrence, but it sat directly beside the "Repeats" field with a
+        trigger labelled "Repeat", so the panel showed two adjacent repeat
+        concepts and the second one's value was the first one's verb.
+        "Copies" names what it produces and the collision goes away.
+      */}
+      <MetaField label="Copies">
         <RepeatButton task={task} />
       </MetaField>
 
@@ -167,10 +194,28 @@ export function MetadataRail({
         </MetaField>
       ) : null}
 
-      {/* Updated timestamp */}
-      <MetaField label="Updated" colSpan2={compact}>
-        <UpdatedStamp updatedAt={task.updatedAt} />
-      </MetaField>
+      {/*
+        The panel header already stamps "edited 5h" beside the task id, so a
+        second Updated row said the same thing twice, three rows apart.
+      */}
+
+      {hiddenFields.length > 0 ? (
+        <MetaField label="Add field" colSpan2={compact}>
+          <div className="flex flex-wrap gap-1">
+            {hiddenFields.map((field) => (
+              <button
+                key={field.key}
+                type="button"
+                onClick={() => setRevealed((current) => ({ ...current, [field.key]: true }))}
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+              >
+                <span aria-hidden>+</span>
+                {field.label}
+              </button>
+            ))}
+          </div>
+        </MetaField>
+      ) : null}
     </dl>
   );
 }

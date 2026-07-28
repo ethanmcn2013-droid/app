@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "tasks-seq-2026-07-28",
+  "authorizedBy": "operator directive 2026-07-28 (board world-class programme, human-readable task ids)",
+  "reviewedBy": "Fable 5 session review",
+  "authorizationSource": "operator session instruction; flagged twice in the Tasks board design review",
+  "migrations": [
+    {
+      "id": "0021_tasks_seq",
+      "sha256": "97f290913eecb62d3a60c412bb7c908d2a519512ef835727396551615725491b",
+      "reviewedAt": "2026-07-28T00:00:00.000Z",
+      "risk": "low (additive nullable ADD COLUMN + one-shot backfill + partial unique index); no existing columns modified; no data loss; backfill is a pure computed UPDATE over existing rows",
+      "rollbackPlan": "DROP INDEX tasks_workspace_seq_unique; ALTER TABLE tasks DROP COLUMN seq (SQLite 3.35+); UI falls back to hex-id display with no other read-path dependency",
+      "postconditions": [
+        "seq column exists on tasks table",
+        "every pre-existing row has a non-null seq",
+        "seq is unique within each workspace among non-null values",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "seq-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name = 'seq'",
+          "expected": 1
+        },
+        {
+          "id": "backfill-complete",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE seq IS NULL",
+          "expected": 0
+        },
+        {
+          "id": "per-workspace-unique",
+          "sql": "SELECT COUNT(*) AS value FROM (SELECT workspace_id, seq, COUNT(*) c FROM tasks WHERE seq IS NOT NULL GROUP BY workspace_id, seq HAVING c > 1)",
+          "expected": 0
+        },
+        {
+          "id": "unique-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'index' AND name = 'tasks_workspace_seq_unique'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

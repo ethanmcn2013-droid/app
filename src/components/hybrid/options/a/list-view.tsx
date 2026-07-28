@@ -295,12 +295,31 @@ export function ListView({
             const complete = taskGroup.tasks.filter((task) => task.completed).length;
             return (
               <tbody data-group={taskGroup.key} key={taskGroup.key}>
-                <tr className={styles.groupRow}>
+                {/*
+                  The group cell spans every column, so the band runs the full
+                  row. It used to carry display:flex directly, which voids a
+                  table cell's colSpan and painted the band only as wide as
+                  the title column — every section header stopped partway
+                  across the table with a hole to its right. The flex lives
+                  on an inner div now; the cell stays a real table cell.
+                  Status groups carry the board's lane tone (2px leading rule
+                  + 6% wash + pip) so a lane means one colour in every view.
+                */}
+                <tr
+                  className={styles.groupRow}
+                  data-lane-tone={group === "status" && taskGroup.key !== "queued" ? taskGroup.key : undefined}
+                >
                   <th colSpan={visibleColumns.length} scope="rowgroup">
-                    <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button"><Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />{taskGroup.label}</button>
-                    <span>{taskGroup.tasks.length} tasks</span>
-                    <span>{complete}/{taskGroup.tasks.length || 0} complete</span>
-                    <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
+                    <div className={styles.groupBand}>
+                      <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
+                        <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
+                        {group === "status" ? <span className={styles.statusPip} data-status={taskGroup.key} /> : null}
+                        {taskGroup.label}
+                      </button>
+                      <span>{taskGroup.tasks.length} tasks</span>
+                      <span>{complete}/{taskGroup.tasks.length || 0} complete</span>
+                      <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
+                    </div>
                   </th>
                 </tr>
                 {!isCollapsed && taskGroup.tasks.length === 0 ? (
