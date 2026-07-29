@@ -129,8 +129,49 @@ button.timeLens:active {
   margin-block-start: clamp(var(--space-8), 6vw, var(--space-11));
 }
 
+/* ── Load choreography ────────────────────────────────────────────────────────
+   Pure CSS so the public share renders visible without JavaScript: SSR HTML
+   carries no opacity:0, the entrance runs when the stylesheet lands, and
+   prefers-reduced-motion suppresses it absolutely below. The interactive
+   transitions (TimeLens flip, detail crossfade) stay JS-driven because they
+   respond to input, not load. Curve matches METRIC_EASE in the component. */
+
+@keyframes timeline-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes timeline-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes timeline-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.76);
+  }
+}
+
+@keyframes timeline-draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes timeline-draw-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+
 .headerCopy {
   min-width: 0;
+  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 .heroKicker,
@@ -375,10 +416,12 @@ button.timeLens:focus-visible .metricAlternate {
 .completedRail {
   height: 2px;
   background: var(--ink);
+  animation: timeline-draw-x 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 .completedRailVertical {
   display: none;
+  animation: timeline-draw-y 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
 .todayMarker {
@@ -391,6 +434,7 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-soft);
   pointer-events: none;
   translate: -50% -50%;
+  animation: timeline-drop 220ms cubic-bezier(0.23, 1, 0.32, 1) 220ms backwards;
 }
 
 .todayMarker::before {
@@ -460,6 +504,8 @@ button.timeLens:focus-visible .metricAlternate {
   background: var(--paper);
   translate: -50% -50%;
   transition: box-shadow var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+  animation: timeline-pop 140ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation-delay: var(--timeline-point-delay, 0s);
 }
 
 .milestone[data-state="complete"] .point {
@@ -565,9 +611,19 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-soft);
 }
 
-.milestone[data-labelled="false"] .milestoneLabel {
+.milestone[data-labelled="false"] .milestoneLabel,
+.milestone[data-labelled="extra"] .milestoneLabel {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Collision-aware labels: points granted an "extra" label by the model show
+   it once the rail is wide enough for the label boxes to actually fit. */
+@container timeline-artifact (min-width: 980px) {
+  .milestone[data-labelled="extra"] .milestoneLabel {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .milestone:hover .milestoneLabel,
@@ -626,6 +682,37 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-faint);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+}
+
+/* The detail opens with an echo of the selected rail point, so the reading
+   panel and the dot that opened it visibly belong to each other. */
+.detailStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detailStatus::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+}
+
+.detail[data-detail-state="complete"] .detailStatus::before {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.detail[data-detail-state="current"] .detailStatus::before {
+  border: 2px solid var(--accent);
+}
+
+.detail[data-detail-state="overdue"] .detailStatus::before {
+  border: 2px solid var(--ink);
 }
 
 .detailLead h3 {
@@ -1031,7 +1118,8 @@ button.timeLens:focus-visible .metricAlternate {
     text-align: start;
   }
 
-  .milestone[data-labelled="false"] .milestoneLabel {
+  .milestone[data-labelled="false"] .milestoneLabel,
+  .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
   }
@@ -1128,9 +1216,11 @@ button.timeLens:focus-visible .metricAlternate {
 @media (prefers-reduced-motion: reduce) {
   .productMeta button,
   .metricAlternate,
+  .headerCopy,
   .point,
   .milestoneLabel,
   .completedRail,
+  .completedRailVertical,
   .metricMotion,
   .todayMarker {
     animation: none !important;

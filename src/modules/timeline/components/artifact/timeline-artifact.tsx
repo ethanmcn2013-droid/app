@@ -15,6 +15,7 @@ import { useHydrated } from "@/lib/use-hydrated";
 import {
   buildTimelineArtifactModel,
   buildTimelineCountdown,
+  extraLabelIndices,
   formatTimelineDate,
   timelinePointStatus,
   type TimelineArtifactModel,
@@ -40,6 +41,7 @@ type StageStyle = CSSProperties & {
 
 type PositionStyle = CSSProperties & {
   "--timeline-position": string;
+  "--timeline-point-delay"?: string;
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
@@ -61,6 +63,14 @@ export type TimelineArtifactProps = Readonly<{
   timeline: AudienceTimelineDto;
   compact?: boolean;
   embedded?: boolean;
+  /**
+   * The artifact's own product header (wordmark + shared-by row). On the
+   * standalone shared page and in exhibit frames (artifact studio, phone
+   * preview) it IS the page chrome and stays. Inside the owner's app shell
+   * the StudioBar already provides identity, so the owner view suppresses
+   * it rather than stacking two wordmarks.
+   */
+  showProductHeader?: boolean;
   className?: string;
   onCopyLink?: () => void | Promise<void>;
   copyLinkLabel?: string;
@@ -444,10 +454,34 @@ function Journey({
     "--timeline-point-count": Math.max(1, model.points.length),
     "--timeline-completion": `${model.percent}%`,
   };
+  // Collision-aware extra labels: beyond the mandatory titles (next, the
+  // completed point before it, the last point) any point whose same-side
+  // neighbours leave room earns its label on wide rails. Selection is
+  // excluded from the mandatory set here because it is transient — a
+  // selected label always shows and z-raises regardless.
+  const extraLabels = useMemo(() => {
+    const firstUnfinished = model.points.findIndex((point) => point.state !== "complete");
+    const mandatory = new Set<number>([
+      Math.max(0, firstUnfinished - 1),
+      model.points.length - 1,
+      ...model.points.flatMap((point, index) => (point.isNext ? [index] : [])),
+    ]);
+    return extraLabelIndices(model.points.map((point) => point.position), mandatory);
+  }, [model.points]);
   const todayStyle: PositionStyle | undefined = model.todayPosition === null
     ? undefined
     : { "--timeline-position": `${model.todayPosition}%` };
   const nextMilestone = model.points.find((point) => point.isNext) ?? null;
+  // The cap under the rail's end names the destination. When the final
+  // milestone already carries that name as its persistent label, a second
+  // "Wedding day" stacked in the same corner is noise, not orientation.
+  const finishCandidate = model.percent === 100
+    ? "Complete"
+    : timeline.primaryDate?.label ?? "Finish";
+  const lastPointTitle = model.points.at(-1)?.item.title.trim().toLowerCase();
+  const finishCapLabel = lastPointTitle === finishCandidate.trim().toLowerCase()
+    ? null
+    : finishCandidate;
   const todayLabel = model.todayPosition === null
     ? null
     : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
@@ -474,35 +508,28 @@ function Journey({
               aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
             >
               <span className={styles.baseRail} aria-hidden="true" />
-              <motion.span
+              <span
                 className={styles.completedRail}
-                initial={reduceMotion ? false : { scaleX: 0 }}
-                animate={{ scaleX: model.percent / 100 }}
-                transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
+                style={{ transform: `scaleX(${model.percent / 100})` }}
                 aria-hidden="true"
               />
-              <motion.span
+              <span
                 className={styles.completedRailVertical}
-                initial={reduceMotion ? false : { scaleY: 0 }}
-                animate={{ scaleY: model.percent / 100 }}
-                transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
+                style={{ transform: `scaleY(${model.percent / 100})` }}
                 aria-hidden="true"
               />
             </div>
 
             {todayLabel && todayStyle ? (
-              <motion.span
+              <span
                 className={styles.todayMarker}
                 data-today-marker
                 style={todayStyle}
                 role="img"
                 aria-label={todayLabel}
-                initial={reduceMotion ? false : { opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.22, delay: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
               >
                 <span aria-hidden="true">Today</span>
-              </motion.span>
+              </span>
             ) : null}
 
             {model.points.length ? (
@@ -514,7 +541,11 @@ function Journey({
                     || point.isNext
                     || index === Math.max(0, firstUnfinished - 1)
                     || index === model.points.length - 1;
-                  const pointStyle: PositionStyle = { "--timeline-position": `${point.position}%` };
+                  const extraLabel = !persistentLabel && extraLabels.has(index);
+                  const pointStyle: PositionStyle = {
+                    "--timeline-position": `${point.position}%`,
+                    "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
+                  };
                   const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
 
                   return (
@@ -522,7 +553,7 @@ function Journey({
                       className={styles.milestone}
                       data-state={point.state}
                       data-selected={selected ? "true" : undefined}
-                      data-labelled={persistentLabel ? "true" : "false"}
+                      data-labelled={persistentLabel ? "true" : extraLabel ? "extra" : "false"}
                       data-side={index % 2 === 0 ? "above" : "below"}
                       data-edge={index === 0 ? "start" : index === model.points.length - 1 ? "end" : undefined}
                       key={point.item.publicId}
@@ -546,17 +577,7 @@ function Journey({
                           setDetailOpen(true);
                         }}
                       >
-                        <motion.span
-                          className={styles.point}
-                          initial={reduceMotion ? false : { opacity: 0, scale: 0.76 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{
-                            duration: reduceMotion ? 0 : 0.14,
-                            delay: reduceMotion ? 0 : Math.min(0.08 + index * 0.012, 0.24),
-                            ease: METRIC_EASE,
-                          }}
-                          aria-hidden="true"
-                        />
+                        <span className={styles.point} aria-hidden="true" />
                         <MilestoneLabel point={point} />
                       </button>
                     </li>
@@ -571,9 +592,11 @@ function Journey({
             )}
 
             <span className={styles.startCap} aria-hidden="true">Start</span>
-            <span className={styles.finishCap} aria-hidden="true">
-              {model.percent === 100 ? "Complete" : timeline.primaryDate?.label ?? "Finish"}
-            </span>
+            {finishCapLabel ? (
+              <span className={styles.finishCap} aria-hidden="true">
+                {finishCapLabel}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
@@ -614,11 +637,11 @@ export function TimelineArtifact({
   timeline,
   compact = false,
   embedded = false,
+  showProductHeader = true,
   className,
   onCopyLink,
   copyLinkLabel,
 }: TimelineArtifactProps) {
-  const reduceMotion = useArtifactReducedMotion();
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
 
@@ -632,22 +655,19 @@ export function TimelineArtifact({
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
-        <ProductIdentity
-          timeline={timeline}
-          onCopyLink={onCopyLink}
-          copyLinkLabel={copyLinkLabel}
-        />
+        {showProductHeader ? (
+          <ProductIdentity
+            timeline={timeline}
+            onCopyLink={onCopyLink}
+            copyLinkLabel={copyLinkLabel}
+          />
+        ) : null}
         <div className={styles.titleRow}>
-          <motion.div
-            className={styles.headerCopy}
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
-          >
+          <div className={styles.headerCopy}>
             <p className={styles.heroKicker}>{artifactKicker(timeline)}</p>
             <h1>{timeline.label}</h1>
             <p className={styles.purpose}>{artifactPurpose(timeline)}</p>
-          </motion.div>
+          </div>
           <TimeLens timeline={timeline} model={model} />
         </div>
       </header>

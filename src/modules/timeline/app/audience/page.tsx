@@ -14,7 +14,7 @@ import {
 import { AudienceManager } from "./audience-manager";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Shared timelines, Timeline", robots: { index: false, follow: false } };
+export const metadata = { title: "Shared timelines · Timeline", robots: { index: false, follow: false } };
 
 export default async function AudienceTimelineManagerPage({
   searchParams,
@@ -72,9 +72,9 @@ export default async function AudienceTimelineManagerPage({
     : publications;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
+    <div data-timeline-module className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6">
       <nav className="mb-6 text-sm text-ink-quiet" aria-label="Breadcrumb">
-        <Link href={`/app/timeline${contextQuery}`} className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+        <Link href={`/app/timeline${contextQuery}`} className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
           {workspace.name}
         </Link>
         {project ? (
@@ -82,7 +82,7 @@ export default async function AudienceTimelineManagerPage({
             <span aria-hidden className="mx-2">/</span>
             <Link
               href={`/app/timeline/${encodeURIComponent(project.slug)}${contextQuery}`}
-              className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               {project.name}
             </Link>
@@ -92,7 +92,7 @@ export default async function AudienceTimelineManagerPage({
         <span className="text-ink">Shared timelines</span>
       </nav>
       <header className="mb-10 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Link-only sharing</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Link-only sharing</p>
         <h1 className="mt-2 text-[clamp(2rem,1.4rem+2vw,3.25rem)] font-semibold leading-none tracking-[-0.04em] text-ink">
           {project ? `Share ${project.name}, not the workspace.` : "Share the journey, not the workspace."}
         </h1>

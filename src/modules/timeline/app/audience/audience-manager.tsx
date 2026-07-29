@@ -14,14 +14,19 @@ import {
   type AudienceActionState,
 } from "@/modules/timeline/server/actions/audience-timeline";
 import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
+import {
+  audienceKindLabel,
+  calendarDateLabel,
+  publicationStateLabel,
+} from "@/modules/timeline/lib/format";
 
 const INITIAL: AudienceActionState = { status: "idle" };
 const fieldClass =
-  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2";
+  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 const quietButton =
-  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 const primaryButton =
-  "inline-flex min-h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 
 type SourceNode = Readonly<{
   id: string;
@@ -36,7 +41,7 @@ function ActionNotice({ state }: { state: AudienceActionState }) {
     <p
       role="status"
       className="mt-3 text-sm leading-6"
-      style={{ color: state.status === "error" ? "var(--status-waiting, var(--ink))" : "var(--ink-soft)" }}
+      style={{ color: state.status === "error" ? "var(--x-timeline-alarm)" : "var(--ink-soft)" }}
     >
       {state.message}
     </p>
@@ -70,8 +75,14 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+    <div
+      className="tl-rise-in mt-3 rounded-lg border border-line-soft bg-white p-3"
+      style={{ boxShadow: "inset 2px 0 0 var(--accent)" }}
+    >
+      <p
+        className="font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
+        style={{ color: "var(--accent-hover)" }}
+      >
         One-time share link
       </p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -97,7 +108,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
         className={
           copyStatus === "idle"
             ? "sr-only"
-            : "mt-2 text-xs text-indigo-800"
+            : "mt-2 text-xs text-ink-soft"
         }
       >
         {copyStatus === "copied"
@@ -115,7 +126,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
           Select link again
         </button>
       ) : null}
-      <p className="mt-2 text-xs text-indigo-800">
+      <p className="mt-2 text-xs text-ink-quiet">
         Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
       </p>
     </div>
@@ -219,7 +230,7 @@ export function AudienceManager({
       ) : suiteWorkspaceId ? (
         <section aria-labelledby="new-audience-heading">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Frozen projection</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Frozen projection</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
               {projectName ? `Publish ${projectName}` : "Create a shared timeline"}
             </h2>
@@ -291,7 +302,7 @@ export function AudienceManager({
                         name="sourceId"
                         value={node.id}
                         defaultChecked={Boolean(projectName)}
-                        className="h-4 w-4 rounded border-line-soft accent-indigo-600"
+                        className="h-4 w-4 rounded border-line-soft accent-accent"
                       />
                       <span className="min-w-0 flex-1 text-sm text-ink">{node.title}</span>
                       <span className="text-xs tabular-nums text-ink-quiet">{node.targetDate ?? node.lane}</span>
@@ -321,10 +332,20 @@ export function AudienceManager({
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
-                        {publication.audienceKind} · {publication.state}
+                      <p className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            background:
+                              publication.state === "published"
+                                ? "var(--accent)"
+                                : "var(--ink-ghost)",
+                          }}
+                        />
+                        {audienceKindLabel(publication.audienceKind)} · {publicationStateLabel(publication.state)}
                       </p>
-                      <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
+                      <h3 className="mt-1.5 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
                         {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"} · {publication.qualifiedViewCount.toLocaleString("en-GB")} view{publication.qualifiedViewCount === 1 ? "" : "s"}
                       </p>
@@ -350,26 +371,35 @@ export function AudienceManager({
                   <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-soft">
                     {publication.ownerDisplayLabel ? <span>{publication.ownerDisplayLabel}</span> : null}
                     {publication.primaryDate && publication.primaryDateLabel ? (
-                      <span>{publication.primaryDateLabel}: <time dateTime={publication.primaryDate}>{publication.primaryDate}</time></span>
+                      <span>{publication.primaryDateLabel}: <time dateTime={publication.primaryDate}>{calendarDateLabel(publication.primaryDate)}</time></span>
                     ) : null}
                   </div>
-                  <div className="space-y-3">
+                  {/* One visible header row; per-row labels stay for screen
+                      readers. Ten stacked label grids read as a form farm —
+                      a single ruled list reads as the plan it is. */}
+                  <div aria-hidden className="hidden border-b border-line-soft pb-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">
+                    <span>Shared title</span>
+                    <span>Date</span>
+                    <span>State</span>
+                    <span />
+                  </div>
+                  <div className="divide-y divide-line-soft">
                     {publication.items.map((item) => (
-                      <form key={item.publicId} action={updateAction} className="grid gap-2 rounded-lg border border-line-soft p-3 sm:grid-cols-[1fr_10rem_8rem_auto] sm:items-end">
+                      <form key={item.publicId} action={updateAction} className="grid gap-2 py-2.5 sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:items-center sm:gap-3">
                         <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                         <input type="hidden" name="publicationId" value={publication.id} />
                         <input type="hidden" name="publicId" value={item.publicId} />
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Shared title
-                          <input className={`${fieldClass} mt-1`} name="title" required maxLength={180} defaultValue={item.title} />
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Shared title</span>
+                          <input className={`${fieldClass} mt-1 sm:mt-0`} name="title" required maxLength={180} defaultValue={item.title} />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Calendar date
-                          <input className={`${fieldClass} mt-1`} type="date" name="calendarDate" defaultValue={item.calendarDate ?? ""} />
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Calendar date</span>
+                          <input className={`${fieldClass} mt-1 sm:mt-0`} type="date" name="calendarDate" defaultValue={item.calendarDate ?? ""} />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Shared state
-                          <select className={`${fieldClass} mt-1`} name="state" defaultValue={item.state}>
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Shared state</span>
+                          <select className={`${fieldClass} mt-1 sm:mt-0`} name="state" defaultValue={item.state}>
                             <option value="covered">Covered</option>
                             <option value="now">Now</option>
                             <option value="next">Next</option>
@@ -377,7 +407,7 @@ export function AudienceManager({
                             <option value="cancelled">Cancelled</option>
                           </select>
                         </label>
-                        <button disabled={updatePending} className={quietButton}>Save public copy</button>
+                        <button disabled={updatePending} className={quietButton}>Save copy</button>
                         {item.divergedAt ? (
                           <p className="text-xs text-ink-quiet sm:col-span-4">
                             The source changed after copying. This shared milestone stayed frozen.

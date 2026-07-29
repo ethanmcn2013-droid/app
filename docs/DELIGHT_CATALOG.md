@@ -86,6 +86,29 @@ Ground rules for the eventual pass (from the design system):
 | L5 | Calendar month navigation | Instant grid swap | Candidate: directional slide |
 | L6 | Unscheduled tray → timeline drop | Teleport | Same family as B8 |
 
+## Catalog — Timeline product (added 2026-07-29, world-class pass sweep)
+
+Structural motion matching what Tasks shipped (panel/sheet entrances, fold/
+collapse, state settles) is already ratified and excluded from this list;
+these are the discretionary micro-interaction sites only.
+
+| # | Site | Current behaviour | Notes |
+|---|---|---|---|
+| T1 | Project switcher menu (plan header) | Radix-free custom menu, appears instantly | Same family as B1/B2 popovers |
+| T2 | View/Edit mode toggle | Full navigation, instant swap | Content crossfade candidate; may be restrained |
+| T3 | Manual-add milestone form appear/dismiss | Instant swap with the "+ Add a milestone" link | Fold candidate — same family as Tasks B5 (ratified structural scope) |
+| T4 | Curation "Saved" tick | Appears/vanishes at 1.5s timer, 160ms opacity only | Candidate: check-draw beat, pairs with Tasks P14 |
+| T5 | Curation public-state segmented change | 120ms colour swap | Probably restrained |
+| T6 | Curation reorder drop (drag + keyboard) | Row teleports to new position | Same family as Tasks B8 drop-settle |
+| T7 | Hidden-milestones details expand | Instant | Height ease, same family as Tasks P7 |
+| T8 | Sync-from-Tasks button → result chip | Instant swap between idle/zero/count/error | |
+| T9 | Audience manager publish → share-receipt reveal | Instant | The one-time-link moment; deserves weight |
+| T10 | Copy-link confirmations (artifact header, share receipt) | Instant label swap | Same family as Tasks P14 |
+| T11 | Milestone point select → detail panel | Already animated: 220ms crossfade + rail draw on load | Done register — calibration reference for Timeline |
+| T12 | TimeLens progress ↔ countdown flip | Already animated: 140ms directional slide + 220ms sweep | Done register |
+| T13 | Milestone label hover reveal (desktop rest-hidden labels) | 140ms opacity | Recheck against references |
+| T14 | Phone preview scroll affordance | None; device sits static | Probably restrained |
+
 ## Review checklist (when the catalog closes)
 
 1. Operator supplies reference components per family (popovers, overlays,

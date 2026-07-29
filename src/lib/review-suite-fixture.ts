@@ -48,8 +48,15 @@ export const REVIEW_SUITE_FIXTURE = {
     audiencePublicationId: "demo-audience-publication",
     evidenceAssociationId: "demo-task-to-timeline-menu-tasting",
   },
-  reviewToday: "2026-07-22",
-  lastUpdatedAt: "2026-07-21T18:30:00.000Z",
+  /**
+   * One review clock. This MUST equal PINNED_REVIEW_CALENDAR_FRAME.today
+   * (src/lib/calendar-frame.ts): Tasks views read the frame, Timeline reads
+   * this constant, and the suite cannot disagree about today in review mode.
+   * Guarded by a drift test in
+   * src/modules/timeline/lib/owner-artifact.test.ts.
+   */
+  reviewToday: "2026-07-16",
+  lastUpdatedAt: "2026-07-15T18:30:00.000Z",
 } as const;
 
 export type ReviewTimelineState =

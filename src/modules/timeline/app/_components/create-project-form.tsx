@@ -112,7 +112,7 @@ export function CreateProjectForm({
               ? "var(--ink-quiet)"
               : slugOk
                 ? "var(--status-done)"
-                : "var(--alarm)",
+                : "var(--x-timeline-alarm)",
           }}
         >
           {!slug

@@ -146,6 +146,19 @@
   --x-task-review-soft: color-mix(in srgb, var(--status-review) 10%, var(--paper));
   --x-task-shadow: var(--shadow-modal);
 
+  /* ── Timeline module tokens (--x- extension prefix). The alarm rides the
+     system blocked state mixed toward ink for AA text contrast on paper —
+     same recipe as --x-task-danger, named for the module that owns it.
+     Timeline error copy was previously var(--alarm), which never existed
+     and silently inherited plain ink. */
+  --x-timeline-alarm: color-mix(in srgb, var(--status-blocked) 72%, var(--ink));
+  --x-timeline-alarm-soft: var(--status-blocked-bg);
+  /* Attention-pill pair: readable amber-leaning ink on a whisper wash, the
+     board's calm-amber treatment. Raw --status-flight text at 12% wash was
+     2.2:1 — decorative, not readable. */
+  --x-timeline-attention: color-mix(in srgb, var(--status-flight) 52%, var(--ink));
+  --x-timeline-attention-soft: color-mix(in srgb, var(--status-flight) 12%, transparent);
+
   /* ── Per-column board colours (T·96) — the pickable hues for kanban
      lanes. Each rides an existing system token so nothing new enters
      the palette; the board mixes them down to a whisper. "neutral" has

@@ -1,0 +1,764 @@
+/**
+ * CurationSurface — the owner's private draft list.
+ *
+ * Wave 2 of the Timeline world-class pass (2026-07-29): the surface moves
+ * from inline styles + legacy aliases onto DS 2.0 tokens, picks up the
+ * board's earned lane-tone grammar (2px header rule, full-strength pip, a
+ * whisper wash that releases; the Later/cancelled lanes deliberately plain,
+ * exactly as the board's backlog stays plain), and comes up to the suite
+ * type floor: nothing below 11px, every control at a 32px minimum target.
+ *
+ * Tones ride --status-* system tokens through color-mix only — no raw hex,
+ * per the suite convention ratified with T·106.
+ */
+
+/* ── Lane sections ──────────────────────────────────────────────────────── */
+
+.laneGroup {
+  --x-lane-tone: var(--ink-ghost);
+  --x-lane-ink: var(--ink-faint);
+}
+
+.laneGroup[data-tone="done"] {
+  --x-lane-tone: var(--status-done);
+  --x-lane-ink: color-mix(in srgb, var(--status-done) 60%, var(--ink));
+}
+
+.laneGroup[data-tone="flight"] {
+  --x-lane-tone: var(--status-flight);
+  --x-lane-ink: color-mix(in srgb, var(--status-flight) 52%, var(--ink));
+}
+
+.laneGroup[data-tone="next"] {
+  --x-lane-tone: var(--ink-faint);
+  --x-lane-ink: var(--ink-soft);
+}
+
+.laneHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 var(--space-4);
+  border-block-start: 2px solid var(--x-lane-tone);
+  padding-block: var(--space-3) var(--space-2);
+}
+
+.laneGroup[data-tone="done"] .laneHeader,
+.laneGroup[data-tone="flight"] .laneHeader {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--x-lane-tone) 5%, transparent),
+    transparent
+  );
+}
+
+.laneGroup:first-child .laneHeader {
+  margin-block-start: var(--space-4);
+}
+
+.laneGroup + .laneGroup .laneHeader {
+  margin-block-start: var(--space-6);
+}
+
+.lanePip {
+  width: var(--space-2);
+  height: var(--space-2);
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--x-lane-tone);
+}
+
+.laneGroup[data-tone="plain"] .lanePip,
+.laneGroup[data-tone="cancelled"] .lanePip {
+  border: 1px solid var(--ink-ghost);
+  background: transparent;
+}
+
+.laneGroup[data-tone="cancelled"] .lanePip {
+  border-style: dashed;
+}
+
+.laneLabel {
+  color: var(--x-lane-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.laneCount {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── List frame ─────────────────────────────────────────────────────────── */
+
+.listFrame {
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+}
+
+/* ── Node card ──────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-block-end: 1px solid var(--hairline-soft);
+  background: var(--paper);
+  transition: opacity var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.laneGroup:last-child .card:last-child {
+  border-block-end: 0;
+}
+
+.card[data-hidden="true"] {
+  opacity: 0.45;
+}
+
+.card[data-pending="true"] {
+  opacity: 0.7;
+}
+
+.card[data-drag-over="true"] {
+  background: var(--paper-soft);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.card[data-can-reorder="true"] {
+  cursor: grab;
+}
+
+.dragHandle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  min-height: var(--space-7);
+  margin-inline-start: calc(var(--space-2) * -1);
+  color: var(--ink-ghost);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.card:hover .dragHandle,
+.card:focus-within .dragHandle {
+  color: var(--ink-faint);
+}
+
+.statusDot {
+  flex-shrink: 0;
+  width: var(--space-2);
+  height: var(--space-2);
+  margin-block-start: calc(var(--space-3) - 2px);
+  border-radius: var(--radius-pill);
+}
+
+.statusDot[data-state="covered"] {
+  border: 1.5px solid var(--ink-ghost);
+  background: var(--ink-ghost);
+}
+
+.statusDot[data-state="now"] {
+  border: 1.5px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--paper));
+}
+
+.statusDot[data-state="next"] {
+  border: 1.5px solid var(--accent);
+  background: transparent;
+}
+
+.statusDot[data-state="later"],
+.statusDot[data-state="cancelled"] {
+  border: 1.5px dashed var(--ink-ghost);
+  background: transparent;
+}
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Title — the reading line of the card. */
+
+.titleButton {
+  max-width: 100%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-align: start;
+  cursor: text;
+  overflow-wrap: anywhere;
+}
+
+.titleButton[data-settled="true"] {
+  color: color-mix(in srgb, var(--ink) 62%, var(--paper));
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-ghost);
+}
+
+.titleInput {
+  width: 100%;
+  border: 0;
+  border-block-end: 1px solid var(--accent);
+  padding: 0 0 2px;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  outline: none;
+}
+
+.editedMark {
+  margin-inline-start: var(--space-2);
+  color: var(--ink-ghost);
+  vertical-align: middle;
+}
+
+.driftNote {
+  margin: var(--space-1) 0 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.02em;
+}
+
+/* Attention pill — the board's calm amber, readable this time. */
+
+.attentionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-start: var(--space-1);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+  background: var(--x-timeline-attention-soft);
+  color: var(--x-timeline-attention);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.attentionPill::before {
+  content: "";
+  width: var(--space-1);
+  height: var(--space-1);
+  border-radius: var(--radius-pill);
+  background: currentColor;
+}
+
+/* Meta row — state control, date, inheritance links, source chip. */
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.stateGroup {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+}
+
+.stateOption {
+  min-height: var(--space-7);
+  border: 0;
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out);
+}
+
+.stateOption:hover {
+  color: var(--ink-soft);
+}
+
+.stateOption[aria-checked="true"] {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: var(--weight-medium);
+}
+
+.stateOption:focus-visible,
+.quietAction:focus-visible,
+.iconButton:focus-visible,
+.titleButton:focus-visible,
+.dateField:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.addTrigger:focus-visible,
+.hiddenSummary:focus-visible,
+.retryButton:focus-visible,
+.textField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* At phone widths the fused segment run does not fit; it opens into a
+   wrappable row of discrete pills so no label ever squeezes or clips. */
+@media (max-width: 480px) {
+  .stateGroup {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .stateOption {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-pill);
+  }
+
+  .stateOption[aria-checked="true"] {
+    border-color: var(--ink);
+  }
+}
+
+.quietAction {
+  min-height: var(--space-7);
+  border: 0;
+  padding: 0 var(--space-2);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.quietAction:hover {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dateWrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.dateField {
+  min-height: var(--space-7);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-6) 0 var(--space-2);
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  cursor: pointer;
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.02em;
+}
+
+/* Row-level error + retry. */
+
+.rowError {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+  color: var(--x-timeline-alarm);
+  font-size: var(--text-caption);
+}
+
+.retryButton {
+  min-height: var(--space-7);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+/* Right-side controls. */
+
+.cardControls {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-7);
+  min-height: var(--space-7);
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+}
+
+.iconButton:disabled {
+  color: var(--ink-ghost);
+  cursor: not-allowed;
+}
+
+.iconButton[data-active="true"] {
+  color: var(--accent);
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.toolbarCluster {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.toolbarHeading {
+  margin: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.savedTick,
+.syncingNote {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.errorFlash {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--x-timeline-alarm);
+  font-size: var(--text-caption);
+}
+
+.syncButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-7);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-4);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out);
+}
+
+.syncButton:hover:not(:disabled) {
+  border-color: var(--ink-ghost);
+  background: var(--paper-soft);
+}
+
+.syncButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.syncZeroChip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  max-width: min(400px, 92vw);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  line-height: 1.4;
+}
+
+.syncZeroChip a {
+  color: var(--accent-hover);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.syncCount {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.syncError {
+  color: var(--x-timeline-alarm);
+  font-size: var(--text-caption);
+}
+
+/* ── Manual add form ────────────────────────────────────────────────────── */
+
+.addForm {
+  margin-block-start: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  background: var(--paper-soft);
+}
+
+.addFormGrid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.fieldLabel {
+  display: block;
+  margin-block-end: var(--space-1);
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.textField {
+  width: 100%;
+  min-height: var(--space-7);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--text-body-sm);
+}
+
+.formError {
+  margin: 0;
+  color: var(--x-timeline-alarm);
+  font-size: var(--text-caption);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-8);
+  border: 0;
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.primaryButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-8);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-4);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+.secondaryButton:hover {
+  border-color: var(--ink-ghost);
+  color: var(--ink-soft);
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+
+.emptyState {
+  padding: var(--space-9) var(--space-6);
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.emptyMark {
+  display: inline-flex;
+  margin-block-end: var(--space-4);
+  color: var(--ink-ghost);
+}
+
+.emptyTitle {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+.emptyCopy {
+  max-width: 320px;
+  margin: 0 auto var(--space-4);
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+}
+
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
+}
+
+.emptyPrimary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-8);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.addTrigger {
+  min-height: var(--space-8);
+  border: 0;
+  padding: var(--space-2) 0;
+  background: none;
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.addTrigger:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.addTriggerAccent {
+  display: block;
+  color: var(--accent-hover);
+  font-size: var(--text-caption);
+}
+
+/* ── Hidden milestones ──────────────────────────────────────────────────── */
+
+.hiddenDetails {
+  margin-block-start: var(--space-3);
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+}
+
+.hiddenSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--space-8);
+  padding: 0 var(--space-4);
+  color: var(--ink-soft);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.hiddenSummary::-webkit-details-marker {
+  display: none;
+}
+
+.hiddenCount {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+
+.hiddenBody {
+  border-block-start: 1px solid var(--hairline);
+}
+
+/* ── Notices (auto-sync failure, owner-draft strip live in Tailwind) ────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .stateOption,
+  .quietAction,
+  .iconButton,
+  .syncButton,
+  .dragHandle {
+    transition: none !important;
+  }
+}

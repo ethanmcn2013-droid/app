@@ -5,6 +5,7 @@ import {
   TimelineArtifact,
   TimelinePhonePreview,
 } from "@/modules/timeline/components/artifact";
+import { publicationStateLabel } from "@/modules/timeline/lib/format";
 import styles from "./artifact-studio.module.css";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
@@ -30,13 +31,17 @@ export function TimelineArtifactStudio({
   const live = publication.state === "published" && publication.activeShareCount > 0;
 
   return (
-    <div className={styles.studio}>
+    <div data-timeline-module className={styles.studio}>
       <div className={styles.topline}>
         <Link className={styles.back} href={managerHref}>
-          ← Audience timelines
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          Shared timelines
         </Link>
         <span className={styles.status} data-live={live ? "true" : undefined}>
-          {live ? "Link live" : publication.state}
+          {publicationStateLabel(live ? "published" : publication.state)}
         </span>
       </div>
 
@@ -73,7 +78,11 @@ export function TimelineArtifactStudio({
             <h2 id="artifact-canvas-heading">The full timeline</h2>
           </div>
           <Link className={styles.manageLink} href={managerHref}>
-            Manage milestones and link →
+            Manage milestones and link
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
+            </svg>
           </Link>
         </div>
         <div className={styles.canvas}>
