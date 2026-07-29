@@ -1,14 +1,14 @@
 # Current state — the Signal Studio application
 
-Last updated 2026-07-27.
+Last updated 2026-07-29.
 
 This repository is the unified Signal Studio application. It holds Notes, Tasks,
 Timeline, and Signal as four modules behind
 `app.signalstudio.ie/app/{notes,tasks,timeline,signal}`. The repository name is
 historical and does not mean this is the Tasks product alone.
 
-Latest dispatch: **T·105**, the Delight Layer merge. `CHANGELOG.md` is the
-authority for what shipped and when.
+Latest dispatch: **T·108**, the Notes continuity release. `CHANGELOG.md` is
+the authority for what shipped and when.
 
 ## Where current truth lives
 
