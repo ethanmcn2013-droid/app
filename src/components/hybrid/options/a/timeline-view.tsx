@@ -154,6 +154,10 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
           className={styles.timelineRange}
           data-clipped-end={rawEnd > dates.length || undefined}
           data-clipped-start={rawStart < 0 || undefined}
+          data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
+          data-inspected={store.inspectedId === task.id || undefined}
+          data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+          data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
           data-scheduled-task-id={task.id}
           style={{ left, width: Math.max(12, right - left) }}
         >
@@ -198,6 +202,10 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       <TaskOpenButton
         aria-label={`${task.title}, ${formatSchedule(task.schedule)}. Alt plus Left or Right moves by one day.`}
         className={task.schedule.kind === "milestone" ? styles.timelineMilestone : styles.timelineDue}
+        data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
+        data-inspected={store.inspectedId === task.id || undefined}
+        data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+        data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
         data-scheduled-task-id={task.id}
         draggable={!store.readOnly}
         onContextMenu={(event) => context.openMenu(task.id, event)}
@@ -237,6 +245,10 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
             <article
               aria-label={`${task.title}, unscheduled`}
               className={styles.unscheduledItem}
+              data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
+              data-inspected={store.inspectedId === task.id || undefined}
+              data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+              data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
               data-task-id={task.id}
               data-unscheduled-task-id={task.id}
               draggable={!store.readOnly}
@@ -274,9 +286,14 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
                 {dates.map((date) => (
                   <div
                     className={styles.timelineDate}
+                    data-drop-target={store.drag?.kind === "schedule" && store.drag.targetDate === date || undefined}
                     data-today={date === calendar.today || undefined}
                     key={date}
-                    onDragOver={(event) => { if (!store.readOnly) event.preventDefault(); }}
+                    onDragOver={(event) => {
+                      if (store.readOnly || store.drag?.kind !== "schedule") return;
+                      event.preventDefault();
+                      if (store.drag.targetDate !== date) store.setDrag({ ...store.drag, targetDate: date });
+                    }}
                     onDrop={(event) => dropAtDate(event, date)}
                     title={`Drop on ${formatDate(date, { weekday: "long", day: "numeric", month: "long" })}`}
                   >
@@ -286,7 +303,14 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
               </div>
             </div>
             {scheduled.map((task, index) => (
-              <div className={styles.timelineRow} data-completed={task.completed || undefined} key={task.id}>
+              <div
+                className={styles.timelineRow}
+                data-completed={task.completed || undefined}
+                data-inspected={store.inspectedId === task.id || undefined}
+                data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+                data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
+                key={task.id}
+              >
                 <div
                   className={styles.timelineTaskPane}
                   data-task-id={task.id}
@@ -302,7 +326,12 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
                 </div>
                 <div
                   className={styles.timelineGeometry}
-                  onDragOver={(event) => { if (!store.readOnly) event.preventDefault(); }}
+                  onDragOver={(event) => {
+                    if (store.readOnly || store.drag?.kind !== "schedule") return;
+                    event.preventDefault();
+                    const targetDate = dateFromPointer(event);
+                    if (store.drag.targetDate !== targetDate) store.setDrag({ ...store.drag, targetDate });
+                  }}
                   onDrop={(event) => dropAtDate(event, dateFromPointer(event))}
                   style={{ width: gridWidth }}
                 >

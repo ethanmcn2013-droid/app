@@ -18,6 +18,7 @@ import {
   useTransition,
   type CSSProperties,
 } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -55,6 +56,7 @@ function useDrawerViewport(): boolean {
 function SavedViewsRow() {
   const { savedViews, applySavedView, deleteSavedView } = useRoomTools();
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const wrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -88,8 +90,12 @@ function SavedViewsRow() {
           <span className={styles.navCount}>{savedViews.length}</span>
         ) : null}
       </button>
+      <AnimatePresence>
       {open ? (
-        <div
+        <motion.div
+          animate={{ opacity: 1, transform: "scale(1)" }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
           role="dialog"
           aria-label="Saved views"
           style={{
@@ -101,9 +107,11 @@ function SavedViewsRow() {
             padding: 6,
             position: "absolute",
             top: "calc(100% + 4px)",
+            transformOrigin: "top left",
             width: 220,
             zIndex: 60,
           }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
         >
           {savedViews.length === 0 ? (
             <p
@@ -142,8 +150,9 @@ function SavedViewsRow() {
               </div>
             ))
           )}
-        </div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -181,6 +190,7 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
       try {
         const result = await createProjectAction(trimmed, null);
         await selectWorkspaceAction(result.id);
+        window.sessionStorage.setItem("signal-tasks.recent-project", result.id);
         setAdding(false);
         setDraft("");
         onCreated?.();
@@ -267,6 +277,7 @@ function ProjectRowMenu({
   onDone: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pending, startTransition] = useTransition();
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -342,8 +353,12 @@ function ProjectRowMenu({
           <circle cx="19" cy="12" r="1.7" />
         </svg>
       </button>
+      <AnimatePresence>
       {open ? (
-        <div
+        <motion.div
+          animate={{ opacity: 1, transform: "scale(1)" }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
           role="menu"
           aria-label={`${name} options`}
           onClick={(e) => e.stopPropagation()}
@@ -356,9 +371,11 @@ function ProjectRowMenu({
             position: "absolute",
             right: 0,
             top: "calc(100% + 4px)",
+            transformOrigin: "top right",
             width: 176,
             zIndex: 70,
           }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
         >
           {archived ? (
             <button
@@ -428,8 +445,9 @@ function ProjectRowMenu({
               Deletes every task in {name}. This can’t be undone.
             </p>
           ) : null}
-        </div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -444,10 +462,14 @@ function SidebarBody({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  const reduceMotion = useReducedMotion();
   const router = useRouter();
   const tasks = useTasksState();
   const inboxCount = openTaskCount(tasks);
   const [, startTransition] = useTransition();
+  const [switchPendingId, setSwitchPendingId] = useState<string | null>(null);
+  const [showSwitchPending, setShowSwitchPending] = useState(false);
+  const [recentProjectId, setRecentProjectId] = useState<string | null>(null);
   const activeGroup = tree.groups.find((g) =>
     g.workspaces.some((w) => w.id === activeWorkspaceId),
   );
@@ -456,12 +478,40 @@ function SidebarBody({
   );
   const [archivedOpen, setArchivedOpen] = useState(false);
 
+  useEffect(() => {
+    if (!switchPendingId) return;
+    const timer = window.setTimeout(() => setShowSwitchPending(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [switchPendingId]);
+
+  useEffect(() => {
+    const recent = window.sessionStorage.getItem("signal-tasks.recent-project");
+    if (!recent || !tree.groups.some((group) => group.workspaces.some((workspace) => workspace.id === recent))) return;
+    window.sessionStorage.removeItem("signal-tasks.recent-project");
+    let timer: number | undefined;
+    const frame = window.requestAnimationFrame(() => {
+      setRecentProjectId(recent);
+      timer = window.setTimeout(() => setRecentProjectId(null), 520);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [tree]);
+
   function chooseWorkspace(id: string) {
     onNavigate?.();
     if (id === activeWorkspaceId) return;
     startTransition(async () => {
-      await selectWorkspaceAction(id);
-      router.refresh();
+      setShowSwitchPending(false);
+      setSwitchPendingId(id);
+      try {
+        await selectWorkspaceAction(id);
+        router.refresh();
+      } finally {
+        setShowSwitchPending(false);
+        setSwitchPendingId(null);
+      }
     });
   }
 
@@ -548,11 +598,20 @@ function SidebarBody({
                       <span className={styles.projectDate}>{group.dateRange}</span>
                     ) : null}
                   </button>
-                  <ul className={styles.projectChildren} hidden={!open} id={domId}>
+                  <AnimatePresence initial={false}>
+                  {open ? <motion.ul
+                    animate={{ opacity: 1, transform: "translateY(0)" }}
+                    className={styles.projectChildren}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                    id={domId}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                    transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+                  >
                     {group.workspaces.map((w) => (
                       <li key={w.id}>
-                        <div className={styles.projectRowWrap}>
+                        <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                           <button
+                            aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
                             aria-current={w.id === activeWorkspaceId ? "page" : undefined}
                             className={styles.projectLeaf}
                             onClick={() => chooseWorkspace(w.id)}
@@ -572,15 +631,17 @@ function SidebarBody({
                         </div>
                       </li>
                     ))}
-                  </ul>
+                  </motion.ul> : null}
+                  </AnimatePresence>
                 </li>
               );
             }
             // Periodless workspaces: standalone parent-level rows.
             return group.workspaces.map((w) => (
               <li key={w.id}>
-                <div className={styles.projectRowWrap}>
+                <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                   <button
+                    aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
                     aria-current={w.id === activeWorkspaceId ? "page" : undefined}
                     className={styles.projectParent}
                     data-active={w.id === activeWorkspaceId || undefined}
@@ -621,7 +682,15 @@ function SidebarBody({
                   {tree.archived.length}
                 </span>
               </button>
-              <ul className={styles.projectChildren} hidden={!archivedOpen} id="projects-archived">
+              <AnimatePresence initial={false}>
+              {archivedOpen ? <motion.ul
+                animate={{ opacity: 1, transform: "translateY(0)" }}
+                className={styles.projectChildren}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                id="projects-archived"
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+              >
                 {tree.archived.map((w: ProjectsTreeLeaf) => (
                   <li key={w.id}>
                     <div className={styles.projectRowWrap}>
@@ -640,7 +709,8 @@ function SidebarBody({
                     </div>
                   </li>
                 ))}
-              </ul>
+              </motion.ul> : null}
+              </AnimatePresence>
             </li>
           ) : null}
         </ul>
@@ -685,6 +755,7 @@ export function ProjectsSidebar({
   activeWorkspaceId: string;
 }) {
   const drawerMode = useDrawerViewport();
+  const reduceMotion = useReducedMotion();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
@@ -770,17 +841,30 @@ export function ProjectsSidebar({
           </button>
           <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
         </div>
+        <AnimatePresence>
         {drawerOpen ? (
           <>
-            <div aria-hidden="true" className={styles.drawerBackdrop} onClick={closeDrawer} />
-            <div
+            <motion.div
+              animate={{ opacity: 1 }}
+              aria-hidden="true"
+              className={styles.drawerBackdrop}
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              onClick={closeDrawer}
+              transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+            />
+            <motion.div
+              animate={{ opacity: 1, transform: "translateX(0)" }}
               aria-label="Tasks projects"
               aria-modal="true"
               className={styles.projectsDrawer}
               data-projects-drawer="true"
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(-18px)" }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(-18px)" }}
               onKeyDown={onDrawerKeyDown}
               ref={drawerRef}
               role="dialog"
+              transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.23, 1, 0.32, 1] }}
             >
               <SidebarHeader closeLabel="Close Projects" onClose={closeDrawer} tip="Close Projects" />
               <SidebarBody
@@ -788,52 +872,53 @@ export function ProjectsSidebar({
                 onNavigate={closeDrawer}
                 tree={tree}
               />
-            </div>
+            </motion.div>
           </>
         ) : null}
+        </AnimatePresence>
       </>
     );
   }
 
-  if (collapsed) {
-    return (
-      <div className={`${styles.sidebarStrip} hidden md:flex`}>
-        <button
-          aria-expanded={false}
-          aria-label="Expand Projects sidebar"
-          className={styles.stripButton}
-          data-tip="Expand Projects sidebar"
-          onClick={() => {
-            expandIntent.current = true;
-            setCollapsed(false);
-          }}
-          ref={expandButtonRef}
-          type="button"
-        >
-          <ShellGlyph name="panel" size={15} />
-        </button>
-        <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
-      </div>
-    );
-  }
-
   return (
-    <aside
-      aria-label="Tasks projects"
-      className={`${styles.projectsSidebar} hidden md:flex`}
-      data-projects-sidebar="true"
-      ref={sidebarRef}
-    >
-      <SidebarHeader
-        closeLabel="Collapse Projects sidebar"
-        onClose={() => {
-          collapseIntent.current = true;
-          setCollapsed(true);
-        }}
-        tip="Collapse Projects sidebar"
-      />
-      <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
-      <div aria-hidden="true" className={styles.sidebarFoot} />
-    </aside>
+    <div className={`${styles.projectsSidebarHost} hidden md:block`} data-collapsed={collapsed || undefined}>
+      {collapsed ? (
+        <div className={styles.sidebarStrip}>
+          <button
+            aria-expanded={false}
+            aria-label="Expand Projects sidebar"
+            className={styles.stripButton}
+            data-tip="Expand Projects sidebar"
+            onClick={() => {
+              expandIntent.current = true;
+              setCollapsed(false);
+            }}
+            ref={expandButtonRef}
+            type="button"
+          >
+            <ShellGlyph name="panel" size={15} />
+          </button>
+          <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
+        </div>
+      ) : (
+        <aside
+          aria-label="Tasks projects"
+          className={styles.projectsSidebar}
+          data-projects-sidebar="true"
+          ref={sidebarRef}
+        >
+          <SidebarHeader
+            closeLabel="Collapse Projects sidebar"
+            onClose={() => {
+              collapseIntent.current = true;
+              setCollapsed(true);
+            }}
+            tip="Collapse Projects sidebar"
+          />
+          <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
+          <div aria-hidden="true" className={styles.sidebarFoot} />
+        </aside>
+      )}
+    </div>
   );
 }

@@ -7,7 +7,7 @@ Timeline, and Signal as four modules behind
 `app.signalstudio.ie/app/{notes,tasks,timeline,signal}`. The repository name is
 historical and does not mean this is the Tasks product alone.
 
-Latest dispatch: **T·108**, the Notes continuity release. `CHANGELOG.md` is
+Latest dispatch: **T·109**, the Tasks interaction-continuity release. `CHANGELOG.md` is
 the authority for what shipped and when.
 
 ## Where current truth lives

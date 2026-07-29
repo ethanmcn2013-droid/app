@@ -68,6 +68,16 @@
 .progressHead { align-items: baseline; display: flex; gap: 8px; }
 .progressHead strong { font-family: var(--font-geist-mono), monospace; font-size: 20px; font-weight: 560; letter-spacing: -.04em; line-height: 1; }
 .progressHead span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.progressHead .syncState {
+  margin-left: auto;
+  opacity: 0;
+  transition: color var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+.syncState[data-state="pending"],
+.syncState[data-state="saved"],
+.syncState[data-state="error"] { opacity: 1; }
+.syncState[data-state="saved"] { color: var(--success); }
+.syncState[data-state="error"] { color: var(--danger); }
 .workspaceProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
 .progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; letter-spacing: .01em; margin: 0; }
 .progressFacts b { color: var(--x-task-danger); font-weight: 650; }
@@ -400,7 +410,7 @@
 .calendarCell:focus-within .calendarDayHeader button:last-child { opacity: 1; }
 .calendarCell[data-today] .calendarDayHeader button:first-child { background: var(--x-task-accent); color: var(--x-task-raised); }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; }
-.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; }
+.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press); }
 .calendarTaskWrap[data-kind="due"] { border-left-color: var(--x-task-danger); }
 .calendarTaskWrap[data-kind="milestone"] { background: var(--x-task-review-soft); color: var(--x-task-review); }
 .calendarTaskWrap[data-kind="range"] { background: var(--x-task-accent-soft); border-radius: 0; color: var(--x-task-accent); margin-left: -5px; margin-right: -5px; padding-left: 5px; padding-right: 5px; }
@@ -408,6 +418,25 @@
 .calendarTaskWrap[data-kind="range"][data-range-end] { border-radius: 0 4px 4px 0; margin-right: 0; padding-right: 0; }
 .calendarTaskWrap[data-kind="range"][data-range-start][data-range-end] { border-radius: 4px; margin: 0; padding: 0; }
 .calendarTaskWrap[data-selected] { border-color: var(--x-task-accent); }
+.calendarTaskWrap[data-inspected] { border-color: var(--x-task-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
+.calendarTaskWrap[data-dragging] { box-shadow: var(--shadow-float); opacity: .72; transform: scale(1.01); }
+.calendarTaskWrap[data-recently-placed],
+.selectedAgendaList li[data-recently-placed] article,
+.agendaLedger li[data-recently-placed] { animation: calendar-placement-receipt 280ms var(--ease-out) both; }
+.calendarTaskWrap[data-recently-updated],
+.selectedAgendaList li[data-recently-updated] article,
+.agendaLedger li[data-recently-updated] { animation: calendar-update-receipt 240ms var(--ease-out) both; }
+.selectedAgendaList li[data-inspected] article { box-shadow: inset 2px 0 var(--x-task-accent); }
+.agendaLedger li[data-inspected] { box-shadow: inset 2px 0 var(--x-task-accent); }
+@keyframes calendar-placement-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-raised)); }
+  100% { background: transparent; }
+}
+@keyframes calendar-update-receipt {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--x-task-accent) 16%, transparent); }
+  45% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 9%, transparent); }
+  100% { box-shadow: none; }
+}
 .calendarTaskChip { align-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 4px; height: 24px; min-width: 0; padding: 0 5px; text-align: left; }
 .calendarTaskChip span { font-size: 10px; font-weight: 590; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarTaskChip:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
@@ -529,6 +558,15 @@
 @media (prefers-reduced-motion: reduce) {
   .boardCard { transition: none; }
   .boardCard:hover { transform: none; }
+  .calendarTable,
+  .selectedAgenda,
+  .calendarTaskWrap[data-recently-placed],
+  .calendarTaskWrap[data-recently-updated],
+  .selectedAgendaList li[data-recently-placed] article,
+  .selectedAgendaList li[data-recently-updated] article,
+  .agendaLedger li[data-recently-placed],
+  .agendaLedger li[data-recently-updated] { animation: none; }
+  .calendarTaskWrap { transition: none; }
   :where(.optionB) button:active:not(:disabled) { transform: none; }
 }
 

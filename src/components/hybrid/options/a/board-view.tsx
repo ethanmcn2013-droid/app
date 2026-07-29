@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
+import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { STATUS_LABELS, TASK_STATUSES, type CalendarDate, type LabTask, type TaskStatus } from "../../types";
@@ -480,8 +481,10 @@ function LaneComposer({
 export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const store = useLabStore();
   const calendar = useCalendarFrame();
+  const reduceMotion = useReducedMotion();
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
   const [composing, setComposing] = useState<TaskStatus | null>(null);
+  const [keyboardMove, setKeyboardMove] = useState(false);
   const orderedIds = tasks.map((task) => task.id);
 
   const tasksInLane = (status: TaskStatus) => tasks
@@ -540,16 +543,20 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     }
     if (event.altKey && !store.readOnly && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
       event.preventDefault();
+      setKeyboardMove(true);
       const nextIndex = event.key === "ArrowUp" ? laneIndex - 1 : laneIndex + 1;
       store.moveStatus(task.id, task.status, Math.max(0, Math.min(laneTasks.length - 1, nextIndex)));
       focusTask(task.id);
+      requestAnimationFrame(() => setKeyboardMove(false));
       return;
     }
     if (event.altKey && !store.readOnly && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
       event.preventDefault();
+      setKeyboardMove(true);
       const targetStatus = nextVisibleStatus(task.status, event.key === "ArrowLeft" ? -1 : 1);
       if (targetStatus !== task.status) store.moveStatus(task.id, targetStatus);
       focusTask(task.id);
+      requestAnimationFrame(() => setKeyboardMove(false));
       return;
     }
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
@@ -582,6 +589,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
 
   return (
     <div aria-label="Board lanes" className={styles.boardSurface}>
+      <LayoutGroup id="tasks-board">
       <div className={styles.boardScroll}>
         {TASK_STATUSES.map((status) => {
           const laneTasks = tasksInLane(status);
@@ -686,7 +694,15 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   const shownAssignees = task.assigneeIds.filter((id) => personById(id));
                   const hasFooter = shownAssignees.length > 0 || Boolean(task.estimate);
                   return (
-                    <li key={task.id}>
+                    <motion.li
+                      initial={false}
+                      key={task.id}
+                      layout
+                      layoutId={`tasks-board-${task.id}`}
+                      transition={reduceMotion || keyboardMove
+                        ? { duration: 0 }
+                        : { layout: { duration: 0.22, ease: [0.23, 1, 0.32, 1] } }}
+                    >
                       {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
                       {/*
                         ContextActions wraps the card: right-click on the article
@@ -703,6 +719,9 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                             data-active={store.activeId === task.id || undefined}
                             data-completed={task.completed || undefined}
                             data-dragging={store.drag?.kind === "board" && store.drag.taskId === task.id || undefined}
+                            data-inspected={store.inspectedId === task.id || undefined}
+                            data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+                            data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
                             data-selected={store.selectedIds.includes(task.id) || undefined}
                             data-task-id={task.id}
                             draggable={!store.readOnly}
@@ -780,7 +799,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                           </article>
                         }
                       />
-                    </li>
+                    </motion.li>
                   );
                 })}
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
@@ -815,6 +834,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           );
         })}
       </div>
+      </LayoutGroup>
       <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits title.</KeyboardLegend>
     </div>
   );

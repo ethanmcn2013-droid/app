@@ -269,7 +269,7 @@
   min-width: 272px;
   overflow: hidden;
   position: relative;
-  transition: flex-basis 240ms var(--spring-glide), min-width 240ms var(--spring-glide);
+  transition: flex-basis 220ms var(--spring-glide), min-width 220ms var(--spring-glide);
 }
 /* Done keeps a whisper of recession, from paper rather than from grey. */
 .boardLane[data-done] { background: color-mix(in srgb, var(--x-task-raised) 94%, var(--x-task-surface)); }
@@ -289,6 +289,7 @@
 }
 
 .laneHeader {
+  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
   align-items: center;
   background: color-mix(in srgb, var(--lane-tone, transparent) 6%, var(--x-task-surface));
   border-bottom: 1px solid var(--x-task-border);
@@ -342,6 +343,7 @@
 /* The lane's own scroll region. `overscroll-behavior: contain` stops a
    lane that has hit its end from chaining the scroll to the page. */
 .laneList {
+  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -373,10 +375,7 @@
 .boardLane[data-collapsed]::after { display: none; }
 .laneRail {
   align-items: center;
-  /* Fade in over the folding lane: the width transition on .boardLane does
-     the travel, and the rail arriving a beat later covers the interior
-     swap so the fold reads as one motion rather than a snap. */
-  animation: lane-rail-in 200ms var(--ease-out) 60ms backwards;
+  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
   background: color-mix(in srgb, var(--lane-tone, transparent) 5%, var(--x-task-surface));
   border: 0;
   color: var(--x-task-text-secondary);
@@ -395,10 +394,11 @@
   width: 100%;
 }
 
-@keyframes lane-rail-in {
+@keyframes lane-content-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
 .laneRail::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
 .laneRail:hover { background: color-mix(in srgb, var(--lane-tone, transparent) 10%, var(--x-task-hover)); color: var(--x-task-text); }
 .railName { font-size: 12px; font-weight: 650; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
@@ -415,12 +415,23 @@
   cursor: default;
   padding: 10px 12px 11px;
   position: relative;
-  transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out);
+  transform-origin: center;
+  transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press);
 }
 .boardCard:hover { border-color: var(--x-task-border-strong); box-shadow: var(--shadow-1); }
 .boardCard[data-selected] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); }
 .boardCard[data-active] { border-color: var(--x-task-border-strong); }
-.boardCard[data-dragging] { opacity: .5; }
+.boardCard[data-inspected] {
+  border-color: color-mix(in srgb, var(--x-task-accent) 44%, var(--x-task-border-strong));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent), var(--shadow-1);
+}
+.boardCard[data-dragging] {
+  box-shadow: var(--shadow-float);
+  opacity: .72;
+  transform: scale(1.01);
+}
+.boardCard[data-recently-placed] { animation: task-placement-receipt 280ms var(--ease-out) both; }
+.boardCard[data-recently-updated] { animation: task-update-receipt 240ms var(--ease-out) both; }
 .boardCard[data-completed] { color: var(--x-task-text-muted); }
 .boardLane[data-done] .boardCard { background: color-mix(in srgb, var(--x-task-raised) 72%, var(--x-task-canvas)); }
 /* Negative right margin only: the checkbox keeps the title's left edge, and
@@ -497,8 +508,22 @@
 .cardLabels { margin-top: 8px; overflow: hidden; }
 .cardSchedule { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
 .boardCard > footer { align-items: center; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 10px; justify-content: space-between; margin-top: 9px; padding-top: 9px; }
-.boardInsertion { background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; }
+.boardInsertion { animation: board-insertion-in 140ms var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
 .boardInsertion::before { background: var(--x-task-raised); border: 2px solid var(--x-task-accent); border-radius: 50%; content: ""; height: 7px; left: -3px; position: absolute; top: -3px; width: 7px; }
+@keyframes board-insertion-in {
+  from { opacity: 0; transform: scaleX(.76); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+@keyframes task-placement-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-raised)); box-shadow: 0 0 0 0 color-mix(in srgb, var(--x-task-accent) 18%, transparent); }
+  52% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
+  100% { background: var(--x-task-raised); box-shadow: none; }
+}
+@keyframes task-update-receipt {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--x-task-accent) 16%, transparent); }
+  45% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 9%, transparent); }
+  100% { box-shadow: none; }
+}
 .emptyLane { align-items: center; border: 1px dashed var(--x-task-border-strong); border-radius: 8px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; justify-content: center; min-height: 104px; padding: 18px; text-align: center; }
 .emptyLane span { color: var(--x-task-text-secondary); font-size: 12px; font-weight: 620; }
 .emptyLane small { font-size: 10px; }
@@ -591,6 +616,15 @@
 .taskRow { background: var(--x-task-raised); }
 .taskRow:hover { background: var(--x-task-hover); }
 .taskRow[aria-selected="true"] { background: var(--x-task-selected); }
+.taskRow[data-inspected] > th[data-column="title"] {
+  box-shadow: inset 2px 0 var(--x-task-accent);
+}
+.taskRow[data-recently-placed] > th,
+.taskRow[data-recently-placed] > td {
+  animation: list-placement-receipt 280ms var(--ease-out) both;
+}
+.taskRow[data-recently-updated] > th,
+.taskRow[data-recently-updated] > td { animation: list-update-receipt 240ms var(--ease-out) both; }
 .taskRow[data-completed] { color: var(--x-task-text-muted); }
 .taskRow > th,
 .taskRow > td { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid color-mix(in srgb, var(--x-task-border) 62%, transparent); font-size: 12px; height: 38px; overflow: hidden; padding: 0 8px; text-overflow: ellipsis; white-space: nowrap; }
@@ -610,6 +644,14 @@
 .subtaskRows ul { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
 .subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 11px; gap: 6px; min-height: 25px; }
 .subtaskRows span[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
+@keyframes list-placement-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-raised)); }
+  100% { background: var(--x-task-raised); }
+}
+@keyframes list-update-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 7%, var(--x-task-raised)); }
+  100% { background: var(--x-task-raised); }
+}
 
 .fieldsPanel { width: 390px; }
 .fieldsPanel ol { list-style: none; margin: 0; max-height: 390px; overflow: auto; padding: 5px; }
@@ -677,7 +719,7 @@
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
 .timelineGrid span[data-weekend] { background: color-mix(in srgb, var(--x-task-canvas) 48%, transparent); }
 .todayLine { background: var(--x-task-accent); bottom: 0; position: absolute; top: 0; width: 1px; z-index: 2; }
-.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; z-index: 3; }
+.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press); z-index: 3; }
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
@@ -687,7 +729,26 @@
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .rangeHandle:disabled { cursor: not-allowed; opacity: .35; }
 .timelineDue,
-.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); z-index: 3; }
+.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out); z-index: 3; }
+.timelineRange[data-inspected],
+.timelineDue[data-inspected],
+.timelineMilestone[data-inspected] { border-color: var(--x-task-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
+.timelineRange[data-dragging],
+.timelineDue[data-dragging],
+.timelineMilestone[data-dragging],
+.unscheduledItem[data-dragging] { box-shadow: var(--shadow-float); opacity: .72; }
+.timelineRange[data-recently-placed],
+.timelineDue[data-recently-placed],
+.timelineMilestone[data-recently-placed],
+.timelineRow[data-recently-placed] .timelineTaskPane,
+.unscheduledItem[data-recently-placed] { animation: task-placement-receipt 280ms var(--ease-out) both; }
+.timelineRange[data-recently-updated],
+.timelineDue[data-recently-updated],
+.timelineMilestone[data-recently-updated],
+.timelineRow[data-recently-updated] .timelineTaskPane,
+.unscheduledItem[data-recently-updated] { animation: task-update-receipt 240ms var(--ease-out) both; }
+.timelineRow[data-inspected] .timelineTaskPane { box-shadow: inset 2px 0 var(--x-task-accent); }
+.timelineDate[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-surface)); box-shadow: inset 0 -2px var(--x-task-accent); }
 .timelineDue > span:last-child,
 .timelineMilestone > span:last-child { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dueStem { background: var(--x-task-danger); flex: 0 0 2px; height: 14px; }
@@ -820,12 +881,34 @@
   .calendarTask,
   .taskPeek { scroll-behavior: auto; transition: none; }
   .laneRail,
+  .laneHeader,
+  .laneList,
   .laneAdd,
   .laneIconButton,
   .cardMenuTrigger,
   .cardMilestone { transition: none; }
   .boardLane { transition: none; }
-  .laneRail { animation: none; }
+  .laneRail,
+  .laneHeader,
+  .laneList { animation: none; }
+  .boardCard[data-recently-placed],
+  .boardCard[data-recently-updated],
+  .boardInsertion,
+  .taskRow[data-recently-placed] > th,
+  .taskRow[data-recently-placed] > td,
+  .taskRow[data-recently-updated] > th,
+  .taskRow[data-recently-updated] > td,
+  .timelineRange[data-recently-placed],
+  .timelineDue[data-recently-placed],
+  .timelineMilestone[data-recently-placed],
+  .timelineRow[data-recently-placed] .timelineTaskPane,
+  .unscheduledItem[data-recently-placed],
+  .timelineRange[data-recently-updated],
+  .timelineDue[data-recently-updated],
+  .timelineMilestone[data-recently-updated],
+  .timelineRow[data-recently-updated] .timelineTaskPane,
+  .unscheduledItem[data-recently-updated],
+  .timelineCanvas { animation: none; }
 }
 
 /*

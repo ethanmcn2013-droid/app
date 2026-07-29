@@ -4,6 +4,29 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-29 · T·109 · tightens · every task movement explains what changed
+
+**Tasks now keeps the work visibly continuous when it opens, moves, settles,
+saves, completes, or fails.** Board, List, Schedule, Calendar, the planning
+rail, project navigation, task detail, creation, menus, comments, resources,
+and feedback now share one restrained interaction grammar. The source task
+stays marked while its inspector is open, focus returns to that exact source
+when the inspector closes, placement resolves in the final slot, and pending
+feedback waits long enough to avoid flashing during fast saves.
+
+The 106-moment interaction ledger is enforced as a decision system rather than
+an invitation to animate every control. Keyboard movement, route changes,
+writing, density changes, and repeated data entry remain immediate. Reduced
+motion removes spatial travel while preserving state, errors restore the exact
+optimistic slot they displaced, and the only expressive treatment is a local,
+once-only first completion receipt.
+
+Two product models remain deliberately separate from this motion release:
+production tag editing and the Schedule first-open/range orientation contract.
+Both are recorded as a founder follow-up that Codex or Claude can complete in a
+later cycle. Direct manipulation is implemented, but production approval still
+requires a physical touch-device drag and resize pass.
+
 ## 2026-07-29 · T·108 · ships · the note stays in sight while the work moves
 
 **Notes now keeps a private thought visibly continuous as it becomes a saved

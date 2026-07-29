@@ -10,6 +10,7 @@ import {
   type DragEvent,
   type KeyboardEvent,
 } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import {
   addDays,
@@ -95,7 +96,11 @@ function CalendarTaskChip({
     <div
       className={styles.calendarTaskWrap}
       data-active={store.activeId === task.id || undefined}
+      data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
+      data-inspected={store.inspectedId === task.id || undefined}
       data-kind={task.schedule.kind}
+      data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+      data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
       data-range-end={rangeEnd || undefined}
       data-range-start={rangeStart || undefined}
       data-scheduled-task-id={task.id}
@@ -182,7 +187,14 @@ function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; ta
       ) : (
         <ol className={styles.selectedAgendaList}>
           {tasks.map((task) => (
-            <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}>
+            <li
+              data-inspected={store.inspectedId === task.id || undefined}
+              data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+              data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
+              data-scheduled-task-id={task.id}
+              data-task-id={task.id}
+              key={task.id}
+            >
               <article>
                 <div className={styles.agendaTaskLead}>
                   <TaskSelection disabled={store.readOnly} orderedIds={visibleIds} task={task} />
@@ -216,6 +228,7 @@ function OverflowPopover({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
@@ -227,10 +240,12 @@ function OverflowPopover({
   }, []);
 
   return (
-    <section
+    <motion.section
+      animate={{ opacity: 1, transform: "scale(1)" }}
       aria-labelledby={labelledBy}
       className={styles.calendarOverflowPopover}
       id={id}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
       onKeyDown={(event) => {
         if (event.key !== "Escape") return;
         event.preventDefault();
@@ -239,21 +254,23 @@ function OverflowPopover({
       }}
       ref={dialogRef}
       role="dialog"
+      transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.23, 1, 0.32, 1] }}
     >
       <header><div><span>Day agenda</span><strong id={labelledBy}>{formatDate(date, { weekday: "long", day: "numeric", month: "long" })}</strong></div><button aria-label="Close day agenda" onClick={onClose} type="button"><Icon name="close" size={15} /></button></header>
       <ul>{tasks.map((task) => <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}><TaskOpenButton task={task} /><ScheduleText compact task={task} /></li>)}</ul>
-    </section>
+    </motion.section>
   );
 }
 
 function AgendaLedger({ dates, tasks, selectedDate, onSelect }: { dates: CalendarDate[]; tasks: LabTask[]; selectedDate: CalendarDate; onSelect: (date: CalendarDate) => void }) {
+  const store = useLabStore();
   const groups = dates.map((date) => ({ date, tasks: tasksForDate(tasks, date) })).filter((group) => group.tasks.length > 0);
   return (
     <div aria-label="Calendar agenda view" className={styles.agendaLedger}>
       {groups.length === 0 ? <div className={styles.calendarSurfaceEmpty}><Icon name="agenda" size={20} /><strong>No dated work in this agenda window</strong><span>Unscheduled tasks stay in their tray below.</span></div> : groups.map((group) => (
         <section data-date={group.date} data-selected={group.date === selectedDate || undefined} key={group.date}>
           <button aria-label={`Select ${formatDateLong(group.date)}`} onClick={() => onSelect(group.date)} type="button"><span>{formatDate(group.date, { weekday: "short" })}</span><strong>{formatDate(group.date, { day: "numeric", month: "short" })}</strong></button>
-          <ol>{group.tasks.map((task) => <li data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}><TaskOpenButton task={task} /><ScheduleText task={task} /><AvatarStack limit={2} task={task} /></li>)}</ol>
+          <ol>{group.tasks.map((task) => <li data-inspected={store.inspectedId === task.id || undefined} data-recently-placed={store.recentlyPlacedId === task.id || undefined} data-recently-updated={store.recentlyUpdatedId === task.id || undefined} data-scheduled-task-id={task.id} data-task-id={task.id} key={task.id}><TaskOpenButton task={task} /><ScheduleText task={task} /><AvatarStack limit={2} task={task} /></li>)}</ol>
         </section>
       ))}
     </div>

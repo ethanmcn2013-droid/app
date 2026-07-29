@@ -247,15 +247,35 @@
 
 /* ── Projects sidebar ─────────────────────────────────────────────────── */
 
+.projectsSidebarHost {
+  flex: 0 0 248px;
+  height: 100%;
+  overflow: hidden;
+  transition: flex-basis 220ms var(--spring-glide), width 220ms var(--spring-glide);
+  width: 248px;
+}
+
+.projectsSidebarHost[data-collapsed] {
+  flex-basis: 44px;
+  width: 44px;
+}
+
+.projectsSidebarHost > * { animation: projects-sidebar-content-in 140ms var(--ease-out) 70ms backwards; }
+
+@keyframes projects-sidebar-content-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .projectsSidebar {
   background: var(--x-task-surface);
   border-right: 1px solid var(--x-task-border);
   display: flex;
-  flex: 0 0 248px;
+  flex: 0 0 100%;
   flex-direction: column;
   height: 100%;
   min-width: 0;
-  width: 248px;
+  width: 100%;
 }
 
 .sidebarHeader {
@@ -428,6 +448,7 @@
   margin: 1px 0 6px;
   padding: 0 0 0 22px;
   position: relative;
+  overflow: hidden;
 }
 
 .projectChildren::before {
@@ -463,6 +484,18 @@
    menu are siblings inside a positioned wrapper (a button can't nest a
    button), so the menu floats over the row's right edge on hover / when open. */
 .projectRowWrap { position: relative; }
+.projectRowWrap[data-recently-placed] { animation: project-placement-receipt 280ms var(--ease-out) both; }
+.projectRowWrap [aria-busy="true"]::after {
+  color: var(--x-task-text-muted);
+  content: "Opening…";
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 9px;
+  margin-left: auto;
+}
+@keyframes project-placement-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
+  100% { background: transparent; }
+}
 
 .projectRowMenu {
   opacity: 0;
@@ -586,15 +619,22 @@
 /* ── Responsive widths ────────────────────────────────────────────────── */
 
 @media (max-width: 1439px) {
+  .projectsSidebarHost { flex-basis: 228px; width: 228px; }
+  .projectsSidebarHost[data-collapsed] { flex-basis: 44px; width: 44px; }
   .projectsSidebar { flex-basis: 228px; width: 228px; }
 }
 
 @media (max-width: 1279px) {
+  .projectsSidebarHost { flex-basis: 212px; width: 212px; }
+  .projectsSidebarHost[data-collapsed] { flex-basis: 44px; width: 44px; }
   .projectsSidebar { flex-basis: 212px; width: 212px; }
   .projectDate { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .projectsSidebarHost { transition: none; }
+  .projectsSidebarHost > * { animation: none; }
+  .projectRowWrap[data-recently-placed] { animation: none; }
   .railHomeTile,
   .railTile,
   .railLabel,
