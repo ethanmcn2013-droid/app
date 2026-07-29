@@ -2645,7 +2645,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c3b5937ac5f7c86e"
+      "materialityHash": "55fc56395b70514e"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2741,7 +2741,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "af686c391cbfd5b3"
+      "materialityHash": "d4ea072df8f66529"
     },
     {
       "id": "tasks.surface.task-detail-panel",

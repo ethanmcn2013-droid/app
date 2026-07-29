@@ -5,9 +5,13 @@
 // full Option-B shell (product rail, projects sidebar) that production replaces
 // with its own chrome. Renders the real workspace name from DomainProvider.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useDomain } from "@/lib/domain-context";
+import {
+  TASKS_SYNC_EVENT,
+  type TaskSyncEventDetail,
+} from "@/lib/tasks/delight-events";
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
@@ -121,6 +125,37 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
     return aDate.localeCompare(bDate);
   }).slice(0, 3);
   const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
+  const [syncState, setSyncState] = useState<"idle" | "pending" | "saved" | "error">("idle");
+
+  useEffect(() => {
+    const pending = new Set<string>();
+    let settleTimer: number | undefined;
+    const settle = (state: "saved" | "error") => {
+      if (settleTimer !== undefined) window.clearTimeout(settleTimer);
+      setSyncState(state);
+      settleTimer = window.setTimeout(() => setSyncState("idle"), state === "error" ? 3600 : 1400);
+    };
+    const handleSync = (event: Event) => {
+      const { id, phase } = (event as CustomEvent<TaskSyncEventDetail>).detail;
+      if (phase === "pending") {
+        pending.add(id);
+        setSyncState("pending");
+        return;
+      }
+      pending.delete(id);
+      if (phase === "error") {
+        settle("error");
+        return;
+      }
+      if (pending.size > 0) setSyncState("pending");
+      else settle("saved");
+    };
+    window.addEventListener(TASKS_SYNC_EVENT, handleSync);
+    return () => {
+      window.removeEventListener(TASKS_SYNC_EVENT, handleSync);
+      if (settleTimer !== undefined) window.clearTimeout(settleTimer);
+    };
+  }, []);
   // The milestones panel renders only when there is a milestone to show. An
   // empty one used to draw a bordered column and a two-column "No date / No
   // milestones yet" row, which read as a broken record rather than an
@@ -139,7 +174,13 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
         where a sentence does the same work in a quarter of the height.
       */}
       <section aria-label="Workspace progress" className={styles.workspaceProgress}>
-        <div className={styles.progressHead}><strong>{progress}%</strong><span>Progress</span></div>
+        <div className={styles.progressHead}>
+          <strong>{progress}%</strong>
+          <span>Progress</span>
+          <span aria-live="polite" className={styles.syncState} data-state={syncState} role="status">
+            {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
+          </span>
+        </div>
         <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
         <p className={styles.progressFacts}>
           {completed} of {store.tasks.length} done

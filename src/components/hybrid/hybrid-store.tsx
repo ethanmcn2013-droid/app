@@ -9,7 +9,7 @@
 // UI-only concerns the server never sees (selection, focus, inspection,
 // preview, inline-edit target, drag) live in a small local reducer here.
 
-import { useCallback, useMemo, useReducer, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
@@ -38,6 +38,8 @@ type UiState = {
   selectionAnchorId: string | null;
   activeId: string | null;
   inspectedId: string | null;
+  recentlyPlacedId: string | null;
+  recentlyUpdatedId: string | null;
   previewId: string | null;
   editing: { taskId: string; field: string } | null;
   drag: LabDragOperation;
@@ -48,6 +50,8 @@ type UiState = {
 type UiAction =
   | { type: "SET_ACTIVE"; id: string | null }
   | { type: "SET_INSPECTED"; id: string | null }
+  | { type: "SET_PLACED"; id: string | null }
+  | { type: "SET_UPDATED"; id: string | null }
   | { type: "SET_PREVIEW"; id: string | null }
   | { type: "SET_EDITING"; editing: UiState["editing"] }
   | { type: "SET_DRAG"; drag: LabDragOperation }
@@ -61,6 +65,8 @@ const INITIAL_UI: UiState = {
   selectionAnchorId: null,
   activeId: null,
   inspectedId: null,
+  recentlyPlacedId: null,
+  recentlyUpdatedId: null,
   previewId: null,
   editing: null,
   drag: null,
@@ -74,6 +80,10 @@ function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, activeId: action.id };
     case "SET_INSPECTED":
       return { ...state, inspectedId: action.id };
+    case "SET_PLACED":
+      return { ...state, recentlyPlacedId: action.id };
+    case "SET_UPDATED":
+      return { ...state, recentlyUpdatedId: action.id };
     case "SET_PREVIEW":
       return { ...state, previewId: action.id };
     case "SET_EDITING":
@@ -127,6 +137,10 @@ export function HybridStoreProvider({
   const taskPanel = useTaskPanel();
   const calendar = useCalendarFrame();
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
+  const knownTaskIds = useRef(new Set(prodTasks.map((task) => task.id)));
+  const knownUpdatedAt = useRef(new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()])));
+  const updateReceiptTimer = useRef<number | undefined>(undefined);
+  const pendingDuplicate = useRef(false);
 
   const labTasks = useMemo<LabTask[]>(
     () => prodTasks.map((task, index) => taskToLab(task, index, calendar)),
@@ -137,6 +151,33 @@ export function HybridStoreProvider({
     const map = new Map<string, Task>();
     for (const task of prodTasks) map.set(task.id, task);
     return map;
+  }, [prodTasks]);
+
+  useEffect(() => {
+    const nextIds = new Set(prodTasks.map((task) => task.id));
+    const changed = prodTasks.find((task) => {
+      const prior = knownUpdatedAt.current.get(task.id);
+      return prior !== undefined && prior !== task.updatedAt.getTime();
+    });
+    if (pendingDuplicate.current) {
+      const added = prodTasks.find((task) => !knownTaskIds.current.has(task.id));
+      if (added) {
+        pendingDuplicate.current = false;
+        dispatch({ type: "SET_PLACED", id: added.id });
+      }
+    }
+    if (changed) {
+      dispatch({ type: "SET_UPDATED", id: changed.id });
+      if (updateReceiptTimer.current !== undefined) window.clearTimeout(updateReceiptTimer.current);
+      updateReceiptTimer.current = window.setTimeout(() => {
+        dispatch({ type: "SET_UPDATED", id: null });
+      }, 360);
+    }
+    knownTaskIds.current = nextIds;
+    knownUpdatedAt.current = new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()]));
+    return () => {
+      if (updateReceiptTimer.current !== undefined) window.clearTimeout(updateReceiptTimer.current);
+    };
   }, [prodTasks]);
 
   const openTask = useCallback(
@@ -190,7 +231,9 @@ export function HybridStoreProvider({
       selectedIds: ui.selectedIds,
       selectionAnchorId: ui.selectionAnchorId,
       activeId: ui.activeId,
-      inspectedId: ui.inspectedId,
+      inspectedId: taskPanel.taskId,
+      recentlyPlacedId: ui.recentlyPlacedId,
+      recentlyUpdatedId: ui.recentlyUpdatedId,
       previewId: ui.previewId,
       editing: ui.editing,
       drag: ui.drag,
@@ -276,17 +319,22 @@ export function HybridStoreProvider({
         if (schedule && (patch.startDay != null || patch.durationDays != null)) {
           prod.updateTask(created.id, { startDay: patch.startDay, durationDays: patch.durationDays });
         }
+        dispatch({ type: "SET_PLACED", id: created.id });
         // Titled adds come from the board's inline composer: the author is
         // mid-flow adding several tasks, so the panel must not steal focus.
         // Untitled adds still open the panel to be named.
         if (!trimmed) openTask(created.id);
       },
       deleteTask: (id) => !readOnly && prod.removeTask(id),
-      duplicateTask: (id) => !readOnly && prod.duplicateTask(id),
+      duplicateTask: (id) => {
+        if (readOnly) return;
+        pendingDuplicate.current = true;
+        prod.duplicateTask(id);
+      },
       archiveTask: (id: string) => { if (!readOnly) prod.archiveTask(id); },
       makeSubtaskOf: (id: string, parentId: string | null) => { if (!readOnly) prod.setParent(id, parentId); },
     };
-  }, [applySchedule, calendar, labTasks, openTask, prod, prodById, readOnly, ui]);
+  }, [applySchedule, calendar, labTasks, openTask, prod, prodById, readOnly, taskPanel.taskId, ui]);
 
   return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }

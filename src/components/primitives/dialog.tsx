@@ -10,14 +10,17 @@ export function Dialog({
   children,
   labelledBy,
   width = 480,
+  motionMode = "standard",
 }: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   labelledBy?: string;
   width?: number;
+  motionMode?: "standard" | "instant";
 }) {
   const reduce = useReducedMotion();
+  const instant = motionMode === "instant";
   const dialogRef = useRef<HTMLDivElement>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
@@ -61,7 +64,7 @@ export function Dialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={
-              reduce
+              reduce || instant
                 ? { duration: 0 }
                 : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
             }
@@ -80,15 +83,15 @@ export function Dialog({
               role="dialog"
               aria-modal="true"
               aria-labelledby={labelledBy}
-              initial={{ opacity: 0, y: 6, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 4, scale: 0.98 }}
+              initial={instant ? false : reduce ? { opacity: 0 } : { opacity: 0, transform: "scale(0.97)" }}
+              animate={{ opacity: 1, transform: "scale(1)" }}
+              exit={instant ? { opacity: 1 } : reduce ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
               transition={
-                reduce
-                  ? { duration: 0 }
+                reduce || instant
+                  ? { duration: instant ? 0 : 0.12 }
                   : {
-                      duration: 0.26,
-                      ease: [0.16, 1, 0.3, 1],
+                      duration: 0.2,
+                      ease: [0.23, 1, 0.32, 1],
                     }
               }
               onClick={(e) => e.stopPropagation()}

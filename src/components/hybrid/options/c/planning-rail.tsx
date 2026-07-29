@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
 import { useLabStore } from "../../store";
@@ -26,6 +27,7 @@ export function PlanningRail({
   view: LabView;
 }) {
   const store = useLabStore();
+  const reduceMotion = useReducedMotion();
   const calendar = useCalendarFrame();
   const menu = useTaskContextMenu();
   const [unscheduledOpen, setUnscheduledOpen] = useState(true);
@@ -84,14 +86,27 @@ export function PlanningRail({
 
   if (collapsed) {
     return (
-      <aside aria-label="Collapsed planning rail" className={`${styles.planningRail} ${styles.planningRailCollapsed}`}>
+      <motion.aside
+        animate={{ opacity: 1 }}
+        aria-label="Collapsed planning rail"
+        className={`${styles.planningRail} ${styles.planningRailCollapsed}`}
+        initial={{ opacity: 0 }}
+        transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
+      >
         <button aria-expanded="false" className={styles.planningRailExpand} onClick={onToggle} type="button"><Icon name="arrow-left" size={14} /><span>Planning</span><strong>{unscheduled.length}</strong></button>
-      </aside>
+      </motion.aside>
     );
   }
 
   return (
-    <aside aria-label="Planning rail" className={styles.planningRail} id="c-planning-rail">
+    <motion.aside
+      animate={{ opacity: 1 }}
+      aria-label="Planning rail"
+      className={styles.planningRail}
+      id="c-planning-rail"
+      initial={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
+    >
       <header className={styles.planningRailHeader}>
         <div><span>Planning period</span><strong>{sourcePeriod?.name ?? "Dates not set"}</strong></div>
         <button aria-expanded="true" aria-label="Collapse planning rail" onClick={onToggle} type="button"><Icon name="arrow-right" size={15} /></button>
@@ -132,8 +147,15 @@ export function PlanningRail({
           <button aria-expanded={unscheduledOpen} onClick={() => setUnscheduledOpen((value) => !value)} type="button"><Icon name={unscheduledOpen ? "chevron-down" : "chevron-right"} size={14} /><span>Unscheduled work</span><strong>{unscheduled.length}</strong></button>
           {planningView ? <small>Drag to the canvas or choose a date</small> : <small>Plan without leaving this view</small>}
         </header>
+        <AnimatePresence initial={false}>
         {unscheduledOpen ? (
-          <>
+          <motion.div
+            animate={{ opacity: 1, transform: "translateY(0)" }}
+            className={styles.unscheduledDisclosure}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+            transition={{ duration: reduceMotion ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+          >
             {unscheduled.length > 0 ? (
               <ul className={styles.unscheduledList}>
                 {unscheduled.map((task) => (
@@ -157,8 +179,9 @@ export function PlanningRail({
               </ul>
             ) : <p className={styles.railEmpty}><Icon name="check" size={16} /><strong>Everything has a date</strong><span>No schedule has been inferred.</span></p>}
             <button className={styles.addUnscheduled} disabled={store.readOnly} onClick={() => store.addTask("queued")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>
-          </>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
       </section>
 
       <section className={styles.nextMilestone}>
@@ -166,6 +189,6 @@ export function PlanningRail({
         {milestones[0] && milestones[0].schedule.kind === "milestone" ? <TaskOpenButton task={milestones[0]}><strong>{milestones[0].title}</strong><small>{formatDateLong(milestones[0].schedule.on)}</small></TaskOpenButton> : <p>No upcoming milestone in this filter.</p>}
       </section>
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
-    </aside>
+    </motion.aside>
   );
 }

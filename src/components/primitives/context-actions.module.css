@@ -18,11 +18,17 @@
   padding: 5px;
   z-index: 200;
 
-  /* Enter animation: 120ms opacity + scale, no exit (Radix unmounts on close) */
-  animation: contentIn 120ms ease-out;
   transform-origin: var(--radix-dropdown-menu-content-transform-origin,
                        var(--radix-context-menu-content-transform-origin,
                        top left));
+}
+
+.content[data-state="open"] {
+  animation: contentIn 140ms var(--ease-out);
+}
+
+.content[data-state="closed"] {
+  animation: contentOut 100ms var(--ease-out) forwards;
 }
 
 @keyframes contentIn {
@@ -36,10 +42,34 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .content {
-    animation: none;
+@keyframes contentOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
   }
+  to {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content[data-state="open"] {
+    animation: contentFadeIn 100ms linear;
+  }
+  .content[data-state="closed"] {
+    animation: contentFadeOut 80ms linear forwards;
+  }
+}
+
+@keyframes contentFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes contentFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* ── Menu items ──────────────────────────────────────────────────────────── */

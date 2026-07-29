@@ -570,11 +570,12 @@ thead .listTitleCell { z-index: 14; }
 .calendarPreview > div { align-items: center; display: flex; justify-content: space-between; margin-top: 8px; }
 
 /* Planning rail */
-.planningRail { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border); display: flex; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; z-index: 12; }
-.planningRailCollapsed { align-items: center; overflow: hidden; padding: 8px 5px; }
+.planningRail { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 236px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
+.planningRailCollapsed { align-items: center; flex-basis: 44px; overflow: hidden; padding: 8px 5px; }
 .planningRailExpand { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: 8px; padding: 4px 0; }
 .planningRailExpand span { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; writing-mode: vertical-rl; }
 .planningRailExpand strong { align-items: center; background: var(--x-task-accent-soft); border-radius: 8px; color: var(--x-task-accent); display: flex; font-size: 10px; height: 18px; justify-content: center; min-width: 18px; }
+.unscheduledDisclosure { overflow: hidden; }
 .planningRailHeader { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 52px; justify-content: space-between; padding: 0 10px 0 12px; }
 .planningRailHeader > div { display: flex; flex-direction: column; }
 .planningRailHeader strong { font-size: 10px; margin-top: 3px; }
@@ -689,5 +690,6 @@ thead .listTitleCell { z-index: 14; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .planningRail { transition: none; }
   .boardCard:active { transform: none; }
 }

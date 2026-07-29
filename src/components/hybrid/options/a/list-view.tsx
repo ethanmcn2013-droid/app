@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import {
   PRIORITY_LABELS,
@@ -60,8 +61,17 @@ export function ListFieldsPanel({
   onClose: () => void;
 }) {
   const store = useLabStore();
+  const reduceMotion = useReducedMotion();
   return (
-    <section aria-label="List fields" aria-modal="false" className={styles.fieldsPanel} role="dialog">
+    <motion.section
+      animate={{ opacity: 1, transform: "scale(1)" }}
+      aria-label="List fields"
+      aria-modal="false"
+      className={styles.fieldsPanel}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
+      role="dialog"
+      transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+    >
       <header>
         <div><strong>List fields</strong><span>Session-only column layout</span></div>
         <button aria-label="Close fields" onClick={onClose} type="button"><Icon name="close" size={15} /></button>
@@ -103,7 +113,7 @@ export function ListFieldsPanel({
         <button disabled={store.readOnly} onClick={() => setColumns(INITIAL_LIST_COLUMNS.map((column) => ({ ...column })))} type="button">Reset fields</button>
         <span>Drag headers or use these controls.</span>
       </footer>
-    </section>
+    </motion.section>
   );
 }
 
@@ -334,6 +344,9 @@ export function ListView({
                       className={styles.taskRow}
                       data-active={store.activeId === task.id || undefined}
                       data-completed={task.completed || undefined}
+                      data-inspected={store.inspectedId === task.id || undefined}
+                      data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+                      data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
                       data-task-id={task.id}
                       key={task.id}
                       onContextMenu={(event) => context.openMenu(task.id, event)}

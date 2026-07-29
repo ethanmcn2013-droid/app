@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../store";
 import { STATUS_LABELS, TASK_STATUSES } from "../types";
 import { Icon } from "./icons";
@@ -8,12 +9,21 @@ import styles from "./shared.module.css";
 
 export function BulkToolbar() {
   const store = useLabStore();
+  const reduceMotion = useReducedMotion();
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
-  if (store.selectedIds.length === 0) return null;
   const selectionKey = [...store.selectedIds].sort().join(":");
   const deleteArmed = deleteConfirmation === selectionKey;
   return (
-    <div aria-label="Bulk actions" className={styles.bulkToolbar} role="toolbar">
+    <AnimatePresence>
+    {store.selectedIds.length > 0 ? <motion.div
+      animate={{ opacity: 1, transform: "translate(-50%, 0)" }}
+      aria-label="Bulk actions"
+      className={styles.bulkToolbar}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translate(-50%, 3px)" }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translate(-50%, 4px)" }}
+      role="toolbar"
+      transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+    >
       <strong>{store.selectedIds.length} selected</strong>
       <span className={styles.toolbarDivider} />
       <label>
@@ -33,6 +43,7 @@ export function BulkToolbar() {
         type="button"
       ><Icon name="trash" size={15} />{deleteArmed ? "Confirm delete" : "Delete"}</button>
       <button onClick={store.clearSelection} type="button"><Icon name="close" size={15} />Clear</button>
-    </div>
+    </motion.div> : null}
+    </AnimatePresence>
   );
 }
