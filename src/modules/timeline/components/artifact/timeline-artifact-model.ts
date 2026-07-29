@@ -143,6 +143,37 @@ function artifactDensity(count: number): TimelineArtifactDensity {
   return "standard";
 }
 
+/**
+ * Map a raw calendar percentage through the same distortion the points
+ * received. `collisionSafePositions` may move clustered points a long way
+ * from their raw calendar spots; anything else placed on the rail (the Today
+ * dash) must ride the identical mapping or the artifact lies about order.
+ * Piecewise-linear between each dated point's (raw, adjusted) pair, with the
+ * rail's own edges as end anchors, keeps "between those two milestones"
+ * truthful even when spacing is no longer calendar-proportional.
+ */
+function mapThroughPointDistortion(
+  rawValue: number,
+  anchors: ReadonlyArray<{ raw: number; adjusted: number }>,
+  edge: number,
+): number {
+  const sorted = [...anchors].sort((left, right) => left.raw - right.raw);
+  const full = [
+    { raw: 0, adjusted: edge },
+    ...sorted,
+    { raw: 100, adjusted: 100 - edge },
+  ];
+  for (let index = 1; index < full.length; index += 1) {
+    const lower = full[index - 1];
+    const upper = full[index];
+    if (rawValue > upper.raw) continue;
+    if (upper.raw === lower.raw) return upper.adjusted;
+    const ratio = (rawValue - lower.raw) / (upper.raw - lower.raw);
+    return clampPercent(lower.adjusted + ratio * (upper.adjusted - lower.adjusted));
+  }
+  return clampPercent(100 - edge);
+}
+
 function calendarPositions(
   items: readonly AudienceTimelineItemDto[],
   today: string,
@@ -179,9 +210,22 @@ function calendarPositions(
       : ((day - axisStart) / (axisEnd - axisStart)) * 100),
   );
   const safePointPositions = collisionSafePositions(rawPointPositions);
+  const edge = Math.min(6, Math.max(3, 36 / rawPointPositions.length));
+  const datedAnchors = itemDays.flatMap((day, index) =>
+    day === null
+      ? []
+      : [{
+          raw: ((day - axisStart) / (axisEnd - axisStart)) * 100,
+          adjusted: safePointPositions[index],
+        }],
+  );
   const todayPosition = todayDay === null
     ? null
-    : clampPercent(4 + (((todayDay - axisStart) / (axisEnd - axisStart)) * 92));
+    : mapThroughPointDistortion(
+        ((todayDay - axisStart) / (axisEnd - axisStart)) * 100,
+        datedAnchors,
+        edge,
+      );
 
   return { pointPositions: safePointPositions, todayPosition };
 }
@@ -238,6 +282,50 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     nextMilestoneId: next?.publicId ?? null,
     defaultSelectedId: defaultPoint?.item.publicId ?? null,
   };
+}
+
+/**
+ * Indices that may carry a persistent label beyond the mandatory set (the
+ * next milestone, the completed point before it, the final point). Greedy
+ * left-to-right: a point earns its label when every labelled neighbour on
+ * the SAME side of the rail (sides alternate by index) is at least `minGap`
+ * rail-percent away — the same collision thinking the point positions use,
+ * applied to their titles. Wide rails label everything that fits instead of
+ * defaulting to three titles and six anonymous dots; the CSS gates these to
+ * containers wide enough for the label boxes.
+ */
+export function extraLabelIndices(
+  positions: readonly number[],
+  mandatory: ReadonlySet<number>,
+  labelWidth = 16,
+): Set<number> {
+  // Labels are centred on their point except at the rail's edges, where the
+  // CSS anchors them inward (start label grows right, end label grows left).
+  // Compare occupied INTERVALS, not centre distances, or the end-anchored
+  // label collides with its inboard neighbour on mid-width rails.
+  const interval = (index: number): [number, number] => {
+    const position = positions[index];
+    if (index === 0) return [position, position + labelWidth];
+    if (index === positions.length - 1) return [position - labelWidth, position];
+    return [position - labelWidth / 2, position + labelWidth / 2];
+  };
+  const granted = new Set(mandatory);
+  for (let index = 0; index < positions.length; index += 1) {
+    if (granted.has(index)) continue;
+    const [start, end] = interval(index);
+    let fits = true;
+    for (const other of granted) {
+      if ((other - index) % 2 !== 0) continue;
+      const [otherStart, otherEnd] = interval(other);
+      if (start < otherEnd && otherStart < end) {
+        fits = false;
+        break;
+      }
+    }
+    if (fits) granted.add(index);
+  }
+  for (const index of mandatory) granted.delete(index);
+  return granted;
 }
 
 export function buildTimelineCountdown(

@@ -18,6 +18,27 @@ import {
   demoWorkspace,
 } from "@/modules/timeline/lib/roadmap/demo-data";
 import { REVIEW_AUDIENCE_TIMELINE_DTO } from "@/modules/timeline/lib/review-audience-fixture";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
+
+test("the review suite runs on one clock: Timeline's fixture today equals the pinned calendar frame", () => {
+  assert.equal(
+    REVIEW_SUITE_FIXTURE.reviewToday,
+    PINNED_REVIEW_CALENDAR_FRAME.today,
+  );
+  // The frozen public projection served at /s/[token] in review mode must
+  // carry the same today as the owner surfaces — the two-routes-one-clock
+  // guarantee, cross-checked at the DTO level.
+  assert.equal(
+    REVIEW_AUDIENCE_TIMELINE_DTO.today,
+    PINNED_REVIEW_CALENDAR_FRAME.today,
+  );
+  // The fixture's last-updated stamp must not postdate the review "today",
+  // or owner surfaces show an update from the future.
+  assert.ok(
+    REVIEW_SUITE_FIXTURE.lastUpdatedAt.slice(0, 10) <=
+      REVIEW_SUITE_FIXTURE.reviewToday,
+  );
+});
 
 const publication: AudienceOwnerPublication = {
   id: "publication-1",

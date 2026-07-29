@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.print-board",
+  "source": "tasks/src/app/print/board/page.tsx",
+  "materialityHash": "9154b894aeb46365",
+  "reviewedAt": "2026-07-29",
+  "reviewer": "Claude Fable 5, T·107 evidence-contract refresh",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-1284d6e9633994220b0afd63-f07b18ad36a0e4f5.json",
+    "attestationSha256": "52107a22b20f663da0f84864bd369603b5859563f015b484e107ab56db6fdd72",
+    "runId": "tasks-playwright-1284d6e9633994220b0afd63",
+    "canonicalEvidenceSha256": "1284d6e9633994220b0afd63accd2e59258bbb3337801f9b69f6146436e922e3",
+    "rawArtifactSha256": "f07b18ad36a0e4f58443ddf4a75f386fa67ee4bdac059367500037a175bdf1ab",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The critical-experience spec changed with T·107: the shared-artifact countdown evidence moved from the stale 22 July fixture clock to the suite calendar frame, 73 days becoming 79. No source change to this surface.",
+  "decision": "Re-attested against the current full-suite run, where this surface passes on mobile, tablet, desktop and wide with no axe violations."
+}

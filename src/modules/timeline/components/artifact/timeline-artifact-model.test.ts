@@ -9,6 +9,7 @@ import {
 import {
   buildTimelineArtifactModel,
   buildTimelineCountdown,
+  extraLabelIndices,
 } from "./timeline-artifact-model";
 
 function item(
@@ -108,7 +109,41 @@ test("one dated milestone uses calendar geometry only with a distinct date bound
   });
 
   assert.equal(withoutBoundary.todayPosition, null);
-  assert.equal(withBoundary.todayPosition, 4);
+  // Today shares the single milestone's date, so the dash lands on the point
+  // (50), not at the rail edge where the raw axis would put it.
+  assert.equal(withBoundary.todayPosition, 50);
+});
+
+test("Today rides the same collision distortion as the points", () => {
+  // The Mara & Finn shape: two early milestones, then a late-summer cluster.
+  // collisionSafePositions spreads the cluster to its minimum gap, so the
+  // Today dash must interpolate between each point's ADJUSTED position or it
+  // renders to the right of milestones that are weeks in the future.
+  const dto: AudienceTimelineDto = {
+    ...timeline([
+      item("yes", "covered", "2026-01-02"),
+      item("venue", "covered", "2026-04-18"),
+      item("menu", "now", "2026-08-01"),
+      item("invitations", "next", "2026-08-08"),
+      item("fitting", "next", "2026-08-22"),
+      item("music", "next", "2026-08-29"),
+      item("guests", "later", "2026-09-05"),
+      item("walkthrough", "later", "2026-09-19"),
+      item("wedding", "later", "2026-10-03"),
+    ]),
+    today: "2026-07-22",
+    primaryDate: { label: "Wedding day", date: "2026-10-03" },
+  };
+  const model = buildTimelineArtifactModel(dto);
+  const positionOf = (id: string) =>
+    model.points.find((point) => point.item.publicId === id)!.position;
+
+  assert.ok(model.todayPosition !== null);
+  // 22 July sits after the venue reservation (18 April)…
+  assert.ok(model.todayPosition! > positionOf("venue"));
+  // …and strictly before the menu tasting (1 August) and everything beyond.
+  assert.ok(model.todayPosition! < positionOf("menu"));
+  assert.ok(model.todayPosition! < positionOf("wedding"));
 });
 
 test("the next milestone prefers now, then next, then later", () => {
@@ -155,6 +190,27 @@ test("an overdue next milestone remains visibly distinct from Today", () => {
 
   assert.equal(model.points.find((point) => point.item.publicId === "next")?.state, "overdue");
   assert.notEqual(model.todayPosition, model.percent);
+});
+
+test("extra labels fill the rail exactly as far as same-side spacing allows", () => {
+  // The Mara & Finn shape after collision adjustment: same-side neighbours
+  // sit 18 percent apart, so every point earns its label on a wide rail.
+  const wedding = [4, 33, 42, 51, 60, 69, 78, 87, 96];
+  const mandatory = new Set([1, 2, 8]);
+  const granted = extraLabelIndices(wedding, mandatory);
+  // Index 6 stays hover-only: the final label is edge-anchored and grows
+  // leftward over index 6's band, so granting it would collide.
+  assert.deepEqual([...granted].sort((a, b) => a - b), [0, 3, 4, 5, 7]);
+
+  // A dense cluster stays quiet: points 4 percent from a labelled same-side
+  // neighbour do not earn a label and remain hover-revealed.
+  const dense = [10, 12, 14, 16, 18];
+  const denseGranted = extraLabelIndices(dense, new Set([0]));
+  assert.ok(!denseGranted.has(2));
+  assert.ok(!denseGranted.has(4));
+
+  // Mandatory indices are never returned as extras.
+  assert.ok(!granted.has(1) && !granted.has(2) && !granted.has(8));
 });
 
 test("countdown compares publication calendar dates without timezone drift", () => {

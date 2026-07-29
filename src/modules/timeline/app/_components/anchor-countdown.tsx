@@ -125,11 +125,12 @@ export function AnchorSentence({
 
   // Self-correcting: the day is always stated as a fact; the live countdown
   // clause only rides along when the day is still ahead, so a stale example
-  // degrades to "The day is …" rather than "… 22 days ago".
+  // degrades to "The day is …" rather than "… 22 days ago". Comma, not an
+  // em dash — §10 bans em dashes in public-facing copy.
   const clause =
     c.kind === "past" ? null : (
       <>
-        {" — "}
+        {", "}
         <span style={{ fontWeight: 500, color: "var(--ink)" }}>
           {c.kind === "today" ? "today" : countdownPhrase(c)}
         </span>

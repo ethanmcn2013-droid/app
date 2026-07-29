@@ -4,6 +4,41 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-29 · T·107 · ships · the timeline stops lying about today, and the owner gets their own view
+
+**The Today dash now rides the same geometry as the milestones around it, and
+every Timeline surface speaks the design system at a readable floor.** The
+dash used to sit on a raw calendar axis while clustered milestones were
+spread apart for legibility, which could place today to the right of points
+weeks in the future; it now maps through the identical distortion, so
+"between those two milestones" is always true. Review mode runs on one clock
+for the whole suite, guarded by a test, and the public share page renders
+complete before any JavaScript arrives: the load choreography moved from
+script-driven hidden states to CSS, which also makes reduced motion absolute
+from the first paint.
+
+The owner's side comes up to the standard the shared page set. The curation
+surface leaves two thousand lines of inline styles for the design system
+proper: lane headers carry the board's tone grammar with a 2px rule and a
+full-strength pip while Later stays deliberately plain, every control is a
+32px target, nothing renders under 11px, and the state control opens into
+wrappable pills on a phone instead of squeezing five labels into a matchbox.
+Error copy is finally visible; it had been pointing at a colour token that
+never existed and rendered as ordinary ink. The owner's view drops the
+duplicate wordmark behind a quiet "Owner view" strip, the anchor countdown
+takes its place in the plan header, and the sharing screen trades ten
+stacked forms for one ruled list with human labels and real dates. Wide
+rails now title every milestone that fits, with edge-aware collision math
+deciding which labels earn their place at rest.
+
+Structural motion ships in the ratified class only: the switcher menu and
+share receipt enter, the add form rises, a reordered row settles instead of
+teleporting, and hidden milestones fold. Honest edge: the discretionary
+micro-interaction sites stay still, fourteen of them newly catalogued in
+docs/DELIGHT_CATALOG.md for the reference review, the sharing screen still
+posts one form per milestone row, and the fold animation is progressive
+enhancement that older engines render as an instant toggle.
+
 ## 2026-07-29 · T·106 · ships · the board earns its colour, and a task gets a number a person can say
 
 **The board reads by hue, the panel reads as one system, and a task is now

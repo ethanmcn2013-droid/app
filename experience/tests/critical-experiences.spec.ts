@@ -328,7 +328,9 @@ async function auditTimelineContract(
   const toggle = page.locator("[data-timeline-metric-toggle]");
   await toggle.click();
   await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("73");
+  // One review clock (T·107): 16 July to 3 October is 79 days. The old "73"
+  // enshrined the fixture clock that disagreed with the suite calendar frame.
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
 
   const current = page.getByRole("button", { name: /Menu tasting at The Orchard/ });
   await current.focus();
