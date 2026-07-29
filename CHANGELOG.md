@@ -4,6 +4,30 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-29 · T·108 · ships · the note stays in sight while the work moves
+
+**Notes now keeps a private thought visibly continuous as it becomes a saved
+artifact, an approved extract, or confirmed work in Tasks.** The notebook opens
+on a calm artifact history, moves into reading only when a note is chosen, and
+uses one restrained interaction grammar across mobile detail, source approval,
+Tasks handoff, recovery decisions, row presence, and global feedback. The note
+itself remains private throughout; only exact wording selected and approved by
+the owner can cross into Tasks.
+
+The exhaustive interaction ledger is enforced as a product contract rather
+than an instruction to animate everything. Twenty-one states deliberately hold
+still, eleven high-frequency writing, search, selection, and focus paths remain
+immediate, and the remaining continuity treatments stay between 140 and 240 ms.
+Lost Tasks replies retry against the original immutable destination without
+replaying a completed handoff, clipboard feedback uses the shared Notes toast,
+hover motion is limited to fine pointers, and reduced motion removes transform
+travel while preserving every state change.
+
+The release is covered across populated, empty, first-capture, partial failure,
+conflict, offline, read-only, long-content, desktop, mobile, and reduced-motion
+fixtures. Honest edge: the separate motion review lab remains an internal local
+artifact and is not part of the production route.
+
 ## 2026-07-29 · T·107 · ships · the timeline stops lying about today, and the owner gets their own view
 
 **The Today dash now rides the same geometry as the milestones around it, and

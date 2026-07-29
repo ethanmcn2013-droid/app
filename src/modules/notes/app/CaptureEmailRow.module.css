@@ -34,10 +34,6 @@
   text-underline-offset: 0.16em;
 }
 
-.detail a:hover {
-  color: var(--ink, var(--color-ink));
-}
-
 .address {
   display: inline-flex;
   min-inline-size: 0;
@@ -55,13 +51,6 @@
   font: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.address:hover code {
-  color: var(--ink, var(--color-ink));
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
-  text-underline-offset: 0.16em;
 }
 
 .hint {
@@ -94,6 +83,19 @@
 
   .address {
     max-inline-size: 100%;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .detail a:hover {
+    color: var(--ink, var(--color-ink));
+  }
+
+  .address:hover code {
+    color: var(--ink, var(--color-ink));
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+    text-underline-offset: 0.16em;
   }
 }
 

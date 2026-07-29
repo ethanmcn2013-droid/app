@@ -9,6 +9,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import {
   FirstCaptureMoment,
@@ -54,6 +55,11 @@ const RECOVERY_DRAFT_PREFIX = "signal-notes.hybrid-draft.v2";
 const RECOVERY_CAPTURES_PREFIX = "signal-notes.hybrid-pending-captures.v2";
 const RECOVERY_EDITS_PREFIX = "signal-notes.hybrid-detail-edits.v2";
 const DELETE_UNDO_MS = 6_000;
+const MOTION_EASE_OUT = [0.23, 1, 0.32, 1] as const;
+const MOTION_EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
+const MOTION_ENTER = { duration: 0.2, ease: MOTION_EASE_OUT };
+const MOTION_EXIT = { duration: 0.14, ease: MOTION_EASE_OUT };
+const MOTION_LAYOUT = { duration: 0.2, ease: MOTION_EASE_IN_OUT };
 
 type MutationState = "pending" | "failed" | "offline" | "saved";
 type CaptureStatus = "idle" | "pending" | "failed" | "offline" | "saved";
@@ -337,7 +343,7 @@ export function HybridNotebook({
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [captureDiscardOpen, setCaptureDiscardOpen] = useState(false);
   const [recoveryStorageAvailable, setRecoveryStorageAvailable] = useState(true);
-  const [pendingCaptures, setPendingCaptures] = useState<PendingCapture[]>([]);
+  const [, setPendingCaptures] = useState<PendingCapture[]>([]);
   const [recoveredEditIds, setRecoveredEditIds] = useState<string[]>([]);
   const [orphanedRecoveries, setOrphanedRecoveries] = useState<Record<string, RecoveredEdit>>({});
   const [mutationStates, setMutationStates] = useState<Record<string, MutationState>>({});
@@ -398,8 +404,6 @@ export function HybridNotebook({
   const lostTasksReplyOnce = useRef(false);
   const earlySaveQueued = useRef(false);
   const bootstrapped = useRef(false);
-  const autoPreviewedRef = useRef(false);
-  const passivePreviewRef = useRef(false);
   const pendingRef = useRef<PendingCapture[]>([]);
   const pendingApprovedTaskSendsRef = useRef(initialPendingApprovedTaskSends);
   const openVersionRef = useRef<{ id: string; body: string; updatedAt: number } | null>(null);
@@ -443,6 +447,7 @@ export function HybridNotebook({
     const pendingMatches = localResults.filter((note) => mutationStates[note.id]);
     return pendingMatches.reduce((current, note) => upsertNote(current, note), serverResults);
   }, [localResults, mutationStates, query, serverResults]);
+  const filteringNotes = Boolean(query.trim());
 
   const setPending = useCallback((next: PendingCapture[]): boolean => {
     const persisted = writeSession(recoveryKeys.captures, next);
@@ -542,20 +547,6 @@ export function HybridNotebook({
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-
-  useEffect(() => {
-    if (
-      isNarrow !== false ||
-      autoPreviewedRef.current ||
-      openId ||
-      notes.length === 0
-    ) {
-      return;
-    }
-    autoPreviewedRef.current = true;
-    passivePreviewRef.current = true;
-    setOpenId(notes[0].id);
-  }, [isNarrow, notes, openId]);
 
   useEffect(() => {
     if (!mobileDetailOpen) return;
@@ -960,11 +951,7 @@ export function HybridNotebook({
           }
         : null,
     );
-    if (passivePreviewRef.current) {
-      passivePreviewRef.current = false;
-    } else {
-      window.setTimeout(() => detailRef.current?.focus({ preventScroll: true }), 0);
-    }
+    window.setTimeout(() => detailRef.current?.focus({ preventScroll: true }), 0);
   }, [openId]); // Intentionally resets only when navigating, not on every optimistic row merge.
 
   useEffect(() => {
@@ -1334,6 +1321,13 @@ export function HybridNotebook({
           ...current,
           status: "failed",
           error: message,
+          immutableRetry:
+            reviewMode === "tasks-lost-reply"
+              ? {
+                  workspaceId: targetWorkspaceId,
+                  expectedUpdatedAt: targetExpectedUpdatedAt,
+                }
+              : current.immutableRetry,
         } : current);
       }
     }
@@ -1754,13 +1748,23 @@ export function HybridNotebook({
         created: false,
       }
     : null;
+  const handoffTravel = taskReceipt
+    ? taskReceipt.created
+    : extract?.status === "sending" && !extract.immutableRetry;
 
   // Demoted from <main> to <div>: the /app layout already owns the sole
   // <main> landmark. A nested <main> causes landmark-main-is-top-level +
   // landmark-no-duplicate-main axe violations (Phase 7 / Phase 9 fixes).
   return (
     <div id="main-content" className={styles.root} data-hybrid-notebook="true" data-review-mode={reviewMode} data-sentry-mask="true" data-clarity-mask="true" data-dd-privacy="mask" data-1p-ignore="true">
-      <h1 className={styles.srOnly}>Notes</h1>
+      <div className={styles.notebookFrame}>
+      <header className={styles.notebookHeader}>
+        <div className={styles.identity}>
+          <h1 className={styles.wordmark}>Notes<span className={styles.wordmarkDot} aria-hidden="true">.</span></h1>
+          <span className={styles.privateLabel}>Private notebook</span>
+        </div>
+        <span className={styles.headerAssurance}>Yours until you approve a handoff</span>
+      </header>
       <section className={styles.capture} data-state={captureState} aria-labelledby="hybrid-capture-label" inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
         <div className={styles.captureHeader}>
           <div className={styles.captureIdentity}>
@@ -1796,7 +1800,12 @@ export function HybridNotebook({
         <div className={styles.captureFooter}>
           <div className={styles.captureGuidance}>
             <p id="hybrid-capture-hint" className={styles.captureHint}>Enter saves · Shift + Enter adds a line · Escape asks before discarding</p>
-            {captureEmailState ? <CaptureEmailRow state={captureEmailState} /> : null}
+            {captureEmailState ? (
+              <CaptureEmailRow
+                state={captureEmailState}
+                onFeedback={showToast}
+              />
+            ) : null}
           </div>
           <div className={styles.captureActions}>
             {!readOnly ? <button type="button" className={`${styles.quietButton} ${styles.mobileOnly}`} onClick={insertCaptureNewline}>New line</button> : null}
@@ -1820,16 +1829,31 @@ export function HybridNotebook({
             {voice.message ? <span>{voice.message.kind === "denied" ? "Microphone access was not granted." : voice.message.kind === "no-speech" ? "No speech was heard." : "Dictation stopped unexpectedly."}</span> : null}
           </div>
         ) : null}
+        <AnimatePresence initial={false}>
         {captureDiscardOpen ? (
-          <div className={styles.discardPanel} role="region" aria-labelledby="capture-discard-heading">
+          <motion.div
+            className={styles.discardPanel}
+            data-delight-moment="decision-region"
+            role="region"
+            aria-labelledby="capture-discard-heading"
+            initial={{ opacity: 0, transform: "translateY(-6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(-4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
             <strong id="capture-discard-heading">Discard this unsaved capture?</strong>
             <p>Your words stay in the field until you explicitly discard them.</p>
             <div className={styles.actionRow}>
               <button ref={captureKeepRef} type="button" className={styles.quietButton} onClick={() => { setCaptureDiscardOpen(false); captureRef.current?.focus({ preventScroll: true }); }}>Keep writing</button>
               <button type="button" className={styles.dangerButton} onClick={() => { captureGenerationRef.current += 1; setDraft(""); setCaptureDiscardOpen(false); captureRef.current?.focus(); }}>Discard capture</button>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
       </section>
 
       <section className={styles.searchBand} aria-label="Find in Notes" inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
@@ -1875,19 +1899,49 @@ export function HybridNotebook({
             <span className={styles.searchMeta}>{notes.length} active</span>
           </div>
           {displayedNotes.length ? (
-            <ol className={styles.streamList}>
+            <motion.ol
+              layout={!filteringNotes}
+              className={styles.streamList}
+              data-delight-moment="artifact-presence"
+              data-motion-policy={filteringNotes ? "immediate-filter" : "artifact-presence"}
+            >
+              <AnimatePresence initial={false} mode="popLayout">
               {displayedNotes.map((note) => {
                 const presentation = presentNoteBody(note.body);
                 const snippet = contextualSnippet(note.body, query);
                 const mutation = mutationStates[note.id];
                 const failed = mutation === "failed" || mutation === "offline";
                 return (
-                  <li
+                  <motion.li
                     key={note.id}
+                    layout={filteringNotes ? false : "position"}
                     className={styles.noteItem}
                     data-density={snippet ? "standard" : "terse"}
                     data-selected={note.id === openId ? "true" : undefined}
                     data-state={mutation}
+                    initial={
+                      filteringNotes
+                        ? false
+                        : { opacity: 0, transform: "translateY(-4px)" }
+                    }
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={
+                      filteringNotes
+                        ? {
+                            opacity: 1,
+                            transform: "translateY(0px)",
+                            transition: { duration: 0 },
+                          }
+                        : {
+                            opacity: 0,
+                            transform: "translateY(-4px)",
+                          }
+                    }
+                    transition={{
+                      layout: filteringNotes ? { duration: 0 } : MOTION_LAYOUT,
+                      opacity: filteringNotes ? { duration: 0 } : MOTION_EXIT,
+                      transform: filteringNotes ? { duration: 0 } : MOTION_ENTER,
+                    }}
                   >
                     <button
                       type="button"
@@ -1926,10 +1980,11 @@ export function HybridNotebook({
                         </span>
                       </div>
                     ) : null}
-                  </li>
+                  </motion.li>
                 );
               })}
-            </ol>
+              </AnimatePresence>
+            </motion.ol>
           ) : (
             <div className={styles.emptyState}>
               <strong>{query.trim() ? "No matching notes" : "Your notebook starts with one private thought."}</strong>
@@ -1953,31 +2008,28 @@ export function HybridNotebook({
               </ul>
             </section>
           ) : null}
-          {archivedNotes.length ? (
-            <section className={styles.previousSection} aria-labelledby="hybrid-previous-heading">
-              <h3 id="hybrid-previous-heading">Previously sent</h3>
-              <p className={styles.detailHelp}>These notes used the earlier archive-on-send behavior. Restore one at a time; no private note is moved automatically.</p>
-              <ul className={styles.previousList}>
-                {archivedNotes.map((note) => (
-                  <li key={note.id} className={styles.previousRow}>
-                    <span>{presentNoteBody(note.body).title}{note.extractBody ? ` · ${note.extractBody}` : ""}</span>
-                    <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>{restoringId === note.id ? "Restoring…" : "Restore private note"}</button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </section>
 
-        <section
+        <motion.section
           id="hybrid-note-detail"
           className={styles.detailPane}
+          data-delight-moment="stream-to-detail"
           data-open={openNote ? "true" : "false"}
           role={mobileDetailOpen ? "dialog" : undefined}
           aria-modal={mobileDetailOpen ? true : undefined}
           aria-label={openNote ? undefined : "Selected note"}
           aria-labelledby={openNote ? "hybrid-detail-title" : undefined}
           onKeyDown={trapMobileDetailFocus}
+          initial={false}
+          animate={{
+            opacity: isNarrow ? (openNote ? 1 : 0) : 1,
+            transform: isNarrow
+              ? openNote
+                ? "translateX(0%)"
+                : "translateX(100%)"
+              : "translateX(0%)",
+          }}
+          transition={isNarrow ? MOTION_ENTER : { duration: 0 }}
         >
           {openNote ? (
             <>
@@ -2043,11 +2095,38 @@ export function HybridNotebook({
                   <button type="button" className={styles.dangerButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict)} onClick={requestDelete}>Delete…</button>
                 </span>
               </div>
+              <LayoutGroup id={`notes-approval-${openNote.id}`}>
               <p className={styles.selectionStatus}>{selection ? `${selection.length} selected character${selection.length === 1 ? "" : "s"}.` : "No source wording selected."}</p>
+              {selection && !extract ? (
+                <motion.div
+                  layoutId="approved-source-wording"
+                  className={styles.selectionChip}
+                  data-delight-moment="private-to-approved"
+                  data-motion-policy="immediate-selection"
+                  initial={false}
+                >
+                  <span>Selected privately</span>
+                  <q>{selection}</q>
+                </motion.div>
+              ) : null}
               {detailError ? <p className={styles.errorReceipt} role="alert">{detailError}</p> : null}
 
+              <AnimatePresence initial={false}>
               {navigationPrompt ? (
-                <div className={styles.discardPanel} role="region" aria-labelledby="navigation-prompt-heading">
+                <motion.div
+                  className={styles.discardPanel}
+                  data-delight-moment="decision-region"
+                  role="region"
+                  aria-labelledby="navigation-prompt-heading"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <strong id="navigation-prompt-heading">Save this edit before leaving?</strong>
                   <p>Your local version stays visible until you choose.</p>
                   <div className={styles.actionRow}>
@@ -2055,22 +2134,51 @@ export function HybridNotebook({
                     <button type="button" className={styles.dangerButton} disabled={detailSaveInFlight} onClick={discardAndNavigate}>Discard edit</button>
                     <button type="button" className={styles.quietButton} disabled={detailSaveInFlight} onClick={() => { setNavigationPrompt(null); detailRef.current?.focus({ preventScroll: true }); }}>Stay here</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
+              <AnimatePresence initial={false}>
               {deleteConfirm ? (
-                <div className={styles.discardPanel} role="region" aria-labelledby="delete-confirm-heading">
+                <motion.div
+                  className={styles.discardPanel}
+                  data-delight-moment="decision-region"
+                  role="region"
+                  aria-labelledby="delete-confirm-heading"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <strong id="delete-confirm-heading">Delete this private note?</strong>
                   <p>You will have six seconds to undo. Tasks receipts, if any, are not deleted from Tasks.</p>
                   <div className={styles.actionRow}>
                     <button ref={deletePrimaryRef} type="button" className={styles.dangerButton} onClick={confirmDelete}>Delete note</button>
                     <button type="button" className={styles.quietButton} onClick={() => { setDeleteConfirm(false); detailRef.current?.focus({ preventScroll: true }); }}>Cancel</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
+              <AnimatePresence initial={false}>
               {conflict ? (
-                <div className={styles.conflictPanel} data-state="conflict">
+                <motion.div
+                  className={styles.conflictPanel}
+                  data-delight-moment="decision-region"
+                  data-state="conflict"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <p role="alert"><strong>This note changed somewhere else.</strong> Nothing was overwritten. Compare both exact versions, then choose.</p>
                   <div className={styles.conflictVersions}>
                     <section className={styles.conflictVersion}><h3>Your local version</h3><pre>{detailBody}</pre></section>
@@ -2081,8 +2189,9 @@ export function HybridNotebook({
                     <button type="button" disabled={detailSaveInFlight || conflictResolving} onClick={useRemoteVersion}>Use latest</button>
                     <button type="button" disabled={detailSaveInFlight || conflictResolving} onClick={() => void keepBothVersions()}>Keep both as notes</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
               <section className={styles.extractionPanel} aria-labelledby="hybrid-extract-heading">
                 <div className={styles.privacyBoundary}><strong>Your note stays here.</strong> Tasks can receive only the exact wording you select, review, and approve below.</div>
@@ -2090,21 +2199,95 @@ export function HybridNotebook({
                   <h3 id="hybrid-extract-heading">Make this work</h3>
                   <span className={styles.searchMeta}>{extract?.approvedBody.length ?? 0} / {MAX_APPROVED_EXTRACT_CHARS}</span>
                 </div>
+                <AnimatePresence initial={false}>
+                  {extract?.status === "sending" || taskReceipt ? (
+                    <motion.div
+                      key={taskReceipt ? "receipt-confirmed" : "handoff-sending"}
+                      className={styles.handoffState}
+                      data-delight-moment="approved-to-tasks"
+                      data-state={taskReceipt ? "complete" : "sending"}
+                      data-handoff-travel={handoffTravel ? "true" : "false"}
+                      initial={{
+                        opacity: 0.84,
+                        transform: "translateY(2px)",
+                      }}
+                      animate={{ opacity: 1, transform: "translateY(0px)" }}
+                      exit={{ opacity: 0, transition: MOTION_EXIT }}
+                      transition={MOTION_ENTER}
+                      aria-hidden="true"
+                    >
+                      <span>{taskReceipt ? "Tasks confirmed" : "Sending approved wording"}</span>
+                      <span className={styles.handoffTrack}>
+                        <motion.span
+                          initial={{
+                            transform: handoffTravel
+                              ? "scaleX(0.04)"
+                              : "scaleX(1)",
+                          }}
+                          animate={{ transform: "scaleX(1)" }}
+                          transition={
+                            !handoffTravel
+                              ? { duration: 0 }
+                              : taskReceipt
+                              ? MOTION_EXIT
+                              : {
+                                  duration: 0.24,
+                                  ease: MOTION_EASE_IN_OUT,
+                                }
+                          }
+                        />
+                      </span>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+                <AnimatePresence initial={false} mode="wait">
                 {taskReceipt ? (
-                  <div className={styles.receipt}>
+                  <motion.div
+                    key="tasks-receipt"
+                    className={styles.receipt}
+                    initial={{ opacity: 0, transform: "translateY(5px)" }}
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      transform: "translateY(2px)",
+                      transition: MOTION_EXIT,
+                    }}
+                    transition={MOTION_ENTER}
+                  >
                     <strong>Sent to {taskReceipt.workspaceName}.</strong>
                     <p>{openNote.extractBody}</p>
                     <p>The source note remains private and editable here. Receipt {taskReceipt.taskId}.</p>
                     <a ref={receiptLinkRef} href={taskReceipt.taskUrl || TASKS_APP_PATH}>Open in Tasks</a>
-                  </div>
+                  </motion.div>
                 ) : (
-                  <>
+                  <motion.div
+                    key="approval-composer"
+                    className={styles.approvalComposer}
+                    initial={{ opacity: 0, transform: "translateY(3px)" }}
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      transform: "translateY(2px)",
+                      transition: MOTION_EXIT,
+                    }}
+                    transition={MOTION_ENTER}
+                  >
                     {!extract ? (
                       <div className={styles.actionRow}>
                         <button ref={approvalTriggerRef} type="button" className={styles.primaryButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !selection.trim()} onClick={beginExtraction}>Use selection</button>
                       </div>
                     ) : (
                       <>
+                        <motion.div
+                          layoutId="approved-source-wording"
+                          className={styles.approvalSelection}
+                          data-delight-moment="private-to-approved"
+                          data-motion-policy="shared-approval-continuity"
+                          transition={MOTION_ENTER}
+                        >
+                          <span>Approved source</span>
+                          <q>{extract.sourceSelection}</q>
+                        </motion.div>
                         <div className={styles.destinationField}>
                           <span className={styles.destinationLabel}>Tasks destination</span>
                           {extract.immutableRetry ? (
@@ -2184,9 +2367,11 @@ export function HybridNotebook({
                         </div>
                       </>
                     )}
-                  </>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </section>
+              </LayoutGroup>
 
               {planningPeriodsEnabled ? (
                 <details className={styles.timelinePanel}>
@@ -2205,40 +2390,93 @@ export function HybridNotebook({
                 </details>
               ) : null}
 
-              {mobileDetailOpen ? (
-                deleteUndo ? (
-                  <div className={styles.toast} data-state="saved" data-hybrid-toast="true">
-                    Note deleted. <button ref={undoButtonRef} type="button" className={styles.quietButton} onClick={undoDeleteNote}>Undo</button>
-                  </div>
-                ) : toast ? (
-                  <div className={styles.toast} data-state={toast.state} data-hybrid-toast="true">{toast.message}</div>
-                ) : null
-              ) : null}
-
             </>
           ) : (
-            <div className={`${styles.emptyState} ${styles.emptyDetail} ${styles.desktopOnly}`}>
-              <span className={styles.emptyEyebrow}>{notes.length ? "Private notebook" : "Start here"}</span>
-              <strong>{notes.length ? "Choose a note when you want to shape it." : "One private thought is enough."}</strong>
-              <p>
-                {notes.length
-                  ? "Capture stays ready. A note only becomes work when you select and approve the exact wording."
-                  : "Write above and press Enter. Notes keeps the stream flat, private, and newest-first."}
+            <aside className={`${styles.artifactPanel} ${styles.desktopOnly}`} aria-labelledby="hybrid-previous-heading">
+              <div className={styles.artifactHeader}>
+                <span className={styles.emptyEyebrow}>Artifact history</span>
+                <span className={styles.searchMeta}>{archivedNotes.length} archived</span>
+              </div>
+              <h2 id="hybrid-previous-heading">Previously sent</h2>
+              <p className={styles.artifactIntroduction}>
+                Earlier handoffs live here as an explicit history. Restore one at a time; nothing private moves automatically.
               </p>
-            </div>
+              {archivedNotes.length ? (
+                <motion.ul layout className={styles.artifactList}>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {archivedNotes.map((note) => (
+                      <motion.li
+                        layout="position"
+                        key={note.id}
+                        initial={{ opacity: 0, transform: "translateY(-4px)" }}
+                        animate={{ opacity: 1, transform: "translateY(0px)" }}
+                        exit={{ opacity: 0, transform: "translateY(-4px)" }}
+                        transition={{ layout: MOTION_LAYOUT, opacity: MOTION_EXIT, transform: MOTION_ENTER }}
+                      >
+                        <blockquote>{presentNoteBody(note.body).title}</blockquote>
+                        {note.extractBody ? <p>Sent wording: {note.extractBody}</p> : null}
+                        <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>
+                          {restoringId === note.id ? "Restoringâ€¦" : "Restore private note"}
+                        </button>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                </motion.ul>
+              ) : (
+                <div className={styles.artifactEmpty}>
+                  <strong>Nothing is archived.</strong>
+                  <p>Choose a note when you want to edit it, or select exact wording to make it work in Tasks.</p>
+                </div>
+              )}
+              <p className={styles.artifactFootnote}>A Tasks receipt never removes its private source from this notebook.</p>
+            </aside>
           )}
-        </section>
+        </motion.section>
+      </div>
       </div>
 
-      {!mobileDetailOpen ? (
-        deleteUndo ? (
-          <div className={styles.toast} data-state="saved" data-hybrid-toast="true">
+      <AnimatePresence initial={false} mode="popLayout">
+        {deleteUndo ? (
+          <motion.div
+            key="delete-undo"
+            className={styles.toast}
+            data-state="saved"
+            data-hybrid-toast="true"
+            data-delight-moment="toast-lifecycle"
+            role="status"
+            initial={{ opacity: 0, transform: "translateY(6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
             Note deleted. <button ref={undoButtonRef} type="button" className={styles.quietButton} onClick={undoDeleteNote}>Undo</button>
-          </div>
+          </motion.div>
         ) : toast ? (
-          <div className={styles.toast} data-state={toast.state} data-hybrid-toast="true">{toast.message}</div>
+          <motion.div
+            key={toast.message}
+            className={styles.toast}
+            data-state={toast.state}
+            data-hybrid-toast="true"
+            data-delight-moment="toast-lifecycle"
+            role="status"
+            initial={{ opacity: 0, transform: "translateY(6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
+            {toast.message}
+          </motion.div>
         ) : null
-      ) : null}
+        }
+      </AnimatePresence>
       <span className={styles.srOnly} aria-live="polite" aria-atomic="true">{announcement}</span>
       {firstCapture ? <FirstCaptureMoment onDone={() => setFirstCapture(false)} /> : null}
     </div>

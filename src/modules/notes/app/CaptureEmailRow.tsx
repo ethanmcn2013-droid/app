@@ -8,6 +8,11 @@ export type CaptureState =
   | { tier: "entitled"; address: string }
   | { tier: "free" };
 
+type CaptureEmailFeedback = {
+  state: "saved" | "error";
+  message: string;
+};
+
 const PRICING_URL = "https://signalstudio.ie/pricing";
 
 /**
@@ -20,7 +25,13 @@ const PRICING_URL = "https://signalstudio.ie/pricing";
  * Fallback: when navigator.clipboard is unavailable a selectable
  * readonly input is revealed so the address is never inaccessible.
  */
-export function CaptureEmailRow({ state }: { state: CaptureState }) {
+export function CaptureEmailRow({
+  state,
+  onFeedback,
+}: {
+  state: CaptureState;
+  onFeedback?: (feedback: CaptureEmailFeedback) => void;
+}) {
   const [copied, setCopied] = useState(false);
   const [showFallback, setShowFallback] = useState(false);
   const fallbackRef = useRef<HTMLInputElement | null>(null);
@@ -43,9 +54,17 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(address).then(() => {
         setCopied(true);
+        onFeedback?.({
+          state: "saved",
+          message: "Capture email address copied.",
+        });
         setTimeout(() => setCopied(false), 1400);
       }).catch(() => {
         setShowFallback(true);
+        onFeedback?.({
+          state: "error",
+          message: "Clipboard access was unavailable. The address is selected for manual copy.",
+        });
         window.setTimeout(() => {
           fallbackRef.current?.select();
         }, 0);
@@ -53,6 +72,10 @@ export function CaptureEmailRow({ state }: { state: CaptureState }) {
     } else {
       // Clipboard API unavailable, reveal a selectable readonly input.
       setShowFallback(true);
+      onFeedback?.({
+        state: "error",
+        message: "Clipboard access was unavailable. The address is selected for manual copy.",
+      });
       window.setTimeout(() => {
         fallbackRef.current?.select();
       }, 0);
