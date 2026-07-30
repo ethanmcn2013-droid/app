@@ -759,7 +759,10 @@ const LEDGER_CSS = `
   line-height: 1;
   /* Sits on the title's first baseline rather than its box top. */
   padding-top: 9px;
-  color: var(--ink-ghost);
+  /* --ink-faint, not --ink-ghost: the hero sets its ordinals in ghost, but
+     ghost on paper is 1.47:1 and this is real text on a product surface, so
+     axe fails it. Faint is 4.83:1 and still reads as a quiet index. */
+  color: var(--ink-faint);
 }
 .signal-ledger .signal-row[data-lead] .signal-row-rail { padding-top: 8px; }
 

@@ -924,7 +924,14 @@
             },
             {
               "kind": "text",
-              "text": "Daily Signal · Wednesday 08:42",
+              "text": "Thursday 09:00 · The Orchard, events",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "8 read · 6 flagged · 3 shown",
               "proves": [
                 "default"
               ]
@@ -953,7 +960,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "We found your workspace.",
+              "name": "Signal found your workspace.",
               "proves": [
                 "first-use",
                 "populated"
