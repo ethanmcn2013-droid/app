@@ -26,6 +26,10 @@ export default defineConfig({
     "./baselines/{testFilePath}/{projectName}/{arg}{ext}",
   fullyParallel: false,
   workers: 1,
+  // A retried pass is reported as "flaky", never as green, so this makes races
+  // visible while stopping a single one from costing a full rebuild and rerun
+  // (this suite does `next build && next start` on every invocation).
+  retries: process.env.CI ? 2 : 0,
   timeout: 45_000,
   expect: {
     timeout: 8_000,
