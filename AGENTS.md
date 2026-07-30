@@ -45,16 +45,33 @@ Tasks-repo files referenced by atlas entries (e.g. `tasks/drizzle/`, `tasks/src/
 
 # End-of-cycle ritual
 
-After a cycle ships in Tasks (Vercel deploy succeeded, dispatch entry written in CHANGELOG.md per Studio BRAND.md §6.5, phase.md bumped), run:
+After a cycle ships in Tasks (Vercel deploy succeeded, dispatch entry written in
+CHANGELOG.md per Studio BRAND.md §6.5, phase.md bumped), the cycle is recorded.
+There is nothing further to run.
 
-```bash
-node scripts/log-cycle.mjs \
-  --cycle <N> \
-  --title "<one-line headline>" \
-  --date YYYY-MM-DD \
-  --description "<one-paragraph what-and-why>"
-```
+## Retired: `log-cycle`
 
-This pushes a row into the shared TimelineTurso DB so `ethanmcnamara.com/roadmap` stays accurate across all three products. The wrapper delegates to the canonical `log-cycle.ts` that lives alongside it in this repo's `scripts/` directory.
+`scripts/log-cycle.mjs` and `scripts/log-cycle.ts` are **legacy and must not be
+run**. They date from the personal portfolio site this codebase was extracted
+from, and they:
 
-Don't pass `--project` — it's forced to `tasks` in the wrapper.
+- write a `portfolio` workspace plus task and activity rows **straight into the
+  production Tasks database**, with no staging
+- exist to feed a `/roadmap` page on a personal domain that is not part of
+  Signal Studio
+
+Signal Timeline was lifted out of that portfolio repo in Cycle 46
+(`src/modules/timeline/server/db/timeline-schema.ts:12`), and the live Timeline
+product now scopes by workspace and explicitly ignores the leftover portfolio
+rows (`timeline-queries.ts:537`: "Ignores legacy null-workspace rows, those
+belong to the personal portfolio").
+
+The canonical records for a shipped cycle are the two that are already
+contractual:
+
+1. the dispatch entry in this repo's `CHANGELOG.md`
+2. the Signal HQ record in `studio/content/hq/**`
+
+`log-cycle` was a third, obsolete copy pointed at a surface nobody reads.
+Retired 2026-07-30 after it was followed in good faith during T·114/T·115 and
+found to target a domain the company does not own.
