@@ -30,12 +30,16 @@ owns focus through its own effect, so a direct focus call is overridden and the
 selection silently goes to the wrong project. That failure is why this was run
 locally rather than reasoned about.
 
-Two supporting changes. The switcher suite's Playwright traces were being
+One supporting change. The switcher suite's Playwright traces were being
 written on every failure and never uploaded, so each CI failure produced one
-line of output and nothing to read; they are now retained as evidence. And the
-experience suites retry twice on CI, which reports a retried pass as flaky
-rather than green, so a race stays visible while no longer costing a full
-rebuild and rerun.
+line of output and nothing to read; they are now retained as evidence. That
+gap is why this took three attempts to diagnose.
+
+Retries on CI were tried and deliberately left out. The shared Playwright
+config is hashed into every materiality receipt, so adding a single line to it
+invalidated fifteen of them and would have required a full re-attestation run.
+That is a fair price for a change that improves the product and a poor one for
+a convenience setting, particularly now the race is fixed at its source.
 
 Verified by running the suite locally four times per screen size, thirty-two of
 thirty-two green, having first reproduced the failure deterministically on all
