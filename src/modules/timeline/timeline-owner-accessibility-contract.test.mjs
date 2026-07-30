@@ -65,14 +65,23 @@ test("owner controls meet the 44px mobile target and error copy stays factual", 
   const audienceManager = read("app/audience/audience-manager.tsx");
   const errorBoundary = read("app/error.tsx");
 
+  // Assert the literal 44px, not `min-h-11`. This repo remaps Tailwind's
+  // numeric spacing scale (--space-11 is 80px), so `min-h-11` asserted a token
+  // that rendered these controls at 80px while this assertion's own message
+  // promised 44px. A bracketed 44px cannot drift with the scale.
   assert.equal(
-    (projectPage.match(/min-h-11/g) ?? []).length >= 2,
+    (projectPage.match(/min-h-\[44px\]/g) ?? []).length >= 2,
     true,
     "both owner mode controls must be at least 44px high",
   );
+  assert.doesNotMatch(
+    projectPage,
+    /min-h-11\b/,
+    "min-h-11 is 80px on this scale — use min-h-[44px] for tap targets",
+  );
   assert.match(
     audienceManager,
-    /const primaryButton =\s*\n\s*"[^"]*\bmin-h-11\b/,
+    /const primaryButton =\s*\n\s*"[^"]*\bmin-h-\[44px\]/,
   );
   assert.doesNotMatch(errorBoundary, /Nothing was lost|your .* (?:is|are) saved/i);
   assert.match(errorBoundary, /could not finish loading/);

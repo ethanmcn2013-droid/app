@@ -4,6 +4,58 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·112 · tightens · tap targets stop inheriting the 80px spacing step
+
+**Every control that asked for the 44px touch minimum was rendering at 80px, and
+on a phone the Studio Bar wordmark was an 80px box inside a 56px bar.** The suite
+design tokens remap Tailwind's numeric spacing namespace: `src/ds/tokens.css`
+sets `--space-11: 80px` and `src/ds/tailwind.css` maps `--spacing-11` onto it, so
+`min-h-11` resolves to 80px rather than the 44px the idiom means in stock
+Tailwind. Forty-six index-11 sizing utilities across twelve files now carry
+explicit `[44px]` values, variant prefixes intact.
+
+Measured on the review server with Playwright at 390x844 and 1280x800: of 124
+control instances carrying an index-11 sizing utility, 72 sat at
+`min-height: 80px`. Afterwards, none exceed 44px. The suite menu rows went from
+194x80 to 194x44, the Studio Bar create button and account avatar from 80x80 to
+44x44, and the Timeline owner mode nav from 80px segments to 44px ones beside the
+44px primary button they already sat next to.
+
+The trap was armed in the governance layer too, which is why it survived so long.
+`scripts/check-chrome-contract.mjs` asserts the Studio Bar contains `h-10` with
+the message "slim 40px bar" while that token computes to 64px, and the bar
+measures 1280x64. Two accessibility contract tests asserted `min-h-11` and
+`pointer-coarse:h-11` under messages promising 44px. Those assertions now name
+the literal 44px, so a token whose value drifts can no longer pass a green gate.
+`scripts/check-tap-target-scale.mjs` joins `pnpm test` and fails the build on any
+new index-11 sizing utility, carrying a shrink-only ledger for the one Signal
+file left out of this pass.
+
+Two things are deliberately unfixed. The Studio Bar shell keeps `md:h-10`,
+because dropping the shell to a literal 40px while its own contents are still
+inflated by the same remap leaves those controls flush against the bar edges;
+shell and contents have to move together. And the wider divergence stands:
+indices 7 through 12 are remapped while 13 and up fall through to stock Tailwind,
+so `p-10` and `p-16` both mean 64px and `min-h-11` is larger than `min-h-16`.
+Un-remapping resizes roughly 501 uses across 108 files here, and Notes, Timeline
+and Signal vendor the same tokens. `docs/SPACING_SCALE_COLLISION.md` carries the
+compiled evidence and the proposed fix in the design system repo.
+
+One site is deferred rather than fixed. `/invite/[token]` is a critical-tier
+reviewed surface, and `experience/registry.json` pins a materiality hash for it,
+so changing the source requires an evidence-backed refresh signed by the design
+owner. That is not a review to self-attest, so its disabled demo-mode Accept
+invite button stays at 80px and is recorded in the gate's outstanding ledger for
+a pass that carries the review. The ledger only shrinks, and it fails the build
+if a listed file gets worse or becomes clean without the entry being removed.
+
+T·110 reached the same diagnosis independently, on the same day, and landed the
+mobile chrome half of it first. This entry keeps its bar-avatar treatment, which
+is better than the one written here: 32px of visible avatar with a transparent
+ring carrying the pointer target out to 44px, rather than a 44px circle that sits
+heavy in a 56px bar. What T·110 scoped to phone widths is now carried across the
+coarse-pointer variants too, since 44px is the floor wherever the pointer is
+coarse, not only below the medium breakpoint.
 ## 2026-07-30 · T·111 · ships · the briefing shows its working, and a task keeps its own words
 
 **Signal now says how much it read, how much crossed a rule, and how much it

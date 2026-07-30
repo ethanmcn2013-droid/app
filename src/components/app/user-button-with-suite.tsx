@@ -174,7 +174,7 @@ function DemoUserButtonWithSuite({
           "flex cursor-pointer list-none items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ink [&::-webkit-details-marker]:hidden",
           placement === "bar"
             ? `${BAR_AVATAR_SIZE} ${BAR_AVATAR_TOUCH_AREA}`
-            : "h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11",
+            : "h-8 w-8 pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
         ].join(" ")}
       >
         DO
@@ -188,7 +188,7 @@ function DemoUserButtonWithSuite({
             <a
               key={product.slug}
               href={withSuiteContext(product.path, suiteContext)}
-              className="flex min-h-11 items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+              className="flex min-h-[44px] items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
             >
               {product.label}
               <ArrowIcon />
@@ -197,7 +197,7 @@ function DemoUserButtonWithSuite({
         )}
         <Link
           href="/?preview=public"
-          className="flex min-h-11 items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+          className="flex min-h-[44px] items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
         >
           View public site
           <EyeIcon />
@@ -244,7 +244,7 @@ function ClerkUserButtonWithSuite({
           avatarBox:
             placement === "bar"
               ? `${BAR_AVATAR_SIZE} rounded-full`
-              : "h-8 w-8 rounded-full pointer-coarse:h-11 pointer-coarse:w-11",
+              : "h-8 w-8 rounded-full pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
           userButtonTrigger:
             placement === "bar" ? BAR_AVATAR_TOUCH_AREA : "",
           userButtonPopoverCard:

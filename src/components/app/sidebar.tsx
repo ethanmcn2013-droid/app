@@ -270,7 +270,7 @@ function MobileTabBar({ active }: { active: string }) {
                 ref={(element) => registerMenuItem(element, index)}
                 aria-current={current ? "page" : undefined}
                 className={[
-                  "flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium outline-none transition-colors",
+                  "flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium outline-none transition-colors",
                   current
                     ? "bg-brand-soft text-brand"
                     : "text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink",
@@ -298,7 +298,7 @@ function MobileTabBar({ active }: { active: string }) {
           <Link
             ref={(element) => registerMenuItem(element, 4)}
             aria-current={active === "/app/inbox" ? "page" : undefined}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             href={withSuiteContext("/app/inbox", suiteContext)}
             onClick={() => closeViews(false)}
             role="menuitem"
@@ -316,7 +316,7 @@ function MobileTabBar({ active }: { active: string }) {
           <Link
             ref={(element) => registerMenuItem(element, 5)}
             aria-current={active === "/app/my-tasks" ? "page" : undefined}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             href={withSuiteContext("/app/my-tasks", suiteContext)}
             onClick={() => closeViews(false)}
             role="menuitem"
@@ -333,7 +333,7 @@ function MobileTabBar({ active }: { active: string }) {
           </Link>
           <button
             ref={(element) => registerMenuItem(element, 6)}
-            className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             onClick={() => {
               closeViews(false);
               triggerRef.current?.focus({ preventScroll: true });

@@ -141,7 +141,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "view")}
                 aria-label="View timeline"
                 aria-current={mode === "view" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "view"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -153,7 +153,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "edit")}
                 aria-label="Edit milestones"
                 aria-current={mode === "edit" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "edit"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -251,13 +251,13 @@ function TimelineProjectContent({
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href={`/app/timeline/${encodeURIComponent(project.slug)}?mode=edit`}
-              className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Edit milestones
             </Link>
             <Link
               href="/app/tasks"
-              className="inline-flex min-h-11 items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Open Tasks
             </Link>
