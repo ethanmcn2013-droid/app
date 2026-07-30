@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import type { Cadence } from "../../../lib/db/signal-prefs-schema";
 import { updateCadenceAction } from "./signal-cadence-actions";
 
@@ -35,10 +35,18 @@ const OPTIONS: {
   },
 ];
 
+/**
+ * Colour-only transition: layout properties are never animated here, and the
+ * duration token collapses to 0ms under prefers-reduced-motion.
+ */
+const SELECTION_TRANSITION =
+  "border-color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out)";
+
 export function SignalCadenceForm({ initial }: { initial: Cadence }) {
   const [value, setValue] = useState<Cadence>(initial);
   const [pending, startTransition] = useTransition();
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const radios = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onSelect(next: Cadence) {
     if (next === value) return;
@@ -49,52 +57,86 @@ export function SignalCadenceForm({ initial }: { initial: Cadence }) {
     });
   }
 
+  /**
+   * Real radiogroup semantics: one tab stop, arrow keys move and select.
+   * Nothing is disabled while saving, so the control you just pressed keeps
+   * focus instead of dropping it to the body.
+   */
+  function onKeyDown(event: React.KeyboardEvent, index: number) {
+    const step =
+      event.key === "ArrowDown" || event.key === "ArrowRight"
+        ? 1
+        : event.key === "ArrowUp" || event.key === "ArrowLeft"
+          ? -1
+          : 0;
+    if (step === 0) return;
+    event.preventDefault();
+    const next = (index + step + OPTIONS.length) % OPTIONS.length;
+    radios.current[next]?.focus();
+    onSelect(OPTIONS[next].value);
+  }
+
   return (
-    <div className="flex flex-col gap-3">
-      {OPTIONS.map((opt) => {
+    <div
+      role="radiogroup"
+      aria-label="Delivery cadence"
+      aria-busy={pending}
+      className="flex flex-col gap-3"
+    >
+      {OPTIONS.map((opt, index) => {
         const selected = value === opt.value;
         return (
           <button
             key={opt.value}
+            ref={(node) => {
+              radios.current[index] = node;
+            }}
             type="button"
+            role="radio"
+            aria-checked={selected}
+            tabIndex={selected ? 0 : -1}
             onClick={() => onSelect(opt.value)}
-            disabled={pending}
-            aria-pressed={selected}
-            className="group text-left rounded-xl border p-4 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand)] disabled:opacity-60"
+            onKeyDown={(event) => onKeyDown(event, index)}
+            /* No component-level ring: the suite's global :focus-visible
+               outline is the only focus mark. The radius is inline rather
+               than `rounded-lg` because that same global rule also sets
+               border-radius: 6px, which reshaped the card the moment it
+               took focus — a second radius on the route. */
+            className="group min-h-[44px] border p-4 text-left"
             style={{
-              borderColor: selected
-                ? "color-mix(in srgb, var(--brand) 55%, transparent)"
-                : "var(--line-soft, rgba(20,21,26,0.12))",
-              background: selected
-                ? "color-mix(in srgb, var(--brand) 5%, transparent)"
-                : "transparent",
+              borderRadius: "var(--radius-lg)",
+              borderColor: selected ? "var(--accent)" : "var(--hairline)",
+              background: selected ? "var(--accent-tint)" : "var(--paper)",
+              transition: SELECTION_TRANSITION,
             }}
           >
             <div className="flex items-baseline justify-between gap-3">
               <span
                 className="text-[15px] font-semibold"
-                style={{
-                  color: selected ? "var(--brand)" : "var(--ink)",
-                }}
+                style={{ color: "var(--ink)" }}
               >
                 {opt.label}
               </span>
               <span
                 aria-hidden
-                className="inline-flex h-4 w-4 items-center justify-center rounded-full border transition-all"
+                className="inline-flex h-4 w-4 flex-none items-center justify-center rounded-full border"
                 style={{
-                  borderColor: selected
-                    ? "var(--brand)"
-                    : "var(--line-soft, rgba(20,21,26,0.18))",
-                  background: selected ? "var(--brand)" : "transparent",
+                  borderColor: selected ? "var(--accent)" : "var(--hairline)",
+                  transition: SELECTION_TRANSITION,
                 }}
               >
-                {selected && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                )}
+                {selected ? (
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ background: "var(--accent)" }}
+                  />
+                ) : null}
               </span>
             </div>
-            <p className="mt-1 text-[13.5px] leading-[1.55] text-[color:var(--ink-soft)]">
+            <p
+              className="mt-1 max-w-[510px] text-[13px] leading-[1.55]"
+              style={{ color: "var(--ink-soft)" }}
+            >
               {opt.description}
             </p>
           </button>

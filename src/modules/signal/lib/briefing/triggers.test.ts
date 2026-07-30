@@ -221,7 +221,10 @@ describe("detectOverload", () => {
     assert.equal(out.length, 1);
     assert.equal(out[0].trigger, "overload");
     assert.equal(out[0].task.id, "synthetic:overload");
-    assert.match(out[0].task.title, /7 items in flight/);
+    // The synthetic title is a row headline in display type, so its count
+    // is spelled like every other count the reader sees.
+    assert.match(out[0].task.title, /Seven items open at once/);
+    assert.doesNotMatch(out[0].task.title, /\d/);
   });
 
   test("does not flag at exactly 5 in-flight", () => {
@@ -283,7 +286,8 @@ describe("detectCrowdedWeek", () => {
     assert.equal(out.length, 1);
     assert.equal(out[0].trigger, "crowded-week");
     assert.equal(out[0].task.id, "synthetic:crowded-week");
-    assert.match(out[0].task.title, /4 items/);
+    assert.match(out[0].task.title, /Four items due this week/);
+    assert.doesNotMatch(out[0].task.title, /\d/);
   });
 
   test("does not flag at exactly 2 upcoming items", () => {
@@ -401,5 +405,204 @@ describe("detectBlockedTooLong", () => {
     const t = makeTask({ blockedBy: ["other"], idleDays: 10 });
     assert.equal(detectStuckWork([t]).length, 0);
     assert.equal(detectBlockedTooLong([t]).length, 1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// "Why this" reasoning — the panel behind each row
+// ─────────────────────────────────────────────────────────────
+describe("reasons carry evidence, not restatement", () => {
+  function allTriggered() {
+    const week = Array.from({ length: 4 }, (_, i) =>
+      makeTask({ id: `w${i}`, dueAt: NOW + (i + 1) * DAY }),
+    );
+    const flight = Array.from({ length: 7 }, (_, i) =>
+      makeTask({ id: `f${i}`, lane: i < 2 ? "review" : "in-flight" }),
+    );
+    return [
+      ...detectStuckWork([makeTask({ id: "s", idleDays: 18 })]),
+      ...detectDueSoon([makeTask({ id: "o", dueAt: NOW - 2 * DAY })], NOW),
+      ...detectDueSoon([makeTask({ id: "d", dueAt: NOW + DAY })], NOW),
+      ...detectJustShipped(
+        [
+          makeTask({
+            id: "j",
+            lane: "shipped",
+            movedToShippedAt: NOW - 3_600_000,
+          }),
+        ],
+        NOW,
+      ),
+      ...detectOverload(flight),
+      ...detectCrowdedWeek(week, NOW),
+      ...detectBlockedTooLong([
+        makeTask({ id: "b", blockedBy: ["x"], idleDays: 9 }),
+      ]),
+    ];
+  }
+
+  test("every trigger names the rule that actually fired", () => {
+    for (const fired of allTriggered()) {
+      assert.ok(
+        fired.reasons.some((reason) =>
+          /^Signal (flags|keeps)\b/.test(reason),
+        ),
+        `${fired.trigger} should name its rule: ${fired.reasons.join(" | ")}`,
+      );
+    }
+  });
+
+  test("no reason falls back on board vocabulary for the lane", () => {
+    const [blocked] = detectBlockedTooLong([
+      makeTask({ blockedBy: ["x"], idleDays: 9, lane: "review" }),
+    ]);
+    assert.deepEqual(blocked.reasons, [
+      "Signal flags blocked work after five days without movement.",
+      "Sitting in review.",
+      "One upstream item has not cleared.",
+    ]);
+  });
+
+  test("no reason hedges behind 'reviewed' or a watching metaphor", () => {
+    for (const fired of allTriggered()) {
+      for (const reason of fired.reasons) {
+        assert.doesNotMatch(reason, /reviewed/i, `${fired.trigger}: ${reason}`);
+        assert.doesNotMatch(reason, /watch(es|ing)?\b/i, `${fired.trigger}: ${reason}`);
+      }
+    }
+  });
+
+  test("every trigger gives at least two distinct facts", () => {
+    for (const fired of allTriggered()) {
+      assert.ok(fired.reasons.length >= 2, fired.trigger);
+      assert.equal(
+        new Set(fired.reasons).size,
+        fired.reasons.length,
+        `${fired.trigger} repeats itself: ${fired.reasons.join(" | ")}`,
+      );
+    }
+  });
+
+  // The row already reads "Nothing has moved on it for eighteen days", so
+  // a bullet reading "Last update was eighteen days ago" spent the click
+  // restating it. The bullets now name the rule, then say the one thing
+  // the row cannot: whether the work was ever started.
+  test("stuck work adds the lane fact its row cannot carry", () => {
+    assert.deepEqual(
+      detectStuckWork([makeTask({ idleDays: 18, lane: "in-flight" })])[0]!
+        .reasons,
+      [
+        "Signal flags anything quiet for three days or more.",
+        "Started, and still open.",
+      ],
+    );
+    assert.deepEqual(
+      detectStuckWork([makeTask({ idleDays: 18, lane: "next" })])[0]!.reasons,
+      [
+        "Signal flags anything quiet for three days or more.",
+        "Not started yet.",
+      ],
+    );
+    assert.deepEqual(
+      detectStuckWork([makeTask({ idleDays: 18, lane: "review" })])[0]!.reasons,
+      [
+        "Signal flags anything quiet for three days or more.",
+        "Sitting in review.",
+      ],
+    );
+  });
+
+  test("no stuck-work bullet restates the age the row already carries", () => {
+    for (const idleDays of [3, 9, 18, 59]) {
+      for (const [fired] of [detectStuckWork([makeTask({ idleDays })])]) {
+        for (const reason of fired!.reasons) {
+          assert.doesNotMatch(reason, /last update|days ago/i, reason);
+        }
+      }
+    }
+  });
+
+  test("overdue reasons add the idle fact the date cannot carry", () => {
+    const [fired] = detectDueSoon(
+      [makeTask({ dueAt: NOW - 2 * DAY, idleDays: 6 })],
+      NOW,
+    );
+    assert.deepEqual(fired.reasons, [
+      "Signal flags anything past its date.",
+      "No update on it in six days.",
+    ]);
+  });
+
+  test("an untouched due item reports where it is sitting instead", () => {
+    const [fired] = detectDueSoon(
+      [makeTask({ dueAt: NOW + DAY, idleDays: 0, lane: "next" })],
+      NOW,
+    );
+    assert.deepEqual(fired.reasons, [
+      "Signal flags anything due inside two days.",
+      "Not started yet.",
+    ]);
+  });
+
+  test("overload names the threshold and how far the work has got", () => {
+    const flight = Array.from({ length: 7 }, (_, i) =>
+      makeTask({ id: `t${i}`, lane: i < 2 ? "review" : "in-flight" }),
+    );
+    const [fired] = detectOverload(flight);
+    assert.deepEqual(fired.reasons, [
+      "Signal flags anything over five open at once.",
+      "Two of them are already in review.",
+    ]);
+  });
+
+  test("crowded week names the nearest date, not the cluster again", () => {
+    const tasks = Array.from({ length: 3 }, (_, i) =>
+      makeTask({ id: `t${i}`, dueAt: NOW + (i + 2) * DAY }),
+    );
+    const [fired] = detectCrowdedWeek(tasks, NOW);
+    assert.deepEqual(fired.reasons, [
+      "Signal flags three or more dates landing in the same seven days.",
+      "The closest is due in two days.",
+    ]);
+  });
+
+  test("high priority is stated as its own fact, never welded to another", () => {
+    const [fired] = detectStuckWork([makeTask({ idleDays: 5, priority: 0 })]);
+    assert.equal(fired.reasons.at(-1), "You marked this high priority.");
+  });
+
+  // At the old P0-or-P1 threshold the line appeared on very nearly every
+  // row, so it discriminated nothing and read as decoration.
+  test("the priority line only appears on work the reader marked P0", () => {
+    for (const priority of [1, 2, 3] as const) {
+      for (const fired of [
+        detectStuckWork([makeTask({ idleDays: 5, priority })])[0]!,
+        detectDueSoon([makeTask({ dueAt: NOW - DAY, priority })], NOW)[0]!,
+      ]) {
+        assert.ok(
+          !fired.reasons.some((reason) => /high priority/i.test(reason)),
+          `priority ${priority}: ${fired.reasons.join(" | ")}`,
+        );
+      }
+    }
+    assert.ok(
+      detectDueSoon(
+        [makeTask({ dueAt: NOW - DAY, priority: 0 })],
+        NOW,
+      )[0]!.reasons.includes("You marked this high priority."),
+    );
+    assert.equal(
+      detectJustShipped(
+        [
+          makeTask({
+            lane: "shipped",
+            priority: 1,
+            movedToShippedAt: NOW - 3_600_000,
+          }),
+        ],
+        NOW,
+      )[0]!.reasons.at(-1),
+      "Nothing is being asked of you here.",
+    );
   });
 });

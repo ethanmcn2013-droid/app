@@ -9,7 +9,13 @@ import {
   type SignalLedgerSection,
 } from "./ledger-contract";
 import type { Briefing, BriefItem } from "../briefing/types";
-import { ageNote, graceNote, summaryLine } from "../briefing/voice";
+import {
+  ageNote,
+  closingLine,
+  graceNote,
+  readCountSentence,
+  summaryLine,
+} from "../briefing/voice";
 
 interface SharedLedgerOptions {
   generatedAtLabel: string;
@@ -52,7 +58,11 @@ export function ledgerFromLegacyBriefing(
       idSeed: `legacy:${group.key}`,
       section: group.section,
       state: group.section === "attention" ? "needs_attention" : "watch",
+      // The engine's title/observation split carries straight through:
+      // `text` is the reader's own title, `detail` is what Signal
+      // noticed about it.
       text: first.text,
+      detail: first.detail,
       reasons: unique(group.items.flatMap((item) => item.reasons)),
       receipt: {
         sourceLabel: first.sourceLabel,
@@ -81,13 +91,22 @@ export function ledgerFromLegacyBriefing(
     freshness: "fresh",
     coverageStatus: "complete",
     candidates,
+    readCount: briefing.readCount,
+    triggeredCount: briefing.triggeredCount,
     healthyEmptyState: {
       headline:
         briefing.emptyStateHeadline ??
         "Nothing needs your attention right now.",
+      // A clear day reads as a receipt when it can name what was read,
+      // and only falls back to the segment phrasing when it cannot. The
+      // triggered count travels with the read count: the entries here are
+      // attention and risks only, so a just-shipped item leaves the page
+      // empty while having crossed a rule, and the sentence must not call
+      // that "nothing crossed".
       body:
+        readCountSentence(briefing.readCount, briefing.triggeredCount) ??
         briefing.emptyStateBody ??
-        "No item in this scope crossed Signal's attention rules.",
+        "No item in this scope crossed Signal’s attention rules.",
     },
     closingLine: graceNote(briefing),
     allowedAppOrigin: options.allowedAppOrigin,
@@ -135,6 +154,10 @@ export function ledgerFromProgressiveBriefing(
     }),
   );
 
+  const attentionCount = candidates.filter(
+    (candidate) => candidate.section === "attention",
+  ).length;
+
   return buildSignalLedger({
     heading: observationHeading(candidates.length),
     generatedAt: briefing.meta.calculatedAt,
@@ -147,10 +170,32 @@ export function ledgerFromProgressiveBriefing(
     freshness: briefing.meta.freshness,
     coverageStatus: briefing.meta.coverage.status,
     candidates,
+    readCount: progressiveReadCount(briefing),
     healthyEmptyState: briefing.emptyState,
-    closingLine: "That's the read. The rest can wait.",
+    closingLine: closingLine(attentionCount, candidates.length === 0),
     allowedAppOrigin: options.allowedAppOrigin,
   });
+}
+
+/**
+ * Total source records the providers report having examined, or null.
+ *
+ * Only a complete read can honestly answer "how much did you look at":
+ * on a partial, stale, or unavailable coverage status the sum is what
+ * happened to answer, not what is in scope, and the accounting is
+ * withheld rather than guessed. The coverage note already tells the
+ * reader the picture is incomplete.
+ */
+function progressiveReadCount(briefing: BriefingResponse): number | null {
+  if (briefing.meta.coverage.status !== "complete") return null;
+  const providers = Object.values(briefing.meta.coverage.providers).filter(
+    (provider): provider is NonNullable<typeof provider> => Boolean(provider),
+  );
+  if (providers.length === 0) return null;
+  return providers.reduce(
+    (total, provider) => total + Math.max(0, provider.sourceRecordCount),
+    0,
+  );
 }
 
 export function groupLegacyBriefItems(briefing: Briefing): LegacyGroup[] {
@@ -174,6 +219,10 @@ export function groupLegacyBriefItems(briefing: Briefing): LegacyGroup[] {
       row.section,
       row.item.trigger,
       normalized(row.item.text),
+      // Two rows only merge when they read identically, which now means
+      // the same title AND the same observation. Merging on the title
+      // alone would hide one item's age behind another's.
+      normalized(row.item.detail),
       normalized(row.item.sourceLabel),
       row.item.workspaceId ?? "",
       row.item.planningPeriodId ?? "",
@@ -189,9 +238,16 @@ export function groupLegacyBriefItems(briefing: Briefing): LegacyGroup[] {
   return [...groups.values()];
 }
 
+// Words, not numerals: this is a spoken sentence in display type, and
+// it sits beside voice.ts's "Two things calling." The ledger caps at
+// three, so the count never leaves the range words cover comfortably.
+const HEADING_COUNTS = ["", "One thing", "Two things", "Three things"];
+
 function observationHeading(count: number): string {
   if (count === 1) return "One thing genuinely needs you.";
-  if (count > 1) return `${Math.min(count, 3)} things genuinely need you.`;
+  if (count > 1) {
+    return `${HEADING_COUNTS[Math.min(count, 3)]} genuinely need you.`;
+  }
   return "A short read of what deserves attention.";
 }
 
@@ -220,12 +276,21 @@ function fallbackAction(
   if (observation.sourceCounts.notes > 0) {
     return { label: "Open Notes", href: "/app/notes" };
   }
-  return { label: "Keep reading", href: "/app/signal" };
+  // "Keep reading" pointed at /app/signal, which is the page the reader
+  // is already on.
+  return { label: "Open Signal", href: "/app/signal" };
 }
 
-function formatInstant(value: string, timezone: string): string {
+/**
+ * The receipt's "updated" stamp, or null when the instant is unusable.
+ *
+ * Null matters: the renderer composes " · updated {label}", so a
+ * placeholder string produced " · updated Update time unavailable".
+ * A segment with nothing to say drops out of the line instead.
+ */
+function formatInstant(value: string, timezone: string): string | null {
   const instant = new Date(value);
-  if (Number.isNaN(instant.getTime())) return "Update time unavailable";
+  if (Number.isNaN(instant.getTime())) return null;
 
   try {
     return new Intl.DateTimeFormat("en-GB", {

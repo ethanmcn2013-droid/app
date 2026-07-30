@@ -44,6 +44,7 @@ import {
   dateOnlyToTimestamp,
 } from "../../lib/briefing/calendar-time";
 import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
 export type BriefingForUserResult =
   | {
@@ -56,9 +57,12 @@ export type BriefingForUserResult =
 
 /**
  * Fixed synthetic clock for deterministic demo/review screenshots and audits.
- * 07:42 UTC is 08:42 in Europe/London on 15 July 2026.
+ * Derived from the suite's pinned review calendar frame so Signal, Tasks, and
+ * Timeline narrate the same "today" in the shared review story.
  */
-export const DEMO_BRIEFING_NOW = Date.UTC(2026, 6, 15, 7, 42);
+export const DEMO_BRIEFING_NOW = Date.parse(
+  PINNED_REVIEW_CALENDAR_FRAME.nowIso,
+);
 
 export async function buildBriefingForUser(opts: {
   clerkId: string;

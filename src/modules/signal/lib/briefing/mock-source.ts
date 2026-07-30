@@ -4,8 +4,16 @@ import {
   REVIEW_MENU_MILESTONE,
   REVIEW_SUITE_FIXTURE,
 } from "@/lib/review-suite-fixture";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
 const DAY = 86_400_000;
+
+/**
+ * All mock briefings run on the suite's pinned review clock. A wall-clock
+ * default here would let the demo story drift away from the "today" that
+ * Tasks and Timeline review surfaces narrate.
+ */
+const PINNED_REVIEW_NOW = Date.parse(PINNED_REVIEW_CALENDAR_FRAME.nowIso);
 
 /**
  * Mock signals shaped to match the suite-wide The Orchard / Mara & Finn
@@ -131,7 +139,7 @@ export function createMockBriefingSource(input?: {
   return {
     async getSignalsForUser() {
       return makeMockSignals(
-        input?.now ?? Date.now(),
+        input?.now ?? PINNED_REVIEW_NOW,
         input?.workspaceId,
         input?.sourceLabel,
       );
@@ -185,6 +193,6 @@ function makePlanningPeriodMockSignals(now: number): TaskSignal[] {
 
 export const mockPlanningPeriodBriefingSource: BriefingSource = {
   async getSignalsForUser() {
-    return makePlanningPeriodMockSignals(Date.now());
+    return makePlanningPeriodMockSignals(PINNED_REVIEW_NOW);
   },
 };
