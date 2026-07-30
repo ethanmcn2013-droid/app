@@ -4,6 +4,37 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·111 · ships · the briefing shows its working, and a task keeps its own words
+
+**Signal now says how much it read, how much crossed a rule, and how much it
+cleared, and the arithmetic closes in front of the reader.** The read used to
+publish a numerator and ask to be trusted for the rest: three findings, no
+denominator. Every row now carries the pile it came from, drawn beside the
+headline in three weights, lit for what is on screen in that row's own tone,
+mid for work that crossed a rule but lost its slot, ghost for what cleared.
+Held-back work is never counted as clear, synthetic cluster rows are never
+counted as source items, and the contract enforces those invariants itself
+rather than trusting its callers. The close ends on a sentence and a green
+mark for the rest.
+
+Rows are grammatical again. A task title is the reader's own words, so it is
+now a headline and never a clause: "Approve the final seating plan" over "Two
+days past its date", where the page used to compose "Approve the final seating
+plan is 2 days overdue" out of an imperative. The same rule reaches upstream
+blockers, which are stripped of borrowed punctuation and counted rather than
+named when a question or a shout cannot sit inside a sentence. Every "Why
+this" names the rule that fired and then adds a fact the row had no room for,
+instead of restating it. Sections are Now and Next, each row sits on the
+hero's three columns with its action at the right edge, and the tone is
+present at rest rather than only under a pointer.
+
+Underneath, the read runs on the suite's pinned review clock instead of a
+day of its own, the honest loading skeleton is finally mounted and traces the
+settled page band for band, and every control is a real 44px rather than the
+80px `min-h-11` silently resolves to on this scale. Honest edge: the ordinal
+rail carries a number, not the hero's NOW/NEXT claim word, because the section
+headings already say it once; and the unmounted analytics shell is untouched,
+still awaiting its wire-or-retire decision.
 ## 2026-07-30 · T·110 · tightens · the app chrome holds its own bounds on a phone
 
 **On a phone, the Studio Bar now keeps its controls inside the bar, and the in

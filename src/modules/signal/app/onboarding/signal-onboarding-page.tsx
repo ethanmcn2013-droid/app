@@ -49,94 +49,70 @@ export async function SignalOnboardingPage() {
   }
 
   return (
-    <div
-      className="mx-auto w-full max-w-[560px] px-6"
-      style={{ paddingTop: 64, paddingBottom: 96 }}
-    >
-      <div
-        style={{
-          fontFamily: "var(--font-mono-stack)",
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: "0.14em",
-          textTransform: "uppercase",
-          color: "var(--ink-soft)",
-          marginBottom: 14,
-        }}
-      >
-        Onboarding
-      </div>
-      <h1
-        style={{
-          fontSize: "clamp(28px, 4vw, 36px)",
-          letterSpacing: "-0.035em",
-          lineHeight: 1.08,
-          fontWeight: 600,
-          color: "var(--ink)",
-          marginBottom: 12,
-        }}
-      >
-        {candidates.length === 0
-          ? "We couldn't find a workspace."
-          : candidates.length === 1
-            ? "We found your workspace."
-            : "Pick the workspace to brief."}
-      </h1>
-      <p
-        style={{
-          fontSize: 17,
-          lineHeight: 1.55,
-          color: "var(--ink-soft)",
-          marginBottom: 32,
-        }}
-      >
-        {candidates.length === 0
-          ? "Your briefing reads from a Signal Tasks workspace. Sign up at Tasks or get added to one, then come back."
-          : "Signal reads this workspace when you open the briefing. You can change it later."}
-      </p>
-
-      {candidates.length === 0 ? (
-        <div
-          style={{
-            padding: 20,
-            borderRadius: "var(--r-3)",
-            border: "1px solid var(--border-soft)",
-            background: "var(--bg-elev)",
-          }}
+    <div className="mx-auto w-full max-w-[960px] px-6 py-8 sm:px-8">
+      <div className="max-w-[600px]">
+        <p
+          className="mb-[14px] text-[11px] font-semibold uppercase tracking-[0.14em]"
+          style={{ color: "var(--ink-soft)" }}
         >
-          {/* S5: TASKS_URL rewritten to in-app /app/tasks */}
-          <a
-            href="/app/tasks"
+          Onboarding
+        </p>
+        <h1
+          className="mb-3 text-[36px] font-semibold leading-[1.06] tracking-[-0.035em] text-balance"
+          style={{ color: "var(--ink)" }}
+        >
+          {candidates.length === 0
+            ? "No workspace found."
+            : candidates.length === 1
+              ? "Signal found your workspace."
+              : "Pick the workspace Signal should read."}
+        </h1>
+        <p
+          className="mb-8 max-w-[510px] text-[15px] leading-[1.6]"
+          style={{ color: "var(--ink-soft)" }}
+        >
+          {candidates.length === 0
+            ? "Signal reads from a Tasks workspace. Create one in Tasks, or ask to be added to one, then come back."
+            : "Signal reads this workspace when you open the briefing. You can change it later."}
+        </p>
+
+        {candidates.length === 0 ? (
+          <div
+            className="rounded-lg border p-6"
             style={{
-              fontSize: 14,
-              color: "var(--brand)",
-              fontWeight: 600,
-              textDecoration: "none",
+              borderColor: "var(--hairline)",
+              background: "var(--paper)",
             }}
           >
-            Open Signal Tasks ↗
-          </a>
-          <p
-            style={{
-              marginTop: 10,
-              fontSize: 13,
-              color: "var(--ink-quiet)",
-              lineHeight: 1.55,
-            }}
-          >
-            Once you have a workspace,{" "}
+            {/* S5: TASKS_URL rewritten to in-app /app/tasks.
+                No component-level ring on either anchor: the suite's global
+                :focus-visible outline is the only focus mark. */}
             <a
-              href="/app/signal/onboarding"
-              style={{ color: "var(--ink-soft)", textDecoration: "underline" }}
+              href="/app/tasks"
+              className="inline-flex min-h-[44px] items-center text-[13px] font-medium no-underline transition-[color] hover:text-[color:var(--ink)]"
+              style={{ color: "var(--ink)" }}
             >
-              come back to this tab and try again
+              Open Tasks <span aria-hidden>&nbsp;→</span>
             </a>
-            .
-          </p>
-        </div>
-      ) : (
-        <SignalOnboardingPicker candidates={candidates} />
-      )}
+            <p
+              className="mt-2 max-w-[510px] text-[15px] leading-[1.6]"
+              style={{ color: "var(--ink-quiet)" }}
+            >
+              Once you have a workspace,{" "}
+              <a
+                href="/app/signal/onboarding"
+                className="underline underline-offset-2"
+                style={{ color: "var(--ink-soft)" }}
+              >
+                come back to this tab and try again
+              </a>
+              .
+            </p>
+          </div>
+        ) : (
+          <SignalOnboardingPicker candidates={candidates} />
+        )}
+      </div>
     </div>
   );
 }

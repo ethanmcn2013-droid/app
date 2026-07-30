@@ -38,7 +38,15 @@ export type TaskSignal = {
  */
 export type BriefItem = {
   id: string;
+  /** The task title, sentence-cased and otherwise verbatim. Nothing is
+   *  appended: titles are imperatives, questions, and shouts, and any
+   *  observation glued onto one reads as broken English ("Approve the
+   *  final seating plan is 2 days overdue"). */
   text: string;
+  /** The observation about `text`, written with a pronoun or implicit
+   *  subject so it stays grammatical under any title ("Two days past
+   *  its date."). Renderers show it as the line under the headline. */
+  detail: string;
   sourceLabel: string;
   trigger: TriggerKind;
   reasons: string[]; // for /app/brief web view; emails skip these
@@ -78,6 +86,16 @@ export type Briefing = {
   // The brief is "empty" when no bucket has anything. Renderer
   // shows a quiet "Nothing to flag today" state, no email is sent.
   isEmpty: boolean;
+  /** Total signals the engine examined in scope on this run, surfaced
+   *  or not. The product's claim is that it filters, so a count of what
+   *  it showed without a count of what it read is an assertion rather
+   *  than a receipt. Threaded to the ledger as `readCount`. */
+  readCount: number;
+  /** How many distinct signals crossed a rule, counted BEFORE the
+   *  three-per-bucket cap. Without it the ledger cannot tell "cleared"
+   *  (crossed nothing) from "held back" (crossed a rule but lost its
+   *  slot), and would describe held-back work as clear. */
+  triggeredCount: number;
   /** Segment-aware copy when isEmpty, from Tasks primary_use_case. */
   emptyStateHeadline?: string;
   emptyStateBody?: string;
