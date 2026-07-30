@@ -1,12 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import {
-  LANES,
-  LANE_ORDER,
-  PRIORITY_LABEL,
-  type PublicTask,
-} from "@/lib/data";
+import { PRIORITY_LABEL, type PublicTask } from "@/lib/data";
+import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
 import { useGuestAuth } from "@/components/app/guest/guest-auth-context";
 
 /**
@@ -18,8 +14,8 @@ export function ShareBoard({ tasks }: { tasks: PublicTask[] }) {
   const { promptSignUp } = useGuestAuth();
   return (
     <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
-      {LANE_ORDER.map((laneId, idx) => {
-        const lane = LANES[laneId];
+      {publicLaneOrder(tasks).map((laneId, idx) => {
+        const lane = publicLane(laneId);
         const laneTasks = tasks.filter((t) => t.lane === laneId);
         return (
           <motion.div

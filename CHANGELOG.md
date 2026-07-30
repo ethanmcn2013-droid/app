@@ -4,6 +4,36 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·116 · ships · a shared board stops hiding the work parked in Waiting
+
+**Anything sitting in the Waiting column was invisible on every share link,
+every printed board and every public embed, and nothing said so.** A client
+opening a board you sent them saw four columns and no indication that a fifth
+existed. All three surfaces now render every column the board actually holds.
+
+The cause is a seam. The board runs a five-status model against a schema with
+four canonical lanes, so the fifth status is written as raw text into the lane
+column. The share, print and embed views each iterated the canonical four and
+grouped on an exact match, so a task in the fifth simply matched nothing and
+fell out. It did not error and it did not warn. On a guest-facing surface that
+is data loss, and it was the kind you only find by counting.
+
+Lane resolution for those three surfaces now lives in one place. Canonical
+lanes keep their order and their colour. Any other lane the data contains is
+appended in a stable order and rendered neutral, which is the same no-tint
+treatment custom columns already get inside the app, so an unrecognised column
+reads as a real column rather than borrowing a meaning it has not earned. Its
+name is derived from the stored value, so Waiting reads "Waiting".
+
+Eight tests pin the behaviour, including the one that matters: a task in a
+non-canonical lane must appear. This is the guest-facing half of the column
+work. The board's own column system is still the design-lab prototype and is
+addressed separately.
+
+Verified: typecheck clean, the full test suite green, lint with no errors, and
+the production build passing. No schema change and no migration; this is a
+render fix over data that was already stored.
+
 ## 2026-07-30 · T·115 · cuts · the sidebar stops saying the same thing twice
 
 **The left column said "Signal Studio", then "Tasks", directly under a bar that

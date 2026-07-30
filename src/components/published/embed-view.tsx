@@ -1,5 +1,6 @@
-import { LANE_ORDER, LANES, PRIORITY_LABEL } from "@/lib/data";
-import type { LaneId, PublicTask } from "@/lib/data";
+import { PRIORITY_LABEL } from "@/lib/data";
+import type { PublicTask } from "@/lib/data";
+import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
@@ -17,8 +18,9 @@ import type { PublishedWorkspaceProps } from "./types";
 const TASKS_PER_LANE = 6;
 
 export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
-  const byLane = new Map<LaneId, PublicTask[]>();
-  for (const id of LANE_ORDER) byLane.set(id, []);
+  const laneOrder = publicLaneOrder(tasks);
+  const byLane = new Map<string, PublicTask[]>();
+  for (const id of laneOrder) byLane.set(id, []);
   for (const t of tasks) {
     const arr = byLane.get(t.lane);
     if (arr) arr.push(t);
@@ -52,12 +54,12 @@ export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
       </header>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {LANE_ORDER.map((laneId) => {
+        {laneOrder.map((laneId) => {
           const list = byLane.get(laneId) ?? [];
           if (list.length === 0) return null;
           const visible = list.slice(0, TASKS_PER_LANE);
           const overflow = list.length - visible.length;
-          const lane = LANES[laneId];
+          const lane = publicLane(laneId);
           return (
             <section key={laneId}>
               <div

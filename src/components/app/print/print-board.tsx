@@ -1,4 +1,5 @@
-import { LANES, LANE_ORDER, PRIORITY_LABEL, type Task } from "@/lib/data";
+import { PRIORITY_LABEL, type Task } from "@/lib/data";
+import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
 import { groupTasksByLane } from "@/lib/tasks/selectors";
 
 function formatDue(due: string | null | undefined): string {
@@ -25,9 +26,14 @@ export function PrintBoard({
       </div>
 
       <div className="print-board-grid">
-        {LANE_ORDER.map((laneId) => {
-          const lane = LANES[laneId];
-          const laneTasks = grouped[laneId];
+        {publicLaneOrder(tasks).map((laneId) => {
+          const lane = publicLane(laneId);
+          // `grouped` is keyed by the canonical lanes only, so a non-canonical
+          // lane (the board's fifth status) falls back to a direct filter
+          // rather than dropping its tasks the way this surface used to.
+          const laneTasks: Task[] =
+            (grouped as Record<string, Task[]>)[laneId] ??
+            tasks.filter((t) => t.lane === laneId);
           return (
             <div key={laneId} className="print-board-lane">
               <div className="print-lane-header">
