@@ -4,6 +4,48 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·117 · tightens · the project switcher stops disagreeing with the page it is on
+
+**The Timeline switcher took its label from the server while the address bar
+changed instantly, so for a moment the URL said one project and the switcher
+said another.** It now reads the project from the route, which makes it correct
+the moment a switch commits.
+
+This surfaced as a test that failed on a different screen size every run and
+cost several full CI reruns. Two earlier attempts adjusted the assertion, which
+was the wrong instinct: the assertion was fine and the product had a real gap.
+`router.push` updates the URL before the new server payload arrives, and the
+switcher rendered from a prop that arrived with that payload, so it kept
+displaying the previous project until the round trip finished. Resolving the
+label from the route param closes the window. The switcher is now the fastest
+part of the switch rather than the slowest, and the check that used to need
+fifteen seconds finishes in under two.
+
+The test keeps its keyboard path and drops the assumption underneath it. It
+pressed an arrow key and trusted that the wanted project sat exactly one place
+below the focused one; it now asserts where the key landed before committing,
+so a reordered menu fails naming the ordering rather than as a wrong
+destination. An attempt to move focus directly was tried and reverted: the menu
+owns focus through its own effect, so a direct focus call is overridden and the
+selection silently goes to the wrong project. That failure is why this was run
+locally rather than reasoned about.
+
+One supporting change. The switcher suite's Playwright traces were being
+written on every failure and never uploaded, so each CI failure produced one
+line of output and nothing to read; they are now retained as evidence. That
+gap is why this took three attempts to diagnose.
+
+Retries on CI were tried and deliberately left out. The shared Playwright
+config is hashed into every materiality receipt, so adding a single line to it
+invalidated fifteen of them and would have required a full re-attestation run.
+That is a fair price for a change that improves the product and a poor one for
+a convenience setting, particularly now the race is fixed at its source.
+
+Verified by running the suite locally four times per screen size, thirty-two of
+thirty-two green, having first reproduced the failure deterministically on all
+four. Typecheck clean, the full test suite green, lint with no errors, and the
+production build passing.
+
 ## 2026-07-30 · T·116 · ships · a shared board stops hiding the work parked in Waiting
 
 **Anything sitting in the Waiting column was invisible on every share link,
