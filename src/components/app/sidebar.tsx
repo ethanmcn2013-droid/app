@@ -246,6 +246,9 @@ function MobileTabBar({ active }: { active: string }) {
     <nav
       ref={wrapRef}
       aria-label="Signal Studio products and Tasks views"
+      /* Marks this as the rail that owns the foot of the mobile viewport, so
+         floating chrome (the dev notice) can measure it and sit clear. */
+      data-signal-bottom-nav="tasks"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-white/95 shadow-[0_-16px_34px_-30px_rgba(20,21,26,0.36)] backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >

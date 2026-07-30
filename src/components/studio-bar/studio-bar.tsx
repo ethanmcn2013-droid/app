@@ -19,6 +19,12 @@
  *   auto   universal command field (right-aligned, Phase 1), contextual
  *          create + account
  *
+ * Mobile touch targets are written in pixels, not scale steps. The suite
+ * design tokens remap Tailwind's numeric spacing scale onto the semantic
+ * base-4 steps in src/ds/tokens.css, so `h-11` resolves to --space-11 (80px),
+ * not the 44px it means in stock Tailwind — an 80px control inside this 56px
+ * bar overflows it top and bottom. Below md, use h-[44px] / min-h-[44px].
+ *
  * Contract: content/hq/decisions/product-header-contract.md +
  * scripts/check-chrome-contract.mjs. The bar stays at z-40; only overlays
  * float above. The contract tokens (h-10, --x-studio-chrome, z-40,
@@ -101,7 +107,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
       <a
         href={identity.home}
         aria-label={identity.label}
-        className="inline-flex min-h-11 flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-11"
+        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-11"
         style={{ letterSpacing: "-0.05em" }}
       >
         {identity.word}
@@ -202,7 +208,7 @@ export function StudioBar() {
             type="button"
             title="New task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
           >
             <svg
               aria-hidden="true"

@@ -4,6 +4,24 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·110 · tightens · the app chrome holds its own bounds on a phone
+
+**On a phone, the Studio Bar now keeps its controls inside the bar, and the in
+development notice sits above the product rail instead of across it.** The
+account avatar, the create button, and the product wordmark were each drawing at
+80px inside a 56px bar. The avatar read as a large black circle clipped by the
+right edge; the other two spilled invisible tap targets over the canvas below.
+The notice pill covered the Notes, Tasks, Timeline, and Signal tabs.
+
+One cause sat under all of it. The suite spacing scale is semantic, not derived
+from pixels: step 11 is 80px, not 44px. Chrome written as "the 44px touch step"
+therefore came out nearly twice its intended size. Sizes that have to land on
+real pixels are now written in pixels, with the reason recorded beside them.
+
+The notice measures the rail it has to clear rather than guessing at it, so it
+holds its place across both mobile rails and inside the phone's safe area.
+Desktop and tablet are untouched, byte for byte.
+
 ## 2026-07-29 · T·109 · tightens · every task movement explains what changed
 
 **Tasks now keeps the work visibly continuous when it opens, moves, settles,

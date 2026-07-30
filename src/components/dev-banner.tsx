@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useHydrated } from "@/lib/use-hydrated";
 
 /**
@@ -14,6 +15,11 @@ import { useHydrated } from "@/lib/use-hydrated";
  *
  * Copy is configurable via NEXT_PUBLIC_DEV_BANNER_TEXT; default mirrors the
  * suite line "In development, private preview with staged access."
+ *
+ * At mobile widths the app docks a product rail at the foot of the viewport,
+ * so the pill measures that rail (marked `data-signal-bottom-nav`) and lifts
+ * clear of it. Where no rail is docked it keeps its bottom-centre resting
+ * position, offset by the safe area.
  */
 
 function bannerEnabled(): boolean {
@@ -28,8 +34,27 @@ function bannerEnabled(): boolean {
 
 const DISMISS_KEY = "signal-tasks.devbanner_dismissed";
 
+/** Marker set by the mobile rails that own the foot of the viewport. */
+const BOTTOM_NAV_SELECTOR = "[data-signal-bottom-nav]";
+
+/**
+ * How far the pill must rise to clear whatever sits at the foot of the
+ * viewport. Returns the height of the bottom rail's overlap with the viewport
+ * bottom (safe-area padding included, since it is inside the rail's own box),
+ * or 0 when nothing is docked there — desktop and marketing routes.
+ */
+function measureBottomRail(): number {
+  const rail = document.querySelector(BOTTOM_NAV_SELECTOR);
+  if (!rail) return 0;
+  const rect = rail.getBoundingClientRect();
+  if (rect.height === 0) return 0;
+  const overlap = window.innerHeight - rect.top;
+  return overlap > 0 ? Math.round(overlap) : 0;
+}
+
 export function DevBanner() {
   const hydrated = useHydrated();
+  const pathname = usePathname();
   const [hidden, setHidden] = useState(() => {
     if (!bannerEnabled() || typeof sessionStorage === "undefined") return true;
     try {
@@ -39,6 +64,37 @@ export function DevBanner() {
     }
   });
 
+  // The pill is fixed to the viewport, but below md the app docks a product
+  // rail at the foot of it. Measure that rail (it is a sibling subtree, so CSS
+  // alone cannot see it) and lift the pill clear rather than sitting on top of
+  // the Notes/Tasks/Timeline/Signal tabs. Re-measures on navigation, because
+  // which rail renders — or whether one renders at all — is route-dependent.
+  const [railHeight, setRailHeight] = useState(0);
+  const measuring = hydrated && !hidden;
+
+  useEffect(() => {
+    if (!measuring) return undefined;
+
+    const sync = () => setRailHeight(measureBottomRail());
+    sync();
+    // The rail can mount a frame after this effect runs (route transitions,
+    // suspense boundaries resolving), so take a second reading next frame.
+    const frame = requestAnimationFrame(sync);
+
+    const rail = document.querySelector(BOTTOM_NAV_SELECTOR);
+    const observer = new ResizeObserver(sync);
+    if (rail) observer.observe(rail);
+    window.addEventListener("resize", sync);
+    window.addEventListener("orientationchange", sync);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("orientationchange", sync);
+    };
+  }, [measuring, pathname]);
+
   if (!hydrated || hidden) return null;
 
   const text =
@@ -46,7 +102,17 @@ export function DevBanner() {
     "In development, private preview with staged access.";
 
   return (
-    <div className="signal-devbanner" role="status" aria-live="polite">
+    <div
+      className="signal-devbanner"
+      role="status"
+      aria-live="polite"
+      data-lifted={railHeight > 0 ? "true" : undefined}
+      style={
+        railHeight > 0
+          ? ({ "--signal-devbanner-lift": `${railHeight}px` } as React.CSSProperties)
+          : undefined
+      }
+    >
       <span className="signal-devbanner__dot" aria-hidden />
       <span className="signal-devbanner__text">{text}</span>
       <button
@@ -73,7 +139,7 @@ const CSS = `
 .signal-devbanner {
   position: fixed;
   left: 50%;
-  bottom: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   z-index: 60;
   display: inline-flex;
@@ -95,6 +161,12 @@ const CSS = `
   backdrop-filter: blur(10px) saturate(1.1);
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   animation: signal-devbanner-in 420ms cubic-bezier(.22,.7,.2,1) both;
+}
+/* A product rail is docked at the foot of the viewport (mobile widths). Sit
+   above it instead of over the tabs. The measured lift already contains the
+   rail's own safe-area padding, so it is not added again here. */
+.signal-devbanner[data-lifted="true"] {
+  bottom: calc(var(--signal-devbanner-lift, 0px) + 12px);
 }
 .signal-devbanner__dot {
   width: 7px;
