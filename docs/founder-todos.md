@@ -27,3 +27,61 @@ for later; they are intentionally out of scope for the change that logged them.
    a task card, image attachments can be displayed as the task-card thumbnail.
    Define behaviour for multiple images, non-image files, replacement, removal,
    loading, access permissions, and failed previews.
+
+## Board truth programme follow-ups (logged 2026-07-30)
+
+Phases 1 and 4 shipped as T·114 to T·118. What follows is what remains. Full
+plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
+
+5. **Port the column system into the live board (Phase 2, the big one)**
+   The board rendered at `/app/tasks` is the design-lab prototype
+   (`components/hybrid/options/a/board-view.tsx`), whose columns come from a
+   hardcoded five-value const in `components/hybrid/types.ts`. The real board,
+   `components/app/board/board-app.tsx`, has full column management (add,
+   rename, recolour, describe, reorder, delete-with-destination) and **nothing
+   has imported it since 2026-07-20**, when T·99 ported the lab tree in and
+   verified parity by side-by-side render rather than by capability.
+   Port the config into the lab board, then delete `board-app.tsx` so there is
+   one board. Includes: the header caret always visible rather than
+   `opacity-0`; `+` adds a column rather than a task; a pinned add-column
+   control outside the horizontal scroll track; WIP limits from config.
+
+6. **Retire the `waiting` raw-text lane at source (Phase 2, needs a migration)**
+   The lab runs five statuses against a four-lane schema, so `adapter.ts`
+   writes `waiting: "waiting" as LaneId` into a column typed
+   `todo | doing | review | done`. T·116 taught share, print and embed to
+   render it so guests stop losing that work, but the underlying value is
+   still out of contract. Fixing it properly is a **live data migration that
+   rewrites `lane` on existing rows**, plus seeding the column config for
+   affected workspaces. Measure the production row count first.
+
+7. **Decide what "done" means (Phase 3)**
+   `lane === "done"` is compared as a bare string in roughly twelve production
+   modules, and progress % is computed in exactly one of them
+   (`project-overview.ts:287`). Once columns are user-defined this is
+   untenable: rename Done to "Handed over", add "Paid", and the brief
+   disagrees with the board. Add `doneKeys` to the column config and one
+   `isDone()` predicate, then refactor every literal site. Also add
+   `tasks.completedAt`; Signal currently reconstructs completion time from the
+   activity log and already reports
+   `completion_timestamp_missing_for_terminal_tasks`.
+
+8. **Money, narrowly (Phase 5)**
+   `tasks.cents` already exists in production, is editable in the task panel,
+   and is CSV-exported, but nothing sums it and the formatting is hardcoded
+   `en-US`/USD, so a euro wedding renders as dollars. Fix currency first, then
+   add `workspaces.budgetCents` and roll up. Lead with coverage, never a false
+   total. **Boundary: Tasks may restate a number the operator entered; it must
+   never compute, forecast, convert or publish a financial claim.** No
+   invoicing, no payment status, no multi-currency, and not on share, print,
+   embed or `/p/{slug}`.
+
+9. **Widen the board Filter**
+   Priority and assigned/unassigned only today. Wants date, owner-by-name and
+   column. Deliberately deferred out of T·115, whose scope was subtraction
+   only, and it needs the column dimension from item 5 to exist first.
+
+10. **Retire the stale `log-cycle` ritual in the Timeline repo**
+    Tasks PR #70 removed it from this repo's `AGENTS.md`. The Timeline repo's
+    `AGENTS.md` still carries the same instruction and the same dead
+    `~/Projects/personal/tasks` path. Same edit, other repo.
