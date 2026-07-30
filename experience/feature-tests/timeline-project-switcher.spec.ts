@@ -150,10 +150,15 @@ test.describe("Timeline project switcher", () => {
     await expect(page).toHaveURL(
       /\/app\/timeline\/nora-cian\?workspaceId=demo-ws&planningPeriodId=demo-planning-period$/,
     );
-    // The switcher resolves its label from the route param, so it is correct
-    // as soon as the navigation commits rather than when the RSC payload
-    // lands. Before that fix this assertion raced the round trip and the
-    // default expect timeout was not always enough.
+    // This is the first cold render of /app/timeline/[projectSlug] in the run,
+    // and on a CI runner it can take longer than the 8s default. A captured
+    // trace of the failure showed the navigation had already committed (the
+    // document title read "nora-cian") while <main> was still empty, so the
+    // switcher was not stale, it was not mounted yet. Wait for the page to
+    // exist before asserting what it says, then allow a cold-render budget.
+    await expect(
+      page.getByRole("heading", { name: "No visible milestones yet." }),
+    ).toBeVisible({ timeout: 20_000 });
     await expect(
       page.getByRole("button", {
         name: "Current project: Nora & Cian. Switch project.",

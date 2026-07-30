@@ -4,6 +4,29 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·118 · tightens · the switcher check waits for the page to exist before reading it
+
+**T·117 fixed a real staleness gap in the project switcher but did not end the
+intermittent failure, and the trace it enabled showed why.** At the moment of
+failure the navigation had already committed, the document title read the new
+project, and the page body was still empty. The switcher was not showing the
+wrong project. It was not mounted yet.
+
+That is a cold render of a route the run has not visited before, and on a
+slower machine it can outlast the default eight second budget. The check now
+waits for the page itself to be present before asking what the switcher says,
+with a budget suited to a first render. T·117 also tightened that assertion
+from fifteen seconds to the default while restoring exact matching, which made
+the failure more likely rather than less; that is corrected here.
+
+The evidence came from the trace upload T·117 added. Three sessions had
+debugged this from a single line of error text because the artifacts were
+written and then discarded. The first failure after they were retained was
+diagnosed in one read.
+
+Verified locally at two runs per screen size, sixteen of sixteen green, and the
+experience registry validates clean.
+
 ## 2026-07-30 · T·117 · tightens · the project switcher stops disagreeing with the page it is on
 
 **The Timeline switcher took its label from the server while the address bar
