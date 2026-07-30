@@ -2477,6 +2477,49 @@
       "materialityHash": "6542651ed3b2dab6"
     },
     {
+      "id": "tasks.state.app-signal-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/signal",
+      "source": "tasks/src/app/app/signal/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand and use app · signal.",
+      "primaryAction": "Complete the primary action on app · signal.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-30",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9f76837be523afe3"
+    },
+    {
       "id": "tasks.state.root-not-found",
       "product": "tasks",
       "surfaceType": "error",
