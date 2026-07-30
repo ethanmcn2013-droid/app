@@ -161,8 +161,20 @@ value cannot drift if the token scale changes again.
 
 Deliberately **not** changed:
 
-- `src/modules/signal/components/brief/quiet-briefing-ledger.tsx` (4 hits) —
-  Signal-owned surface, excluded by operator instruction. **Still 80px.**
+- `src/app/invite/[token]/page.tsx` (1 hit) — critical-tier reviewed surface.
+  `experience/registry.json` pins a materiality hash for
+  `tasks.page.invite-by-token`, and `scripts/experience/validate.mjs` fails the
+  build when the source drifts from it: *"coverage and baseline metadata never
+  waive later source drift"*. Refreshing it requires an evidence-backed review
+  signed by the design owner (`product-taste-design-integrity`) through
+  `scripts/experience/review-materiality.mjs`, with a Playwright attestation
+  receipt. That is not a review to self-attest, so the disabled demo-mode Accept
+  invite button stays at 80px and is carried in the gate's outstanding ledger.
+- `src/modules/signal/components/brief/quiet-briefing-ledger.tsx` — was 4 hits,
+  excluded by operator instruction, and **cleared by T·111** in the Signal
+  surface's own cycle, which pinned those controls to a real
+  `min-height: 44px`. The gate's shrink-only ledger reported the entry obsolete
+  on merge, which is the ratchet working as intended.
 - `src/components/studio-bar/studio-bar.tsx` bar shell
   (`md:h-10 md:pointer-coarse:h-11`) — a container height, not a tap target.
   Dropping the shell to a literal 40px/44px while its contents are still

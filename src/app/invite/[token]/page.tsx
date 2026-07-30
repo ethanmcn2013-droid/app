@@ -194,7 +194,7 @@ export default async function InviteAcceptPage({
                         <button
                           type="button"
                           disabled
-                          className="inline-flex min-h-[44px] items-center rounded-full bg-ink px-5 text-[14px] font-medium text-white opacity-55"
+                          className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-[14px] font-medium text-white opacity-55"
                         >
                           Accept invite
                         </button>

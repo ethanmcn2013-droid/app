@@ -41,6 +41,14 @@ Un-remapping resizes roughly 501 uses across 108 files here, and Notes, Timeline
 and Signal vendor the same tokens. `docs/SPACING_SCALE_COLLISION.md` carries the
 compiled evidence and the proposed fix in the design system repo.
 
+One site is deferred rather than fixed. `/invite/[token]` is a critical-tier
+reviewed surface, and `experience/registry.json` pins a materiality hash for it,
+so changing the source requires an evidence-backed refresh signed by the design
+owner. That is not a review to self-attest, so its disabled demo-mode Accept
+invite button stays at 80px and is recorded in the gate's outstanding ledger for
+a pass that carries the review. The ledger only shrinks, and it fails the build
+if a listed file gets worse or becomes clean without the entry being removed.
+
 T·110 reached the same diagnosis independently, on the same day, and landed the
 mobile chrome half of it first. This entry keeps its bar-avatar treatment, which
 is better than the one written here: 32px of visible avatar with a transparent
