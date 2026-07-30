@@ -132,7 +132,7 @@ export function RoomViewBar() {
 
   return (
     <div className={styles.roomViewBar}>
-      <nav aria-label="Workspace views" className={shared.viewTabs}>
+      <nav aria-label="Project views" className={shared.viewTabs}>
         {TABS.map((t) => (
           <Link
             aria-current={view === t.view ? "page" : undefined}

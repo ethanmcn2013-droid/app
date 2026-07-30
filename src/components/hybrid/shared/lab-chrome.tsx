@@ -52,7 +52,7 @@ export function LabRibbon({ route, onRouteChange }: { route: LabRouteState; onRo
 
 export function ViewTabs({ route, onRouteChange, className = "" }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void; className?: string }) {
   return (
-    <nav aria-label="Workspace views" className={`${styles.viewTabs} ${className}`}>
+    <nav aria-label="Project views" className={`${styles.viewTabs} ${className}`}>
       {LAB_VIEWS.map((view) => (
         <button aria-current={route.view === view ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} title={VIEW_PURPOSES[view]} type="button">
           <Icon name={view} size={15} />{VIEW_LABELS[view]}
@@ -109,12 +109,12 @@ export function ViewTools({
 
 export function SuiteRail({ active = "workspace" }: { active?: string }) {
   return (
-    <aside aria-label="Workspace navigation" className={styles.suiteRail}>
+    <aside aria-label="Project navigation" className={styles.suiteRail}>
       <a className={styles.signalWordmark} href="#" onClick={(event) => event.preventDefault()}><span>S</span><b>Signal Studio</b></a>
       <nav>
         <a href="#" onClick={(event) => event.preventDefault()}><Icon name="inbox" size={17} />Inbox <small>4</small></a>
         <a href="#" onClick={(event) => event.preventDefault()}><Icon name="agenda" size={17} />My week</a>
-        <a aria-current={active === "workspace" ? "page" : undefined} href="#" onClick={(event) => event.preventDefault()}><Icon name="board" size={17} />Workspaces</a>
+        <a aria-current={active === "workspace" ? "page" : undefined} href="#" onClick={(event) => event.preventDefault()}><Icon name="board" size={17} />Projects</a>
         <a href="#" onClick={(event) => event.preventDefault()}><Icon name="focus" size={17} />Saved views</a>
       </nav>
       <div className={styles.railPlanning}>

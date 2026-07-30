@@ -20,6 +20,12 @@ type DomainCtx = {
    *  Null when no override has been set, consumers fall back to
    *  `shortenTitle(pack.workspaceTitle)` in that case. */
   boardName: string | null;
+  /** The project's supporting line, from `workspaces.description` (T·114).
+   *  Null when the owner hasn't written one; the brief shows its
+   *  placeholder rather than inventing a sentence. Server-backed, so
+   *  collaborators and the share, print and embed surfaces read the same
+   *  text the owner sees — the previous localStorage value did not. */
+  boardDescription: string | null;
   /** Full column config: system overrides + custom columns + render order.
    *  Null when no config has been stored, consumers fall back to LANES
    *  defaults and LANE_ORDER. */
@@ -38,6 +44,7 @@ export function DomainProvider({
   workspaceId,
   workspaceSlug,
   boardName,
+  boardDescription,
   columnConfig,
   tagDefs,
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
@@ -52,6 +59,8 @@ export function DomainProvider({
   personalization: WorkspacePersonalization;
   /** Resolved from meta table in the layout server component. */
   boardName?: string | null;
+  /** Resolved from `workspaces.description` in the layout server component. */
+  boardDescription?: string | null;
   /** Full column config resolved by getColumnConfig() in the layout. */
   columnConfig?: ColumnConfig | null;
   /** Reusable tag definitions resolved by getTagDefs() in the layout. */
@@ -75,6 +84,7 @@ export function DomainProvider({
         workspaceId,
         workspaceSlug,
         boardName: boardName ?? null,
+        boardDescription: boardDescription ?? null,
         columnConfig: resolvedConfig,
         tagDefs: tagDefs ?? [],
         personalization,
@@ -88,6 +98,8 @@ export function DomainProvider({
 export function useDomain(): DomainPack & {
   /** Resolved board-name override (null = not overridden). */
   boardName: string | null;
+  /** Resolved project description (null = the owner hasn't written one). */
+  boardDescription: string | null;
 } {
   const v = useContext(DomainContext);
   if (!v) {
@@ -95,9 +107,9 @@ export function useDomain(): DomainPack & {
     // outside the app shell (e.g. marketing pages embed components).
     // Wedding (not marketing) so an out-of-shell render still shows a
     // real 80% audience, never the tech-company dogfood board.
-    return { ...DOMAINS.wedding, boardName: null };
+    return { ...DOMAINS.wedding, boardName: null, boardDescription: null };
   }
-  return { ...v.pack, boardName: v.boardName };
+  return { ...v.pack, boardName: v.boardName, boardDescription: v.boardDescription };
 }
 
 /** Active workspace metadata. Returns null when called outside the

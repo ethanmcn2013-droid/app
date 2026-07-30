@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "workspaces-description-2026-07-30",
+  "authorizedBy": "operator directive 2026-07-30 (board truth programme, phase 1: the board says what the record holds)",
+  "reviewedBy": "Opus 5 session review",
+  "authorizationSource": "operator session instruction; the project description was found persisting to localStorage keyed by display name, so two projects sharing a display name shared one description and renaming orphaned it",
+  "migrations": [
+    {
+      "id": "0022_workspaces_description",
+      "sha256": "4c77afd07791a89a358252842b6fcb017f666b9cc49ff300297e251642d5c84c",
+      "reviewedAt": "2026-07-30T00:00:00.000Z",
+      "risk": "low (additive nullable ADD COLUMN); no existing columns modified; no backfill; no index; no data loss; every existing row reads NULL, which the brief renders as its placeholder",
+      "rollbackPlan": "ALTER TABLE workspaces DROP COLUMN description (SQLite 3.35+). The brief falls back to the placeholder with no other read-path dependency; no other surface reads the column.",
+      "postconditions": [
+        "description column exists on workspaces table",
+        "no existing workspace row was modified",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "description-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name = 'description'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

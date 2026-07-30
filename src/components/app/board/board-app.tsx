@@ -493,7 +493,7 @@ export function BoardApp() {
   }
 
   return (
-    <section aria-label="Workspace Board" className={roomStyles.boardView}>
+    <section aria-label="Project Board" className={roomStyles.boardView}>
       <div className={`${roomStyles.boardScroller} thin-scroll`}>
         <div
           className={roomStyles.boardGrid}
@@ -1284,7 +1284,7 @@ function AddColumnTile({
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startAdd(); } }}
       >
         <strong>Add column</strong>
-        <span>A custom lane for this workspace.</span>
+        <span>A custom lane for this project.</span>
       </div>
     );
   }

@@ -401,7 +401,7 @@ export function CalendarView({
   };
 
   return (
-    <section aria-label="Workspace Calendar" className={styles.calendarView}>
+    <section aria-label="Project Calendar" className={styles.calendarView}>
       <header className={styles.calendarToolbar}>
         <div className={styles.calendarNavigation}>
           <button aria-label="Previous calendar range" onClick={() => navigate(-1)} type="button"><Icon name="arrow-left" size={14} />Previous</button>

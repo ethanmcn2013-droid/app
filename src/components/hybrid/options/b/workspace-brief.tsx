@@ -5,9 +5,12 @@
 // full Option-B shell (product rail, projects sidebar) that production replaces
 // with its own chrome. Renders the real workspace name from DomainProvider.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { useDomain } from "@/lib/domain-context";
+import { promoteLocalBrief } from "@/lib/brief/promote-local-brief";
+import { renameBoardAction } from "@/server/actions/board";
+import { setProjectDescriptionAction } from "@/server/actions/settings";
 import {
   TASKS_SYNC_EVENT,
   type TaskSyncEventDetail,
@@ -15,7 +18,6 @@ import {
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
-import { Icon } from "../../shared/icons";
 import { TaskOpenButton } from "../../shared/task-ui";
 import styles from "./option-b.module.css";
 
@@ -26,58 +28,63 @@ function shortenWorkspaceTitle(value: string): string {
 }
 
 /**
- * Inline-editable brief text (the workspace heading and its supporting line).
- * Click to edit; the value persists per workspace in localStorage so the founder
- * can retitle a workspace board ("Q3 launch") and rewrite the line beneath it
- * without a round-trip. Renders as a real h1/p so the existing brief styles apply.
+ * Inline-editable brief text (the project heading and its supporting line).
+ *
+ * T·114: this used to persist to localStorage keyed by the workspace's
+ * *display name*. That meant the text was device-local and invisible to every
+ * collaborator, two projects sharing a display name shared one value, and
+ * renaming a project orphaned both. It now commits through a server action and
+ * renders the server's value, so what the owner types is what everyone reads.
+ *
+ * `value` is the stored text (null when the owner hasn't written one).
+ * `placeholder` is shown in its absence and is never persisted — an empty
+ * commit clears the record rather than storing the placeholder as if it were
+ * the user's own sentence. Renders as a real h1/p so the brief styles apply.
  */
 function EditableText({
   tag: Tag,
-  storageKey,
-  legacyStorageKey,
-  fallback,
+  value,
+  placeholder,
   ariaLabel,
+  onCommit,
 }: {
   tag: "h1" | "p";
-  storageKey: string;
-  legacyStorageKey?: string;
-  fallback: string;
+  value: string | null;
+  placeholder: string;
   ariaLabel: string;
+  onCommit: (next: string) => Promise<unknown>;
 }) {
   const ref = useRef<HTMLElement | null>(null);
+  const [, startTransition] = useTransition();
+  const shown = value ?? "";
 
+  // Re-sync the DOM when the server value changes underneath us (another
+  // device, or our own commit revalidating the layout). Guarded on equality
+  // so it never fights the caret while the user is mid-edit.
   useEffect(() => {
-    let value = fallback;
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored && stored.length > 0) {
-        value = stored;
-      } else if (legacyStorageKey) {
-        // Migration: fall back to old key; if found, promote to new key and
-        // remove old so subsequent reads use the namespaced key.
-        const legacy = window.localStorage.getItem(legacyStorageKey);
-        if (legacy && legacy.length > 0) {
-          value = legacy;
-          window.localStorage.setItem(storageKey, legacy);
-          window.localStorage.removeItem(legacyStorageKey);
-        }
-      }
-    } catch {
-      /* private mode / storage disabled — keep the fallback */
+    const el = ref.current;
+    if (el && document.activeElement !== el && el.textContent !== shown) {
+      el.textContent = shown;
     }
-    if (ref.current && ref.current.textContent !== value) ref.current.textContent = value;
-  }, [storageKey, legacyStorageKey, fallback]);
+  }, [shown]);
 
   const commit = () => {
     const el = ref.current;
     if (!el) return;
-    const next = (el.textContent ?? "").replace(/\s+/g, " ").trim() || fallback;
+    const next = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+    // Reflect the normalised value immediately; the server action revalidates
+    // the layout and the effect above reconciles if the server disagrees.
     el.textContent = next;
-    try {
-      window.localStorage.setItem(storageKey, next);
-    } catch {
-      /* ignore persistence failure */
-    }
+    if (next === shown) return;
+    startTransition(async () => {
+      try {
+        await onCommit(next);
+      } catch {
+        // Put the stored value back rather than leaving the surface showing
+        // text that was never saved.
+        if (ref.current) ref.current.textContent = shown;
+      }
+    });
   };
 
   // aria-allowed-role fix (Phase 9): heading elements (h1–h6) prohibit
@@ -89,12 +96,16 @@ function EditableText({
       aria-label={Tag === "h1" ? undefined : ariaLabel}
       className={styles.editable}
       contentEditable
+      data-placeholder={placeholder}
+      data-empty={shown.length === 0 ? "" : undefined}
       onBlur={commit}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
           event.currentTarget.blur();
         } else if (event.key === "Escape") {
+          // Escape abandons the edit: restore the stored value, then leave.
+          event.currentTarget.textContent = shown;
           event.currentTarget.blur();
         }
       }}
@@ -106,7 +117,7 @@ function EditableText({
       suppressContentEditableWarning
       tabIndex={0}
     >
-      {fallback}
+      {shown}
     </Tag>
   );
 }
@@ -116,6 +127,21 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
   const calendar = useCalendarFrame();
   const domain = useDomain();
   const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
+
+  // T·114: rescue any pre-migration brief text still sitting in this browser's
+  // localStorage. Runs at most once per browser per project, never overwrites
+  // a server value, and clears the old keys either way. Remove with
+  // promote-local-brief.ts once no browser plausibly still holds one.
+  useEffect(() => {
+    void promoteLocalBrief({
+      displayName: workspaceName,
+      serverName: domain.boardName,
+      serverDescription: domain.boardDescription,
+      onPromoteName: renameBoardAction,
+      onPromoteDescription: setProjectDescriptionAction,
+    });
+  }, [workspaceName, domain.boardName, domain.boardDescription]);
+
   const completed = store.tasks.filter((task) => task.completed).length;
   const overdue = store.tasks.filter((task) => isTaskOverdue(task, calendar.today)).length;
   const unscheduled = store.tasks.filter((task) => task.schedule.kind === "unscheduled").length;
@@ -163,17 +189,34 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
   const renderMilestones = showMilestones && milestones.length > 0;
   return (
     <header className={styles.workspaceBrief} data-milestones={renderMilestones ? "on" : undefined}>
+      {/*
+        T·114: the crumb above the title read "Workspace ›" — a hardcoded
+        literal that was neither a link nor a real hierarchy, and that used a
+        noun D-011 retired ("Projects = Tasks workspaces"). Nothing replaces
+        it; the title is the top of the page.
+      */}
       <div className={styles.workspaceIdentity}>
-        <div className={styles.workspacePath}><span>Workspace</span><Icon name="chevron-right" size={12} /><strong>{workspaceName}</strong></div>
-        <EditableText ariaLabel="Workspace name" fallback={workspaceName} storageKey={`signal-tasks.brief.title:${workspaceName}`} legacyStorageKey={`tasks:brief:title:${workspaceName}`} tag="h1" />
-        <EditableText ariaLabel="Workspace description" fallback="Everything for this workspace in one view. Every task should leave a clear next handoff." storageKey={`signal-tasks.brief.subtitle:${workspaceName}`} legacyStorageKey={`tasks:brief:subtitle:${workspaceName}`} tag="p" />
+        <EditableText
+          ariaLabel="Project name"
+          onCommit={renameBoardAction}
+          placeholder="Name this project"
+          tag="h1"
+          value={workspaceName}
+        />
+        <EditableText
+          ariaLabel="Project description"
+          onCommit={setProjectDescriptionAction}
+          placeholder="Say what this project is for."
+          tag="p"
+          value={domain.boardDescription}
+        />
       </div>
       {/*
         Progress reads as one number, one bar and one line. The old panel
         spent three table rows on Complete / Overdue / No date — a dashboard
         where a sentence does the same work in a quarter of the height.
       */}
-      <section aria-label="Workspace progress" className={styles.workspaceProgress}>
+      <section aria-label="Project progress" className={styles.workspaceProgress}>
         <div className={styles.progressHead}>
           <strong>{progress}%</strong>
           <span>Progress</span>

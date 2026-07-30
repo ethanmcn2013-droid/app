@@ -231,7 +231,7 @@ function TaskDetailHeader({
 }) {
   const dispatchers = useTasksDispatch();
   const { boardName } = useDomain();
-  const projectLabel = boardName ?? "Workspace";
+  const projectLabel = boardName ?? "Project";
   const isFocus = shell === "focus";
 
   const actions = buildTaskDetailActions(task, {

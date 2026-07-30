@@ -2385,7 +2385,7 @@ export function HybridNotebook({
                   </div>
                   <p className={styles.payloadReceipt}>Exact preview: {timelineDraft.title || "Selected extract"} · {timelineDraft.date || "choose a date"} · {timelineDraft.completion}% · for {timelineDraft.audienceLabel || "named audience"}</p>
                   <div className={styles.actionRow}><button type="button" className={styles.quietButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !openNote.workspaceId || !timelineDraft.title.trim() || !timelineDraft.date || !timelineDraft.audienceLabel.trim()} onClick={() => void sendTimelinePreview()}>{timelineSending ? "Checking Timeline…" : "Send this preview to Timeline"}</button></div>
-                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a workspace when capturing or sending this note first.</p> : null}
+                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a project when capturing or sending this note first.</p> : null}
                   {timelineReceipt ? <p className={styles.receipt}>{timelineReceipt}</p> : null}
                 </details>
               ) : null}

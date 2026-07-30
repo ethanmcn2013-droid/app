@@ -90,6 +90,7 @@ export async function TasksRuntimeShell({
       ? Promise.resolve({
           name: DEMO_WORKSPACE_NAME,
           slug: DEMO_WORKSPACE_SLUG,
+          description: null,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
           planningPeriodId: "demo-planning-period",
         })
@@ -97,6 +98,7 @@ export async function TasksRuntimeShell({
           .select({
             name: workspaces.name,
             slug: workspaces.slug,
+            description: workspaces.description,
             primaryUseCase: workspaces.primaryUseCase,
             planningPeriodId: workspaces.planningPeriodId,
           })
@@ -136,6 +138,7 @@ export async function TasksRuntimeShell({
         <DomainProvider
           domain={domain}
           boardName={boardName}
+          boardDescription={workspace?.description ?? null}
           columnConfig={columnConfig}
           personalization={personalization}
           tagDefs={tagDefs}

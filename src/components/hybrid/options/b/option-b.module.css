@@ -45,14 +45,24 @@
 .workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(300px, 1fr) 210px 216px; }
 
 .workspaceIdentity { min-width: 0; }
-.workspacePath { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 10px; gap: 5px; letter-spacing: .035em; }
-.workspacePath strong { color: var(--x-task-text-secondary); font-weight: 630; }
-.workspaceIdentity h1 { font-size: 22px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 6px 0 4px; text-wrap: balance; }
+.workspaceIdentity h1 { font-size: 22px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 0; max-width: 72ch; text-wrap: pretty; }
-/* Inline-editable heading + supporting line: quiet until hovered or focused. */
-.editable { border-radius: 6px; cursor: text; margin-inline: -6px; outline: none; padding-inline: 6px; transition: box-shadow .12s ease, background-color .12s ease; }
-.editable:hover { box-shadow: inset 0 0 0 1px var(--x-task-border-strong); }
+/*
+  Inline-editable heading + supporting line (T·114). A heading that grows a
+  full inset box on hover reads as a text input in costume, so editability is
+  signalled by the caret plus a hairline under the baseline. Focus keeps a
+  real ring — that one has to be unmistakable, and it must clear contrast.
+*/
+.editable { border-radius: 4px; cursor: text; margin-inline: -6px; outline: none; padding-inline: 6px; transition: box-shadow .12s ease, background-color .12s ease; }
+.editable:hover { box-shadow: inset 0 -1px 0 0 var(--x-task-border-strong); }
 .editable:focus-visible { background: var(--x-task-raised); box-shadow: inset 0 0 0 1px var(--x-task-focus); }
+/*
+  Placeholder for an unwritten value. Rendered from the data attribute so the
+  element stays genuinely empty — the placeholder is never selectable, never
+  copied, and never committed as if the user had typed it.
+*/
+.editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; }
+.editable[data-empty]:focus::before { opacity: .55; }
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: 7px 14px; margin-top: 13px; }
 .workspaceMeta span { position: relative; }
 .workspaceMeta span + span::before { background: var(--x-task-border-strong); content: ""; height: 10px; left: -7px; position: absolute; top: 1px; width: 1px; }

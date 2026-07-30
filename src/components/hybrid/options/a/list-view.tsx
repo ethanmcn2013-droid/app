@@ -247,7 +247,7 @@ export function ListView({
     <div className={styles.listSurface}>
       <div className={styles.tableScroll}>
         <table className={styles.taskTable}>
-          <caption>Launch workspace tasks. Columns can be resized, reordered, and hidden for this session.</caption>
+          <caption>Launch project tasks. Columns can be resized, reordered, and hidden for this session.</caption>
           <colgroup>{visibleColumns.map((column) => <col key={column.id} style={{ width: column.width }} />)}</colgroup>
           <thead>
             <tr>

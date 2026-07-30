@@ -283,7 +283,7 @@ export function TaskInspector() {
           <button aria-label="Close task inspector" onClick={close} ref={closeRef} title="Close" type="button"><Icon name="close" size={17} /></button>
         </div>
       </header>
-      {task ? <InspectorBody task={task} /> : <div className={styles.inspectorMissing}><h2>Task not found</h2><p>This deep link does not match the active fixture.</p><button onClick={close} type="button">Return to workspace</button></div>}
+      {task ? <InspectorBody task={task} /> : <div className={styles.inspectorMissing}><h2>Task not found</h2><p>This deep link does not match the active fixture.</p><button onClick={close} type="button">Return to project</button></div>}
       {task ? <footer className={styles.inspectorFooter}><span>{formatSchedule(task.schedule)}</span><small>{task.schedule.kind === "unscheduled" ? "No date has been inferred" : `Visible from ${formatDateLong(task.schedule.kind === "range" ? task.schedule.startOn : task.schedule.kind === "milestone" ? task.schedule.on : task.schedule.dueOn)}`}</small></footer> : null}
     </aside>
   );
