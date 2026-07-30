@@ -19,6 +19,12 @@
  *   auto   universal command field (right-aligned, Phase 1), contextual
  *          create + account
  *
+ * Mobile touch targets are written in pixels, not scale steps. The suite
+ * design tokens remap Tailwind's numeric spacing scale onto the semantic
+ * base-4 steps in src/ds/tokens.css, so `h-11` resolves to --space-11 (80px),
+ * not the 44px it means in stock Tailwind — an 80px control inside this 56px
+ * bar overflows it top and bottom. Below md, use h-[44px] / min-h-[44px].
+ *
  * Contract: content/hq/decisions/product-header-contract.md +
  * scripts/check-chrome-contract.mjs. The bar stays at z-40; only overlays
  * float above. The contract tokens (h-10, --x-studio-chrome, z-40,

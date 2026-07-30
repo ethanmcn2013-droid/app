@@ -1,3 +1,4 @@
+import { capitalise, numberWord } from "./prose";
 import type { Briefing, TriggerKind } from "./types";
 
 /**
@@ -25,7 +26,7 @@ export function greeting(
   const base = forEmail
     ? "Good morning"
     : hour < 5
-      ? "It's late"
+      ? "It’s late"
       : hour < 12
         ? "Good morning"
         : hour < 17
@@ -51,12 +52,63 @@ export function summaryLine(b: Briefing): string {
     // QuietBriefingLedger carries the frame on these days.
     return "";
   }
-  if (att === 0 && risks > 0) {
-    return `A quiet day, but ${risks} ${risks === 1 ? "risk" : "risks"} worth watching.`;
+  // Every branch has to account for the quiet risks, because they
+  // render directly below this line and the meta line counts them.
+  // "One thing's calling." above two visible risks and a "3 signals"
+  // count was the page contradicting itself in three places.
+  //
+  // The tail is singular-aware in every branch. "A few quieter signals"
+  // over exactly one risk row was the line miscounting what the reader
+  // could see, one row down.
+  const tail =
+    risks === 1 ? "and one quieter signal below" : "and a few quieter signals below";
+  if (att === 0) {
+    return `A quiet day. ${capitalise(numberWord(risks))} ${risks === 1 ? "risk" : "risks"} worth watching.`;
   }
-  if (att === 1) return "One thing's calling.";
-  if (att === 2) return "Two things calling, and a few quieter signals below.";
-  return `Three things calling${risks > 0 ? ", more quietly behind them" : ""}.`;
+  if (att === 1) {
+    return risks > 0 ? `One thing’s calling, ${tail}.` : "One thing’s calling.";
+  }
+  if (att === 2) {
+    return risks > 0 ? `Two things calling, ${tail}.` : "Two things calling.";
+  }
+  // "more quietly behind them" parsed as an adverb on "calling", which
+  // said the three things were calling more quietly than themselves.
+  if (risks === 0) return "Three things calling.";
+  return risks === 1
+    ? "Three things calling, and one quieter signal below them."
+    : "Three things calling, and quieter signals below them.";
+}
+
+/**
+ * The all-clear's accounting sentence, or null when the engine could
+ * not report a denominator. A clear day is only a receipt if the reader
+ * can see what was read to reach it; "nothing needs you" on its own is
+ * an assertion. Never guessed: no count in, no sentence out.
+ *
+ * `triggeredCount` is not optional decoration. A page with no rows is not
+ * proof that nothing crossed a rule: a lone just-shipped item crosses one
+ * and lands in a bucket that renders nowhere, so the sentence used to read
+ * "Signal read two items in this scope. Nothing crossed Signal's attention
+ * rules." over a day where something had. When something crossed, the
+ * sentence says so and says the true thing about it instead, which is that
+ * it is not asking for the reader.
+ */
+export function readCountSentence(
+  readCount: number | null | undefined,
+  triggeredCount?: number | null,
+): string | null {
+  if (typeof readCount !== "number" || !Number.isFinite(readCount)) return null;
+  const read = Math.floor(readCount);
+  if (read <= 0) return null;
+  const denominator = `Signal read ${numberWord(read)} ${read === 1 ? "item" : "items"} in this scope.`;
+  const triggered =
+    typeof triggeredCount === "number" && Number.isFinite(triggeredCount)
+      ? Math.min(read, Math.max(0, Math.floor(triggeredCount)))
+      : 0;
+  if (triggered > 0) {
+    return `${denominator} ${capitalise(numberWord(triggered))} of them crossed a rule without asking anything of you.`;
+  }
+  return `${denominator} Nothing crossed Signal’s attention rules.`;
 }
 
 /**
@@ -80,10 +132,33 @@ export function ageNote(trigger: TriggerKind, days: number): string {
 /**
  * Soft sign-off. Adjusts to the shape of the brief without ever
  * becoming chatty. Read aloud, if it sounds like a friend, keep it.
+ *
+ * It may only describe things the reader can see. The old copy named a
+ * "focus block" that renders in no component, told the reader what to
+ * do first (DESIGN.md §11: observational, never prescriptive), and
+ * branched on an empty `suggestedFocus`, a state with no surface at
+ * all. Shared with the ledger adapters so the page and the DTO sign off
+ * with the same sentence.
+ *
+ * Two later repairs:
+ *
+ *  - the multi-row line claimed an order the page does not use. Rows sort
+ *    by focus weight (due-soon 1000, crowded-week 800, stuck-work 700,
+ *    blocked-too-long 600), not by age, so "the top one is the one that's
+ *    waiting longest" was reliably describing the LAST row. The line now
+ *    states the sort the page actually runs.
+ *  - the single-row line said "Open Tasks when you're ready", which every
+ *    row already carries as a "Review in Tasks" control, and which §11
+ *    refuses as an instruction. It says nothing now.
  */
+export function closingLine(needsAttention: number, isEmpty: boolean): string {
+  if (isEmpty) return "That’s the read.";
+  if (needsAttention >= 2) {
+    return "That’s the read. Dates came first, then the quiet ones.";
+  }
+  return "That’s the read.";
+}
+
 export function graceNote(b: Briefing): string {
-  if (b.isEmpty) return "That's the read.";
-  if (b.suggestedFocus.length === 0) return "That's the read, good day.";
-  if (b.needsAttention.length >= 2) return "Take the focus block first. The rest can wait.";
-  return "That's the read. Open Tasks when you're ready.";
+  return closingLine(b.needsAttention.length, b.isEmpty);
 }

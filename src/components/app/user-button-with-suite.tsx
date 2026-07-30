@@ -54,6 +54,22 @@ const PRODUCTS: { slug: ProductId; label: string; path: string }[] = [
   { slug: "signal", label: "Open signal", path: PRODUCT_APP_PATHS.signal },
 ];
 
+/**
+ * Avatar sizing in the mobile Studio Bar.
+ *
+ * The suite design tokens remap Tailwind's numeric spacing scale onto the
+ * semantic base-4 steps in `src/ds/tokens.css` (`--spacing-11` → `--space-11`
+ * → 80px), so the stock reading of `h-11` as "44px, the touch-target step" is
+ * wrong in this repo: it renders an 80px circle that bursts out of the 56px
+ * bar. Sizes that must land on real pixels are written in pixels.
+ *
+ * 32px reads as an avatar inside a 56px bar; the transparent ::after ring
+ * keeps the 44px pointer target the `h-11` was reaching for.
+ */
+const BAR_AVATAR_SIZE = "h-[32px] w-[32px]";
+const BAR_AVATAR_TOUCH_AREA =
+  "relative after:absolute after:-inset-[6px] after:content-['']";
+
 function ArrowIcon() {
   return (
     <svg
@@ -157,7 +173,7 @@ function DemoUserButtonWithSuite({
         className={[
           "flex cursor-pointer list-none items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ink [&::-webkit-details-marker]:hidden",
           placement === "bar"
-            ? "h-[44px] w-[44px] md:h-8 md:w-8 md:pointer-coarse:h-[44px] md:pointer-coarse:w-[44px]"
+            ? `${BAR_AVATAR_SIZE} ${BAR_AVATAR_TOUCH_AREA}`
             : "h-8 w-8 pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
         ].join(" ")}
       >
@@ -227,8 +243,10 @@ function ClerkUserButtonWithSuite({
         elements: {
           avatarBox:
             placement === "bar"
-              ? "h-[44px] w-[44px] rounded-full md:h-8 md:w-8 md:pointer-coarse:h-[44px] md:pointer-coarse:w-[44px]"
+              ? `${BAR_AVATAR_SIZE} rounded-full`
               : "h-8 w-8 rounded-full pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
+          userButtonTrigger:
+            placement === "bar" ? BAR_AVATAR_TOUCH_AREA : "",
           userButtonPopoverCard:
             "shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]",
         },

@@ -36,6 +36,9 @@ export function MobileSuiteNav() {
   return (
     <nav
       aria-label="Signal Studio products"
+      /* Marks this as the rail that owns the foot of the mobile viewport, so
+         floating chrome (the dev notice) can measure it and sit clear. */
+      data-signal-bottom-nav="suite"
       className="z-40 flex flex-none border-t border-white/[0.08] bg-[var(--x-studio-chrome)] pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {PRODUCTS.map((product) => {

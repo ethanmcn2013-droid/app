@@ -31,14 +31,16 @@ const SKIP_DIRS = new Set([
   "node_modules", ".next", ".git", "dist", "out", "coverage", "public",
 ]);
 
-// Known-outstanding files. Each entry needs a reason and an owner; the list may
-// only shrink. Signal's ledger is fixed in the Signal surface's own cycle.
-const OUTSTANDING = new Map([
-  [
-    "src/modules/signal/components/brief/quiet-briefing-ledger.tsx",
-    "4 hits — Signal-owned surface, excluded from the Tasks scale sweep (2026-07-29)",
-  ],
-]);
+// Known-outstanding files. Each entry needs a reason and an owner, records its
+// hit count, and the list may only shrink: this gate fails if a listed file gets
+// worse, and also fails if a listed file is now clean, so obsolete entries
+// cannot linger.
+//
+// Empty as of 2026-07-30. The one entry it carried, Signal's quiet briefing
+// ledger, was cleared by T·111 in the Signal surface's own cycle, which pinned
+// those controls to a real `min-height: 44px`. This gate reported the entry as
+// obsolete on the merge, which is the ratchet working as intended.
+const OUTSTANDING = new Map();
 
 // Container heights that intentionally ride the numeric chrome scale, keyed by
 // "<file>::<exact class>". The studio bar shell cannot drop to a literal 44px

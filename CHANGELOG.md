@@ -41,6 +41,62 @@ Un-remapping resizes roughly 501 uses across 108 files here, and Notes, Timeline
 and Signal vendor the same tokens. `docs/SPACING_SCALE_COLLISION.md` carries the
 compiled evidence and the proposed fix in the design system repo.
 
+T·110 reached the same diagnosis independently, on the same day, and landed the
+mobile chrome half of it first. This entry keeps its bar-avatar treatment, which
+is better than the one written here: 32px of visible avatar with a transparent
+ring carrying the pointer target out to 44px, rather than a 44px circle that sits
+heavy in a 56px bar. What T·110 scoped to phone widths is now carried across the
+coarse-pointer variants too, since 44px is the floor wherever the pointer is
+coarse, not only below the medium breakpoint.
+## 2026-07-30 · T·111 · ships · the briefing shows its working, and a task keeps its own words
+
+**Signal now says how much it read, how much crossed a rule, and how much it
+cleared, and the arithmetic closes in front of the reader.** The read used to
+publish a numerator and ask to be trusted for the rest: three findings, no
+denominator. Every row now carries the pile it came from, drawn beside the
+headline in three weights, lit for what is on screen in that row's own tone,
+mid for work that crossed a rule but lost its slot, ghost for what cleared.
+Held-back work is never counted as clear, synthetic cluster rows are never
+counted as source items, and the contract enforces those invariants itself
+rather than trusting its callers. The close ends on a sentence and a green
+mark for the rest.
+
+Rows are grammatical again. A task title is the reader's own words, so it is
+now a headline and never a clause: "Approve the final seating plan" over "Two
+days past its date", where the page used to compose "Approve the final seating
+plan is 2 days overdue" out of an imperative. The same rule reaches upstream
+blockers, which are stripped of borrowed punctuation and counted rather than
+named when a question or a shout cannot sit inside a sentence. Every "Why
+this" names the rule that fired and then adds a fact the row had no room for,
+instead of restating it. Sections are Now and Next, each row sits on the
+hero's three columns with its action at the right edge, and the tone is
+present at rest rather than only under a pointer.
+
+Underneath, the read runs on the suite's pinned review clock instead of a
+day of its own, the honest loading skeleton is finally mounted and traces the
+settled page band for band, and every control is a real 44px rather than the
+80px `min-h-11` silently resolves to on this scale. Honest edge: the ordinal
+rail carries a number, not the hero's NOW/NEXT claim word, because the section
+headings already say it once; and the unmounted analytics shell is untouched,
+still awaiting its wire-or-retire decision.
+## 2026-07-30 · T·110 · tightens · the app chrome holds its own bounds on a phone
+
+**On a phone, the Studio Bar now keeps its controls inside the bar, and the in
+development notice sits above the product rail instead of across it.** The
+account avatar, the create button, and the product wordmark were each drawing at
+80px inside a 56px bar. The avatar read as a large black circle clipped by the
+right edge; the other two spilled invisible tap targets over the canvas below.
+The notice pill covered the Notes, Tasks, Timeline, and Signal tabs.
+
+One cause sat under all of it. The suite spacing scale is semantic, not derived
+from pixels: step 11 is 80px, not 44px. Chrome written as "the 44px touch step"
+therefore came out nearly twice its intended size. Sizes that have to land on
+real pixels are now written in pixels, with the reason recorded beside them.
+
+The notice measures the rail it has to clear rather than guessing at it, so it
+holds its place across both mobile rails and inside the phone's safe area.
+Desktop and tablet are untouched, byte for byte.
+
 ## 2026-07-29 · T·109 · tightens · every task movement explains what changed
 
 **Tasks now keeps the work visibly continuous when it opens, moves, settles,

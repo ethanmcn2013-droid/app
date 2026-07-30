@@ -10,6 +10,87 @@ import {
 
 const APP_ORIGIN = "https://app.signalstudio.ie";
 
+describe("the accounting never calls held-back work clear", () => {
+  it("subtracts everything that crossed a rule, not just what is shown", () => {
+    // Six crossed a rule out of forty read; the display cap shows three.
+    // The three held back are neither shown nor clear, so they are named
+    // by `flagged` and are absent from `cleared`.
+    const ledger = buildSignalLedger(
+      input({
+        candidates: [0, 1, 2, 3, 4, 5].map((index) => candidate(index)),
+        readCount: 40,
+        triggeredCount: 6,
+      }),
+    );
+    assert.equal(ledger.entries.length, SIGNAL_LEDGER_MAX_ENTRIES);
+    assert.deepEqual(ledger.readCounts, {
+      read: 40,
+      flagged: 6,
+      shown: 3,
+      cleared: 34,
+    });
+  });
+
+  it("closes the arithmetic in front of the reader", () => {
+    const ledger = buildSignalLedger(
+      input({
+        candidates: [0, 1, 2, 3, 4, 5].map((index) => candidate(index)),
+        readCount: 40,
+        triggeredCount: 6,
+      }),
+    );
+    const counts = ledger.readCounts!;
+    assert.equal(counts.flagged + counts.cleared, counts.read);
+    assert.ok(counts.shown <= counts.flagged);
+  });
+
+  it("counts what is shown in items, not in rows", () => {
+    // One row standing for two merged items still stands for two items,
+    // so the header can never say "one shown" over a row reading "2 items".
+    const ledger = buildSignalLedger(
+      input({
+        candidates: [
+          candidate(0, {
+            receipt: {
+              ...candidate(0).receipt,
+              evidenceCount: 2,
+              sourceCounts: { notes: 0, tasks: 2, milestones: 0 },
+            },
+          }),
+        ],
+        readCount: 12,
+        triggeredCount: 2,
+      }),
+    );
+    assert.equal(ledger.entries.length, 1);
+    assert.equal(ledger.readCounts?.shown, 2);
+    assert.equal(ledger.readCounts?.flagged, 2);
+  });
+
+  it("falls back to the candidate count when no pre-cap total is given", () => {
+    const ledger = buildSignalLedger(
+      input({ candidates: [candidate(0)], readCount: 12 }),
+    );
+    assert.deepEqual(ledger.readCounts, {
+      read: 12,
+      flagged: 1,
+      shown: 1,
+      cleared: 11,
+    });
+  });
+
+  it("withholds the accounting rather than guessing a denominator", () => {
+    assert.equal(buildSignalLedger(input()).readCounts, null);
+  });
+
+  it("never reports a negative cleared count", () => {
+    const ledger = buildSignalLedger(
+      input({ readCount: 1, triggeredCount: 6 }),
+    );
+    assert.equal(ledger.readCounts?.cleared, 0);
+  });
+});
+
 function candidate(
   index: number,
   overrides: Partial<SignalLedgerCandidate> = {},
@@ -52,9 +133,9 @@ function input(
     candidates: [candidate(0)],
     healthyEmptyState: {
       headline: "Nothing needs your attention right now.",
-      body: "No item in this scope crossed Signal's attention rules.",
+      body: "No item in this scope crossed Signal’s attention rules.",
     },
-    closingLine: "That's the read. Open Tasks when you're ready.",
+    closingLine: "That’s the read. Dates came first, then the quiet ones.",
     allowedAppOrigin: APP_ORIGIN,
     ...overrides,
   };
@@ -83,6 +164,7 @@ describe("Signal ledger presentation contract", () => {
       "generatedAt",
       "generatedAtLabel",
       "heading",
+      "readCounts",
       "scopeKind",
       "scopeLabel",
       "version",
@@ -140,6 +222,37 @@ describe("Signal ledger presentation contract", () => {
         `${ledger.emptyState?.headline} ${ledger.emptyState?.body}`,
         /nothing needs your attention|all clear/i,
       );
+    }
+  });
+
+  it("states the coverage state instead of defending the engine", () => {
+    for (const state of ["partial", "stale", "unavailable"] as const) {
+      const ledger = buildSignalLedger(
+        input({ candidates: [], freshness: state, coverageStatus: state }),
+      );
+      const copy = `${ledger.emptyState?.headline} ${ledger.emptyState?.body}`;
+
+      // "Signal is not calling the rest clear" / "nothing here is being
+      // called current" argue with the reader about the implementation.
+      assert.doesNotMatch(
+        copy,
+        /is not (calling|being)|is being called|nothing here is/i,
+        `${state}: ${copy}`,
+      );
+      // There is no refresh control in Signal; the read happens when the
+      // reader opens it.
+      assert.doesNotMatch(copy, /refresh|try again|reload/i, `${state}: ${copy}`);
+      assert.doesNotMatch(copy, /—|!/, `${state}: ${copy}`);
+      assert.doesNotMatch(copy, /'/, `${state}: ${copy}`);
+    }
+  });
+
+  it("keeps the coverage note free of the straight apostrophe", () => {
+    for (const state of ["partial", "stale", "unavailable"] as const) {
+      const ledger = buildSignalLedger(
+        input({ candidates: [], freshness: state, coverageStatus: state }),
+      );
+      assert.doesNotMatch(ledger.coverageNote!, /'/, state);
     }
   });
 

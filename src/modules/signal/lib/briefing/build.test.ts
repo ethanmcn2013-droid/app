@@ -151,22 +151,176 @@ describe("buildBriefing, prose rotation determinism", () => {
     const signals = [task({ id: "x", idleDays: 5 })];
     const a = await buildBriefing(source(signals), CTX, NOW);
     const b = await buildBriefing(source(signals), CTX, NOW);
-    assert.equal(a.quietRisks[0]?.text, b.quietRisks[0]?.text);
+    assert.equal(a.quietRisks[0]?.detail, b.quietRisks[0]?.detail);
   });
 
   test("different days → potentially different phrasing", async () => {
     const signals = [task({ id: "x", idleDays: 5 })];
-    const day0 = await buildBriefing(source(signals), CTX, NOW);
-    const day7 = await buildBriefing(source(signals), CTX, NOW + 7 * DAY);
     const variants = new Set<string>();
     for (let d = 0; d < 7; d++) {
       const b = await buildBriefing(source(signals), CTX, NOW + d * DAY);
-      const text = b.quietRisks[0]?.text;
-      if (text) variants.add(text);
+      const detail = b.quietRisks[0]?.detail;
+      if (detail) variants.add(detail);
     }
-    void day0;
-    void day7;
     assert.ok(variants.size > 1, "rotation should produce at least 2 phrasings across 7 days");
+  });
+
+  // Rotation moves the observation only. If the headline moved too, a
+  // reader returning tomorrow would not recognise yesterday's row.
+  test("the headline never rotates, only the observation does", async () => {
+    const signals = [task({ id: "x", title: "Florist deposit", idleDays: 5 })];
+    const headlines = new Set<string>();
+    for (let d = 0; d < 7; d++) {
+      const b = await buildBriefing(source(signals), CTX, NOW + d * DAY);
+      const text = b.quietRisks[0]?.text;
+      if (text) headlines.add(text);
+    }
+    assert.deepEqual([...headlines], ["Florist deposit"]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// The title / observation split
+// ─────────────────────────────────────────────────────────────
+describe("buildBriefing, headline is the title and nothing else", () => {
+  const AWKWARD = [
+    "Send the invitations.",
+    "Do we need a marquee?",
+    "URGENT: confirm the band",
+    "approve the final seating plan",
+  ];
+
+  test("titles survive verbatim apart from sentence-casing the first letter", async () => {
+    const signals = AWKWARD.map((title, i) =>
+      task({ id: `t${i}`, title, dueAt: NOW - (i + 1) * DAY }),
+    );
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    const headlines = b.needsAttention.map((item) => item.text);
+    assert.ok(headlines.length > 0);
+    for (const headline of headlines) {
+      assert.ok(
+        AWKWARD.some(
+          (title) =>
+            headline ===
+            title.charAt(0).toUpperCase() + title.slice(1),
+        ),
+        `unexpected headline: ${headline}`,
+      );
+    }
+  });
+
+  test("no row ever glues an observation onto the title", async () => {
+    const signals = [
+      task({ id: "a", title: "Approve the final seating plan", dueAt: NOW - 2 * DAY }),
+      task({ id: "b", title: "Do we need a marquee?", idleDays: 9 }),
+    ];
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    for (const item of [...b.needsAttention, ...b.quietRisks]) {
+      assert.doesNotMatch(item.text, /overdue|days|waiting/i, item.text);
+      assert.doesNotMatch(
+        item.detail,
+        /Approve the final seating plan|Do we need a marquee/,
+        item.detail,
+      );
+      assert.ok(item.detail.endsWith("."), item.detail);
+    }
+  });
+});
+
+describe("buildBriefing, the accounting", () => {
+  test("reports everything it read, not just what it surfaced", async () => {
+    const signals = Array.from({ length: 12 }, (_, i) =>
+      task({ id: `t${i}`, dueAt: i < 6 ? NOW - DAY : null }),
+    );
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.equal(b.readCount, 12);
+    assert.equal(b.needsAttention.length, 3);
+  });
+
+  test("a quiet scope still reports its denominator", async () => {
+    const signals = Array.from({ length: 4 }, (_, i) => task({ id: `t${i}` }));
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.equal(b.isEmpty, true);
+    assert.equal(b.readCount, 4);
+  });
+
+  // "Six items open at once" is a reading OF six items already counted.
+  // Counting it as a seventh let one task be counted three times, once as
+  // itself and once inside each synthetic row.
+  test("synthetic rows are never counted as source items", async () => {
+    const signals = Array.from({ length: 7 }, (_, i) =>
+      task({ id: `t${i}`, lane: "in-flight" }),
+    );
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.ok(
+      b.needsAttention.some((i) => i.trigger === "overload"),
+      "overload should be on the page",
+    );
+    assert.equal(b.triggeredCount, 0, "no real item crossed a rule here");
+  });
+
+  test("a crowded week counts its items once, not once plus the cluster", async () => {
+    const signals = Array.from({ length: 4 }, (_, i) =>
+      task({ id: `t${i}`, dueAt: NOW + (i + 3) * DAY }),
+    );
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.ok(b.needsAttention.some((i) => i.trigger === "crowded-week"));
+    // None of the four is due inside two days, so only the synthetic
+    // cluster fired, and it stands for items already in readCount.
+    assert.equal(b.readCount, 4);
+    assert.equal(b.triggeredCount, 0);
+  });
+
+  test("the triggered count never exceeds what was read", async () => {
+    const signals = [
+      ...Array.from({ length: 7 }, (_, i) =>
+        task({ id: `f${i}`, lane: "in-flight", idleDays: 9 }),
+      ),
+      ...Array.from({ length: 4 }, (_, i) =>
+        task({ id: `d${i}`, dueAt: NOW + (i + 1) * DAY }),
+      ),
+    ];
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.ok(b.triggeredCount <= b.readCount, `${b.triggeredCount} of ${b.readCount}`);
+  });
+
+  // Standing guard on just-shipped: it renders in no component today, so
+  // it must never take a slot from work that is asking for the reader.
+  // Its focus weight is an order below every other trigger, which is what
+  // makes that true, and this pins it.
+  test("a just-shipped item never displaces work that is asking", async () => {
+    const signals = [
+      task({ id: "d1", dueAt: NOW - DAY }),
+      task({ id: "d2", dueAt: NOW - 2 * DAY }),
+      task({ id: "d3", dueAt: NOW - 3 * DAY }),
+      task({
+        id: "shipped",
+        lane: "shipped",
+        movedToShippedAt: NOW - 3_600_000,
+      }),
+    ];
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.equal(b.needsAttention.length, 3);
+    assert.equal(b.movingWell.length, 0, "the closed item yields its slot");
+  });
+
+  // It still counts as flagged, because it did cross a rule and dropping
+  // it would make read = flagged + cleared false. The all-clear copy is
+  // what names it (voice.ts readCountSentence).
+  test("a lone just-shipped item is still counted as having crossed a rule", async () => {
+    const signals = [
+      task({ id: "a" }),
+      task({
+        id: "shipped",
+        lane: "shipped",
+        movedToShippedAt: NOW - 3_600_000,
+      }),
+    ];
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    assert.equal(b.readCount, 2);
+    assert.equal(b.triggeredCount, 1);
+    assert.equal(b.needsAttention.length, 0);
+    assert.equal(b.quietRisks.length, 0);
   });
 });
 
@@ -281,10 +435,11 @@ describe("buildBriefing, name-the-blocker prose", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     const item = b.quietRisks.find((i) => i.id === "florist");
     assert.ok(item, "blocked-too-long item should be present");
+    assert.equal(item!.text, "Florist deposit", "the headline stays the title");
     assert.match(
-      item!.text,
+      item!.detail,
       /Music supplier confirmation/,
-      "prose should name the blocker",
+      "the observation should name the blocker",
     );
   });
 
@@ -302,7 +457,7 @@ describe("buildBriefing, name-the-blocker prose", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     const item = b.quietRisks.find((i) => i.id === "florist");
     assert.ok(item, "blocked-too-long item should be present");
-    assert.match(item!.text, /Music supplier and Venue agreement/);
+    assert.match(item!.detail, /Music supplier and Venue agreement/);
   });
 
   test("three-blocker brief item names the first and counts the rest", async () => {
@@ -320,7 +475,44 @@ describe("buildBriefing, name-the-blocker prose", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     const item = b.quietRisks.find((i) => i.id === "florist");
     assert.ok(item);
-    assert.match(item!.text, /Music supplier and 2 more/);
+    assert.match(item!.detail, /Music supplier and two more/);
+  });
+
+  test("a question or a shout upstream is counted, never named inline", async () => {
+    const signals = [
+      task({ id: "q", title: "Do we need a marquee?" }),
+      task({
+        id: "florist",
+        title: "Florist deposit",
+        blockedBy: ["q"],
+        idleDays: 9,
+      }),
+    ];
+    const b = await buildBriefing(source(signals), CTX, NOW);
+    const item = b.quietRisks.find((i) => i.id === "florist");
+    assert.ok(item);
+    assert.doesNotMatch(item!.detail, /marquee/i, item!.detail);
+    assert.doesNotMatch(item!.detail, /[?!]/, item!.detail);
+    assert.match(item!.detail, /one upstream item/, item!.detail);
+  });
+
+  test("a blocker title keeps its words and loses its full stop", async () => {
+    const signals = [
+      task({ id: "inv", title: "Send the invitations." }),
+      task({
+        id: "florist",
+        title: "Florist deposit",
+        blockedBy: ["inv"],
+        idleDays: 9,
+      }),
+    ];
+    for (let day = 0; day < 7; day++) {
+      const b = await buildBriefing(source(signals), CTX, NOW + day * DAY);
+      const item = b.quietRisks.find((i) => i.id === "florist");
+      assert.ok(item);
+      assert.doesNotMatch(item!.detail, /\.\./, item!.detail);
+      assert.match(item!.detail, /Send the invitations[.,]/, item!.detail);
+    }
   });
 
   test("falls back to generic phrasing when blocker title is unresolvable", async () => {
@@ -335,7 +527,7 @@ describe("buildBriefing, name-the-blocker prose", () => {
     const b = await buildBriefing(source(signals), CTX, NOW);
     const item = b.quietRisks.find((i) => i.id === "orphaned-blocked");
     assert.ok(item, "still surfaces the task");
-    assert.doesNotMatch(item!.text, /task-not-in-this-source/);
+    assert.doesNotMatch(item!.detail, /task-not-in-this-source/);
   });
 });
 

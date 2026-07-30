@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-tasks-timeline",
+  "source": "tasks/src/app/app/tasks/timeline/page.tsx",
+  "materialityHash": "f20fd2dc1b67ab0e",
+  "reviewedAt": "2026-07-30",
+  "reviewer": "Claude Opus 5, T·111 evidence-contract refresh",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-5501ae463b99182192baa7cc-57620129dfe392df.json",
+    "attestationSha256": "ae07a250f0a04068ddac1f0479ea5ab03c0bb5e57ff38259c2559d4ce9a6275e",
+    "runId": "tasks-playwright-5501ae463b99182192baa7cc",
+    "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
+    "rawArtifactSha256": "57620129dfe392df07739d261a63cad36fa902f38d6f59012cb81bcf165c3509",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "The evidence contract changed with T·111: Signal's briefing renamed its sections to Now and Next, moved to the suite's pinned review clock, and registered a new supporting loading boundary, so every fixture assertion hash moved. No source change to this surface.",
+  "decision": "Re-attested against the current full-suite run, where this surface passes on mobile, tablet, desktop and wide with no axe violations."
+}
