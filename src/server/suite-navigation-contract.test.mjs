@@ -46,6 +46,7 @@ const taskCalendarStyles = read(
 const studioBar = read("src/components/studio-bar/studio-bar.tsx");
 const studioChrome = read("src/components/studio-bar/studio-chrome-context.tsx");
 const studioRail = read("src/components/studio-bar/studio-rail.tsx");
+const signalShell = read("src/components/studio-bar/signal-shell.module.css");
 const contextHook = read("src/components/app/use-suite-context.ts");
 const userButton = read("src/components/app/user-button-with-suite.tsx");
 const notesPage = read("src/modules/notes/app/page.tsx");
@@ -123,6 +124,35 @@ test("the product rail derives ownership and carries allowlisted context hints",
   ]) {
     assert.equal(contextHook.includes(forbidden), false);
   }
+});
+
+test("the selected Command frame keeps search with the work and consolidates rail utilities", () => {
+  assert.match(studioBar, /data-slot="command-field"/);
+  assert.ok(
+    studioBar.indexOf('data-slot="command-field"') <
+      studioBar.indexOf('data-slot="signal-pulse"'),
+    "the command field must stay left of the reserved Signal pulse slot",
+  );
+  assert.match(studioBar, /aria-keyshortcuts="c"/);
+  assert.match(studioBar, /bg-\[var\(--x-studio-ink-strong\)\]/);
+
+  assert.doesNotMatch(studioRail, /aria-label="Search"/);
+  assert.doesNotMatch(studioRail, /aria-label="Team"/);
+  assert.doesNotMatch(studioRail, /aria-label="Settings"/);
+  assert.match(studioRail, /aria-label="Help and settings"/);
+  assert.match(studioRail, /href="\/app\/settings"/);
+  assert.match(studioRail, /href="\/settings\/profile"/);
+  assert.match(studioRail, /event\.key !== "Escape"/);
+  assert.match(studioRail, /triggerRef\.current\?\.focus/);
+
+  assert.match(
+    signalShell,
+    /\.railProduct\[data-active\]\s*\{[\s\S]*background:\s*color-mix/,
+  );
+  assert.doesNotMatch(
+    signalShell,
+    /\.railProduct\[data-active\]\s+\.railTile\s*\{[\s\S]{0,120}background:/,
+  );
 });
 
 test("suite context subscribes before its first storage read", () => {

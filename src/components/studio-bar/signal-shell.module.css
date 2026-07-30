@@ -95,15 +95,22 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
+  height: 58px;
   margin: 1px 0;
-  padding: 6px 0 7px;
+  padding: 4px 0;
   position: relative;
   text-decoration: none;
+  transition:
+    background 150ms ease,
+    box-shadow 150ms ease,
+    color 150ms ease,
+    transform 120ms ease;
   width: 52px;
 }
 
 .railProduct:hover { background: rgba(255, 255, 255, 0.05); }
+.railProduct:active { transform: scale(0.98); }
 
 .railTile {
   align-items: center;
@@ -119,12 +126,14 @@
 
 .railProduct:hover .railTile { color: var(--x-studio-ink); }
 
-.railProduct[data-active] .railTile {
+.railProduct[data-active] {
   background: color-mix(in srgb, var(--x-studio-accent) 16%, transparent);
-  color: var(--x-studio-ink-strong);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--x-studio-focus) 11%, transparent);
 }
 
-.railProduct[data-active] .iconAccent { color: var(--x-studio-accent); }
+.railProduct[data-active] .railTile {
+  color: var(--x-studio-ink-strong);
+}
 
 .railLabel {
   color: var(--x-studio-ink-quiet);
@@ -150,11 +159,77 @@
   justify-content: center;
   margin: 1px 0;
   position: relative;
-  transition: background 150ms ease, color 150ms ease;
+  transition: background 150ms ease, color 150ms ease, transform 120ms ease;
   width: 40px;
 }
 
 .railUtility:hover { background: rgba(255, 255, 255, 0.05); color: var(--x-studio-ink); }
+.railUtility:active { transform: scale(0.97); }
+
+.railHelpMenuHost {
+  display: flex;
+  flex: none;
+  position: relative;
+}
+
+.helpGlyph {
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  display: flex;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10px;
+  height: 16px;
+  justify-content: center;
+  width: 16px;
+}
+
+.railHelpMenu {
+  background: var(--x-studio-chrome-raised);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  bottom: 0;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+  display: flex;
+  flex-direction: column;
+  left: calc(100% + 10px);
+  padding: 6px;
+  position: absolute;
+  width: 220px;
+  z-index: 120;
+}
+
+.railHelpEyebrow {
+  color: var(--x-studio-ink-quiet);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 7px 9px 6px;
+  text-transform: uppercase;
+}
+
+.railHelpMenu a {
+  align-items: center;
+  border-radius: 7px;
+  color: var(--x-studio-ink-soft);
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 9px;
+  text-decoration: none;
+  transition: background 130ms ease, color 130ms ease;
+}
+
+.railHelpMenu a:hover,
+.railHelpMenu a:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--x-studio-ink);
+}
+
+.railHelpMenuHost[data-open] > .railUtility::after {
+  display: none;
+}
 
 .railAccount {
   align-items: center;
@@ -636,6 +711,7 @@
   .projectsSidebarHost > * { animation: none; }
   .projectRowWrap[data-recently-placed] { animation: none; }
   .railHomeTile,
+  .railProduct,
   .railTile,
   .railLabel,
   .railUtility,

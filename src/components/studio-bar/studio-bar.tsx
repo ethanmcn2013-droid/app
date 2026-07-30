@@ -15,9 +15,9 @@
  *          live here was removed — workspace switching now lives in the
  *          Projects sidebar and the ⌘K palette, so the upper-left reads as
  *          the product, not a stray project picker. No chevron, no menu.
- *   1fr    spacer (reserved Signal pulse slot docks at the right of it)
- *   auto   universal command field (right-aligned, Phase 1), contextual
- *          create + account
+ *   1fr    left-anchored universal command field with a reserved Signal
+ *          pulse slot at the far edge
+ *   auto   contextual create + mobile account
  *
  * Mobile touch targets are written in pixels, not scale steps. The suite
  * design tokens remap Tailwind's numeric spacing scale onto the semantic
@@ -29,7 +29,9 @@
  * scripts/check-chrome-contract.mjs. The bar stays at z-40; only overlays
  * float above. The contract tokens (h-10, --x-studio-chrome, z-40,
  * w-[60px] mark cell, w-[248px] identity cell, signal-pulse slot) are all
- * preserved.
+ * preserved. The command-led treatment is the selected Signal Frame B
+ * direction: search sits with the work, while the create action closes the
+ * bar at the far right.
  */
 
 import { useSyncExternalStore } from "react";
@@ -107,8 +109,8 @@ function IdentityCell({ edition }: { edition: string | null }) {
       <a
         href={identity.home}
         aria-label={identity.label}
-        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-[44px]"
-        style={{ letterSpacing: "-0.05em" }}
+        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[24px] md:pointer-coarse:min-h-[44px]"
+        style={{ letterSpacing: "-0.045em" }}
       >
         {identity.word}
       </a>
@@ -145,8 +147,8 @@ export function StudioBar() {
     !pathname.startsWith("/app/timeline") &&
     !pathname.startsWith("/app/signal");
   const commandLabel = tasksSurface
-    ? "Search, jump or create"
-    : "Jump across Signal Studio";
+    ? "Search tasks and projects"
+    : "Search Signal Studio";
 
   return (
     // Bar *height* stays on the numeric scale on purpose. On this scale h-10
@@ -164,29 +166,20 @@ export function StudioBar() {
 
       <IdentityCell edition={data?.edition ?? null} />
 
-      {/* Spacer. The reserved Signal pulse ("3 need you") docks at its right
-          edge when it ships — deliberately empty space, deliberately no bell. */}
-      <div className="flex min-w-0 flex-1 items-center justify-end px-3 md:px-4">
-        <span
-          aria-hidden="true"
-          data-slot="signal-pulse"
-          className="hidden w-10 flex-none xl:block"
-        />
-      </div>
-
-      <div className="flex flex-none items-center gap-2 pr-3">
-        {/* Phase 1: the universal command field is right-aligned, sitting in
-            the right action cluster beside create + account. */}
+      {/* Selected Signal Frame B: the command field begins where the working
+          canvas begins instead of hiding in the far-right action cluster. */}
+      <div className="flex min-w-0 flex-1 items-center px-3 md:px-6">
         <button
           type="button"
           aria-label={commandLabel}
+          data-slot="command-field"
           onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] pointer-coarse:h-[44px] lg:w-[300px]"
+          className="hidden h-8 w-full max-w-[480px] min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.99] focus-visible:border-[var(--x-studio-accent)] md:flex pointer-coarse:h-[44px]"
         >
           <svg
             aria-hidden="true"
-            width="13"
-            height="13"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -196,8 +189,6 @@ export function StudioBar() {
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          {/* soft ink (not quiet): placeholder + kbd are real text on the
-              raised field surface and must hold ≥4.5:1 for the Axe gate. */}
           <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--x-studio-ink-soft)]">
             {commandLabel}…
           </span>
@@ -206,6 +197,16 @@ export function StudioBar() {
           </kbd>
         </button>
 
+        {/* The reserved Signal pulse ("3 need you") keeps its contractual
+            slot at the far edge — deliberately empty, deliberately no bell. */}
+        <span
+          aria-hidden="true"
+          data-slot="signal-pulse"
+          className="ml-auto hidden w-10 flex-none xl:block"
+        />
+      </div>
+
+      <div className="flex flex-none items-center gap-2 pr-3">
         {/* Search-Expand affordance below md, where the full field is hidden:
             the icon morphs into an inline field that seeds the palette. */}
         <StudioBarSearch label={commandLabel} />
@@ -213,9 +214,10 @@ export function StudioBar() {
         {tasksSurface ? (
           <button
             type="button"
+            aria-keyshortcuts="c"
             title="New task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-md border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] md:h-8 md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
           >
             <svg
               aria-hidden="true"
@@ -231,6 +233,9 @@ export function StudioBar() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span className="hidden sm:block">New task</span>
+            <kbd className="hidden h-[18px] items-center rounded border border-black/15 px-1 font-mono text-[10px] font-medium text-zinc-600 lg:flex">
+              C
+            </kbd>
           </button>
         ) : null}
         {/* Account avatar. On desktop (md+) it lives at the foot of the
