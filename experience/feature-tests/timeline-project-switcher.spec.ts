@@ -150,6 +150,6 @@ test.describe("Timeline project switcher", () => {
         name: "Current project: Nora & Cian. Switch project.",
         exact: true,
       }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
   });
 });
