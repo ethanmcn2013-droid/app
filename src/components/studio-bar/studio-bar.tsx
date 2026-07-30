@@ -101,7 +101,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
       <a
         href={identity.home}
         aria-label={identity.label}
-        className="inline-flex min-h-11 flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-11"
+        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-[44px]"
         style={{ letterSpacing: "-0.05em" }}
       >
         {identity.word}
@@ -143,6 +143,13 @@ export function StudioBar() {
     : "Jump across Signal Studio";
 
   return (
+    // Bar *height* stays on the numeric scale on purpose. On this scale h-10
+    // is 64px, not the 40px the chrome contract names, and h-11 is 80px — but
+    // the bar's own controls (h-8 → 40px) are inflated by the same factor, so
+    // dropping the shell to a literal 40px/44px without moving its contents
+    // leaves the controls flush against the edges. Shell and contents have to
+    // move together; that is the --spacing-* remap fix, not a local patch.
+    // Tap targets *inside* the bar are absolute and were fixed to 44px.
     <header
       role="banner"
       className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
@@ -168,7 +175,7 @@ export function StudioBar() {
           type="button"
           aria-label={commandLabel}
           onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] pointer-coarse:h-11 lg:w-[300px]"
+          className="hidden h-8 min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)] md:flex md:w-[240px] pointer-coarse:h-[44px] lg:w-[300px]"
         >
           <svg
             aria-hidden="true"
@@ -202,7 +209,7 @@ export function StudioBar() {
             type="button"
             title="New task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-11 min-w-11 flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-11 md:pointer-coarse:min-w-11"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-1.5 rounded-md border border-white/[0.09] bg-white/[0.06] px-2.5 text-[13px] font-medium text-[var(--x-studio-ink)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.1] focus-visible:border-[var(--x-studio-accent)] md:h-8 md:min-w-0 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
           >
             <svg
               aria-hidden="true"

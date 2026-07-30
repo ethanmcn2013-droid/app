@@ -72,7 +72,7 @@ export function YourWorkView({ data }: { data: YourWorkDTO }) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={`Search ${data.totalWorkspaceCount} workspaces`}
-              className="min-h-11 w-full rounded-xl border border-line-soft bg-bg-elevated px-4 text-[14px] text-ink outline-none placeholder:text-ink-quiet focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20"
+              className="min-h-[44px] w-full rounded-xl border border-line-soft bg-bg-elevated px-4 text-[14px] text-ink outline-none placeholder:text-ink-quiet focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20"
             />
           </label>
         ) : null}
@@ -543,7 +543,7 @@ function BulkWorkspaceForm({ period }: { period: YourWorkPeriod }) {
 
   return (
     <details className="mt-3 rounded-xl border border-dashed border-line-soft bg-bg-elevated/50">
-      <summary className="min-h-11 cursor-pointer list-none rounded-xl px-4 py-3 text-[13px] font-medium text-ink-soft outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/30">
+      <summary className="min-h-[44px] cursor-pointer list-none rounded-xl px-4 py-3 text-[13px] font-medium text-ink-soft outline-none hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/30">
         Add {term.workspacePlural.toLowerCase()}
       </summary>
       <form
@@ -634,7 +634,7 @@ function BulkWorkspaceForm({ period }: { period: YourWorkPeriod }) {
         <button
           type="submit"
           disabled={pending || preview.names.length === 0}
-          className="mt-4 min-h-11 rounded-full bg-ink px-5 text-[13px] font-medium text-white outline-none hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 min-h-[44px] rounded-full bg-ink px-5 text-[13px] font-medium text-white outline-none hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? "Creating…" : `Create ${preview.names.length || ""} ${preview.names.length === 1 ? term.workspace : term.workspacePlural}`}
         </button>
@@ -654,7 +654,7 @@ function NewPeriodForm() {
   const [feedback, setFeedback] = useState<Feedback>(null);
   return (
     <details className="w-full sm:w-auto">
-      <summary className="min-h-11 cursor-pointer list-none rounded-full bg-ink px-5 py-3 text-center text-[13px] font-medium text-white outline-none hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-brand/30">
+      <summary className="min-h-[44px] cursor-pointer list-none rounded-full bg-ink px-5 py-3 text-center text-[13px] font-medium text-white outline-none hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-brand/30">
         New planning period
       </summary>
       <form

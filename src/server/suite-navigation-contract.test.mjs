@@ -333,8 +333,14 @@ test("Tasks mobile CSS contains dense canvases and preserves 44px primary target
   assert.match(taskCalendarStyles, /\.calendarPrimary[\s\S]*overflow-x: auto/);
   assert.match(taskCalendarStyles, /\.calendarWorkspace[\s\S]*min-width: 0/);
   assert.match(taskSharedStyles, /env\(safe-area-inset-bottom\)/);
-  assert.match(studioBar, /md:pointer-coarse:h-11/);
-  assert.match(userButton, /pointer-coarse:h-11/);
+  // Assert the literal 44px, not `h-11`. This repo remaps Tailwind's numeric
+  // spacing scale (--space-11 is 80px), so `h-11` asserted a token that
+  // rendered coarse-pointer targets at 80px while this test's name promised
+  // 44px. A bracketed 44px cannot drift with the scale.
+  assert.match(userButton, /pointer-coarse:h-\[44px\]/);
+  assert.match(userButton, /pointer-coarse:w-\[44px\]/);
+  assert.match(studioBar, /pointer-coarse:h-\[44px\]/);
+  assert.match(studioBar, /md:pointer-coarse:min-w-\[44px\]/);
 });
 
 test("the shared app frame starts with one stable skip-link destination", () => {

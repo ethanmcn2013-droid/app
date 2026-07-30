@@ -49,7 +49,7 @@ export function ArchivedApp({ tasks }: { tasks: Task[] }) {
   if (tasks.length === 0) {
     return (
       <div className="mx-auto flex max-w-[560px] flex-col items-center px-6 py-20 text-center">
-        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-sunken text-ink-quiet">
+        <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-bg-sunken text-ink-quiet">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <rect x="3" y="4" width="18" height="4" rx="1" />
             <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />

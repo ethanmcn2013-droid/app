@@ -157,8 +157,8 @@ function DemoUserButtonWithSuite({
         className={[
           "flex cursor-pointer list-none items-center justify-center rounded-full bg-ink text-[11px] font-semibold text-white outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-ink [&::-webkit-details-marker]:hidden",
           placement === "bar"
-            ? "h-11 w-11 md:h-8 md:w-8 md:pointer-coarse:h-11 md:pointer-coarse:w-11"
-            : "h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11",
+            ? "h-[44px] w-[44px] md:h-8 md:w-8 md:pointer-coarse:h-[44px] md:pointer-coarse:w-[44px]"
+            : "h-8 w-8 pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
         ].join(" ")}
       >
         DO
@@ -172,7 +172,7 @@ function DemoUserButtonWithSuite({
             <a
               key={product.slug}
               href={withSuiteContext(product.path, suiteContext)}
-              className="flex min-h-11 items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+              className="flex min-h-[44px] items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
             >
               {product.label}
               <ArrowIcon />
@@ -181,7 +181,7 @@ function DemoUserButtonWithSuite({
         )}
         <Link
           href="/?preview=public"
-          className="flex min-h-11 items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
+          className="flex min-h-[44px] items-center justify-between rounded-lg px-2.5 text-sm text-ink hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink"
         >
           View public site
           <EyeIcon />
@@ -227,8 +227,8 @@ function ClerkUserButtonWithSuite({
         elements: {
           avatarBox:
             placement === "bar"
-              ? "h-11 w-11 rounded-full md:h-8 md:w-8 md:pointer-coarse:h-11 md:pointer-coarse:w-11"
-              : "h-8 w-8 rounded-full pointer-coarse:h-11 pointer-coarse:w-11",
+              ? "h-[44px] w-[44px] rounded-full md:h-8 md:w-8 md:pointer-coarse:h-[44px] md:pointer-coarse:w-[44px]"
+              : "h-8 w-8 rounded-full pointer-coarse:h-[44px] pointer-coarse:w-[44px]",
           userButtonPopoverCard:
             "shadow-[0_24px_60px_-24px_rgba(20,21,26,0.18)]",
         },
