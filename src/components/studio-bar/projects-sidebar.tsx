@@ -34,7 +34,6 @@ import type {
   ProjectsTreeData,
   ProjectsTreeLeaf,
 } from "@/server/actions/projects-tree";
-import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { RailIcon, ShellGlyph, SidebarGlyph } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
@@ -50,110 +49,6 @@ function useDrawerViewport(): boolean {
     subscribe,
     () => window.matchMedia(DRAWER_QUERY).matches,
     () => false,
-  );
-}
-
-function SavedViewsRow() {
-  const { savedViews, applySavedView, deleteSavedView } = useRoomTools();
-  const [open, setOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className={styles.navRow}
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        <SidebarGlyph name="focus" size={16} />
-        <span>Saved views</span>
-        {savedViews.length > 0 ? (
-          <span className={styles.navCount}>{savedViews.length}</span>
-        ) : null}
-      </button>
-      <AnimatePresence>
-      {open ? (
-        <motion.div
-          animate={{ opacity: 1, transform: "scale(1)" }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
-          role="dialog"
-          aria-label="Saved views"
-          style={{
-            background: "var(--x-task-overlay)",
-            border: "1px solid var(--x-task-border)",
-            borderRadius: 8,
-            boxShadow: "var(--x-task-shadow)",
-            left: 8,
-            padding: 6,
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            transformOrigin: "top left",
-            width: 220,
-            zIndex: 60,
-          }}
-          transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
-        >
-          {savedViews.length === 0 ? (
-            <p
-              style={{
-                color: "var(--x-task-text-muted)",
-                fontSize: 10,
-                lineHeight: 1.5,
-                margin: 0,
-                padding: "6px 8px",
-              }}
-            >
-              Save a view from the view bar and it lands here.
-            </p>
-          ) : (
-            savedViews.map((v) => (
-              <div key={v.id} style={{ alignItems: "center", display: "flex", gap: 4 }}>
-                <button
-                  className={styles.navRow}
-                  onClick={() => {
-                    setOpen(false);
-                    applySavedView(v.id);
-                  }}
-                  type="button"
-                >
-                  <span className={styles.projectName}>{v.name}</span>
-                  <span className={styles.navCount}>{v.view}</span>
-                </button>
-                <button
-                  aria-label={`Delete saved view ${v.name}`}
-                  className={styles.sidebarCollapse}
-                  onClick={() => deleteSavedView(v.id)}
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-            ))
-          )}
-        </motion.div>
-      ) : null}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -545,32 +440,9 @@ function SidebarBody({
           <SidebarGlyph name="agenda" size={16} />
           <span>My work</span>
         </Link>
-        <Link
-          aria-current={pathname === "/app/your-work" ? "page" : undefined}
-          className={styles.navRow}
-          href="/app/your-work"
-          onClick={onNavigate}
-        >
-          <SidebarGlyph name="people" size={16} />
-          <span>Assigned to me</span>
-        </Link>
-        <Link
-          aria-current={pathname === "/app/archived" ? "page" : undefined}
-          className={styles.navRow}
-          href="/app/archived"
-          onClick={onNavigate}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="4" rx="1" />
-            <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
-            <path d="M10 12h4" />
-          </svg>
-          <span>Archived</span>
-        </Link>
-        <SavedViewsRow />
       </nav>
       <nav aria-label="Projects" className={styles.projectsSection}>
-        <h2 className={styles.projectsHeading}>Projects</h2>
+        <h2 className="sr-only">Projects</h2>
         <ul className={styles.projectTree}>
           {tree.groups.map((group) => {
             if (group.periodId) {
@@ -730,10 +602,6 @@ function SidebarHeader({
 }) {
   return (
     <header className={styles.sidebarHeader}>
-      <div className={styles.sidebarIdentity}>
-        <span className={styles.sidebarEyebrow}>Signal Studio</span>
-        <strong className={styles.sidebarTitle}>Tasks</strong>
-      </div>
       <button
         aria-label={closeLabel}
         className={styles.sidebarCollapse}

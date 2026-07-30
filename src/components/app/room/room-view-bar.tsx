@@ -158,18 +158,19 @@ export function RoomViewBar() {
           <Icon name="sort" size={15} />
           Sort
         </button>
-        <button
-          disabled={view !== "list"}
-          onClick={() => {
-            setFieldsOpen(!fieldsOpen);
-            setPanel(null);
-          }}
-          title={view === "list" ? "Choose visible fields" : "Fields apply to the list view"}
-          type="button"
-        >
-          <Icon name="fields" size={15} />
-          Fields
-        </button>
+        {view === "list" ? (
+          <button
+            onClick={() => {
+              setFieldsOpen(!fieldsOpen);
+              setPanel(null);
+            }}
+            title="Choose visible fields"
+            type="button"
+          >
+            <Icon name="fields" size={15} />
+            Fields
+          </button>
+        ) : null}
         <label className={shared.compactSelect}>
           <span className={shared.srOnly}>Density</span>
           <Icon name="density" size={15} />
