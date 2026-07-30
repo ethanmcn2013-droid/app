@@ -2491,8 +2491,7 @@
         "member"
       ],
       "requiredStates": [
-        "loading",
-        "slow-loading",
+        "default",
         "reduced-motion"
       ],
       "requiredBreakpoints": [
@@ -2503,18 +2502,18 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "critical",
+      "reviewTier": "supporting",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
       "implementationStatus": "live",
       "auditStatus": "registered",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "partial",
+      "automatedTestCoverage": "none",
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9f76837be523afe3"
