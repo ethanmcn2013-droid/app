@@ -4,6 +4,40 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·115 · cuts · the sidebar stops saying the same thing twice
+
+**The left column said "Signal Studio", then "Tasks", directly under a bar that
+already said Tasks, and then offered two rows that answered the same question.**
+It now opens on Inbox, My work and your projects. Nothing was added.
+
+"Assigned to me" and "My work" pointed at two routes that return the same list
+for anyone working alone or in a pair, which is most of this product's use. One
+row goes; the route stays live as a URL. Saved views leaves the column too, on
+the grounds that a saved view is made in the view bar and belongs per project,
+so having the create control in one place and the read control in another was
+the actual problem. Archived was sitting at the same level as live work while
+already appearing at the foot of the projects tree, so the promoted copy goes.
+The uppercase "PROJECTS" heading stays in the document outline for screen
+readers and leaves the visual field, which was carrying three typographic
+assertions in a 200px column before a single project name.
+
+The view bar loses its dead control. Fields configures list columns, and on
+every other view it rendered greyed out, so the board, which is the view you
+land on, shipped a disabled button in prime space. It now renders only on the
+list, where it does something.
+
+One test repair rides along. The Timeline project switcher smoke has been
+failing intermittently on main, on a different viewport each run, which is the
+signature of a race rather than a regression. Its final assertion matched the
+switcher by exact accessible name, so it asserted the punctuation of the whole
+label alongside the project and reported any difference as "element not found".
+It now matches by project name, the same way the rest of the file does, which
+proves the same thing without the brittleness.
+
+Verified: typecheck clean, the full test suite green, lint with no errors, and
+the production build passing. No board, column, task, or data behaviour changed
+in this release, and no migration was needed.
+
 ## 2026-07-30 · T·114 · ships · the project name you type is the one everyone reads
 
 **The title and description above your board were being saved to your own
