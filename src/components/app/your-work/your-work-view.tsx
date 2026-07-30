@@ -66,7 +66,7 @@ export function YourWorkView({ data }: { data: YourWorkDTO }) {
 
         {data.searchEnabled ? (
           <label className="mt-6 block max-w-sm">
-            <span className="sr-only">Search workspaces</span>
+            <span className="sr-only">Search projects</span>
             <input
               type="search"
               value={query}

@@ -114,7 +114,7 @@ function RailHelpMenu() {
         >
           <span className={styles.railHelpEyebrow}>Help and settings</span>
           <Link href="/app/settings" role="menuitem">
-            <span>Workspace and team</span>
+            <span>Project and team</span>
             <span aria-hidden="true">↗</span>
           </Link>
           <Link href="/settings/profile" role="menuitem">

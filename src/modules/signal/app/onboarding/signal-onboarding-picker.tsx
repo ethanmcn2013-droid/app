@@ -93,7 +93,7 @@ export function SignalOnboardingPicker({
       ) : (
         <div
           role="radiogroup"
-          aria-label="Workspace"
+          aria-label="Project"
           style={{
             display: "flex",
             flexDirection: "column",

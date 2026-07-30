@@ -152,7 +152,7 @@ export function WorkspaceSection({
     <div>
       <SectionHeader
         eyebrow="Workspace"
-        title="The shape of your workspace"
+        title="The shape of your project"
         description="Rename it, swap the starter pack, or review your workspace details. Changes save instantly, no save button to forget."
       />
 
@@ -160,7 +160,7 @@ export function WorkspaceSection({
         {/* Name */}
         <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
           <Label>Name</Label>
-          <Caption>What this workspace gets called everywhere, the header, share links, the daily digest.</Caption>
+          <Caption>What this project gets called everywhere, the header, share links, the daily digest.</Caption>
           <div className="mt-3 flex items-center gap-2">
             <input
               ref={inputRef}

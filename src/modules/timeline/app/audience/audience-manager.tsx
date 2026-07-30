@@ -193,19 +193,19 @@ export function AudienceManager({
             Connect the canonical workspace
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
-            Use the immutable Signal Tasks workspace ID. Labels and slugs are never used as a suite join key.
+            Use the immutable Signal Tasks project ID. Labels and slugs are never used as a suite join key.
           </p>
           <form action={connectAction} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             <label className="flex-1">
-              <span className="sr-only">Signal Tasks workspace ID</span>
+              <span className="sr-only">Signal Tasks project ID</span>
               <input
                 name="suiteWorkspaceId"
                 required
                 maxLength={120}
                 autoComplete="off"
                 className={fieldClass}
-                placeholder="Signal Tasks workspace ID"
+                placeholder="Signal Tasks project ID"
               />
             </label>
             <button disabled={connectPending} className={primaryButton}>

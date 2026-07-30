@@ -268,6 +268,16 @@ export const workspaces = sqliteTable("workspaces", {
    *  identifier and as the public `/p/{slug}` URL when published. */
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  /** The project's supporting line, shown under the title in the brief
+   *  (T·114). Nullable: null renders the brief's placeholder rather than
+   *  a sentence nobody wrote. Before 0022 this text lived in localStorage
+   *  keyed by *display name*, so two projects sharing a display name
+   *  shared one description and a rename orphaned it — the value was
+   *  invisible to every collaborator and to share, print and embed.
+   *
+   *  MIGRATION REQUIRED before this column is readable from prod:
+   *  see drizzle/0022_workspaces_description.sql. */
+  description: text("description"),
   /** Nullable so the schema push doesn't fail on the legacy backfill;
    *  tightened to NOT NULL after the user webhook lands real owners. */
   ownerUserId: text("owner_user_id").references(() => users.id),

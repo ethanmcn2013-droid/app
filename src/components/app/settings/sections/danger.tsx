@@ -116,7 +116,7 @@ export function DangerSection({
         {/* Delete workspace */}
         {isOwner ? (
           <DangerCard
-            title="Delete this workspace"
+            title="Delete this project"
             description={
               "Erases the workspace and everything in it, tasks, comments, members, share links, the whole shape. There is no undo."
             }

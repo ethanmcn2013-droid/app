@@ -284,7 +284,7 @@ export function TimelineApp() {
   } as CSSProperties;
 
   return (
-    <section aria-label="Workspace Timeline" className={styles.timelineView}>
+    <section aria-label="Project Timeline" className={styles.timelineView}>
       <header className={styles.timelineStory}>
         <div>
           <span>Planning story</span>

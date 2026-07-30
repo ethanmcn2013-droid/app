@@ -96,6 +96,40 @@ export async function updateWorkspaceAction(input: {
   return { ok: true };
 }
 
+/** Maximum stored length of the project's supporting line. The brief renders
+ *  it on one line under the title; longer text is the task detail's job. */
+const PROJECT_DESCRIPTION_MAX = 200;
+
+/**
+ * Set (or clear) the active project's supporting line — the sentence under
+ * the title in the brief (T·114).
+ *
+ * Before this action the text lived in localStorage keyed by *display name*,
+ * so it was invisible to collaborators, lost on rename, and shared between
+ * two projects that happened to display the same name. Storing it on the
+ * workspace row makes it one value that every reader sees.
+ *
+ * An empty string clears the column back to NULL, which is what makes the
+ * brief show its placeholder again rather than an empty line.
+ */
+export async function setProjectDescriptionAction(
+  description: string,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  const trimmed = description.replace(/\s+/g, " ").trim();
+  if (trimmed.length > PROJECT_DESCRIPTION_MAX) {
+    throw new Error(
+      `Keep the description under ${PROJECT_DESCRIPTION_MAX} characters.`,
+    );
+  }
+  await db
+    .update(workspaces)
+    .set({ description: trimmed.length > 0 ? trimmed : null })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
 /** Remove a member from the active workspace. Owner-only; refuses to
  *  remove the workspace's last owner (one-owner invariant). */
 export async function removeMemberAction(

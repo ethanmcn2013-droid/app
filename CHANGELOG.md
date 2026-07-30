@@ -4,6 +4,58 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·114 · ships · the project name you type is the one everyone reads
+
+**The title and description above your board were being saved to your own
+browser, so nobody else ever saw them, and the product called the same thing a
+Workspace in one place and a Project in another.** Both are fixed. The
+supporting line now lives on the project record, the title commits through the
+rename the server already had, and the word "Workspace" is gone from every
+surface a person reads.
+
+The description was the worse of the two. It was written to localStorage under
+a key built from the project's *display name*, which meant three things at
+once: a collaborator opening the same board saw a sentence the owner had never
+written, two projects that happened to display the same name shared one
+description, and renaming a project orphaned the text with no way back.
+Migration `0022_workspaces_description` adds a nullable column to hold it. The
+old values cannot be recovered from the server because they only ever existed
+in each browser, so the first load of this release promotes whatever that
+browser still holds, once, and only into a field the server has no value for.
+The server always wins. The old default sentence is never promoted, because a
+line every project shipped with was never the owner's own.
+
+The title had a quieter version of the same fault. `renameBoardAction` and the
+per-project name record already existed and were already correct; the brief
+simply shadowed them with the local copy. It now renders and commits the
+stored value, so the name on the board, on a share link, in the print view and
+in the daily digest are the same name.
+
+On the naming: D-011 ratified "Projects = Tasks workspaces" on 2026-07-21 and
+it had not landed. The crumb above the title read "Workspace ›", a hardcoded
+literal that was neither a link nor a real hierarchy. It is gone, and nothing
+replaces it. The leak came from one line in the vocabulary map, where the
+generic context still answered "Workspace" while every other context was
+already right. A contract test now fails the build if any component writes the
+noun into JSX text, `aria-label`, `title`, `placeholder` or `alt`, with the
+vocabulary map as the only allowed source. That test immediately found fifteen
+more instances a manual search had missed, in Notes, Timeline, Signal, the
+share email and the onboarding picker, all now corrected. The share email's
+"Open the workspace" was BRAND.md §6.5's ratified call to action and now reads
+"Open the project"; §6.5 needs the same amendment.
+
+Editing is signalled by the caret and a hairline under the baseline rather
+than the full inset box the heading used to grow on hover, which read as a
+text input in costume. An empty description clears the record and shows its
+placeholder instead of storing the placeholder as though someone had typed it.
+The dead `room-brief.tsx`, which held the correct crumb-free header from T·94
+and was never rendered, is deleted.
+
+Verified: the migration contract at 19 of 19 with the new migration executed
+and its three proofs checked against a fresh database, typecheck clean, the
+full test suite green, lint clean, and the production build passing. No board,
+column, task, or data behaviour changed in this release.
+
 ## 2026-07-30 · T·113 · tightens · the frame puts the command where the work begins
 
 **The black Signal Studio frame now reads as one deliberate command surface

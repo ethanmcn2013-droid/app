@@ -40,7 +40,7 @@ export function StorageSection({
     <div>
       <SectionHeader
         eyebrow="Storage"
-        title="Workspace storage"
+        title="Project storage"
         description="Attachments and uploaded files count against your workspace quota. The quota resets if you upgrade."
       />
 

@@ -465,7 +465,7 @@ export function ListApp() {
 
   return (
     <section
-      aria-label="Workspace List"
+      aria-label="Project List"
       className={styles.listView}
       data-density={density}
     >

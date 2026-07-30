@@ -88,7 +88,7 @@ export function CalendarApp() {
   const maxVisible = 3;
 
   return (
-    <section aria-label="Workspace Calendar" className={`${styles.calendarView} thin-scroll`}>
+    <section aria-label="Project Calendar" className={`${styles.calendarView} thin-scroll`}>
       <header className={styles.calendarToolbar}>
         <div className={styles.calendarNavigation}>
           <button

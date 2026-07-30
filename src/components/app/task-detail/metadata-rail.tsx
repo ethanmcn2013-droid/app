@@ -61,7 +61,7 @@ export function MetadataRail({
 }) {
   const { boardName } = useDomain();
   const suiteContext = useSuiteContext();
-  const projectLabel = boardName ?? "Workspace";
+  const projectLabel = boardName ?? "Project";
   const timelineHref = withSuiteContext(
     PRODUCT_APP_PATHS.timeline,
     suiteContext,
