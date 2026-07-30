@@ -4,6 +4,20 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-30 · T·113 · tightens · the frame puts the command where the work begins
+
+**The black Signal Studio frame now reads as one deliberate command surface
+instead of a header and rail competing for attention.** Search moves to the
+left edge of the working canvas, New task closes the bar as the single light
+action, and the current product is held by one quiet indigo plate rather than
+an icon nested inside another tile. The product order, charcoal chassis,
+workspace geometry, and keyboard behavior stay fixed.
+
+The lower rail now keeps Updates, Help and account at rest. Help retains the
+existing workspace, team, account-settings and support paths, so reducing the
+visible controls does not remove a destination. No board, list, schedule,
+calendar, sidebar, data, or task behavior changed in this release.
+
 ## 2026-07-30 · T·112 · tightens · tap targets stop inheriting the 80px spacing step
 
 **Every control that asked for the 44px touch minimum was rendering at 80px, and

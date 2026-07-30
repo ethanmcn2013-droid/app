@@ -9,10 +9,9 @@
  *   products → each product's canonical module route within this app,
  *              carrying allowlisted workspace context as navigation hints
  *   more     → the umbrella (all products)
- *   search   → the universal command palette
  *   updates  → /app/inbox (the daily digest surface)
- *   team     → workspace settings (members live there)
- *   settings → /app/settings
+ *   help     → a compact menu retaining support, workspace/team, and
+ *              account-settings access
  *   account  → the profile avatar + full account menu, docked at the foot
  *              of the rail (the L-frame's bottom-left corner). Relocated
  *              from the Studio Bar's top-right cluster.
@@ -21,6 +20,7 @@
  * keeps the account avatar, since the rail is not painted there).
  */
 
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useSuiteContext } from "@/components/app/use-suite-context";
@@ -32,7 +32,6 @@ import {
   type ProductId,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
-import { STUDIO_PALETTE_EVENT } from "./studio-chrome-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
@@ -44,14 +43,94 @@ const CORE_PRODUCTS: Array<{ key: ProductId; label: string }> = [
   { key: "signal", label: "Signal" },
 ];
 
-function ProductTile({ icon, label, active }: { icon: RailIconName; label: string; active?: boolean }) {
+function ProductTile({ icon, label }: { icon: RailIconName; label: string }) {
   return (
     <>
       <span aria-hidden="true" className={styles.railTile}>
-        <RailIcon accentClassName={active ? styles.iconAccent : undefined} name={icon} size={20} />
+        <RailIcon name={icon} size={20} />
       </span>
       <span className={styles.railLabel}>{label}</span>
     </>
+  );
+}
+
+function RailHelpMenu() {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      menuRef.current
+        ?.querySelector<HTMLElement>('[role="menuitem"]')
+        ?.focus();
+    });
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpen(false);
+      triggerRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div
+      className={styles.railHelpMenuHost}
+      data-open={open ? "true" : undefined}
+      ref={rootRef}
+    >
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="Help and settings"
+        className={styles.railUtility}
+        data-tip="Help and settings"
+        onClick={() => setOpen((current) => !current)}
+        ref={triggerRef}
+        type="button"
+      >
+        <span aria-hidden="true" className={styles.helpGlyph}>?</span>
+      </button>
+      {open ? (
+        <div
+          aria-label="Help and settings"
+          className={styles.railHelpMenu}
+          ref={menuRef}
+          role="menu"
+        >
+          <span className={styles.railHelpEyebrow}>Help and settings</span>
+          <Link href="/app/settings" role="menuitem">
+            <span>Workspace and team</span>
+            <span aria-hidden="true">↗</span>
+          </Link>
+          <Link href="/settings/profile" role="menuitem">
+            <span>Account settings</span>
+            <span aria-hidden="true">↗</span>
+          </Link>
+          <a
+            href="mailto:hello@signalstudio.ie?subject=Signal%20Studio%20help"
+            role="menuitem"
+          >
+            <span>Contact support</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -81,7 +160,7 @@ export function StudioRail() {
               href={href}
               key={product.key}
             >
-              <ProductTile active={active} icon={product.key} label={product.label} />
+              <ProductTile icon={product.key} label={product.label} />
             </Link>
           );
         })}
@@ -99,24 +178,10 @@ export function StudioRail() {
         <span className={styles.railLabel}>More</span>
       </a>
       <span className={styles.railSpacer} />
-      <button
-        aria-label="Search"
-        className={styles.railUtility}
-        data-tip="Search, jump or create · ⌘K"
-        onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-        type="button"
-      >
-        <RailIcon name="search" size={18} />
-      </button>
       <Link aria-label="Updates" className={styles.railUtility} data-tip="Updates · daily digest" href="/app/inbox">
         <RailIcon name="updates" size={18} />
       </Link>
-      <Link aria-label="Team" className={styles.railUtility} data-tip="Team · workspace members" href="/app/settings">
-        <RailIcon name="team" size={18} />
-      </Link>
-      <Link aria-label="Settings" className={styles.railUtility} data-tip="Settings" href="/app/settings">
-        <RailIcon name="settings" size={18} />
-      </Link>
+      <RailHelpMenu />
       {/* Account lives here at the foot of the rail — the bottom-left corner
           of the Signal Studio L-frame. The profile avatar (with its full
           account menu) was relocated from the Studio Bar's top-right cluster
