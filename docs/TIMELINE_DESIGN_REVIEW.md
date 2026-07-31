@@ -440,6 +440,40 @@ Shipped in the same cycle as the review:
   future intent; delete-or-wire remains open); `brand.md` staleness
   (Tasks-owned doc).
 
+## Elevation pass · same cycle (good → great)
+
+The operator's brief after the first ship: "good, not great." The gap
+was information density done quietly — the rail asserted positions but
+gave the viewer no calendar to read them against — and three places
+where the composition still had slack.
+
+- **Month cartography.** `monthBoundaries()` in the model emits
+  first-of-month ticks strictly inside the axis span, mapped through
+  `mapThroughPointDistortion` — the same piecewise mapping the points
+  and the Today chip ride, so the calendar and the dots cannot
+  disagree. Spans of >14 months thin to quarters, then to Januarys;
+  January is labelled `Jan ’YY`. The view renders each tick as a
+  1px×0.5rem ink-ghost hairline under the rail with a 0.625rem mono
+  uppercase label; labels yield (`data-quiet`) within 3 points of the
+  Today chip and 4 of the rail's edges, and a greedy pass marks labels
+  <4 points from the last-labelled tick `data-tight` — hidden below
+  980px container width, which is what saves the print sheet from
+  MAY/JUN garble. The stacked phone rail keeps the tick rhythm,
+  drops all text. Model-tested (ordering on both axes, between-ness
+  against distorted points, en-GB "Sept", multi-year thinning, undated
+  → none) and contract-pinned (ticks come from the model — `new
+  Date()` is banned in the view).
+- **Composition.** The journey now meets the frame at
+  `clamp(--space-6, 3.5vw, --space-8)`; planning decisions sit
+  full-width under a soft top rule with a rotating `+` marker; the
+  milestone detail closes at `--space-8` so the last line lands
+  instead of stopping.
+
+Deferred from this pass, named honestly: template dates (P1-8,
+studio-side), the four unused-library deletions, and the advisory
+council's two open journey items (they require real journey evidence,
+which is not fabricated).
+
 ## Appendix · reproducing the evidence
 
 - Demo render: `NEXT_PUBLIC_DEMO_MODE=true pnpm dev`, then

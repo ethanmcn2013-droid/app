@@ -32,6 +32,17 @@ export type TimelineArtifactPoint = Readonly<{
   isNext: boolean;
 }>;
 
+export type TimelineMonthTick = Readonly<{
+  /** Rail-percent on the horizontal axis, ridden through the same
+      distortion as the points — the cartography cannot disagree with
+      the dots it annotates. */
+  position: number;
+  /** The stacked (vertical) axis position, capped like everything else. */
+  stackPosition: number;
+  /** Short month name, e.g. "Feb"; January carries its year: "Jan ’27". */
+  label: string;
+}>;
+
 export type TimelineArtifactModel = Readonly<{
   density: TimelineArtifactDensity;
   points: readonly TimelineArtifactPoint[];
@@ -42,6 +53,12 @@ export type TimelineArtifactModel = Readonly<{
   percent: number;
   todayPosition: number | null;
   todayStackPosition: number | null;
+  /**
+   * Month boundaries inside the plan's span, for the rail's cartography.
+   * Empty when the timeline has no usable calendar axis, or when the span
+   * is so long the ticks would become noise (they thin to quarters first).
+   */
+  monthTicks: readonly TimelineMonthTick[];
   /**
    * The rail-percent of the furthest completed milestone, or null when
    * nothing is complete. The completed ink is drawn to THIS, never to the
@@ -188,17 +205,56 @@ function mapThroughPointDistortion(
   return clampPercent(100 - edge);
 }
 
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  timeZone: "UTC",
+});
+
+/**
+ * First-of-month instants strictly inside (axisStart, axisEnd). When a plan
+ * spans years the ticks thin to quarters, then to Januarys, so cartography
+ * never becomes noise. January ticks carry their year.
+ */
+function monthBoundaries(axisStart: number, axisEnd: number): Array<{ day: number; label: string }> {
+  const boundaries: Array<{ day: number; label: string }> = [];
+  const cursor = new Date(axisStart);
+  cursor.setUTCDate(1);
+  cursor.setUTCHours(0, 0, 0, 0);
+  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  while (cursor.getTime() < axisEnd) {
+    const month = cursor.getUTCMonth();
+    boundaries.push({
+      day: cursor.getTime(),
+      label: month === 0
+        ? `Jan ’${String(cursor.getUTCFullYear() % 100).padStart(2, "0")}`
+        : MONTH_FORMATTER.format(cursor),
+    });
+    cursor.setUTCMonth(month + 1);
+  }
+  if (boundaries.length > 14) {
+    const quarters = boundaries.filter(({ day }) => new Date(day).getUTCMonth() % 3 === 0);
+    return quarters.length > 14
+      ? quarters.filter(({ day }) => new Date(day).getUTCMonth() === 0)
+      : quarters;
+  }
+  return boundaries;
+}
+
 function calendarPositions(
   items: readonly AudienceTimelineItemDto[],
   today: string,
   primaryDate: string | undefined,
-): { pointPositions: number[]; todayPosition: number | null } {
+): {
+  pointPositions: number[];
+  todayPosition: number | null;
+  monthTicks: Array<{ position: number; label: string }>;
+} {
   const todayDay = calendarDay(today);
   const primaryDay = calendarDay(primaryDate);
   const itemDays = items.map((item) => calendarDay(item.date));
   const datedItemDays = itemDays.filter((day): day is number => day !== null);
   if (datedItemDays.length === 0) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const axisDays = [
@@ -209,13 +265,13 @@ function calendarPositions(
   const distinctAxisDays = new Set(axisDays);
 
   if (distinctAxisDays.size < 2) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const axisStart = Math.min(...axisDays);
   const axisEnd = Math.max(...axisDays);
   if (axisEnd <= axisStart) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const rawPointPositions = interpolateUndatedPositions(
@@ -233,15 +289,18 @@ function calendarPositions(
           adjusted: safePointPositions[index],
         }],
   );
-  const todayPosition = todayDay === null
-    ? null
-    : mapThroughPointDistortion(
-        ((todayDay - axisStart) / (axisEnd - axisStart)) * 100,
-        datedAnchors,
-        edge,
-      );
+  const mapDay = (day: number): number => mapThroughPointDistortion(
+    ((day - axisStart) / (axisEnd - axisStart)) * 100,
+    datedAnchors,
+    edge,
+  );
+  const todayPosition = todayDay === null ? null : mapDay(todayDay);
+  const monthTicks = monthBoundaries(axisStart, axisEnd).map(({ day, label }) => ({
+    position: mapDay(day),
+    label,
+  }));
 
-  return { pointPositions: safePointPositions, todayPosition };
+  return { pointPositions: safePointPositions, todayPosition, monthTicks };
 }
 
 /**
@@ -300,9 +359,16 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     raw: position,
     adjusted: stackPositions[index],
   }));
+  const mapStack = (position: number): number =>
+    mapThroughPointDistortion(position, stackAnchors, 0);
   const todayStackPosition = schedule.todayPosition === null
     ? null
-    : mapThroughPointDistortion(schedule.todayPosition, stackAnchors, 0);
+    : mapStack(schedule.todayPosition);
+  const monthTicks: TimelineMonthTick[] = schedule.monthTicks.map((tick) => ({
+    position: tick.position,
+    stackPosition: mapStack(tick.position),
+    label: tick.label,
+  }));
 
   const points = activeItems.map((item, index): TimelineArtifactPoint => {
     const itemDay = calendarDay(item.date);
@@ -344,6 +410,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     percent,
     todayPosition: schedule.todayPosition,
     todayStackPosition,
+    monthTicks,
     completedFrontier,
     completedStackFrontier,
     nextMilestoneId: next?.publicId ?? null,

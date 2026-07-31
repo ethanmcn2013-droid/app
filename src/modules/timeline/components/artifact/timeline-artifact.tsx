@@ -662,6 +662,47 @@ function Journey({
               />
             </div>
 
+            {/* The rail's cartography: month boundaries riding the same
+                distortion mapping as the points, so the calendar's rhythm —
+                why some gaps run long and others short — is visible truth.
+                Labels yield to the Today chip and the rail's edge caps;
+                decoration never outranks information. */}
+            {model.monthTicks.length ? (
+              <span className={styles.monthTicks} aria-hidden="true">
+                {(() => {
+                  // Greedy label thinning: a label that would sit within 4
+                  // rail-percent of the previous labelled tick is "tight" —
+                  // it keeps its label on wide rails and yields it below
+                  // 980px (and in print), where four percent stops being
+                  // enough paper for a month's name.
+                  let lastLabelled = Number.NEGATIVE_INFINITY;
+                  return model.monthTicks.map((tick) => {
+                    const nearToday = model.todayPosition !== null
+                      && Math.abs(tick.position - model.todayPosition) < 3;
+                    const nearEdge = tick.position < 4 || tick.position > 96;
+                    const quiet = nearToday || nearEdge;
+                    const tight = !quiet && tick.position - lastLabelled < 4;
+                    if (!quiet && !tight) lastLabelled = tick.position;
+                    const tickStyle: PositionStyle = {
+                      "--timeline-position": `${tick.position}%`,
+                      "--timeline-position-stack": `${tick.stackPosition}%`,
+                    };
+                    return (
+                      <span
+                        className={styles.monthTick}
+                        data-quiet={quiet ? "true" : undefined}
+                        data-tight={tight ? "true" : undefined}
+                        key={`${tick.label}-${tick.position}`}
+                        style={tickStyle}
+                      >
+                        <span>{tick.label}</span>
+                      </span>
+                    );
+                  });
+                })()}
+              </span>
+            ) : null}
+
             {todayLabel && todayStyle ? (
               <span
                 className={styles.todayMarker}

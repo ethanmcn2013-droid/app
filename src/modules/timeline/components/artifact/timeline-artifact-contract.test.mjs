@@ -112,6 +112,19 @@ test("paper keeps the content: print carries the milestone index and both metric
   assert.match(styles, /\.printFacts\s*\{\s*display:\s*none;/);
 });
 
+test("the rail's cartography rides the model's mapping and yields to information", () => {
+  // Month ticks come from the model (the same distortion mapping as the
+  // points), never from raw calendar math in the view; their labels yield
+  // near the Today chip and the rail's edges. On the stacked axis the
+  // ticks keep the rhythm but drop their text.
+  assert.match(artifact, /model\.monthTicks/);
+  assert.match(artifact, /styles\.monthTick\b/);
+  assert.match(artifact, /data-quiet=/);
+  assert.match(styles, /\.monthTick\[data-quiet="true"\] > span/);
+  assert.match(styles, /\.monthTick\s*\{[\s\S]*?--timeline-position/);
+  assert.doesNotMatch(artifact, /new Date\(\)/);
+});
+
 test("the hidden scrollbar owes an affordance and the attribution walks", () => {
   assert.match(artifact, /data-overflow-start/);
   assert.match(artifact, /data-overflow-end/);

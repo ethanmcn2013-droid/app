@@ -311,3 +311,52 @@ test("metric faces declare a width class so the wedding-day face can never clip"
   assert.equal(metricValueScale("1095"), "four");
   assert.equal(metricValueScale("Today"), "word");
 });
+
+test("month ticks ride the same distortion as the points and thin on long spans", () => {
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("menu", "now", "2026-08-01"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+
+  // Jan 2 → Oct 3 crosses nine first-of-month boundaries, Feb through Oct.
+  // "Sept" is en-GB's short September — the same formatter voice as every
+  // date already on the artifact.
+  assert.deepEqual(
+    model.monthTicks.map((tick) => tick.label),
+    ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct"],
+  );
+
+  // Strictly ordered on both axes, and honest about between-ness: the Feb
+  // and Mar ticks sit between the January and April milestones; the Sep
+  // tick sits between the August and October ones.
+  for (let index = 1; index < model.monthTicks.length; index += 1) {
+    assert.ok(model.monthTicks[index].position > model.monthTicks[index - 1].position);
+    assert.ok(model.monthTicks[index].stackPosition > model.monthTicks[index - 1].stackPosition);
+  }
+  const [yes, venue, menu, wedding] = model.points;
+  const tick = (label: string) => model.monthTicks.find((candidate) => candidate.label === label)!;
+  assert.ok(tick("Feb").position > yes.position && tick("Feb").position < venue.position);
+  assert.ok(tick("Mar").position > yes.position && tick("Mar").position < venue.position);
+  assert.ok(tick("Sept").position > menu.position && tick("Sept").position < wedding.position);
+  assert.ok(tick("Sept").stackPosition > menu.stackPosition
+    && tick("Sept").stackPosition < wedding.stackPosition);
+
+  // A multi-year plan thins to quarters, Januarys carrying their year.
+  const long = buildTimelineArtifactModel(timeline([
+    item("start", "covered", "2026-01-10"),
+    item("mid", "now", "2027-06-01"),
+    item("end", "later", "2028-06-20"),
+  ]));
+  assert.ok(long.monthTicks.length <= 14);
+  assert.ok(long.monthTicks.every(({ label }) => /^(Jan ’\d{2}|Apr|Jul|Oct)$/.test(label)));
+  assert.ok(long.monthTicks.some(({ label }) => label === "Jan ’27"));
+
+  // No calendar axis, no cartography.
+  const undated = buildTimelineArtifactModel(timeline([
+    item("one", "now"),
+    item("two", "later"),
+  ]));
+  assert.deepEqual(undated.monthTicks, []);
+});

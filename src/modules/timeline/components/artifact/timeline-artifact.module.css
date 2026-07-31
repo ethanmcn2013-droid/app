@@ -401,7 +401,9 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .journey {
-  margin-block-start: clamp(var(--space-8), 5vw, var(--space-10));
+  /* The rail hangs close enough to the header to read as one plate; the
+     whitespace between them is composed, not leftover. */
+  margin-block-start: clamp(var(--space-6), 3.5vw, var(--space-8));
 }
 
 .railFrame {
@@ -489,6 +491,59 @@ button.timeLens:focus-visible .metricAlternate {
 .completedRailVertical {
   display: none;
   animation: timeline-draw-y 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+}
+
+/* ── Cartography ────────────────────────────────────────────────────────────
+   Month boundaries as hairline ticks with a quiet mono initial. They make
+   the calendar's rhythm legible — why one gap runs long and another short —
+   and they ride the identical distortion mapping as the points, so the
+   annotation can never disagree with the thing it annotates. */
+
+.monthTicks {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.monthTick {
+  position: absolute;
+  inset-block-start: 48%;
+  inset-inline-start: var(--timeline-position);
+  width: 1px;
+  height: 0.5rem;
+  background: var(--ink-ghost);
+  translate: -50% -50%;
+  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
+}
+
+.monthTick > span {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  color: var(--ink-ghost);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+/* Ticks near the Today chip or the rail's caps keep their mark but yield
+   their label — the working annotations outrank the atlas. */
+.monthTick[data-quiet="true"] > span {
+  visibility: hidden;
+}
+
+/* Tightly-spaced months keep their labels only where four rail-percent is
+   real paper: below 980px (print included) the tick stays, the text goes. */
+@container timeline-artifact (max-width: 980px) {
+  .monthTick[data-tight="true"] > span {
+    visibility: hidden;
+  }
 }
 
 .todayMarker {
@@ -758,7 +813,7 @@ button.timeLens:focus-visible .metricAlternate {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(11rem, 0.65fr);
   gap: clamp(var(--space-6), 5vw, var(--space-10));
-  padding-block: var(--space-6) var(--space-9);
+  padding-block: var(--space-6) var(--space-8);
 }
 
 .detailLead h3,
@@ -846,9 +901,12 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .decisions {
-  width: fit-content;
-  max-width: 100%;
-  margin-block: var(--space-3) var(--space-8);
+  /* Part of the page's rhythm, not an afterthought floating in the void:
+     the fold spans the measure and hangs from its own soft rule. */
+  width: 100%;
+  margin-block: 0 var(--space-7);
+  border-block-start: 1px solid var(--hairline-soft);
+  padding-block-start: var(--space-2);
   color: var(--ink-faint);
   font-size: var(--text-body-sm);
   interpolate-size: allow-keywords;
@@ -1239,6 +1297,20 @@ button.timeLens:focus-visible .metricAlternate {
     width: 2px;
   }
 
+  /* On the stacked axis the ticks become quiet dashes on the line; their
+     labels would fight the milestone rows for the same column, so the
+     rhythm stays and the atlas text waits for wider paper. */
+  .monthTick {
+    inset-block-start: var(--timeline-position-stack, var(--timeline-position));
+    inset-inline: 1.75rem auto;
+    width: 0.5rem;
+    height: 1px;
+  }
+
+  .monthTick > span {
+    display: none;
+  }
+
   /* The stacked axis: identical order, long quiet gaps capped by the model.
      Everything on the rail reads the stack position; Today rode the same
      remap in the model, so "between those two milestones" stays true. */
@@ -1387,6 +1459,7 @@ button.timeLens:focus-visible .metricAlternate {
   .completedRailVertical,
   .metricMotion,
   .todayMarker,
+  .monthTick,
   .footerLink,
   .decisions summary,
   .decisions summary::after,

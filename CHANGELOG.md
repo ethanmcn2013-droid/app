@@ -33,6 +33,17 @@ used to print. Sharing prefers the platform share sheet, failure is
 visible (not screen-reader-only), and the footer attribution finally
 walks — "Made with Signal Timeline", the growth loop's missing link.
 
+The rail earns its cartography. First-of-month ticks ride the same
+distortion mapping as the milestones — the calendar and the dots can
+never disagree — and sit under the line as quiet mono capitals, sized
+to whisper. Long spans thin themselves to quarters, January carries
+the year, and every label knows when to yield: near the Today chip, at
+the rail's edges, and wherever a neighbour sits too close to read.
+The phone's vertical rail keeps the tick rhythm and drops the text.
+Around it the composition tightens — the journey breathes against the
+frame's edge, planning decisions settle full-width on their own soft
+rule, and the milestone detail closes with room to land.
+
 Owner surfaces catch up on honesty: Revoke and Unpublish take two
 presses with a named consequence, "Link live" only shows while a link
 actually works, link expiry ends at the publication's own midnight
