@@ -34,6 +34,7 @@ import {
   listMyWorkspaces,
 } from "@/server/auth";
 import { getBoardName, getColumnConfig } from "@/server/actions/board";
+import { getWorkspaceMemberMeta } from "@/server/db/members";
 import { getProjectsTreeData } from "@/server/actions/projects-tree";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getTagDefs } from "@/server/actions/tags";
@@ -81,6 +82,7 @@ export async function TasksRuntimeShell({
     boardName,
     columnConfig,
     tagDefs,
+    members,
     userPreferences,
   ] = await Promise.all([
     getTasks(workspaceId),
@@ -111,6 +113,7 @@ export async function TasksRuntimeShell({
     getBoardName(workspaceId),
     getColumnConfig(workspaceId),
     getTagDefs(workspaceId),
+    getWorkspaceMemberMeta(workspaceId),
     isDemoMode()
       ? Promise.resolve(null)
       : getCurrentUser().then((userId) => getUserPreferences(userId)),
@@ -142,6 +145,7 @@ export async function TasksRuntimeShell({
           columnConfig={columnConfig}
           personalization={personalization}
           tagDefs={tagDefs}
+          members={members}
           workspaceId={workspaceId}
           workspaceSlug={workspaceSlug}
         >

@@ -4,6 +4,29 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·119 · tightens · the assign menu offers your project's people, not the design lab's
+
+**Assigning work now offers the people who are actually in your project, and
+their avatars render on every view.** Since the T·99 port, the mounted views
+resolved people from a design-lab registry that production never filled. The
+fallback was the lab's fixture roster: the assign menu listed eight invented
+teammates, choosing one stored a fixture id on the task, and a real member's
+id never resolved — so real assignees rendered as nothing on cards, list rows,
+schedule rows, and calendar chips.
+
+Members now resolve server-side from the project's membership (owner first,
+then A–Z, with each member's own colour and initials) and hydrate the views on
+first paint. The fixture roster is confined to the design lab: once the live
+mount sets the registry, it is authoritative, and an empty roster reads as
+empty rather than borrowing fake people. Unknown live tags now render as
+neutral chips under their own names for the same reason.
+
+Verified by a registry regression test (fixtures never leak past a set
+registry) and the full gate run. Honest edges: a task that already carries a
+fixture id from the affected window keeps it until the Phase 2 data pass
+measures and clears those rows, and a task assigned to someone who has since
+left the project shows no avatar rather than a guess.
+
 ## 2026-07-30 · T·118 · tightens · the switcher check waits for the page to exist before reading it
 
 **T·117 fixed a real staleness gap in the project switcher but did not end the

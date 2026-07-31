@@ -7,12 +7,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTagDefs } from "@/lib/domain-context";
+import { useTagDefs, useWorkspaceMembers } from "@/lib/domain-context";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { HybridStoreProvider } from "./hybrid-store";
 import { useLabStore } from "./store";
 import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
-import { tagToLabel } from "./adapter";
+import { tagToLabel, userToPerson } from "./adapter";
 import { OptionHybrid } from "./options/hybrid/option-hybrid";
 import { BulkToolbar } from "./shared/bulk-toolbar";
 import type { LabDensity, LabLabel, LabPerson, LabRouteState, LabView } from "./types";
@@ -71,17 +71,34 @@ function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteCha
 export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) {
   const router = useRouter();
   const tagDefs = useTagDefs();
+  const memberMeta = useWorkspaceMembers();
   const [density, setDensity] = useState<LabDensity>("compact");
 
   // Populate the runtime registries so avatars/labels resolve to live workspace
   // data on first paint. Labels come from the workspace tag definitions so chips
-  // render in their real colours. Idempotent; safe to run each render.
+  // render in their real colours; people come from real workspace members so
+  // the assign menu offers colleagues, never design-lab fixtures. Both set
+  // unconditionally: an empty workspace roster must read as empty, not fall
+  // back to fake people. Idempotent; safe to run each render.
   const resolvedLabels = useMemo<LabLabel[]>(
     () => labels ?? tagDefs.map((tag) => tagToLabel(tag.name, tag.color)),
     [labels, tagDefs],
   );
+  const resolvedPeople = useMemo<LabPerson[]>(
+    () =>
+      people ??
+      memberMeta.map((member) =>
+        userToPerson(member.id, {
+          name: member.name,
+          initials: member.initials,
+          color: member.color,
+          role: member.role === "owner" ? "Owner" : "",
+        }),
+      ),
+    [people, memberMeta],
+  );
   setRuntimeLabels(resolvedLabels);
-  if (people) setRuntimePeople(people);
+  setRuntimePeople(resolvedPeople);
 
   const route = useMemo<LabRouteState>(
     () => ({ option: "hybrid", view, dataset: "normal", density, mode: "default", task: null }),
