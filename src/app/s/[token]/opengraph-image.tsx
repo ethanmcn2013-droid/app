@@ -52,6 +52,7 @@ export default async function SharedTimelineOpenGraphImage() {
     kind: "complete" | "upcoming" | "target",
   ) => {
     if (kind === "target") {
+      // The next milestone at full strength: a solid indigo mark, no hollow.
       return (
         <div
           style={{
@@ -61,22 +62,10 @@ export default async function SharedTimelineOpenGraphImage() {
             width: 26,
             height: 26,
             borderRadius: 999,
-            border: `4px solid ${ACCENT}`,
-            background: PAPER,
+            background: ACCENT,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
           }}
-        >
-          <div
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 999,
-              background: ACCENT,
-            }}
-          />
-        </div>
+        />
       );
     }
     const complete = kind === "complete";

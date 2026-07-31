@@ -14,16 +14,16 @@ can clip at any width. The completed ink is drawn to the furthest
 completed dot instead of the abstract count percentage; the fill and
 the beads are one statement, on screen, on phones and in print. And a
 pasted link finally unfurls as the product: a data-free Geist card
-(wordmark, rail motif, one indigo target) with viewer vocabulary — "A
-shared wedding timeline.", never "couple" as an adjective — mirrored
+(wordmark, rail motif, one solid indigo mark) with viewer vocabulary —
+"A shared wedding timeline.", never "couple" as an adjective — mirrored
 into the Twitter tags that previously dropped the couple's names.
 
 A couple's artifact now opens on the countdown; progress-% stays one
 press away. The milestone marks read as four states with one grammar —
-quiet hairline rings ahead, solid beads settled, the one indigo target
-for the next milestone (with a single once-only ring on load), and the
-same target in ink when it runs late; the diagonal overdue tick is
-gone. The phone's vertical rail caps long empty calendar stretches
+quiet hairline rings ahead, solid beads settled, one full solid indigo
+mark for the next milestone at full strength (operator call: no hollow
+ring; a single once-only ring of light on load), and the same solid
+mark in ink when it runs late; the diagonal overdue tick is gone. The phone's vertical rail caps long empty calendar stretches
 through the same honesty mapping Today already rode, the Today chip
 negotiates for space like every label does, and hidden horizontal
 overflow earns edge fades and snap. Print grows a second page instead
