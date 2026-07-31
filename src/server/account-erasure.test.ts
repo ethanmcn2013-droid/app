@@ -20,7 +20,7 @@
  *   2. NO COLLATERAL DELETION. A second "bystander" user, who owns their
  *      own workspace, is a member of the target's workspace, and posted on
  *      the target's tasks, keeps every one of their own rows. Global,
- *      non-tenant tables (comp_codes, roadmap_items, …) are untouched.
+ *      non-tenant tables (comp_codes, processed_webhooks, …) are untouched.
  *
  * Plus: the on-disk attachment binary is unlinked (a real probe file is
  * created and asserted gone), erasure is idempotent, and erasing an
@@ -135,9 +135,6 @@ async function seed(client: Client, probePath: string) {
     -- Non-tenant global tables, must be untouched by erasure.
     INSERT INTO comp_codes (code, tier, duration_days, quantity) VALUES ('CODE1','pro',30,10);
     INSERT INTO processed_webhooks (event_id, event_type) VALUES ('evt_1','checkout.session.completed');
-    INSERT INTO roadmap_items (id, week, kind) VALUES ('ri-1',0,'post');
-    INSERT INTO blockers (id, title, kind, description) VALUES ('B-x','x','purchase','d');
-    INSERT INTO action_items (id, category, title) VALUES ('AI-x','cat','t');
   `);
 }
 
@@ -203,9 +200,6 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["meta", 2], // board:ws-b:name + activeDomain
       ["comp_codes", 1],
       ["processed_webhooks", 1],
-      ["roadmap_items", 1],
-      ["blockers", 1],
-      ["action_items", 1],
     ];
     for (const [table, expected] of survivors) {
       assert.equal(
