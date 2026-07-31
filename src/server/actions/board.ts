@@ -45,7 +45,7 @@ import {
   serializeColumnConfig,
   type ColumnConfig,
 } from "@/lib/board-config";
-// T·120: a workspace that has never stored a config operates on the default
+// T·121: a workspace that has never stored a config operates on the default
 // five-column board (Waiting is a default custom column). Every mutation
 // therefore bases its first write on defaultColumnConfig(), never on the
 // bare four-lane emptyConfig() — otherwise the first rename on a fresh
@@ -241,7 +241,7 @@ export async function setColumnDescriptionAction(
 }
 
 /**
- * Set (or clear) a column's soft work-in-progress limit (T·120). Works for
+ * Set (or clear) a column's soft work-in-progress limit (T·121). Works for
  * system lanes and custom columns alike. `null` (or 0) clears the limit.
  * Advisory only: the board shows amber at and over the limit; nothing is
  * ever blocked.
@@ -464,7 +464,7 @@ export async function deleteColumnAction(
   }
 
   // A task belongs to this column through its claim (boardColumnKey) OR,
-  // for a non-canonical key, through raw `lane` text — the pre-0023 shape
+  // for a non-canonical key, through raw `lane` text — the pre-0024 shape
   // of the Waiting column and any other stray value that ever leaked into
   // the unconstrained lane column. Deleting the column must move both
   // kinds, or the raw-lane rows would re-materialise as an orphan column.
@@ -574,7 +574,7 @@ export async function moveTaskToColumnAction(
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   } else {
     // Custom column: set the claim. Lane normally stays canonical; a row
-    // still holding raw lane text (pre-0023 "waiting") is canonicalised to
+    // still holding raw lane text (pre-0024 "waiting") is canonicalised to
     // "doing" on touch so stray text never outlives a deliberate move.
     if (row.boardColumnKey === columnKey) return { ok: true };
     const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);

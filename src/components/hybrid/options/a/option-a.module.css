@@ -1056,7 +1056,7 @@
   }
 }
 
-/* ── T·120 · config-driven columns ──────────────────────────────────────────
+/* ── T·121 · config-driven columns ──────────────────────────────────────────
    A column's visual identity is its configured colour: the lane carries
    `--lane-accent` inline and `data-tinted`; the pip, the wash and the
    picker swatch all derive from that one var. Neutral columns carry

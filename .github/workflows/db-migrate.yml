@@ -68,7 +68,7 @@ jobs:
         env:
           TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
           TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
-        # SELECT-only counts for the board-truth data migration (0023):
+        # SELECT-only counts for the board-truth data migration (0024):
         # waiting rows per workspace, stray lane text, column claims,
         # stored configs, fixture assignee ids. Modifies nothing.
         run: node scripts/db/measure-board-truth.mjs

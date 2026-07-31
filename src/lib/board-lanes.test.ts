@@ -8,7 +8,7 @@ test("standard columns render in the required order", () => {
   assert.deepEqual(LANE_ORDER, ["todo", "doing", "review", "done"]);
 });
 
-test("standard columns default to the shipped board vocabulary (T·120)", () => {
+test("standard columns default to the shipped board vocabulary (T·121)", () => {
   // These are the names the app has rendered since 2026-07-20. Share,
   // print, embed and export label from LANES, so this alignment is what
   // keeps a guest's copy agreeing with the operator's screen. Workspace

@@ -22,7 +22,7 @@ export type CustomColumn = { key: string; name: string };
  * - `colors`: per-column colour; an explicit "neutral" IS kept so a system
  *   lane's semantic default can be overridden back to no tint.
  * - `descriptions`: per-column subtext; "" means an owner cleared it.
- * - `limits`: per-column soft work-in-progress limit (T·120). Advisory
+ * - `limits`: per-column soft work-in-progress limit (T·121). Advisory
  *   only — the board turns the count amber at and over the limit, it
  *   never blocks a drop. Absent or 0 means no limit.
  */

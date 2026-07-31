@@ -33,11 +33,11 @@ for later; they are intentionally out of scope for the change that logged them.
 Phases 1 and 4 shipped as T·114 to T·118; the four-view capability audit
 (2026-07-31) then found the T·99 blast radius covered all four views plus the
 filter, share and assignee layers. T·119 restored real members to the assign
-path. T·120 shipped phase 2: items 5 and 6 below are done (the 0023 migration
+path. T·121 shipped phase 2: items 5 and 6 below are done (the 0024 migration
 runs through the db-migrate workflow with production counts measured first).
 Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
 
-5. **Done, T·120 — port the column system into the live board (Phase 2)**
+5. **Done, T·121 — port the column system into the live board (Phase 2)**
    The board rendered at `/app/tasks` is the design-lab prototype
    (`components/hybrid/options/a/board-view.tsx`), whose columns come from a
    hardcoded five-value const in `components/hybrid/types.ts`. The real board,
@@ -50,7 +50,7 @@ Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
    `opacity-0`; `+` adds a column rather than a task; a pinned add-column
    control outside the horizontal scroll track; WIP limits from config.
 
-6. **Done, T·120 — retire the `waiting` raw-text lane at source (migration 0023)**
+6. **Done, T·121 — retire the `waiting` raw-text lane at source (migration 0024)**
    The lab runs five statuses against a four-lane schema, so `adapter.ts`
    writes `waiting: "waiting" as LaneId` into a column typed
    `todo | doing | review | done`. T·116 taught share, print and embed to

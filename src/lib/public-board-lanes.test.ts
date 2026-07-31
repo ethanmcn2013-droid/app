@@ -7,7 +7,7 @@ import { publicBoardColumns, publicColumnTasks } from "./public-board-lanes";
 /**
  * Guest-facing surfaces must not silently drop work, and must agree with
  * the operator's screen. T·116 taught them to render every lane the data
- * contains; T·120 hands them the column config itself, with a neutral
+ * contains; T·121 hands them the column config itself, with a neutral
  * appended column for any orphaned key so nothing a guest was sent can
  * vanish.
  */

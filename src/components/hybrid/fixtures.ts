@@ -258,7 +258,7 @@ function buildTask(seed: Seed, index: number): LabTask {
 
 export const LAB_TASKS: LabTask[] = SEEDS.map(buildTask);
 
-/** The frozen fixture data predates T·120 and stores the old five status
+/** The frozen fixture data predates T·121 and stores the old five status
  *  words; the views now speak column keys (lane ids + custom keys). The
  *  projection maps at the boundary so the hashed fixture stays untouched. */
 const FIXTURE_STATUS_TO_COLUMN: Record<string, string> = {

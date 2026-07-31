@@ -158,7 +158,7 @@ export const LANES: Record<
   LaneId,
   { id: LaneId; name: string; ink: string; bg: string; dot: string }
 > = {
-  // T·120: the default display names are the ones the shipped board has
+  // T·121: the default display names are the ones the shipped board has
   // used since 2026-07-20 — Queued · In progress · Review · Done. The
   // 2026-07-18 relabel (Blocked · In Progress · Reviewing) never rendered
   // in the app after the T·99 port, but share, print, embed and export

@@ -1,5 +1,5 @@
 /**
- * The one column model every Tasks surface renders from (T·120).
+ * The one column model every Tasks surface renders from (T·121).
  *
  * The board, the list's status grouping, the bulk toolbar, the card menus,
  * and the public share / print / embed / export surfaces all resolve their
@@ -21,7 +21,7 @@
  *   a config, Waiting is theirs to rename, recolour or delete like any
  *   other custom column.
  * - A legacy row whose `lane` still holds raw "waiting" text (pre-migration
- *   0023) resolves to the same "waiting" column key via effectiveColumnKey,
+ *   0024) resolves to the same "waiting" column key via effectiveColumnKey,
  *   so this module renders identically before and after the data migration.
  */
 
@@ -146,7 +146,7 @@ export function resolveBoardColumns(config: ColumnConfig | null): BoardColumn[] 
 
 /**
  * The column a task belongs to: its custom claim when it has one, else its
- * lane. Raw legacy lane text (e.g. "waiting" before migration 0023) is a
+ * lane. Raw legacy lane text (e.g. "waiting" before migration 0024) is a
  * valid column key by design.
  */
 export function effectiveColumnKey(task: {

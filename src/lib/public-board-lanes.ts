@@ -8,7 +8,7 @@ import {
 
 /**
  * Column resolution for the unauthenticated board surfaces — the share
- * link, the print sheet, the public embed — and the exports (T·120).
+ * link, the print sheet, the public embed — and the exports (T·121).
  *
  * These surfaces used to iterate the four canonical lanes and, after
  * T·116, "every lane the data contains". The column config now reaches

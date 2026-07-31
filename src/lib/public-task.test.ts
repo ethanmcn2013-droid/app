@@ -39,7 +39,7 @@ test("public task projection is a stable allowlist", () => {
     priority: "p1",
     due: "Fri",
     tags: ["launch"],
-    // The column claim is public by design (T·120): guest surfaces group
+    // The column claim is public by design (T·121): guest surfaces group
     // by the operator's custom columns through it.
     boardColumnKey: "launch",
   });

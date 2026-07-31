@@ -3,7 +3,7 @@
 // verbatim hybrid views render real production data. It is intentionally the
 // ONLY place that knows both shapes.
 //
-// T·120: a LabTask's status IS its board column key, resolved by
+// T·121: a LabTask's status IS its board column key, resolved by
 // effectiveColumnKey — a claim (boardColumnKey) wins, else the lane, so a
 // legacy row whose lane still holds raw "waiting" text resolves to the same
 // column the migrated shape does. The old 5-status mapping (and the raw-text

@@ -43,7 +43,7 @@ export function formatTasksAsCsv(tasks: Task[], columns?: PublicColumn[]): strin
   const rows: string[] = [CSV_COLS.join(",")];
   // Iterate in column order so the CSV is grouped + scannable when
   // pasted into a spreadsheet without sorting, and the status cell says
-  // what the operator's board says (T·120).
+  // what the operator's board says (T·121).
   const boardColumns = columns ?? publicBoardColumns(null, tasks);
   for (const column of boardColumns) {
     const list = publicColumnTasks(tasks, column.id);

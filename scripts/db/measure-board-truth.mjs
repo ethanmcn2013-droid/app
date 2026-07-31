@@ -2,7 +2,7 @@
 
 /**
  * Read-only production measurement for the board-truth data migration
- * (0023) — the founder's gate: measure before writing or executing SQL.
+ * (0024) — the founder's gate: measure before writing or executing SQL.
  *
  * Prints, without modifying anything:
  *   - lane='waiting' rows, total and per workspace

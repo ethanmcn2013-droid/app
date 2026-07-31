@@ -1,6 +1,6 @@
 "use client";
 
-// The board columns the mounted views render (T·120). Production mounts
+// The board columns the mounted views render (T·121). Production mounts
 // resolve the workspace's ColumnConfig once (DomainProvider carries it) and
 // provide the result here; the design-lab routes provide nothing and read
 // the default five columns. Every view, menu and toolbar under the hybrid

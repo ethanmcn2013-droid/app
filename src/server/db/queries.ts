@@ -523,7 +523,7 @@ export type ShareData = {
   token: string;
   view: ShareView;
   tasks: PublicTask[];
-  /** The workspace's columns, resolved for guest rendering (T·120). */
+  /** The workspace's columns, resolved for guest rendering (T·121). */
   columns: PublicColumn[];
   workspaceTitle: string;
   workspaceCrumb: string;

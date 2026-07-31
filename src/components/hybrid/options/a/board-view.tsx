@@ -997,7 +997,7 @@ function BoardCard({
   );
 }
 
-// ─── Column header + management (T·120, ported from the retired BoardApp) ────
+// ─── Column header + management (T·121, ported from the retired BoardApp) ────
 
 function LaneHeader({
   column,

@@ -11,7 +11,7 @@ export type LabDataset = (typeof LAB_DATASETS)[number];
 export type LabDensity = (typeof LAB_DENSITIES)[number];
 export type LabMode = (typeof LAB_MODES)[number];
 /**
- * T·120: a task's status IS its board column key — one of the four
+ * T·121: a task's status IS its board column key — one of the four
  * permanent lanes (todo/doing/review/done) or a custom column key such as
  * the default "waiting". The five-value const this replaced is gone; the
  * column set now comes from the workspace config via useBoardColumns().

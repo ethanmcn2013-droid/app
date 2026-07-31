@@ -21,7 +21,7 @@ export type PublishedWorkspaceProps = {
     publishedAt: Date;
   };
   tasks: PublicTask[];
-  /** Resolved workspace columns (T·120). Optional so the /p themes that
+  /** Resolved workspace columns (T·121). Optional so the /p themes that
    *  do not group by column keep their existing contract. */
   columns?: PublicColumn[];
 };
