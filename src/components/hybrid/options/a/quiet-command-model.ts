@@ -26,7 +26,7 @@ export type ListColumn = {
 export const INITIAL_LIST_COLUMNS: ListColumn[] = [
   { id: "title", label: "Task", visible: true, width: 360, minWidth: 260 },
   { id: "status", label: "Status", visible: true, width: 132, minWidth: 112 },
-  { id: "assignees", label: "Owner", visible: true, width: 144, minWidth: 112 },
+  { id: "assignees", label: "Owner", visible: true, width: 180, minWidth: 112 },
   { id: "schedule", label: "Dates", visible: true, width: 154, minWidth: 126 },
   { id: "priority", label: "Priority", visible: true, width: 104, minWidth: 88 },
   { id: "estimate", label: "Estimate", visible: true, width: 88, minWidth: 76 },

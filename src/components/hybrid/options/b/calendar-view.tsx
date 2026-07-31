@@ -12,6 +12,9 @@ import {
 } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { useActiveWorkspace } from "@/lib/domain-context";
+import { useToast } from "@/components/primitives/toast";
+import type { CalendarFrame } from "@/lib/calendar-frame";
 import {
   addDays,
   asCalendarDate,
@@ -277,6 +280,85 @@ function AgendaLedger({ dates, tasks, selectedDate, onSelect }: { dates: Calenda
   );
 }
 
+/**
+ * Subscribe control for the calendar toolbar. Copies a `webcal://` link the
+ * operator pastes into their own calendar app's "Add subscription" dialog —
+ * the feed itself is read-only and refreshed on the client's own cadence.
+ * Renders nothing outside the app shell, where there is no workspace to
+ * build a feed URL for.
+ */
+function CalendarSubscribeButton() {
+  const ws = useActiveWorkspace();
+  const { toast } = useToast();
+
+  const onSubscribe = useCallback(() => {
+    if (!ws) return;
+    const url = `${window.location.origin.replace(/^https?/, "webcal")}/api/calendar/${ws.id}`;
+    const finish = () => toast("Link copied", { tone: "success", body: "Paste into Calendar's 'Add subscription' dialog." });
+    const fallbackCopy = () => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        finish();
+      } catch {
+        toast("Couldn't copy the link", { tone: "warn" });
+      }
+    };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(finish, fallbackCopy);
+    else fallbackCopy();
+  }, [toast, ws]);
+
+  if (!ws) return null;
+  return (
+    <button onClick={onSubscribe} title="Subscribe in your calendar app" type="button">Subscribe</button>
+  );
+}
+
+/**
+ * Mobile day-list. Below md the month/week grid (and the agenda ledger
+ * beside it) don't fit a phone width usefully, so narrow viewports get a
+ * plain chronological list of the next 14 days instead — always anchored to
+ * the calendar frame's today, independent of the month/week/agenda toggle
+ * above (which stays reachable for whenever the viewport widens back out).
+ */
+function MobileDayList({ calendar, tasks }: { calendar: CalendarFrame; tasks: LabTask[] }) {
+  const dates = useMemo(() => eachDate(calendar.today, addDays(calendar.today, 13)), [calendar.today]);
+  return (
+    <div aria-label="Upcoming 14 days" className={styles.calendarDayList}>
+      {dates.map((date) => {
+        const dayTasks = tasksForDate(tasks, date);
+        const isToday = date === calendar.today;
+        return (
+          <section className={styles.calendarDayListRow} data-today={isToday || undefined} key={date}>
+            <header>
+              <span>{isToday ? "Today" : formatDate(date, { weekday: "short" })}</span>
+              <strong>{formatDate(date, { day: "numeric", month: "short" })}</strong>
+            </header>
+            {dayTasks.length === 0 ? (
+              <p className={styles.calendarDayListEmpty}>Nothing scheduled.</p>
+            ) : (
+              <ul>
+                {dayTasks.map((task) => (
+                  <li key={task.id}>
+                    <TaskOpenButton task={task} />
+                    <ScheduleText compact task={task} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 export function CalendarView({
   tasks,
   selectedDate,
@@ -407,12 +489,17 @@ export function CalendarView({
           <button aria-label="Previous calendar range" onClick={() => navigate(-1)} type="button"><Icon name="arrow-left" size={14} />Previous</button>
           <button aria-label="Next calendar range" onClick={() => navigate(1)} type="button">Next<Icon name="arrow-right" size={14} /></button>
           <button onClick={() => { setAnchorDate(calendar.today as CalendarDate); onSelectedDateChange(calendar.today as CalendarDate); }} type="button">Today</button>
+          <CalendarSubscribeButton />
         </div>
         <h2>{title}</h2>
         <div aria-label="Calendar view" className={styles.calendarModeSwitch} role="group">
           {(["month", "week", "agenda"] as CalendarMode[]).map((value) => <button aria-pressed={mode === value} key={value} onClick={() => setMode(value)} type="button">{value[0].toUpperCase() + value.slice(1)}</button>)}
         </div>
       </header>
+
+      <div className={styles.calendarMobileAgenda}>
+        <MobileDayList calendar={calendar} tasks={tasks} />
+      </div>
 
       <div className={styles.calendarWorkspace}>
         <div className={styles.calendarPrimary}>

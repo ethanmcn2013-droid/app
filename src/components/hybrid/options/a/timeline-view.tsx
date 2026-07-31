@@ -19,6 +19,7 @@ import {
   AvatarStack,
   PriorityMark,
   ScheduleText,
+  TaskCompletion,
   TaskOpenButton,
   TaskSelection,
 } from "../../shared/task-ui";
@@ -268,6 +269,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
               tabIndex={0}
             >
               <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+              <TaskCompletion task={task} />
               <PriorityMark task={task} />
               <TaskOpenButton task={task}>{task.title}</TaskOpenButton>
               <button disabled={store.readOnly} onClick={() => store.setActive(task.id)} type="button">Schedule</button>
@@ -320,6 +322,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
                   tabIndex={0}
                 >
                   <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                  <TaskCompletion task={task} />
                   <PriorityMark task={task} />
                   <span className={styles.timelineTaskCopy}><TaskOpenButton task={task}>{task.title}</TaskOpenButton><ScheduleText compact task={task} /></span>
                   <AvatarStack limit={2} showUnassigned={false} task={task} />

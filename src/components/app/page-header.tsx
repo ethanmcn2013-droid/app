@@ -7,7 +7,6 @@ import { useDomain } from "@/lib/domain-context";
 import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
 import { publicBoardColumns } from "@/lib/public-board-lanes";
 import { ShareButton } from "@/components/app/share/share-button";
-import { RoomViewBar } from "@/components/app/room/room-view-bar";
 import { usePalette } from "@/components/app/palette/command-palette";
 import { useTasks } from "@/lib/tasks/tasks-context";
 import { useToast } from "@/components/primitives/toast";
@@ -46,16 +45,7 @@ function inferPrintPath(pathname: string): string {
   return "/print/board";
 }
 
-export function AppPageHeader({
-  active: activeProp,
-  brief,
-}: {
-  active?: string;
-  /** Editorial Project Room brief (Option B, 2026-07-17). When present it
-   *  owns workspace identity (breadcrumb + h1 + purpose + receipts), so
-   *  the header renders only the action row and view tabs around it. */
-  brief?: React.ReactNode;
-}) {
+export function AppPageHeader({ active: activeProp }: { active?: string }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
   const { openPalette } = usePalette();
@@ -83,19 +73,6 @@ export function AppPageHeader({
 
   const shareView = inferShareView(pathname ?? "/app/tasks");
   const printPath = inferPrintPath(pathname ?? "/app/tasks");
-
-  // T·95 lab parity: workspace views render the Editorial Project Room
-  // header — the full-bleed brief band, then the 52px room view bar
-  // carrying tabs + working tools (the lab composition, exactly).
-  // Inbox / My week / Settings keep the simple title header below.
-  if (brief) {
-    return (
-      <>
-        {brief}
-        <RoomViewBar />
-      </>
-    );
-  }
 
   return (
     <header className="px-4 pb-3 pt-2.5 md:px-8 md:pt-3">

@@ -689,7 +689,7 @@
 .unscheduledTray > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
 .unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 10px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
-.unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
+.unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
 .unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 10px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 10px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
@@ -710,7 +710,7 @@
 .timelineDate[data-today] b { color: var(--x-task-accent); }
 .timelineRow { min-height: 39px; }
 .timelineRow[data-completed] { color: var(--x-task-text-muted); }
-.timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 6px; grid-template-columns: 15px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 7px; position: sticky; z-index: 6; }
+.timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 6px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 7px; position: sticky; z-index: 6; }
 .timelineTaskPane:focus { background: var(--x-task-selected); }
 .timelineTaskCopy { display: flex; flex-direction: column; min-width: 0; }
 .timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 580; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
@@ -1337,3 +1337,19 @@
   font-weight: 600 !important;
 }
 .boardDialogHint { color: var(--x-task-text-muted); font-size: 11px; }
+
+/* T·125: shown when active filters admit no tasks — the view keeps its
+   chrome; this band says why it is empty and offers the way back. */
+.filterEmptyNotice { align-items: center; background: var(--x-task-accent-soft); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); display: flex; flex: 0 0 auto; font-size: 12px; gap: 10px; padding: 8px 14px; }
+.filterEmptyNotice button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+
+/* T·125 P2: list-view capability restorations. The per-row complete
+   toggle and the priority select reuse existing shared primitives and
+   the `.taskRow td select` rule above; the title/description stack and
+   the assignee name label are the only new layouts here. Row height
+   (`.taskRow > th/td`) is a CSS minimum, not a cap, so a description
+   line simply grows the row rather than needing its own height rule. */
+.titleStack { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
+.listDescription { color: var(--x-task-text-muted); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assigneeCell { align-items: center; display: flex; gap: 6px; min-width: 0; }
+.assigneeNames { color: var(--x-task-text-secondary); flex: 1; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

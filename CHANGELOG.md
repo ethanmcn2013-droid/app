@@ -4,6 +4,49 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·125 · restores · the working tools return to every view
+
+**Filter, sort and saved views are back on all four views — wider than
+before: filter by priority, by column, by owner by name, or by date —
+and the Share, export, print and calendar-subscribe cluster rides the
+view bar again.** The July interior consolidation shipped the approved
+composition but silently dropped the working layer around it: the tools
+band, per-row completion on the schedule and list, the list's inline
+priority and description line, the calendar's phone layout, and the
+guided first-run states. The 2026-07-31 capability audit wrote down
+every loss; this dispatch returns them all to the composition that
+shipped.
+
+The Filter panel admits four honest dimensions: priority, column (your
+real columns, by name), owner (the project's real members, by name,
+plus has-an-owner and unassigned), and date (overdue, due today, the
+next seven days, or explicitly unscheduled). Filters and sort apply to
+every view. The brief and planning rail deliberately keep whole-project
+numbers, so receipts never quietly shrink to a filtered subset — and
+when filters admit nothing, the view says so and offers the way back.
+Saved views close their loop inside the panel: save, reopen, delete —
+and a saved view now restores density along with everything else.
+
+The list regains per-row completion, inline priority, the description
+line under each title, and owners by name beside their initials. The
+schedule regains per-row completion in both the planned rows and the
+unscheduled tray. The calendar regains its phone layout — a fourteen-day
+list starting today — and a visible Subscribe button that copies the
+live calendar feed. An empty project greets you with the guided
+first-run state on every view instead of bare chrome.
+
+With the tools remounted, the last pre-consolidation view components —
+the dead list, calendar and schedule implementations, the retired
+export menu and the old room view bar — are deleted: 2,856
+lines of unreachable code gone, and the four views' behavior now has
+exactly one source.
+
+Verified live against the seeded project: every filter dimension
+narrowing the board and list, the sort and saved-view round trips,
+completion toggling from list and schedule rows and reverting cleanly,
+the subscribe toast, and the phone day-list at 375 px — plus the full
+gate chain and the materiality suite.
+
 ## 2026-07-31 · T·124 · ships · money, narrowly
 
 **Your project now has one currency, one budget, and one honest sentence

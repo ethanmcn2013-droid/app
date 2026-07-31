@@ -5,9 +5,10 @@
 // — production's left rail and top header remain, per the founder's spec — and
 // backs it with real workspace data through HybridStoreProvider.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTagDefs, useWorkspaceMembers } from "@/lib/domain-context";
+import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { HybridStoreProvider } from "./hybrid-store";
 import { useLabStore } from "./store";
@@ -15,7 +16,7 @@ import { setRuntimeLabels, setRuntimePeople } from "./fixtures";
 import { tagToLabel, userToPerson } from "./adapter";
 import { OptionHybrid } from "./options/hybrid/option-hybrid";
 import { BulkToolbar } from "./shared/bulk-toolbar";
-import type { LabDensity, LabLabel, LabPerson, LabRouteState, LabView } from "./types";
+import type { LabLabel, LabPerson, LabRouteState, LabView } from "./types";
 import styles from "./hybrid-workspace.module.css";
 
 export type HybridWorkspaceProps = {
@@ -72,7 +73,9 @@ export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) 
   const router = useRouter();
   const tagDefs = useTagDefs();
   const memberMeta = useWorkspaceMembers();
-  const [density, setDensity] = useState<LabDensity>("compact");
+  // Density lives in the room tools (T·125) so saved views capture and
+  // restore it — the panel promises "view, filters, sort, and density".
+  const { density, setDensity } = useRoomTools();
 
   // Populate the runtime registries so avatars/labels resolve to live workspace
   // data on first paint. Labels come from the workspace tag definitions so chips
