@@ -7,7 +7,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { useDomain } from "@/lib/domain-context";
+import { useDomain, useProjectMoney } from "@/lib/domain-context";
+import { budgetCoverageLine } from "@/lib/money";
 import { promoteLocalBrief } from "@/lib/brief/promote-local-brief";
 import { renameBoardAction } from "@/server/actions/board";
 import { setProjectDescriptionAction } from "@/server/actions/settings";
@@ -126,6 +127,7 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
   const store = useLabStore();
   const calendar = useCalendarFrame();
   const domain = useDomain();
+  const money = useProjectMoney();
   const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
 
   // T·114: rescue any pre-migration brief text still sitting in this browser's
@@ -151,6 +153,17 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
     return aDate.localeCompare(bDate);
   }).slice(0, 3);
   const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
+  // Money, narrowly (T·124): restate and sum what the operator entered,
+  // always with coverage. Renders only here — never on share, print,
+  // embed or /p/{slug}.
+  const costedTasks = store.tasks.filter((task) => typeof task.cents === "number" && task.cents > 0);
+  const coverage = budgetCoverageLine({
+    summedCents: costedTasks.reduce((sum, task) => sum + (task.cents ?? 0), 0),
+    costedCount: costedTasks.length,
+    uncostedCount: store.tasks.length - costedTasks.length,
+    budgetCents: money.budgetCents,
+    currency: money.currency,
+  });
   const [syncState, setSyncState] = useState<"idle" | "pending" | "saved" | "error">("idle");
 
   useEffect(() => {
@@ -230,6 +243,9 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
           {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
           {unscheduled > 0 ? <> · {unscheduled} no date</> : null}
         </p>
+        {coverage ? (
+          <p aria-label="Budget coverage" className={styles.progressFacts}>{coverage}</p>
+        ) : null}
       </section>
       {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>

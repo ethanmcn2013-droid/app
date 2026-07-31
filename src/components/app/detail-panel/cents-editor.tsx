@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Popover } from "./popover";
+import { useProjectMoney } from "@/lib/domain-context";
+import { formatCents } from "@/lib/money";
 
 /**
  * Inline editor for the optional dollar amount attached to a task.
@@ -18,16 +20,7 @@ import { Popover } from "./popover";
  * the optimistic pattern shared with the rest of the panel, dispatch
  * locally, reconcile inside `startTransition`.
  */
-const USD = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
-
-const MAX_CENTS = 99_999_999; // $999,999.99, beyond that suggests a typo.
-
-function formatDollars(cents: number): string {
-  return USD.format(cents / 100);
-}
+const MAX_CENTS = 99_999_999; // 999,999.99 in any currency; beyond that suggests a typo.
 
 /** Strip currency noise (`$`, commas, whitespace) and parse as float.
  *  Returns null when the result isn't a finite, non-negative number. */
@@ -43,6 +36,8 @@ function parseDollarsToCents(raw: string): number | null {
 
 export function CentsEditor({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
+  const { currency } = useProjectMoney();
+  const formatCurrency = (cents: number) => formatCents(cents, currency);
   const cents = task.cents ?? 0;
   const hasAmount = cents > 0;
 
@@ -78,7 +73,7 @@ export function CentsEditor({ task }: { task: Task }) {
         >
           {hasAmount ? (
             <span className="truncate text-[12.5px] font-medium tabular-nums text-ink">
-              {formatDollars(cents)}
+              {formatCurrency(cents)}
             </span>
           ) : (
             <>

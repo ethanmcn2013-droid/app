@@ -203,6 +203,7 @@ export function taskToLab(
     blockerIds: [],
     completed: isTaskDone(task, columnConfig),
     completedAt: task.completedAt ? task.completedAt.toISOString() : undefined,
+    cents: task.cents ?? null,
     workspaceId: task.workspaceId ?? "workspace",
     order,
   };

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "workspace-money-2026-07-31",
+  "authorizedBy": "founder directive 2026-07-31 (board truth programme, phase 5: money, narrowly; full execution authorization given in-session)",
+  "reviewedBy": "Claude Fable 5 session review, T·124",
+  "authorizationSource": "operator session instruction: fix currency first (add workspaces.currency), then workspaces.budgetCents and a roll-up; lead with coverage, never a false total. Hard boundary ratified: Tasks may restate a number the operator entered, never compute, forecast, convert or publish a financial claim; no money on share, print, embed or /p/{slug}.",
+  "migrations": [
+    {
+      "id": "0026_workspace_money",
+      "sha256": "025060ee078882de300df2e06388d89353ebf1504120bb297b82a7707d31225a",
+      "reviewedAt": "2026-07-31T00:00:00.000Z",
+      "risk": "low (two additive nullable ADD COLUMNs on workspaces); no existing column modified, no backfill, no data loss; every existing row reads NULL for both, which the app renders as the USD-labelled status quo with no budget line.",
+      "rollbackPlan": "ALTER TABLE workspaces DROP COLUMN budget_cents; ALTER TABLE workspaces DROP COLUMN currency (SQLite 3.35+). The settings fields disappear and the brief's coverage line stops rendering; nothing else reads the columns.",
+      "postconditions": [
+        "currency column exists on workspaces",
+        "budget_cents column exists on workspaces",
+        "no existing workspace row was modified",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "currency-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name = 'currency'",
+          "expected": 1
+        },
+        {
+          "id": "budget-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name = 'budget_cents'",
+          "expected": 1
+        },
+        {
+          "id": "no-row-touched",
+          "sql": "SELECT COUNT(*) AS value FROM workspaces WHERE currency IS NOT NULL OR budget_cents IS NOT NULL",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

@@ -36,7 +36,9 @@ filter, share and assignee layers. T·119 restored real members to the assign
 path. T·121 shipped phase 2: items 5 and 6 below are done (migration 0024
 applied to production with counts measured first). T·122 shipped phase 3:
 item 7 is done (doneKeys + one isTaskDone predicate + tasks.completedAt via
-migration 0025).
+migration 0025). T·124 shipped phase 5: item 8 is done (workspaces.currency +
+budgetCents via migration 0026, coverage-first roll-up in the brief, hard
+restate-only boundary held).
 Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
 
 5. **Done, T·121 — port the column system into the live board (Phase 2)**
@@ -72,7 +74,7 @@ Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
    activity log and already reports
    `completion_timestamp_missing_for_terminal_tasks`.
 
-8. **Money, narrowly (Phase 5)**
+8. **Done, T·124 — money, narrowly (Phase 5)**
    `tasks.cents` already exists in production, is editable in the task panel,
    and is CSV-exported, but nothing sums it and the formatting is hardcoded
    `en-US`/USD, so a euro wedding renders as dollars. Fix currency first, then
