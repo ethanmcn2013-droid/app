@@ -88,7 +88,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
             <button aria-expanded={fieldsOpen} disabled={route.view !== "list"} onClick={() => { setFieldsOpen((value) => !value); setToolPanel(null); }} type="button"><Icon name="fields" size={15} />Fields</button>
             <label className={styles.densityControl}><Icon name="density" size={15} /><span className={styles.srOnly}>Density</span><select aria-label="Density" onChange={(event) => onRouteChange({ density: event.target.value as TasksOptionProps["route"]["density"] })} value={route.density}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label>
-            {store.readOnly ? null : <button onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={15} />Add task</button>}
+            {store.readOnly ? null : <button data-primary onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={15} />Add task</button>}
           </div>
         </div>
         <ViewToolPanels onClose={() => setToolPanel(null)} panel={toolPanel} view={route.view} />

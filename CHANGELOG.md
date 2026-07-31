@@ -51,9 +51,20 @@ completion keeps the one expressive signature the motion contract
 budgets.
 
 Deliberately not in this dispatch: touch drag (the motion contract
-gates it behind a real-device pass), the full 10px→token type ramp,
-roving tabindex, and the schedule bar's grab-offset drag. The review
-dossier holds the rest, ranked, with file-level evidence.
+gates it behind a real-device pass), roving tabindex, and the schedule
+bar's grab-offset drag. The review dossier holds the rest, ranked,
+with file-level evidence.
+
+Later the same day, the grace pass. Every font size in the four view
+modules moves onto the brand ramp — 335 call sites, an 11px floor,
+nothing beneath it — and uppercase eyebrows take their full 0.12em.
+The room's Filter/Sort/Save panels, which had been running at 9px
+inside an 829-line file that was mostly a dead 7–9px copy of a board
+nobody mounted, are rebuilt as 67 lines on the ramp with the motion
+contract's anchored-layer entrance. The tools bar gains its one accent
+act: Add task alone wears indigo. On phones the brief keeps its name
+and progress and hands milestones and money to bigger screens, and
+the add-column rail yields to the lane menu.
 
 ## 2026-07-31 · T·125 · restores · the working tools return to every view
 

@@ -44,13 +44,13 @@
 .contextCopy nav b { color: var(--x-task-text-secondary); font-weight: 620; }
 .contextCopy nav svg { margin: 0 2px; }
 .contextCopy > div { align-items: baseline; display: flex; gap: 10px; min-width: 0; }
-.contextCopy h1 { color: var(--x-task-text); font-size: 18px; font-weight: 680; letter-spacing: -.035em; margin: 0; white-space: nowrap; }
+.contextCopy h1 { color: var(--x-task-text); font-size: 20px; font-weight: 680; letter-spacing: -.035em; margin: 0; white-space: nowrap; }
 .contextCopy p { color: var(--x-task-text-secondary); font-size: 12px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .contextFacts { display: flex; gap: 18px; margin: 0; }
 .contextFacts > div { display: flex; flex-direction: column; gap: 3px; }
-.contextFacts dt { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
-.contextFacts dd { align-items: center; color: var(--x-task-text); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 10px; gap: 4px; margin: 0; white-space: nowrap; }
+.contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.contextFacts dd { align-items: center; color: var(--x-task-text); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; gap: 4px; margin: 0; white-space: nowrap; }
 .readOnlyFlag { background: var(--x-task-waiting-soft); border: 1px solid color-mix(in srgb, var(--x-task-waiting) 26%, var(--x-task-border)); border-radius: 5px; color: var(--x-task-waiting); font-size: 11px; font-weight: 650; padding: 5px 7px; }
 
 .viewBar {
@@ -90,8 +90,12 @@
 .densityControl:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
 .functionalTools > button[data-active],
 .functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); }
+/* One accent CTA per bar: creating work is the bar's primary act, so
+   Add task alone wears the brand — everything beside it stays quiet. */
+.functionalTools > button[data-primary] { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
+.functionalTools > button[data-primary]:hover { background: var(--x-task-focus); border-color: var(--x-task-focus); color: var(--x-task-raised); }
 .functionalTools > button:disabled { background: var(--x-task-surface); color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
-.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; padding: 2px 3px; text-transform: uppercase; }
+.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; padding: 2px 3px; text-transform: uppercase; }
 .functionalTools > button[data-saved] { color: var(--x-task-success); }
 .densityControl select { appearance: none; background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; outline: 0; }
 
@@ -110,7 +114,7 @@
 .workspaceSearch:focus-within { background: var(--x-task-raised); border-color: var(--x-task-focus); }
 .workspaceSearch input { background: transparent; border: 0; color: var(--x-task-text); flex: 1; font: inherit; font-size: 12px; min-width: 0; outline: 0; padding: 0 5px; }
 .workspaceSearch kbd,
-.shortcutsPanel kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-muted); font: inherit; font-size: 10px; padding: 1px 4px; }
+.shortcutsPanel kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-muted); font: inherit; font-size: 11px; padding: 1px 4px; }
 
 .activeView { flex: 1; min-height: 0; min-width: 0; overflow: hidden; position: relative; }
 
@@ -139,7 +143,7 @@
 .shortcutsPanel > header strong { font-size: 11px; }
 .toolPanel > header span,
 .fieldsPanel > header span,
-.shortcutsPanel > header span { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.shortcutsPanel > header span { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .toolPanel > header button,
 .fieldsPanel > header button,
 .shortcutsPanel > header button { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; width: 28px; }
@@ -184,11 +188,11 @@
 .inlineEdit { display: flex; flex: 1; flex-direction: column; min-width: 0; position: relative; }
 .inlineEdit input { background: var(--x-task-raised); border: 1px solid var(--x-task-focus); border-radius: 4px; color: var(--x-task-text); font: inherit; font-size: 13px; min-height: 30px; outline: 2px solid color-mix(in srgb, var(--x-task-focus) 15%, transparent); padding: 4px 6px; width: 100%; }
 .inlineEdit input[aria-invalid="true"] { border-color: var(--x-task-danger); outline-color: color-mix(in srgb, var(--x-task-danger) 16%, transparent); }
-.inlineEdit small { background: var(--x-task-danger-soft); color: var(--x-task-danger); font-size: 10px; left: 0; padding: 3px 5px; position: absolute; top: calc(100% + 2px); z-index: 5; }
+.inlineEdit small { background: var(--x-task-danger-soft); color: var(--x-task-danger); font-size: 11px; left: 0; padding: 3px 5px; position: absolute; top: calc(100% + 2px); z-index: 5; }
 
 .taskPeek { background: var(--x-task-overlay); border: 1px solid var(--x-task-border-strong); border-radius: 7px; bottom: 42px; box-shadow: var(--x-task-shadow); padding: 0 12px 12px; position: absolute; right: 14px; width: 340px; z-index: 30; }
 .taskPeek > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; height: 34px; justify-content: space-between; margin-bottom: 9px; }
-.taskPeek > header span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+.taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
 .statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 620; }
@@ -205,12 +209,12 @@
 .dateCommandEmpty { align-items: end; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; gap: 6px; min-width: max-content; overflow-x: auto; padding: 6px 10px; }
 .dateCommandTask { display: flex; flex-direction: column; justify-content: center; margin-right: 4px; max-width: 180px; min-width: 140px; }
 .dateCommandTask span,
-.dateCommand label > span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.dateCommand label > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .dateCommandTask strong { font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dateCommand label { display: flex; flex-direction: column; gap: 2px; }
-.dateCommand input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text); font: inherit; font-family: var(--font-geist-mono), monospace; font-size: 10px; height: 28px; padding: 0 5px; }
+.dateCommand input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text); font: inherit; font-family: var(--font-geist-mono), monospace; font-size: 11px; height: 28px; padding: 0 5px; }
 .dateCommand > button,
-.dateStep button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; height: 28px; justify-content: center; padding: 0 7px; white-space: nowrap; }
+.dateStep button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; height: 28px; justify-content: center; padding: 0 7px; white-space: nowrap; }
 .dateCommand button:disabled { cursor: not-allowed; opacity: .48; }
 .dateStep { align-items: center; display: flex; gap: 2px; }
 .dateStep button { padding: 0 6px; }
@@ -222,13 +226,13 @@
 .surfaceEmpty span { font-size: 11px; }
 .surfaceEmpty button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; margin-top: 5px; min-height: 29px; padding: 0 8px; }
 .surfaceEmpty button:disabled { opacity: .5; }
-.keyboardLegend { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex: 0 0 30px; font-size: 10px; gap: 6px; min-width: max-content; padding: 0 12px; }
+.keyboardLegend { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex: 0 0 30px; font-size: 11px; gap: 6px; min-width: max-content; padding: 0 12px; }
 
 /* ══ Board ═══════════════════════════════════════════════════════════════
    Board scale (2026-07-28). The lane was set 3–5px under the suite's app
    body size (15px): 10px lane names, 11px titles, 7px counters. At 1440px
    that read as a scale model of the board rather than the board. The floor
-   on this surface is now 10px, and nothing decorative sits below it. */
+   on this surface is the brand ramp's 11px label size; nothing ships below it. */
 .boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 
 /* The board scrolls horizontally; each lane owns its vertical scroll (see
@@ -315,7 +319,7 @@
 /* The count carries the limit with it ("3/6"). The old surface showed the
    lane count and then "WIP 3/6" beside it — the same numerator twice, and
    "WIP" is project-management register the brand refuses. */
-.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .wipCount[data-near] { color: var(--x-task-warning); }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
 
@@ -408,7 +412,7 @@
 .laneRail::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
 .laneRail:hover { background: color-mix(in srgb, var(--lane-tone, transparent) 10%, var(--x-task-hover)); color: var(--x-task-text); }
 .railName { font-size: 12px; font-weight: 650; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
-.railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; font-variant-numeric: tabular-nums; margin-top: auto; }
+.railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
 
 .boardCard {
   background: var(--x-task-raised);
@@ -513,7 +517,7 @@
 .boardTitleEdit { margin: 4px 0 0; }
 .cardLabels { margin-top: 8px; overflow: hidden; }
 .cardSchedule { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
-.boardCard > footer { align-items: center; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 10px; justify-content: space-between; margin-top: 9px; padding-top: 9px; }
+.boardCard > footer { align-items: center; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; justify-content: space-between; margin-top: 9px; padding-top: 9px; }
 .boardInsertion { animation: board-insertion-in 140ms var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
 .boardInsertion::before { background: var(--x-task-raised); border: 2px solid var(--x-task-accent); border-radius: 50%; content: ""; height: 7px; left: -3px; position: absolute; top: -3px; width: 7px; }
 @keyframes board-insertion-in {
@@ -532,7 +536,7 @@
 }
 .emptyLane { align-items: center; border: 1px dashed var(--x-task-border-strong); border-radius: 8px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; justify-content: center; min-height: 104px; padding: 18px; text-align: center; }
 .emptyLane span { color: var(--x-task-text-secondary); font-size: 12px; font-weight: 620; }
-.emptyLane small { font-size: 10px; }
+.emptyLane small { font-size: 11px; }
 
 /* The add affordance sits directly under the last card, inside the scroll
    region, so a new card appears where the click was. It used to be pinned
@@ -584,7 +588,7 @@
 .taskTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; min-width: 100%; }
 .taskTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; width: 1px; }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
-.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 10px; font-weight: 610; height: 34px; letter-spacing: .04em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
+.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 610; height: 34px; letter-spacing: .04em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
 .taskTable thead th[draggable="true"] { cursor: grab; }
 .taskTable th[data-column="title"] { background: var(--x-task-raised); left: 0; position: sticky; z-index: 7; }
 .taskTable thead th[data-column="title"] { background: var(--x-task-surface); z-index: 15; }
@@ -614,7 +618,7 @@
    in view while the table scrolls horizontally. */
 .groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px 0 11px; position: sticky; width: max-content; }
 .groupRow button { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 660; gap: 6px; padding: 0; }
-.groupRow span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.groupRow span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .groupRow button:last-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 540; }
 .groupRow button:last-child:hover { color: var(--x-task-text); }
 .groupRow button:last-child:disabled { cursor: not-allowed; opacity: .45; }
@@ -649,7 +653,7 @@
 .listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 580; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow[data-completed] .listTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
 .listTitleEdit { min-width: 120px; }
-.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .subtaskRows td { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); padding: 5px 12px 6px 62px; }
 .subtaskRows ul { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
 .subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 11px; gap: 6px; min-height: 25px; }
@@ -672,23 +676,23 @@
 .fieldVisibility span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fieldWidth { align-items: center; display: grid; gap: 6px; grid-template-columns: 1fr 42px; }
 .fieldWidth input { accent-color: var(--x-task-accent); min-width: 0; width: 100%; }
-.fieldWidth output { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; text-align: right; }
+.fieldWidth output { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; text-align: right; }
 .fieldOrder { display: flex; gap: 2px; }
 .fieldOrder button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 25px; justify-content: center; width: 25px; }
 .fieldOrder button:disabled { cursor: not-allowed; opacity: .38; }
 .fieldsPanel > footer { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); display: flex; height: 38px; justify-content: space-between; padding: 0 10px; }
-.fieldsPanel > footer button { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 10px; }
+.fieldsPanel > footer button { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; }
 .fieldsPanel > footer button:disabled { cursor: not-allowed; opacity: .4; }
-.fieldsPanel > footer span { color: var(--x-task-text-muted); font-size: 10px; }
+.fieldsPanel > footer span { color: var(--x-task-text-muted); font-size: 11px; }
 
 /* Timeline */
 .timelineSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
 .timelineToolbar { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 40px; gap: 12px; padding: 0 10px; }
-.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 560; }
+.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 560; }
 .rangeNavigation,
 .zoomControl { align-items: center; display: flex; gap: 2px; }
 .rangeNavigation button,
-.zoomControl button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
+.zoomControl button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
 .zoomControl { margin-left: auto; }
 .zoomControl button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 650; }
 
@@ -696,14 +700,14 @@
 .unscheduledTray > header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 6px; }
 .unscheduledTray > header > div { align-items: center; display: flex; gap: 6px; }
 .unscheduledTray > header strong { font-size: 11px; }
-.unscheduledTray > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
-.unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 10px; }
+.unscheduledTray > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+.unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 11px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
 .unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
 .unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
-.unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 10px; height: 23px; padding: 0 5px; }
+.unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
-.trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 10px; min-height: 30px; }
+.trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; min-height: 30px; }
 
 .timelineScroller { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .timelineCanvas { min-width: calc(274px + var(--timeline-width)); width: max-content; }
@@ -711,11 +715,11 @@
 .timelineRow { display: grid; grid-template-columns: 274px var(--timeline-width); }
 .timelineHeaderRow { position: sticky; top: 0; z-index: 10; }
 .timelinePaneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border-strong); display: flex; height: 38px; justify-content: space-between; left: 0; padding: 0 9px; position: sticky; z-index: 14; }
-.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 10px; font-weight: 650; text-transform: uppercase; }
-.timelinePaneHeader span:last-child { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 650; text-transform: uppercase; }
+.timelinePaneHeader span:last-child { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .timelineDateHeader { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); display: grid; height: 38px; }
-.timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 10px; justify-content: center; }
-.timelineDate b { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; margin-top: 2px; }
+.timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 11px; justify-content: center; }
+.timelineDate b { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 2px; }
 .timelineDate[data-today] { background: var(--x-task-accent-soft); color: var(--x-task-accent); }
 .timelineDate[data-today] b { color: var(--x-task-accent); }
 .timelineRow { min-height: 39px; }
@@ -734,7 +738,7 @@
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
 .timelineRangeButton > span { font-size: 11px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.timelineRangeButton small { color: var(--x-task-accent); font-family: var(--font-geist-mono), monospace; font-size: 10px; margin-left: auto; white-space: nowrap; }
+.timelineRangeButton small { color: var(--x-task-accent); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-left: auto; white-space: nowrap; }
 .rangeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .rangeHandle:disabled { cursor: not-allowed; opacity: .35; }
@@ -760,7 +764,7 @@
 .timelineRow[data-inspected] .timelineTaskPane { box-shadow: inset 2px 0 var(--x-task-accent); }
 .timelineDate[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-surface)); box-shadow: inset 0 -2px var(--x-task-accent); }
 .timelineDue > span:last-child,
-.timelineMilestone > span:last-child { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineMilestone > span:last-child { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The chart follows the shared due grammar (shared.module.css): scheduled
    is calm accent, due today is the amber nudge, overdue is the alarm. It
    used to paint every tick danger-red regardless of state. */
@@ -769,7 +773,7 @@
 .timelineDue[data-overdue] .dueStem { background: var(--x-task-danger); }
 .milestoneDiamond,
 .calendarDiamond { background: var(--x-task-milestone); display: inline-block; flex: 0 0 auto; height: 8px; transform: rotate(45deg); width: 8px; }
-.outsideRange { background: var(--x-task-surface); border: 1px dashed var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text-muted); cursor: pointer; font: inherit; font-size: 10px; left: 8px; min-height: 25px; padding: 0 7px; position: absolute; top: 7px; }
+.outsideRange { background: var(--x-task-surface); border: 1px dashed var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text-muted); cursor: pointer; font: inherit; font-size: 11px; left: 8px; min-height: 25px; padding: 0 7px; position: absolute; top: 7px; }
 
 /* Calendar */
 .calendarSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
@@ -779,7 +783,7 @@
 .calendarModes { align-items: center; display: flex; gap: 2px; }
 .calendarModes { margin-left: auto; }
 .calendarNavigation button,
-.calendarModes button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
+.calendarModes button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
 .calendarModes button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 650; }
 .calendarWorkspace { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: auto; }
 .calendarMain { flex: 1 0 720px; min-height: 0; min-width: 720px; overflow: hidden; }
@@ -787,21 +791,21 @@
 .calendarTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; min-width: 720px; table-layout: fixed; width: 100%; }
 .calendarTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; width: 1px; }
 .calendarTable thead { position: sticky; top: 0; z-index: 8; }
-.calendarTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 10px; font-weight: 560; height: 28px; text-align: left; padding: 0 6px; }
+.calendarTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 560; height: 28px; text-align: left; padding: 0 6px; }
 .calendarCell { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border); height: 106px; padding: 0; position: relative; vertical-align: top; }
 .calendarCell[data-outside] { background: var(--x-task-surface); color: var(--x-task-text-muted); }
 .calendarCell[data-selected] { box-shadow: inset 0 0 0 1px var(--x-task-accent); }
 .calendarCell[data-today] > header { background: var(--x-task-accent-soft); }
 .calendarCell > header { align-items: center; display: flex; height: 28px; justify-content: space-between; padding: 0 2px 0 4px; }
-.dateButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 4px; justify-content: center; min-height: 24px; min-width: 24px; padding: 0 2px; }
-.dateButton b { font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.dateButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; justify-content: center; min-height: 24px; min-width: 24px; padding: 0 2px; }
+.dateButton b { font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .calendarCell[data-today] .dateButton { color: var(--x-task-accent); font-weight: 700; }
 .cellAdd { align-items: center; background: transparent; border: 0; border-radius: 3px; color: transparent; cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarCell:hover .cellAdd,
 .cellAdd:focus-visible { color: var(--x-task-text-muted); }
 .cellAdd:disabled { cursor: not-allowed; }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; padding: 0 3px; }
-.calendarTask { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; font-size: 10px; gap: 4px; height: 24px; min-width: 0; overflow: hidden; padding: 0 4px; text-align: left; width: 100%; }
+.calendarTask { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; font-size: 11px; gap: 4px; height: 24px; min-width: 0; overflow: hidden; padding: 0 4px; text-align: left; width: 100%; }
 .calendarTask > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarTask[data-segment="start"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-radius: 3px 0 0 3px; }
 .calendarTask[data-segment="middle"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-left: 0; border-radius: 0; border-right: 0; }
@@ -813,11 +817,11 @@
 .calendarStatus[data-status="waiting"] { background: var(--x-task-waiting); }
 .calendarStatus[data-status="done"] { background: var(--x-task-success); }
 .calendarDiamond { height: 6px; width: 6px; }
-.moreTasks { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 10px; margin: 2px 4px; padding: 2px; }
+.moreTasks { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; margin: 2px 4px; padding: 2px; }
 .moreTasks:hover { color: var(--x-task-accent); }
 .calendarOverflow { background: var(--x-task-overlay); border: 1px solid var(--x-task-border-strong); border-radius: 6px; box-shadow: var(--x-task-shadow); left: 4px; min-width: 190px; padding: 5px; position: absolute; top: 70px; z-index: 22; }
 .calendarOverflow > header { align-items: center; display: flex; height: 26px; justify-content: space-between; padding: 0 2px 4px; }
-.calendarOverflow > header strong { font-size: 10px; }
+.calendarOverflow > header strong { font-size: 11px; }
 .calendarOverflow > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 22px; justify-content: center; width: 22px; }
 .calendarTaskCompact { height: 24px; margin-top: 2px; }
 .weekTable .calendarCell { height: 340px; }
@@ -826,12 +830,12 @@
 .dayAgenda { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border-strong); display: flex; flex: 0 0 276px; flex-direction: column; min-height: 0; min-width: 276px; overflow: hidden; }
 .dayAgenda > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; justify-content: space-between; padding: 0 9px 0 11px; }
 .dayAgenda > header > div { display: flex; flex-direction: column; min-width: 0; }
-.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .dayAgenda > header strong { font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dayAgenda > header button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 27px; justify-content: center; width: 27px; }
 .dayAgenda > header button:disabled { cursor: not-allowed; opacity: .45; }
 .dayAgendaList { flex: 1; min-height: 80px; overflow-y: auto; padding: 6px; scrollbar-width: thin; }
-.dayAgendaList > p { color: var(--x-task-text-muted); font-size: 10px; line-height: 1.45; padding: 8px; }
+.dayAgendaList > p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; padding: 8px; }
 .agendaTask { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; gap: 6px; grid-template-columns: 15px minmax(0, 1fr) auto; margin-bottom: 4px; min-height: 38px; padding: 4px 5px; }
 .agendaTaskCopy { display: flex; flex-direction: column; min-width: 0; }
 .agendaTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
@@ -840,20 +844,20 @@
 .agendaRangeControls button:disabled { cursor: not-allowed; opacity: .4; }
 .calendarUnscheduled { border-top: 1px solid var(--x-task-border-strong); display: flex; flex: 0 0 min(190px, 35%); flex-direction: column; min-height: 110px; }
 .calendarUnscheduled > header { align-items: center; display: flex; flex: 0 0 32px; gap: 6px; padding: 0 9px; }
-.calendarUnscheduled > header strong { font-size: 10px; }
-.calendarUnscheduled > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.calendarUnscheduled > header strong { font-size: 11px; }
+.calendarUnscheduled > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .calendarUnscheduled > div { overflow-y: auto; padding: 0 6px 6px; }
 .calendarUnscheduled article { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; display: flex; gap: 5px; margin-bottom: 3px; min-height: 28px; padding: 3px 4px 3px 7px; }
-.calendarUnscheduled article > button:first-child { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; flex: 1; font: inherit; font-size: 10px; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.calendarUnscheduled article > button:first-child { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; flex: 1; font: inherit; font-size: 11px; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .calendarUnscheduled article > button:last-child { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 21px; justify-content: center; width: 24px; }
 .calendarUnscheduled article > button:last-child:disabled { cursor: not-allowed; opacity: .4; }
-.calendarUnscheduled p { color: var(--x-task-text-muted); font-size: 10px; padding: 5px; }
+.calendarUnscheduled p { color: var(--x-task-text-muted); font-size: 11px; padding: 5px; }
 
 .agendaMode { height: 100%; overflow-y: auto; padding: 8px 10px 18px; scrollbar-width: thin; }
 .agendaMode > section { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; grid-template-columns: 170px minmax(0, 1fr); margin-bottom: 6px; min-height: 48px; }
 .agendaMode > section > header { align-items: flex-start; border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; padding: 7px 9px; }
 .agendaMode > section > header time { font-size: 11px; font-weight: 640; }
-.agendaMode > section > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 3px; margin-top: 5px; padding: 0; }
+.agendaMode > section > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 3px; margin-top: 5px; padding: 0; }
 .agendaMode > section > div { display: grid; gap: 3px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 6px; }
 
 :where(.optionA) :focus-visible {
@@ -1048,6 +1052,11 @@
      is 30px of noise partially covered by toasts. */
   .keyboardLegend { display: none; }
 
+  /* Adding columns is a desktop act; on a phone the pinned rail only
+     overlapped the next lane's peek. The lane menu keeps 'Add column
+     after'. */
+  .addColumnRail { display: none; }
+
   .timelineToolbar {
     flex-basis: auto;
     min-height: 52px;
@@ -1138,7 +1147,7 @@
   border-radius: 5px;
   color: var(--x-task-text-secondary);
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13px;
   padding: 6px 8px;
   text-align: left;
 }
@@ -1149,7 +1158,7 @@
 .laneMenu > button:disabled { cursor: not-allowed; opacity: 0.45; }
 .laneMenuLabel {
   color: var(--x-task-text-muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   padding: 6px 8px 2px;
@@ -1263,7 +1272,7 @@
 .addColumnField { display: flex; flex-direction: column; gap: 3px; }
 .addColumnField > span {
   color: var(--x-task-text-muted);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1275,14 +1284,14 @@
   border: 1px solid var(--x-task-border);
   border-radius: 6px;
   color: var(--x-task-text);
-  font-size: 12.5px;
+  font-size: 13px;
   min-height: 30px;
   outline: none;
   padding: 0 8px;
 }
 .addColumnField input:focus-visible,
 .addColumnField select:focus-visible { border-color: var(--x-task-focus); }
-.addColumnError { color: var(--x-task-danger, var(--status-blocked)); font-size: 11.5px; margin: 0; }
+.addColumnError { color: var(--x-task-danger, var(--status-blocked)); font-size: 12px; margin: 0; }
 .addColumnActions { display: flex; gap: 6px; justify-content: flex-end; }
 .addColumnActions button {
   border: 1px solid var(--x-task-border);
@@ -1322,7 +1331,7 @@
   width: 100%;
 }
 .boardDialog h2 { font-size: 15px; font-weight: 600; margin: 0; }
-.boardDialog p { color: var(--x-task-text-secondary); font-size: 12.5px; line-height: 1.5; margin: 0; }
+.boardDialog p { color: var(--x-task-text-secondary); font-size: 13px; line-height: 1.5; margin: 0; }
 .boardDialog label { display: flex; flex-direction: column; gap: 4px; }
 .boardDialog label > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 500; }
 .boardDialog input,
@@ -1333,7 +1342,7 @@
   border-radius: 6px;
   color: var(--x-task-text);
   font: inherit;
-  font-size: 12.5px;
+  font-size: 13px;
   min-height: 32px;
   outline: none;
   padding: 4px 8px;
@@ -1345,7 +1354,7 @@
   border: 1px solid var(--x-task-border);
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
   min-height: 32px;
   padding: 0 12px;

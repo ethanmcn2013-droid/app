@@ -47,7 +47,7 @@
 .workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(240px, 1fr) minmax(210px, 264px) minmax(216px, 320px); }
 
 .workspaceIdentity { min-width: 0; }
-.workspaceIdentity h1 { font-size: 22px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
+.workspaceIdentity h1 { font-size: 24px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 0; max-width: 72ch; text-wrap: pretty; }
 /*
   Inline-editable heading + supporting line (T·114). A heading that grows a
@@ -79,7 +79,7 @@
 }
 .progressHead { align-items: baseline; display: flex; gap: 8px; }
 .progressHead strong { font-family: var(--font-geist-mono), monospace; font-size: 20px; font-weight: 560; letter-spacing: -.04em; line-height: 1; }
-.progressHead span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.progressHead span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .progressHead .syncState {
   margin-left: auto;
   opacity: 0;
@@ -91,7 +91,7 @@
 .syncState[data-state="saved"] { color: var(--success); }
 .syncState[data-state="error"] { color: var(--danger); }
 .workspaceProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
-.progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; letter-spacing: .01em; margin: 0; }
+.progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: .01em; margin: 0; }
 .progressFacts b { color: var(--x-task-danger); font-weight: 650; }
 /* A count never separates from its label mid-wrap. */
 .progressFacts span,
@@ -105,7 +105,7 @@
   min-width: 0;
   padding-left: 18px;
 }
-.workspaceMilestones > span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.workspaceMilestones > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .workspaceMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 7px 0 0; padding: 0; }
 .workspaceMilestones li { align-items: center; border-bottom: 1px solid var(--x-task-border); display: grid; gap: 8px; grid-template-columns: 47px 1fr; min-height: 25px; min-width: 0; }
 .workspaceMilestones li:last-child { border-bottom: 0; }
@@ -113,7 +113,7 @@
 .workspaceMilestones button,
 .workspaceMilestones li strong { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 11px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceMilestones button { cursor: pointer; }
-.workspaceMilestones small { color: var(--x-task-text-muted); font-size: 10px; line-height: 1.35; margin-top: 5px; }
+.workspaceMilestones small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.35; margin-top: 5px; }
 
 .roomViewBar {
   align-items: center;
@@ -157,15 +157,15 @@
 .roomFilterFields legend { color: var(--x-task-text-muted); font-size: 11px; }
 .roomFilterFields select { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 34px; padding: 0 8px; }
 .roomFilterFields fieldset { border: 0; margin: 0; padding: 0; }
-.roomFilterFields fieldset > label { align-items: center; display: inline-flex; font-size: 10px; gap: 5px; margin: 7px 12px 0 0; }
+.roomFilterFields fieldset > label { align-items: center; display: inline-flex; font-size: 11px; gap: 5px; margin: 7px 12px 0 0; }
 .roomFilterFields input { accent-color: var(--x-task-accent); }
-.roomResetFilters { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 10px; justify-self: start; padding: 0; }
+.roomResetFilters { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 11px; justify-self: start; padding: 0; }
 .roomSortOptions { border: 0; display: grid; gap: 4px; margin: 0; padding: 0; }
 .roomSortOptions label { align-items: center; border-radius: 6px; cursor: pointer; display: grid; gap: 9px; grid-template-columns: 16px 1fr; padding: 8px; }
 .roomSortOptions label:has(input:checked) { background: var(--x-task-selected); }
 .roomSortOptions input { accent-color: var(--x-task-accent); }
 .roomSortOptions label > span { display: flex; flex-direction: column; }
-.roomSortOptions strong { font-size: 10px; }
+.roomSortOptions strong { font-size: 11px; }
 .roomSortOptions small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.4; margin-top: 2px; }
 
 .activeViewSurface { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
@@ -201,7 +201,7 @@
 .laneHeader { background: color-mix(in srgb, var(--x-task-surface) 94%, var(--x-task-raised)); border-bottom: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; min-height: 92px; padding: 12px 12px 10px; position: sticky; top: 0; z-index: 5; }
 .laneHeader > div { align-items: center; display: flex; gap: 7px; }
 .laneHeader h2 { font-size: 12px; font-weight: 680; margin: 0; }
-.laneCount { align-items: center; background: var(--x-task-hover); border-radius: 10px; color: var(--x-task-text-muted); display: inline-flex; font-family: var(--font-geist-mono), monospace; font-size: 10px; height: 18px; justify-content: center; min-width: 19px; padding: 0 5px; }
+.laneCount { align-items: center; background: var(--x-task-hover); border-radius: 10px; color: var(--x-task-text-muted); display: inline-flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; height: 18px; justify-content: center; min-width: 19px; padding: 0 5px; }
 .laneStatusMark { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
 .laneStatusMark[data-status="doing"] { background: var(--x-task-accent); }
 .laneStatusMark[data-status="review"] { background: var(--x-task-review); }
@@ -209,7 +209,7 @@
 .laneStatusMark[data-status="done"] { background: var(--x-task-success); }
 .laneHeader > button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; margin-left: auto; position: absolute; right: 7px; top: 7px; width: 28px; }
 .laneHeader p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.35; margin: 7px 0 0; }
-.wipNote { color: var(--x-task-text-muted); display: block; font-family: var(--font-geist-mono), monospace; font-size: 10px; margin-top: 5px; }
+.wipNote { color: var(--x-task-text-muted); display: block; font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 5px; }
 .wipNote[data-over] { color: var(--x-task-danger); font-weight: 650; }
 .boardTaskList { display: flex; flex-direction: column; gap: 9px; list-style: none; margin: 0; min-height: 130px; padding: 10px; }
 .boardCardItem { position: relative; }
@@ -233,13 +233,13 @@
 .cardLabels { margin-left: 24px; min-height: 20px; }
 .cardScheduleRow { align-items: center; border-top: 1px solid var(--x-task-border); display: flex; justify-content: space-between; margin-top: 11px; padding-top: 9px; }
 .cardFooter { align-items: center; display: flex; justify-content: space-between; margin-top: 8px; min-height: 16px; }
-.waitingReason { color: var(--x-task-waiting); font-size: 10px; }
+.waitingReason { color: var(--x-task-waiting); font-size: 11px; }
 .emptyLane { align-items: flex-start; border: 1px dashed var(--x-task-border-strong); border-radius: 7px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 4px; justify-content: center; min-height: 116px; padding: 14px; }
 .emptyLane[data-drop-active] { background: var(--x-task-accent-soft); border-color: var(--x-task-accent); }
-.emptyLane strong { color: var(--x-task-text-secondary); font-size: 10px; }
+.emptyLane strong { color: var(--x-task-text-secondary); font-size: 11px; }
 .emptyLane span { font-size: 11px; line-height: 1.45; }
 .boardEndDrop { height: 8px; position: relative; }
-.laneAddButton { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 6px; margin: 0 10px 10px; min-height: 30px; padding: 0 7px; }
+.laneAddButton { align-items: center; background: transparent; border: 0; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 6px; margin: 0 10px 10px; min-height: 30px; padding: 0 7px; }
 .laneAddButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneAddButton:disabled { cursor: not-allowed; opacity: .42; }
 
@@ -248,8 +248,8 @@
 .taskTable { border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; min-width: 100%; }
 .taskTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
-.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); color: var(--x-task-text-muted); font-size: 10px; font-weight: 600; height: 38px; letter-spacing: .045em; padding: 0 10px; text-align: left; text-transform: uppercase; }
-.taskTable thead th > span:not(.srOnly) { float: right; font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; height: 38px; letter-spacing: .045em; padding: 0 10px; text-align: left; text-transform: uppercase; }
+.taskTable thead th > span:not(.srOnly) { float: right; font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .listFrozenHeader { border-right: 1px solid var(--x-task-border); left: 76px; position: sticky; z-index: 14; }
 .listTaskRow { background: var(--x-task-raised); outline: 0; }
 .listTaskRow > td,
@@ -267,12 +267,12 @@
 .listFrozenTask { background: inherit; }
 .listExpandCell button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: inline-flex; height: 26px; justify-content: center; width: 26px; }
 .listFrozenTask { border-right: 1px solid var(--x-task-border); left: 76px; position: sticky; text-align: left; z-index: 7; }
-.listDataCell select { background: var(--x-task-raised); border: 1px solid transparent; border-radius: 5px; color: var(--x-task-text-secondary); font: inherit; font-size: 10px; height: 30px; max-width: 100%; padding: 0 5px; }
+.listDataCell select { background: var(--x-task-raised); border: 1px solid transparent; border-radius: 5px; color: var(--x-task-text-secondary); font: inherit; font-size: 11px; height: 30px; max-width: 100%; padding: 0 5px; }
 .listDataCell select:hover,
 .listDataCell select:focus { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
 .listTaskCell { min-width: 0; }
 .listTaskCell .taskTitleButton { display: block; font-size: 11px; font-weight: 640; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
-.listTaskCell p { color: var(--x-task-text-muted); font-size: 10px; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listTaskCell p { color: var(--x-task-text-muted); font-size: 11px; margin: 3px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .listPeopleCell { align-items: center; display: flex; gap: 7px; min-width: 0; }
 .listPeopleCell > span { color: var(--x-task-text-secondary); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .listGroupRow th { background: color-mix(in srgb, var(--x-task-surface) 92%, var(--x-task-canvas)); border-bottom: 1px solid var(--x-task-border); height: 50px; padding: 0; text-align: left; }
@@ -280,10 +280,10 @@
 .listGroupHeading > button:first-child { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; width: 28px; }
 .listGroupHeading > div { display: flex; flex-direction: column; min-width: 0; }
 .listGroupHeading strong { font-size: 11px; }
-.listGroupHeading > div span { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.groupCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; white-space: nowrap; }
+.listGroupHeading > div span { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.groupCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; white-space: nowrap; }
 .groupProgress { display: flex; flex-direction: column; gap: 3px; }
-.groupProgress span { color: var(--x-task-text-muted); font-size: 10px; }
+.groupProgress span { color: var(--x-task-text-muted); font-size: 11px; }
 .groupProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
 .groupAdd { align-items: center; background: transparent; border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; min-height: 28px; padding: 0 8px; white-space: nowrap; }
 .groupAdd:disabled { cursor: not-allowed; opacity: .42; }
@@ -294,25 +294,25 @@
 .subtaskCell input:checked + span { color: var(--x-task-text-muted); text-decoration: line-through; }
 .listEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; justify-content: center; min-height: 330px; text-align: center; }
 .listEmpty strong { color: var(--x-task-text); font-size: 13px; margin-top: 7px; }
-.listEmpty p { font-size: 10px; margin: 0 0 7px; }
-.listEmpty button { align-items: center; background: var(--x-task-text); border: 0; border-radius: 6px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 5px; min-height: 32px; padding: 0 10px; }
+.listEmpty p { font-size: 11px; margin: 0 0 7px; }
+.listEmpty button { align-items: center; background: var(--x-task-text); border: 0; border-radius: 6px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; min-height: 32px; padding: 0 10px; }
 
 .fieldPanel { background: var(--x-task-overlay); border: 1px solid var(--x-task-border); border-radius: 8px; box-shadow: var(--x-task-shadow); max-height: calc(100% - 24px); overflow-y: auto; padding: 12px; position: absolute; right: 12px; top: 12px; width: 332px; z-index: 35; }
 .fieldPanel > header { align-items: flex-start; display: flex; justify-content: space-between; }
 .fieldPanel > header div { display: flex; flex-direction: column; }
 .fieldPanel > header strong { font-size: 12px; }
-.fieldPanel > header span { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.fieldPanel > header span { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .fieldPanel > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; width: 28px; }
 .fieldPanel > p { color: var(--x-task-text-secondary); font-size: 11px; line-height: 1.45; margin: 10px 0 12px; }
 .fieldPanel ol { display: flex; flex-direction: column; gap: 5px; list-style: none; margin: 0; padding: 0; }
 .fieldPanel li { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 6px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; padding: 8px; }
-.fieldVisibility { align-items: center; display: flex; font-size: 10px; gap: 7px; min-width: 0; }
+.fieldVisibility { align-items: center; display: flex; font-size: 11px; gap: 7px; min-width: 0; }
 .fieldVisibility input { accent-color: var(--x-task-accent); }
 .fieldOrderControls { display: flex; gap: 2px; }
 .fieldOrderControls button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 25px; justify-content: center; width: 25px; }
 .fieldOrderControls button:disabled { cursor: not-allowed; opacity: .35; }
 .fieldWidthControl { display: flex; flex-direction: column; gap: 5px; grid-column: 1 / -1; }
-.fieldWidthControl span { color: var(--x-task-text-muted); display: flex; font-size: 10px; justify-content: space-between; }
+.fieldWidthControl span { color: var(--x-task-text-muted); display: flex; font-size: 11px; justify-content: space-between; }
 .fieldWidthControl b { font-family: var(--font-geist-mono), monospace; font-weight: 520; }
 .fieldWidthControl input { accent-color: var(--x-task-accent); width: 100%; }
 
@@ -320,18 +320,18 @@
 .unscheduledTray { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 8px; display: grid; gap: 12px; grid-template-columns: 210px minmax(0, 1fr); margin: 12px 16px; padding: 12px; }
 .unscheduledTray > header { border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; padding-right: 12px; }
 .unscheduledTray > header > div { display: flex; flex-direction: column; }
-.unscheduledTray > header span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.unscheduledTray > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
 .unscheduledTray > header strong { font-size: 11px; margin-top: 4px; }
-.unscheduledTray > header p { color: var(--x-task-text-muted); font-size: 10px; line-height: 1.4; margin: 6px 0 0; }
+.unscheduledTray > header p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.4; margin: 6px 0 0; }
 .trayTaskList { display: grid; gap: 8px; grid-auto-columns: 248px; grid-auto-flow: column; overflow-x: auto; padding-bottom: 2px; }
 .trayTask { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 7px; cursor: grab; min-width: 0; padding: 9px; }
 .trayTask:active { cursor: grabbing; }
 .trayTaskTop { align-items: center; display: flex; justify-content: space-between; }
-.trayTaskTitle { display: block; font-size: 10px; font-weight: 650; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
-.trayTask > p { color: var(--x-task-text-muted); font-size: 10px; line-height: 1.4; margin: 4px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trayTaskTitle { display: block; font-size: 11px; font-weight: 650; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.trayTask > p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.4; margin: 4px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trayScheduleForm { align-items: center; display: flex; gap: 5px; }
-.trayScheduleForm input { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 10px; height: 28px; min-width: 0; padding: 0 4px; width: 110px; }
-.trayScheduleForm button { align-items: center; background: var(--x-task-text); border: 0; border-radius: 5px; color: var(--x-task-raised); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 10px; gap: 4px; height: 28px; justify-content: center; }
+.trayScheduleForm input { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 28px; min-width: 0; padding: 0 4px; width: 110px; }
+.trayScheduleForm button { align-items: center; background: var(--x-task-text); border: 0; border-radius: 5px; color: var(--x-task-raised); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 11px; gap: 4px; height: 28px; justify-content: center; }
 .trayScheduleForm button:disabled,
 .trayScheduleForm input:disabled { cursor: not-allowed; opacity: .42; }
 .trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; gap: 7px; min-height: 70px; }
@@ -341,30 +341,30 @@
 /* Timeline */
 .timelineView { height: 100%; overflow: auto; overscroll-behavior: contain; padding-bottom: 24px; }
 .timelineStory { align-items: stretch; display: grid; gap: 18px; grid-template-columns: minmax(280px, 1fr) minmax(310px, .8fr); padding: 16px 18px 4px; }
-.timelineStory > div > span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.timelineStory > div > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
 .timelineStory > div > strong { display: block; font-size: 15px; letter-spacing: -.025em; margin-top: 5px; }
 .timelineStory > div > p { color: var(--x-task-text-secondary); font-size: 11px; line-height: 1.5; margin: 5px 0 0; }
 .timelineStory ol { border-left: 1px solid var(--x-task-border); display: grid; list-style: none; margin: 0; padding: 0 0 0 16px; }
 .timelineStory li { align-items: center; border-bottom: 1px solid var(--x-task-border); display: grid; gap: 8px; grid-template-columns: 46px 1fr; min-width: 0; }
 .timelineStory li:last-child { border-bottom: 0; }
-.timelineStory li > span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.timelineStory li > span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .timelineStory li button,
 .timelineStory li strong { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .timelineToolbar { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 7px 7px 0 0; display: grid; gap: 12px; grid-template-columns: auto 1fr auto; margin: 14px 16px 0; min-height: 45px; padding: 6px 8px; position: sticky; top: 0; z-index: 18; }
 .timelineNavigation { display: flex; gap: 3px; }
-.timelineToolbar button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 4px; min-height: 29px; padding: 0 7px; }
-.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 10px; font-weight: 540; text-align: center; }
-.timelineToolbar > label { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 10px; gap: 5px; }
-.timelineToolbar select { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 10px; height: 29px; }
+.timelineToolbar button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; min-height: 29px; padding: 0 7px; }
+.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 540; text-align: center; }
+.timelineToolbar > label { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; gap: 5px; }
+.timelineToolbar select { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 29px; }
 .timelineScroller { border: 1px solid var(--x-task-border); border-top: 0; margin: 0 16px; max-height: 520px; overflow: auto; overscroll-behavior: contain; }
 .timelineGrid { display: grid; grid-auto-rows: 48px; grid-template-columns: 278px var(--timeline-width); min-width: calc(278px + var(--timeline-width)); position: relative; }
 .timelineRowContents { display: contents; }
 .timelineCorner { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border-strong); display: flex; flex-direction: column; justify-content: center; left: 0; padding: 0 12px; position: sticky; top: 0; z-index: 16; }
 .timelineCorner span { align-self: flex-start; font-size: 11px; font-weight: 650; }
-.timelineCorner small { align-self: flex-start; color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.timelineCorner small { align-self: flex-start; color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .timelineDateHeader { background: var(--x-task-surface); display: grid; grid-template-columns: repeat(var(--timeline-days), var(--timeline-cell)); position: sticky; top: 0; width: var(--timeline-width); z-index: 14; }
 .timelineDateHeading { align-items: center; border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; }
-.timelineDateHeading span { color: var(--x-task-text-muted); font-size: 10px; text-transform: uppercase; }
+.timelineDateHeading span { color: var(--x-task-text-muted); font-size: 11px; text-transform: uppercase; }
 .timelineDateHeading strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 2px; }
 .timelineDateHeading[data-today] { background: var(--x-task-accent-soft); color: var(--x-task-accent); }
 .timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 8px; grid-template-columns: 16px minmax(0, 1fr) auto; left: 0; min-width: 0; padding: 5px 10px; position: sticky; z-index: 9; }
@@ -378,7 +378,7 @@
 .timelineDropColumn { background: var(--x-task-accent-soft); bottom: 0; position: absolute; top: 0; }
 .timelineRange { align-items: stretch; background: color-mix(in srgb, var(--x-task-accent-soft) 82%, var(--x-task-raised)); border: 1px solid color-mix(in srgb, var(--x-task-accent) 34%, var(--x-task-border)); border-radius: 5px; display: flex; height: 28px; min-width: 26px; position: absolute; top: 9px; z-index: 4; }
 .timelineRange > button:first-child { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: 1; font: inherit; min-width: 0; overflow: hidden; padding: 0 8px; text-align: left; }
-.timelineRange > button:first-child span { display: block; font-size: 10px; font-weight: 630; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineRange > button:first-child span { display: block; font-size: 11px; font-weight: 630; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timelineResizeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .timelineResizeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 25%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .timelineRange[data-selected] { box-shadow: inset 0 0 0 1px var(--x-task-accent); }
@@ -389,7 +389,7 @@
 .timelineDue { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 5px; color: var(--x-task-text); cursor: grab; display: flex; gap: 5px; height: 28px; max-width: 158px; padding: 0 6px; position: absolute; top: 9px; z-index: 4; }
 .timelineMilestone { color: var(--x-task-review); }
 .timelineMilestone > span,
-.timelineDue > span:last-child { font-size: 10px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineDue > span:last-child { font-size: 11px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timelineDuePin { background: var(--x-task-danger); border-radius: 50%; flex: 0 0 7px; height: 7px; }
 .timelineMilestone[data-selected],
 .timelineDue[data-selected] { background: var(--x-task-selected); border-color: var(--x-task-accent); }
@@ -397,21 +397,21 @@
 .timelineEmpty strong { color: var(--x-task-text); font-size: 11px; }
 .timelineEmpty span { font-size: 11px; }
 .timelineKeyboardNote,
-.calendarKeyboardNote { color: var(--x-task-text-muted); font-size: 10px; margin: 8px 18px 0; }
+.calendarKeyboardNote { color: var(--x-task-text-muted); font-size: 11px; margin: 8px 18px 0; }
 
 /* Calendar */
 .calendarView { height: 100%; overflow: auto; overscroll-behavior: contain; padding: 14px 16px 24px; }
 .calendarToolbar { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 8px 8px 0 0; display: grid; gap: 10px; grid-template-columns: auto 1fr auto; min-height: 48px; padding: 7px 9px; position: sticky; top: -14px; z-index: 17; }
 .calendarNavigation,
 .calendarModeSwitch { display: flex; gap: 3px; }
-.calendarToolbar button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 4px; min-height: 29px; padding: 0 7px; }
+.calendarToolbar button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; min-height: 29px; padding: 0 7px; }
 .calendarToolbar h2 { font-size: 12px; font-weight: 660; margin: 0; text-align: center; }
 .calendarModeSwitch button[aria-pressed="true"] { background: var(--x-task-text); border-color: var(--x-task-text); color: var(--x-task-raised); }
 .calendarWorkspace { display: grid; gap: 12px; grid-template-columns: minmax(500px, 1fr) 288px; min-width: 800px; }
 .calendarPrimary { min-width: 0; overflow: auto; position: relative; }
 .calendarTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; table-layout: fixed; width: 100%; }
 .calendarTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; white-space: nowrap; width: 1px; }
-.calendarTable th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 10px; font-weight: 560; height: 32px; text-align: left; }
+.calendarTable th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 560; height: 32px; text-align: left; }
 .calendarTable th span { padding-left: 7px; }
 .calendarCell { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border); height: 108px; padding: 5px; vertical-align: top; }
 .calendarCell[data-outside] { background: color-mix(in srgb, var(--x-task-surface) 78%, var(--x-task-canvas)); color: var(--x-task-text-muted); }
@@ -461,20 +461,20 @@
 .calendarTaskChip:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
 .calendarExtendButton { align-items: center; background: transparent; border: 0; border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 22%, transparent); color: var(--x-task-accent); cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarExtendButton:disabled { cursor: not-allowed; opacity: .38; }
-.calendarMoreButton { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 10px; padding: 2px 4px; text-align: left; }
+.calendarMoreButton { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 11px; padding: 2px 4px; text-align: left; }
 .selectedAgenda { align-self: start; background: var(--x-task-surface); border: 1px solid var(--x-task-border); max-height: 620px; min-height: 100%; overflow-y: auto; position: sticky; top: 42px; }
 .selectedAgenda > header { border-bottom: 1px solid var(--x-task-border); padding: 13px; }
-.selectedAgenda > header > span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
-.selectedAgenda h2 { font-size: 16px; letter-spacing: -.03em; line-height: 1.15; margin: 6px 0 4px; }
-.selectedAgenda > header p { color: var(--x-task-text-muted); font-size: 10px; margin: 0 0 10px; }
+.selectedAgenda > header > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.selectedAgenda h2 { font-size: 15px; letter-spacing: -.03em; line-height: 1.15; margin: 6px 0 4px; }
+.selectedAgenda > header p { color: var(--x-task-text-muted); font-size: 11px; margin: 0 0 10px; }
 .selectedAgenda > header button { align-items: center; background: var(--x-task-text); border: 0; border-radius: 5px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; min-height: 30px; padding: 0 9px; }
 .selectedAgenda > header button:disabled { cursor: not-allowed; opacity: .42; }
 .calendarPreview { background: var(--x-task-selected); border-bottom: 1px solid color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); padding: 11px 13px; }
 .calendarPreview > div { align-items: center; display: flex; justify-content: space-between; }
-.calendarPreview > div span { color: var(--x-task-accent); font-size: 10px; font-weight: 650; text-transform: uppercase; }
+.calendarPreview > div span { color: var(--x-task-accent); font-size: 11px; font-weight: 650; text-transform: uppercase; }
 .calendarPreview > div button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 24px; justify-content: center; width: 24px; }
-.calendarPreview > strong { display: block; font-size: 10px; margin-top: 4px; }
-.calendarPreview > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 10px; line-height: 1.45; margin: 5px 0 8px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.calendarPreview > strong { display: block; font-size: 11px; margin-top: 4px; }
+.calendarPreview > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 11px; line-height: 1.45; margin: 5px 0 8px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .calendarPreview footer { align-items: center; display: flex; justify-content: space-between; }
 .agendaEmpty { align-items: flex-start; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; padding: 28px 15px; }
 .agendaEmpty strong { color: var(--x-task-text); font-size: 11px; margin-top: 4px; }
@@ -484,26 +484,26 @@
 .selectedAgendaList article { min-width: 0; }
 .agendaTaskLead { align-items: flex-start; display: grid; gap: 7px; grid-template-columns: 16px minmax(0, 1fr) 26px; }
 .agendaTaskLead > div { display: flex; flex-direction: column; min-width: 0; }
-.agendaTaskTitle { font-size: 10px; font-weight: 650; line-height: 1.35; }
+.agendaTaskTitle { font-size: 11px; font-weight: 650; line-height: 1.35; }
 .agendaTaskLead > div > span { margin-top: 3px; }
 .agendaTaskLead > button { align-items: center; background: transparent; border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .agendaTaskLead > button:disabled { cursor: not-allowed; opacity: .42; }
-.selectedAgendaList article > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 10px; line-height: 1.45; margin: 8px 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.selectedAgendaList article > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 11px; line-height: 1.45; margin: 8px 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .agendaTaskPeople { align-items: center; display: flex; justify-content: space-between; }
-.agendaBlocker { align-items: center; background: var(--x-task-waiting-soft); border-radius: 5px; color: var(--x-task-waiting); display: flex; font-size: 10px; gap: 5px; margin-top: 8px; padding: 6px; }
+.agendaBlocker { align-items: center; background: var(--x-task-waiting-soft); border-radius: 5px; color: var(--x-task-waiting); display: flex; font-size: 11px; gap: 5px; margin-top: 8px; padding: 6px; }
 .agendaDateEditor { display: grid; gap: 5px; grid-template-columns: 1fr 1fr; margin-top: 9px; }
 .agendaDateEditor label,
 .agendaSingleDate { display: flex; flex-direction: column; gap: 3px; }
 .agendaDateEditor span,
-.agendaSingleDate span { color: var(--x-task-text-muted); font-size: 10px; }
+.agendaSingleDate span { color: var(--x-task-text-muted); font-size: 11px; }
 .agendaDateEditor input,
-.agendaSingleDate input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 10px; height: 28px; min-width: 0; padding: 0 4px; }
+.agendaSingleDate input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 28px; min-width: 0; padding: 0 4px; }
 .agendaSingleDate { margin-top: 9px; }
 .calendarOverflowPopover { background: var(--x-task-overlay); border: 1px solid var(--x-task-border); border-radius: 8px; box-shadow: var(--x-task-shadow); max-height: 390px; overflow-y: auto; padding: 10px; position: absolute; right: 10px; top: 44px; width: 270px; z-index: 30; }
 .calendarOverflowPopover > header { align-items: flex-start; border-bottom: 1px solid var(--x-task-border); display: flex; justify-content: space-between; padding-bottom: 8px; }
 .calendarOverflowPopover header div { display: flex; flex-direction: column; }
-.calendarOverflowPopover header span { color: var(--x-task-text-muted); font-size: 10px; text-transform: uppercase; }
-.calendarOverflowPopover header strong { font-size: 10px; margin-top: 3px; }
+.calendarOverflowPopover header span { color: var(--x-task-text-muted); font-size: 11px; text-transform: uppercase; }
+.calendarOverflowPopover header strong { font-size: 11px; margin-top: 3px; }
 .calendarOverflowPopover header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 25px; justify-content: center; width: 25px; }
 .calendarOverflowPopover ul { list-style: none; margin: 6px 0 0; padding: 0; }
 .calendarOverflowPopover li { border-bottom: 1px solid var(--x-task-border); display: flex; flex-direction: column; gap: 3px; padding: 7px 4px; }
@@ -513,8 +513,8 @@
 .agendaLedger > section { border-bottom: 1px solid var(--x-task-border); display: grid; grid-template-columns: 86px 1fr; min-height: 64px; }
 .agendaLedger > section[data-selected] { background: var(--x-task-selected); }
 .agendaLedger > section > button { align-items: flex-start; background: var(--x-task-surface); border: 0; border-right: 1px solid var(--x-task-border); color: var(--x-task-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; justify-content: center; padding: 8px 12px; }
-.agendaLedger > section > button span { color: var(--x-task-text-muted); font-size: 10px; }
-.agendaLedger > section > button strong { font-family: var(--font-geist-mono), monospace; font-size: 10px; margin-top: 2px; }
+.agendaLedger > section > button span { color: var(--x-task-text-muted); font-size: 11px; }
+.agendaLedger > section > button strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 2px; }
 .agendaLedger ol { list-style: none; margin: 0; padding: 5px 10px; }
 .agendaLedger li { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto auto; min-height: 31px; }
 .agendaLedger li > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; font-weight: 590; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
@@ -555,7 +555,7 @@
 }
 
 [data-density="compact"] .workspaceBrief { padding-block: 11px; }
-[data-density="compact"] .workspaceIdentity h1 { font-size: 21px; margin-top: 5px; }
+[data-density="compact"] .workspaceIdentity h1 { font-size: 20px; margin-top: 5px; }
 [data-density="compact"] .workspaceMeta { margin-top: 8px; }
 [data-density="compact"] .boardGrid { gap: 10px; padding: 12px 14px 20px; }
 [data-density="compact"] .boardTaskList { gap: 6px; padding: 7px; }
@@ -781,8 +781,8 @@
 .calendarDayList { display: flex; flex-direction: column; gap: 8px; }
 .calendarDayListRow { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 7px; overflow: hidden; }
 .calendarDayListRow > header { align-items: baseline; display: flex; gap: 8px; justify-content: space-between; padding: 8px 10px; }
-.calendarDayListRow > header span { color: var(--x-task-text-muted); font-size: 10px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
-.calendarDayListRow > header strong { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.calendarDayListRow > header span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.calendarDayListRow > header strong { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .calendarDayListRow[data-today] { border-color: color-mix(in srgb, var(--x-task-accent) 40%, var(--x-task-border)); }
 .calendarDayListRow[data-today] > header span { color: var(--x-task-accent); }
 .calendarDayListRow ul { border-top: 1px solid var(--x-task-border); display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
@@ -801,4 +801,16 @@
 
 @media (pointer: coarse) {
   .calendarDayListRow li > button { min-height: 44px; }
+}
+
+/* Phone chrome budget: before this block the brief spent ~46% of the
+   first screen before any work appeared. On a phone it keeps the name,
+   the description line, and the progress readout; the money line and
+   milestones stay desktop/panel surfaces. */
+@media (max-width: 767px) {
+  .workspaceBrief,
+  .workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 16px 11px; }
+  .workspaceMilestones { display: none; }
+  .progressFacts[aria-label="Budget coverage"] { display: none; }
+  .workspaceProgress { border-left: 0; gap: 5px; padding-left: 0; }
 }

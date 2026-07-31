@@ -25,11 +25,11 @@
 .labIdentity { align-items: center; display: flex; gap: 9px; min-width: 0; }
 .labIdentity > span:last-child { display: flex; flex-direction: column; min-width: 0; }
 .labIdentity strong { font-size: 12px; letter-spacing: 0.005em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.labIdentity small { color: color-mix(in srgb, var(--x-task-raised) 58%, transparent); font-size: 10px; margin-top: 1px; }
+.labIdentity small { color: color-mix(in srgb, var(--x-task-raised) 58%, transparent); font-size: 11px; margin-top: 1px; }
 .labMark { align-items: center; background: var(--x-task-accent); border-radius: 5px; display: flex; height: 26px; justify-content: center; width: 26px; }
 
 .segmented { align-items: center; background: color-mix(in srgb, var(--x-task-raised) 8%, transparent); border: 1px solid color-mix(in srgb, var(--x-task-raised) 10%, transparent); border-radius: 7px; display: flex; padding: 2px; }
-.segmented button { align-items: center; background: transparent; border: 0; border-radius: 5px; color: color-mix(in srgb, var(--x-task-raised) 70%, transparent); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 6px; min-height: 30px; padding: 0 9px; }
+.segmented button { align-items: center; background: transparent; border: 0; border-radius: 5px; color: color-mix(in srgb, var(--x-task-raised) 70%, transparent); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 6px; min-height: 30px; padding: 0 9px; }
 .segmented button b { align-items: center; border: 1px solid color-mix(in srgb, var(--x-task-raised) 20%, transparent); border-radius: 4px; display: flex; font-size: 11px; height: 18px; justify-content: center; width: 18px; }
 .segmented button[aria-pressed="true"] { background: var(--x-task-raised); color: var(--x-task-text); }
 .segmented button[aria-pressed="true"] b { background: var(--x-task-accent-soft); border-color: var(--x-task-accent-soft); color: var(--x-task-accent); }
@@ -39,8 +39,8 @@
 .labSelectors label > span { color: color-mix(in srgb, var(--x-task-raised) 50%, transparent); font-size: 11px; margin-right: 5px; text-transform: uppercase; }
 .labSelectors select { appearance: none; background: transparent; border: 0; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; outline: 0; }
 .labSelectors select option { background: var(--x-task-text); color: var(--x-task-raised); }
-.resetButton { align-items: center; background: transparent; border: 1px solid color-mix(in srgb, var(--x-task-raised) 16%, transparent); border-radius: 6px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 5px; height: 32px; padding: 0 9px; }
-.labTruth { align-items: center; color: color-mix(in srgb, var(--x-task-raised) 62%, transparent); display: flex; font-size: 10px; gap: 7px; white-space: nowrap; }
+.resetButton { align-items: center; background: transparent; border: 1px solid color-mix(in srgb, var(--x-task-raised) 16%, transparent); border-radius: 6px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; height: 32px; padding: 0 9px; }
+.labTruth { align-items: center; color: color-mix(in srgb, var(--x-task-raised) 62%, transparent); display: flex; font-size: 11px; gap: 7px; white-space: nowrap; }
 .labTruth > span { background: var(--x-task-success); border: 2px solid color-mix(in srgb, var(--x-task-success) 38%, var(--x-task-text)); border-radius: 50%; height: 8px; width: 8px; }
 
 .suiteRail {
@@ -55,7 +55,7 @@
 }
 
 .signalWordmark { align-items: center; color: var(--x-task-text); display: flex; font-size: 13px; gap: 9px; margin: 0 7px 23px; text-decoration: none; }
-.signalWordmark > span { align-items: center; background: var(--x-task-text); border-radius: 6px; color: var(--x-task-raised); display: flex; font-size: 10px; font-weight: 760; height: 26px; justify-content: center; width: 26px; }
+.signalWordmark > span { align-items: center; background: var(--x-task-text); border-radius: 6px; color: var(--x-task-raised); display: flex; font-size: 11px; font-weight: 760; height: 26px; justify-content: center; width: 26px; }
 .signalWordmark b { font-weight: 690; letter-spacing: -0.02em; }
 .suiteRail nav { display: flex; flex-direction: column; gap: 2px; }
 .suiteRail nav a { align-items: center; border-radius: 6px; color: var(--x-task-text-secondary); display: flex; font-size: 12px; gap: 9px; min-height: 35px; padding: 0 9px; text-decoration: none; }
@@ -65,7 +65,7 @@
 .railPlanning { border-bottom: 1px solid var(--x-task-border); border-top: 1px solid var(--x-task-border); display: flex; flex-direction: column; margin: 22px 5px 16px; padding: 15px 4px; }
 .railPlanning span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
 .railPlanning strong { font-size: 11px; margin-top: 5px; }
-.railPlanning small { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.railPlanning small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .railBottom { margin-top: auto; }
 .accountChip { align-items: center; border-top: 1px solid var(--x-task-border); display: grid; gap: 1px 8px; grid-template-columns: 28px 1fr; margin-top: 12px; padding: 12px 7px 0; }
 .accountChip > span { align-items: center; background: var(--x-task-text); border-radius: 50%; color: var(--x-task-raised); display: flex; font-size: 11px; grid-row: 1 / 3; height: 28px; justify-content: center; width: 28px; }
@@ -83,12 +83,16 @@
 .viewTools > button:hover,
 .compactSelect:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
 .viewTools > button:disabled { cursor: not-allowed; opacity: .48; }
+/* One accent CTA per bar: creating work is the bar's primary act, so the
+   Add task button alone wears the brand — everything beside it stays quiet. */
+.viewTools > button[data-primary] { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
+.viewTools > button[data-primary]:hover { background: var(--x-task-focus); border-color: var(--x-task-focus); color: var(--x-task-raised); }
 .viewTools select { appearance: none; background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; outline: 0; }
 .searchBox { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; color: var(--x-task-text-muted); display: flex; height: 32px; min-width: 142px; padding: 0 7px; }
 .searchBox input { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 11px; min-width: 0; outline: 0; padding: 0 6px; width: 100%; }
 .searchBox:has(input:disabled) { opacity: .55; }
 .searchBox kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 3px; font: inherit; font-size: 11px; padding: 1px 4px; }
-.localTag { background: var(--x-task-hover); border-radius: 4px; color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; padding: 2px 4px; text-transform: uppercase; }
+.localTag { background: var(--x-task-hover); border-radius: 4px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; padding: 2px 4px; text-transform: uppercase; }
 
 .selectionBox { accent-color: var(--x-task-accent); cursor: pointer; flex: 0 0 auto; height: 16px; margin: 0; position: relative; width: 16px; }
 .selectionBox::after { content: ""; inset: -4px; position: absolute; }
@@ -128,7 +132,7 @@
 .completionBox:checked { background: var(--x-task-success); border-color: var(--x-task-success); }
 .completionBox:checked::before { border-color: var(--x-task-raised); }
 .completionBox:disabled { cursor: default; opacity: .55; }
-.priority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 10px; gap: 5px; white-space: nowrap; }
+.priority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; gap: 5px; white-space: nowrap; }
 .priorityDot { background: var(--x-task-text-muted); border-radius: 50%; height: 6px; width: 6px; }
 .priority[data-priority="urgent"] .priorityDot { background: var(--x-task-danger); }
 .priority[data-priority="high"] .priorityDot { background: var(--x-task-warning); }
@@ -140,10 +144,10 @@
 .schedule[data-overdue] { color: var(--x-task-danger); font-weight: 640; }
 .schedule[data-unscheduled] { color: var(--x-task-text-muted); }
 .avatarStack { align-items: center; display: inline-flex; min-width: 0; }
-.avatar { align-items: center; background: color-mix(in srgb, var(--avatar-color) 14%, var(--x-task-raised)); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text); display: inline-flex; font-size: 10px; font-weight: 750; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
+.avatar { align-items: center; background: color-mix(in srgb, var(--avatar-color) 14%, var(--x-task-raised)); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text); display: inline-flex; font-size: 11px; font-weight: 750; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
 .avatar:first-child { margin-left: 0; }
-.avatarMore { align-items: center; background: var(--x-task-hover); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text-secondary); display: inline-flex; font-size: 10px; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
-.unassigned { color: var(--x-task-text-muted); font-size: 10px; }
+.avatarMore { align-items: center; background: var(--x-task-hover); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
+.unassigned { color: var(--x-task-text-muted); font-size: 11px; }
 .signals { align-items: center; color: var(--x-task-text-muted); display: inline-flex; gap: 8px; }
 .signals > span { align-items: center; display: inline-flex; font-size: 11px; gap: 3px; }
 .labels { align-items: center; display: inline-flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
@@ -161,7 +165,7 @@
 .contextMenu button:hover,
 .contextMenu button:focus-visible { background: var(--x-task-hover); outline: 0; }
 .contextMenu button:disabled { color: var(--x-task-text-muted); cursor: not-allowed; }
-.menuLabel { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .08em; padding: 8px 8px 4px; text-transform: uppercase; }
+.menuLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 8px 8px 4px; text-transform: uppercase; }
 .menuDivider { background: var(--x-task-border); height: 1px; margin: 4px; }
 .menuStatus,
 .paletteStatus { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
@@ -174,7 +178,7 @@
 .bulkToolbar { align-items: center; background: var(--x-task-text); border: 1px solid color-mix(in srgb, var(--x-task-raised) 14%, transparent); border-radius: 9px; bottom: 22px; box-shadow: var(--x-task-shadow); color: var(--x-task-raised); display: flex; gap: 5px; left: 50%; padding: 6px 7px 6px 13px; position: fixed; transform: translateX(-50%); z-index: 90; }
 .bulkToolbar strong { font-size: 11px; margin-right: 5px; white-space: nowrap; }
 .bulkToolbar button,
-.bulkToolbar select { align-items: center; background: color-mix(in srgb, var(--x-task-raised) 9%, transparent); border: 1px solid color-mix(in srgb, var(--x-task-raised) 13%, transparent); border-radius: 5px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 10px; gap: 5px; min-height: 30px; padding: 0 8px; }
+.bulkToolbar select { align-items: center; background: color-mix(in srgb, var(--x-task-raised) 9%, transparent); border: 1px solid color-mix(in srgb, var(--x-task-raised) 13%, transparent); border-radius: 5px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; min-height: 30px; padding: 0 8px; }
 .bulkToolbar select option { background: var(--x-task-text); }
 .bulkToolbar button:disabled,
 .bulkToolbar select:disabled { opacity: .45; }
@@ -223,9 +227,9 @@
 .assigneeEditor label { align-items: center; border: 1px solid var(--x-task-border); border-radius: 6px; cursor: pointer; display: grid; gap: 1px 7px; grid-template-columns: 15px 25px 1fr; min-height: 42px; padding: 4px 7px; }
 .assigneeEditor label:has(input:checked) { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-border)); }
 .assigneeEditor input { accent-color: var(--x-task-accent); grid-row: 1 / 3; }
-.personAvatar { align-items: center; background: color-mix(in srgb, var(--avatar-color) 14%, var(--x-task-raised)); border-radius: 50%; color: var(--avatar-color); display: flex; font-size: 10px; font-weight: 760; grid-row: 1 / 3; height: 25px; justify-content: center; width: 25px; }
-.assigneeEditor b { font-size: 10px; }
-.assigneeEditor small { color: var(--x-task-text-muted); font-size: 10px; }
+.personAvatar { align-items: center; background: color-mix(in srgb, var(--avatar-color) 14%, var(--x-task-raised)); border-radius: 50%; color: var(--avatar-color); display: flex; font-size: 11px; font-weight: 760; grid-row: 1 / 3; height: 25px; justify-content: center; width: 25px; }
+.assigneeEditor b { font-size: 11px; }
+.assigneeEditor small { color: var(--x-task-text-muted); font-size: 11px; }
 .inspectorSection { border-top: 1px solid var(--x-task-border); padding: 17px 0; }
 .inspectorSection h3 { align-items: center; display: flex; font-size: 11px; justify-content: space-between; margin: 0 0 10px; }
 .inspectorSection h3 span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 500; }
@@ -242,9 +246,9 @@
 .attachmentList li > span,
 .relationshipList li > span { display: flex; flex-direction: column; min-width: 0; }
 .attachmentList b,
-.relationshipList b { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.relationshipList b { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .attachmentList small,
-.relationshipList small { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.relationshipList small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .commentComposer { align-items: flex-end; display: flex; flex-direction: column; gap: 6px; }
 .commentComposer textarea { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 6px; color: var(--x-task-text); font: inherit; font-size: 11px; padding: 8px; resize: vertical; width: 100%; }
 .commentComposer button { background: var(--x-task-text); border: 0; border-radius: 5px; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; min-height: 29px; padding: 0 9px; }
@@ -252,14 +256,14 @@
 .commentList { display: flex; flex-direction: column; gap: 13px; list-style: none; margin: 16px 0 0; padding: 0; }
 .commentList li { align-items: flex-start; display: flex; gap: 8px; }
 .commentList li > div { flex: 1; min-width: 0; }
-.commentList b { font-size: 10px; }
-.commentList time { color: var(--x-task-text-muted); font-size: 10px; margin-left: 6px; }
-.commentList p { color: var(--x-task-text-secondary); font-size: 10px; line-height: 1.45; margin: 3px 0 0; }
+.commentList b { font-size: 11px; }
+.commentList time { color: var(--x-task-text-muted); font-size: 11px; margin-left: 6px; }
+.commentList p { color: var(--x-task-text-secondary); font-size: 11px; line-height: 1.45; margin: 3px 0 0; }
 .inspectorFooter { background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; flex-direction: column; justify-content: center; padding: 0 18px; }
 .inspectorFooter span { font-size: 11px; font-weight: 640; }
-.inspectorFooter small { color: var(--x-task-text-muted); font-size: 10px; margin-top: 2px; }
+.inspectorFooter small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .inspectorMissing { padding: 40px 24px; }
-.inspectorMissing h2 { font-size: 18px; margin: 0 0 7px; }
+.inspectorMissing h2 { font-size: 20px; margin: 0 0 7px; }
 .inspectorMissing p { color: var(--x-task-text-secondary); font-size: 12px; }
 .inspectorMissing button { background: var(--x-task-text); border: 0; border-radius: 6px; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; min-height: 34px; padding: 0 11px; }
 
@@ -276,8 +280,8 @@
 .paletteCommands b { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .paletteCommands small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .paletteCommands > p { color: var(--x-task-text-muted); font-size: 11px; padding: 18px; text-align: center; }
-.paletteLabel { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .08em; padding: 10px 9px 4px; text-transform: uppercase; }
-.commandPalette footer { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-size: 10px; gap: 12px; height: 34px; padding: 0 12px; }
+.paletteLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 10px 9px 4px; text-transform: uppercase; }
+.commandPalette footer { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-size: 11px; gap: 12px; height: 34px; padding: 0 12px; }
 .commandPalette footer span:last-child { margin-left: auto; }
 
 :where(.labRibbon, .viewTabs, .viewTools, .suiteRail, .inspector, .bulkToolbar, .contextMenu, .commandPalette) :focus-visible {
