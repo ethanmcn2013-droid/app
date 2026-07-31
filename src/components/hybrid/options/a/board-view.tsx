@@ -786,7 +786,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                       onDismiss={() => setComposing(null)}
                     />
                   ) : (
-                    <button className={styles.laneAdd} disabled={store.readOnly} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
+                    store.readOnly ? null : <button className={styles.laneAdd} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
                   )}
                 </li>
               </ul>

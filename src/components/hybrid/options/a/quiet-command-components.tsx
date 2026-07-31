@@ -245,7 +245,7 @@ export function SurfaceEmpty({ title, body, onAdd }: { title: string; body: stri
       <Icon name="inbox" size={20} />
       <strong>{title}</strong>
       <span>{body}</span>
-      {onAdd ? <button disabled={store.readOnly} onClick={onAdd} type="button"><Icon name="add" size={14} />Add task</button> : null}
+      {onAdd && !store.readOnly ? <button onClick={onAdd} type="button"><Icon name="add" size={14} />Add task</button> : null}
     </div>
   );
 }

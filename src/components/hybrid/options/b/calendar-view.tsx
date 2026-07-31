@@ -175,7 +175,7 @@ function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; ta
         <span>Selected day</span>
         <h2>{formatDate(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
         <p>{tasks.length} task{tasks.length === 1 ? "" : "s"}{milestones > 0 ? `, ${milestones} milestone${milestones === 1 ? "" : "s"}` : ""}{waiting > 0 ? `, ${waiting} waiting` : ""}</p>
-        <button disabled={store.readOnly} onClick={() => store.addTask("todo", { kind: "due", dueOn: date })} type="button"><Icon name="add" size={14} />Create on this date</button>
+        {store.readOnly ? null : <button onClick={() => store.addTask("todo", { kind: "due", dueOn: date })} type="button"><Icon name="add" size={14} />Create on this date</button>}
       </header>
 
       {previewTask ? (
@@ -473,7 +473,7 @@ export function CalendarView({
             >
               <div className={styles.calendarDayHeader}>
                 <button aria-label={`Select ${formatDateLong(date)}`} data-date-select="true" onClick={() => onSelectedDateChange(date)} onKeyDown={(event) => dateKeyboard(event, date)} type="button">{formatDate(date, { day: "numeric" })}</button>
-                <button aria-label={`Create task due ${formatDateLong(date)}`} disabled={store.readOnly} onClick={() => { store.addTask("todo", { kind: "due", dueOn: date }); onSelectedDateChange(date); }} type="button"><Icon name="add" size={12} /></button>
+                {store.readOnly ? null : <button aria-label={`Create task due ${formatDateLong(date)}`} onClick={() => { store.addTask("todo", { kind: "due", dueOn: date }); onSelectedDateChange(date); }} type="button"><Icon name="add" size={12} /></button>}
               </div>
               <div className={styles.calendarItems}>
                 {visible.map((task) => <CalendarTaskChip date={date} key={task.id} onOpenMenu={contextMenu.openMenuAt} task={task} visibleIds={visibleIds} />)}

@@ -142,7 +142,7 @@ export function PlanningRail({
           {selectedDayTasks.length > 0 ? (
             <ul>{selectedDayTasks.slice(0, 6).map((task) => <li data-task-id={task.id} key={task.id}><TaskOpenButton task={task}>{task.title}</TaskOpenButton><ScheduleText compact task={task} /></li>)}</ul>
           ) : <p>No dated work on this day.</p>}
-          <button disabled={store.readOnly} onClick={() => store.addTask("todo", { kind: "due", dueOn: selectedDate })} type="button"><Icon name="add" size={13} />Add on {formatDate(selectedDate)}</button>
+          {store.readOnly ? null : <button onClick={() => store.addTask("todo", { kind: "due", dueOn: selectedDate })} type="button"><Icon name="add" size={13} />Add on {formatDate(selectedDate)}</button>}
         </section>
       ) : null}
 
@@ -182,7 +182,7 @@ export function PlanningRail({
                 ))}
               </ul>
             ) : <p className={styles.railEmpty}><Icon name="check" size={16} /><strong>Everything has a date</strong><span>No schedule has been inferred.</span></p>}
-            <button className={styles.addUnscheduled} disabled={store.readOnly} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>
+            {store.readOnly ? null : <button className={styles.addUnscheduled} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>}
           </motion.div>
         ) : null}
         </AnimatePresence>

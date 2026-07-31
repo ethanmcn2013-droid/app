@@ -360,7 +360,7 @@ export function ListView({
                       </button>
                       <span>{taskGroup.tasks.length} tasks</span>
                       <span>{complete}/{taskGroup.tasks.length || 0} done</span>
-                      <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
+                      {store.readOnly ? null : <button onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>}
                     </div>
                   </th>
                 </tr>
