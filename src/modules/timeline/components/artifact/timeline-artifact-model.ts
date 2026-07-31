@@ -22,6 +22,12 @@ export type TimelineArtifactDensity =
 export type TimelineArtifactPoint = Readonly<{
   item: AudienceTimelineItemDto;
   position: number;
+  /**
+   * Position on the vertical (stacked) axis. Identical to `position` except
+   * that long empty calendar stretches are capped, so a phone never spends a
+   * full screen on one quiet gap. Today rides the same remap.
+   */
+  stackPosition: number;
   state: TimelineArtifactPointState;
   isNext: boolean;
 }>;
@@ -35,6 +41,14 @@ export type TimelineArtifactModel = Readonly<{
   remainingCount: number;
   percent: number;
   todayPosition: number | null;
+  todayStackPosition: number | null;
+  /**
+   * The rail-percent of the furthest completed milestone, or null when
+   * nothing is complete. The completed ink is drawn to THIS, never to the
+   * abstract count-percentage, so the fill and the dots are one statement.
+   */
+  completedFrontier: number | null;
+  completedStackFrontier: number | null;
   nextMilestoneId: string | null;
   defaultSelectedId: string | null;
 }>;
@@ -230,6 +244,39 @@ function calendarPositions(
   return { pointPositions: safePointPositions, todayPosition };
 }
 
+/**
+ * Cap long empty stretches for the stacked (vertical) axis. Horizontal
+ * whitespace reads as time; vertical whitespace reads as a broken page. Gaps
+ * are limited to `capRatio` × the mean gap and the sequence is rescaled back
+ * onto the original span, so order and edge padding are preserved exactly.
+ * Returns the input unchanged when nothing exceeds the cap.
+ */
+export function capStackGaps(
+  positions: readonly number[],
+  capRatio = 1.9,
+): number[] {
+  if (positions.length < 3) return [...positions];
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+  const span = last - first;
+  if (span <= 0) return [...positions];
+
+  const mean = span / (positions.length - 1);
+  const cap = mean * capRatio;
+  const gaps = positions.slice(1).map((position, index) =>
+    Math.min(position - positions[index], cap),
+  );
+  const total = gaps.reduce((sum, gap) => sum + gap, 0);
+  if (total <= 0 || Math.abs(total - span) < 1e-9) return [...positions];
+
+  const scale = span / total;
+  const stacked = [first];
+  for (const gap of gaps) {
+    stacked.push(stacked[stacked.length - 1] + gap * scale);
+  }
+  return stacked.map(clampPercent);
+}
+
 function nextMilestone(items: readonly AudienceTimelineItemDto[]): AudienceTimelineItemDto | null {
   return items.find((item) => item.state === "now")
     ?? items.find((item) => item.state === "next")
@@ -248,6 +295,15 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
   const schedule = calendarPositions(activeItems, dto.today, dto.primaryDate?.date);
   const todayDay = calendarDay(dto.today);
 
+  const stackPositions = capStackGaps(schedule.pointPositions);
+  const stackAnchors = schedule.pointPositions.map((position, index) => ({
+    raw: position,
+    adjusted: stackPositions[index],
+  }));
+  const todayStackPosition = schedule.todayPosition === null
+    ? null
+    : mapThroughPointDistortion(schedule.todayPosition, stackAnchors, 0);
+
   const points = activeItems.map((item, index): TimelineArtifactPoint => {
     const itemDay = calendarDay(item.date);
     const isNext = item.publicId === next?.publicId;
@@ -258,6 +314,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     return {
       item,
       position: schedule.pointPositions[index] ?? 50,
+      stackPosition: stackPositions[index] ?? 50,
       isNext,
       state: item.state === "covered"
         ? "complete"
@@ -269,6 +326,13 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     };
   });
   const defaultPoint = points.find((point) => point.isNext) ?? points.at(-1) ?? null;
+  const completedPoints = points.filter((point) => point.state === "complete");
+  const completedFrontier = completedPoints.length
+    ? Math.max(...completedPoints.map((point) => point.position))
+    : null;
+  const completedStackFrontier = completedPoints.length
+    ? Math.max(...completedPoints.map((point) => point.stackPosition))
+    : null;
 
   return {
     density: artifactDensity(totalCount),
@@ -279,6 +343,9 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     remainingCount: Math.max(0, totalCount - completedCount),
     percent,
     todayPosition: schedule.todayPosition,
+    todayStackPosition,
+    completedFrontier,
+    completedStackFrontier,
     nextMilestoneId: next?.publicId ?? null,
     defaultSelectedId: defaultPoint?.item.publicId ?? null,
   };
@@ -360,6 +427,22 @@ export function formatTimelineDate(value: string, style: "short" | "long" = "sho
   const day = calendarDay(value);
   if (day === null) return value;
   return (style === "long" ? LONG_DATE_FORMATTER : SHORT_DATE_FORMATTER).format(new Date(day));
+}
+
+export type MetricValueScale = "base" | "three" | "four" | "word";
+
+/**
+ * The metric face must fit its column by construction, not by hoping the
+ * value stays short. Tabular numerals make digit width deterministic, so the
+ * face declares its width class and the CSS sizes each class to fit: one or
+ * two digits ride the display size, longer counts step down, and word values
+ * ("Today") take a size measured to clear the column on the day it matters.
+ */
+export function metricValueScale(value: string): MetricValueScale {
+  if (!/^\d+$/.test(value)) return "word";
+  if (value.length >= 4) return "four";
+  if (value.length === 3) return "three";
+  return "base";
 }
 
 export function timelinePointStatus(point: TimelineArtifactPoint): string {

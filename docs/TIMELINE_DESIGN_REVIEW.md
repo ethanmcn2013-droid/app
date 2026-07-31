@@ -1,6 +1,7 @@
 # Signal Timeline · design review
 
-Status: review — findings only, no product changes in this PR
+Status: review · implementation shipped 2026-07-31 (T·126) — see
+"Implementation status" at the end for the fix-by-fix record
 Date: 2026-07-31
 Scope: the shared Timeline artifact (`/s/[token]`), its owner surfaces
 (`/app/timeline`, edit, audience studio), the publish flow, and every
@@ -388,6 +389,56 @@ through P1-8 with the following cycle's owner work; P2/P3
 opportunistically alongside.
 
 ---
+
+## Implementation status · 2026-07-31 (T·126)
+
+Shipped in the same cycle as the review:
+
+- **P0-1 fixed.** Metric faces declare width classes
+  (`metricValueScale`); "Today" measures 218px in the 243px column at
+  1440 (was 311px, clipped to "Toda"). Verified at 320–1728 and print.
+- **P0-2 fixed.** `completedFrontier` / `completedStackFrontier` in the
+  model; the ink is drawn to the furthest completed dot on both axes.
+  Contract-pinned.
+- **P0-3 fixed.** Data-free Geist OG card at `/s/[token]/opengraph-image`
+  (it must live in the page's own segment — a parent-segment card is
+  dropped by the page's `openGraph` object); per-kind descriptions;
+  twitter parity. Contract extended to pin all three.
+- **P1-1..P1-7 fixed.** Countdown default for couples; vertical gap cap
+  via `capStackGaps` riding the existing distortion mapping; edge fades
+  + proximity snap driven by real scroll state; print index page +
+  static both-facts line; share sheet with visible failure and resting
+  receipts; footer attribution links via `PRODUCT_MARKETING_URLS`;
+  viewer vocabulary everywhere ("A shared project timeline", owner
+  picker says "Project", publish default derives from the workspace
+  template).
+- **P1-8 deferred.** Template dates require the studio-side template
+  source (`templates.generated.ts` is generated) and an instantiation
+  prompt for the wedding date — a Tasks-side flow. Follow-up cycle.
+- **P2 shipped:** detail facts ("Milestone 3 of 9", relative timing);
+  decisions disclosure affordance + fold; Today chip collision handling
+  (below-side flip, stacked nudge); `--x-artifact-*` display register
+  ratified in `globals.css` and consumed by artifact, studio, 404;
+  `latin-ext`; owner two-press confirms; honest "Links revoked" label;
+  publication-midnight expiry (`endOfCalendarDayInZone`, DST-tested);
+  strikethrough removed from settled titles; mode carried by the
+  switcher; anchor chip visible from `sm`; `/s` loading `role="status"`.
+- **P2 deferred:** dot-echo cores in the detail panel eyebrow (the ring
+  echo stands); metric register wording beyond the print line.
+- **P3 shipped:** artifact contract test repaired (the identity
+  negative-match now passes because the artifact stopped naming
+  suite chrome), extended (frontier, metric scale, print, fades,
+  attribution), and wired into `test:timeline-owner` with the model
+  test; orphaned `home.tsx` and dashboard-era `app/loading.tsx`
+  deleted; the module error boundary is mounted at
+  `src/app/app/timeline/error.tsx`; `timeline.css` sheds legacy
+  aliases and off-scale durations; `CLAUDE.md` names the vendored
+  token truth; the format helper's `revoked` branch is no longer dead
+  — the manager uses it.
+- **P3 deferred:** unused `AnchorSentence`, `personalization.ts`,
+  `shared-update.ts`, `currentState` (each has tests or documented
+  future intent; delete-or-wire remains open); `brand.md` staleness
+  (Tasks-owned doc).
 
 ## Appendix · reproducing the evidence
 

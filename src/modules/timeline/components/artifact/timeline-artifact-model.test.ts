@@ -9,7 +9,9 @@ import {
 import {
   buildTimelineArtifactModel,
   buildTimelineCountdown,
+  capStackGaps,
   extraLabelIndices,
+  metricValueScale,
 } from "./timeline-artifact-model";
 
 function item(
@@ -224,4 +226,88 @@ test("countdown compares publication calendar dates without timezone drift", () 
     days: 2,
   });
   assert.equal(buildTimelineCountdown("not-a-date", "2026-07-22"), null);
+});
+
+test("the completed ink frontier is the furthest completed dot, not the count percentage", () => {
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("menu", "now", "2026-08-01"),
+    item("invites", "next", "2026-08-08"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+
+  const venue = model.points.find((point) => point.item.publicId === "venue");
+  assert.ok(venue);
+  assert.equal(model.completedFrontier, venue.position);
+  assert.equal(model.completedStackFrontier, venue.stackPosition);
+  // The old defect: percent-of-count (40 here) disagreed with the dot.
+  assert.notEqual(model.completedFrontier, model.percent);
+
+  const nothingDone = buildTimelineArtifactModel(timeline([
+    item("menu", "now", "2026-08-01"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+  assert.equal(nothingDone.completedFrontier, null);
+  assert.equal(nothingDone.completedStackFrontier, null);
+});
+
+test("stacked positions cap long quiet gaps and Today rides the same remap", () => {
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("menu", "now", "2026-08-01"),
+    item("invites", "next", "2026-08-08"),
+    item("fitting", "next", "2026-08-22"),
+    item("music", "next", "2026-08-29"),
+    item("guests", "later", "2026-09-05"),
+    item("walkthrough", "later", "2026-09-19"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+
+  const positions = model.points.map((point) => point.position);
+  const stacked = model.points.map((point) => point.stackPosition);
+  const span = positions[positions.length - 1] - positions[0];
+  const meanGap = span / (positions.length - 1);
+
+  // Order and endpoints survive the remap.
+  assert.equal(stacked[0], positions[0]);
+  assert.ok(Math.abs(stacked[stacked.length - 1] - positions[positions.length - 1]) < 1e-6);
+  for (let index = 1; index < stacked.length; index += 1) {
+    assert.ok(stacked[index] > stacked[index - 1]);
+  }
+
+  // The 106-day January-to-April stretch no longer dominates the axis: every
+  // stacked gap sits within the cap (once rescaled, slightly above 1.9x mean).
+  const stackedGaps = stacked.slice(1).map((value, index) => value - stacked[index]);
+  const largestStacked = Math.max(...stackedGaps);
+  const largestRaw = Math.max(...positions.slice(1).map((value, index) => value - positions[index]));
+  assert.ok(largestStacked < largestRaw);
+  assert.ok(largestStacked <= meanGap * 2.6);
+
+  // Today sits between the same two milestones on both axes.
+  assert.ok(model.todayPosition !== null && model.todayStackPosition !== null);
+  const venue = model.points[1];
+  const menu = model.points[2];
+  assert.ok(model.todayPosition > venue.position && model.todayPosition < menu.position);
+  assert.ok(
+    model.todayStackPosition > venue.stackPosition
+      && model.todayStackPosition < menu.stackPosition,
+  );
+});
+
+test("capStackGaps leaves already-even sequences and tiny sets untouched", () => {
+  assert.deepEqual(capStackGaps([4, 28, 52, 76, 96]), [4, 28, 52, 76, 96]);
+  assert.deepEqual(capStackGaps([10, 90]), [10, 90]);
+  assert.deepEqual(capStackGaps([50]), [50]);
+  assert.deepEqual(capStackGaps([]), []);
+});
+
+test("metric faces declare a width class so the wedding-day face can never clip", () => {
+  assert.equal(metricValueScale("7"), "base");
+  assert.equal(metricValueScale("79"), "base");
+  assert.equal(metricValueScale("100"), "three");
+  assert.equal(metricValueScale("365"), "three");
+  assert.equal(metricValueScale("1095"), "four");
+  assert.equal(metricValueScale("Today"), "word");
 });

@@ -49,15 +49,24 @@ test("one-time audience link copy has an announced manual recovery path", () => 
 });
 
 test("Timeline loading boundaries announce progress without exposing skeletons", () => {
-  for (const relativePath of [
-    "app/loading.tsx",
-    "app/plan/[projectSlug]/loading.tsx",
-  ]) {
+  // The project-first route owns one module loading boundary; the retired
+  // dashboard skeleton (app/loading.tsx) was deleted with the dashboard it
+  // described. The bearer-link loading state lives outside the module and
+  // is pinned here so the two boundaries cannot drift apart in register.
+  for (const relativePath of ["app/plan/[projectSlug]/loading.tsx"]) {
     const source = read(relativePath);
     assert.match(source, /role="status"/);
     assert.match(source, /aria-live="polite"/);
     assert.match(source, /aria-hidden/);
   }
+
+  const sharedLoading = fs.readFileSync(
+    new URL("../../app/s/[token]/loading.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(sharedLoading, /role="status"/);
+  assert.match(sharedLoading, /aria-live="polite"/);
+  assert.match(sharedLoading, /motion-reduce:animate-none/);
 });
 
 test("owner controls meet the 44px mobile target and error copy stays factual", () => {

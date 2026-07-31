@@ -4,6 +4,48 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·126 · the artifact is finished for the days that matter
+
+**The shared Timeline artifact repairs the three places it broke its own
+promise, and the rail's marks become a system.** On the wedding day the
+countdown now renders "Today" whole — every metric face declares a
+width class and is sized to fit its column by construction, so no value
+can clip at any width. The completed ink is drawn to the furthest
+completed dot instead of the abstract count percentage; the fill and
+the beads are one statement, on screen, on phones and in print. And a
+pasted link finally unfurls as the product: a data-free Geist card
+(wordmark, rail motif, one indigo target) with viewer vocabulary — "A
+shared wedding timeline.", never "couple" as an adjective — mirrored
+into the Twitter tags that previously dropped the couple's names.
+
+A couple's artifact now opens on the countdown; progress-% stays one
+press away. The milestone marks read as four states with one grammar —
+quiet hairline rings ahead, solid beads settled, the one indigo target
+for the next milestone (with a single once-only ring on load), and the
+same target in ink when it runs late; the diagonal overdue tick is
+gone. The phone's vertical rail caps long empty calendar stretches
+through the same honesty mapping Today already rode, the Today chip
+negotiates for space like every label does, and hidden horizontal
+overflow earns edge fades and snap. Print grows a second page instead
+of losing six milestone titles: a ruled index of every milestone, and a
+static "22% complete · 79 days left" line where the click instruction
+used to print. Sharing prefers the platform share sheet, failure is
+visible (not screen-reader-only), and the footer attribution finally
+walks — "Made with Signal Timeline", the growth loop's missing link.
+
+Owner surfaces catch up on honesty: Revoke and Unpublish take two
+presses with a named consequence, "Link live" only shows while a link
+actually works, link expiry ends at the publication's own midnight
+(never bare UTC), completed milestones lose their strikethrough,
+switching projects keeps edit mode, and the anchor countdown reaches
+tablets. The artifact's own contract test — previously wired to no
+gate and failing — is repaired, extended to the new invariants, and
+runs in `test:timeline-owner`. Names with extended-Latin glyphs stop
+falling back mid-headline (`latin-ext` ships), the artifact display
+register is ratified once as `--x-artifact-*` tokens, and the module
+sheds its orphaned dashboard-era files. The full review that drove
+this cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+
 ## 2026-07-31 · T·125 · restores · the working tools return to every view
 
 **Filter, sort and saved views are back on all four views — wider than

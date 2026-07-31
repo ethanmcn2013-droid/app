@@ -80,10 +80,46 @@ test("the owner studio owns vertical scrolling inside the app shell", () => {
 });
 
 test("owner surfaces embed the exact artifact without claiming a document-height viewport", () => {
-  assert.match(ownerProject, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
+  // The owner's plan view sits inside the suite chrome, so it embeds the
+  // artifact with its own product header suppressed — one wordmark, never
+  // two. The studio is an exhibit frame and keeps the header.
+  assert.match(
+    ownerProject,
+    /<TimelineArtifact timeline=\{timeline\} embedded showProductHeader=\{false\} \/>/,
+  );
   assert.match(artifactStudio, /<TimelineArtifact timeline=\{timeline\} embedded \/>/);
   assert.match(artifact, /data-embedded=\{embedded \? "true" : undefined\}/);
   assert.match(styles, /\.artifact\[data-embedded="true"\]\s*\{[\s\S]*?min-height:\s*auto;/);
+});
+
+test("the completed ink is drawn to the frontier dot, never the count percentage", () => {
+  assert.match(artifact, /scaleX\(\$\{\(model\.completedFrontier \?\? 0\) \/ 100\}\)/);
+  assert.match(artifact, /scaleY\(\$\{\(model\.completedStackFrontier \?\? 0\) \/ 100\}\)/);
+  // The spoken progressbar keeps the honest count; only the paint changed.
+  assert.match(artifact, /aria-valuenow=\{model\.percent\}/);
+});
+
+test("every metric face declares its width class so no value can clip", () => {
+  assert.match(artifact, /data-metric-scale=\{metricValueScale\(/);
+  assert.match(styles, /data-metric-scale="word"/);
+  assert.match(styles, /data-metric-scale="four"/);
+});
+
+test("paper keeps the content: print carries the milestone index and both metric facts", () => {
+  assert.match(artifact, /styles\.printIndex/);
+  assert.match(artifact, /styles\.printFacts/);
+  assert.match(styles, /\.printIndex\s*\{\s*display:\s*none;/);
+  assert.match(styles, /\.printFacts\s*\{\s*display:\s*none;/);
+});
+
+test("the hidden scrollbar owes an affordance and the attribution walks", () => {
+  assert.match(artifact, /data-overflow-start/);
+  assert.match(artifact, /data-overflow-end/);
+  assert.match(styles, /\.railFrame\[data-overflow-end="true"\]::after/);
+  // The growth loop's last step: attribution is a link built from the typed
+  // product-URL contract, never an invented hostname.
+  assert.match(artifact, /PRODUCT_MARKETING_URLS\.timeline/);
+  assert.doesNotMatch(artifact, /https?:\/\/(?:www\.)?signalstudio/);
 });
 
 test("low-information timelines receive density-only refinements after the generic mobile rules", () => {
