@@ -4,6 +4,46 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·123 · cuts · the contract slims to what the repo actually is
+
+**AGENTS.md drops from a drifted mix of rule-text, dead paths, and a
+retired ritual to a 75-line pointer that says what this repo is, names
+its two hard constraints, and sends everything else to its real source.**
+The GitHub repo renamed tasks→app today because the product suite's
+operating contract moved up to the workspace file — this repo's copy no
+longer needs to restate Signal HQ's sync rules, a `log-cycle`
+post-mortem, or a personal-portfolio origin story. It needs to say what
+this repo is (the unified app at `app.signalstudio.ie`, four modules,
+GitHub name `app`), keep the Next.js caveat and the URL and database
+release-gate contracts intact, and point at `studio/AGENTS.md` and the
+workspace `AGENTS.md` for the rest.
+
+CLAUDE.md is now a three-line pointer at `@AGENTS.md` and the real design
+sources (`ds-foundation`, `studio/docs/BRAND.md`) instead of a dead
+`~/Projects/personal` path. CODEX.md is deleted — Claude Code is the only
+agent on this repo now.
+
+Twenty dated one-off GTM artifacts — the eight `posts-week-N` drafts,
+both launch-day runbooks, the Product Hunt and Show HN drafts, the press
+list, the phase plan, the KPI log, the launch checklist, the GTM plan,
+and the venue-outreach doc — moved into `docs/archive/`, next to the
+review notes already there. `docs/data-model.md`'s "GTM roadmap state"
+row pointed at `roadmap_items`, a table migration `0023` dropped months
+ago; it now says so and points at the archived plan instead of a table
+that no longer exists. The contracts, the decisions log, the URL and
+naming rules, the collaboration loop, and the living founder backlog
+stayed where they are — nothing that's still true moved.
+
+Two closed-out worktree checkouts (`elegant-mcnulty-cfcf0d`,
+`modest-blackwell-100af5`) were retired from `.claude/worktrees/` — both
+PRs were already merged into `main`. `modest-blackwell-100af5` is fully
+deleted; `elegant-mcnulty-cfcf0d` is unregistered from git and emptied,
+but its top-level folder is held open by a process outside this
+session's reach and still needs a manual delete.
+
+No application code changed. `pnpm typecheck`, `pnpm lint`, `pnpm test`
+(402 tests), and `pnpm db:contract` (19 tests) all pass unchanged.
+
 ## 2026-07-31 · T·122 · ships · done means one thing
 
 **Rename Done to "Handed over", add a "Paid" column that also counts as

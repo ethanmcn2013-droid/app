@@ -27,7 +27,7 @@ recovery, flag, and acceptance contract is in `docs/planning-periods.md`.
 | Share-link tokens + visit log | Turso/libSQL `share_links` / `share_link_visits` | Read-only public access by token. Visit counter for analytics + sparkline. |
 | Notifications + prefs | Turso/libSQL `notifications` / `notification_prefs` | Anti-notification stance: only @mentions + direct blocks land here. Daily digest is the only broadcast channel. |
 | Stripe webhook idempotency | Turso/libSQL `processed_webhooks` | Prevents double-grant on Stripe re-deliveries. |
-| GTM roadmap state | Turso/libSQL `roadmap_items` / `blockers` / `action_items` | Operator surface at `/roadmap`. Source-of-truth markdown is in `docs/gtm-plan.md`; the parser keeps the table in sync. |
+| GTM roadmap state | Retired — `roadmap_items` / `blockers` / `action_items` and the `/roadmap` surface were removed in migration `0023_retire_launch_scaffolding.sql`. The old plan is archived at `docs/archive/gtm-plan.md`. |
 | Errors + traces | Sentry | Configured via `instrumentation.ts` + `instrumentation-client.ts`. PII redaction on the way (action item AI-sec-pii-logging). |
 | Analytics events | PostHog | Single `signup_completed` event today; more as the funnel matures. Cookie-less mode preferred. |
 | Transactional email | Resend | Daily digest, weekly digest, share-link invites, student-code redemption. |
