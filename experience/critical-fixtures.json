@@ -476,7 +476,7 @@
             {
               "kind": "role",
               "role": "button",
-              "name": "Add task",
+              "name": "Add project",
               "count": 0,
               "proves": [
                 "read-only"
