@@ -9,8 +9,8 @@ what the task needs.
 This is the unified signed-in Signal Studio app at `app.signalstudio.ie`
 — one app, four modules: **Notes** (capture), **Tasks** (execution),
 **Timeline** (direction), **Signal** (attention). The GitHub repo is
-named `app` (`ethanmcn2013-droid/app`); the local directory rename is
-pending.
+named `app` (`ethanmcn2013-droid/app`); local clones should sit in a
+matching `app/` directory.
 
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
