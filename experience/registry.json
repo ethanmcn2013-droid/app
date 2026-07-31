@@ -162,7 +162,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "58fc9b218b76a1a5"
+      "materialityHash": "03d2eb5aa09d172f"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -206,9 +206,9 @@
       "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e6572d73e8304e38",
+      "materialityHash": "742f6da52fc2ae6e",
       "materialityReview": {
-        "materialityHash": "e6572d73e8304e38",
+        "materialityHash": "742f6da52fc2ae6e",
         "reviewedAt": "2026-07-31",
         "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-31.json"
       }
@@ -363,9 +363,9 @@
       "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "86ee3a76a13d8bc0",
+      "materialityHash": "cc5db7e841cafabc",
       "materialityReview": {
-        "materialityHash": "86ee3a76a13d8bc0",
+        "materialityHash": "cc5db7e841cafabc",
         "reviewedAt": "2026-07-31",
         "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-31.json"
       }
@@ -512,9 +512,9 @@
       "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f20fd2dc1b67ab0e",
+      "materialityHash": "0d372879eb4d3aef",
       "materialityReview": {
-        "materialityHash": "f20fd2dc1b67ab0e",
+        "materialityHash": "0d372879eb4d3aef",
         "reviewedAt": "2026-07-31",
         "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-31.json"
       }

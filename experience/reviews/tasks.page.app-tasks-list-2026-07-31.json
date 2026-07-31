@@ -2,15 +2,15 @@
   "schemaVersion": "signal-materiality-review/2",
   "experienceId": "tasks.page.app-tasks-list",
   "source": "tasks/src/app/app/tasks/list/page.tsx",
-  "materialityHash": "86ee3a76a13d8bc0",
+  "materialityHash": "cc5db7e841cafabc",
   "reviewedAt": "2026-07-31",
   "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-5883c3d281ebebf2ef71f2d7-aec8f7de3f0626d7.json",
-    "attestationSha256": "cd9e9c7966d4a60bf5f570c634de39feebcc942fd59892cfeec7875d76cb0f9d",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-5883c3d281ebebf2ef71f2d7-34d34da80bce4203.json",
+    "attestationSha256": "2e1f6ab93276cadeb582c6fc06a32943ebb33eb809889c80f9d1bc12552197d3",
     "runId": "tasks-playwright-5883c3d281ebebf2ef71f2d7",
     "canonicalEvidenceSha256": "5883c3d281ebebf2ef71f2d7005a65fd28c7d4599f342704292aa764fc066d95",
-    "rawArtifactSha256": "aec8f7de3f0626d7326560a6f927609d8255a815deb64d2e5a8d309e2a10a3e0",
+    "rawArtifactSha256": "34d34da80bce4203ed9fddd53939c90041773ff9e85b587b043c87211b1d8c8b",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "No source change. The T-126 cycle advanced the fixture manifest (quick-create accessible-name assertion; share read-only proof retargeted to 'Add project'), which retires attestations pinned to the prior manifest.",
-  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); surface unchanged and passing."
+  "reviewedChange": "T-126 continue-batch: each Tasks view page gains its own document title via a metadata export (Board / List / Schedule / Calendar - Tasks). No rendered-surface change.",
+  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); the rendered case is unchanged and passing."
 }
