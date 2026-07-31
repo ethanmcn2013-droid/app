@@ -74,7 +74,7 @@ test("runtime registries are authoritative once set; fixtures never leak past th
 
     // Production mount sets the registry: it becomes the only source.
     setRuntimePeople([
-      { id: "user_2real", name: "Real Member", initials: "RM", role: "Owner", color: "#123456" },
+      { id: "user_2real", name: "Real Member", initials: "RM", role: "Owner", color: "var(--accent)" },
     ]);
     assert.deepEqual(listPeople().map((person) => person.id), ["user_2real"]);
     assert.equal(personById("maya"), undefined);
