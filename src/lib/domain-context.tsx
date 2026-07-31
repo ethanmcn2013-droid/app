@@ -34,6 +34,11 @@ type DomainCtx = {
   /** Reusable tag definitions (name + colour) for the workspace. Empty
    *  when none are defined; chips fall back to neutral. Phase 3A. */
   tagDefs: TagDef[];
+  /** T·124: the project currency label (null = USD default) and the
+   *  operator budget in cents (null = unset). App surfaces only —
+   *  money never reaches share, print, embed or /p/{slug}. */
+  currency: string | null;
+  budgetCents: number | null;
   /** Real workspace members (owner first, then A–Z), resolved by
    *  getWorkspaceMemberMeta() in the layout. The assign menu and avatar
    *  stacks hydrate from this — never from design-lab fixtures. */
@@ -50,6 +55,8 @@ export function DomainProvider({
   workspaceSlug,
   boardName,
   boardDescription,
+  currency,
+  budgetCents,
   columnConfig,
   tagDefs,
   members,
@@ -73,6 +80,9 @@ export function DomainProvider({
   tagDefs?: TagDef[];
   /** Workspace members resolved by getWorkspaceMemberMeta() in the layout. */
   members?: WorkspaceMemberMeta[];
+  /** Project currency + budget resolved from the workspaces row (T·124). */
+  currency?: string | null;
+  budgetCents?: number | null;
   /** @deprecated Legacy prop, use columnConfig. */
   columnNames?: Partial<Record<LaneId, string>> | null;
   children: ReactNode;
@@ -96,6 +106,8 @@ export function DomainProvider({
         columnConfig: resolvedConfig,
         tagDefs: tagDefs ?? [],
         members: members ?? [],
+        currency: currency ?? null,
+        budgetCents: budgetCents ?? null,
         personalization,
       }}
     >
@@ -145,6 +157,13 @@ export function useColumnConfig(): ColumnConfig | null {
 export function useTagDefs(): TagDef[] {
   const v = useContext(DomainContext);
   return v?.tagDefs ?? [];
+}
+
+/** The project money settings (T·124). Null currency renders as the
+ *  USD default; null budget hides the coverage line. */
+export function useProjectMoney(): { currency: string | null; budgetCents: number | null } {
+  const v = useContext(DomainContext);
+  return { currency: v?.currency ?? null, budgetCents: v?.budgetCents ?? null };
 }
 
 /** Real members of the active workspace, owner first. Empty outside the

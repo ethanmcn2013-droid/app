@@ -78,6 +78,8 @@ export type LabTask = {
   blockerIds: string[];
   completed: boolean;
   completedAt?: string;
+  /** Integer cents the operator put on the task; app surfaces only. */
+  cents?: number | null;
   workspaceId: string;
   order: number;
 };

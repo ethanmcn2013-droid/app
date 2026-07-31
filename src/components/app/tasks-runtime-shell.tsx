@@ -93,6 +93,8 @@ export async function TasksRuntimeShell({
           name: DEMO_WORKSPACE_NAME,
           slug: DEMO_WORKSPACE_SLUG,
           description: null,
+          currency: null,
+          budgetCents: null,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
           planningPeriodId: "demo-planning-period",
         })
@@ -101,6 +103,8 @@ export async function TasksRuntimeShell({
             name: workspaces.name,
             slug: workspaces.slug,
             description: workspaces.description,
+            currency: workspaces.currency,
+            budgetCents: workspaces.budgetCents,
             primaryUseCase: workspaces.primaryUseCase,
             planningPeriodId: workspaces.planningPeriodId,
           })
@@ -142,6 +146,8 @@ export async function TasksRuntimeShell({
           domain={domain}
           boardName={boardName}
           boardDescription={workspace?.description ?? null}
+          currency={workspace?.currency ?? null}
+          budgetCents={workspace?.budgetCents ?? null}
           columnConfig={columnConfig}
           personalization={personalization}
           tagDefs={tagDefs}

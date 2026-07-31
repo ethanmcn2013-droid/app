@@ -460,14 +460,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9335b240eb37bac0",
+      "materialityHash": "d9988ba395545970",
       "materialityReview": {
-        "materialityHash": "9335b240eb37bac0",
-        "reviewedAt": "2026-07-30",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-30.json"
+        "materialityHash": "d9988ba395545970",
+        "reviewedAt": "2026-07-31",
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-31.json"
       }
     },
     {

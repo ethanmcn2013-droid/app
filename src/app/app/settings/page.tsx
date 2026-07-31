@@ -67,6 +67,8 @@ export default async function SettingsPage() {
               activeDomain: "wedding",
               primaryUseCase: "venue",
               secondaryContext: null,
+              currency: null,
+              budgetCents: null,
               createdAt: nowIso,
               ownerUserId: DEMO_USER_ID,
               publishedAt: null,
@@ -172,6 +174,8 @@ export default async function SettingsPage() {
                 activeDomain: workspaceRow.activeDomain ?? null,
                 primaryUseCase: workspaceRow.primaryUseCase ?? null,
                 secondaryContext: workspaceRow.secondaryContext ?? null,
+                currency: workspaceRow.currency ?? null,
+                budgetCents: workspaceRow.budgetCents ?? null,
                 createdAt: workspaceRow.createdAt
                   ? workspaceRow.createdAt.toISOString()
                   : null,

@@ -268,6 +268,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/tasks-completed-at-2026-07-31.json",
       "receiptSha256": "727bd3ae86594a541c2f8bf00b03395dc5547b9317d17ee79e7f61406f3b64f7"
+    },
+    {
+      "ordinal": 26,
+      "id": "0026_workspace_money",
+      "file": "drizzle/0026_workspace_money.sql",
+      "when": 1785492000000,
+      "sha256": "025060ee078882de300df2e06388d89353ebf1504120bb297b82a7707d31225a",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/workspace-money-2026-07-31.json",
+      "receiptSha256": "b1c29017c308d03b43ff921d9d1c1f2c959fcb6efc36cad66698cdc971e4189c"
     }
   ]
 }

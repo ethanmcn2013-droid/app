@@ -275,6 +275,13 @@ export const workspaces = sqliteTable("workspaces", {
    *  identifier and as the public `/p/{slug}` URL when published. */
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  /** T·124: the project's ONE currency (curated ISO-4217 label). It
+   *  labels amounts, never converts them. NULL keeps the USD label the
+   *  existing amounts were entered under. */
+  currency: text("currency"),
+  /** T·124: the operator's budget in integer cents of `currency`.
+   *  Restated and summed against, never computed from. NULL = unset. */
+  budgetCents: integer("budget_cents"),
   /** The project's supporting line, shown under the title in the brief
    *  (T·114). Nullable: null renders the brief's placeholder rather than
    *  a sentence nobody wrote. Before 0022 this text lived in localStorage

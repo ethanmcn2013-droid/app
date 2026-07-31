@@ -2,6 +2,7 @@
 
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
 import {
@@ -125,6 +126,47 @@ export async function setProjectDescriptionAction(
   await db
     .update(workspaces)
     .set({ description: trimmed.length > 0 ? trimmed : null })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set the project's one currency label (T·124). A curated ISO code or
+ * null to return to the USD default the existing amounts were entered
+ * under. A label only — nothing is converted.
+ */
+export async function setProjectCurrencyAction(
+  currency: string | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (currency !== null && !isProjectCurrency(currency)) {
+    throw new Error("Choose one of the supported currencies.");
+  }
+  await db
+    .update(workspaces)
+    .set({ currency })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set (or clear) the operator's budget for this project, in integer
+ * cents (T·124). Restated and summed against — never computed from.
+ */
+export async function setProjectBudgetAction(
+  budgetCents: number | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (budgetCents !== null) {
+    if (!Number.isInteger(budgetCents) || budgetCents < 0 || budgetCents > 9_999_999_999) {
+      throw new Error("Budget must be a whole amount in range.");
+    }
+  }
+  await db
+    .update(workspaces)
+    .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
     .where(eq(workspaces.id, ws));
   revalidatePath("/app", "layout");
   return { ok: true };

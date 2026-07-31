@@ -4,6 +4,33 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·124 · ships · money, narrowly
+
+**Your project now has one currency, one budget, and one honest sentence
+about both: "EUR 1,684 of EUR 50,000. 2 tasks costed, 24 without a
+price."** Task amounts have existed for a while — editable on the panel,
+exported to CSV — but nothing summed them, and every amount rendered as
+dollars regardless of what the operator meant. A euro wedding read as a
+dollar wedding.
+
+Settings gains a Money card: choose the project's currency (a label from
+a short list — nothing is ever converted) and set the budget you are
+working to, or leave it blank for no budget line. The brief restates the
+sum of what you entered, always leading with coverage, so a number never
+pretends to be a total when a third of the board is uncosted. Existing
+projects keep the USD label their amounts were entered under — relabelling
+stored numbers would change your claim, and the boundary this ships under
+forbids that: Tasks restates and sums what you entered; it never
+computes, forecasts, converts or publishes a financial claim, and money
+never appears on share links, print sheets, embeds or the public page.
+
+Migration 0026 adds the two columns; both are empty until you choose,
+and everything renders exactly as before until then.
+
+Verified by the formatter and coverage suites, the full gate run, and a
+live walk of the real flow: currency chosen in Settings, the brief
+re-reading in euros, and the coverage sentence rendering to the letter.
+
 ## 2026-07-31 · T·123 · cuts · the contract slims to what the repo actually is
 
 **AGENTS.md drops from a drifted mix of rule-text, dead paths, and a
