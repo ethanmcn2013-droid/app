@@ -6,6 +6,7 @@ import type { WorkspacePersonalization } from "@/lib/onboarding/personalization"
 import type { LaneId } from "@/lib/data";
 import type { ColumnConfig } from "@/server/actions/board";
 import type { TagDef } from "@/lib/tags";
+import type { WorkspaceMemberMeta } from "@/lib/members";
 
 /** Active-workspace + domain context. The app layout resolves the
  *  active workspace once at the server-component boundary; this
@@ -33,6 +34,10 @@ type DomainCtx = {
   /** Reusable tag definitions (name + colour) for the workspace. Empty
    *  when none are defined; chips fall back to neutral. Phase 3A. */
   tagDefs: TagDef[];
+  /** Real workspace members (owner first, then A–Z), resolved by
+   *  getWorkspaceMemberMeta() in the layout. The assign menu and avatar
+   *  stacks hydrate from this — never from design-lab fixtures. */
+  members: WorkspaceMemberMeta[];
   /** Segment-aware copy for empty states and chrome. */
   personalization: WorkspacePersonalization;
 };
@@ -47,6 +52,7 @@ export function DomainProvider({
   boardDescription,
   columnConfig,
   tagDefs,
+  members,
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
    *  migrated yet; merged into a synthetic ColumnConfig if columnConfig is absent. */
   columnNames,
@@ -65,6 +71,8 @@ export function DomainProvider({
   columnConfig?: ColumnConfig | null;
   /** Reusable tag definitions resolved by getTagDefs() in the layout. */
   tagDefs?: TagDef[];
+  /** Workspace members resolved by getWorkspaceMemberMeta() in the layout. */
+  members?: WorkspaceMemberMeta[];
   /** @deprecated Legacy prop, use columnConfig. */
   columnNames?: Partial<Record<LaneId, string>> | null;
   children: ReactNode;
@@ -87,6 +95,7 @@ export function DomainProvider({
         boardDescription: boardDescription ?? null,
         columnConfig: resolvedConfig,
         tagDefs: tagDefs ?? [],
+        members: members ?? [],
         personalization,
       }}
     >
@@ -136,6 +145,14 @@ export function useColumnConfig(): ColumnConfig | null {
 export function useTagDefs(): TagDef[] {
   const v = useContext(DomainContext);
   return v?.tagDefs ?? [];
+}
+
+/** Real members of the active workspace, owner first. Empty outside the
+ *  app shell — consumers must treat empty as "no one to offer", never
+ *  fall back to fixture people. */
+export function useWorkspaceMembers(): WorkspaceMemberMeta[] {
+  const v = useContext(DomainContext);
+  return v?.members ?? [];
 }
 
 /**
