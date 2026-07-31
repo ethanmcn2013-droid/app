@@ -8,6 +8,7 @@ import type {
   ProviderResult,
 } from "../../../lib/analytics/contracts";
 import { isTerminalTaskTransition } from "../../../lib/analytics/task-events";
+import { isTaskDone } from "@/lib/board-columns";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
 import { activities, tasks } from "../../tasks-db/signal-tasks-db-schema";
 import { and, asc, eq, inArray } from "drizzle-orm";
@@ -96,8 +97,11 @@ export class NotesAnalyticsProvider implements NotesProvider {
         .map((row) => textValue(row.promoted_task_id))
         .filter((id): id is string => Boolean(id)),
     );
+    // This read-only mirror has no meta table / boardColumnKey column (see
+    // tasks.ts provider), so null resolves to the default ["done"] doneKeys,
+    // identical to the literal check it replaces.
     const completedTaskIds = scopedTasks
-      .filter((task) => task.lane === "done" && promotedTaskIds.has(task.id))
+      .filter((task) => isTaskDone(task, null) && promotedTaskIds.has(task.id))
       .map((task) => task.id);
     const completionRows = completedTaskIds.length
       ? await tasksDb
@@ -138,7 +142,7 @@ export class NotesAnalyticsProvider implements NotesProvider {
         projectIds: stringArray(task.tags).map(projectIdFromTag),
         kind: "follow_up",
         title,
-        state: task.lane === "done" ? "completed" : "open",
+        state: isTaskDone(task, null) ? "completed" : "open",
         ownerIds: stringArray(task.assignees),
         due: taskDate(task.dueAt, task.due),
         createdAt,

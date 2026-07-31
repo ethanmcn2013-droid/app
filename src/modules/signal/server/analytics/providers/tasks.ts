@@ -14,6 +14,7 @@ import type {
   TasksProviderResult,
 } from "../../../lib/analytics/contracts";
 import { APP_ORIGIN } from "@/lib/product-urls";
+import { isTaskDone } from "@/lib/board-columns";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
 import {
   activities,
@@ -109,8 +110,11 @@ export class TasksAnalyticsProvider implements TasksProvider {
       if (bucket) bucket.push(row);
       else rawByTask.set(row.taskId, [row]);
     }
+    // This read-only mirror has no meta table / boardColumnKey column, so
+    // there is no per-workspace column config to read; null resolves to the
+    // default ["done"] doneKeys, identical to the literal check it replaces.
     const terminalTaskIds = new Set(
-      boundedRows.filter((row) => row.lane === "done").map((row) => row.id),
+      boundedRows.filter((row) => isTaskDone(row, null)).map((row) => row.id),
     );
     const projectIdsByTask = new Map(
       scopedRows.map((row) => [row.id, stringArray(row.tags).map(projectIdFromTag)]),
@@ -135,7 +139,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
         projectIds: stringArray(row.tags).map(projectIdFromTag),
         title: row.title,
         status: row.lane,
-        terminal: row.lane === "done",
+        terminal: isTaskDone(row, null),
         ownerIds: assigneeIds,
         owners: assigneeIds.map((id) => people.get(id) ?? { id, displayName: null }),
         due: analyticsDate(row.dueAt, row.due),

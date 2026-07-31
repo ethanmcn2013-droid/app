@@ -24,14 +24,18 @@ import {
 import { USERS } from "@/lib/data";
 import { readPersonalityPrefs } from "@/server/personality-read";
 import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
+import { isTaskDone } from "@/lib/board-columns";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
   if (isDemoMode()) {
     const tasks = demoTasks();
-    const completed = tasks.filter((task) => task.lane === "done");
-    const open = tasks.filter((task) => task.lane !== "done");
+    // Demo/review never touches the DB (access-mode.ts safety invariant), so
+    // there is no per-workspace column config to read here; null resolves to
+    // the default ["done"] doneKeys, identical to the literal check it replaces.
+    const completed = tasks.filter((task) => isTaskDone(task, null));
+    const open = tasks.filter((task) => !isTaskDone(task, null));
 
     return (
       <>

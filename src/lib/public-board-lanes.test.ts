@@ -28,6 +28,11 @@ test("no config: guests see the shipped five columns, operator names included", 
   // System defaults carry a tint; the default Waiting column is neutral.
   assert.ok(columns[0].accent);
   assert.equal(columns[3].accent, null);
+  // Only the Done column reads as finished (T·122 default doneKeys).
+  assert.deepEqual(
+    columns.map((column) => column.isDone),
+    [false, false, false, false, true],
+  );
 });
 
 test("a workspace config drives guest columns: rename, order, custom", () => {
@@ -54,6 +59,9 @@ test("an orphaned key still present in data renders as a neutral column, never d
   assert.ok(ids.includes("col-gone"));
   assert.equal(columns.find((column) => column.id === "on_hold")?.name, "On hold");
   assert.equal(columns.find((column) => column.id === "on_hold")?.accent, null);
+  // Orphaned/extra columns never read as done.
+  assert.equal(columns.find((column) => column.id === "on_hold")?.isDone, false);
+  assert.equal(columns.find((column) => column.id === "col-gone")?.isDone, false);
 });
 
 test("column membership honours claims over lanes, and raw waiting text", () => {

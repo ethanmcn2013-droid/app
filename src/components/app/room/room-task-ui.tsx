@@ -17,15 +17,21 @@
 
 import { PRIORITY_LABEL, USERS, type Priority, type Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
-import { useTagDefs } from "@/lib/domain-context";
+import { useTagDefs, useColumnConfig } from "@/lib/domain-context";
 import { COLUMN_COLORS } from "@/lib/board-colors";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { tagColor } from "@/lib/tags";
 import { Icon } from "./room-icons";
 import styles from "./room-shared.module.css";
 
 /** True when the task is past its parsed due date and not yet done. */
-export function isTaskOverdue(task: Task, now: number): boolean {
-  return Boolean(task.dueAt && task.dueAt.getTime() < now && task.lane !== "done");
+export function isTaskOverdue(
+  task: Task,
+  now: number,
+  columnConfig: ColumnConfig | null,
+): boolean {
+  return Boolean(task.dueAt && task.dueAt.getTime() < now && !isTaskDone(task, columnConfig));
 }
 
 /**
@@ -34,7 +40,8 @@ export function isTaskOverdue(task: Task, now: number): boolean {
  * without relying on hue.
  */
 export function OverdueFlag({ task, now }: { task: Task; now: number }) {
-  if (!isTaskOverdue(task, now)) return null;
+  const columnConfig = useColumnConfig();
+  if (!isTaskOverdue(task, now, columnConfig)) return null;
   return (
     <span className={styles.overdueFlag} title="Past its due date">
       <span className={styles.overdueDot} aria-hidden="true" />
@@ -52,7 +59,8 @@ const PRIORITY_TONE: Record<Priority, string> = {
 
 export function TaskCompleteBox({ task }: { task: Task }) {
   const { toggleComplete } = useTasksDispatch();
-  const done = task.lane === "done";
+  const columnConfig = useColumnConfig();
+  const done = isTaskDone(task, columnConfig);
   return (
     <input
       aria-label={`${done ? "Reopen" : "Complete"} ${task.title}`}
@@ -80,7 +88,8 @@ export function PriorityMark({ task, withLabel = false }: { task: Task; withLabe
 }
 
 export function ScheduleText({ task, now }: { task: Task; now: number }) {
-  const overdue = Boolean(task.dueAt && task.dueAt.getTime() < now && task.lane !== "done");
+  const columnConfig = useColumnConfig();
+  const overdue = Boolean(task.dueAt && task.dueAt.getTime() < now && !isTaskDone(task, columnConfig));
   const unscheduled = !task.due;
   return (
     <span
