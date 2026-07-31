@@ -162,6 +162,13 @@
       "when": 1785369600000,
       "tag": "0022_workspaces_description",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1785485242617,
+      "tag": "0023_retire_launch_scaffolding",
+      "breakpoints": true
     }
   ]
 }

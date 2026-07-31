@@ -51,14 +51,15 @@ There is nothing further to run.
 
 ## Retired: `log-cycle`
 
-`scripts/log-cycle.mjs` and `scripts/log-cycle.ts` are **legacy and must not be
-run**. They date from the personal portfolio site this codebase was extracted
-from, and they:
+The `log-cycle` and `check-cycles` scripts were **deleted in the 2026-07-31
+data-layer reset** (retired 2026-07-30, removed the day after). They dated
+from the personal portfolio site this codebase was extracted from:
 
-- write a `portfolio` workspace plus task and activity rows **straight into the
-  production Tasks database**, with no staging
-- exist to feed a `/roadmap` page on a personal domain that is not part of
-  Signal Studio
+- they wrote a `portfolio` workspace plus task and activity rows **straight
+  into the production Tasks database**, with no staging
+- they fed a `/roadmap` page on a personal domain that is not part of
+  Signal Studio (the empty GTM `/roadmap` scaffolding and its three tables
+  were removed in the same reset — migration 0023)
 
 Signal Timeline was lifted out of that portfolio repo in Cycle 46
 (`src/modules/timeline/server/db/timeline-schema.ts:12`), and the live Timeline

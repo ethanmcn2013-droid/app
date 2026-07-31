@@ -12,13 +12,8 @@ import { isDemoMode } from "@/lib/access-mode";
  * dev workflow stays zero-config, `pnpm dev` will create tasks.db in
  * the repo root on first boot exactly as before.
  *
- * TASKS_DATABASE_URL is intentionally separate from TURSO_DATABASE_URL
- * (which points at the physically distinct roadmap-only Turso DB and
- * is used solely by the raw-SQL cycle-log scripts, scripts/log-cycle.ts
- * and scripts/check-cycles.ts; there is no longer a drizzle roadmap-db
- * layer in this repo). Keeping them apart prevents the tasks seed from
- * hitting the roadmap schema and emitting "table comments has no column
- * named workspace_id".
+ * One canonical pair since the 2026-07-31 reset — the legacy
+ * TURSO_-prefixed portfolio-era variables are retired everywhere.
  *
  * Switching on TASKS_DATABASE_URL presence (not just VERCEL) so a
  * local dev session can also point at the remote DB by setting the env

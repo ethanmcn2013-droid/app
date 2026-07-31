@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "retire-launch-scaffolding-2026-07-31",
+  "authorizedBy": "operator directive 2026-07-31 (stack reset, decision D9: one founder checklist system)",
+  "reviewedBy": "Claude Fable 5 session review",
+  "authorizationSource": "operator session sign-off on the stack-audit reset plan; tables verified empty in production (0 rows each) and in both local dev databases before authoring; the /roadmap page was additionally unreachable on production hosts because the retired-subdomain redirect map intercepts /roadmap ahead of routing",
+  "migrations": [
+    {
+      "id": "0023_retire_launch_scaffolding",
+      "sha256": "6cba388bf386737cba7931191f847cbfc32b021b9250eb2a9d9013ed6b1c0c7d",
+      "reviewedAt": "2026-07-31T00:00:00.000Z",
+      "risk": "low (drops three tables verified empty everywhere; no FK references them — blocker_id columns were plain text without REFERENCES; no code path reads them after the same-branch code removal)",
+      "rollbackPlan": "restore from db-archive/2026-07-31/signal-tasks.sql (full pre-reset dump) or re-create the three tables from the 0014 baseline definitions; both restore an empty state because the tables never held rows",
+      "postconditions": [
+        "roadmap_items, blockers, action_items no longer exist",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "scaffolding-tables-absent",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name IN ('roadmap_items', 'blockers', 'action_items')",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

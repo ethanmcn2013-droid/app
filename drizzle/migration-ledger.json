@@ -155,7 +155,7 @@
       "snapshot": "drizzle/meta/0014_snapshot.json",
       "snapshotSha256": "6e253924090c0abd9738b2988752dbc970117a969923f83c6069bd1c96075bed",
       "receipt": "drizzle/receipts/current-schema-baseline.json",
-      "receiptSha256": "1ec8652b81c83c14495463a49c43e8d81c883795057b2b59d999b53ec98f3107"
+      "receiptSha256": "85edbc37473bac32d665d4a9404be90893b62a367c440b98936bf456905299e8"
     },
     {
       "ordinal": 15,
@@ -238,6 +238,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/workspaces-description-2026-07-30.json",
       "receiptSha256": "3abe189926a4fae4a717f93640d9dbee2e92ba136010e5d65f7a59a0f7005815"
+    },
+    {
+      "ordinal": 23,
+      "id": "0023_retire_launch_scaffolding",
+      "file": "drizzle/0023_retire_launch_scaffolding.sql",
+      "when": 1785485242617,
+      "sha256": "6cba388bf386737cba7931191f847cbfc32b021b9250eb2a9d9013ed6b1c0c7d",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/retire-launch-scaffolding-2026-07-31.json",
+      "receiptSha256": "8ced3894e40dba89329ee7d104cb9e83d1c80e157bc03bbe3b2bfa1327b29697"
     }
   ]
 }

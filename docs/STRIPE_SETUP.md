@@ -25,9 +25,9 @@ In <https://dashboard.stripe.com>, create products + prices:
 | Workspace     | Subscription   | Monthly   | EUR      | €12.00   | `STRIPE_PRICE_WORKSPACE_MONTHLY`   |
 | Event         | One-time       | —         | EUR      | €89.00   | `STRIPE_PRICE_EVENT_ONETIME`       |
 
-(`STRIPE_PRICE_PRO_MONTHLY` is a legacy alias in code for
-`STRIPE_PRICE_WORKSPACE_MONTHLY` — set the new name; the alias only
-fires if the new one is unset.)
+(The historical `STRIPE_PRICE_PRO_MONTHLY` alias was retired in the
+2026-07-31 data-layer reset — `STRIPE_PRICE_WORKSPACE_MONTHLY` is the
+only name the code reads.)
 
 ## 2 · Webhook
 

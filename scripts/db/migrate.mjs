@@ -460,8 +460,10 @@ export async function migrationStatus({ client, context = loadAndValidateLedger(
 }
 
 function resolveConnection(values) {
-  const databaseUrl = values["database-url"] || process.env.TASKS_DATABASE_URL || process.env.TURSO_DATABASE_URL || "file:tasks.db";
-  const authToken = values["auth-token"] || process.env.TASKS_AUTH_TOKEN || process.env.TASKS_DATABASE_AUTH_TOKEN || process.env.TURSO_AUTH_TOKEN;
+  // One canonical pair since the 2026-07-31 reset; the TURSO_* and
+  // TASKS_DATABASE_AUTH_TOKEN aliases are retired.
+  const databaseUrl = values["database-url"] || process.env.TASKS_DATABASE_URL || "file:tasks.db";
+  const authToken = values["auth-token"] || process.env.TASKS_AUTH_TOKEN;
   return { databaseUrl, authToken };
 }
 

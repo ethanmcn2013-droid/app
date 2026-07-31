@@ -82,12 +82,9 @@ test("getCurrentUser fails closed in production (no silent dev-user fallback)", 
 });
 
 // ── Invariant 3: mutating actions resolve the validated tenant ───────────
-// Per-tenant tables only. Deliberately EXCLUDES roadmapItems / blockers /
-// actionItems: those are a single GLOBAL product GTM roadmap parsed from
-// docs/gtm-plan.md (one shared set of rows, no per-user/per-workspace
-// column) — not tenant data, so the cross-tenant rule does not apply.
-// (Their write actions in actions/roadmap.ts lack auth entirely; that is a
-// separate operator-surface authorization question, not tenant isolation.)
+// Per-tenant tables only. (The old GLOBAL GTM tables — roadmap_items /
+// blockers / action_items — were retired in the 2026-07-31 data-layer
+// reset; they were empty scaffolding that never shipped.)
 const OWNER_TABLES = [
   "tasks",
   "comments",
