@@ -4,13 +4,13 @@
   "source": "tasks/src/app/print/list/page.tsx",
   "materialityHash": "d68e7b7dc1af8677",
   "reviewedAt": "2026-07-31",
-  "reviewer": "Claude Fable 5, T-122 board truth phase 3",
+  "reviewer": "claude-fable-5 (T·126 cycle)",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-5501ae463b99182192baa7cc-b3f6654de0e84899.json",
-    "attestationSha256": "5ecea040c71d32a93de5a5e51d00e4c4f2a6561796b3e84ef151e25ed10f76a7",
-    "runId": "tasks-playwright-5501ae463b99182192baa7cc",
-    "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
-    "rawArtifactSha256": "b3f6654de0e84899c3207b3a49da816ce6c862aeda2b5d1ac16ba6aff359b63f",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e9c86a114218e4f203417e4a-ef27c9b3d47d2052.json",
+    "attestationSha256": "0ba87aa910803da169259a8c9ef3f128ab77f27d283720a6b904c0f470c5f214",
+    "runId": "tasks-playwright-e9c86a114218e4f203417e4a",
+    "canonicalEvidenceSha256": "e9c86a114218e4f203417e4ad3294f245ac39a791943ab39fa04b3d87afa416d",
+    "rawArtifactSha256": "ef27c9b3d47d2052acaa6a0dbe9b701727daaea83836d0f4bd30b3c9a9a67fb3",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "T-122 routes the printed list's done reading through the config predicate: the page loads the workspace column config and the sheet asks isTaskDone instead of comparing lane text, so a renamed or additional done column prints the same truth the board shows.",
-  "decision": "Re-attested against the current full-suite run; this surface passes on mobile, tablet, desktop and wide with no axe violations."
+  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
+  "decision": "approve"
 }
