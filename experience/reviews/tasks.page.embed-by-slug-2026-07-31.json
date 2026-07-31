@@ -4,13 +4,13 @@
   "source": "tasks/src/app/embed/[slug]/page.tsx",
   "materialityHash": "d226ac71e96df95f",
   "reviewedAt": "2026-07-31",
-  "reviewer": "Claude Fable 5, T-120 board truth phase 2",
+  "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-5501ae463b99182192baa7cc-d9056b559e46f7af.json",
-    "attestationSha256": "79a8006994ce87d14b6a47850d0d1f1a4d0c97c58ce05d895e8125f3cf8ed884",
-    "runId": "tasks-playwright-5501ae463b99182192baa7cc",
-    "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
-    "rawArtifactSha256": "d9056b559e46f7aff01b4d81ff2b7c98e43d02bafcd0a6d8698313f2b2484abe",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-5883c3d281ebebf2ef71f2d7-aec8f7de3f0626d7.json",
+    "attestationSha256": "cd9e9c7966d4a60bf5f570c634de39feebcc942fd59892cfeec7875d76cb0f9d",
+    "runId": "tasks-playwright-5883c3d281ebebf2ef71f2d7",
+    "canonicalEvidenceSha256": "5883c3d281ebebf2ef71f2d7005a65fd28c7d4599f342704292aa764fc066d95",
+    "rawArtifactSha256": "aec8f7de3f0626d7326560a6f927609d8255a815deb64d2e5a8d309e2a10a3e0",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "populated demo workspace",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "T-120 hands the column config to this surface: it groups and labels by the workspace's resolved columns (custom columns, renames, tints), appending a neutral column for any orphaned key, replacing the canonical-four iteration plus the T-116 extras rule.",
-  "decision": "Re-attested against the current full-suite run; this surface passes on mobile, tablet, desktop and wide with no axe violations."
+  "reviewedChange": "No source change. The T-126 cycle advanced the fixture manifest (quick-create accessible-name assertion; share read-only proof retargeted to 'Add project'), which retires attestations pinned to the prior manifest.",
+  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); surface unchanged and passing."
 }

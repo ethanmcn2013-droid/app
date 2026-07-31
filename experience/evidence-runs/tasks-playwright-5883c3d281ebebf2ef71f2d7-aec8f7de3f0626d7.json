@@ -1,11 +1,11 @@
 {
   "schemaVersion": "signal-playwright-attestation/1",
-  "runId": "tasks-playwright-5501ae463b99182192baa7cc",
-  "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
-  "rawArtifactSha256": "b3f6654de0e84899c3207b3a49da816ce6c862aeda2b5d1ac16ba6aff359b63f",
+  "runId": "tasks-playwright-5883c3d281ebebf2ef71f2d7",
+  "canonicalEvidenceSha256": "5883c3d281ebebf2ef71f2d7005a65fd28c7d4599f342704292aa764fc066d95",
+  "rawArtifactSha256": "aec8f7de3f0626d7326560a6f927609d8255a815deb64d2e5a8d309e2a10a3e0",
   "artifactPath": "experience/output/critical-evidence.json",
   "browserContractSha256": "838e98594ed9b15cfa6386e15abea30ac0553727a42e77ade1badc31740870e1",
-  "fixtureManifestSha256": "11a1de9075917da5d4a5af969f89a252c94d1cfa3d17a0004c6861eb16db71de",
+  "fixtureManifestSha256": "92d7930cf11d1b379ac8312fc1c3a1c8bbf649e9c8902dc8e671fe5f2a6fc620",
   "playwrightConfigSha256": "7361a297351d9ebe2ebe948f689969ea590f9ee7ef6cd20ce9c40f57e0f4708a",
   "playwrightSpecSha256": "883f3ce21443132e3eb0850383d61b1613b305d9f39ad4cbc46e063bb434277f",
   "projects": [
@@ -29,5 +29,5 @@
   "testCount": 128,
   "passedCount": 128,
   "unexpectedCount": 0,
-  "startedAt": "2026-07-31T10:21:10.222Z"
+  "startedAt": "2026-07-31T19:13:34.140Z"
 }

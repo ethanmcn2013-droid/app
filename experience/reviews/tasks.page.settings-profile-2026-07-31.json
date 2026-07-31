@@ -1,8 +1,8 @@
 {
   "schemaVersion": "signal-materiality-review/2",
-  "experienceId": "tasks.page.print-board",
-  "source": "tasks/src/app/print/board/page.tsx",
-  "materialityHash": "05f3816d6030a501",
+  "experienceId": "tasks.page.settings-profile",
+  "source": "tasks/src/app/settings/profile/page.tsx",
+  "materialityHash": "a24a1b85fe91dad0",
   "reviewedAt": "2026-07-31",
   "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
   "playwrightEvidence": {
