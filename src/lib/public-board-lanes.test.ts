@@ -1,70 +1,68 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-
-import { LANE_ORDER, type PublicTask } from "./data";
-import { publicLane, publicLaneOrder } from "./public-board-lanes";
+import type { PublicTask } from "./data";
+import { emptyConfig } from "./board-config";
+import { publicBoardColumns, publicColumnTasks } from "./public-board-lanes";
 
 /**
- * Guest-facing surfaces must not silently drop work.
- *
- * The share link, print sheet and public embed all iterated the four
- * canonical lanes. The board runs a five-status model whose fifth status
- * (`waiting`) has no canonical lane and is persisted as raw text, so a task
- * parked in Waiting rendered nowhere on a link a client had been sent, with
- * nothing to signal the omission. These tests pin the fix.
+ * Guest-facing surfaces must not silently drop work, and must agree with
+ * the operator's screen. T·116 taught them to render every lane the data
+ * contains; T·120 hands them the column config itself, with a neutral
+ * appended column for any orphaned key so nothing a guest was sent can
+ * vanish.
  */
 
-function task(id: string, lane: string): PublicTask {
-  return { id, title: id, lane: lane as PublicTask["lane"], priority: "p2" };
-}
+const task = (id: string, lane: string, boardColumnKey?: string): PublicTask =>
+  ({ id, title: id, lane, priority: "p2", ...(boardColumnKey ? { boardColumnKey } : {}) }) as PublicTask;
 
-test("canonical lanes keep their fixed order", () => {
-  const order = publicLaneOrder([task("a", "todo"), task("b", "done")]);
-  assert.deepEqual(order.slice(0, LANE_ORDER.length), [...LANE_ORDER]);
+test("no config: guests see the shipped five columns, operator names included", () => {
+  const columns = publicBoardColumns(null, []);
+  assert.deepEqual(
+    columns.map((column) => column.id),
+    ["todo", "doing", "review", "waiting", "done"],
+  );
+  assert.deepEqual(
+    columns.map((column) => column.name),
+    ["Queued", "In progress", "Review", "Waiting", "Done"],
+  );
+  // System defaults carry a tint; the default Waiting column is neutral.
+  assert.ok(columns[0].accent);
+  assert.equal(columns[3].accent, null);
 });
 
-test("a non-canonical lane is rendered, not dropped", () => {
-  const order = publicLaneOrder([task("a", "todo"), task("b", "waiting")]);
-  assert.ok(
-    order.includes("waiting"),
-    "a task in Waiting must appear on guest surfaces",
+test("a workspace config drives guest columns: rename, order, custom", () => {
+  const columns = publicBoardColumns(
+    {
+      ...emptyConfig(),
+      system: { done: "Handed over" },
+      custom: [{ key: "col-pay", name: "Paid" }],
+      order: ["doing", "col-pay", "todo", "review", "done"],
+    },
+    [],
+  );
+  assert.deepEqual(
+    columns.map((column) => column.name),
+    ["In progress", "Paid", "Queued", "Review", "Handed over"],
   );
 });
 
-test("non-canonical lanes come after the canonical four", () => {
-  const order = publicLaneOrder([task("a", "waiting"), task("b", "todo")]);
-  assert.equal(order.indexOf("waiting"), LANE_ORDER.length);
+test("an orphaned key still present in data renders as a neutral column, never drops", () => {
+  const tasks = [task("a", "doing"), task("b", "on_hold"), task("c", "doing", "col-gone")];
+  const columns = publicBoardColumns(null, tasks);
+  const ids = columns.map((column) => column.id);
+  assert.ok(ids.includes("on_hold"));
+  assert.ok(ids.includes("col-gone"));
+  assert.equal(columns.find((column) => column.id === "on_hold")?.name, "On hold");
+  assert.equal(columns.find((column) => column.id === "on_hold")?.accent, null);
 });
 
-test("extra lanes are stable in order and deduplicated", () => {
-  const order = publicLaneOrder([
-    task("a", "waiting"),
-    task("b", "on_hold"),
-    task("c", "waiting"),
-  ]);
-  assert.deepEqual(order.slice(LANE_ORDER.length), ["on_hold", "waiting"]);
-});
-
-test("no extra columns when every task is canonical", () => {
-  const order = publicLaneOrder([task("a", "todo"), task("b", "review")]);
-  assert.equal(order.length, LANE_ORDER.length);
-});
-
-test("an unknown lane gets a readable name and neutral tone", () => {
-  const lane = publicLane("waiting");
-  assert.equal(lane.name, "Waiting");
-  // Neutral is the no-tint treatment custom columns already get; it must not
-  // borrow a canonical lane's semantic colour.
-  assert.match(lane.bg, /lane-neutral/);
-});
-
-test("underscores and hyphens humanise", () => {
-  assert.equal(publicLane("on_hold").name, "On hold");
-  assert.equal(publicLane("needs-review").name, "Needs review");
-});
-
-test("a canonical lane keeps its own name and tone", () => {
-  const lane = publicLane("done");
-  assert.equal(lane.id, "done");
-  assert.match(lane.bg, /lane-done/);
+test("column membership honours claims over lanes, and raw waiting text", () => {
+  const tasks = [
+    task("claimed", "doing", "col-pay"),
+    task("laned", "doing"),
+    task("legacy", "waiting"),
+  ];
+  assert.deepEqual(publicColumnTasks(tasks, "col-pay").map((t) => t.id), ["claimed"]);
+  assert.deepEqual(publicColumnTasks(tasks, "doing").map((t) => t.id), ["laned"]);
+  assert.deepEqual(publicColumnTasks(tasks, "waiting").map((t) => t.id), ["legacy"]);
 });

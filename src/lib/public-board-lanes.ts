@@ -1,66 +1,60 @@
-import { LANES, LANE_ORDER, type LaneId, type PublicTask } from "./data";
+import type { ColumnConfig } from "./board-config";
+import { COLUMN_COLORS } from "./board-colors";
+import {
+  effectiveColumnKey,
+  humaniseColumnKey,
+  resolveBoardColumns,
+} from "./board-columns";
 
 /**
- * Lane resolution for the three unauthenticated board surfaces: the share
- * link, the print sheet, and the public embed.
+ * Column resolution for the unauthenticated board surfaces — the share
+ * link, the print sheet, the public embed — and the exports (T·120).
  *
- * All three used to iterate `LANE_ORDER`, the four canonical lanes, and drop
- * everything else on the floor. That was silent data loss on a guest-facing
- * surface: the board runs a five-status model whose fifth status, `waiting`,
- * has no canonical lane and is persisted as raw text in the `lane` column
- * (see `components/hybrid/adapter.ts`). A task parked in Waiting therefore
- * rendered nowhere on a share link a client had been sent, with nothing to
- * indicate anything was missing.
- *
- * Until the column config reaches these surfaces, the honest rule is: render
- * every lane the data actually contains. Canonical lanes keep their order and
- * their tone; anything else is appended in a stable order and rendered
- * neutral, which is the same no-tint treatment custom columns already get in
- * the app.
+ * These surfaces used to iterate the four canonical lanes and, after
+ * T·116, "every lane the data contains". The column config now reaches
+ * them: they render the same columns, names and order the operator's
+ * board shows, appending a neutral column for any orphaned key still
+ * present in the data so nothing a guest was sent can silently vanish.
  */
 
-export type PublicLane = {
+export type PublicColumn = {
   id: string;
   name: string;
-  ink: string;
-  bg: string;
-  dot: string;
+  /** CSS colour value for the column dot/tint; null = neutral. */
+  accent: string | null;
 };
 
-/** Neutral presentation for a lane the canonical set does not define. */
-const NEUTRAL: Omit<PublicLane, "id" | "name"> = {
-  ink: "var(--lane-neutral-ink, currentColor)",
-  bg: "var(--lane-neutral, transparent)",
-  dot: "var(--lane-neutral-dot, currentColor)",
-};
+type ColumnedTask = { lane: string; boardColumnKey?: string | null };
 
-function isCanonical(lane: string): lane is LaneId {
-  return (LANE_ORDER as readonly string[]).includes(lane);
-}
-
-/** "waiting" -> "Waiting", "on_hold" -> "On hold". */
-function humanise(lane: string): string {
-  const spaced = lane.replace(/[-_]+/g, " ").trim();
-  if (spaced.length === 0) return "Other";
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-export function publicLane(lane: string): PublicLane {
-  if (isCanonical(lane)) {
-    const known = LANES[lane];
-    return { id: known.id, name: known.name, ink: known.ink, bg: known.bg, dot: known.dot };
-  }
-  return { id: lane, name: humanise(lane), ...NEUTRAL };
-}
-
-/**
- * The canonical four in their fixed order, then any other lane present in the
- * data, sorted so the same board always renders its columns the same way.
- */
-export function publicLaneOrder(tasks: readonly PublicTask[]): string[] {
+export function publicBoardColumns(
+  config: ColumnConfig | null,
+  tasks: readonly ColumnedTask[],
+): PublicColumn[] {
+  const resolved = resolveBoardColumns(config).map((column) => ({
+    id: column.key,
+    name: column.name,
+    accent: COLUMN_COLORS[column.color].var,
+  }));
+  const known = new Set(resolved.map((column) => column.id));
   const extras = new Set<string>();
   for (const task of tasks) {
-    if (!isCanonical(task.lane)) extras.add(task.lane);
+    const key = effectiveColumnKey(task);
+    if (!known.has(key)) extras.add(key);
   }
-  return [...LANE_ORDER, ...[...extras].sort()];
+  return [
+    ...resolved,
+    ...[...extras].sort().map((id) => ({
+      id,
+      name: humaniseColumnKey(id),
+      accent: null,
+    })),
+  ];
+}
+
+/** The tasks that belong to a public column, claims and lanes alike. */
+export function publicColumnTasks<T extends ColumnedTask>(
+  tasks: readonly T[],
+  columnId: string,
+): T[] {
+  return tasks.filter((task) => effectiveColumnKey(task) === columnId);
 }

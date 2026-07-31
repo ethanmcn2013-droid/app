@@ -292,7 +292,7 @@ export type Task = {
  */
 export type PublicTask = Pick<
   Task,
-  "id" | "title" | "lane" | "priority" | "due" | "tags"
+  "id" | "title" | "lane" | "priority" | "due" | "tags" | "boardColumnKey"
 >;
 
 /**

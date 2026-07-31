@@ -39,8 +39,12 @@ test("public task projection is a stable allowlist", () => {
     priority: "p1",
     due: "Fri",
     tags: ["launch"],
+    // The column claim is public by design (T·120): guest surfaces group
+    // by the operator's custom columns through it.
+    boardColumnKey: "launch",
   });
   assert.deepEqual(Object.keys(projected).sort(), [
+    "boardColumnKey",
     "due",
     "id",
     "lane",
@@ -61,5 +65,6 @@ test("public projection omits empty optional fields", () => {
     title: "Publish the launch plan",
     lane: "doing",
     priority: "p1",
+    boardColumnKey: "launch",
   });
 });

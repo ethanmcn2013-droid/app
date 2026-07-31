@@ -2,24 +2,24 @@
 
 import { motion } from "motion/react";
 import { PRIORITY_LABEL, type PublicTask } from "@/lib/data";
-import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
+import { publicColumnTasks, type PublicColumn } from "@/lib/public-board-lanes";
 import { useGuestAuth } from "@/components/app/guest/guest-auth-context";
 
 /**
- * Read-only board for /share/[token]. Same visual as the live BoardApp
- * but every interactive surface raises the progressive auth modal
- * instead of mutating. Drag is disabled.
+ * Read-only board for /share/[token]. Renders the operator's own columns
+ * (names, order, tint) from the workspace config; every interactive
+ * surface raises the progressive auth modal instead of mutating. Drag is
+ * disabled.
  */
-export function ShareBoard({ tasks }: { tasks: PublicTask[] }) {
+export function ShareBoard({ tasks, columns }: { tasks: PublicTask[]; columns: PublicColumn[] }) {
   const { promptSignUp } = useGuestAuth();
   return (
     <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
-      {publicLaneOrder(tasks).map((laneId, idx) => {
-        const lane = publicLane(laneId);
-        const laneTasks = tasks.filter((t) => t.lane === laneId);
+      {columns.map((column, idx) => {
+        const laneTasks = publicColumnTasks(tasks, column.id);
         return (
           <motion.div
-            key={laneId}
+            key={column.id}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -28,19 +28,20 @@ export function ShareBoard({ tasks }: { tasks: PublicTask[] }) {
               ease: [0.16, 1, 0.3, 1],
             }}
             className="flex w-[298px] flex-shrink-0 flex-col rounded-xl p-2.5"
-            style={{ background: `${lane.bg}E6` }}
+            style={{
+              background: column.accent
+                ? `color-mix(in srgb, ${column.accent} 6%, var(--paper))`
+                : "var(--bg-sunken, var(--paper))",
+            }}
           >
             <div className="flex items-center justify-between px-1.5 pb-2 pt-0.5">
               <div className="flex items-center gap-1.5">
                 <span
                   className="block h-2 w-2 rounded-full"
-                  style={{ background: lane.dot }}
+                  style={{ background: column.accent ?? "var(--ink-faint, currentColor)" }}
                 />
-                <span
-                  className="text-[12px] font-semibold"
-                  style={{ color: lane.ink }}
-                >
-                  {lane.name}
+                <span className="text-[12px] font-semibold text-ink-soft">
+                  {column.name}
                 </span>
                 <span className="text-[11.5px] text-ink-quiet">
                   {laneTasks.length}

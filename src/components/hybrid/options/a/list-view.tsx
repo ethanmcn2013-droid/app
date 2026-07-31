@@ -372,9 +372,17 @@ export function ListView({
                     isExpanded ? (
                       <tr className={styles.subtaskRows} key={`${task.id}-subtasks`}>
                         <td colSpan={visibleColumns.length}>
-                          <ul aria-label={`Subtasks for ${task.title}`}>
-                            {task.subtasks.map((subtask) => <li key={subtask.id}><Icon name={subtask.completed ? "check" : "chevron-right"} size={12} /><span data-completed={subtask.completed || undefined}>{subtask.title}</span></li>)}
-                          </ul>
+                          {task.subtasks.some((subtask) => subtask.title.trim()) ? (
+                            <ul aria-label={`Subtasks for ${task.title}`}>
+                              {task.subtasks.filter((subtask) => subtask.title.trim()).map((subtask) => <li key={subtask.id}><Icon name={subtask.completed ? "check" : "chevron-right"} size={12} /><span data-completed={subtask.completed || undefined}>{subtask.title}</span></li>)}
+                            </ul>
+                          ) : (
+                            /* The top-level fetch hydrates counts, not titles;
+                               blank rows read as breakage, a ratio reads true. */
+                            <p aria-label={`Subtasks for ${task.title}`}>
+                              {task.subtasks.filter((subtask) => subtask.completed).length} of {task.subtasks.length} subtasks complete. Open the task to see them.
+                            </p>
+                          )}
                         </td>
                       </tr>
                     ) : null,

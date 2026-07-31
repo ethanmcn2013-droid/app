@@ -22,6 +22,7 @@ import {
   workspaces,
   workspaceMembers,
   users,
+  meta,
 } from "./schema";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
@@ -38,6 +39,8 @@ import type {
 
 import { rowToTask } from "./row-mappers";
 import { toPublicTask } from "@/lib/public-task";
+import { parseColumnConfig } from "@/lib/board-config";
+import { publicBoardColumns, type PublicColumn } from "@/lib/public-board-lanes";
 import { byWorkspace } from "./tenant";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
@@ -520,6 +523,8 @@ export type ShareData = {
   token: string;
   view: ShareView;
   tasks: PublicTask[];
+  /** The workspace's columns, resolved for guest rendering (T·120). */
+  columns: PublicColumn[];
   workspaceTitle: string;
   workspaceCrumb: string;
   domainId: DomainId;
@@ -688,10 +693,12 @@ export async function resolveShareLink(
   if (isDemoMode()) {
     if (token !== DEMO_SHARE_TOKEN) return null;
     const pack = DOMAINS[DEMO_DOMAIN];
+    const demoPublicTasks = demoTasks().map(toPublicTask);
     return {
       token,
       view: "board",
-      tasks: demoTasks().map(toPublicTask),
+      tasks: demoPublicTasks,
+      columns: publicBoardColumns(null, demoPublicTasks),
       workspaceTitle: pack.workspaceTitle,
       workspaceCrumb: pack.workspaceCrumb,
       domainId: DEMO_DOMAIN,
@@ -726,10 +733,16 @@ export async function resolveShareLink(
     ? candidateDomain
     : "marketing";
   const pack = DOMAINS[domainId];
+  const [configRow] = await db
+    .select({ value: meta.value })
+    .from(meta)
+    .where(eq(meta.key, `board:${wsId}:columns`));
+  const columnConfig = configRow ? parseColumnConfig(configRow.value) : null;
   return {
     token,
     view: row.view,
     tasks: taskList.map(toPublicTask),
+    columns: publicBoardColumns(columnConfig, taskList.map(toPublicTask)),
     workspaceTitle: pack.workspaceTitle,
     workspaceCrumb: pack.workspaceCrumb,
     domainId,

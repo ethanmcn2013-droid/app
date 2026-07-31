@@ -41,6 +41,9 @@ export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: (
   const firstRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const task = menu ? store.taskById(menu.taskId) : undefined;
+  // Deleting has no undo, so the item arms per task and deletes on the
+  // second press — the same two-step the bulk toolbar uses.
+  const [armedFor, setArmedFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (!menu) return;
@@ -96,8 +99,17 @@ export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: (
         <button disabled={store.readOnly} onClick={() => run(() => store.unscheduleTask(task.id))} role="menuitem" type="button"><Icon name="calendar" size={15} />Unschedule</button>
       )}
       <button disabled={store.readOnly} onClick={() => run(() => store.toggleComplete(task.id))} role="menuitem" type="button"><Icon name="check" size={15} />{task.completed ? "Reopen" : "Complete"}</button>
-      <button disabled={store.readOnly} onClick={() => run(() => store.duplicateTask(task.id))} role="menuitem" type="button"><Icon name="add" size={15} />Duplicate in session</button>
-      <button className={styles.dangerMenuItem} disabled={store.readOnly} onClick={() => run(() => store.deleteTask(task.id))} role="menuitem" type="button"><Icon name="trash" size={15} />Delete in session</button>
+      <button disabled={store.readOnly} onClick={() => run(() => store.duplicateTask(task.id))} role="menuitem" type="button"><Icon name="add" size={15} />Duplicate</button>
+      <button
+        className={styles.dangerMenuItem}
+        disabled={store.readOnly}
+        onClick={() => {
+          if (armedFor === task.id) { setArmedFor(null); run(() => store.deleteTask(task.id)); }
+          else setArmedFor(task.id);
+        }}
+        role="menuitem"
+        type="button"
+      ><Icon name="trash" size={15} />{armedFor === task.id ? "Confirm delete" : "Delete"}</button>
     </div>
   );
 }
