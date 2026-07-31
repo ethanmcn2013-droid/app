@@ -30,7 +30,7 @@ export function ShareBoard({ tasks, columns }: { tasks: PublicTask[]; columns: P
             className="flex w-[298px] flex-shrink-0 flex-col rounded-xl p-2.5"
             style={{
               background: column.accent
-                ? `color-mix(in srgb, ${column.accent} 6%, var(--paper))`
+                ? `color-mix(in srgb, ${column.accent} 5%, var(--paper))`
                 : "var(--bg-sunken, var(--paper))",
             }}
           >
@@ -59,7 +59,7 @@ export function ShareBoard({ tasks, columns }: { tasks: PublicTask[]; columns: P
               <button
                 type="button"
                 onClick={() => promptSignUp("addTask")}
-                className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-quiet transition-colors hover:bg-white/60 hover:text-ink-soft"
+                className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-soft transition-colors hover:bg-white/60 hover:text-ink"
               >
                 <svg
                   width="12"

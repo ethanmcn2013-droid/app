@@ -1,0 +1,87 @@
+#!/usr/bin/env node
+
+/**
+ * Read-only production measurement for the board-truth data migration
+ * (0023) — the founder's gate: measure before writing or executing SQL.
+ *
+ * Prints, without modifying anything:
+ *   - lane='waiting' rows, total and per workspace
+ *   - any other non-canonical lane text present
+ *   - board_column_key claims, per key
+ *   - stored column configs among the affected workspaces
+ *   - rows whose assignees still carry a design-lab fixture id (T·119's
+ *     honest edge; counted here so the cleanup can be sized)
+ *
+ * Runs wherever the Tasks DB env is present; in CI it is dispatched via
+ * the db-migrate workflow's `measure` command, where the production
+ * credentials already live as repo secrets.
+ */
+
+import { createClient } from "@libsql/client";
+
+const url = process.env.TASKS_DATABASE_URL ?? "file:tasks.db";
+const authToken = process.env.TASKS_AUTH_TOKEN;
+
+const FIXTURE_IDS = ["ethan", "maya", "noah", "aisha", "luca", "erin", "sam", "imani"];
+const CANONICAL = ["todo", "doing", "review", "done"];
+
+const client = createClient(authToken ? { url, authToken } : { url });
+
+async function one(sql, args = []) {
+  const result = await client.execute({ sql, args });
+  return result.rows;
+}
+
+const out = {};
+
+out.waitingRowsTotal = Number(
+  (await one("SELECT COUNT(*) AS n FROM tasks WHERE lane = 'waiting'"))[0].n,
+);
+out.waitingRowsByWorkspace = (
+  await one(
+    "SELECT workspace_id, COUNT(*) AS n FROM tasks WHERE lane = 'waiting' GROUP BY workspace_id ORDER BY n DESC",
+  )
+).map((row) => ({ workspaceId: row.workspace_id, rows: Number(row.n) }));
+
+out.otherStrayLanes = (
+  await one(
+    `SELECT lane, COUNT(*) AS n FROM tasks WHERE lane NOT IN (${CANONICAL.map(() => "?").join(",")}) AND lane != 'waiting' GROUP BY lane`,
+    CANONICAL,
+  )
+).map((row) => ({ lane: row.lane, rows: Number(row.n) }));
+
+out.columnClaimsByKey = (
+  await one(
+    "SELECT board_column_key AS key, COUNT(*) AS n FROM tasks WHERE board_column_key IS NOT NULL GROUP BY board_column_key ORDER BY n DESC",
+  )
+).map((row) => ({ key: row.key, rows: Number(row.n) }));
+
+out.storedColumnConfigs = Number(
+  (await one("SELECT COUNT(*) AS n FROM meta WHERE key LIKE 'board:%:columns'"))[0].n,
+);
+out.affectedWorkspacesWithStoredConfig = Number(
+  (
+    await one(
+      `SELECT COUNT(*) AS n FROM meta m
+       WHERE m.key LIKE 'board:%:columns'
+         AND EXISTS (
+           SELECT 1 FROM tasks t
+           WHERE t.lane = 'waiting'
+             AND m.key = 'board:' || t.workspace_id || ':columns'
+         )`,
+    )
+  )[0].n,
+);
+
+out.fixtureAssigneeRows = Number(
+  (
+    await one(
+      `SELECT COUNT(*) AS n FROM tasks
+       WHERE ${FIXTURE_IDS.map(() => "assignees LIKE ?").join(" OR ")}`,
+      FIXTURE_IDS.map((id) => `%"${id}"%`),
+    )
+  )[0].n,
+);
+
+console.log(JSON.stringify(out, null, 2));
+client.close();

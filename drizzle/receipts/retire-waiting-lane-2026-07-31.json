@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "retire-waiting-lane-2026-07-31",
+  "authorizedBy": "founder directive 2026-07-31 (board truth programme, phase 2: the columns are yours; full execution authorization given in-session)",
+  "reviewedBy": "Claude Fable 5 session review, T·121",
+  "authorizationSource": "operator session instruction: retire the waiting raw-text lane at source — rewrite lane on existing rows and seed the column config for affected workspaces; production counts measured via the db-migrate measure command before execution",
+  "migrations": [
+    {
+      "id": "0024_retire_waiting_lane",
+      "sha256": "3fa504b7e91c704e42ff1060b0c85d150b9646c7895b16be6d5fbb062070f859",
+      "reviewedAt": "2026-07-31T00:00:00.000Z",
+      "risk": "medium (three-statement data rewrite; no schema change, no row deleted). Statement 1 inserts configs only where none exist; statement 2 appends a JSON member only to configs that lack the quoted waiting key; statement 3 rewrites lane='waiting' rows to a board_column_key claim with the canonical doing lane. The application resolves the claim and the raw text to the same column, so surfaces render identically before, during and after.",
+      "rollbackPlan": "UPDATE tasks SET lane = 'waiting', board_column_key = NULL WHERE board_column_key = 'waiting' AND lane = 'doing' restores the pre-migration row shape for every row this migration touched (rows a user later moves are indistinguishable and stay where the user put them); seeded configs are inert under the old code and can be deleted by key. The workflow's verified backup restores the exact prior state if a full revert is ever preferred.",
+      "postconditions": [
+        "no task row holds the raw lane text 'waiting'",
+        "every waiting claim sits on the canonical doing lane",
+        "no non-canonical lane text remains at all",
+        "every workspace holding waiting claims has a column config that names the waiting key",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "zero-waiting-lane-text",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE lane = 'waiting'",
+          "expected": 0
+        },
+        {
+          "id": "claims-are-canonical",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE board_column_key = 'waiting' AND lane <> 'doing'",
+          "expected": 0
+        },
+        {
+          "id": "no-stray-lane-text",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE lane NOT IN ('todo','doing','review','done')",
+          "expected": 0
+        },
+        {
+          "id": "affected-configs-name-waiting",
+          "sql": "SELECT COUNT(*) AS value FROM (SELECT DISTINCT t.workspace_id FROM tasks t WHERE t.board_column_key = 'waiting' AND NOT EXISTS (SELECT 1 FROM meta m WHERE m.key = 'board:' || t.workspace_id || ':columns' AND m.value LIKE '%\"waiting\"%'))",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

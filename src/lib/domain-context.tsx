@@ -155,17 +155,6 @@ export function useWorkspaceMembers(): WorkspaceMemberMeta[] {
   return v?.members ?? [];
 }
 
-/**
- * Per-workspace column-name overrides (system lanes only).
- * @deprecated Use useColumnConfig() for the full picture (custom columns
- *   + render order). Kept for board-app.tsx and Card component that only
- *   needed system renames before step 5.
- */
-export function useColumnNames(): Partial<Record<LaneId, string>> | null {
-  const v = useContext(DomainContext);
-  return v?.columnConfig?.system ?? null;
-}
-
 /** Segment-aware workspace copy, empty states, examples, titles. */
 export function usePersonalization(): WorkspacePersonalization {
   const v = useContext(DomainContext);

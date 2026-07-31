@@ -227,7 +227,6 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     ["getBoardName", ["await db"]],
     ["renameBoardAction", ["getActiveWorkspace", "db.run", "revalidatePath"]],
     ["getColumnConfig", ["readColumnConfig"]],
-    ["getColumnNames", ["readColumnConfig"]],
     ["renameColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["setColumnLimitAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],

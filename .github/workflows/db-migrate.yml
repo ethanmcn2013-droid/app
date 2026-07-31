@@ -21,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "Runner command (execute = backup + dry run + receipt + apply)"
+        description: "Runner command (execute = backup + dry run + receipt + apply; measure = read-only board-truth counts)"
         type: choice
-        options: [status, execute]
+        options: [status, execute, measure]
         default: status
 
 concurrency:
@@ -62,6 +62,16 @@ jobs:
         # database URLs; the human confirmation this stands in for is the
         # deliberate workflow_dispatch above.
         run: node scripts/db/migrate.mjs status --confirm-production=tasks
+
+      - name: measure (read-only board-truth counts)
+        if: ${{ inputs.command == 'measure' }}
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+        # SELECT-only counts for the board-truth data migration (0023):
+        # waiting rows per workspace, stray lane text, column claims,
+        # stored configs, fixture assignee ids. Modifies nothing.
+        run: node scripts/db/measure-board-truth.mjs
 
       - name: execute (backup + dry run + receipt + apply)
         if: ${{ inputs.command == 'execute' }}

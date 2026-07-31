@@ -704,10 +704,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9a25ccd47aecbc0a"
+      "materialityHash": "d226ac71e96df95f",
+      "materialityReview": {
+        "materialityHash": "d226ac71e96df95f",
+        "reviewedAt": "2026-07-31",
+        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-07-31.json"
+      }
     },
     {
       "id": "tasks.page.embed-guide",
@@ -1275,14 +1280,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9154b894aeb46365",
+      "materialityHash": "05f3816d6030a501",
       "materialityReview": {
-        "materialityHash": "9154b894aeb46365",
-        "reviewedAt": "2026-07-30",
-        "evidence": "experience/reviews/tasks.page.print-board-2026-07-30.json"
+        "materialityHash": "05f3816d6030a501",
+        "reviewedAt": "2026-07-31",
+        "evidence": "experience/reviews/tasks.page.print-board-2026-07-31.json"
       }
     },
     {
@@ -1845,7 +1850,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "4f51148f9944c13c"
+      "materialityHash": "207434165cbcb6c2"
     },
     {
       "id": "tasks.page.share-target",
@@ -2514,7 +2519,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "0a47bc47115bcca2"
+      "materialityHash": "ff2735926bc451a4"
     },
     {
       "id": "tasks.state.share-by-token-not-found",
@@ -2557,7 +2562,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f68afc574ba0541a"
+      "materialityHash": "8e44260afa29a010"
     },
     {
       "id": "tasks.state.share-error",

@@ -248,6 +248,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/retire-launch-scaffolding-2026-07-31.json",
       "receiptSha256": "8ced3894e40dba89329ee7d104cb9e83d1c80e157bc03bbe3b2bfa1327b29697"
+    },
+    {
+      "ordinal": 24,
+      "id": "0024_retire_waiting_lane",
+      "file": "drizzle/0024_retire_waiting_lane.sql",
+      "when": 1785488000000,
+      "sha256": "3fa504b7e91c704e42ff1060b0c85d150b9646c7895b16be6d5fbb062070f859",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/retire-waiting-lane-2026-07-31.json",
+      "receiptSha256": "4b6a4d024bf9e9cdf27c6a96887cbe3507f54e7c8f2e487bf3e133cbb75d230a"
     }
   ]
 }

@@ -153,25 +153,6 @@ export async function getColumnConfig(
   return readColumnConfig(workspaceId);
 }
 
-/**
- * Backward-compat alias: returns the system-lane name overrides slice only.
- * Layout code imports this and passes columnNames into DomainProvider.
- * Kept so the layout doesn't need a bigger refactor; getColumnConfig is
- * the full read path.
- *
- * @deprecated Use getColumnConfig. This will be removed once board-app.tsx
- *   is updated to consume the full config.
- */
-export async function getColumnNames(
-  workspaceId: string,
-): Promise<Partial<Record<LaneId, string>> | null> {
-  if (isDemoMode()) return null;
-  const config = await readColumnConfig(workspaceId);
-  if (!config) return null;
-  const hasAny = LANE_ORDER.some((id) => typeof config.system[id] === "string");
-  return hasAny ? config.system : null;
-}
-
 // ─── Column mutations ─────────────────────────────────────────────────────────
 
 /**
