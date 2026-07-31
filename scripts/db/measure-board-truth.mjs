@@ -83,5 +83,17 @@ out.fixtureAssigneeRows = Number(
   )[0].n,
 );
 
+out.schemaMigrationRows = (
+  await one(
+    "SELECT id, sha256, review_receipt_id, review_receipt_sha256, status FROM signal_schema_migrations ORDER BY applied_at, id",
+  )
+).map((row) => ({
+  id: row.id,
+  sha256: String(row.sha256).slice(0, 12),
+  receiptId: row.review_receipt_id,
+  receiptSha256: String(row.review_receipt_sha256).slice(0, 12),
+  status: row.status,
+}));
+
 console.log(JSON.stringify(out, null, 2));
 client.close();
