@@ -51,6 +51,7 @@ export class NotesAnalyticsProvider implements NotesProvider {
         tags: tasks.tags,
         assignees: tasks.assignees,
         lane: tasks.lane,
+        completedAt: tasks.completedAt,
         due: tasks.due,
         dueAt: tasks.dueAt,
       })
@@ -100,10 +101,18 @@ export class NotesAnalyticsProvider implements NotesProvider {
     // This read-only mirror has no meta table / boardColumnKey column (see
     // tasks.ts provider), so null resolves to the default ["done"] doneKeys,
     // identical to the literal check it replaces.
-    const completedTaskIds = scopedTasks
-      .filter((task) => isTaskDone(task, null) && promotedTaskIds.has(task.id))
-      .map((task) => task.id);
-    const completionRows = completedTaskIds.length
+    const completedTasks = scopedTasks.filter(
+      (task) => isTaskDone(task, null) && promotedTaskIds.has(task.id),
+    );
+    const completedTaskIds = completedTasks.map((task) => task.id);
+    // T·122: tasks.completedAt is the durable stamp; only rows completed
+    // before the column existed still need the activity-log fallback.
+    const stampedByTask = new Map<string, string>();
+    for (const task of completedTasks) {
+      if (task.completedAt) stampedByTask.set(task.id, task.completedAt.toISOString());
+    }
+    const unstampedTaskIds = completedTaskIds.filter((id) => !stampedByTask.has(id));
+    const completionRows = unstampedTaskIds.length
       ? await tasksDb
           .select({
             taskId: activities.taskId,
@@ -115,14 +124,14 @@ export class NotesAnalyticsProvider implements NotesProvider {
           .where(
             and(
               eq(activities.workspaceId, query.scope.workspaceId),
-              inArray(activities.taskId, completedTaskIds),
+              inArray(activities.taskId, unstampedTaskIds),
             ),
           )
           .orderBy(asc(activities.createdAt))
           .limit(MAX_COMPLETION_EVENTS + 1)
       : [];
     signal?.throwIfAborted();
-    const completedAtByTask = new Map<string, string>();
+    const completedAtByTask = new Map<string, string>(stampedByTask);
     for (const row of completionRows.slice(0, MAX_COMPLETION_EVENTS)) {
       if (isTerminalTaskTransition(row.kind, row.payload)) {
         completedAtByTask.set(row.taskId, row.createdAt.toISOString());

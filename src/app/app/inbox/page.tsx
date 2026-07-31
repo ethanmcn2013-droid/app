@@ -7,6 +7,7 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { aiConfigured } from "@/server/ai";
 import { buildWeeklySnapshotFor } from "@/server/digest-narration";
 import { getOverdueTodayCount } from "@/server/actions/roll-forward";
@@ -104,7 +105,7 @@ export default async function InboxPage() {
       // Personality prefs for greeting + tips gating.
       readPersonalityPrefs(me),
     ]);
-  const nudges = generateNudges(tasks, me);
+  const nudges = generateNudges(tasks, me, await readWorkspaceColumnConfig(ws));
   return (
     <>
       <AppPageHeader />

@@ -36,6 +36,9 @@ export const tasks = sqliteTable("tasks", {
   isMilestone: integer("is_milestone", { mode: "boolean" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  /** T·122: when the task last became done; the durable stamp Signal
+   *  prefers before reconstructing completion from the activity log. */
+  completedAt: integer("completed_at", { mode: "timestamp" }),
 });
 
 export const workspaces = sqliteTable("workspaces", {

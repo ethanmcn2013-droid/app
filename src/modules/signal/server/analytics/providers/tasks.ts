@@ -128,10 +128,16 @@ export class TasksAnalyticsProvider implements TasksProvider {
       const explicitBlocking = row.lane === "blocked" || row.lane === "waiting";
       const taskActivities = rawByTask.get(row.id) ?? [];
       const meaningful = taskActivities.filter((entry) => isMeaningfulActivity(entry.kind, entry.payload));
+      // T·122: tasks.completedAt is the durable completion moment; the
+      // activity-log reconstruction remains only as the fallback for rows
+      // completed before the column existed. The
+      // completion_timestamp_missing gauge now measures exactly that
+      // residue, and burns down as old tasks are touched.
       const completion = terminalTaskIds.has(row.id)
-        ? [...taskActivities]
+        ? row.completedAt ??
+          ([...taskActivities]
             .reverse()
-            .find((entry) => isTerminalActivity(entry.kind, entry.payload))?.createdAt ?? null
+            .find((entry) => isTerminalActivity(entry.kind, entry.payload))?.createdAt ?? null)
         : null;
       return {
         id: row.id,

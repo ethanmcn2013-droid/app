@@ -4,6 +4,39 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·122 · ships · done means one thing
+
+**Rename Done to "Handed over", add a "Paid" column that also counts as
+finished — and the board, the brief, the digest, the exports and Signal all
+agree, because every one of them now asks the same question.** Done used to
+be a bare text comparison scattered through roughly thirty modules, with the
+progress percentage computed in exactly one of them. Once columns became
+yours to shape, that arithmetic was one rename away from lying. Now the
+column menu carries "Counts as done", the config records which columns mean
+finished (always at least one), and a single predicate answers for every
+surface: cards, subtasks, blockers, My week, the project brief, printed
+lists, the share card image, nudges, project duplication, and both Signal
+providers.
+
+Completion also has a timestamp now. Every way a task can cross the line —
+the checkbox, a drag into a done column, a keyboard move, a repeat
+completing, even creating a task straight into Done — stamps
+`completedAt`, and reopening clears it. Signal read completion time by
+reconstructing it from the activity log and flagged what it could not
+prove; it now reads the stamp first, and migration 0025 backfilled the
+column from the log wherever the log could prove a moment, leaving the
+rest honestly empty rather than invented.
+
+Two quiet repairs shipped inside this: marking a claimed task done (or
+moving it between lanes) now clears its custom-column claim, so the card
+lands where the action said it would; and the cross-project "Your work"
+rollup still counts only the canonical Done lane — a custom done column
+is not reflected there yet, recorded as the one known edge.
+
+Verified by the predicate suite, a seeded-database migration test
+covering stale-event and claimed-task shapes, the full gate run, and
+production counts measured read-only before execution.
+
 ## 2026-07-31 · T·121 · ships · the columns are yours
 
 **Your board's columns are now yours to shape — add one, rename it, describe
