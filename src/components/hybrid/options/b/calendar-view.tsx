@@ -33,6 +33,7 @@ import type { CalendarDate, LabTask, TaskSchedule } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { AvatarStack, ScheduleText, TaskOpenButton, TaskSelection, TaskSignals } from "../../shared/task-ui";
+import { KeyboardLegend } from "../a/quiet-command-components";
 import { UnscheduledTray } from "./schedule-tray";
 import styles from "./option-b.module.css";
 
@@ -99,6 +100,7 @@ function CalendarTaskChip({
     <div
       className={styles.calendarTaskWrap}
       data-active={store.activeId === task.id || undefined}
+      data-completed={task.completed || undefined}
       data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
       data-inspected={store.inspectedId === task.id || undefined}
       data-kind={task.schedule.kind}
@@ -123,7 +125,7 @@ function CalendarTaskChip({
       onMouseEnter={() => store.setPreview(task.id)}
     >
       <button
-        aria-label={`${task.title}. ${task.schedule.kind === "milestone" ? "Milestone" : task.schedule.kind === "due" ? "Due date" : "Date range"}. ${formatDateLong(date)}`}
+        aria-label={`${task.title}. ${task.completed ? "Done. " : ""}${task.schedule.kind === "milestone" ? "Milestone" : task.schedule.kind === "due" ? "Due date" : "Date range"}. ${formatDateLong(date)}`}
         className={styles.calendarTaskChip}
         onClick={() => store.openTask(task.id)}
         onKeyDown={moveByKeyboard}
@@ -173,7 +175,7 @@ function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; ta
         <span>Selected day</span>
         <h2>{formatDate(date, { weekday: "long", day: "numeric", month: "long" })}</h2>
         <p>{tasks.length} task{tasks.length === 1 ? "" : "s"}{milestones > 0 ? `, ${milestones} milestone${milestones === 1 ? "" : "s"}` : ""}{waiting > 0 ? `, ${waiting} waiting` : ""}</p>
-        <button disabled={store.readOnly} onClick={() => store.addTask("queued", { kind: "due", dueOn: date })} type="button"><Icon name="add" size={14} />Create on this date</button>
+        <button disabled={store.readOnly} onClick={() => store.addTask("todo", { kind: "due", dueOn: date })} type="button"><Icon name="add" size={14} />Create on this date</button>
       </header>
 
       {previewTask ? (
@@ -202,7 +204,7 @@ function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; ta
                 <div className={styles.agendaTaskLead}>
                   <TaskSelection disabled={store.readOnly} orderedIds={visibleIds} task={task} />
                   <div><TaskOpenButton className={styles.agendaTaskTitle} task={task} /><ScheduleText task={task} /></div>
-                  <button aria-label={`${task.completed ? "Reopen" : "Complete"} ${task.title}`} disabled={store.readOnly} onClick={() => store.toggleComplete(task.id)} type="button"><Icon name="check" size={14} /></button>
+                  <button aria-label={`${task.completed ? "Reopen" : "Mark done"} ${task.title}`} disabled={store.readOnly} onClick={() => store.toggleComplete(task.id)} type="button"><Icon name="check" size={14} /></button>
                 </div>
                 <p>{task.description}</p>
                 <div className={styles.agendaTaskPeople}><AvatarStack limit={4} task={task} /><TaskSignals task={task} /></div>
@@ -323,12 +325,14 @@ function CalendarSubscribeButton() {
 /**
  * Mobile day-list. Below md the month/week grid (and the agenda ledger
  * beside it) don't fit a phone width usefully, so narrow viewports get a
- * plain chronological list of the next 14 days instead — always anchored to
- * the calendar frame's today, independent of the month/week/agenda toggle
- * above (which stays reachable for whenever the viewport widens back out).
+ * plain chronological 14-day list instead, anchored to the toolbar's
+ * Previous/Next/Today navigation. The Month/Week/Agenda switch is hidden
+ * at this width — the list replaces all three modes.
  */
-function MobileDayList({ calendar, tasks }: { calendar: CalendarFrame; tasks: LabTask[] }) {
-  const dates = useMemo(() => eachDate(calendar.today, addDays(calendar.today, 13)), [calendar.today]);
+function MobileDayList({ anchor, calendar, tasks }: { anchor: CalendarDate; calendar: CalendarFrame; tasks: LabTask[] }) {
+  // Anchored to the toolbar's navigation state, not permanently to today —
+  // Previous/Next/Today were verifiably dead controls at phone width.
+  const dates = useMemo(() => eachDate(anchor, addDays(anchor, 13)), [anchor]);
   return (
     <div aria-label="Upcoming 14 days" className={styles.calendarDayList}>
       {dates.map((date) => {
@@ -469,7 +473,7 @@ export function CalendarView({
             >
               <div className={styles.calendarDayHeader}>
                 <button aria-label={`Select ${formatDateLong(date)}`} data-date-select="true" onClick={() => onSelectedDateChange(date)} onKeyDown={(event) => dateKeyboard(event, date)} type="button">{formatDate(date, { day: "numeric" })}</button>
-                <button aria-label={`Create task due ${formatDateLong(date)}`} disabled={store.readOnly} onClick={() => { store.addTask("queued", { kind: "due", dueOn: date }); onSelectedDateChange(date); }} type="button"><Icon name="add" size={12} /></button>
+                <button aria-label={`Create task due ${formatDateLong(date)}`} disabled={store.readOnly} onClick={() => { store.addTask("todo", { kind: "due", dueOn: date }); onSelectedDateChange(date); }} type="button"><Icon name="add" size={12} /></button>
               </div>
               <div className={styles.calendarItems}>
                 {visible.map((task) => <CalendarTaskChip date={date} key={task.id} onOpenMenu={contextMenu.openMenuAt} task={task} visibleIds={visibleIds} />)}
@@ -498,7 +502,7 @@ export function CalendarView({
       </header>
 
       <div className={styles.calendarMobileAgenda}>
-        <MobileDayList calendar={calendar} tasks={tasks} />
+        <MobileDayList anchor={visibleAnchor} calendar={calendar} tasks={tasks} />
       </div>
 
       <div className={styles.calendarWorkspace}>
@@ -510,7 +514,7 @@ export function CalendarView({
       </div>
 
       <UnscheduledTray compact source="calendar" tasks={unscheduled} />
-      <p className={styles.calendarKeyboardNote}>Keyboard: arrows move between day controls. Alt + Left/Right moves a focused task. Add Shift to change a range end.</p>
+      <KeyboardLegend>Arrows move between day controls. Alt + Left or Right moves a focused task. Add Shift to change a range end.</KeyboardLegend>
       <TaskContextMenu menu={contextMenu.menu} onClose={contextMenu.closeMenu} />
     </section>
   );

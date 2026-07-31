@@ -93,7 +93,9 @@ export async function TasksRuntimeShell({
           name: DEMO_WORKSPACE_NAME,
           slug: DEMO_WORKSPACE_SLUG,
           description: null,
-          currency: null,
+          // The demo venue is Irish; a USD receipt line on The Orchard's
+          // board read as a locale bug (the review's voice-8).
+          currency: "EUR",
           budgetCents: null,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
           planningPeriodId: "demo-planning-period",

@@ -41,8 +41,10 @@
   padding: 12px 20px 13px;
 }
 
-/* Three columns only when a milestone actually exists to fill the third. */
-.workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(300px, 1fr) 210px 216px; }
+/* Three columns only when a milestone actually exists to fill the third.
+   The data columns may grow before they truncate — the identity column
+   used to hoard all slack while the milestone title ellipsized at 1440px. */
+.workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(240px, 1fr) minmax(210px, 264px) minmax(216px, 320px); }
 
 .workspaceIdentity { min-width: 0; }
 .workspaceIdentity h1 { font-size: 22px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
@@ -91,6 +93,9 @@
 .workspaceProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
 .progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; letter-spacing: .01em; margin: 0; }
 .progressFacts b { color: var(--x-task-danger); font-weight: 650; }
+/* A count never separates from its label mid-wrap. */
+.progressFacts span,
+.progressFacts b { white-space: nowrap; }
 
 .workspaceMilestones {
   border-left: 1px solid var(--x-task-border);
@@ -102,9 +107,9 @@
 }
 .workspaceMilestones > span { color: var(--x-task-text-muted); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; }
 .workspaceMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 7px 0 0; padding: 0; }
-.workspaceMilestones li { align-items: center; border-bottom: 1px solid var(--x-task-border); display: grid; gap: 8px; grid-template-columns: 42px 1fr; min-height: 25px; min-width: 0; }
+.workspaceMilestones li { align-items: center; border-bottom: 1px solid var(--x-task-border); display: grid; gap: 8px; grid-template-columns: 47px 1fr; min-height: 25px; min-width: 0; }
 .workspaceMilestones li:last-child { border-bottom: 0; }
-.workspaceMilestones time { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.workspaceMilestones time { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .workspaceMilestones button,
 .workspaceMilestones li strong { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 11px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceMilestones button { cursor: pointer; }
@@ -420,9 +425,13 @@
 .calendarCell:focus-within .calendarDayHeader button:last-child { opacity: 1; }
 .calendarCell[data-today] .calendarDayHeader button:first-child { background: var(--x-task-accent); color: var(--x-task-raised); }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; }
-.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press); }
+.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); }
 .calendarTaskWrap[data-kind="due"] { border-left-color: var(--x-task-danger); }
-.calendarTaskWrap[data-kind="milestone"] { background: var(--x-task-review-soft); color: var(--x-task-review); }
+.calendarTaskWrap[data-kind="milestone"] { background: var(--x-task-milestone-soft); color: var(--x-task-milestone); }
+/* Done work reads as done on every calendar surface — chip, agenda row,
+   day list, overflow — the same strike-and-mute the other views use. */
+.calendarTaskWrap[data-completed] { opacity: .68; }
+.calendarView button[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
 .calendarTaskWrap[data-kind="range"] { background: var(--x-task-accent-soft); border-radius: 0; color: var(--x-task-accent); margin-left: -5px; margin-right: -5px; padding-left: 5px; padding-right: 5px; }
 .calendarTaskWrap[data-kind="range"][data-range-start] { border-radius: 4px 0 0 4px; margin-left: 0; padding-left: 0; }
 .calendarTaskWrap[data-kind="range"][data-range-end] { border-radius: 0 4px 4px 0; margin-right: 0; padding-right: 0; }
@@ -448,7 +457,7 @@
   100% { box-shadow: none; }
 }
 .calendarTaskChip { align-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 4px; height: 24px; min-width: 0; padding: 0 5px; text-align: left; }
-.calendarTaskChip span { font-size: 10px; font-weight: 590; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.calendarTaskChip span { font-size: 11px; font-weight: 590; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarTaskChip:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
 .calendarExtendButton { align-items: center; background: transparent; border: 0; border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 22%, transparent); color: var(--x-task-accent); cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarExtendButton:disabled { cursor: not-allowed; opacity: .38; }
@@ -785,6 +794,9 @@
 @media (max-width: 767px) {
   .calendarWorkspace { display: none; }
   .calendarMobileAgenda { display: block; }
+  /* The phone day-list replaces all three modes, so a pressed-looking
+     Month/Week/Agenda toggle would be a control that does nothing. */
+  .calendarModeSwitch { display: none; }
 }
 
 @media (pointer: coarse) {

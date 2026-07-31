@@ -537,7 +537,10 @@ export const PRIORITY_LABEL: Record<Priority, { label: string; color: string }> 
   {
     p0: { label: "Urgent", color: "#dc2626" },
     p1: { label: "High", color: "#ea580c" },
-    p2: { label: "Medium", color: "#0284c7" },
+    // "Normal", not "Medium": the views' own scale (hybrid types.ts
+    // PRIORITY_LABELS) says Normal, and the panel and public surfaces
+    // read from here — one wording everywhere.
+    p2: { label: "Normal", color: "#0284c7" },
     p3: { label: "Low", color: "#64748b" },
   };
 

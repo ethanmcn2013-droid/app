@@ -359,7 +359,7 @@ export function ListView({
                         {taskGroup.label}
                       </button>
                       <span>{taskGroup.tasks.length} tasks</span>
-                      <span>{complete}/{taskGroup.tasks.length || 0} complete</span>
+                      <span>{complete}/{taskGroup.tasks.length || 0} done</span>
                       <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
                     </div>
                   </th>
@@ -426,7 +426,7 @@ export function ListView({
               </tbody>
             );
           })}
-          {tasks.length === 0 ? <tbody><tr><td colSpan={visibleColumns.length}><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("queued")} title="No tasks in this list" /></td></tr></tbody> : null}
+          {tasks.length === 0 ? <tbody><tr><td colSpan={visibleColumns.length}><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
         </table>
       </div>
       <KeyboardLegend>Up and down navigate rows. Enter opens. Space selects. F2 edits. Shift + F10 opens actions.</KeyboardLegend>

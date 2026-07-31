@@ -4,6 +4,57 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·126 · repairs · the panel review's blockers close
+
+**Creating a task works from every entry point again, the detail panel
+speaks the same column model as the board, and the board's columns say
+their own names.** An adversarially-verified design review ran against
+the live product this morning — eight lenses, 88 findings raised, 82
+held. This dispatch ships its five blockers and the highest-severity
+fixes behind them.
+
+The blockers, plainly. Six create affordances — the calendar's "+" and
+"Create on this date", both planning-rail adds, the palette entry, the
+list's empty state — wrote a status key no workspace has ("queued", the
+lab's retired vocabulary), and the task was silently orphaned; the
+store now resolves any stale key to the top of the board, and the call
+sites speak real column keys. The detail panel declared aria-modal
+without ever taking focus — it now takes it, keeps Tab inside, and
+still returns it exactly; its status control iterated the retired
+four-lane constant and now renders the workspace's real columns,
+custom ones included; its assign menu offers real members instead of
+the design-lab cast. A reference to the undefined --spring-press
+invalidated the entire transition stack on cards, schedule bars and
+calendar chips; the sanctioned instant token replaces it. And the lane
+header wraps to two rows, so a column's name is never again crushed to
+a sliver by its own description.
+
+Around them, the seams. One wording for finishing (Mark done), one for
+creating (Add task), one name for /app/my-tasks (My work), one label —
+Schedule — everywhere "Timeline" leaked beside the Timeline product.
+One milestone colour on every surface (violet; no status token spends
+it). Completed work reads as done on the calendar. The schedule's due
+ticks follow the shared amber/red due grammar instead of painting
+everything alarm-red. The brief's milestone date reads "1 Aug", not
+US-style "08/01"; its stat lines stop wrapping mid-number; the demo
+venue prices in euro. List row descriptions drop the browser's
+bold-and-centred <th> defaults. Completion is a circle and selection
+is a square, everywhere — the two used to be pixel-identical twins.
+Priority loses the "P1 ·" prefix and the forked Medium/Normal scale.
+Settings shows the board's real name. On phones: the tablet strip
+stops leaking through the cascade, Schedule's first paint pans to
+today, the calendar's Previous/Next/Today actually drive the day
+list, the planning rail overlays instead of crushing the workspace to
+110px, and the keyboard legend no longer lectures a touchscreen about
+Alt keys. The per-completion glow burst retires; the first-ever
+completion keeps the one expressive signature the motion contract
+budgets.
+
+Deliberately not in this dispatch: touch drag (the motion contract
+gates it behind a real-device pass), the full 10px→token type ramp,
+roving tabindex, and the schedule bar's grab-offset drag. The review
+dossier holds the rest, ranked, with file-level evidence.
+
 ## 2026-07-31 · T·125 · restores · the working tools return to every view
 
 **Filter, sort and saved views are back on all four views — wider than

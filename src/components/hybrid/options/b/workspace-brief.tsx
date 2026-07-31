@@ -16,7 +16,7 @@ import {
   TASKS_SYNC_EVENT,
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
-import { isTaskOverdue } from "../../dates";
+import { formatDate, isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
 import { TaskOpenButton } from "../../shared/task-ui";
@@ -238,19 +238,29 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
           </span>
         </div>
         <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
+        {/* Each fact is an unbreakable unit — a count split from its label
+            ("1 overdue · 7 / no date") reads as a different number. Wraps
+            may only land on the separators. */}
         <p className={styles.progressFacts}>
-          {completed} of {store.tasks.length} done
+          <span>{completed} of {store.tasks.length} done</span>
           {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
-          {unscheduled > 0 ? <> · {unscheduled} no date</> : null}
+          {unscheduled > 0 ? <> · <span>{unscheduled} unscheduled</span></> : null}
         </p>
         {coverage ? (
-          <p aria-label="Budget coverage" className={styles.progressFacts}>{coverage}</p>
+          <p aria-label="Budget coverage" className={styles.progressFacts}>
+            {coverage.split(/(?<=[.,])\s+/).map((segment) => (
+              <span key={segment}>{segment} </span>
+            ))}
+          </p>
         ) : null}
       </section>
       {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>
         <ol>
-          {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? task.schedule.on.slice(5).replace("-", "/") : ""}</time><TaskOpenButton task={task} /></li>)}
+          {/* Day-month, like every other date on screen — the old
+              `slice(5).replace("-", "/")` printed US-style "08/01", which
+              an en-IE reader parses as 8 January. */}
+          {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? formatDate(task.schedule.on) : ""}</time><TaskOpenButton task={task} /></li>)}
         </ol>
         {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : null}
       </section> : null}

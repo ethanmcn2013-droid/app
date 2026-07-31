@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { DATASET_LABELS, LAB_DATASETS, LAB_MODES, LAB_OPTIONS, MODE_LABELS, OPTION_LABELS, VIEW_LABELS, LAB_VIEWS, type LabRouteState } from "../types";
 import { FIXTURE_MANIFEST_ID, FIXTURE_SHA256 } from "../fixtures";
 import { useLabStore } from "../store";
@@ -7,7 +8,7 @@ import { Icon } from "./icons";
 import styles from "./shared.module.css";
 
 const VIEW_PURPOSES: Record<LabRouteState["view"], string> = {
-  board: "Move and prioritize work by status",
+  board: "Move and prioritise work by status",
   list: "Scan and edit operational task fields",
   timeline: "Plan dated work and explicit unscheduled tasks",
   calendar: "Review commitments by day, week, or agenda",
@@ -51,10 +52,16 @@ export function LabRibbon({ route, onRouteChange }: { route: LabRouteState; onRo
 }
 
 export function ViewTabs({ route, onRouteChange, className = "" }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void; className?: string }) {
+  // When the tab row scrolls (phone widths), the current view must not
+  // load clipped mid-word off the right edge — pull it into view once.
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [route.view]);
   return (
     <nav aria-label="Project views" className={`${styles.viewTabs} ${className}`}>
       {LAB_VIEWS.map((view) => (
-        <button aria-current={route.view === view ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} title={VIEW_PURPOSES[view]} type="button">
+        <button aria-current={route.view === view ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} ref={route.view === view ? activeRef : undefined} title={VIEW_PURPOSES[view]} type="button">
           <Icon name={view} size={15} />{VIEW_LABELS[view]}
         </button>
       ))}
@@ -113,7 +120,7 @@ export function SuiteRail({ active = "workspace" }: { active?: string }) {
       <a className={styles.signalWordmark} href="#" onClick={(event) => event.preventDefault()}><span>S</span><b>Signal Studio</b></a>
       <nav>
         <a href="#" onClick={(event) => event.preventDefault()}><Icon name="inbox" size={17} />Inbox <small>4</small></a>
-        <a href="#" onClick={(event) => event.preventDefault()}><Icon name="agenda" size={17} />My week</a>
+        <a href="#" onClick={(event) => event.preventDefault()}><Icon name="agenda" size={17} />My work</a>
         <a aria-current={active === "workspace" ? "page" : undefined} href="#" onClick={(event) => event.preventDefault()}><Icon name="board" size={17} />Projects</a>
         <a href="#" onClick={(event) => event.preventDefault()}><Icon name="focus" size={17} />Saved views</a>
       </nav>

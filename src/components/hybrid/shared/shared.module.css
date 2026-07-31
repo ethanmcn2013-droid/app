@@ -92,6 +92,42 @@
 
 .selectionBox { accent-color: var(--x-task-accent); cursor: pointer; flex: 0 0 auto; height: 16px; margin: 0; position: relative; width: 16px; }
 .selectionBox::after { content: ""; inset: -4px; position: absolute; }
+/* Completion is a different verb than selection, so it is a different
+   shape: a circle that fills on done — the affordance every task tool
+   spends on "mark this finished" — while selection stays the square
+   checkbox. Before this split the two rendered pixel-identical and sat
+   side by side on list and schedule rows. Same 24px hit area. */
+.completionBox {
+  appearance: none;
+  background: var(--x-task-raised);
+  border: 1.5px solid var(--x-task-border-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 16px;
+  margin: 0;
+  position: relative;
+  transition: background var(--motion-instant) var(--ease-out), border-color var(--motion-instant) var(--ease-out);
+  width: 16px;
+}
+.completionBox::before {
+  border: solid transparent;
+  border-width: 0 0 1.8px 1.8px;
+  content: "";
+  height: 4px;
+  left: 3px;
+  position: absolute;
+  top: 4px;
+  transform: rotate(-45deg);
+  width: 8px;
+}
+.completionBox::after { content: ""; inset: -4px; position: absolute; }
+.completionBox:hover:not(:disabled),
+.completionBox:focus-visible { border-color: var(--x-task-success); }
+.completionBox:hover:not(:disabled)::before { border-color: var(--x-task-border-strong); }
+.completionBox:checked { background: var(--x-task-success); border-color: var(--x-task-success); }
+.completionBox:checked::before { border-color: var(--x-task-raised); }
+.completionBox:disabled { cursor: default; opacity: .55; }
 .priority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 10px; gap: 5px; white-space: nowrap; }
 .priorityDot { background: var(--x-task-text-muted); border-radius: 50%; height: 6px; width: 6px; }
 .priority[data-priority="urgent"] .priorityDot { background: var(--x-task-danger); }

@@ -476,7 +476,7 @@
             {
               "kind": "role",
               "role": "button",
-              "name": "New task",
+              "name": "Add task",
               "count": 0,
               "proves": [
                 "read-only"
@@ -863,7 +863,7 @@
         {
           "kind": "role",
           "role": "textbox",
-          "name": "Name a task, try: Confirm catering tasting menu by Friday",
+          "name": "Task name",
           "value": "Confirm the final supplier arrival plan with every Saturday contact next Thursday #maria-james",
           "proves": [
             "default"

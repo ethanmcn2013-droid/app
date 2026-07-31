@@ -235,7 +235,9 @@
    .laneList). A ten-card lane can be read to the bottom without dragging
    its three-card neighbour out of view — the lanes are independent
    surfaces, which is how every board people already know behaves. */
-.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+/* The lanes scroll; the add-column rail stays pinned beside them. */
+.boardTrack { display: flex; flex: 1; min-height: 0; min-width: 0; }
+.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
 
 /* ── column colour ─────────────────────────────────────────────────────
    Ported from the Tasks hero (studio · marketing/heroes/tasks/showcase/
@@ -288,21 +290,26 @@
   z-index: 0;
 }
 
+/* Two rows by design: name + actions on the first, the editable
+   description on its own full-width second row. The description was
+   authored as subtext ("Editable column subtext", below) — in a single
+   nowrap row its width:100% crushed the h2 name to a sliver, which put
+   helper text above the column's identity. */
 .laneHeader {
-  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
   align-items: center;
   background: color-mix(in srgb, var(--lane-tone, transparent) 6%, var(--x-task-surface));
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
-  flex: 0 0 42px;
-  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0 6px;
   justify-content: space-between;
   padding: 0 6px 0 6px;
   position: relative;
   z-index: 2;
 }
 .laneHeader::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
-.laneIdentity { align-items: center; display: flex; gap: 6px; min-width: 0; }
+.laneIdentity { align-items: center; display: flex; flex: 1 1 0; gap: 6px; min-height: 42px; min-width: 0; }
 .laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 650; letter-spacing: -.01em; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The count carries the limit with it ("3/6"). The old surface showed the
@@ -312,7 +319,7 @@
 .wipCount[data-near] { color: var(--x-task-warning); }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
 
-.laneActions { align-items: center; display: flex; flex: 0 0 auto; gap: 1px; }
+.laneActions { align-items: center; display: flex; flex: 0 0 auto; gap: 1px; min-height: 42px; }
 .laneIconButton {
   align-items: center;
   background: transparent;
@@ -343,7 +350,6 @@
 /* The lane's own scroll region. `overscroll-behavior: contain` stops a
    lane that has hit its end from chaining the scroll to the page. */
 .laneList {
-  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
@@ -416,7 +422,7 @@
   padding: 10px 12px 11px;
   position: relative;
   transform-origin: center;
-  transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press);
+  transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
 }
 .boardCard:hover { border-color: var(--x-task-border-strong); box-shadow: var(--shadow-1); }
 .boardCard[data-selected] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); }
@@ -486,7 +492,7 @@
 .cardMilestone:focus-visible,
 .cardMilestone[data-active] { opacity: 1; }
 .cardMilestone:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.cardMilestone[data-active] { color: var(--x-task-warning); }
+.cardMilestone[data-active] { color: var(--x-task-milestone); }
 .cardMilestone[data-active] svg { fill: currentColor; }
 .cardMilestone:disabled { cursor: not-allowed; }
 .cardMenuTrigger:hover,
@@ -626,8 +632,12 @@
 .taskRow[data-recently-updated] > th,
 .taskRow[data-recently-updated] > td { animation: list-update-receipt 240ms var(--ease-out) both; }
 .taskRow[data-completed] { color: var(--x-task-text-muted); }
+/* font-weight/text-align: the title cell is a <th scope="row"> for AT, and
+   the browser default (bold, centered) leaked into everything the reset
+   below the title button didn't cover — row descriptions rendered heavier
+   than their own titles, centered on a ragged axis. */
 .taskRow > th,
-.taskRow > td { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid color-mix(in srgb, var(--x-task-border) 62%, transparent); font-size: 12px; height: 38px; overflow: hidden; padding: 0 8px; text-overflow: ellipsis; white-space: nowrap; }
+.taskRow > td { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid color-mix(in srgb, var(--x-task-border) 62%, transparent); font-size: 12px; font-weight: 400; height: 38px; overflow: hidden; padding: 0 8px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow:hover > th[data-column="title"] { background: var(--x-task-hover); }
 .taskRow[aria-selected="true"] > th[data-column="title"] { background: var(--x-task-selected); }
 .taskRow td select { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--x-task-text-secondary); font: inherit; font-size: 12px; height: 28px; max-width: 100%; padding: 0 4px; }
@@ -690,7 +700,7 @@
 .unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 10px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
 .unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
-.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 10px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 10px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
 .trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 10px; min-height: 30px; }
@@ -719,7 +729,7 @@
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
 .timelineGrid span[data-weekend] { background: color-mix(in srgb, var(--x-task-canvas) 48%, transparent); }
 .todayLine { background: var(--x-task-accent); bottom: 0; position: absolute; top: 0; width: 1px; z-index: 2; }
-.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform 180ms var(--spring-press); z-index: 3; }
+.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); z-index: 3; }
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
@@ -751,9 +761,14 @@
 .timelineDate[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-surface)); box-shadow: inset 0 -2px var(--x-task-accent); }
 .timelineDue > span:last-child,
 .timelineMilestone > span:last-child { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dueStem { background: var(--x-task-danger); flex: 0 0 2px; height: 14px; }
+/* The chart follows the shared due grammar (shared.module.css): scheduled
+   is calm accent, due today is the amber nudge, overdue is the alarm. It
+   used to paint every tick danger-red regardless of state. */
+.dueStem { background: var(--x-task-accent); flex: 0 0 2px; height: 14px; }
+.timelineDue[data-due-today] .dueStem { background: var(--x-task-warning); }
+.timelineDue[data-overdue] .dueStem { background: var(--x-task-danger); }
 .milestoneDiamond,
-.calendarDiamond { background: var(--x-task-review); display: inline-block; flex: 0 0 auto; height: 8px; transform: rotate(45deg); width: 8px; }
+.calendarDiamond { background: var(--x-task-milestone); display: inline-block; flex: 0 0 auto; height: 8px; transform: rotate(45deg); width: 8px; }
 .outsideRange { background: var(--x-task-surface); border: 1px dashed var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text-muted); cursor: pointer; font: inherit; font-size: 10px; left: 8px; min-height: 25px; padding: 0 7px; position: absolute; top: 7px; }
 
 /* Calendar */
@@ -1029,6 +1044,10 @@
 }
 
 @media (pointer: coarse) {
+  /* A bar of Alt/F2/arrow-key instructions on a device with no keyboard
+     is 30px of noise partially covered by toasts. */
+  .keyboardLegend { display: none; }
+
   .timelineToolbar {
     flex-basis: auto;
     min-height: 52px;
@@ -1181,8 +1200,10 @@
   font-size: 11px;
   line-height: 1.35;
   overflow: hidden;
-  padding: 0 2px 2px;
+  padding: 0 2px 6px;
   text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   width: 100%;
 }
 .laneDescButton:disabled { cursor: default; }

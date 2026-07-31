@@ -168,7 +168,6 @@ function MobileTabBar({ active }: { active: string }) {
   const inboxCount = openTaskCount(tasks);
   const myCount = openTaskCount(tasks, { user: me });
   const activeView = VIEWS.find((view) => active === view.href);
-  const isViewActive = Boolean(activeView);
 
   const closeViews = useCallback((restoreFocus: boolean) => {
     setViewsOpen(false);
@@ -323,7 +322,7 @@ function MobileTabBar({ active }: { active: string }) {
             tabIndex={-1}
           >
             <NavIcon kind="user" />
-            <span className="flex-1">My week</span>
+            <span className="flex-1">My work</span>
             <span
               aria-label={`${myCount} open tasks`}
               className="font-mono text-[10px] text-ink-faint"
@@ -380,9 +379,14 @@ function MobileTabBar({ active }: { active: string }) {
             aria-controls={viewsOpen ? menuId : undefined}
             aria-expanded={viewsOpen}
             aria-haspopup="menu"
+            // Lit only while its menu is open. It used to take the same
+            // active tint as the Tasks link whenever a view was active —
+            // two tabs lit at once, and a menu dressed as a destination.
+            // The chevron says "this opens something", the label says
+            // where you are.
             className={[
               "flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] font-semibold outline-none transition-colors",
-              isViewActive || viewsOpen
+              viewsOpen
                 ? "bg-brand-soft/60 text-brand"
                 : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",
             ].join(" ")}
@@ -394,8 +398,11 @@ function MobileTabBar({ active }: { active: string }) {
             type="button"
           >
             <NavIcon kind={activeView?.icon ?? "views"} />
-            <span className="max-w-full truncate">
-              {activeView?.label ?? "Views"}
+            <span className="flex max-w-full items-center gap-0.5">
+              <span className="min-w-0 truncate">{activeView?.label ?? "Views"}</span>
+              <svg aria-hidden className="flex-none" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
             </span>
           </button>
         </li>

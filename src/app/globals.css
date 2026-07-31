@@ -144,6 +144,12 @@
   --x-task-danger-soft: var(--status-blocked-bg);
   --x-task-review: color-mix(in srgb, var(--status-review) 55%, var(--ink));
   --x-task-review-soft: color-mix(in srgb, var(--status-review) 10%, var(--paper));
+  /* Milestones carry ONE identity everywhere a diamond renders — board
+     card, Schedule row, Calendar chip. Violet: the only hue no status
+     token spends, so a milestone never reads as due-today (amber) or
+     Review (teal) by accident. */
+  --x-task-milestone: color-mix(in srgb, var(--x-col-violet) 72%, var(--ink));
+  --x-task-milestone-soft: color-mix(in srgb, var(--x-col-violet) 10%, var(--paper));
   --x-task-shadow: var(--shadow-modal);
 
   /* ── Timeline module tokens (--x- extension prefix). The alarm rides the

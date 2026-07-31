@@ -154,7 +154,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         // writes notes like `stripe-sub:sub_…`; the dev path writes
         // `dev:no-stripe`. Both expire on cancel.
         await expireEntitlementByNotes("dev:no-stripe");
-        toast("Subscription canceled", {
+        toast("Subscription cancelled", {
           tone: "success",
           body: "You'll keep paid features until the period ends.",
         });

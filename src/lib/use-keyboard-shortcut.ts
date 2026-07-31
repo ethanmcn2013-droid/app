@@ -6,6 +6,9 @@ function targetIsEditable(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
   if (el instanceof HTMLInputElement) return true;
   if (el instanceof HTMLTextAreaElement) return true;
+  // A focused <select> consumes letter keys as typeahead ("c" jumps to a
+  // C-option); firing a global shortcut over it hijacks that.
+  if (el instanceof HTMLSelectElement) return true;
   if (el.isContentEditable) return true;
   return false;
 }

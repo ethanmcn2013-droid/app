@@ -247,7 +247,7 @@ function TaskDetailHeader({
   const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
 
   return (
-    <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-5 pb-3 pt-4">
+    <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-5 pb-3 pt-4">
       {/* Top row: breadcrumb + controls */}
       <div className="flex items-center justify-between gap-2">
         {/* Breadcrumb */}
@@ -370,7 +370,7 @@ function TaskDetailHeader({
         </button>
         <span className="text-[11px] text-ink-faint">e — focus mode · j/k — navigate</span>
       </div>
-    </header>
+    </div>
   );
 }
 
@@ -427,7 +427,7 @@ export function TaskDetail({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
-      if (target.matches("input, textarea, [contenteditable]")) return;
+      if (target.matches("input, textarea, select, [contenteditable]")) return;
       if (e.key === "j") { e.preventDefault(); onNavigate?.("next"); }
       if (e.key === "k") { e.preventDefault(); onNavigate?.("prev"); }
       if (e.key === "e") { e.preventDefault(); onFocusToggle(); }

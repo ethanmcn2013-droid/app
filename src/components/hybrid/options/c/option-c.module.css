@@ -676,6 +676,19 @@ thead .listTitleCell { z-index: 14; }
 }
 
 @media (max-width: 767px) {
+  /* Expanded, the rail overlays the workspace instead of sharing the row —
+     as an in-flow 236px column it crushed the board to ~110px on a phone. */
+  .planningRail:not(.planningRailCollapsed) {
+    bottom: 0;
+    box-shadow: -24px 0 48px -24px rgba(20, 21, 26, 0.35);
+    max-width: calc(100vw - 56px);
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 300px;
+    z-index: 70;
+  }
+
   .planningRailCollapsed {
     flex: 0 0 48px;
     padding-left: 2px;
