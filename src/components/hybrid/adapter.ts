@@ -12,7 +12,8 @@
 
 import type { Priority, Task } from "@/lib/data";
 import type { CalendarFrame } from "@/lib/calendar-frame";
-import { effectiveColumnKey } from "@/lib/board-columns";
+import { effectiveColumnKey, isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { addDays, asCalendarDate, differenceInDays } from "./dates";
 import type {
   CalendarDate,
@@ -167,6 +168,7 @@ export function taskToLab(
   task: Task,
   order: number,
   calendar?: CalendarFrame,
+  columnConfig: ColumnConfig | null = null,
 ): LabTask {
   const subtaskCount = task.subtaskCount ?? 0;
   const subtaskDone = task.subtaskDone ?? 0;
@@ -199,7 +201,8 @@ export function taskToLab(
     })),
     blockedByIds: task.blockedBy ?? [],
     blockerIds: [],
-    completed: task.lane === "done",
+    completed: isTaskDone(task, columnConfig),
+    completedAt: task.completedAt ? task.completedAt.toISOString() : undefined,
     workspaceId: task.workspaceId ?? "workspace",
     order,
   };

@@ -33,6 +33,7 @@ export type ColumnConfig = {
   colors: Partial<Record<string, ColumnColorKey>>;
   descriptions: Partial<Record<string, string>>;
   limits: Partial<Record<string, number>>;
+  doneKeys: string[];
 };
 
 export const MAX_NAME_LEN = 80;
@@ -52,6 +53,7 @@ export function emptyConfig(): ColumnConfig {
     colors: {},
     descriptions: {},
     limits: {},
+    doneKeys: ["done"],
   };
 }
 
@@ -85,6 +87,13 @@ export function parseDescriptions(raw: unknown): Partial<Record<string, string>>
     if (typeof value === "string") out[key] = value.slice(0, MAX_DESCRIPTION_LEN);
   }
   return out;
+}
+
+/** Parse the stored done keys; absent or unusable reads as ["done"]. */
+export function parseDoneKeys(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return ["done"];
+  const keys = raw.filter((key): key is string => typeof key === "string" && key.length > 0);
+  return keys.length > 0 ? [...new Set(keys)] : ["done"];
 }
 
 /** Parse the stored limits map, keeping positive integers within range.
@@ -128,7 +137,8 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
       "order" in obj ||
       "colors" in obj ||
       "descriptions" in obj ||
-      "limits" in obj
+      "limits" in obj ||
+      "doneKeys" in obj
     ) {
       const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
       const custom = Array.isArray(obj.custom)
@@ -146,6 +156,7 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
         colors: parseColors(obj.colors),
         descriptions: parseDescriptions(obj.descriptions),
         limits: parseLimits(obj.limits),
+        doneKeys: parseDoneKeys(obj.doneKeys),
       };
     }
 
@@ -170,6 +181,7 @@ export function serializeColumnConfig(config: ColumnConfig): string {
     colors: config.colors ?? {},
     descriptions: config.descriptions ?? {},
     limits: config.limits ?? {},
+    doneKeys: config.doneKeys?.length ? config.doneKeys : ["done"],
   });
 }
 
@@ -183,6 +195,7 @@ export function configRemoveColumn(config: ColumnConfig, key: string): ColumnCon
   delete descriptions[key];
   const limits = { ...config.limits };
   delete limits[key];
+  const doneKeys = config.doneKeys.filter((k) => k !== key);
   return {
     ...config,
     custom: config.custom.filter((c) => c.key !== key),
@@ -190,6 +203,7 @@ export function configRemoveColumn(config: ColumnConfig, key: string): ColumnCon
     colors,
     descriptions,
     limits,
+    doneKeys: doneKeys.length > 0 ? doneKeys : ["done"],
   };
 }
 

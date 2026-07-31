@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
-import { columnDisplayName, resolveBoardColumns } from "@/lib/board-columns";
+import { columnDisplayName, isDoneColumnKey, resolveBoardColumns } from "@/lib/board-columns";
 import { addDays, formatSchedule, moveSchedule, resizeScheduleEnd } from "./dates";
 import type {
   CalendarDate,
@@ -129,13 +129,13 @@ function reducer(state: StoreState, action: Action): StoreState {
       if (!moving) return state;
       const statusTasks = state.tasks.filter((task) => task.status === action.status && task.id !== action.id);
       const index = Math.max(0, Math.min(action.index ?? statusTasks.length, statusTasks.length));
-      statusTasks.splice(index, 0, { ...moving, status: action.status, completed: action.status === "done" });
+      statusTasks.splice(index, 0, { ...moving, status: action.status, completed: isDoneColumnKey(action.status, null) });
       const ranks = new Map(statusTasks.map((task, rank) => [task.id, rank]));
       return {
         ...state,
         ...snapshot(state, `Move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => task.id === action.id
-          ? { ...task, status: action.status, completed: action.status === "done", order: index }
+          ? { ...task, status: action.status, completed: isDoneColumnKey(action.status, null), order: index }
           : task.status === action.status
             ? { ...task, order: ranks.get(task.id) ?? task.order }
             : task),
@@ -177,7 +177,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, `Bulk move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => selected.has(task.id)
-          ? { ...task, status: action.status, completed: action.status === "done" }
+          ? { ...task, status: action.status, completed: isDoneColumnKey(action.status, null) }
           : task),
         announcement: `${selected.size} tasks moved to ${labColumnName(action.status)}`,
       };
@@ -191,7 +191,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         tasks: state.tasks.map((task) => selected.has(task.id) ? {
           ...task,
           completed: action.completed,
-          status: action.completed ? "done" : task.status === "done" ? "active" : task.status,
+          status: action.completed ? "done" : isDoneColumnKey(task.status, null) ? "doing" : task.status,
           completedAt: action.completed ? action.nowIso : undefined,
         } : task),
         announcement: `${selected.size} tasks ${action.completed ? "completed" : "reopened"}`,
@@ -431,7 +431,7 @@ export function LabStoreProvider({
         id,
         fields: {
           completed: !task.completed,
-          status: !task.completed ? "done" : "active",
+          status: !task.completed ? "done" : "doing",
           completedAt: !task.completed ? calendar.nowIso : undefined,
         },
         label: !task.completed ? "Completed" : "Reopened",

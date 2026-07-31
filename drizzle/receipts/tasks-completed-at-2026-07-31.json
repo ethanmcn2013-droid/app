@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "tasks-completed-at-2026-07-31",
+  "authorizedBy": "founder directive 2026-07-31 (board truth programme, phase 3: done means one thing; full execution authorization given in-session)",
+  "reviewedBy": "Claude Fable 5 session review, T·122",
+  "authorizationSource": "operator session instruction: add tasks.completedAt; Signal reconstructs completion time from the activity log today and already reports completion_timestamp_missing_for_terminal_tasks. Backfill only what the log can prove; production counts measured via the db-migrate measure command before execution.",
+  "migrations": [
+    {
+      "id": "0025_tasks_completed_at",
+      "sha256": "0d169a3ca395616c3d81868da31f732fd3181d7a5efc624bf703192ff3155613",
+      "reviewedAt": "2026-07-31T00:00:00.000Z",
+      "risk": "low-medium (one additive nullable column, one guarded backfill). The backfill writes only currently-done canonical-lane tasks, only from provable activity-log transitions; every other row keeps NULL. No row is deleted, no existing column modified.",
+      "rollbackPlan": "ALTER TABLE tasks DROP COLUMN completed_at (SQLite 3.35+). Application code treats NULL as not-stamped and keeps functioning; Signal falls back to activity-log reconstruction exactly as before. The workflow's verified backup restores the exact prior state if preferred.",
+      "postconditions": [
+        "completed_at column exists on tasks",
+        "no open or claimed task received a backfilled timestamp",
+        "every backfilled timestamp came from an activity row for that task",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "completed-at-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('tasks') WHERE name = 'completed_at'",
+          "expected": 1
+        },
+        {
+          "id": "backfill-scoped-to-done",
+          "sql": "SELECT COUNT(*) AS value FROM tasks WHERE completed_at IS NOT NULL AND NOT (lane = 'done' AND board_column_key IS NULL)",
+          "expected": 0
+        },
+        {
+          "id": "backfill-provable",
+          "sql": "SELECT COUNT(*) AS value FROM tasks t WHERE t.completed_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM activities a WHERE a.task_id = t.id AND a.created_at = t.completed_at)",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

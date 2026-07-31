@@ -258,6 +258,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/retire-waiting-lane-2026-07-31.json",
       "receiptSha256": "b4b4dd9a266cba899120abac958d6221902ea622d9c49afffc1304e21c8b515b"
+    },
+    {
+      "ordinal": 25,
+      "id": "0025_tasks_completed_at",
+      "file": "drizzle/0025_tasks_completed_at.sql",
+      "when": 1785490000000,
+      "sha256": "0d169a3ca395616c3d81868da31f732fd3181d7a5efc624bf703192ff3155613",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/tasks-completed-at-2026-07-31.json",
+      "receiptSha256": "727bd3ae86594a541c2f8bf00b03395dc5547b9317d17ee79e7f61406f3b64f7"
     }
   ]
 }

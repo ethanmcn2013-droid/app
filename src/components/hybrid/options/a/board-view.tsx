@@ -21,6 +21,7 @@ import {
 import {
   defaultColumnConfig,
   resolveBoardColumns,
+  resolveDoneKeys,
   type BoardColumn,
 } from "@/lib/board-columns";
 import { useColumnConfig } from "@/lib/domain-context";
@@ -31,6 +32,7 @@ import {
   reorderColumnsAction,
   setColumnColorAction,
   setColumnDescriptionAction,
+  setColumnDoneAction,
   setColumnLimitAction,
 } from "@/server/actions/board";
 import { Icon } from "../../shared/icons";
@@ -1133,6 +1135,26 @@ function LaneHeader({
     });
   }
 
+  function toggleDone() {
+    setMenuOpen(false);
+    const next = base();
+    const keys = new Set(resolveDoneKeys(next));
+    const marking = !column.isDone;
+    if (marking) keys.add(column.key);
+    else keys.delete(column.key);
+    // The board always keeps at least one done column — the server throws
+    // on an empty set, so don't paint an optimistic state it will reject.
+    if (keys.size === 0) return;
+    onOptimisticConfigChange({ ...next, doneKeys: [...keys] });
+    startTransition(async () => {
+      try {
+        await setColumnDoneAction(column.key, marking);
+      } catch {
+        onOptimisticConfigChange(currentConfig);
+      }
+    });
+  }
+
   function setColor(color: ColumnColorKey) {
     setMenuOpen(false);
     const next = base();
@@ -1234,6 +1256,17 @@ function LaneHeader({
               </button>
               <button disabled={readOnly} onClick={() => { setMenuOpen(false); setLimitDraft(column.limit ? String(column.limit) : ""); setLimitEditing(true); }} role="menuitem" type="button">
                 {column.limit !== undefined ? `Limit · ${column.limit}` : "Set a limit"}
+              </button>
+              {/* Done-ness is configurable per column (T·122): progress,
+                  briefs and exports all count what lands here. */}
+              <button
+                aria-pressed={column.isDone}
+                disabled={readOnly || (column.isDone && columns.filter((c) => c.isDone).length === 1)}
+                onClick={toggleDone}
+                role="menuitem"
+                type="button"
+              >
+                {column.isDone ? "Counts as done ✓" : "Counts as done"}
               </button>
               <div className={styles.laneMenuLabel}>Colour</div>
               <div aria-label="Column colour" className={styles.laneColorRow} role="group">

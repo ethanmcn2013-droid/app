@@ -17,6 +17,8 @@ import { createClient } from "@libsql/client";
 
 const SQL = readFileSync(new URL("../../drizzle/0024_retire_waiting_lane.sql", import.meta.url), "utf8");
 const STATEMENTS = SQL.split("--> statement-breakpoint").map((s) => s.trim()).filter(Boolean);
+const SQL_0025 = readFileSync(new URL("../../drizzle/0025_tasks_completed_at.sql", import.meta.url), "utf8");
+const STATEMENTS_0025 = SQL_0025.split("--> statement-breakpoint").map((s) => s.trim()).filter(Boolean);
 
 test("0024 splits into its three statements", () => {
   assert.equal(STATEMENTS.length, 3);
@@ -73,5 +75,36 @@ test("0024 moves waiting rows and seeds or amends configs, with data present", a
   const untouched = await client.execute("SELECT COUNT(*) AS n FROM meta WHERE key = 'board:ws-c:columns'");
   assert.equal(Number(untouched.rows[0].n), 0);
 
+  client.close();
+});
+
+test("0025 adds completed_at and backfills only provable done transitions", async () => {
+  const client = createClient({ url: ":memory:" });
+  await client.execute("CREATE TABLE tasks (id TEXT PRIMARY KEY, workspace_id TEXT, lane TEXT, board_column_key TEXT)");
+  await client.execute("CREATE TABLE activities (id TEXT PRIMARY KEY, task_id TEXT, kind TEXT, payload TEXT, created_at INTEGER)");
+
+  // d1: done with a provable toggle. d2: done with a provable move.
+  // d3: done, no log (stays NULL). o1: open with a stale done event
+  // (reopened later — must NOT be stamped). c1: claimed task (skipped).
+  await client.execute(`INSERT INTO tasks VALUES
+    ('d1','ws','done',NULL),
+    ('d2','ws','done',NULL),
+    ('d3','ws','done',NULL),
+    ('o1','ws','doing',NULL),
+    ('c1','ws','done','col-x')`);
+  await client.execute(`INSERT INTO activities VALUES
+    ('a1','d1','toggleComplete','{"kind":"toggleComplete","to":"done"}',1000),
+    ('a2','d1','toggleComplete','{"kind":"toggleComplete","to":"done"}',2000),
+    ('a3','d2','move','{"kind":"move","from":"doing","to":"done"}',1500),
+    ('a4','o1','toggleComplete','{"kind":"toggleComplete","to":"done"}',1200)`);
+
+  assert.equal(STATEMENTS_0025.length, 2);
+  for (const statement of STATEMENTS_0025) await client.execute(statement);
+
+  const rows = await client.execute("SELECT id, completed_at FROM tasks ORDER BY id");
+  assert.deepEqual(
+    rows.rows.map((row) => [row.id, row.completed_at === null ? null : Number(row.completed_at)]),
+    [["c1", null], ["d1", 2000], ["d2", 1500], ["d3", null], ["o1", null]],
+  );
   client.close();
 });

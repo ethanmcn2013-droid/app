@@ -74,6 +74,7 @@ test("serialize round-trips a config and normalises missing system lanes", () =>
     order: ["doing", "col-x"], // deliberately missing todo/review/done
     colors: { doing: "sky" },
     limits: {},
+    doneKeys: ["done"],
     descriptions: { "col-x": "notes" },
   };
   const round = parseColumnConfig(serializeColumnConfig(cfg));
@@ -112,6 +113,7 @@ test("configRemoveColumn drops the column and its colour + description", () => {
     colors: { "col-a": "pink", done: "emerald" },
     descriptions: { "col-a": "temp" },
     limits: { "col-a": 5 },
+    doneKeys: ["done", "col-a"],
   };
   const next = configRemoveColumn(cfg, "col-a");
   assert.equal(next.custom.length, 0);

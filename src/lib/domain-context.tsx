@@ -82,7 +82,7 @@ export function DomainProvider({
   const resolvedConfig: ColumnConfig | null =
     columnConfig ??
     (columnNames
-      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {}, limits: {} }
+      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {}, limits: {}, doneKeys: ["done"] }
       : null);
 
   return (
