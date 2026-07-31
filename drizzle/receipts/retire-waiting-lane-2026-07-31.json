@@ -7,7 +7,7 @@
   "migrations": [
     {
       "id": "0024_retire_waiting_lane",
-      "sha256": "3fa504b7e91c704e42ff1060b0c85d150b9646c7895b16be6d5fbb062070f859",
+      "sha256": "63a96b5effdf633c0341193506225d209777ca6353234522cdbb1fd439d3a9a9",
       "reviewedAt": "2026-07-31T00:00:00.000Z",
       "risk": "medium (three-statement data rewrite; no schema change, no row deleted). Statement 1 inserts configs only where none exist; statement 2 appends a JSON member only to configs that lack the quoted waiting key; statement 3 rewrites lane='waiting' rows to a board_column_key claim with the canonical doing lane. The application resolves the claim and the raw text to the same column, so surfaces render identically before, during and after.",
       "rollbackPlan": "UPDATE tasks SET lane = 'waiting', board_column_key = NULL WHERE board_column_key = 'waiting' AND lane = 'doing' restores the pre-migration row shape for every row this migration touched (rows a user later moves are indistinguishable and stay where the user put them); seeded configs are inert under the old code and can be deleted by key. The workflow's verified backup restores the exact prior state if a full revert is ever preferred.",

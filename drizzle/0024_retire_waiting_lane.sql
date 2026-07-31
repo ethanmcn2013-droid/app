@@ -26,7 +26,7 @@ WHERE EXISTS (
   AND NOT EXISTS (
         SELECT 1 FROM meta m WHERE m.key = 'board:' || w.id || ':columns'
       );
-
+--> statement-breakpoint
 -- 2. Affected workspaces WITH a stored config that does not know the
 --    waiting key yet: append the custom column and its order slot. The
 --    '"waiting"' guard is quote-delimited, so keys that merely contain
@@ -49,7 +49,7 @@ WHERE key IN (
               )
       )
   AND value NOT LIKE '%"waiting"%';
-
+--> statement-breakpoint
 -- 3. The rows themselves: a Waiting task becomes a claim on the waiting
 --    column with the canonical in-motion lane. No row is deleted; the
 --    board, share, print, embed and export all resolve the same column
