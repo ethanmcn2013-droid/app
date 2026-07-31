@@ -759,3 +759,34 @@
     min-width: 44px;
   }
 }
+
+/*
+ * T·125 restoration: mobile day-list. Below md the seven-column grid (and
+ * the agenda ledger beside it) don't fit a phone width usefully, so narrow
+ * viewports get a plain chronological list of the next 14 days instead —
+ * hidden on desktop, swapped in for the whole grid/agenda workspace below
+ * the breakpoint. Matches the pre-consolidation calendar's judgment call:
+ * a thin muted line for an empty day rather than an expanding empty state.
+ */
+.calendarMobileAgenda { display: none; }
+.calendarDayList { display: flex; flex-direction: column; gap: 8px; }
+.calendarDayListRow { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 7px; overflow: hidden; }
+.calendarDayListRow > header { align-items: baseline; display: flex; gap: 8px; justify-content: space-between; padding: 8px 10px; }
+.calendarDayListRow > header span { color: var(--x-task-text-muted); font-size: 10px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; }
+.calendarDayListRow > header strong { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.calendarDayListRow[data-today] { border-color: color-mix(in srgb, var(--x-task-accent) 40%, var(--x-task-border)); }
+.calendarDayListRow[data-today] > header span { color: var(--x-task-accent); }
+.calendarDayListRow ul { border-top: 1px solid var(--x-task-border); display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.calendarDayListRow li { border-bottom: 1px solid var(--x-task-border); display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; }
+.calendarDayListRow li:last-child { border-bottom: 0; }
+.calendarDayListRow li > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; font-weight: 620; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.calendarDayListEmpty { color: var(--x-task-text-muted); font-size: 11px; font-style: italic; margin: 0; padding: 8px 10px; }
+
+@media (max-width: 767px) {
+  .calendarWorkspace { display: none; }
+  .calendarMobileAgenda { display: block; }
+}
+
+@media (pointer: coarse) {
+  .calendarDayListRow li > button { min-height: 44px; }
+}

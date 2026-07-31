@@ -3,10 +3,12 @@
 import { useMemo, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
+import { personById } from "../../fixtures";
 import {
   PRIORITY_LABELS,
   TASK_PRIORITIES,
   type LabTask,
+  type TaskPriority,
   type TaskStatus,
 } from "../../types";
 import type { BoardColumn } from "@/lib/board-columns";
@@ -17,6 +19,7 @@ import {
   AvatarStack,
   PriorityMark,
   ScheduleText,
+  TaskCompletion,
   TaskOpenButton,
   TaskSelection,
   TaskSignals,
@@ -135,6 +138,23 @@ function groupsFor(tasks: LabTask[], group: QuietGroup, boardColumns: readonly B
   }));
 }
 
+/**
+ * Owner cell: the avatar stack plus the first assignee's name, so a row
+ * reads "who" without opening the task. The overflow count reuses
+ * AvatarStack's own "+N" convention rather than list-app.tsx's "and N
+ * more" phrasing off its first two names — one overflow idiom per option.
+ */
+function AssigneeCell({ task }: { task: LabTask }) {
+  const people = task.assigneeIds.map(personById).filter(Boolean);
+  const [first, ...rest] = people;
+  return (
+    <span className={styles.assigneeCell}>
+      <AvatarStack limit={3} task={task} />
+      {first ? <span className={styles.assigneeNames}>{first.name}{rest.length ? ` +${rest.length}` : ""}</span> : null}
+    </span>
+  );
+}
+
 export function ListView({
   tasks,
   columns,
@@ -235,9 +255,20 @@ export function ListView({
         </select>
       );
     }
-    if (column.id === "assignees") return <AvatarStack limit={3} task={task} />;
+    if (column.id === "assignees") return <AssigneeCell task={task} />;
     if (column.id === "schedule") return <ScheduleText task={task} />;
-    if (column.id === "priority") return <PriorityMark task={task} withLabel />;
+    if (column.id === "priority") {
+      return (
+        <select
+          aria-label={`Priority for ${task.title}`}
+          disabled={store.readOnly}
+          onChange={(event) => store.updatePriority(task.id, event.target.value as TaskPriority)}
+          value={task.priority}
+        >
+          {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{PRIORITY_LABELS[priority]}</option>)}
+        </select>
+      );
+    }
     if (column.id === "estimate") return <span className={styles.monoValue}>{task.estimate ?? "Not set"}</span>;
     if (column.id === "progress") return <span className={styles.monoValue}>{task.subtasks.length ? `${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}` : "None"}</span>;
     if (column.id === "activity") return <TaskSignals task={task} />;
@@ -363,8 +394,12 @@ export function ListView({
                           <div className={styles.titleCell}>
                             {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : <span className={styles.expandSpacer} />}
                             <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                            <TaskCompletion task={task} />
                             <PriorityMark task={task} />
-                            {store.editing?.taskId === task.id && store.editing.field === "title" ? <InlineTaskTitle className={styles.listTitleEdit} task={task} /> : <TaskOpenButton className={styles.listTitle} task={task}>{task.title}</TaskOpenButton>}
+                            <div className={styles.titleStack}>
+                              {store.editing?.taskId === task.id && store.editing.field === "title" ? <InlineTaskTitle className={styles.listTitleEdit} task={task} /> : <TaskOpenButton className={styles.listTitle} task={task}>{task.title}</TaskOpenButton>}
+                              {task.description ? <span className={styles.listDescription}>{task.description}</span> : null}
+                            </div>
                           </div>
                         </th>
                       ) : <td data-column={column.id} key={column.id} style={{ minWidth: column.minWidth, width: column.width }}>{renderCell(task, column)}</td>)}
