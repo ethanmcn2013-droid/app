@@ -50,7 +50,12 @@ import {
 // therefore bases its first write on defaultColumnConfig(), never on the
 // bare four-lane emptyConfig() — otherwise the first rename on a fresh
 // board would persist a config without Waiting and the column would vanish.
-import { defaultColumnConfig } from "@/lib/board-columns";
+import {
+  defaultColumnConfig,
+  isDoneColumnKey,
+  isTaskDone,
+  resolveDoneKeys,
+} from "@/lib/board-columns";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
 
@@ -263,6 +268,32 @@ export async function setColumnLimitAction(
   if (limit === null || limit === 0) delete limits[columnKey];
   else limits[columnKey] = limit;
   existing.limits = limits;
+
+  await writeColumnConfig(ws, existing);
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Mark (or unmark) a column as done-meaning (T·122). Guard: the board
+ * must always keep at least one done column, or progress, briefs and
+ * exports would have nothing to count — unmarking the last one throws.
+ */
+export async function setColumnDoneAction(
+  columnKey: string,
+  isDone: boolean,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
+
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  const current = new Set(resolveDoneKeys(existing));
+  if (isDone) current.add(columnKey);
+  else current.delete(columnKey);
+  if (current.size === 0) {
+    throw new Error("At least one column must count as done.");
+  }
+  existing.doneKeys = [...current];
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
@@ -565,12 +596,24 @@ export async function moveTaskToColumnAction(
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return { ok: true }; // workspace guard, silent no-op for foreign ids
 
+  // Done transitions stamp completedAt whichever way the claim moves —
+  // a custom "Paid" column that counts as done completes the task the
+  // same as the canonical Done lane (T·122).
+  const config = await readColumnConfig(ws);
+  const wasDone = isTaskDone(row, config);
   if (isSystemLane) {
     const toLane = columnKey as LaneId;
     if (row.lane === toLane && !row.boardColumnKey) return { ok: true };
     await db
       .update(tasks)
-      .set({ lane: toLane, boardColumnKey: null, idleDays: null })
+      .set({
+        lane: toLane,
+        boardColumnKey: null,
+        idleDays: null,
+        ...(wasDone === isDoneColumnKey(toLane, config)
+          ? {}
+          : { completedAt: isDoneColumnKey(toLane, config) ? new Date() : null }),
+      })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   } else {
     // Custom column: set the claim. Lane normally stays canonical; a row
@@ -578,13 +621,16 @@ export async function moveTaskToColumnAction(
     // "doing" on touch so stray text never outlives a deliberate move.
     if (row.boardColumnKey === columnKey) return { ok: true };
     const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
+    const nowDone = isDoneColumnKey(columnKey, config);
     await db
       .update(tasks)
-      .set(
-        laneIsCanonical
-          ? { boardColumnKey: columnKey }
-          : { boardColumnKey: columnKey, lane: "doing" },
-      )
+      .set({
+        boardColumnKey: columnKey,
+        ...(laneIsCanonical ? {} : { lane: "doing" as LaneId }),
+        ...(wasDone === nowDone
+          ? {}
+          : { completedAt: nowDone ? new Date() : null }),
+      })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   }
 

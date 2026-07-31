@@ -40,6 +40,8 @@ export type BoardColumn = {
   description: string | undefined;
   /** Soft work-in-progress limit; undefined means no limit. */
   limit: number | undefined;
+  /** Landing here means the work is finished (config doneKeys, T·122). */
+  isDone: boolean;
 };
 
 /** The default fifth column's stable key. Also the value legacy rows hold
@@ -103,6 +105,7 @@ export function resolveBoardColumns(config: ColumnConfig | null): BoardColumn[] 
   const seen = new Set<string>();
   const columns: BoardColumn[] = [];
 
+  const doneKeys = new Set(resolveDoneKeys(source));
   const push = (key: string, name: string, isSystem: boolean) => {
     columns.push({
       key,
@@ -111,6 +114,7 @@ export function resolveBoardColumns(config: ColumnConfig | null): BoardColumn[] 
       color: boardColumnColor(key, source.colors?.[key], isSystem),
       description: resolveDescription(key, source.descriptions?.[key]),
       limit: source.limits?.[key],
+      isDone: doneKeys.has(key),
     });
   };
 
@@ -170,6 +174,34 @@ export function columnDisplayName(
   key: string,
 ): string {
   return columnByKey(columns, key)?.name ?? humaniseColumnKey(key);
+}
+
+/** The done column keys a config declares; null config means ["done"]. */
+export function resolveDoneKeys(config: ColumnConfig | null): string[] {
+  const keys = config?.doneKeys?.filter((key) => key.length > 0) ?? [];
+  return keys.length > 0 ? [...new Set(keys)] : ["done"];
+}
+
+/**
+ * THE done predicate (T·122). Every surface that asks "is this task
+ * finished" asks here — progress percentages, briefs, digests, exports,
+ * nudges, card strikethrough — so renaming Done or marking another
+ * column as done-meaning changes every reading at once, identically.
+ * A raw pre-0024 "waiting" lane never reads as done; an orphaned claim
+ * on a deleted done column falls back honestly to not-done.
+ */
+export function isDoneColumnKey(
+  key: string,
+  config: ColumnConfig | null,
+): boolean {
+  return resolveDoneKeys(config).includes(key);
+}
+
+export function isTaskDone(
+  task: { lane: string; boardColumnKey?: string | null },
+  config: ColumnConfig | null,
+): boolean {
+  return isDoneColumnKey(effectiveColumnKey(task), config);
 }
 
 /**

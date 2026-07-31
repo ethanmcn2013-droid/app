@@ -9,6 +9,9 @@ import {
 } from "react";
 import type { Task } from "@/lib/data";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { ReorderList, positionForDrop } from "@/components/ui/reorder-list";
 import {
   addTaskAction,
@@ -35,6 +38,7 @@ import {
  */
 export function SubtasksSection({ task }: { task: Task }) {
   const { openTask } = useTaskPanel();
+  const columnConfig = useColumnConfig();
   const [subtasks, setSubtasks] = useState<Task[] | null>(null);
   const [, startServerSync] = useTransition();
 
@@ -64,7 +68,7 @@ export function SubtasksSection({ task }: { task: Task }) {
 
   const toggle = useCallback(
     (sub: Task) => {
-      const nextLane = sub.lane === "done" ? "todo" : "done";
+      const nextLane = isTaskDone(sub, columnConfig) ? "todo" : "done";
       // Optimistic flip, the parent updatedAt won't change until the
       // server reconciles, so we patch the local list directly.
       setSubtasks((cur) =>
@@ -92,7 +96,7 @@ export function SubtasksSection({ task }: { task: Task }) {
         }
       });
     },
-    [],
+    [columnConfig],
   );
 
   const add = useCallback(
@@ -174,7 +178,7 @@ export function SubtasksSection({ task }: { task: Task }) {
   if (subtasks === null) return null;
 
   const total = subtasks.length;
-  const done = subtasks.filter((s) => s.lane === "done").length;
+  const done = subtasks.filter((s) => isTaskDone(s, columnConfig)).length;
 
   // Empty state: a single quiet composer chip, no header.
   if (total === 0) {
@@ -204,6 +208,7 @@ export function SubtasksSection({ task }: { task: Task }) {
             subtask={sub}
             onToggle={() => toggle(sub)}
             onOpen={() => openTask(sub.id)}
+            columnConfig={columnConfig}
           />
         )}
       />
@@ -218,12 +223,15 @@ function SubtaskRow({
   subtask,
   onToggle,
   onOpen,
+  columnConfig,
 }: {
   subtask: Task;
   onToggle: () => void;
   onOpen: () => void;
+  /** Threaded from SubtasksSection's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
-  const isDone = subtask.lane === "done";
+  const isDone = isTaskDone(subtask, columnConfig);
   // Temp (optimistic) rows aren't openable, they have no real id yet.
   const openable = !subtask.id.startsWith("temp-");
   return (

@@ -15,6 +15,8 @@ import { LANE_ORDER, type LaneId } from "@/lib/data";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
 import {
   fieldsPatch,
   labToPriority,
@@ -136,6 +138,7 @@ export function HybridStoreProvider({
   const prod = useTasksDispatch();
   const taskPanel = useTaskPanel();
   const calendar = useCalendarFrame();
+  const columnConfig = useColumnConfig();
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
   const knownTaskIds = useRef(new Set(prodTasks.map((task) => task.id)));
   const knownUpdatedAt = useRef(new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()])));
@@ -143,8 +146,8 @@ export function HybridStoreProvider({
   const pendingDuplicate = useRef(false);
 
   const labTasks = useMemo<LabTask[]>(
-    () => prodTasks.map((task, index) => taskToLab(task, index, calendar)),
-    [calendar, prodTasks],
+    () => prodTasks.map((task, index) => taskToLab(task, index, calendar, columnConfig)),
+    [calendar, columnConfig, prodTasks],
   );
 
   const prodById = useMemo(() => {
@@ -211,7 +214,10 @@ export function HybridStoreProvider({
 
   const value = useMemo<LabStore>(() => {
     const byId = (id: string) => labTasks.find((task) => task.id === id);
-    const isDone = (id: string) => prodById.get(id)?.lane === "done";
+    const isDone = (id: string) => {
+      const task = prodById.get(id);
+      return task ? isTaskDone(task, columnConfig) : false;
+    };
 
     // A status IS a column key. The four permanent lanes move canonically
     // (with positional reorder); any other key is a custom-column claim,
@@ -349,7 +355,7 @@ export function HybridStoreProvider({
       archiveTask: (id: string) => { if (!readOnly) prod.archiveTask(id); },
       makeSubtaskOf: (id: string, parentId: string | null) => { if (!readOnly) prod.setParent(id, parentId); },
     };
-  }, [applySchedule, calendar, labTasks, openTask, prod, prodById, readOnly, taskPanel.taskId, ui]);
+  }, [applySchedule, calendar, columnConfig, labTasks, openTask, prod, prodById, readOnly, taskPanel.taskId, ui]);
 
   return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }

@@ -176,6 +176,13 @@
       "when": 1785488000000,
       "tag": "0024_retire_waiting_lane",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1785490000000,
+      "tag": "0025_tasks_completed_at",
+      "breakpoints": true
     }
   ]
 }

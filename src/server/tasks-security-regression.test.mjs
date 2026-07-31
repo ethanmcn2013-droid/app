@@ -229,6 +229,7 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     ["getColumnConfig", ["readColumnConfig"]],
     ["renameColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["setColumnLimitAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnDoneAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],

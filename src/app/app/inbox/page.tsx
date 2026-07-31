@@ -7,6 +7,7 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { aiConfigured } from "@/server/ai";
 import { buildWeeklySnapshotFor } from "@/server/digest-narration";
 import { getOverdueTodayCount } from "@/server/actions/roll-forward";
@@ -24,14 +25,18 @@ import {
 import { USERS } from "@/lib/data";
 import { readPersonalityPrefs } from "@/server/personality-read";
 import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
+import { isTaskDone } from "@/lib/board-columns";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
   if (isDemoMode()) {
     const tasks = demoTasks();
-    const completed = tasks.filter((task) => task.lane === "done");
-    const open = tasks.filter((task) => task.lane !== "done");
+    // Demo/review never touches the DB (access-mode.ts safety invariant), so
+    // there is no per-workspace column config to read here; null resolves to
+    // the default ["done"] doneKeys, identical to the literal check it replaces.
+    const completed = tasks.filter((task) => isTaskDone(task, null));
+    const open = tasks.filter((task) => !isTaskDone(task, null));
 
     return (
       <>
@@ -100,7 +105,7 @@ export default async function InboxPage() {
       // Personality prefs for greeting + tips gating.
       readPersonalityPrefs(me),
     ]);
-  const nudges = generateNudges(tasks, me);
+  const nudges = generateNudges(tasks, me, await readWorkspaceColumnConfig(ws));
   return (
     <>
       <AppPageHeader />

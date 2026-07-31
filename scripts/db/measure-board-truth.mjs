@@ -83,6 +83,24 @@ out.fixtureAssigneeRows = Number(
   )[0].n,
 );
 
+out.doneCanonicalTasks = Number(
+  (await one("SELECT COUNT(*) AS n FROM tasks WHERE lane = 'done' AND board_column_key IS NULL"))[0].n,
+);
+out.doneTasksWithProvableCompletion = Number(
+  (
+    await one(
+      `SELECT COUNT(*) AS n FROM tasks t
+       WHERE t.lane = 'done' AND t.board_column_key IS NULL
+         AND EXISTS (
+           SELECT 1 FROM activities a
+           WHERE a.task_id = t.id
+             AND ((a.kind = 'toggleComplete' AND json_extract(a.payload, '$.to') = 'done')
+               OR (a.kind = 'move' AND json_extract(a.payload, '$.to') = 'done'))
+         )`,
+    )
+  )[0].n,
+);
+
 out.schemaMigrationRows = (
   await one(
     "SELECT id, sha256, review_receipt_id, review_receipt_sha256, status FROM signal_schema_migrations ORDER BY applied_at, id",

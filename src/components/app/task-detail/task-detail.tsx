@@ -19,7 +19,8 @@ import {
 } from "react";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
-import { useDomain } from "@/lib/domain-context";
+import { useDomain, useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
 import { getTaskConversationAction } from "@/server/actions/conversation";
 import type { ConversationItem } from "@/server/db/queries";
 
@@ -231,6 +232,7 @@ function TaskDetailHeader({
 }) {
   const dispatchers = useTasksDispatch();
   const { boardName } = useDomain();
+  const columnConfig = useColumnConfig();
   const projectLabel = boardName ?? "Project";
   const isFocus = shell === "focus";
 
@@ -239,9 +241,10 @@ function TaskDetailHeader({
     isFocus,
     onOpenFocus: onFocusToggle,
     onClosePanel: onClose,
+    columnConfig,
   });
 
-  const primaryLabel = task.lane === "done" ? "Reopen" : "Mark done";
+  const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
 
   return (
     <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-5 pb-3 pt-4">
@@ -358,7 +361,7 @@ function TaskDetailHeader({
           onClick={() => dispatchers.toggleComplete(task.id)}
           className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[11.5px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          {task.lane !== "done" ? (
+          {!isTaskDone(task, columnConfig) ? (
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
               <polyline points="20 6 9 17 4 12" />
             </svg>

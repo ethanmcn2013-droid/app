@@ -58,6 +58,7 @@ import { detectVenueWelcome } from "@/server/db/venue-welcome";
 import { requirePlanningFeature } from "@/server/planning/flags";
 import { planDuplicatedTasks } from "@/lib/planning/duplication";
 import { isDemoMode } from "@/lib/access-mode";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -1099,11 +1100,15 @@ async function duplicateWorkspaceIntoPeriod(
       .from(tasks)
       .where(eq(tasks.workspaceId, input.source.id))
       .orderBy(asc(tasks.createdAt));
+    // Source workspace's done semantics decide which copied tasks reset to
+    // todo (T·122).
+    const columnConfig = await readWorkspaceColumnConfig(input.source.id);
     const copies = planDuplicatedTasks(
       sourceTasks,
       input.choices,
       copiedMemberIds,
       () => `t-${randomUUID()}`,
+      columnConfig,
     );
     for (const task of copies) {
       await tx.insert(tasks).values({

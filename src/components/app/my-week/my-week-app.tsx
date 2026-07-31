@@ -19,7 +19,9 @@ import {
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
-import { usePersonalization } from "@/lib/domain-context";
+import { usePersonalization, useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
 import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 
@@ -35,6 +37,7 @@ export function MyWeekApp() {
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
+  const columnConfig = useColumnConfig();
 
   const meId = useCurrentUser();
   const me = USERS[meId];
@@ -47,8 +50,8 @@ export function MyWeekApp() {
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure), the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
-    () => generateNudges(state.tasks, meId),
-    [state.tasks, meId],
+    () => generateNudges(state.tasks, meId, columnConfig),
+    [state.tasks, meId, columnConfig],
   );
 
   const totalAttention =
@@ -90,6 +93,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty="Today is clear."
           // "Today is clear." is only true when the evening is clear
           // too; an evening-only day suppresses the empty line and
@@ -102,6 +106,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -110,6 +115,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -118,6 +124,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -126,6 +133,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -134,6 +142,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
           muted
         />
@@ -153,6 +162,7 @@ function Section({
   empty,
   showEmpty,
   muted,
+  columnConfig,
 }: {
   title: string;
   tasks: Task[];
@@ -162,6 +172,8 @@ function Section({
   empty: string;
   showEmpty?: boolean;
   muted?: boolean;
+  /** Threaded from MyWeekApp's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
   if (tasks.length === 0 && !showEmpty) return null;
   return (
@@ -189,6 +201,7 @@ function Section({
               onOpen={() => openTask(task.id)}
               onToggle={() => toggleComplete(task.id)}
               muted={muted}
+              columnConfig={columnConfig}
             />
           ))}
         </ul>
@@ -204,6 +217,7 @@ function Row({
   onOpen,
   onToggle,
   muted,
+  columnConfig,
 }: {
   task: Task;
   i: number;
@@ -211,9 +225,11 @@ function Row({
   onOpen: () => void;
   onToggle: () => void;
   muted?: boolean;
+  /** Threaded from MyWeekApp's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
   const lane = LANES[task.lane];
-  const isDone = task.lane === "done";
+  const isDone = isTaskDone(task, columnConfig);
   return (
     <motion.li
       layout

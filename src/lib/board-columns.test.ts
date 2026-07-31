@@ -5,7 +5,10 @@ import {
   columnPersistence,
   defaultColumnConfig,
   effectiveColumnKey,
+  isDoneColumnKey,
+  isTaskDone,
   resolveBoardColumns,
+  resolveDoneKeys,
   WAITING_COLUMN_KEY,
 } from "./board-columns";
 import { emptyConfig, parseColumnConfig, serializeColumnConfig } from "./board-config";
@@ -97,4 +100,25 @@ test("legacy flat configs still parse and carry empty limits", () => {
   const parsed = parseColumnConfig(JSON.stringify({ todo: "Intake" }));
   assert.equal(parsed?.system.todo, "Intake");
   assert.deepEqual(parsed?.limits, {});
+});
+
+test("done is the config predicate, defaulting to the canonical done lane", () => {
+  assert.deepEqual(resolveDoneKeys(null), ["done"]);
+  assert.equal(isTaskDone({ lane: "done" }, null), true);
+  assert.equal(isTaskDone({ lane: "doing" }, null), false);
+  // A claim on a non-done column overrides a done lane — the task sits in
+  // that column, so it is not finished.
+  assert.equal(isTaskDone({ lane: "done", boardColumnKey: "col-x" }, null), false);
+  // Raw pre-0024 waiting text never reads as done.
+  assert.equal(isTaskDone({ lane: "waiting" }, null), false);
+
+  const config = { ...defaultColumnConfig(), doneKeys: ["done", "col-paid"] };
+  assert.equal(isDoneColumnKey("col-paid", config), true);
+  assert.equal(isTaskDone({ lane: "doing", boardColumnKey: "col-paid" }, config), true);
+  const columns = resolveBoardColumns({
+    ...config,
+    custom: [...config.custom, { key: "col-paid", name: "Paid" }],
+    order: [...config.order, "col-paid"],
+  });
+  assert.deepEqual(columns.filter((c) => c.isDone).map((c) => c.key), ["done", "col-paid"]);
 });

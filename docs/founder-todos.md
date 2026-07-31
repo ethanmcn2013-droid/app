@@ -33,8 +33,10 @@ for later; they are intentionally out of scope for the change that logged them.
 Phases 1 and 4 shipped as T·114 to T·118; the four-view capability audit
 (2026-07-31) then found the T·99 blast radius covered all four views plus the
 filter, share and assignee layers. T·119 restored real members to the assign
-path. T·121 shipped phase 2: items 5 and 6 below are done (the 0024 migration
-runs through the db-migrate workflow with production counts measured first).
+path. T·121 shipped phase 2: items 5 and 6 below are done (migration 0024
+applied to production with counts measured first). T·122 shipped phase 3:
+item 7 is done (doneKeys + one isTaskDone predicate + tasks.completedAt via
+migration 0025).
 Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
 
 5. **Done, T·121 — port the column system into the live board (Phase 2)**
@@ -59,7 +61,7 @@ Full plan and root cause: `studio/content/hq/features/tasks-board-truth.md`.
    rewrites `lane` on existing rows**, plus seeding the column config for
    affected workspaces. Measure the production row count first.
 
-7. **Decide what "done" means (Phase 3)**
+7. **Done, T·122 — "done" is the config predicate (Phase 3)**
    `lane === "done"` is compared as a bare string in roughly twelve production
    modules, and progress % is computed in exactly one of them
    (`project-overview.ts:287`). Once columns are user-defined this is

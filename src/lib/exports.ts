@@ -86,8 +86,10 @@ export function formatTasksAsMarkdown(
     if (list.length === 0) continue;
     lines.push(`## ${column.name}`);
     lines.push("");
+    // Column membership decides the checkbox, not a per-task lane read —
+    // every task in `list` already belongs to this column (T·122).
+    const checkbox = column.isDone ? "[x]" : "[ ]";
     for (const t of list) {
-      const checkbox = t.lane === "done" ? "[x]" : "[ ]";
       const meta: string[] = [];
       if (t.due) meta.push(`due ${t.due}`);
       if (t.priority !== "p3")

@@ -31,6 +31,8 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { getTasks } from "@/server/db/queries";
 import { isDemoMode } from "@/lib/access-mode";
 import { getBoardName } from "@/server/actions/board";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { isTaskDone } from "@/lib/board-columns";
 import {
   DEMO_USER_ID,
   DEMO_WORKSPACE_ID,
@@ -280,15 +282,19 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
   const declaredStatus = parseStatus(rawStatus);
   const targetDate = rawTargetDate?.trim() || null;
 
-  // Tasks: getTasks already workspace-scoped via byWorkspace.
-  const allTasks = await getTasks(ws);
+  // Tasks: getTasks already workspace-scoped via byWorkspace. Column config
+  // fetched once alongside it and reused for every done-check below (T·122).
+  const [allTasks, columnConfig] = await Promise.all([
+    getTasks(ws),
+    readWorkspaceColumnConfig(ws),
+  ]);
   const nowMs = Date.now();
   const total = allTasks.length;
-  const complete = allTasks.filter((t) => t.lane === "done").length;
+  const complete = allTasks.filter((t) => isTaskDone(t, columnConfig)).length;
   const overdue = allTasks.filter(
-    (t) => t.dueAt && t.dueAt.getTime() < nowMs && t.lane !== "done",
+    (t) => t.dueAt && t.dueAt.getTime() < nowMs && !isTaskDone(t, columnConfig),
   ).length;
-  const undated = allTasks.filter((t) => !t.dueAt && t.lane !== "done").length;
+  const undated = allTasks.filter((t) => !t.dueAt && !isTaskDone(t, columnConfig)).length;
   const progressPct = total === 0 ? 0 : Math.round((complete / total) * 100);
 
   // Milestone tasks: is_milestone = true, not done, capped 5, ordered by dueAt.

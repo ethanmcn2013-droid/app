@@ -22,6 +22,8 @@ export type PublicColumn = {
   name: string;
   /** CSS colour value for the column dot/tint; null = neutral. */
   accent: string | null;
+  /** Landing here means the work is finished (config doneKeys, T·122). */
+  isDone: boolean;
 };
 
 type ColumnedTask = { lane: string; boardColumnKey?: string | null };
@@ -34,6 +36,7 @@ export function publicBoardColumns(
     id: column.key,
     name: column.name,
     accent: COLUMN_COLORS[column.color].var,
+    isDone: column.isDone,
   }));
   const known = new Set(resolved.map((column) => column.id));
   const extras = new Set<string>();
@@ -47,6 +50,7 @@ export function publicBoardColumns(
       id,
       name: humaniseColumnKey(id),
       accent: null,
+      isDone: false,
     })),
   ];
 }

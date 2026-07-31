@@ -312,7 +312,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "17abdc26302306a7"
+      "materialityHash": "233768d6d170033f"
     },
     {
       "id": "tasks.page.app-tasks-list",
@@ -1383,14 +1383,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-07-31",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "a544e0ffbc8d363e",
+      "materialityHash": "d68e7b7dc1af8677",
       "materialityReview": {
-        "materialityHash": "a544e0ffbc8d363e",
-        "reviewedAt": "2026-07-30",
-        "evidence": "experience/reviews/tasks.page.print-list-2026-07-30.json"
+        "materialityHash": "d68e7b7dc1af8677",
+        "reviewedAt": "2026-07-31",
+        "evidence": "experience/reviews/tasks.page.print-list-2026-07-31.json"
       }
     },
     {

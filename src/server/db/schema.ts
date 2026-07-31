@@ -124,6 +124,13 @@ export const tasks = sqliteTable("tasks", {
    *
    *  Steps 1-4 of T·69 are independently shippable without this column. */
   boardColumnKey: text("board_column_key"),
+  /** T·122: when the task last became done (any config done column), in
+   *  epoch seconds like every timestamp here. NULL means not done, or
+   *  done before this column existed and not reconstructable from the
+   *  activity log (migration 0025 backfills what the log can prove).
+   *  Maintained by every done-transition write path; Signal reads this
+   *  before falling back to activity-log reconstruction. */
+  completedAt: integer("completed_at", { mode: "timestamp" }),
   /** RW-3b: milestone promotion flag. True when the owner explicitly
    *  "promotes to milestone" in the task panel. The flag is additive
    *  and reversible, a milestone is still a normal board task; the

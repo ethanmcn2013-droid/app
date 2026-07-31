@@ -1,4 +1,6 @@
 import type { Task, UserId } from "@/lib/data";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 
 export type NudgeKind =
   | "idle-doing"
@@ -104,12 +106,15 @@ const DOING_EMPTY: string[] = [
 export function generateNudges(
   tasks: Task[],
   currentUser: UserId,
+  /** Threaded from the caller's useColumnConfig() / readWorkspaceColumnConfig
+   *  (T·122); defaults to null (["done"]) for callers that haven't wired it. */
+  columnConfig: ColumnConfig | null = null,
   now: Date = new Date(),
 ): Nudge[] {
   const out: Nudge[] = [];
 
   const myOpen = tasks.filter(
-    (t) => t.assignees.includes(currentUser) && t.lane !== "done",
+    (t) => t.assignees.includes(currentUser) && !isTaskDone(t, columnConfig),
   );
 
   // Rule 1, idle in_progress
@@ -193,7 +198,7 @@ export function generateNudges(
     );
     const allDone =
       blockers.length > 0 &&
-      blockers.every((b) => b && b.lane === "done");
+      blockers.every((b) => b && isTaskDone(b, columnConfig));
     if (!allDone) continue;
     const tpl = pickRand(BLOCKER_CLEARED, t.id + "blocker");
     out.push({

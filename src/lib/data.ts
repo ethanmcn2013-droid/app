@@ -282,6 +282,9 @@ export type Task = {
   archivedAt?: Date | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
+  /** When the task last became done (any config done column); null when
+   *  open, or done from before the column existed (T·122). */
+  completedAt?: Date | null;
 };
 
 /**
