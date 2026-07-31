@@ -14,10 +14,10 @@ import { signalPrefsDb } from "./db/signal-prefs-client";
  * GDPR Art. 20 (data portability) — Signal analytics + prefs module.
  *
  * Returns everything Signal holds for the user across its two Turso databases:
- *   - Analytics DB (`SIGNAL_ANALYTICS_DATABASE_URL`): analyticsUsers,
+ *   - Analytics DB (`SIGNAL_DATABASE_URL`): analyticsUsers,
  *     phrasingRotations, briefingFeedback, surfacedItems,
  *     analyticsViewPreferences.
- *   - Prefs DB (`SIGNAL_PREFS_DATABASE_URL`): userPreferences (email
+ *   - Prefs DB (`SIGNAL_DATABASE_URL`): userPreferences (email
  *     subscription).
  *
  * SECURITY: `user_preferences.unsubscribe_token` is OMITTED. It is an opaque

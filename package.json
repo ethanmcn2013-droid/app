@@ -28,8 +28,6 @@
     "db:push:unsafe": "drizzle-kit push --force",
     "notes:db:push:unsafe": "drizzle-kit push --force --config drizzle.notes.config.ts",
     "timeline:db:push:unsafe": "drizzle-kit push --force --config drizzle.timeline.config.ts",
-    "signal:analytics:db:push:unsafe": "drizzle-kit push --force --config drizzle.signal-analytics.config.ts",
-    "signal:prefs:db:push:unsafe": "drizzle-kit push --force --config drizzle.signal-prefs.config.ts",
     "db:check": "drizzle-kit check",
     "db:contract": "node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs",
     "db:seed": "tsx --tsconfig ./tsconfig.json src/server/db/seed.ts",
@@ -44,9 +42,12 @@
     "check:suite-switcher": "node scripts/check-suite-switcher-contract.mjs",
     "check:loading": "node scripts/check-loading-contract.mjs",
     "check:tap-targets": "node scripts/check-tap-target-scale.mjs",
-    "test:parser": "tsx --conditions=react-server src/server/roadmap/parser.test.ts",
     "test:smoke": "tsx e2e/marketing-golden-path.smoke.ts",
-    "seed:wedding": "node --import tsx scripts/seed-wedding.ts"
+    "seed:wedding": "node --import tsx scripts/seed-wedding.ts",
+    "signal:db:push:unsafe": "drizzle-kit push --force --config drizzle.signal.config.ts",
+    "notes:db:generate": "drizzle-kit generate --config drizzle.notes.config.ts",
+    "timeline:db:generate": "drizzle-kit generate --config drizzle.timeline.config.ts",
+    "signal:db:generate": "drizzle-kit generate --config drizzle.signal.config.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",

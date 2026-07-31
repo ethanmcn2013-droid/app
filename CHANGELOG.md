@@ -4,6 +4,39 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·120 · cuts · one name per database, and the scaffolding nobody used is gone
+
+**Every database the app touches now has exactly one name, in code, in
+Vercel, and in CI.** Four generations of environment-variable conventions
+had accumulated — the same physical database answered to
+`SIGNAL_ANALYTICS_DATABASE_URL` in this repo, `ANALYTICS_TURSO_URL` in
+studio, and `TURSO_DATABASE_URL` in its legacy repo — and the
+worst-named pair pointed at different databases than their names
+suggested. The reset collapses all of it to `<MODULE>_DATABASE_URL` +
+`<MODULE>_AUTH_TOKEN` for tasks, notes, timeline, signal, and
+entitlements, retires the separate signal-prefs database by folding
+`user_preferences` into the Signal database, and drops the retired
+aliases (`STRIPE_PRICE_PRO_MONTHLY`, `NEXT_PUBLIC_TIMELINE_URL`, the
+`TURSO_*` fallbacks in the migration runner).
+
+The launch scaffolding that never launched is gone with it: the
+`/roadmap` GTM page, its sync/seed/parser machinery, the log-cycle
+leftovers, and the three tables behind them — verified empty in
+production and in both local databases before migration 0023 dropped
+them. The Notes, Timeline, and Signal modules also gain tracked
+baseline migrations generated from their live schemas, which closes a
+real gap: two production tables (`note_task_send_outbox`,
+`audience_view_receipts`) existed in no migration file anywhere until
+today.
+
+Verified by the full db:contract gate (19 checks, including the
+amended durable baseline proof), typecheck, lint, and the test suite.
+Honest edge: this entry ships with the coordinated cutover — new
+databases created from the fresh baselines, environment variables
+replaced in Vercel and GitHub Actions, and a new execution receipt for
+the new database identity — so it lands together with that deploy, not
+before it.
+
 ## 2026-07-31 · T·119 · tightens · the assign menu offers your project's people, not the design lab's
 
 **Assigning work now offers the people who are actually in your project, and

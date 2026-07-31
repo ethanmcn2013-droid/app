@@ -9,8 +9,7 @@ import * as schema from "./timeline-schema";
  * TIMELINE_AUTH_TOKEN. Preview builds may not have the Turso secrets, so
  * they fall back to a local file client keeping Vercel preview deployable.
  *
- * T3 (manifest): TURSO_DATABASE_URL → TIMELINE_DATABASE_URL,
- *                TURSO_AUTH_TOKEN   → TIMELINE_AUTH_TOKEN.
+ * Env: TIMELINE_DATABASE_URL / TIMELINE_AUTH_TOKEN (2026-07-31 convention).
  *
  * The original roadmap DB env vars are intentionally NOT read here so a
  * production misconfiguration (old var name left in Vercel) fails fast

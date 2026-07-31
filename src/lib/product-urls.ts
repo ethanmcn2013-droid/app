@@ -58,7 +58,6 @@ export const TASKS_PUBLIC_ORIGIN =
 
 export const TIMELINE_PUBLIC_ORIGIN =
   process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ??
-  process.env.NEXT_PUBLIC_TIMELINE_URL ??
   suiteProducts.timeline.publicOrigin;
 
 export const STUDIO_URL = STUDIO_ORIGIN;

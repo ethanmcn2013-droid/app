@@ -1,23 +1,22 @@
 import type { Config } from "drizzle-kit";
 
 /**
- * Drizzle-kit config for the Signal module analytics database.
+ * Drizzle-kit config for the Signal module database.
  *
- * Used by `signal:analytics:db:push:unsafe` (local dev only — never run against prod).
- * The analytics DB is a separate Turso instance; signal.git migrations remain
- * the canonical ledger for the prod schema.
+ * 2026-07-31 data-layer reset: one Signal database — the briefing engine
+ * tables plus the folded-in `user_preferences` table (the separate prefs DB
+ * is retired). `drizzle-signal/` holds the tracked baseline the production
+ * database is created from; `signal:db:push:unsafe` remains local-dev only.
  *
- * S2: SIGNAL_ANALYTICS_DATABASE_URL (renamed from TURSO_DATABASE_URL in signal.git).
- *     Dev fallback: file:analytics.db (matches signal-analytics-client.ts fallback).
- *
- * S8: ported copy — prod schema owned by signal.git cron + its own drizzle migrations.
+ * Env: SIGNAL_DATABASE_URL / SIGNAL_AUTH_TOKEN.
+ * Dev fallback: file:signal.db (matches signal-analytics-client.ts).
  */
 export default {
   schema: "./src/modules/signal/server/db/signal-analytics-schema.ts",
-  out: "./drizzle-signal-analytics",
+  out: "./drizzle-signal",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.SIGNAL_ANALYTICS_DATABASE_URL ?? "file:analytics.db",
+    url: process.env.SIGNAL_DATABASE_URL ?? "file:signal.db",
   },
   verbose: false,
   strict: true,
