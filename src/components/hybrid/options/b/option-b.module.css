@@ -198,7 +198,7 @@
 .laneHeader h2 { font-size: 12px; font-weight: 680; margin: 0; }
 .laneCount { align-items: center; background: var(--x-task-hover); border-radius: 10px; color: var(--x-task-text-muted); display: inline-flex; font-family: var(--font-geist-mono), monospace; font-size: 10px; height: 18px; justify-content: center; min-width: 19px; padding: 0 5px; }
 .laneStatusMark { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
-.laneStatusMark[data-status="active"] { background: var(--x-task-accent); }
+.laneStatusMark[data-status="doing"] { background: var(--x-task-accent); }
 .laneStatusMark[data-status="review"] { background: var(--x-task-review); }
 .laneStatusMark[data-status="waiting"] { background: var(--x-task-waiting); }
 .laneStatusMark[data-status="done"] { background: var(--x-task-success); }

@@ -169,6 +169,13 @@
       "when": 1785485242617,
       "tag": "0023_retire_launch_scaffolding",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1785488000000,
+      "tag": "0024_retire_waiting_lane",
+      "breakpoints": true
     }
   ]
 }

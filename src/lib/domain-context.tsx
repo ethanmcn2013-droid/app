@@ -82,7 +82,7 @@ export function DomainProvider({
   const resolvedConfig: ColumnConfig | null =
     columnConfig ??
     (columnNames
-      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {} }
+      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {}, limits: {} }
       : null);
 
   return (
@@ -153,17 +153,6 @@ export function useTagDefs(): TagDef[] {
 export function useWorkspaceMembers(): WorkspaceMemberMeta[] {
   const v = useContext(DomainContext);
   return v?.members ?? [];
-}
-
-/**
- * Per-workspace column-name overrides (system lanes only).
- * @deprecated Use useColumnConfig() for the full picture (custom columns
- *   + render order). Kept for board-app.tsx and Card component that only
- *   needed system renames before step 5.
- */
-export function useColumnNames(): Partial<Record<LaneId, string>> | null {
-  const v = useContext(DomainContext);
-  return v?.columnConfig?.system ?? null;
 }
 
 /** Segment-aware workspace copy, empty states, examples, titles. */

@@ -129,7 +129,7 @@
 .menuDivider { background: var(--x-task-border); height: 1px; margin: 4px; }
 .menuStatus,
 .paletteStatus { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
-.menuStatus[data-status="active"], .paletteStatus[data-status="active"] { background: var(--x-task-accent); }
+.menuStatus[data-status="doing"], .paletteStatus[data-status="doing"] { background: var(--x-task-accent); }
 .menuStatus[data-status="review"], .paletteStatus[data-status="review"] { background: var(--x-task-review); }
 .menuStatus[data-status="waiting"], .paletteStatus[data-status="waiting"] { background: var(--x-task-waiting); }
 .menuStatus[data-status="done"], .paletteStatus[data-status="done"] { background: var(--x-task-success); }

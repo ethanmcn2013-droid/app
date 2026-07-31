@@ -54,7 +54,7 @@ export default function NotFound() {
               href="/app/tasks"
               className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-4 py-2 text-[13px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
             >
-              Open the workspace
+              Open the project
             </Link>
             <a
               href="https://signalstudio.ie/pricing"

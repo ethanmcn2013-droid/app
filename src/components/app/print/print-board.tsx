@@ -1,6 +1,5 @@
 import { PRIORITY_LABEL, type Task } from "@/lib/data";
-import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
-import { groupTasksByLane } from "@/lib/tasks/selectors";
+import { publicColumnTasks, type PublicColumn } from "@/lib/public-board-lanes";
 
 function formatDue(due: string | null | undefined): string {
   if (!due) return "";
@@ -9,15 +8,15 @@ function formatDue(due: string | null | undefined): string {
 
 export function PrintBoard({
   tasks,
+  columns,
   workspaceName,
   generatedAt,
 }: {
   tasks: Task[];
+  columns: PublicColumn[];
   workspaceName: string;
   generatedAt: string;
 }) {
-  const grouped = groupTasksByLane(tasks);
-
   return (
     <div className="print-view print-board">
       <div className="print-doc-header">
@@ -26,23 +25,17 @@ export function PrintBoard({
       </div>
 
       <div className="print-board-grid">
-        {publicLaneOrder(tasks).map((laneId) => {
-          const lane = publicLane(laneId);
-          // `grouped` is keyed by the canonical lanes only, so a non-canonical
-          // lane (the board's fifth status) falls back to a direct filter
-          // rather than dropping its tasks the way this surface used to.
-          const laneTasks: Task[] =
-            (grouped as Record<string, Task[]>)[laneId] ??
-            tasks.filter((t) => t.lane === laneId);
+        {columns.map((column) => {
+          const laneTasks = publicColumnTasks(tasks, column.id);
           return (
-            <div key={laneId} className="print-board-lane">
+            <div key={column.id} className="print-board-lane">
               <div className="print-lane-header">
                 <span
                   className="print-lane-dot"
-                  style={{ background: lane.dot }}
+                  style={{ background: column.accent ?? "currentColor" }}
                   aria-hidden
                 />
-                <span className="print-lane-name">{lane.name}</span>
+                <span className="print-lane-name">{column.name}</span>
                 <span className="print-lane-count">{laneTasks.length}</span>
               </div>
               <div className="print-lane-cards">

@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { LANE_ORDER, type LaneId } from "@/lib/data";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
@@ -18,7 +19,6 @@ import {
   fieldsPatch,
   labToPriority,
   scheduleToPatch,
-  statusToLane,
   taskToLab,
   taskToSchedule,
 } from "./adapter";
@@ -213,15 +213,19 @@ export function HybridStoreProvider({
     const byId = (id: string) => labTasks.find((task) => task.id === id);
     const isDone = (id: string) => prodById.get(id)?.lane === "done";
 
+    // A status IS a column key. The four permanent lanes move canonically
+    // (with positional reorder); any other key is a custom-column claim,
+    // persisted through the column-aware dispatcher — the raw-text lane
+    // write that used to serve the Waiting column is gone.
     const moveStatus = (id: string, status: TaskStatus, index?: number) => {
       if (readOnly) return;
-      if (status === "waiting") {
-        prod.updateTask(id, { lane: "waiting" as Task["lane"] });
+      if ((LANE_ORDER as string[]).includes(status)) {
+        const lane = status as LaneId;
+        if (typeof index === "number") prod.reorderTask(id, lane, index);
+        else prod.moveTask(id, lane);
         return;
       }
-      const lane = statusToLane(status);
-      if (typeof index === "number") prod.reorderTask(id, lane, index);
-      else prod.moveTask(id, lane);
+      prod.moveTaskToColumn(id, status);
     };
 
     return {
@@ -263,7 +267,15 @@ export function HybridStoreProvider({
       // ---- mutations → production dispatchers ----
       updateTask: (id, fields: UpdateFields) => {
         if (readOnly) return;
-        const patch = fieldsPatch(fields, calendar);
+        // Column membership and completion are workflow moves, not field
+        // patches — route them through their dispatchers so claims and
+        // completion always persist correctly.
+        const { status, completed, ...rest } = fields;
+        if (status !== undefined) moveStatus(id, status);
+        if (completed !== undefined && isDone(id) !== completed) {
+          prod.toggleComplete(id);
+        }
+        const patch = fieldsPatch(rest, calendar);
         if (patch) prod.updateTask(id, patch);
       },
       updateTitle: (id, title) => !readOnly && prod.updateTask(id, { title }),
@@ -307,7 +319,8 @@ export function HybridStoreProvider({
       addTask: (status, schedule?: TaskSchedule, title?: string) => {
         if (readOnly) return;
         const trimmed = title?.trim();
-        const lane = status === "waiting" ? "todo" : statusToLane(status);
+        const isLaneKey = (LANE_ORDER as string[]).includes(status);
+        const lane = isLaneKey ? (status as LaneId) : "doing";
         const patch = schedule ? scheduleToPatch(schedule, calendar) : {};
         const created = prod.addTask({
           title: trimmed || "Untitled task",
@@ -315,7 +328,9 @@ export function HybridStoreProvider({
           priority: "p2",
           ...(patch.dueAt ? { dueAt: patch.dueAt, due: patch.due } : {}),
         });
-        if (status === "waiting") prod.updateTask(created.id, { lane: "waiting" as Task["lane"] });
+        // A custom-column add claims the new task for that column; its
+        // lane stays canonical ("doing").
+        if (!isLaneKey) prod.moveTaskToColumn(created.id, status);
         if (schedule && (patch.startDay != null || patch.durationDays != null)) {
           prod.updateTask(created.id, { startDay: patch.startDay, durationDays: patch.durationDays });
         }

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.print-board",
+  "source": "tasks/src/app/print/board/page.tsx",
+  "materialityHash": "05f3816d6030a501",
+  "reviewedAt": "2026-07-31",
+  "reviewer": "Claude Fable 5, T-120 board truth phase 2",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-5501ae463b99182192baa7cc-d9056b559e46f7af.json",
+    "attestationSha256": "79a8006994ce87d14b6a47850d0d1f1a4d0c97c58ce05d895e8125f3cf8ed884",
+    "runId": "tasks-playwright-5501ae463b99182192baa7cc",
+    "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
+    "rawArtifactSha256": "d9056b559e46f7aff01b4d81ff2b7c98e43d02bafcd0a6d8698313f2b2484abe",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "populated demo workspace",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "T-120 hands the column config to this surface: it groups and labels by the workspace's resolved columns (custom columns, renames, tints), appending a neutral column for any orphaned key, replacing the canonical-four iteration plus the T-116 extras rule.",
+  "decision": "Re-attested against the current full-suite run; this surface passes on mobile, tablet, desktop and wide with no axe violations."
+}

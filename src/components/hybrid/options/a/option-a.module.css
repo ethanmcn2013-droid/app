@@ -168,7 +168,7 @@
 
 .statusPip { background: var(--x-task-text-muted); border-radius: 50%; display: inline-block; flex: 0 0 auto; height: 8px; width: 8px; }
 .statusPip:not([data-status]) { border: 1px solid var(--x-task-border-strong); background: transparent; }
-.statusPip[data-status="active"] { background: var(--x-task-accent); }
+.statusPip[data-status="doing"] { background: var(--x-task-accent); }
 .statusPip[data-status="review"] { background: var(--x-task-review); }
 .statusPip[data-status="waiting"] { background: var(--x-task-waiting); }
 .statusPip[data-status="done"] { background: var(--x-task-success); }
@@ -192,7 +192,7 @@
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
 .statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 620; }
-.statusText[data-status="active"] { color: var(--x-task-accent); }
+.statusText[data-status="doing"] { color: var(--x-task-accent); }
 .statusText[data-status="review"] { color: var(--x-task-review); }
 .statusText[data-status="waiting"] { color: var(--x-task-waiting); }
 .statusText[data-status="done"] { color: var(--x-task-success); }
@@ -247,7 +247,7 @@
    rule along the top of the header, a 6% wash behind the header, a
    gradient that releases by 220px, and the status pip. Tinting a whole
    column flat would fight the cards, which are the thing to read. */
-.boardLane[data-lane-tone="active"]  { --lane-tone: var(--accent); }
+.boardLane[data-lane-tone="doing"]  { --lane-tone: var(--accent); }
 .boardLane[data-lane-tone="review"]  { --lane-tone: var(--status-flight); }
 .boardLane[data-lane-tone="waiting"] { --lane-tone: var(--status-blocked); }
 .boardLane[data-lane-tone="done"]    { --lane-tone: var(--status-done); }
@@ -593,7 +593,7 @@
    shape a horizontal band allows: the tone lands on a 2px rule along the
    leading edge, a 6% wash behind the band, and the status pip. Same three
    signals, same tones, so a lane means one colour wherever you meet it. */
-.groupRow[data-lane-tone="active"]  { --lane-tone: var(--accent); }
+.groupRow[data-lane-tone="doing"]  { --lane-tone: var(--accent); }
 .groupRow[data-lane-tone="review"]  { --lane-tone: var(--status-flight); }
 .groupRow[data-lane-tone="waiting"] { --lane-tone: var(--status-blocked); }
 .groupRow[data-lane-tone="done"]    { --lane-tone: var(--status-done); }
@@ -793,7 +793,7 @@
 .calendarTask[data-segment="end"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-radius: 0 3px 3px 0; }
 .calendarTask[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
 .calendarStatus { background: var(--x-task-text-muted); border-radius: 50%; flex: 0 0 auto; height: 5px; width: 5px; }
-.calendarStatus[data-status="active"] { background: var(--x-task-accent); }
+.calendarStatus[data-status="doing"] { background: var(--x-task-accent); }
 .calendarStatus[data-status="review"] { background: var(--x-task-review); }
 .calendarStatus[data-status="waiting"] { background: var(--x-task-waiting); }
 .calendarStatus[data-status="done"] { background: var(--x-task-success); }
@@ -1055,3 +1055,285 @@
     opacity: 1;
   }
 }
+
+/* ── T·121 · config-driven columns ──────────────────────────────────────────
+   A column's visual identity is its configured colour: the lane carries
+   `--lane-accent` inline and `data-tinted`; the pip, the wash and the
+   picker swatch all derive from that one var. Neutral columns carry
+   neither attribute and stay untinted. */
+
+.boardLane[data-tinted] {
+  background: color-mix(in srgb, var(--lane-accent) 5%, var(--x-task-surface));
+}
+.boardLane .statusPip[data-accent],
+.groupRow .statusPip[data-accent] {
+  background: var(--lane-accent);
+  border: 0;
+}
+
+/* Inline column rename: reads as the heading until it is an input. */
+.laneRenameButton {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: text;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+.laneRenameButton:disabled { cursor: default; }
+.laneNameInput {
+  background: transparent;
+  border: 1px solid var(--x-task-focus);
+  border-radius: 4px;
+  color: var(--x-task-text);
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 140px;
+  outline: none;
+  padding: 0 4px;
+  width: 100%;
+}
+
+/* Column menu: quiet trigger, plain menu, always reachable (no hover-only
+   opacity, touch screens have no hover). */
+.laneMenuWrap { position: relative; }
+.laneMenu {
+  background: var(--x-task-overlay, var(--x-task-raised));
+  border: 1px solid var(--x-task-border);
+  border-radius: 8px;
+  box-shadow: var(--x-task-shadow, 0 18px 40px -18px color-mix(in srgb, var(--ink) 22%, transparent));
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  width: 188px;
+  z-index: 30;
+}
+.laneMenu > button {
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  font-size: 12.5px;
+  padding: 6px 8px;
+  text-align: left;
+}
+.laneMenu > button:hover:not(:disabled) {
+  background: var(--x-task-hover);
+  color: var(--x-task-text);
+}
+.laneMenu > button:disabled { cursor: not-allowed; opacity: 0.45; }
+.laneMenuLabel {
+  color: var(--x-task-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 6px 8px 2px;
+  text-transform: uppercase;
+}
+.laneMenuDivider { border-top: 1px solid var(--x-task-border); margin: 4px 2px; }
+.laneMenuDanger { color: var(--x-task-danger, var(--status-blocked)); }
+.laneMenu > .laneMenuDanger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--x-task-danger, var(--status-blocked)) 10%, transparent);
+  color: var(--x-task-danger, var(--status-blocked));
+}
+
+/* Colour picker: the swatch previews the tint the lane actually paints,
+   the 5% wash, with a full-strength dot inside, so choosing a colour
+   shows what the board will genuinely look like, not a saturated square. */
+.laneColorRow { display: flex; gap: 5px; padding: 4px 8px 6px; }
+.laneColorSwatch {
+  background: color-mix(in srgb, var(--swatch-accent, transparent) 12%, var(--x-task-raised));
+  border: 1px solid var(--x-task-border);
+  border-radius: 5px;
+  cursor: pointer;
+  height: 18px;
+  position: relative;
+  width: 18px;
+}
+.laneColorSwatch::after {
+  background: var(--swatch-accent, var(--x-task-border-strong));
+  border-radius: 50%;
+  content: "";
+  height: 6px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+}
+.laneColorSwatch[data-selected] {
+  border-color: var(--x-task-focus);
+  box-shadow: 0 0 0 1px var(--x-task-focus);
+}
+
+/* Editable column subtext + the limit editor that borrows its slot. */
+.laneDescButton {
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text-muted);
+  cursor: text;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow: hidden;
+  padding: 0 2px 2px;
+  text-align: left;
+  width: 100%;
+}
+.laneDescButton:disabled { cursor: default; }
+.laneDescInput {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-focus);
+  border-radius: 4px;
+  color: var(--x-task-text);
+  font-size: 11px;
+  margin: 0 2px 2px;
+  outline: none;
+  padding: 2px 4px;
+  width: calc(100% - 4px);
+}
+
+/* Pinned add-column affordance, outside the horizontal scroll track. */
+.addColumnRail {
+  align-self: stretch;
+  display: flex;
+  flex-shrink: 0;
+  padding: 4px 4px 4px 0;
+}
+.addColumnRailButton {
+  align-items: center;
+  background: transparent;
+  border: 1px dashed var(--x-task-border-strong);
+  border-radius: 10px;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: flex-start;
+  padding: 14px 8px;
+  width: 44px;
+  writing-mode: vertical-rl;
+}
+.addColumnRailButton:hover:not(:disabled) {
+  border-color: var(--x-task-focus);
+  color: var(--x-task-text);
+}
+.addColumnRailButton:disabled { cursor: not-allowed; opacity: 0.5; }
+.addColumnRailButton span { font-size: 12px; letter-spacing: 0.02em; }
+
+/* Add-column form: shares its grammar with the lane surface. */
+.addColumnForm {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+  min-width: 218px;
+  padding: 10px;
+}
+.addColumnField { display: flex; flex-direction: column; gap: 3px; }
+.addColumnField > span {
+  color: var(--x-task-text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.addColumnField > span em { font-style: normal; font-weight: 400; text-transform: none; }
+.addColumnField input,
+.addColumnField select {
+  background: var(--x-task-surface);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  color: var(--x-task-text);
+  font-size: 12.5px;
+  min-height: 30px;
+  outline: none;
+  padding: 0 8px;
+}
+.addColumnField input:focus-visible,
+.addColumnField select:focus-visible { border-color: var(--x-task-focus); }
+.addColumnError { color: var(--x-task-danger, var(--status-blocked)); font-size: 11.5px; margin: 0; }
+.addColumnActions { display: flex; gap: 6px; justify-content: flex-end; }
+.addColumnActions button {
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 28px;
+  padding: 0 10px;
+}
+.addColumnCancel { background: transparent; color: var(--x-task-text-secondary); }
+.addColumnCreate { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-accent-contrast, var(--paper)); }
+
+/* Board dialogs: column delete, task delete, nudge. Centred, backdrop-
+   dismissed, focus lands inside. */
+.boardDialogBackdrop {
+  align-items: center;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 100;
+}
+.boardDialog {
+  background: var(--x-task-overlay, var(--x-task-raised));
+  border: 1px solid var(--x-task-border);
+  border-radius: 12px;
+  box-shadow: 0 28px 60px -20px color-mix(in srgb, var(--ink) 40%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 380px;
+  outline: none;
+  padding: 18px;
+  width: 100%;
+}
+.boardDialog h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.boardDialog p { color: var(--x-task-text-secondary); font-size: 12.5px; line-height: 1.5; margin: 0; }
+.boardDialog label { display: flex; flex-direction: column; gap: 4px; }
+.boardDialog label > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 500; }
+.boardDialog input,
+.boardDialog select,
+.boardDialog textarea {
+  background: var(--x-task-surface);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 12.5px;
+  min-height: 32px;
+  outline: none;
+  padding: 4px 8px;
+}
+.boardDialog textarea { resize: vertical; }
+.boardDialogActions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.boardDialogActions button {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  min-height: 32px;
+  padding: 0 12px;
+}
+.boardDialogActions button:disabled { cursor: not-allowed; opacity: 0.5; }
+.boardDialogDanger {
+  background: var(--x-task-danger, var(--status-blocked)) !important;
+  border-color: var(--x-task-danger, var(--status-blocked)) !important;
+  color: var(--paper) !important;
+  font-weight: 600 !important;
+}
+.boardDialogHint { color: var(--x-task-text-muted); font-size: 11px; }

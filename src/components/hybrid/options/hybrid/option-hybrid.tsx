@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { WorkspaceBoardColumnsProvider } from "../../columns-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
@@ -43,6 +44,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
         );
 
   return (
+    <WorkspaceBoardColumnsProvider>
     <div className={styles.optionA} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
       {hideSuiteRail ? null : <SuiteRail />}
       <section className={styles.workspaceShell}>
@@ -52,7 +54,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
           <div aria-label="Hybrid view controls" className={styles.functionalTools} role="toolbar">
             <button aria-expanded={fieldsOpen} disabled={route.view !== "list"} onClick={() => setFieldsOpen((value) => !value)} type="button"><Icon name="fields" size={15} />Fields</button>
             <label className={styles.densityControl}><Icon name="density" size={15} /><span className={styles.srOnly}>Density</span><select aria-label="Density" onChange={(event) => onRouteChange({ density: event.target.value as TasksOptionProps["route"]["density"] })} value={route.density}><option value="compact">Compact</option><option value="comfortable">Comfortable</option></select></label>
-            <button disabled={store.readOnly} onClick={() => store.addTask("queued")} type="button"><Icon name="add" size={15} />Add task</button>
+            <button disabled={store.readOnly} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={15} />Add task</button>
           </div>
         </div>
         {fieldsOpen && route.view === "list" ? <ListFieldsPanel columns={columns} onClose={() => setFieldsOpen(false)} setColumns={setColumns} /> : null}
@@ -60,5 +62,6 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
       </section>
       <PlanningRail collapsed={planningCollapsed} onSelectedDate={setSelectedDate} onToggle={() => setPlanningCollapsed((value) => !value)} selectedDate={selectedDate} tasks={visibleTasks} view={route.view} />
     </div>
+    </WorkspaceBoardColumnsProvider>
   );
 }

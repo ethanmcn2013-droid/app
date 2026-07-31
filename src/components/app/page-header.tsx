@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useDomain } from "@/lib/domain-context";
-import { useActiveWorkspace } from "@/lib/domain-context";
+import { useActiveWorkspace, useColumnConfig } from "@/lib/domain-context";
+import { publicBoardColumns } from "@/lib/public-board-lanes";
 import { ShareButton } from "@/components/app/share/share-button";
 import { RoomViewBar } from "@/components/app/room/room-view-bar";
 import { usePalette } from "@/components/app/palette/command-palette";
@@ -172,6 +173,7 @@ export function PageActionsOverflow({
   const { state } = useTasks();
   const pack = useDomain();
   const ws = useActiveWorkspace();
+  const columnConfig = useColumnConfig();
   const [copying, setCopying] = useState<string | null>(null);
 
   const handleCopy = useCallback(
@@ -208,7 +210,7 @@ export function PageActionsOverflow({
     if (!ws) return;
     handleCopy(
       "csv",
-      formatTasksAsCsv(state.tasks),
+      formatTasksAsCsv(state.tasks, publicBoardColumns(columnConfig, state.tasks)),
       "CSV copied",
       "Paste into Google Sheets, Excel, or Numbers.",
     );
@@ -217,7 +219,11 @@ export function PageActionsOverflow({
     if (!ws) return;
     handleCopy(
       "md",
-      formatTasksAsMarkdown(state.tasks, pack.workspaceTitle),
+      formatTasksAsMarkdown(
+        state.tasks,
+        pack.workspaceTitle,
+        publicBoardColumns(columnConfig, state.tasks),
+      ),
       "Markdown copied",
       "Paste into Google Docs, Notion, or anything markdown.",
     );

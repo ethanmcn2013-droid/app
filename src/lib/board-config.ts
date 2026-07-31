@@ -22,6 +22,9 @@ export type CustomColumn = { key: string; name: string };
  * - `colors`: per-column colour; an explicit "neutral" IS kept so a system
  *   lane's semantic default can be overridden back to no tint.
  * - `descriptions`: per-column subtext; "" means an owner cleared it.
+ * - `limits`: per-column soft work-in-progress limit (T·121). Advisory
+ *   only — the board turns the count amber at and over the limit, it
+ *   never blocks a drop. Absent or 0 means no limit.
  */
 export type ColumnConfig = {
   system: Partial<Record<LaneId, string>>;
@@ -29,6 +32,7 @@ export type ColumnConfig = {
   order: string[];
   colors: Partial<Record<string, ColumnColorKey>>;
   descriptions: Partial<Record<string, string>>;
+  limits: Partial<Record<string, number>>;
 };
 
 export const MAX_NAME_LEN = 80;
@@ -36,6 +40,8 @@ export const MAX_NAME_LEN = 80;
 export const MAX_CUSTOM_COLUMNS = 20;
 /** Max column description length; wraps/truncates gracefully in the UI. */
 export const MAX_DESCRIPTION_LEN = 160;
+/** Max per-column soft limit. High enough for any real lane; guards junk. */
+export const MAX_COLUMN_LIMIT = 999;
 
 /** A fresh, empty config. Used as the base whenever none is stored. */
 export function emptyConfig(): ColumnConfig {
@@ -45,6 +51,7 @@ export function emptyConfig(): ColumnConfig {
     order: [...LANE_ORDER],
     colors: {},
     descriptions: {},
+    limits: {},
   };
 }
 
@@ -80,6 +87,24 @@ export function parseDescriptions(raw: unknown): Partial<Record<string, string>>
   return out;
 }
 
+/** Parse the stored limits map, keeping positive integers within range.
+ *  A stored 0 (or anything unusable) reads as "no limit" and is dropped. */
+export function parseLimits(raw: unknown): Partial<Record<string, number>> {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return {};
+  const out: Partial<Record<string, number>> = {};
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (
+      typeof value === "number" &&
+      Number.isInteger(value) &&
+      value > 0 &&
+      value <= MAX_COLUMN_LIMIT
+    ) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 /**
  * Parse the stored JSON into a ColumnConfig, handling both the legacy
  * `Record<LaneId, string>` format (pure system overrides) and the new
@@ -102,7 +127,8 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
       "custom" in obj ||
       "order" in obj ||
       "colors" in obj ||
-      "descriptions" in obj
+      "descriptions" in obj ||
+      "limits" in obj
     ) {
       const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
       const custom = Array.isArray(obj.custom)
@@ -119,6 +145,7 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
         order,
         colors: parseColors(obj.colors),
         descriptions: parseDescriptions(obj.descriptions),
+        limits: parseLimits(obj.limits),
       };
     }
 
@@ -142,6 +169,7 @@ export function serializeColumnConfig(config: ColumnConfig): string {
     order: normaliseOrder(config),
     colors: config.colors ?? {},
     descriptions: config.descriptions ?? {},
+    limits: config.limits ?? {},
   });
 }
 
@@ -153,12 +181,15 @@ export function configRemoveColumn(config: ColumnConfig, key: string): ColumnCon
   delete colors[key];
   const descriptions = { ...config.descriptions };
   delete descriptions[key];
+  const limits = { ...config.limits };
+  delete limits[key];
   return {
     ...config,
     custom: config.custom.filter((c) => c.key !== key),
     order: config.order.filter((k) => k !== key),
     colors,
     descriptions,
+    limits,
   };
 }
 

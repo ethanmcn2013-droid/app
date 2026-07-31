@@ -1,6 +1,10 @@
 import { PRIORITY_LABEL } from "@/lib/data";
 import type { PublicTask } from "@/lib/data";
-import { publicLane, publicLaneOrder } from "@/lib/public-board-lanes";
+import {
+  publicBoardColumns,
+  publicColumnTasks,
+  type PublicColumn,
+} from "@/lib/public-board-lanes";
 import type { PublishedWorkspaceProps } from "./types";
 
 /**
@@ -17,14 +21,11 @@ import type { PublishedWorkspaceProps } from "./types";
 
 const TASKS_PER_LANE = 6;
 
-export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
-  const laneOrder = publicLaneOrder(tasks);
-  const byLane = new Map<string, PublicTask[]>();
-  for (const id of laneOrder) byLane.set(id, []);
-  for (const t of tasks) {
-    const arr = byLane.get(t.lane);
-    if (arr) arr.push(t);
-  }
+export function EmbedView({ workspace, tasks, columns }: PublishedWorkspaceProps) {
+  const boardColumns: PublicColumn[] = columns ?? publicBoardColumns(null, tasks);
+  const byColumn = new Map<string, PublicTask[]>(
+    boardColumns.map((column) => [column.id, publicColumnTasks(tasks, column.id)]),
+  );
 
   return (
     <div
@@ -54,14 +55,13 @@ export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
       </header>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {laneOrder.map((laneId) => {
-          const list = byLane.get(laneId) ?? [];
+        {boardColumns.map((column) => {
+          const list = byColumn.get(column.id) ?? [];
           if (list.length === 0) return null;
           const visible = list.slice(0, TASKS_PER_LANE);
           const overflow = list.length - visible.length;
-          const lane = publicLane(laneId);
           return (
-            <section key={laneId}>
+            <section key={column.id}>
               <div
                 style={{
                   display: "flex",
@@ -76,7 +76,7 @@ export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
                     width: 6,
                     height: 6,
                     borderRadius: 999,
-                    background: `var(--lane-${laneId}-dot, #c8cad1)`,
+                    background: column.accent ?? "#c8cad1",
                   }}
                   aria-hidden
                 />
@@ -90,7 +90,7 @@ export function EmbedView({ workspace, tasks }: PublishedWorkspaceProps) {
                     color: "#8b8e98",
                   }}
                 >
-                  {lane.name}
+                  {column.name}
                 </h2>
                 <span
                   style={{

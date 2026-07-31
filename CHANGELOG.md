@@ -4,6 +4,48 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-07-31 · T·121 · ships · the columns are yours
+
+**Your board's columns are now yours to shape — add one, rename it, describe
+it, colour it, give it a soft limit, move it, or delete it with its tasks
+moved where you choose — and every copy of your board says the same thing.**
+Since the T·99 port the live board drew five fixed columns from a constant
+while a complete column system sat unreachable in a component nothing
+imported. That system is back, rebuilt into the board people actually use.
+
+The header "+" now adds a column after the one you pressed it on, and a
+pinned control past the last column appends one, so adding a column no
+longer requires knowing it was impossible. The collapse caret and the
+column menu are always visible rather than appearing on hover, which
+touch screens do not have. Soft limits show amber at and over the line and
+never block a drop. Column colour previews at the tint the lane actually
+paints — a whisper, not a swatch of paint — and column hues no longer
+share variables with teammate avatar colours, so a colour means one thing.
+
+The same column set now reaches every copy of the board: the share link,
+the print sheet, the public embed, and the CSV and Markdown exports group
+and label by your columns, where they previously spoke a four-lane
+vocabulary the app itself had stopped using — a guest could read "Blocked"
+on a column the operator saw as "Queued". The Waiting column's raw-text
+persistence is retired by data migration 0024: rows move to a proper
+column claim with a canonical lane, affected projects are seeded a config
+naming Waiting, and the board renders identically before and after.
+
+Also in this release: deleting a task asks first, everywhere; the
+design-lab "in session" menu labels are gone; the list's subtask expander
+shows an honest completion ratio instead of blank rows; the Nudge dialog
+rides the card menu with sending still disabled until its backend exists;
+and the retired "Open the workspace" phrasing becomes "Open the project"
+on the last pages that carried it.
+
+Verified by the full gate run, the migration ledger suite applying 0023
+to a fresh database with all six receipt proofs passing, and production
+row counts measured read-only before execution. Honest edges: reordering
+tasks by position inside a custom column appends rather than honouring
+the drop position (system lanes honour it), and rows that already carried
+a fixture assignee id keep it until a separate cleanup sized by the same
+measurement.
+
 ## 2026-07-31 · T·120 · cuts · one name per database, and the scaffolding nobody used is gone
 
 **Every database the app touches now has exactly one name, in code, in

@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublishedWorkspaceBySlug } from "@/server/db/queries";
+import { getColumnConfig } from "@/server/actions/board";
+import { publicBoardColumns } from "@/lib/public-board-lanes";
 import { EmbedView } from "@/components/published/embed-view";
 
 /**
@@ -30,9 +32,11 @@ export default async function EmbedPage({
   const { slug } = await params;
   const ws = await getPublishedWorkspaceBySlug(slug);
   if (!ws) notFound();
+  const columnConfig = await getColumnConfig(ws.id);
 
   return (
     <EmbedView
+      columns={publicBoardColumns(columnConfig, ws.tasks)}
       workspace={{
         id: ws.id,
         slug: ws.slug,
