@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { WorkspaceBoardColumnsProvider } from "../../columns-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
 import { Icon } from "../../shared/icons";
@@ -83,7 +84,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
       <section className={styles.workspaceShell}>
         <WorkspaceBrief tasks={wholeProject} />
         <div className={styles.viewBar}>
-          <div className={styles.tabsScroll}><ViewTabs onRouteChange={(patch) => { setFieldsOpen(false); setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
+          <div className={styles.tabsScroll}><ViewTabs hrefFor={(view) => TASKS_VIEW_PATHS[view]} onRouteChange={(patch) => { setFieldsOpen(false); setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
           <div aria-label="Hybrid view controls" className={styles.functionalTools} role="toolbar">
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
             <button aria-expanded={fieldsOpen} disabled={route.view !== "list"} onClick={() => { setFieldsOpen((value) => !value); setToolPanel(null); }} type="button"><Icon name="fields" size={15} />Fields</button>

@@ -570,7 +570,7 @@ thead .listTitleCell { z-index: 14; }
 .calendarPreview > div { align-items: center; display: flex; justify-content: space-between; margin-top: 8px; }
 
 /* Planning rail */
-.planningRail { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 236px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
+.planningRail { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 236px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis var(--motion-base) var(--spring-glide); z-index: 12; }
 .planningRailCollapsed { align-items: center; flex-basis: 44px; overflow: hidden; padding: 8px 5px; }
 .planningRailExpand { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: 8px; padding: 4px 0; }
 .planningRailExpand span { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; writing-mode: vertical-rl; }

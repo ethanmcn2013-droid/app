@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type Ref } from "react";
 import { DATASET_LABELS, LAB_DATASETS, LAB_MODES, LAB_OPTIONS, MODE_LABELS, OPTION_LABELS, VIEW_LABELS, LAB_VIEWS, type LabRouteState } from "../types";
 import { FIXTURE_MANIFEST_ID, FIXTURE_SHA256 } from "../fixtures";
 import { useLabStore } from "../store";
@@ -51,20 +51,45 @@ export function LabRibbon({ route, onRouteChange }: { route: LabRouteState; onRo
   );
 }
 
-export function ViewTabs({ route, onRouteChange, className = "" }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void; className?: string }) {
+export function ViewTabs({ route, onRouteChange, hrefFor, className = "" }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void; hrefFor?: (view: LabRouteState["view"]) => string; className?: string }) {
   // When the tab row scrolls (phone widths), the current view must not
   // load clipped mid-word off the right edge — pull it into view once.
-  const activeRef = useRef<HTMLButtonElement | null>(null);
+  const activeRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [route.view]);
   return (
     <nav aria-label="Project views" className={`${styles.viewTabs} ${className}`}>
-      {LAB_VIEWS.map((view) => (
-        <button aria-current={route.view === view ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} ref={route.view === view ? activeRef : undefined} title={VIEW_PURPOSES[view]} type="button">
-          <Icon name={view} size={15} />{VIEW_LABELS[view]}
-        </button>
-      ))}
+      {LAB_VIEWS.map((view) => {
+        const current = route.view === view;
+        // Production passes canonical hrefs so the views are real links —
+        // middle-click and cmd-click open a tab, copy-link-address works.
+        // A plain click still navigates client-side through onRouteChange.
+        // The lab has no routes and keeps buttons.
+        if (hrefFor) {
+          return (
+            <a
+              aria-current={current ? "page" : undefined}
+              href={hrefFor(view)}
+              key={view}
+              onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                event.preventDefault();
+                onRouteChange({ view });
+              }}
+              ref={current ? (activeRef as Ref<HTMLAnchorElement>) : undefined}
+              title={VIEW_PURPOSES[view]}
+            >
+              <Icon name={view} size={15} />{VIEW_LABELS[view]}
+            </a>
+          );
+        }
+        return (
+          <button aria-current={current ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} ref={current ? (activeRef as Ref<HTMLButtonElement>) : undefined} title={VIEW_PURPOSES[view]} type="button">
+            <Icon name={view} size={15} />{VIEW_LABELS[view]}
+          </button>
+        );
+      })}
     </nav>
   );
 }

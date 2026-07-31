@@ -215,7 +215,7 @@
 .boardCardItem { position: relative; }
 .boardCardItem[data-insertion-before]::before,
 .boardEndDrop[data-insertion]::before { background: var(--x-task-accent); border-radius: 2px; content: ""; height: 2px; left: 0; position: absolute; right: 0; top: -5px; }
-.boardCard { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 8px; cursor: grab; min-height: 160px; padding: 12px; position: relative; transition: border-color 140ms ease, transform 140ms ease, background 140ms ease; }
+.boardCard { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 8px; cursor: grab; min-height: 160px; padding: 12px; position: relative; transition: border-color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out); }
 .boardCard:hover { border-color: var(--x-task-border-strong); transform: translateY(-1px); }
 .boardCard:active { cursor: grabbing; transform: translateY(0); }
 .boardCard:focus-visible { border-color: var(--x-task-focus); outline: 2px solid color-mix(in srgb, var(--x-task-focus) 22%, transparent); outline-offset: 2px; }
@@ -425,7 +425,7 @@
 .calendarCell:focus-within .calendarDayHeader button:last-child { opacity: 1; }
 .calendarCell[data-today] .calendarDayHeader button:first-child { background: var(--x-task-accent); color: var(--x-task-raised); }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; }
-.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); }
+.calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); }
 .calendarTaskWrap[data-kind="due"] { border-left-color: var(--x-task-danger); }
 .calendarTaskWrap[data-kind="milestone"] { background: var(--x-task-milestone-soft); color: var(--x-task-milestone); }
 /* Done work reads as done on every calendar surface — chip, agenda row,
@@ -444,7 +444,7 @@
 .agendaLedger li[data-recently-placed] { animation: calendar-placement-receipt 280ms var(--ease-out) both; }
 .calendarTaskWrap[data-recently-updated],
 .selectedAgendaList li[data-recently-updated] article,
-.agendaLedger li[data-recently-updated] { animation: calendar-update-receipt 240ms var(--ease-out) both; }
+.agendaLedger li[data-recently-updated] { animation: calendar-update-receipt var(--motion-base) var(--ease-out) both; }
 .selectedAgendaList li[data-inspected] article { box-shadow: inset 2px 0 var(--x-task-accent); }
 .agendaLedger li[data-inspected] { box-shadow: inset 2px 0 var(--x-task-accent); }
 @keyframes calendar-placement-receipt {

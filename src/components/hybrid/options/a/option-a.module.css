@@ -275,7 +275,7 @@
   min-width: 272px;
   overflow: hidden;
   position: relative;
-  transition: flex-basis 220ms var(--spring-glide), min-width 220ms var(--spring-glide);
+  transition: flex-basis var(--motion-base) var(--spring-glide), min-width var(--motion-base) var(--spring-glide);
 }
 /* Done keeps a whisper of recession, from paper rather than from grey. */
 .boardLane[data-done] { background: color-mix(in srgb, var(--x-task-raised) 94%, var(--x-task-surface)); }
@@ -336,7 +336,7 @@
   height: 26px;
   justify-content: center;
   padding: 0;
-  transition: background 120ms var(--ease-out), color 120ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 26px;
 }
 .laneIconButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
@@ -400,7 +400,7 @@
   overflow: hidden;
   padding: 9px 0 13px;
   position: relative;
-  transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 100%;
 }
 
@@ -426,7 +426,7 @@
   padding: 10px 12px 11px;
   position: relative;
   transform-origin: center;
-  transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), background 200ms var(--ease-out), color 200ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
 }
 .boardCard:hover { border-color: var(--x-task-border-strong); box-shadow: var(--shadow-1); }
 .boardCard[data-selected] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); }
@@ -441,7 +441,7 @@
   transform: scale(1.01);
 }
 .boardCard[data-recently-placed] { animation: task-placement-receipt 280ms var(--ease-out) both; }
-.boardCard[data-recently-updated] { animation: task-update-receipt 240ms var(--ease-out) both; }
+.boardCard[data-recently-updated] { animation: task-update-receipt var(--motion-base) var(--ease-out) both; }
 .boardCard[data-completed] { color: var(--x-task-text-muted); }
 .boardLane[data-done] .boardCard { background: color-mix(in srgb, var(--x-task-raised) 72%, var(--x-task-canvas)); }
 /* Negative right margin only: the checkbox keeps the title's left edge, and
@@ -465,7 +465,7 @@
   justify-content: center;
   opacity: 0;
   padding: 0;
-  transition: opacity 120ms var(--ease-out), background 120ms var(--ease-out), color 120ms var(--ease-out);
+  transition: opacity var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 24px;
 }
 .boardCard:hover .cardMenuTrigger,
@@ -488,7 +488,7 @@
   justify-content: center;
   opacity: 0;
   padding: 0;
-  transition: opacity 120ms var(--ease-out), background 120ms var(--ease-out), color 120ms var(--ease-out);
+  transition: opacity var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 24px;
 }
 .boardCard:hover .cardMilestone,
@@ -513,7 +513,7 @@
    that alignment never held and the floor only bought dead space. */
 .boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; font: inherit; font-size: 13px; font-weight: 580; letter-spacing: -.005em; line-height: 1.4; margin: 4px 0 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; width: 100%; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .boardCard[data-completed] .boardTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
-.boardTitle { transition: color 200ms var(--ease-out); }
+.boardTitle { transition: color var(--motion-base) var(--ease-out); }
 .boardTitleEdit { margin: 4px 0 0; }
 .cardLabels { margin-top: 8px; overflow: hidden; }
 .cardSchedule { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
@@ -557,7 +557,7 @@
   min-height: 34px;
   padding: 0 11px;
   text-align: left;
-  transition: background 120ms var(--ease-out), border-color 120ms var(--ease-out), color 120ms var(--ease-out);
+  transition: background var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 100%;
 }
 .laneAdd:hover { background: var(--x-task-hover); border-color: var(--x-task-border-strong); color: var(--x-task-text); }
@@ -634,7 +634,7 @@
   animation: list-placement-receipt 280ms var(--ease-out) both;
 }
 .taskRow[data-recently-updated] > th,
-.taskRow[data-recently-updated] > td { animation: list-update-receipt 240ms var(--ease-out) both; }
+.taskRow[data-recently-updated] > td { animation: list-update-receipt var(--motion-base) var(--ease-out) both; }
 .taskRow[data-completed] { color: var(--x-task-text-muted); }
 /* font-weight/text-align: the title cell is a <th scope="row"> for AT, and
    the browser default (bold, centered) leaked into everything the reset
@@ -733,7 +733,7 @@
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
 .timelineGrid span[data-weekend] { background: color-mix(in srgb, var(--x-task-canvas) 48%, transparent); }
 .todayLine { background: var(--x-task-accent); bottom: 0; position: absolute; top: 0; width: 1px; z-index: 2; }
-.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); z-index: 3; }
+.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); z-index: 3; }
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
@@ -743,7 +743,7 @@
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .rangeHandle:disabled { cursor: not-allowed; opacity: .35; }
 .timelineDue,
-.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); transform-origin: center; transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out), opacity 140ms var(--ease-out); z-index: 3; }
+.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out); z-index: 3; }
 .timelineRange[data-inspected],
 .timelineDue[data-inspected],
 .timelineMilestone[data-inspected] { border-color: var(--x-task-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
@@ -760,7 +760,7 @@
 .timelineDue[data-recently-updated],
 .timelineMilestone[data-recently-updated],
 .timelineRow[data-recently-updated] .timelineTaskPane,
-.unscheduledItem[data-recently-updated] { animation: task-update-receipt 240ms var(--ease-out) both; }
+.unscheduledItem[data-recently-updated] { animation: task-update-receipt var(--motion-base) var(--ease-out) both; }
 .timelineRow[data-inspected] .timelineTaskPane { box-shadow: inset 2px 0 var(--x-task-accent); }
 .timelineDate[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-surface)); box-shadow: inset 0 -2px var(--x-task-accent); }
 .timelineDue > span:last-child,

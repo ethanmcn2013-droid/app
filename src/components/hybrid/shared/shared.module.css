@@ -73,9 +73,12 @@
 .accountChip small { color: var(--x-task-text-muted); font-size: 11px; }
 
 .viewTabs { align-items: center; display: flex; gap: 2px; }
-.viewTabs button { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 34px; padding: 0 10px; position: relative; }
-.viewTabs button:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.viewTabs button[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 640; }
+.viewTabs button,
+.viewTabs a { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 34px; padding: 0 10px; position: relative; text-decoration: none; }
+.viewTabs button:hover,
+.viewTabs a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.viewTabs button[aria-current="page"],
+.viewTabs a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 640; }
 
 .viewTools { align-items: center; display: flex; gap: 4px; min-width: 0; }
 .viewTools > button,

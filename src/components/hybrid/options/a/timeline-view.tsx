@@ -55,6 +55,9 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
   // range can start at the planning period's opening date — on a phone
   // that left the visible window entirely empty until a manual pan.
   const didAnchorScroll = useRef(false);
+  // Days between a dragged bar's schedule start and the cell it was
+  // grabbed by; applied on drop so the bar lands where the hand put it.
+  const dragGrabOffset = useRef(0);
   const config = ZOOM[zoom];
   const dates = useMemo(() => eachDate(start, addDays(start, config.days - 1)), [config.days, start]);
   const gridWidth = dates.length * config.cell;
@@ -90,8 +93,12 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       store.scheduleTask(task.id, scheduleFromDrop(date));
     } else {
       const currentStart = scheduleStart(task.schedule);
-      if (currentStart) store.moveScheduleByDays(task.id, differenceInDays(currentStart, date));
+      if (currentStart) {
+        const targetStart = addDays(date, -dragGrabOffset.current);
+        store.moveScheduleByDays(task.id, differenceInDays(currentStart, targetStart));
+      }
     }
+    dragGrabOffset.current = 0;
     resizeTask.current = null;
     store.setDrag(null);
     store.setActive(task.id);
@@ -149,6 +156,19 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
     if (store.readOnly) return;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/task-id", task.id);
+    // One-to-one manipulation (motion contract): remember which cell of
+    // the bar the pointer picked up, so the drop preserves the grip
+    // instead of snapping the schedule's START to the cursor cell — a
+    // grab mid-bar used to shift the whole range by half its length.
+    const span = dateSpan(task);
+    if (span) {
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      const hiddenLead = span.start < dates[0] ? differenceInDays(span.start, dates[0]) : 0;
+      const withinBar = clamp(Math.floor((event.clientX - rect.left) / config.cell), 0, 999);
+      dragGrabOffset.current = hiddenLead + withinBar;
+    } else {
+      dragGrabOffset.current = 0;
+    }
     store.setDrag({ kind: "schedule", taskId: task.id, source: "timeline", targetDate: null });
   };
 
