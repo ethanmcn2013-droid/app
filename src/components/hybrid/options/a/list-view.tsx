@@ -5,12 +5,12 @@ import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import {
   PRIORITY_LABELS,
-  STATUS_LABELS,
   TASK_PRIORITIES,
-  TASK_STATUSES,
   type LabTask,
   type TaskStatus,
 } from "../../types";
+import type { BoardColumn } from "@/lib/board-columns";
+import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
 import {
@@ -117,21 +117,21 @@ export function ListFieldsPanel({
   );
 }
 
-function groupsFor(tasks: LabTask[], group: QuietGroup): ListGroup[] {
+function groupsFor(tasks: LabTask[], group: QuietGroup, boardColumns: readonly BoardColumn[]): ListGroup[] {
   if (group === "priority") {
     return TASK_PRIORITIES.map((priority) => ({
       key: priority,
       label: `${PRIORITY_LABELS[priority]} priority`,
       tasks: tasks.filter((task) => task.priority === priority),
-      addStatus: "queued" as TaskStatus,
+      addStatus: "todo" as TaskStatus,
     }));
   }
-  if (group === "none") return [{ key: "all", label: "All tasks", tasks, addStatus: "queued" }];
-  return TASK_STATUSES.map((status) => ({
-    key: status,
-    label: STATUS_LABELS[status],
-    tasks: tasks.filter((task) => task.status === status),
-    addStatus: status,
+  if (group === "none") return [{ key: "all", label: "All tasks", tasks, addStatus: "todo" }];
+  return boardColumns.map((column) => ({
+    key: column.key,
+    label: column.name,
+    tasks: tasks.filter((task) => task.status === column.key),
+    addStatus: column.key,
   }));
 }
 
@@ -147,13 +147,14 @@ export function ListView({
   group: QuietGroup;
 }) {
   const store = useLabStore();
+  const boardColumns = useBoardColumns();
   const context = useTaskContextMenu();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [draggedColumn, setDraggedColumn] = useState<ListColumnId | null>(null);
   const visibleColumns = columns.filter((column) => column.visible);
   const orderedIds = tasks.map((task) => task.id);
-  const groups = useMemo(() => groupsFor(tasks, group), [group, tasks]);
+  const groups = useMemo(() => groupsFor(tasks, group, boardColumns), [boardColumns, group, tasks]);
   const allSelected = orderedIds.length > 0 && orderedIds.every((id) => store.selectedIds.includes(id));
 
   const toggleGroup = (key: string) => {
@@ -229,8 +230,8 @@ export function ListView({
   const renderCell = (task: LabTask, column: ListColumn) => {
     if (column.id === "status") {
       return (
-        <select aria-label={`Status for ${task.title}`} disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value as TaskStatus)} value={task.status}>
-          {TASK_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+        <select aria-label={`Status for ${task.title}`} disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value)} value={task.status}>
+          {boardColumns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
         </select>
       );
     }
@@ -317,7 +318,7 @@ export function ListView({
                 */}
                 <tr
                   className={styles.groupRow}
-                  data-lane-tone={group === "status" && taskGroup.key !== "queued" ? taskGroup.key : undefined}
+                  data-lane-tone={group === "status" && taskGroup.key !== "todo" ? taskGroup.key : undefined}
                 >
                   <th colSpan={visibleColumns.length} scope="rowgroup">
                     <div className={styles.groupBand}>

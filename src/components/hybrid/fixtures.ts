@@ -258,6 +258,17 @@ function buildTask(seed: Seed, index: number): LabTask {
 
 export const LAB_TASKS: LabTask[] = SEEDS.map(buildTask);
 
+/** The frozen fixture data predates T·120 and stores the old five status
+ *  words; the views now speak column keys (lane ids + custom keys). The
+ *  projection maps at the boundary so the hashed fixture stays untouched. */
+const FIXTURE_STATUS_TO_COLUMN: Record<string, string> = {
+  queued: "todo",
+  active: "doing",
+  review: "review",
+  waiting: "waiting",
+  done: "done",
+};
+
 export function tasksForDataset(dataset: LabDataset): LabTask[] {
   const source = dataset === "sparse"
     ? LAB_TASKS.filter((task) => SPARSE_IDS.has(task.id))
@@ -266,7 +277,10 @@ export function tasksForDataset(dataset: LabDataset): LabTask[] {
       : dataset === "edge"
         ? LAB_TASKS.filter((task) => EDGE_IDS.has(task.id))
         : LAB_TASKS;
-  return structuredClone(source);
+  return structuredClone(source).map((task) => ({
+    ...task,
+    status: FIXTURE_STATUS_TO_COLUMN[task.status] ?? task.status,
+  }));
 }
 
 // Runtime registries. In the design-lab route these are never set and the

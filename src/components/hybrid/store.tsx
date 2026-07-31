@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
+import { columnDisplayName, resolveBoardColumns } from "@/lib/board-columns";
 import { addDays, formatSchedule, moveSchedule, resizeScheduleEnd } from "./dates";
 import type {
   CalendarDate,
@@ -19,7 +20,11 @@ import type {
   TaskSchedule,
   TaskStatus,
 } from "./types";
-import { STATUS_LABELS } from "./types";
+
+// The lab store always runs the default five-column board (no workspace
+// config exists in the design lab), so announcements resolve names here.
+const LAB_COLUMNS = resolveBoardColumns(null);
+const labColumnName = (key: TaskStatus) => columnDisplayName(LAB_COLUMNS, key);
 
 type StoreState = {
   tasks: LabTask[];
@@ -128,7 +133,7 @@ function reducer(state: StoreState, action: Action): StoreState {
       const ranks = new Map(statusTasks.map((task, rank) => [task.id, rank]));
       return {
         ...state,
-        ...snapshot(state, `Move to ${STATUS_LABELS[action.status]}`),
+        ...snapshot(state, `Move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => task.id === action.id
           ? { ...task, status: action.status, completed: action.status === "done", order: index }
           : task.status === action.status
@@ -136,7 +141,7 @@ function reducer(state: StoreState, action: Action): StoreState {
             : task),
         activeId: action.id,
         recentlyUpdatedId: action.id,
-        announcement: `${moving.title} moved to ${STATUS_LABELS[action.status]}, position ${index + 1}`,
+        announcement: `${moving.title} moved to ${labColumnName(action.status)}, position ${index + 1}`,
       };
     }
     case "MOVE_SCHEDULE": {
@@ -170,11 +175,11 @@ function reducer(state: StoreState, action: Action): StoreState {
       const selected = new Set(state.selectedIds);
       return {
         ...state,
-        ...snapshot(state, `Bulk move to ${STATUS_LABELS[action.status]}`),
+        ...snapshot(state, `Bulk move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => selected.has(task.id)
           ? { ...task, status: action.status, completed: action.status === "done" }
           : task),
-        announcement: `${selected.size} tasks moved to ${STATUS_LABELS[action.status]}`,
+        announcement: `${selected.size} tasks moved to ${labColumnName(action.status)}`,
       };
     }
     case "BULK_COMPLETE": {
@@ -239,7 +244,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         inspectedId: titled ? state.inspectedId : id,
         activeId: id,
         recentlyPlacedId: id,
-        announcement: `${task.title} added to ${STATUS_LABELS[action.status]}`,
+        announcement: `${task.title} added to ${labColumnName(action.status)}`,
       };
     }
     case "DELETE_TASK": {

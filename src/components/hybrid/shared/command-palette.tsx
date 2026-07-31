@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLabStore } from "../store";
-import { STATUS_LABELS } from "../types";
+import { columnDisplayName } from "@/lib/board-columns";
+import { useBoardColumns } from "../columns-context";
 import { Icon } from "./icons";
 import styles from "./shared.module.css";
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -48,7 +50,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         <div className={styles.paletteCommands}>
           <button disabled={store.readOnly} onClick={() => { store.addTask("queued"); close(); }} type="button"><Icon name="add" size={16} /><span><b>Create a task</b><small>Add to Queued · session only</small></span><kbd>C</kbd></button>
           <div className={styles.paletteLabel}>Tasks</div>
-          {results.map((task) => <button key={task.id} onClick={() => { store.openTask(task.id); close(); }} type="button"><span className={styles.paletteStatus} data-status={task.status} /><span><b>{task.title}</b><small>{STATUS_LABELS[task.status]}</small></span></button>)}
+          {results.map((task) => <button key={task.id} onClick={() => { store.openTask(task.id); close(); }} type="button"><span className={styles.paletteStatus} data-status={task.status} /><span><b>{task.title}</b><small>{columnDisplayName(columns, task.status)}</small></span></button>)}
           {results.length === 0 ? <p>No matching tasks</p> : null}
         </div>
         <footer><span><kbd>↵</kbd> Open</span><span><kbd>↑↓</kbd> Navigate</span><span>Fixture search · no network</span></footer>

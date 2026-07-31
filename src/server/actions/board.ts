@@ -487,19 +487,19 @@ export async function deleteColumnAction(
   // of the Waiting column and any other stray value that ever leaked into
   // the unconstrained lane column. Deleting the column must move both
   // kinds, or the raw-lane rows would re-materialise as an orphan column.
-  const inDeletedColumn = and(
-    eq(tasks.workspaceId, ws),
-    or(
-      eq(tasks.boardColumnKey, columnKey),
-      and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
-    ),
+  // The tenant clause stays inline at every callsite below so the
+  // tenant-scope contract can verify it; only the column-membership OR is
+  // shared.
+  const memberOfDeletedColumn = or(
+    eq(tasks.boardColumnKey, columnKey),
+    and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
   );
 
   // Count tasks in this column before moving, for the toast copy.
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(tasks)
-    .where(inDeletedColumn);
+    .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
   const tasksReassigned = Number(countRow?.count ?? 0);
 
   // Move the tasks. With an explicit destination the client picked where
@@ -514,7 +514,7 @@ export async function deleteColumnAction(
       await db
         .update(tasks)
         .set({ lane: destination as LaneId, boardColumnKey: null, idleDays: null })
-        .where(inDeletedColumn);
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     } else if (destination) {
       await db
         .update(tasks)
@@ -522,7 +522,7 @@ export async function deleteColumnAction(
           boardColumnKey: destination,
           lane: canonicalisedLane as unknown as LaneId,
         })
-        .where(inDeletedColumn);
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     } else {
       await db
         .update(tasks)
@@ -530,7 +530,7 @@ export async function deleteColumnAction(
           boardColumnKey: null,
           lane: canonicalisedLane as unknown as LaneId,
         })
-        .where(inDeletedColumn);
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     }
   }
 

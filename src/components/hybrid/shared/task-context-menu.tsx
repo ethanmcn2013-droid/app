@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKe
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { CalendarDate } from "../types";
 import { useLabStore } from "../store";
-import { STATUS_LABELS, TASK_STATUSES } from "../types";
+import { useBoardColumns } from "../columns-context";
 import { Icon } from "./icons";
 import styles from "./shared.module.css";
 
@@ -36,6 +36,7 @@ export function useTaskContextMenu() {
 
 export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: () => void }) {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const calendar = useCalendarFrame();
   const firstRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -83,9 +84,9 @@ export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: (
       <button disabled={store.readOnly} onClick={() => run(() => store.openTask(task.id))} ref={firstRef} role="menuitem" type="button"><Icon name="focus" size={15} />Open task</button>
       <button disabled={store.readOnly} onClick={() => run(() => store.setEditing(task.id, "title"))} role="menuitem" type="button"><Icon name="redo" size={15} />Edit title</button>
       <div className={styles.menuLabel}>Move to</div>
-      {TASK_STATUSES.filter((status) => status !== task.status).map((status) => (
+      {columns.filter((column) => column.key !== task.status).map(({ key: status, name }) => (
         <button disabled={store.readOnly} key={status} onClick={() => run(() => store.moveStatus(task.id, status))} role="menuitem" type="button">
-          <span className={styles.menuStatus} data-status={status} />{STATUS_LABELS[status]}
+          <span className={styles.menuStatus} data-status={status} />{name}
         </button>
       ))}
       <div className={styles.menuDivider} />

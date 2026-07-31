@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../store";
-import { STATUS_LABELS, TASK_STATUSES } from "../types";
+import { useBoardColumns } from "../columns-context";
 import { Icon } from "./icons";
 import styles from "./shared.module.css";
 
 export function BulkToolbar() {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const reduceMotion = useReducedMotion();
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const selectionKey = [...store.selectedIds].sort().join(":");
@@ -28,9 +29,9 @@ export function BulkToolbar() {
       <span className={styles.toolbarDivider} />
       <label>
         <span className={styles.srOnly}>Move selected tasks</span>
-        <select aria-label="Move selected tasks" disabled={store.readOnly} onChange={(event) => store.bulkStatus(event.target.value as (typeof TASK_STATUSES)[number])} value="">
+        <select aria-label="Move selected tasks" disabled={store.readOnly} onChange={(event) => store.bulkStatus(event.target.value)} value="">
           <option disabled value="">Move to…</option>
-          {TASK_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+          {columns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
         </select>
       </label>
       <button disabled={store.readOnly} onClick={() => store.bulkComplete()} type="button"><Icon name="check" size={15} />Complete</button>
