@@ -658,7 +658,7 @@ const LANE_TONE: Record<string, string | undefined> = {
 /** A base ColumnConfig synthesised when none is stored yet (demo / new
  *  board) so optimistic edits still apply. */
 function clientBaseConfig(allKeys: string[]): ColumnConfig {
-  return { system: {}, custom: [], order: [...allKeys], colors: {}, descriptions: {} };
+  return { system: {}, custom: [], order: [...allKeys], colors: {}, descriptions: {}, limits: {} };
 }
 
 type LaneColumnRef = { key: string; name: string; dot: string };

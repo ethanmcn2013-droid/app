@@ -158,30 +158,31 @@ export const LANES: Record<
   LaneId,
   { id: LaneId; name: string; ink: string; bg: string; dot: string }
 > = {
-  // Phase 2 (2026-07-18): the four standard columns display as
-  // Blocked · In Progress · Reviewing · Done. Internal LaneId values
-  // (todo/doing/review/done) are STABLE — only the display labels
-  // changed — so no task, seed, selector, nudge, or migration moves.
-  // LANE_ORDER is already [todo, doing, review, done], so the required
-  // left-to-right order holds by position with zero data risk. Labels
-  // are further overridable per workspace via the column config `system` map.
+  // T·120: the default display names are the ones the shipped board has
+  // used since 2026-07-20 — Queued · In progress · Review · Done. The
+  // 2026-07-18 relabel (Blocked · In Progress · Reviewing) never rendered
+  // in the app after the T·99 port, but share, print, embed and export
+  // kept it, so a guest's copy disagreed with the operator's screen.
+  // Internal LaneId values (todo/doing/review/done) are STABLE — only
+  // labels change — and every label is overridable per workspace via the
+  // column config `system` map, which wins wherever a config exists.
   todo: {
     id: "todo",
-    name: "Blocked",
+    name: "Queued",
     ink: "var(--lane-todo-ink)",
     bg: "var(--lane-todo)",
     dot: "var(--lane-todo-dot)",
   },
   doing: {
     id: "doing",
-    name: "In Progress",
+    name: "In progress",
     ink: "var(--lane-doing-ink)",
     bg: "var(--lane-doing)",
     dot: "var(--lane-doing-dot)",
   },
   review: {
     id: "review",
-    name: "Reviewing",
+    name: "Review",
     ink: "var(--lane-review-ink)",
     bg: "var(--lane-review)",
     dot: "var(--lane-review-dot)",
