@@ -104,14 +104,3 @@ export function countdownToken(c: Countdown): string {
   if (c.kind === "past") return `−${c.days}d`;
   return `T-${c.days}`;
 }
-
-/**
- * The recipient register, plain English (voice rule 7, "numbers speak
- * plainly"). For a couple reading their own plan, "47 days from now",
- * never "T-47".
- */
-export function countdownPhrase(c: Countdown): string {
-  if (c.kind === "today") return "today";
-  const unit = c.days === 1 ? "day" : "days";
-  return c.kind === "past" ? `${c.days} ${unit} ago` : `${c.days} ${unit} from now`;
-}

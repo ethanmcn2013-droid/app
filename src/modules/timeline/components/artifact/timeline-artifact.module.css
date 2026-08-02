@@ -840,25 +840,31 @@ button.timeLens:focus-visible .metricAlternate {
 .detailStatus::before {
   content: "";
   flex-shrink: 0;
-  width: 0.55rem;
-  height: 0.55rem;
+  width: var(--echo-size, 0.55rem);
+  height: var(--echo-size, 0.55rem);
   border: 1px solid var(--ink-faint);
   border-radius: var(--radius-pill);
   background: var(--paper);
 }
 
+/* The echo carries the rail's proportions, not only its colour. Size is what
+   separates a settled bead from the mark that is next — an echo that flattened
+   every state to one diameter would name the state in words and contradict it
+   in form. These are the rail's own three diameters, unscaled. */
 .detail[data-detail-state="complete"] .detailStatus::before {
+  --echo-size: 0.64rem;
   border-color: var(--ink);
   background: var(--ink);
 }
 
-.detail[data-detail-state="current"] .detailStatus::before {
-  border-color: var(--accent);
+.detail[data-detail-state="current"] .detailStatus::before,
+.detail[data-detail-state="overdue"] .detailStatus::before {
+  --echo-size: 0.88rem;
+  border: 0;
   background: var(--accent);
 }
 
 .detail[data-detail-state="overdue"] .detailStatus::before {
-  border-color: var(--ink);
   background: var(--ink);
 }
 

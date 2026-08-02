@@ -54,8 +54,28 @@ gate and failing — is repaired, extended to the new invariants, and
 runs in `test:timeline-owner`. Names with extended-Latin glyphs stop
 falling back mid-headline (`latin-ext` ships), the artifact display
 register is ratified once as `--x-artifact-*` tokens, and the module
-sheds its orphaned dashboard-era files. The full review that drove
-this cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+sheds its orphaned dashboard-era files.
+
+The template points at the day. A venue starting from the wedding
+workspace is asked when the wedding is, and the eight planning
+milestones place themselves around it: the venue booking most of a year
+out, headcount and suppliers in the last six weeks, the walkthrough and
+the run of show in the final week. Their first shared artifact opens
+with a real countdown and real calendar spacing, the way the fixture
+everyone reviews always did. The date stays optional, and left blank
+nothing changes. `pnpm sync:templates` now generates the Timeline slice
+it always claimed to, so seeds can no longer drift from the canonical
+templates in silence.
+
+Both metric faces now state both facts: the countdown carries "2 of 9
+settled", so a couple who never presses the toggle still sees how far
+the plan has come. The milestone detail's status echo takes the rail's
+three diameters, not only its colours. Four modules left unused since
+the port from the standalone repo are resolved rather than left in
+limbo: the Timeline empty state now reads its copy from the module that
+owns it, and three dead files are gone, including a shared-update page
+model the artifact itself replaced. The full review that drove this
+cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
 
 ## 2026-07-31 · T·125 · restores · the working tools return to every view
 

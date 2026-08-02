@@ -116,12 +116,20 @@ function progressFact(model: TimelineArtifactModel): MetricFact {
 function countdownFact(
   countdown: Exclude<ReturnType<typeof buildTimelineCountdown>, null | { kind: "past" }>,
   eventLabel: string,
+  model: TimelineArtifactModel,
 ): MetricFact {
+  // Both faces carry a receipt, so whichever one the artifact opens on states
+  // the plan's other fact too. Paper already prints both; the screen owed the
+  // same completeness — a couple leading with the countdown should not have to
+  // press to learn anything settled.
+  const receipt = `${model.completedCount} of ${model.totalCount} settled`;
+
   if (countdown.kind === "today") {
     return {
       label: `Until ${eventLabel.toLowerCase()}`,
       value: "Today",
       unit: "",
+      receipt,
       spoken: `${eventLabel} is today`,
       alternate: `${eventLabel} today`,
     };
@@ -131,6 +139,7 @@ function countdownFact(
     label: `Until ${eventLabel.toLowerCase()}`,
     value: String(countdown.days),
     unit: countdown.days === 1 ? "day" : "days",
+    receipt,
     spoken: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} remaining`,
     alternate: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`,
   };
@@ -170,7 +179,7 @@ function TimeLens({
   const mode: MetricMode = canCountDown ? requestedMode : "progress";
   const completion = progressFact(model);
   const remaining = canCountDown && timeline.primaryDate
-    ? countdownFact(countdown, timeline.primaryDate.label)
+    ? countdownFact(countdown, timeline.primaryDate.label, model)
     : null;
   const active = mode === "countdown" && remaining ? remaining : completion;
   const alternate = mode === "progress" ? remaining : completion;
