@@ -12,6 +12,28 @@ This is the unified signed-in Signal Studio app at `app.signalstudio.ie`
 named `app` (`ethanmcn2013-droid/app`); the local directory rename is
 pending.
 
+## North star (set 2026-08 · operator re-derives ~every six months)
+
+Three priorities govern everything front-facing, in this order:
+
+1. **Experience.** Using the product should feel considered end to end,
+   and in the right moments delightful. Delight is deliberate: candidate
+   moments are appended to `docs/DELIGHT_CATALOG.md` for an
+   animate-or-restrained verdict — never sprinkled ad hoc.
+2. **Design.** Every front-facing surface ships at the standard of the
+   best studios working today — spacing, type, motion, empty, loading,
+   and error states, microcopy, all deliberate, nothing default. The bar
+   is the design register plus the 9.5 gate
+   (`experience/QUALITY_COUNCIL_EVIDENCE.md`).
+3. **Utility.** Someone who has never used a project-management tool
+   must be able to pick this up and understand it unaided — the
+   first-contact test. No jargon, no technical lock-out; a surface that
+   needs explaining is not done.
+
+When the three pull against each other, that order decides. The durable
+record and the review date live in
+`studio/content/hq/decisions/product-north-star.md`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 

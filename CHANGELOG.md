@@ -4,7 +4,7 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-07-31 · T·126 · the artifact is finished for the days that matter
+## 2026-08-02 · T·127 · finishes · the artifact for the days that matter, and the template that points at one
 
 **The shared Timeline artifact repairs the three places it broke its own
 promise, and the rail's marks become a system.** On the wedding day the
@@ -76,6 +76,29 @@ limbo: the Timeline empty state now reads its copy from the module that
 owns it, and three dead files are gone, including a shared-update page
 model the artifact itself replaced. The full review that drove this
 cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+
+## 2026-08-01 · T·126 · holds · experience, then design, then utility
+
+**The product north star is written down where every session reads it.**
+The operator set the direction on 2026-08-01: three priorities govern
+everything front-facing — experience (considered end to end, delightful
+in the right moments), design (the standard of the best studios working
+today, nothing default), utility (understandable unaided by someone who
+has never used a project-management tool) — and when they pull against
+each other, that order decides. The register's own hierarchy (A1.1:
+creativity and emotion outrank restraint) stands beneath it untouched.
+
+Nothing new was invented to enforce it. The three priorities bind to
+machinery that already exists: the delight catalog gates the moments,
+the 9.5 quality council gate proves the finish, and the first-contact
+test names what intuitive means here. AGENTS.md carries the ambient
+copy; the durable record — with its ~six-month review date, next
+2027-02 — is `studio/content/hq/decisions/product-north-star.md`, so
+HQ surfaces the re-derivation when it falls due.
+
+Also repaired in passing: CLAUDE.md pointed design voice at
+`studio/docs/BRAND.md`, which studio marked v1 history on 07-31; it
+now points at the successor `studio/BRAND.md`.
 
 ## 2026-07-31 · T·125 · restores · the working tools return to every view
 

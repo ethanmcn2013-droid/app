@@ -1,6 +1,6 @@
 # Signal Timeline · design review
 
-Status: review · implementation shipped 2026-07-31 (T·126) — see
+Status: review · implementation shipped 2026-07-31 to 2026-08-02 (T·127) — see
 "Implementation status" at the end for the fix-by-fix record
 Date: 2026-07-31
 Scope: the shared Timeline artifact (`/s/[token]`), its owner surfaces
@@ -390,7 +390,7 @@ opportunistically alongside.
 
 ---
 
-## Implementation status · 2026-07-31 (T·126)
+## Implementation status · 2026-07-31 (dispatched as T·127)
 
 Shipped in the same cycle as the review:
 

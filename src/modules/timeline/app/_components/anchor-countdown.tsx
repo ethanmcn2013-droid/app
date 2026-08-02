@@ -11,7 +11,7 @@ import {
  * AnchorChip is a quiet mono readout for the owner's own surfaces (the
  * dashboard, the editor), the "good context" of seeing how far out the day is
  * without opening anything. The recipient register that once lived beside it
- * was retired with T·126: the shared artifact answers "how far out is this"
+ * was retired with T·127: the shared artifact answers "how far out is this"
  * with its own metric face, and a second plain-English countdown on the same
  * page would have stated the fact twice in two voices.
  *
