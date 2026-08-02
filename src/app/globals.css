@@ -129,6 +129,10 @@
   --x-task-overlay: var(--paper);
   --x-task-border: var(--hairline);
   --x-task-border-strong: var(--ink-ghost);
+  /* The boundary of a CONTROL, not a decoration. --x-task-border-strong is
+     a hairline token — around 1.5:1 on paper, fine for a rule and far
+     under the 3:1 WCAG 1.4.11 wants for a control's visible edge. */
+  --x-task-control-border: var(--ink-faint);
   --x-task-text: var(--ink);
   --x-task-text-secondary: var(--ink-soft);
   --x-task-text-muted: color-mix(in srgb, var(--ink-faint) 90%, var(--ink));

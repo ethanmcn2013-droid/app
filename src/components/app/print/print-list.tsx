@@ -75,7 +75,7 @@ export function PrintList({
                         style={{ background: prio.color }}
                         aria-hidden
                       />
-                      {task.priority.toUpperCase()}
+                      {PRIORITY_LABEL[task.priority].label}
                     </td>
                     <td className="print-list-due">{task.due ?? "—"}</td>
                   </tr>

@@ -32,7 +32,7 @@ import { useLabStore } from "../../store";
 import type { CalendarDate, LabTask, TaskSchedule } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
-import { AvatarStack, ScheduleText, TaskOpenButton, TaskSelection, TaskSignals } from "../../shared/task-ui";
+import { AvatarStack, ScheduleText, TaskCompletion, TaskOpenButton, TaskSelection, TaskSignals } from "../../shared/task-ui";
 import { KeyboardLegend } from "../a/quiet-command-components";
 import { UnscheduledTray } from "./schedule-tray";
 import styles from "./option-b.module.css";
@@ -204,7 +204,7 @@ function SelectedDayAgenda({ date, tasks, visibleIds }: { date: CalendarDate; ta
                 <div className={styles.agendaTaskLead}>
                   <TaskSelection disabled={store.readOnly} orderedIds={visibleIds} task={task} />
                   <div><TaskOpenButton className={styles.agendaTaskTitle} task={task} /><ScheduleText task={task} /></div>
-                  <button aria-label={`${task.completed ? "Reopen" : "Mark done"} ${task.title}`} disabled={store.readOnly} onClick={() => store.toggleComplete(task.id)} type="button"><Icon name="check" size={14} /></button>
+                  <TaskCompletion disabled={store.readOnly} task={task} />
                 </div>
                 <p>{task.description}</p>
                 <div className={styles.agendaTaskPeople}><AvatarStack limit={4} task={task} /><TaskSignals task={task} /></div>
@@ -407,9 +407,21 @@ export function CalendarView({
     : mode === "week" ? `${formatDate(weekDates[0], { day: "numeric", month: "short" })} to ${formatDate(weekDates[6], { day: "numeric", month: "short", year: "numeric" })}`
       : `Agenda from ${formatDate(visibleAnchor, { day: "numeric", month: "long", year: "numeric" })}`;
 
+  // Navigation moves the SELECTION with the window. visibleAnchor falls back
+  // to selectedDate whenever the selection sits outside the anchor's window —
+  // a guard meant to follow a far-away pick, which also fired on every
+  // Previous/Next and snapped the view straight back, leaving all three
+  // controls inert (the phone day list most visibly, since it has no grid to
+  // hide the fact).
   const navigate = (direction: -1 | 1) => {
-    if (mode === "month") setAnchorDate(shiftMonth(visibleAnchor, direction));
-    else setAnchorDate(addDays(visibleAnchor, direction * (mode === "week" ? 7 : 21)));
+    const nextAnchor = mode === "month"
+      ? shiftMonth(visibleAnchor, direction)
+      : addDays(visibleAnchor, direction * (mode === "week" ? 7 : 21));
+    setAnchorDate(nextAnchor);
+    const nextSelected = mode === "month"
+      ? shiftMonth(selectedDate, direction)
+      : addDays(selectedDate, direction * (mode === "week" ? 7 : 21));
+    onSelectedDateChange(nextSelected);
     setOverflowDate(null);
   };
 

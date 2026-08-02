@@ -36,7 +36,7 @@
 
 .labSelectors { align-items: center; display: flex; gap: 5px; }
 .labSelectors label { align-items: center; border: 1px solid color-mix(in srgb, var(--x-task-raised) 16%, transparent); border-radius: 6px; display: flex; height: 32px; padding: 0 7px; }
-.labSelectors label > span { color: color-mix(in srgb, var(--x-task-raised) 50%, transparent); font-size: 11px; margin-right: 5px; text-transform: uppercase; }
+.labSelectors label > span { color: color-mix(in srgb, var(--x-task-raised) 50%, transparent); font-size: 11px; margin-right: 5px; letter-spacing: .12em; text-transform: uppercase; }
 .labSelectors select { appearance: none; background: transparent; border: 0; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; outline: 0; }
 .labSelectors select option { background: var(--x-task-text); color: var(--x-task-raised); }
 .resetButton { align-items: center; background: transparent; border: 1px solid color-mix(in srgb, var(--x-task-raised) 16%, transparent); border-radius: 6px; color: var(--x-task-raised); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 5px; height: 32px; padding: 0 9px; }
@@ -63,7 +63,7 @@
 .suiteRail nav a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 630; }
 .suiteRail nav a small { background: var(--x-task-hover); border-radius: 9px; font-size: 11px; margin-left: auto; padding: 2px 5px; }
 .railPlanning { border-bottom: 1px solid var(--x-task-border); border-top: 1px solid var(--x-task-border); display: flex; flex-direction: column; margin: 22px 5px 16px; padding: 15px 4px; }
-.railPlanning span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.railPlanning span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .railPlanning strong { font-size: 11px; margin-top: 5px; }
 .railPlanning small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .railBottom { margin-top: auto; }
@@ -95,7 +95,7 @@
 .searchBox input { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 11px; min-width: 0; outline: 0; padding: 0 6px; width: 100%; }
 .searchBox:has(input:disabled) { opacity: .55; }
 .searchBox kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 3px; font: inherit; font-size: 11px; padding: 1px 4px; }
-.localTag { background: var(--x-task-hover); border-radius: 4px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; padding: 2px 4px; text-transform: uppercase; }
+.localTag { background: var(--x-task-hover); border-radius: 4px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 4px; text-transform: uppercase; }
 
 .selectionBox { accent-color: var(--x-task-accent); cursor: pointer; flex: 0 0 auto; height: 16px; margin: 0; position: relative; width: 16px; }
 .selectionBox::after { content: ""; inset: -4px; position: absolute; }
@@ -107,7 +107,7 @@
 .completionBox {
   appearance: none;
   background: var(--x-task-raised);
-  border: 1.5px solid var(--x-task-border-strong);
+  border: 1.5px solid var(--x-task-control-border);
   border-radius: 50%;
   cursor: pointer;
   flex: 0 0 auto;
@@ -131,8 +131,10 @@
 .completionBox::after { content: ""; inset: -4px; position: absolute; }
 .completionBox:hover:not(:disabled),
 .completionBox:focus-visible { border-color: var(--x-task-success); }
-.completionBox:hover:not(:disabled)::before { border-color: var(--x-task-border-strong); }
+.completionBox:hover:not(:disabled):not(:checked)::before { border-color: var(--x-task-control-border); }
 .completionBox:checked { background: var(--x-task-success); border-color: var(--x-task-success); }
+.completionBox:checked:hover:not(:disabled) { background: var(--x-task-success-soft); }
+.completionBox:checked:hover:not(:disabled)::before { border-color: var(--x-task-success); }
 .completionBox:checked::before { border-color: var(--x-task-raised); }
 .completionBox:disabled { cursor: default; opacity: .55; }
 .priority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; gap: 5px; white-space: nowrap; }
@@ -168,7 +170,7 @@
 .contextMenu button:hover,
 .contextMenu button:focus-visible { background: var(--x-task-hover); outline: 0; }
 .contextMenu button:disabled { color: var(--x-task-text-muted); cursor: not-allowed; }
-.menuLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 8px 8px 4px; text-transform: uppercase; }
+.menuLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 8px 8px 4px; text-transform: uppercase; }
 .menuDivider { background: var(--x-task-border); height: 1px; margin: 4px; }
 .menuStatus,
 .paletteStatus { background: var(--x-task-text-muted); border-radius: 50%; height: 7px; width: 7px; }
@@ -192,7 +194,7 @@
 .inspectorBackdrop { background: color-mix(in srgb, var(--x-task-text) 46%, transparent); inset: 0; position: fixed; z-index: 101; }
 .inspectorHeader { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 52px; justify-content: space-between; padding: 0 14px 0 18px; }
 .inspectorHeader > div:first-child { display: flex; flex-direction: column; min-width: 0; }
-.inspectorHeader > div:first-child span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.inspectorHeader > div:first-child span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .inspectorHeader > div:first-child h2 { font-size: 11px; font-weight: 620; margin: 2px 0 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspectorHeader > div:last-child { align-items: center; display: flex; gap: 4px; }
 .inspectorHeader button { align-items: center; background: transparent; border: 1px solid transparent; border-radius: 5px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 32px; justify-content: center; width: 32px; }
@@ -201,7 +203,7 @@
 .inspectorBody { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 0 18px 36px; }
 .inspectorTitleBlock { border-bottom: 1px solid var(--x-task-border); padding: 20px 0; }
 .inspectorEyebrow { align-items: center; display: flex; justify-content: space-between; margin-bottom: 11px; }
-.inspectorPriority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; gap: 5px; text-transform: uppercase; }
+.inspectorPriority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; gap: 5px; letter-spacing: .12em; text-transform: uppercase; }
 .inspectorPriority > span { background: var(--x-task-text-muted); border-radius: 50%; height: 6px; width: 6px; }
 .inspectorPriority[data-priority="urgent"] > span { background: var(--x-task-danger); }
 .inspectorPriority[data-priority="high"] > span { background: var(--x-task-warning); }
@@ -218,14 +220,14 @@
 .inspectorField,
 .inspectorFieldWide { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .inspectorField > span:first-child,
-.inspectorFieldWide > span:first-child { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.inspectorFieldWide > span:first-child { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .inspectorField select,
 .inspectorField input,
 .inspectorFieldWide select,
 .inspectorFieldWide input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 34px; min-width: 0; padding: 0 8px; width: 100%; }
 .readOnlyValue { align-items: center; display: flex; font-size: 11px; min-height: 34px; }
 .assigneeEditor { border: 0; border-top: 1px solid var(--x-task-border); margin: 0; padding: 17px 0; }
-.assigneeEditor legend { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; padding: 0; text-transform: uppercase; }
+.assigneeEditor legend { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 0; text-transform: uppercase; }
 .assigneeEditor > div { display: grid; gap: 5px; grid-template-columns: 1fr 1fr; margin-top: 9px; }
 .assigneeEditor label { align-items: center; border: 1px solid var(--x-task-border); border-radius: 6px; cursor: pointer; display: grid; gap: 1px 7px; grid-template-columns: 15px 25px 1fr; min-height: 42px; padding: 4px 7px; }
 .assigneeEditor label:has(input:checked) { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-border)); }
@@ -283,7 +285,7 @@
 .paletteCommands b { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .paletteCommands small { color: var(--x-task-text-muted); font-size: 11px; margin-top: 2px; }
 .paletteCommands > p { color: var(--x-task-text-muted); font-size: 11px; padding: 18px; text-align: center; }
-.paletteLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 10px 9px 4px; text-transform: uppercase; }
+.paletteLabel { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 10px 9px 4px; text-transform: uppercase; }
 .commandPalette footer { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-size: 11px; gap: 12px; height: 34px; padding: 0 12px; }
 .commandPalette footer span:last-child { margin-left: auto; }
 

@@ -49,7 +49,7 @@
 
 .contextFacts { display: flex; gap: 18px; margin: 0; }
 .contextFacts > div { display: flex; flex-direction: column; gap: 3px; }
-.contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .contextFacts dd { align-items: center; color: var(--x-task-text); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; gap: 4px; margin: 0; white-space: nowrap; }
 .readOnlyFlag { background: var(--x-task-waiting-soft); border: 1px solid color-mix(in srgb, var(--x-task-waiting) 26%, var(--x-task-border)); border-radius: 5px; color: var(--x-task-waiting); font-size: 11px; font-weight: 650; padding: 5px 7px; }
 
@@ -95,7 +95,7 @@
 .functionalTools > button[data-primary] { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
 .functionalTools > button[data-primary]:hover { background: var(--x-task-focus); border-color: var(--x-task-focus); color: var(--x-task-raised); }
 .functionalTools > button:disabled { background: var(--x-task-surface); color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
-.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .05em; padding: 2px 3px; text-transform: uppercase; }
+.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 3px; text-transform: uppercase; }
 .functionalTools > button[data-saved] { color: var(--x-task-success); }
 .densityControl select { appearance: none; background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; outline: 0; }
 
@@ -192,7 +192,7 @@
 
 .taskPeek { background: var(--x-task-overlay); border: 1px solid var(--x-task-border-strong); border-radius: 7px; bottom: 42px; box-shadow: var(--x-task-shadow); padding: 0 12px 12px; position: absolute; right: 14px; width: 340px; z-index: 30; }
 .taskPeek > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; height: 34px; justify-content: space-between; margin-bottom: 9px; }
-.taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; }
+.taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
 .statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 620; }
@@ -209,7 +209,7 @@
 .dateCommandEmpty { align-items: end; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; gap: 6px; min-width: max-content; overflow-x: auto; padding: 6px 10px; }
 .dateCommandTask { display: flex; flex-direction: column; justify-content: center; margin-right: 4px; max-width: 180px; min-width: 140px; }
 .dateCommandTask span,
-.dateCommand label > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.dateCommand label > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .dateCommandTask strong { font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dateCommand label { display: flex; flex-direction: column; gap: 2px; }
 .dateCommand input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text); font: inherit; font-family: var(--font-geist-mono), monospace; font-size: 11px; height: 28px; padding: 0 5px; }
@@ -588,7 +588,7 @@
 .taskTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; min-width: 100%; }
 .taskTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; width: 1px; }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
-.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 610; height: 34px; letter-spacing: .04em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
+.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 610; height: 34px; letter-spacing: .12em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
 .taskTable thead th[draggable="true"] { cursor: grab; }
 .taskTable th[data-column="title"] { background: var(--x-task-raised); left: 0; position: sticky; z-index: 7; }
 .taskTable thead th[data-column="title"] { background: var(--x-task-surface); z-index: 15; }
@@ -704,7 +704,7 @@
 .unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 11px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
 .unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
-.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 11px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
 .trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; min-height: 30px; }
@@ -715,7 +715,7 @@
 .timelineRow { display: grid; grid-template-columns: 274px var(--timeline-width); }
 .timelineHeaderRow { position: sticky; top: 0; z-index: 10; }
 .timelinePaneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border-strong); display: flex; height: 38px; justify-content: space-between; left: 0; padding: 0 9px; position: sticky; z-index: 14; }
-.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 650; text-transform: uppercase; }
+.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
 .timelinePaneHeader span:last-child { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .timelineDateHeader { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); display: grid; height: 38px; }
 .timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 11px; justify-content: center; }
@@ -830,7 +830,7 @@
 .dayAgenda { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border-strong); display: flex; flex: 0 0 276px; flex-direction: column; min-height: 0; min-width: 276px; overflow: hidden; }
 .dayAgenda > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; justify-content: space-between; padding: 0 9px 0 11px; }
 .dayAgenda > header > div { display: flex; flex-direction: column; min-width: 0; }
-.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .dayAgenda > header strong { font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dayAgenda > header button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 27px; justify-content: center; width: 27px; }
 .dayAgenda > header button:disabled { cursor: not-allowed; opacity: .45; }
@@ -1047,15 +1047,31 @@
   }
 }
 
+@media (max-width: 767px) {
+  /* The list at phone width was a 1321px table behind a 660px sticky
+     title column — five of six columns physically unreachable, because a
+     sticky column wider than the viewport pins the scroll. Below 768px
+     the table stops being a table: each row becomes a title over one
+     meta line, which is what the data actually is at this width. The
+     Fields panel still governs which meta appear on wider screens. */
+  .taskTable { table-layout: auto; width: 100%; }
+  .taskTable thead { display: none; }
+  .taskTable th[data-column="title"] { position: static; width: auto; }
+  .taskRow { display: grid; gap: 2px; padding: 8px 12px; }
+  .taskRow > th,
+  .taskRow > td { border-right: 0; height: auto; padding: 0; white-space: normal; }
+  .taskRow > th { grid-column: 1 / -1; }
+  .taskRow > td { color: var(--x-task-text-muted); display: inline; font-size: 11px; }
+  .taskRow > td:not(:last-child)::after { content: " · "; }
+  .listTitle { white-space: normal; }
+  .listDescription { white-space: normal; }
+}
+
 @media (pointer: coarse) {
   /* A bar of Alt/F2/arrow-key instructions on a device with no keyboard
      is 30px of noise partially covered by toasts. */
   .keyboardLegend { display: none; }
 
-  /* Adding columns is a desktop act; on a phone the pinned rail only
-     overlapped the next lane's peek. The lane menu keeps 'Add column
-     after'. */
-  .addColumnRail { display: none; }
 
   .timelineToolbar {
     flex-basis: auto;
@@ -1274,7 +1290,7 @@
   color: var(--x-task-text-muted);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .addColumnField > span em { font-style: normal; font-weight: 400; text-transform: none; }
@@ -1383,3 +1399,14 @@
 .listDescription { color: var(--x-task-text-muted); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .assigneeCell { align-items: center; display: flex; gap: 6px; min-width: 0; }
 .assigneeNames { color: var(--x-task-text-secondary); flex: 1; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Coarse-pointer overrides that must outrank later base rules ──────
+   Media queries carry no specificity, so a hide declared above the rule
+   it targets loses on source order. Anything here is deliberately last
+   in the file. */
+@media (pointer: coarse) {
+  /* Adding columns is a desktop act; on a phone the pinned rail only
+     overlapped the next lane's peek. The lane menu keeps 'Add column
+     after'. */
+  .addColumnRail { display: none; }
+}

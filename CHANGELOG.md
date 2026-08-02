@@ -55,6 +55,56 @@ gates it behind a real-device pass), roving tabindex, and the schedule
 bar's grab-offset drag. The review dossier holds the rest, ranked,
 with file-level evidence.
 
+## 2026-08-02 · T·127 · corrects · the second panel reads the repairs back
+
+**A second eight-lens panel reviewed the repaired product and returned
+51 verified findings — twenty of them caused by the repair cycle
+itself.** That is the number worth publishing. The first panel found a
+year-old surface wanting; this one found the fixes wanting, which is
+what a review instrument is for.
+
+Its hardest verdict lands on the grace pass: **superficial**, in the
+typographic lens's word. Moving 335 declarations onto the ramp resolved
+to 83% of them landing on the ramp's 11px *label* step, so the board
+rendered four sizes across 85 text nodes and a calendar date sat at the
+same size as the tasks inside it. A monotone is not a ramp. Content
+steps back off the label floor here — calendar chips, agenda and
+day-list titles, tray chips, the milestone name, and the date numeral
+that has to outrank its own cell — and the tracking pass, which had
+reached only the four eyebrows visible in the screenshots, now covers
+all 43 uppercase rules at one value.
+
+**Five blockers, four of them ours.** The grab-offset drag measured the
+grabbed *element*, whose pill is as wide as its label rather than its
+day, so a due marker landed up to five days off; the drag now moves the
+schedule by the pointer's own travel, which is one-to-one by
+construction and has no geometry to get wrong. The completion circle's
+border was a hairline token at about 1.5:1, under what WCAG asks of a
+control's edge — there is now a control-boundary token at 4.8:1 — and
+its hover dimmed the tick on already-done work, previewing nothing;
+reopening gets its own honest signal. The phone planning rail, which
+this cycle made an overlay, was a modal with no dialog role, no scrim,
+no Escape and no focus handling; it has all four. The calendar's
+Previous/Next/Today were still inert because a snap-back guard meant to
+follow a far-away selection fired on every navigation — navigation
+moves the selection with the window now.
+
+Beyond ours: the list at phone width was a 1321px table behind a 660px
+sticky column, five of six columns physically unreachable, and below
+768px stops being a table at all; a column config read had no demo
+guard, so one of its three callers returned a server error from a link
+the view bar offers in one click, fixed at the boundary rather than the
+call site; a column move re-read the server unconditionally and reverted
+custom-column drops that had already landed; and the P-code retirement
+had stopped at the app edge, so print and the public share board still
+showed P1 to guests. The calendar's completion control was a 26px
+rounded square where every other surface uses the 16px circle.
+
+Deliberately still open, with their gating reasons: touch drag (the
+motion contract wants a real-device pass), roving tabindex, the detail
+panel's own type ramp, and leading, which the panel correctly names as
+the weakest link now that the sizes have tiers again.
+
 Later the same day, the grace pass. Every font size in the four view
 modules moves onto the brand ramp — 335 call sites, an 11px floor,
 nothing beneath it — and uppercase eyebrows take their full 0.12em.

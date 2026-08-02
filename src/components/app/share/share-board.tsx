@@ -118,7 +118,7 @@ function ReadCard({
               className="block h-1.5 w-1.5 rounded-full"
               style={{ background: prio.color }}
             />
-            {task.priority.toUpperCase()}
+            {PRIORITY_LABEL[task.priority].label}
           </span>
           {task.due ? (
             <span className="text-[10.5px] text-ink-quiet">{task.due}</span>

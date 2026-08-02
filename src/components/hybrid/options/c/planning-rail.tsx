@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
@@ -31,6 +31,36 @@ export function PlanningRail({
   const calendar = useCalendarFrame();
   const menu = useTaskContextMenu();
   const [unscheduledOpen, setUnscheduledOpen] = useState(true);
+  const panelRef = useRef<HTMLElement | null>(null);
+  // Below 768px the expanded rail leaves the flow and covers the workspace
+  // (option-c.module.css). A thing that covers the workspace is a dialog:
+  // it takes focus, closes on Escape, and hands focus back. Above 768px it
+  // is an ordinary in-flow column and none of this applies.
+  const [asOverlay, setAsOverlay] = useState(false);
+  useEffect(() => {
+    if (collapsed) return;
+    const query = window.matchMedia("(max-width: 767px)");
+    const sync = () => setAsOverlay(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, [collapsed]);
+  useEffect(() => {
+    if (!asOverlay || collapsed) return;
+    const panel = panelRef.current;
+    const returnTo = document.activeElement as HTMLElement | null;
+    panel?.focus({ preventScroll: true });
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onToggle();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
+    };
+  }, [asOverlay, collapsed, onToggle]);
   const orderedIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
   const selectedDayTasks = tasks.filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, selectedDate));
@@ -103,12 +133,24 @@ export function PlanningRail({
   }
 
   return (
+    <>
+    {asOverlay ? (
+      <div
+        aria-hidden
+        className={styles.planningScrim}
+        onClick={onToggle}
+      />
+    ) : null}
     <motion.aside
       animate={{ opacity: 1 }}
       aria-label="Planning rail"
+      aria-modal={asOverlay ? true : undefined}
       className={styles.planningRail}
       id="c-planning-rail"
       initial={{ opacity: 0 }}
+      ref={panelRef}
+      role={asOverlay ? "dialog" : undefined}
+      tabIndex={asOverlay ? -1 : undefined}
       transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
     >
       <header className={styles.planningRailHeader}>
@@ -194,5 +236,6 @@ export function PlanningRail({
       </section>
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </motion.aside>
+    </>
   );
 }
