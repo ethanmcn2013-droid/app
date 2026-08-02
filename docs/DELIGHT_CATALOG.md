@@ -1,6 +1,6 @@
 # Delight Catalog — Tasks
 
-**Status: cataloging. Do not implement.**
+**Status: catalogued and grouped. Awaiting references. Do not implement.**
 
 The operator's direction (2026-07-28): before building any more micro-interactions,
 catalog every site in the product where one belongs. The operator is sourcing
@@ -9,12 +9,67 @@ catalog is complete, reviewed, and each entry has a decision (animate vs stay
 restrained). Sessions working in this repo should append newly noticed sites to
 this file rather than animating them ad hoc.
 
+This catalog serves priority 1 of the north star (`AGENTS.md` §North star):
+delight is deliberate, and this file is where deliberation happens.
+
 Ground rules for the eventual pass (from the design system):
 - Motion is spent, not sprinkled: `--spring-glide` / `--spring-snap` / `--ease-out`
   are the only curves; `prefers-reduced-motion` is absolute; no confetti or
   celebration animations (BRAND refusal).
 - Every entry below gets a verdict at review time: **animate** (with the chosen
   reference) or **restrained** (explicitly decided, not forgotten).
+
+## Families — the reference-supplying job, 2026-08-01
+
+Checklist step 2 ("group entries into families; one treatment per family, not
+per site") is done. The 66 catalogued sites resolve to **nine families, one
+open question, and three restrained-by-default entries**. Six entries are
+already shipped and serve as internal calibration references.
+
+This is the whole of the operator's remaining input: **nine reference
+decisions, not sixty.** Supply one reference per family — or accept the
+internal reference already shipped — and every member of that family inherits
+the treatment.
+
+| # | Family | Members | Nearest shipped reference | What one decision buys |
+|---|---|---|---|---|
+| F1 | **Menus and pickers** — anchored, dismissible, small | B1 B2 B3 P1 P2 P3 P5 P6 T1 | none — all nine appear instantly | The highest-count family. One entrance covers every dropdown and popover in Tasks and Timeline. |
+| F2 | **Overlays and dialogs** — centred, modal, large | S1 S2 P10 | P10 file-drop, 120ms fade | S1 is the highest-traffic overlay in the app; it and the quick-create dialog should share one entrance. |
+| F3 | **Folds and reveals** — height travel in place | B5 P7 S4 S7 L1 L2 T3 T7 | SG1 Why-this fold, 200ms height ease, chevron unified both directions | SG1 already solved the hard part (exit and its affordance must land together). Porting it is nearly free. |
+| F4 | **Item arrival and departure** — a row joins or leaves a list | B6 P4·avatars P9 P11 S8 | SG3 ledger entrance, 220ms rise, 60ms stagger, CSS on server markup | Single-item arrival is not yet solved; SG3 covers the batch case only. |
+| F5 | **Drag, insertion and drop settle** | B7 B8 L3 L4 L6 T6 | none — every drop teleports | The only family with no shipped reference anywhere. Highest craft ceiling, highest risk of feeling cheap. |
+| F6 | **Confirmations** — the act landed | P8 P14 S6 T4 T8 T9 T10 SG9 SG5 | none as motion; SG5/SG11 shipped honest busy states, not delight | Nine sites currently swap a label instantly. T9 (share-receipt reveal) is the one that deserves extra weight. |
+| F7 | **In-place state change** — a value changes where it sits | B4 B10 B12 T5 SG10 | card completion settle, 200ms | Mostly restrained candidates. B10 (WIP crossing its limit) is the one with a real argument for a beat. |
+| F8 | **Content swap** — same frame, new content | P13 S3 S5 L5 T2 SG8 SG11 | T11 milestone detail, 220ms crossfade + rail draw · T12 TimeLens flip, 140ms directional slide | Two shipped references already disagree in register (crossfade vs directional). Pick which governs. |
+| F9 | **Hover and rest-state reveal** | B9 B11 P12 T13 | SG4 — decided restrained: tone lives at rest, pointer only deepens it | SG4's reasoning (a hover-only affordance does not exist on touch) probably settles this family without a reference. |
+| F10 | **Perpetual marks** | SG12 | hero `rd-ping`, ~4s · SG2 empty-state tick, rests after 3 cycles | Not a reference question. See below. |
+
+**Restrained by default, no reference needed:** SG6 (coverage note), SG7
+(freshness suffix — an honesty surface, not decoration), T14 (phone preview).
+Recorded as decided, not forgotten.
+
+**Already shipped, serving as the internal register:** T11, T12 (Timeline),
+SG1, SG2, SG3 (Signal), SG4 (Signal, restrained). Plus the five Tasks
+treatments in the calibration table below.
+
+### F10 needs a decision, not a reference
+
+SG12 asks whether the daily read's lead attention mark gets a ping. The
+product is named Signal; the hero makes the name literal with a ring leaving
+the NOW marker every ~4s; today the only perpetual motion in the app lives in
+the empty state — the screen whose message is that nothing happened.
+
+The question is **one perpetual mark, or none.** It is a yes/no from the
+operator, and no reference component answers it. If yes, SG12 is the site. If
+no, SG12 is recorded restrained and the hero keeps its ping as a marketing-only
+gesture.
+
+### Ordering when references arrive
+
+Traffic-ordered, per checklist step 4: **F1** and **F2** first (every session
+touches a menu or the command palette), then **F6** (nine instant label swaps
+is the largest single pool of missing feedback), then **F3**, **F4**, **F8**,
+then **F5** and **F7**. F9 and F10 are decisions, not builds.
 
 ## Already done (for register calibration)
 
@@ -152,9 +207,15 @@ than guessed at.
 
 ## Review checklist (when the catalog closes)
 
-1. Operator supplies reference components per family (popovers, overlays,
-   list reflow, drag/drop, confirmations).
-2. Group entries into families; one treatment per family, not per site.
+1. **Open.** Operator supplies reference components per family — nine
+   decisions, listed in the Families table above. Tracked as a founder-gated
+   task at `studio/content/hq/operator-todos/supply-delight-reference-components.md`
+   so it surfaces on /hq instead of resting only in this file.
+2. **Done 2026-08-01.** Group entries into families; one treatment per family,
+   not per site. Nine families, one open question (F10), three restrained by
+   default.
 3. Decide **animate vs restrained** for every entry — a restrained verdict is
-   recorded here, not silently dropped.
-4. Implementation plan ordered by traffic (S1/S2 and B1/B2 first).
+   recorded here, not silently dropped. Partially done: F9's members inherit
+   SG4's recorded reasoning; SG6, SG7 and T14 are decided restrained.
+4. **Done 2026-08-01** (ordering fixed, execution pending references):
+   F1 → F2 → F6 → F3 → F4 → F8 → F5 → F7.

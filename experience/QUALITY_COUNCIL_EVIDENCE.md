@@ -78,3 +78,50 @@ pnpm experience:quality
 `pnpm experience:council` must remain red while any receipt, state, viewport,
 score, evidence file, hash, source version, continuous journey, or hard-blocker
 result is missing or stale.
+
+## Current state, measured 2026-08-01
+
+The gate was run end to end for the first time on 2026-08-01, as part of the
+north-star cycle (T·126). Result, honestly stated: **the machinery works and
+has never certified anything.**
+
+What passes today:
+
+| Layer | Result |
+|---|---|
+| `experience:self-test` | pass — correctly rejects 49/52, fractional scores, missing journey evidence, stale source, and tampered evidence |
+| `experience:fixtures` | clean — 35/35 critical experiences mapped, 32 deterministic cases x 4 breakpoints |
+| `experience:validate` | clean — 80 experiences, 412 required state variants |
+| `ds:check` | clean — no drift |
+| `experience:council:prepare` | writes the matrix — 120 product assessment units, 4 journey receipts |
+| `experience:council` | **9 failures** — all 8 receipts absent, suite score unavailable |
+
+`experience/council-evidence/` does not exist. No product or journey receipt
+has ever been authored. `certificationStatus` reads
+`not-assessed-until-receipts-validate`.
+
+### The bottleneck is review capacity, not engineering
+
+The deterministic half is finished and green. The human half has never started,
+and the arithmetic explains why:
+
+- 30 required states across the four products, x 4 viewports = **120
+  assessment units**;
+- x 13 dimensions = **1,560 individual taste scores**, each requiring a
+  written rationale and positive rendered evidence;
+- plus at least three independent council reviews bound to every receipt;
+- plus 4 continuous journey receipts, one per viewport.
+
+Automation is explicitly barred from awarding those scores, and correctly so.
+But a solo operator cannot produce 1,560 evidenced taste judgements, which
+means the gate as specified does not fail — it simply never runs, and
+"ships at the standard of the best studios" stays unproven rather than proven.
+
+This is recorded as a founder decision, not fixed unilaterally, because
+narrowing a quality gate is a judgement about standards:
+`studio/content/hq/operator-todos/rule-on-95-gate-scope.md`.
+
+Nothing here argues for lowering the bar. The 50/52 threshold, the fail-closed
+posture, and the ban on automated taste scores should all survive. The question
+is only how much surface one pass must cover before it may certify anything at
+all.
