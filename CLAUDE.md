@@ -1,4 +1,4 @@
-Design tokens and voice rules live in `ds-foundation` (npm package) and `studio/docs/BRAND.md` — not a local DESIGN.md.
+Design tokens and voice rules live in `ds-foundation` (npm package) and `studio/BRAND.md` — not a local DESIGN.md.
 
 ## Show, don't summarise
 
