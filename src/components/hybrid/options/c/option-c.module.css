@@ -704,11 +704,50 @@ thead .listTitleCell { z-index: 14; }
 
   .planningRail:not(.planningRailCollapsed):focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: -2px; }
 
+  /* Collapsed, the rail floats instead of holding a column open. It is a
+     44px tab, but as an in-flow flex item it charged every view 48px of
+     a 390px phone — the list, the board and the calendar were all laid
+     out in 342px and clipped at the right edge for a control that is shut.
+     Expanded it already overlays (above); collapsed it now does too, so
+     the workspace gets the whole width in both states.
+
+     It sits in the bottom corner rather than centred on the edge: a
+     centred tab floats over the middle of the list, which is where the
+     rows people are actually reading are. The corner above the tab bar is
+     the one place on this screen that holds nothing. */
   .planningRailCollapsed {
-    flex: 0 0 48px;
-    padding-left: 2px;
-    padding-right: 2px;
+    border: 1px solid var(--x-task-border);
+    border-radius: 999px;
+    /* Clears the fixed furniture already stacked in this corner: the tab
+       bar is 61px and the review-mode banner above it is another 36px,
+       plus a gap. Measured, not guessed — a pill that lands on the banner
+       is the reason this is not simply `bottom: 12px`. */
+    bottom: 121px;
+    box-shadow: 0 8px 24px -12px rgba(20, 21, 26, 0.4);
+    flex-direction: row;
+    height: auto;
+    left: auto;
+    overflow: visible;
+    padding: 0;
+    position: fixed;
+    right: 12px;
+    top: auto;
+    width: auto;
+    z-index: 40;
   }
+
+  .planningRailCollapsed .planningRailExpand {
+    align-items: center;
+    background: var(--x-task-raised);
+    border-radius: 999px;
+    flex-direction: row;
+    gap: 7px;
+    padding: 0 13px 0 11px;
+  }
+
+  /* A vertical word is for a vertical tab. This one lies down. */
+  .planningRailCollapsed .planningRailExpand span { writing-mode: horizontal-tb; }
+  .planningRailCollapsed .planningRailExpand svg { transform: rotate(90deg); }
 
   .planningRailExpand,
   .planningRailHeader button {

@@ -587,6 +587,8 @@
 .tableScroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .taskTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; table-layout: fixed; width: max-content; min-width: 100%; }
 .taskTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; width: 1px; }
+.taskTable th[data-column],
+.taskTable td[data-column] { min-width: var(--column-min-width); width: var(--column-width); }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
 .taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 610; height: 34px; letter-spacing: .12em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
 .taskTable thead th[draggable="true"] { cursor: grab; }
@@ -612,7 +614,11 @@
 /* The cell spans every column and must STAY a table cell: display:flex here
    voids colSpan and shrank the band to the title column, leaving a hole
    across the rest of the row. The flex lives on .groupBand inside. */
-.groupRow th { background: color-mix(in srgb, var(--lane-tone, transparent) 6%, var(--x-task-canvas)); border-bottom: 1px solid var(--x-task-border); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
+/* The tone falls back to the canvas, not to `transparent`. Mixing 6% of
+   `transparent` into the canvas does not tint it — it takes 6% of its
+   alpha away, and a 0.94-opaque sticky header let every row scrolling
+   under it print through the group name. */
+.groupRow th { background: color-mix(in srgb, var(--lane-tone, var(--x-task-canvas)) 6%, var(--x-task-canvas)); border-bottom: 1px solid var(--x-task-border); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
 .groupRow th::before { background: var(--lane-tone, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */
@@ -1047,26 +1053,6 @@
   }
 }
 
-@media (max-width: 767px) {
-  /* The list at phone width was a 1321px table behind a 660px sticky
-     title column — five of six columns physically unreachable, because a
-     sticky column wider than the viewport pins the scroll. Below 768px
-     the table stops being a table: each row becomes a title over one
-     meta line, which is what the data actually is at this width. The
-     Fields panel still governs which meta appear on wider screens. */
-  .taskTable { table-layout: auto; width: 100%; }
-  .taskTable thead { display: none; }
-  .taskTable th[data-column="title"] { position: static; width: auto; }
-  .taskRow { display: grid; gap: 2px; padding: 8px 12px; }
-  .taskRow > th,
-  .taskRow > td { border-right: 0; height: auto; padding: 0; white-space: normal; }
-  .taskRow > th { grid-column: 1 / -1; }
-  .taskRow > td { color: var(--x-task-text-muted); display: inline; font-size: 11px; }
-  .taskRow > td:not(:last-child)::after { content: " · "; }
-  .listTitle { white-space: normal; }
-  .listDescription { white-space: normal; }
-}
-
 @media (pointer: coarse) {
   /* A bar of Alt/F2/arrow-key instructions on a device with no keyboard
      is 30px of noise partially covered by toasts. */
@@ -1409,4 +1395,115 @@
      overlapped the next lane's peek. The lane menu keeps 'Add column
      after'. */
   .addColumnRail { display: none; }
+}
+
+/* ── Phone list: also deliberately last in the file ───────────────────
+   Same source-order rule as the block above. `.listDescription` and
+   `.listTitle` are declared near the end of this file, so a phone
+   override written next to the rest of the list styles lost to them on
+   source order and the description kept its nowrap — which floored the
+   table at the description's whole unwrapped line. */
+@media (max-width: 767px) {
+  /* The list at phone width was a 1321px table behind a 660px sticky
+     title column — five of six columns physically unreachable, because a
+     sticky column wider than the viewport pins the scroll. Below 768px
+     the table stops being a table: each row becomes a title over one
+     meta line, which is what the data actually is at this width. The
+     Fields panel still governs which meta appear on wider screens. */
+  /* The table stops being a table. A `display: block` row left inside a
+     table-row-group gets wrapped in an anonymous table cell, and that cell
+     shrink-wraps: the row measured 237px inside a 390px body and the title
+     wrapped early against nothing. Taking the table, the body and the rows
+     out of table layout together is what lets a row fill the width.
+
+     The elements carry explicit ARIA roles (list-view.tsx) precisely
+     because of this — changing a table's display drops its semantics from
+     the accessibility tree, and the roles put them back. */
+  .taskTable { display: block; table-layout: auto; width: 100%; }
+  .taskTable thead { display: none; }
+  .taskTable tbody { display: block; }
+  .taskTable tbody > tr { display: block; }
+  .taskTable tbody > tr > th[colspan],
+  .taskTable tbody > tr > td[colspan] { display: block; width: 100%; }
+  .taskTable th[data-column="title"] { position: static; }
+  /* The group band sticks under the column header on desktop. There is no
+     column header here, so it sticks to the top of the scroller. */
+  .groupRow th { top: 0; }
+  /* The desktop column grid is what made this 1321px wide. Give the
+     widths back and the row is free to be as wide as the phone is. */
+  .taskTable th[data-column],
+  .taskTable td[data-column] { min-width: 0; width: auto; }
+
+  /* Block row, inline-block cells — not grid and not flex. Both of those
+     blockify their items, which is why the cells first stacked into six
+     ragged rows. A block box's min-content is its longest word, so the
+     row is free to be exactly as wide as the phone is, and the cells
+     flow and wrap along the line the way a meta run should. */
+  /* The separator belongs to the row now, not to each cell. Per-cell
+     borders drew a stray rule beneath every item in the meta run.
+
+     The meta runs flush to the row's edge rather than indented under the
+     title. Indenting it to the title reads better in isolation, but the
+     controls in front of the title are 82px wide, and paying that out of
+     a 342px row pushed the meta from two lines to four and the row from
+     176px to 229px. On a phone, two more tasks on screen is worth more
+     than the alignment. */
+  .taskRow { border-bottom: 1px solid var(--x-task-border); display: block; padding: 10px 12px; }
+  .taskRow > th,
+  .taskRow > td {
+    border-bottom: 0;
+    border-right: 0;
+    height: auto;
+    overflow: visible;
+    padding: 0;
+    text-overflow: clip;
+    white-space: normal;
+  }
+  .taskRow > th { display: block; margin-bottom: 3px; }
+  /* A title that wraps to three lines should not leave the checkbox
+     floating at its middle — the controls belong to the first line. */
+  .titleCell { align-items: start; }
+  .taskRow > td {
+    color: var(--x-task-text-muted);
+    display: inline-block;
+    font-size: 11px;
+    line-height: 1.35;
+    margin-right: 8px;
+    margin-top: 5px;
+    vertical-align: middle;
+  }
+  /* A cell that rendered nothing must not leave a gap in the run. */
+  .taskRow > td:empty { display: none; }
+
+  /* The two selects are the only controls on the meta line. At 11px they
+     keep their boundary — a control's edge is not decoration (1.4.11) —
+     but shed the desktop cell's full height so the line reads as a line. */
+  .taskRow > td select {
+    background: var(--x-task-raised);
+    border: 1px solid var(--x-task-control-border);
+    border-radius: 5px;
+    font-size: 11px;
+    height: 26px;
+    max-width: 116px;
+    padding: 0 4px;
+  }
+
+  /* Both of these are declared with nowrap plus ellipsis further up, for
+     a fixed-width desktop column. Here the line is free to wrap — and it
+     has to be, because a nowrap description sets the table's min-content
+     to its whole unwrapped line and drags the row back out past the
+     viewport however narrow the cells are told to be. */
+  .listTitle { overflow: visible; text-overflow: clip; white-space: normal; }
+  /* Two lines of context, then the row hands off to the task itself;
+     five lines of description is a wall, not a list. This must stay one
+     rule — a second `.listDescription` block re-declaring overflow would
+     defeat the clamp and let lines three onward paint over the meta. */
+  .listDescription {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+  }
 }

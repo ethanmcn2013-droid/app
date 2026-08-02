@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useMemo, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import { personById } from "../../fixtures";
@@ -35,6 +35,14 @@ import {
   type QuietGroup,
 } from "./quiet-command-model";
 import styles from "./option-a.module.css";
+
+// Column widths travel as custom properties rather than as inline width and
+// min-width. An inline width is unbeatable by any stylesheet rule, and at
+// phone width the row stops being a table row — it needs to shed the
+// desktop column grid entirely. Handing the number to CSS instead of the
+// element lets the phone media query take the widths back.
+const columnSizing = (column: ListColumn) =>
+  ({ "--column-width": `${column.width}px`, "--column-min-width": `${column.minWidth}px` }) as CSSProperties;
 
 type ListGroup = {
   key: string;
@@ -278,11 +286,11 @@ export function ListView({
   return (
     <div className={styles.listSurface}>
       <div className={styles.tableScroll}>
-        <table className={styles.taskTable}>
+        <table className={styles.taskTable} role="table">
           <caption>Launch project tasks. Columns can be resized, reordered, and hidden for this session.</caption>
           <colgroup>{visibleColumns.map((column) => <col key={column.id} style={{ width: column.width }} />)}</colgroup>
-          <thead>
-            <tr>
+          <thead role="rowgroup">
+            <tr role="row">
               {visibleColumns.map((column) => (
                 <th
                   data-column={column.id}
@@ -292,8 +300,9 @@ export function ListView({
                   onDragOver={(event) => { if (!store.readOnly && draggedColumn) event.preventDefault(); }}
                   onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; setDraggedColumn(column.id); }}
                   onDrop={() => reorderColumn(column.id)}
+                  role="columnheader"
                   scope="col"
-                  style={{ minWidth: column.minWidth, width: column.width }}
+                  style={columnSizing(column)}
                 >
                   <span className={styles.columnLabel}>
                     {column.id === "title" ? (
@@ -336,7 +345,7 @@ export function ListView({
             const isCollapsed = collapsed.has(taskGroup.key);
             const complete = taskGroup.tasks.filter((task) => task.completed).length;
             return (
-              <tbody data-group={taskGroup.key} key={taskGroup.key}>
+              <tbody data-group={taskGroup.key} key={taskGroup.key} role="rowgroup">
                 {/*
                   The group cell spans every column, so the band runs the full
                   row. It used to carry display:flex directly, which voids a
@@ -350,8 +359,9 @@ export function ListView({
                 <tr
                   className={styles.groupRow}
                   data-lane-tone={group === "status" && taskGroup.key !== "todo" ? taskGroup.key : undefined}
+                  role="row"
                 >
-                  <th colSpan={visibleColumns.length} scope="rowgroup">
+                  <th colSpan={visibleColumns.length} role="rowheader" scope="rowgroup">
                     <div className={styles.groupBand}>
                       <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
                         <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
@@ -365,7 +375,7 @@ export function ListView({
                   </th>
                 </tr>
                 {!isCollapsed && taskGroup.tasks.length === 0 ? (
-                  <tr className={styles.groupEmpty}><td colSpan={visibleColumns.length}>No tasks in this group</td></tr>
+                  <tr className={styles.groupEmpty} role="row"><td colSpan={visibleColumns.length} role="cell">No tasks in this group</td></tr>
                 ) : null}
                 {!isCollapsed ? taskGroup.tasks.map((task) => {
                   const taskIndex = tasks.findIndex((item) => item.id === task.id);
@@ -387,10 +397,11 @@ export function ListView({
                       onKeyDown={(event) => keyRow(event, task, taskIndex)}
                       onMouseEnter={() => store.setPreview(task.id)}
                       onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
+                      role="row"
                       tabIndex={0}
                     >
                       {visibleColumns.map((column) => column.id === "title" ? (
-                        <th data-column="title" key={column.id} scope="row" style={{ minWidth: column.minWidth, width: column.width }}>
+                        <th data-column="title" key={column.id} role="rowheader" scope="row" style={columnSizing(column)}>
                           <div className={styles.titleCell}>
                             {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : <span className={styles.expandSpacer} />}
                             <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
@@ -402,10 +413,10 @@ export function ListView({
                             </div>
                           </div>
                         </th>
-                      ) : <td data-column={column.id} key={column.id} style={{ minWidth: column.minWidth, width: column.width }}>{renderCell(task, column)}</td>)}
+                      ) : <td data-column={column.id} key={column.id} role="cell" style={columnSizing(column)}>{renderCell(task, column)}</td>)}
                     </tr>,
                     isExpanded ? (
-                      <tr className={styles.subtaskRows} key={`${task.id}-subtasks`}>
+                      <tr className={styles.subtaskRows} key={`${task.id}-subtasks`} role="row">
                         <td colSpan={visibleColumns.length}>
                           {task.subtasks.some((subtask) => subtask.title.trim()) ? (
                             <ul aria-label={`Subtasks for ${task.title}`}>
@@ -426,7 +437,7 @@ export function ListView({
               </tbody>
             );
           })}
-          {tasks.length === 0 ? <tbody><tr><td colSpan={visibleColumns.length}><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
+          {tasks.length === 0 ? <tbody role="rowgroup"><tr role="row"><td colSpan={visibleColumns.length} role="cell"><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
         </table>
       </div>
       <KeyboardLegend>Up and down navigate rows. Enter opens. Space selects. F2 edits. Shift + F10 opens actions.</KeyboardLegend>

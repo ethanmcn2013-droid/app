@@ -55,6 +55,55 @@ gates it behind a real-device pass), roving tabindex, and the schedule
 bar's grab-offset drag. The review dossier holds the rest, ranked,
 with file-level evidence.
 
+## 2026-08-02 · T·128 · finishes · the phone list becomes a list
+
+**The list at phone width is a list again, the planning rail stops
+charging every view 48px to stay shut, and a sticky group band no
+longer lets the rows print through it.** T·127 stopped the phone list
+overflowing but left it half-built: the row was a grid, and a grid item
+is blockified, so six cells stacked into six ragged lines with stray
+separators hanging off them. This dispatch finishes that row and the
+three faults found underneath it.
+
+The row, plainly. It is a block box with inline-block cells now — not a
+grid and not a flex line, both of which blockify what they contain. The
+title takes its own line, the description clamps at two, and status,
+owner, dates, priority and estimate run as one meta line beneath. The
+column widths moved off inline `style` and onto custom properties,
+because an inline width is unbeatable by any stylesheet and the phone
+needs those widths back. And the table, its body and its rows leave
+table layout together: a `display: block` row left inside a
+table-row-group gets wrapped in an anonymous cell that shrink-wraps, so
+the row measured 237px inside a 390px body and the title wrapped early
+against nothing. Every element carries an explicit ARIA role now,
+because changing a table's display drops its semantics — verified
+identical on both widths: 17 rows, 6 row groups, 15 row headers, 51
+cells.
+
+Underneath it, three more. The collapsed planning rail was an in-flow
+48px column on a 390px phone, so the list, the board, the schedule and
+the calendar were each laid out in 342px and clipped for a control that
+was shut; expanded it already overlaid, and collapsed it now floats as
+a pill in the one corner that holds nothing, measured to clear the tab
+bar and the review banner rather than land on them. The sticky group
+band mixed 6% of `transparent` into the canvas, which does not tint a
+colour — it takes 6% of its alpha away, and every row scrolling under a
+0.94-opaque header printed through the group's name. And that band
+sticks to the top of the scroller at phone width instead of 34px down,
+where the column header it was clearing is hidden.
+
+Recorded for the next reader: the dev server in a sandboxed container
+serves an app that never hydrates, because Next blocks its own
+cross-origin dev resources and the HMR socket dies with them. Motion
+components sit at their initial `opacity: 0` and nothing responds to a
+click. Screenshots taken against it are of an un-hydrated page. The
+sanctioned harness builds and starts production for exactly this
+reason; visual review has to do the same.
+
+Gates: typecheck, lint (0 errors), 402/402 tests, ds-check clean,
+experience 128/128, axe 0 violations across four views × two widths,
+zero document overflow on all eight.
+
 ## 2026-08-02 · T·127 · corrects · the second panel reads the repairs back
 
 **A second eight-lens panel reviewed the repaired product and returned
