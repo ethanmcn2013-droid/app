@@ -56,16 +56,19 @@ falling back mid-headline (`latin-ext` ships), the artifact display
 register is ratified once as `--x-artifact-*` tokens, and the module
 sheds its orphaned dashboard-era files.
 
-The template points at the day. A venue starting from the wedding
-workspace is asked when the wedding is, and the eight planning
-milestones place themselves around it: the venue booking most of a year
-out, headcount and suppliers in the last six weeks, the walkthrough and
-the run of show in the final week. Their first shared artifact opens
-with a real countdown and real calendar spacing, the way the fixture
-everyone reviews always did. The date stays optional, and left blank
-nothing changes. `pnpm sync:templates` now generates the Timeline slice
-it always claimed to, so seeds can no longer drift from the canonical
-templates in silence.
+The template points at the day. The wedding workspace now declares the
+one date a couple always knows, and its eight planning milestones carry
+offsets counted back from it: the venue booking most of a year out,
+headcount and suppliers in the last six weeks, the walkthrough and the
+run of show in the final week. Hand the seeding path that date and every
+milestone lands on a real day, so a first artifact opens with a
+countdown and real calendar spacing instead of flat ordinal order.
+Stated plainly: nothing in this app asks the question yet. The
+workspace-creation route that seeds a timeline has no entry point in
+this repo, so what ships now is the template, the resolver and its
+tests; the form that asks travels with that flow. `pnpm sync:templates`
+also generates the Timeline slice it always claimed to, so seeds can no
+longer drift from the canonical templates in silence.
 
 Both metric faces now state both facts: the countdown carries "2 of 9
 settled", so a couple who never presses the toggle still sees how far

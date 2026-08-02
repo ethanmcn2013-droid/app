@@ -493,7 +493,11 @@ Nothing here is new scope. It is this review's own open list, emptied.
   `targetDate`. A venue's first artifact now opens with a countdown, a
   Today dash, and real calendar spacing instead of flat ordinal order.
   The date stays optional: left blank, the workspace seeds exactly as it
-  did before. Offsets are UTC calendar days, so no local timezone can
+  did before. One limit, stated rather than implied: nothing in this repo
+  asks the question yet. `createWorkspaceAction` is the only path that
+  seeds a timeline from a template and it has no in-repo caller, so the
+  template, the resolver and its tests are what ship here; the field that
+  asks belongs with whatever surface finally mounts that flow. Offsets are UTC calendar days, so no local timezone can
   move a milestone across midnight on the way in. Pure and tested in
   `lib/template-anchor.ts` — seven cases, including leap-day and
   month-boundary shifts, and a guard that the flagship template dates all
