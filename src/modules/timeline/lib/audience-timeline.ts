@@ -73,6 +73,35 @@ const FORBIDDEN_KEYS = new Set([
   "privateMetadata",
 ]);
 
+/**
+ * E06.01 — `ownerDisplayLabel` is the only owner-supplied free-text identity
+ * string that crosses the public boundary. Everything else on the DTO is a
+ * label, a date, a state or an opaque id.
+ *
+ * On a couple's artifact it is a name, so it is held to a name shape: letters,
+ * combining marks, spaces, apostrophes, hyphens, ampersands, full stops and
+ * commas. Digits are refused, and that is the whole point of the rule: a house
+ * number, an Eircode, a phone number and a date all need digits, and a couple's
+ * shared name does not. `@`, `/` and `:` fall outside the class, so an email
+ * address and a URL are refused with them.
+ *
+ * What it does not do, stated so nobody reads more into it: it cannot stop a
+ * couple typing a street or a townland in words. The control that matters there
+ * is that the field is theirs, optional, and shown to them before they publish.
+ *
+ * `class` and `module` publications keep the older rule. "Year 3, 2027" is a
+ * legitimate label for those and carries no home in it.
+ */
+const COUPLE_DISPLAY_LABEL_RE = /^[\p{L}\p{M}][\p{L}\p{M} '’\-&.,]*$/u;
+
+/** Shown to the couple. Says what is allowed, not what went wrong. */
+export const COUPLE_DISPLAY_LABEL_REFUSAL =
+  "A shared name can use letters, spaces, apostrophes and hyphens. Take out anything else, including numbers, an address, a phone number or an email.";
+
+export function isCoupleDisplayLabel(value: string): boolean {
+  return COUPLE_DISPLAY_LABEL_RE.test(value);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -147,11 +176,17 @@ export function validateAudienceTimelineDto(value: unknown): AudienceTimelineDto
     throw new TypeError("timeline.lastUpdatedAt must be an ISO instant");
   }
   if (value.ownerDisplayLabel !== undefined) {
-    dto.ownerDisplayLabel = requiredString(
+    const ownerDisplayLabel = requiredString(
       value.ownerDisplayLabel,
       "timeline.ownerDisplayLabel",
       80,
     );
+    // Enforced here as well as at the form, so a row written before this rule
+    // existed fails at the boundary rather than rendering on a public page.
+    if (dto.audienceKind === "couple" && !isCoupleDisplayLabel(ownerDisplayLabel)) {
+      throw new TypeError("timeline.ownerDisplayLabel is not a shared name");
+    }
+    dto.ownerDisplayLabel = ownerDisplayLabel;
   }
   if (value.primaryDate !== undefined) {
     if (!isRecord(value.primaryDate)) throw new TypeError("timeline.primaryDate must be an object");

@@ -200,6 +200,7 @@ export async function createWorkspace({
   ownerEmail = null,
   plan = "free",
   templateId = null,
+  suiteWorkspaceId = null,
 }: {
   slug: string;
   name: string;
@@ -208,6 +209,11 @@ export async function createWorkspace({
   ownerEmail?: string | null;
   plan?: "free" | "pro" | "studio";
   templateId?: string | null;
+  /** The immutable Signal Tasks workspace id this Timeline belongs to. Set at
+   *  creation by the provisioning path so the workspace is reachable by suite
+   *  context from its first read; a Timeline created without one is only
+   *  reachable as "the owner's first workspace". */
+  suiteWorkspaceId?: string | null;
 }): Promise<Workspace> {
   await db.insert(workspaces).values({
     slug,
@@ -217,6 +223,7 @@ export async function createWorkspace({
     ownerEmail,
     plan,
     templateId,
+    suiteWorkspaceId,
   });
   const row = await getWorkspace(slug);
   if (!row) throw new Error(`createWorkspace: insert succeeded but row not found for slug="${slug}"`);

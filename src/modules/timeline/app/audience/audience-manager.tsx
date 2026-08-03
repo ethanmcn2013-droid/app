@@ -10,6 +10,7 @@ import {
   revokeAudienceShareAction,
   rotateAudienceShareAction,
   unpublishAudiencePublicationAction,
+  updateAudiencePrimaryDateAction,
   updateAudiencePublicationItemAction,
   type AudienceActionState,
 } from "@/modules/timeline/server/actions/audience-timeline";
@@ -19,6 +20,7 @@ import {
   calendarDateLabel,
   publicationStateLabel,
 } from "@/modules/timeline/lib/format";
+import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
 
 const INITIAL: AudienceActionState = { status: "idle" };
 const fieldClass =
@@ -184,6 +186,8 @@ export function AudienceManager({
     refreshAudienceDivergenceAction,
     INITIAL,
   );
+  const [primaryDateState, primaryDateAction, primaryDatePending] =
+    useActionState(updateAudiencePrimaryDateAction, INITIAL);
 
   return (
     <div className="space-y-10">
@@ -347,7 +351,10 @@ export function AudienceManager({
                       </p>
                       <h3 className="mt-1.5 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
-                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"} · {publication.qualifiedViewCount.toLocaleString("en-GB")} view{publication.qualifiedViewCount === 1 ? "" : "s"}
+                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"}
+                        {viewerCountSummary({ count: publication.qualifiedViewCount })
+                          ? ` · ${viewerCountSummary({ count: publication.qualifiedViewCount })}`
+                          : ""}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -372,6 +379,61 @@ export function AudienceManager({
                     {publication.ownerDisplayLabel ? <span>{publication.ownerDisplayLabel}</span> : null}
                     {publication.primaryDate && publication.primaryDateLabel ? (
                       <span>{publication.primaryDateLabel}: <time dateTime={publication.primaryDate}>{calendarDateLabel(publication.primaryDate)}</time></span>
+                    ) : (
+                      <span>No main date on the shared page</span>
+                    )}
+                  </div>
+
+                  {/* E06.06. The main date is the one field a couple most often
+                      wants off a page other people can see. Until now it was
+                      fixed at creation, so hiding it meant unpublishing. */}
+                  <div className="mb-5 rounded-lg border border-line-soft bg-bg-deep p-4">
+                    <p className="text-sm font-medium text-ink">The main date</p>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
+                      Shown at the top of the shared timeline and used for the
+                      countdown. Hide it and the date is removed from the page
+                      itself, not just from view. Your own plan keeps it.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-end gap-2">
+                      <form action={primaryDateAction} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                        <input type="hidden" name="publicationId" value={publication.id} />
+                        <label className="text-xs font-medium text-ink-quiet">
+                          What to call it
+                          <input
+                            className={`${fieldClass} mt-1 w-44`}
+                            name="primaryDateLabel"
+                            maxLength={40}
+                            defaultValue={publication.primaryDateLabel ?? ""}
+                            placeholder="The day"
+                          />
+                        </label>
+                        <label className="text-xs font-medium text-ink-quiet">
+                          Date
+                          <input
+                            className={`${fieldClass} mt-1 w-44`}
+                            type="date"
+                            name="primaryDate"
+                            defaultValue={publication.primaryDate ?? ""}
+                          />
+                        </label>
+                        <button disabled={primaryDatePending} className={quietButton}>
+                          Save
+                        </button>
+                      </form>
+                      {publication.primaryDate && publication.primaryDateLabel ? (
+                        <form action={primaryDateAction}>
+                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                          <input type="hidden" name="publicationId" value={publication.id} />
+                          <input type="hidden" name="intent" value="conceal" />
+                          <button disabled={primaryDatePending} className={quietButton}>
+                            Hide the date
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                    {primaryDateState.publicationId === publication.id ? (
+                      <ActionNotice state={primaryDateState} />
                     ) : null}
                   </div>
                   {/* One visible header row; per-row labels stay for screen

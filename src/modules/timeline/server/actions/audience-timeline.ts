@@ -12,12 +12,15 @@ import {
   refreshAudienceDivergence,
   revokeAudienceShares,
   rotateAudienceShare,
+  setAudiencePrimaryDate,
   unpublishAudiencePublication,
   updateAudiencePublicationItem,
 } from "@/modules/timeline/server/audience-timeline";
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_KINDS,
+  COUPLE_DISPLAY_LABEL_REFUSAL,
+  isCoupleDisplayLabel,
   validateIanaTimezone,
   type AudienceItemState,
   type AudienceKind,
@@ -184,6 +187,16 @@ export async function createAudiencePublicationAction(
         if (ownerDisplayLabel?.includes("@")) {
           throw new TypeError("Use a public display label, not an email address");
         }
+        // E06.01. On a couple's artifact the shared name is a name. The same
+        // rule runs again inside validateAudienceTimelineDto, so a row that
+        // predates this check cannot render either.
+        if (
+          ownerDisplayLabel &&
+          kindValue === "couple" &&
+          !isCoupleDisplayLabel(ownerDisplayLabel)
+        ) {
+          throw new TypeError(COUPLE_DISPLAY_LABEL_REFUSAL);
+        }
         return createAudiencePublication({
           workspaceSlug: workspace.slug,
           projectSlug: optionalText(formData, "projectSlug", 120),
@@ -334,6 +347,44 @@ export async function updateAudiencePublicationItemAction(
     return {
       status: "success",
       message: "Public item updated. The source was not changed.",
+      publicationId,
+    };
+  } catch (error) {
+    return errorState(error);
+  }
+}
+
+/**
+ * E06.06 — set or hide the main date on a shared timeline. `intent=conceal`
+ * clears both columns; anything else writes the submitted pair. Owner-gated
+ * through `ownerWorkspace`, and the publication ownership is re-checked in
+ * `setAudiencePrimaryDate`.
+ */
+export async function updateAudiencePrimaryDateAction(
+  _previous: AudienceActionState,
+  formData: FormData,
+): Promise<AudienceActionState> {
+  const demoState = demoReadOnlyState(formData);
+  if (demoState) return demoState;
+  try {
+    const { workspace } = await ownerWorkspace(formData);
+    const publicationId = requiredText(formData, "publicationId", 80);
+    const conceal = formData.get("intent") === "conceal";
+    const outcome = await setAudiencePrimaryDate({
+      publicationId,
+      workspaceSlug: workspace.slug,
+      primaryDateLabel: conceal
+        ? null
+        : optionalText(formData, "primaryDateLabel", 40),
+      primaryDate: conceal ? null : optionalCalendarDate(formData, "primaryDate"),
+    });
+    revalidatePath("/app/timeline/audience");
+    return {
+      status: "success",
+      message:
+        outcome === "concealed"
+          ? "The main date is hidden. The shared page no longer carries it."
+          : "The main date is updated on the shared page.",
       publicationId,
     };
   } catch (error) {

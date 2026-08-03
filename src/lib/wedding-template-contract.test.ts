@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getTemplate } from "./templates";
 import { resolveTemplateDueAt, templateMilestoneCount } from "./template-anchor";
+import {
+  WEDDING_TIMELINE_POINTS,
+  missingWeddingTimelinePoints,
+} from "./wedding-template-timeline";
 
 /**
  * Contract and audit pins for the template every sponsored couple receives.
@@ -86,24 +90,104 @@ test("restraint bar: the wedding template declares at most eight milestones", ()
   );
 });
 
-test("audit pin (E05.03): the shipped wedding template declares ZERO milestones", () => {
+test("blocker 2: the wedding template declares the six Timeline points", () => {
   // Timeline's milestone source reads WHERE is_milestone = 1
-  // (src/modules/timeline/server/sync/tasks-milestone-source.ts). Zero
-  // milestones means a sponsored couple's Timeline, which is the film's hero
-  // surface, renders empty on day one. Update this when template content
-  // lands.
+  // (src/modules/timeline/server/sync/tasks-milestone-source.ts). This pin
+  // used to assert ZERO, which is why a sponsored couple's Timeline rendered
+  // empty on day one even once they had one. The declaration lives in
+  // src/lib/wedding-template-timeline.ts, not in the generated artifact.
   const template = getTemplate(WEDDING_TEMPLATE_ID);
-  assert.equal(templateMilestoneCount(template.tasks), 0);
+  assert.equal(templateMilestoneCount(template.tasks), 6);
+  // Compared as sets: the template's own order is board order, the
+  // declaration's order is the story order, and neither should be pinned here.
+  assert.deepEqual(
+    template.tasks
+      .filter((t) => t.milestone === true)
+      .map((t) => t.title)
+      .sort(),
+    WEDDING_TIMELINE_POINTS.map((p) => p.title).sort(),
+    "the declared points and the template's milestones have diverged",
+  );
 });
 
-test("audit pin (E05.03): no task carries a wedding-relative due offset", () => {
-  // So even with a known wedding date every seeded task gets a null due_at,
-  // and the couple's Signal briefing carries no dated item.
+test("blocker 2: every declared Timeline point still exists in the template", () => {
+  // The bridge matches on exact task title. If template copy is edited in
+  // studio and re-synced, a point silently stops applying and the Timeline
+  // quietly loses a milestone. This is the one place that catches it.
   const template = getTemplate(WEDDING_TEMPLATE_ID);
-  const withOffsets = template.tasks.filter((t) => t.dueOffsetDays != null);
-  assert.deepEqual(withOffsets, []);
+  assert.deepEqual(
+    missingWeddingTimelinePoints(template),
+    [],
+    "a declared Timeline point no longer matches any task title in the wedding template",
+  );
+});
 
-  for (const t of template.tasks) {
+test("blocker 2: each Timeline point resolves a real due date from a wedding date", () => {
+  // With a wedding date the six points become ordered instants, which is what
+  // the milestone source orders by. Without one they stay null and the
+  // milestone still appears, sorted last — the deliberate refusal in
+  // src/lib/template-anchor.ts.
+  const template = getTemplate(WEDDING_TEMPLATE_ID);
+  const milestones = template.tasks.filter((t) => t.milestone === true);
+
+  for (const t of milestones) {
+    const resolved = resolveTemplateDueAt({
+      anchorDate: "2027-09-18",
+      dueOffsetDays: t.dueOffsetDays,
+    });
+    assert.ok(resolved instanceof Date, `${t.title} resolves no due date`);
+    assert.equal(
+      resolveTemplateDueAt({
+        anchorDate: null,
+        dueOffsetDays: t.dueOffsetDays,
+      }),
+      null,
+      `${t.title} fabricated a due date with no wedding date`,
+    );
+  }
+
+  const ordered = milestones
+    .map((t) => ({
+      title: t.title,
+      at: resolveTemplateDueAt({
+        anchorDate: "2027-09-18",
+        dueOffsetDays: t.dueOffsetDays,
+      })!.getTime(),
+    }))
+    .sort((a, b) => a.at - b.at)
+    .map((x) => x.title);
+
+  assert.deepEqual(ordered, [
+    "Venue contract and deposit schedule recorded",
+    "Send menu decisions to catering",
+    "Confirm final guest numbers",
+    "Review seating chart with venue",
+    "Book final-week venue walkthrough",
+    "Create post-wedding collection list",
+  ]);
+});
+
+test("blocker 2: no special-category task is a Timeline point", () => {
+  // R-017 is open. A milestone is the most visible thing in the product and
+  // the thing a published Timeline is built from, so nothing on the
+  // special-category list becomes one while that stays open.
+  const template = getTemplate(WEDDING_TEMPLATE_ID);
+  const flaggedMilestones = template.tasks
+    .filter((t) => t.milestone === true)
+    .map((t) => t.title)
+    .filter((title) => SPECIAL_CATEGORY_PATTERNS.some((p) => p.test(title)));
+  assert.deepEqual(flaggedMilestones, []);
+});
+
+test("audit pin (E05.03): the twelve non-milestone tasks are still undated", () => {
+  // Dating the whole template is E05.03's work and it is template copy, which
+  // is the founder's to approve. Blocker 2 dated the six points and nothing
+  // else, so a couple's Signal briefing still carries no dated item outside
+  // those six.
+  const template = getTemplate(WEDDING_TEMPLATE_ID);
+  const undated = template.tasks.filter((t) => t.milestone !== true);
+  assert.equal(undated.length, 12);
+  for (const t of undated) {
     assert.equal(
       resolveTemplateDueAt({
         anchorDate: "2027-09-18",

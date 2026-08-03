@@ -1,6 +1,7 @@
 import type { LaneId, Priority } from "@/lib/data";
 import type { DomainId } from "@/lib/domains";
 import { SYNCED_TEMPLATES } from "./templates.generated";
+import { withWeddingTimelinePoints } from "./wedding-template-timeline";
 
 /**
  * Drop-in task lists users can apply to an existing workspace.
@@ -875,9 +876,16 @@ const _weddingSectionStart = TEMPLATES_INLINE.findIndex(
 const _splicePoint =
   _weddingSectionStart === -1 ? TEMPLATES_INLINE.length : _weddingSectionStart;
 
+/**
+ * The wedding template's Timeline points are declared in
+ * `./wedding-template-timeline`, not in the synced artifact, because the
+ * artifact is generated and would lose them on the next `pnpm sync:templates`.
+ * The bridge is a no-op the moment the canonical studio template declares a
+ * milestone of its own. Everything else passes through untouched.
+ */
 export const TEMPLATES: Template[] = [
   ...TEMPLATES_INLINE.slice(0, _splicePoint),
-  ...SYNCED_TEMPLATES,
+  ...SYNCED_TEMPLATES.map(withWeddingTimelinePoints),
   ...TEMPLATES_INLINE.slice(_splicePoint),
 ];
 
