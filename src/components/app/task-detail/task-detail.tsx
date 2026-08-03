@@ -404,7 +404,12 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
         ) : timedOut ? (
           <ConversationTimeout onRetry={retry} />
         ) : (
-          <ConversationFeed key={task.id} taskId={task.id} initialItems={items} />
+          <ConversationFeed
+            key={task.id}
+            taskId={task.id}
+            initialItems={items}
+            assigneeIds={task.assignees}
+          />
         )}
       </section>
     </div>

@@ -28,6 +28,17 @@ export type TemplateTaskInput = {
   /** Human due label, same shape as `Task.due` ("Today", "Fri", "Mar 12"). */
   due?: string;
   tags?: string[];
+  /** Seed this task as a Timeline milestone (`tasks.is_milestone`).
+   *  Timeline's milestone source reads `WHERE is_milestone = 1`, so a
+   *  template that sets none renders an empty Timeline. Restraint is the
+   *  point: a handful of real milestones, not one per task. */
+  milestone?: boolean;
+  /** Signed whole days from the workspace's anchor date
+   *  (`workspaces.primary_date`, the wedding day for a wedding workspace).
+   *  Negative is before the day, 0 is the day, positive is after.
+   *  Resolved by `resolveTemplateDueAt`; with no anchor there is no
+   *  `due_at`, deliberately. See src/lib/template-anchor.ts. */
+  dueOffsetDays?: number;
 };
 
 export type Template = {

@@ -10,6 +10,19 @@ export type TasksPersonalization = {
   firstTaskExample: string;
   workspaceTitle: string;
   primaryUseCase: string | null;
+  /**
+   * The owner workspace's active domain, as Tasks already reports it.
+   *
+   * Notes reads this only to choose which register its own copy speaks in
+   * (see lib/notes-copy.ts). It is a presentation hint and never an
+   * authorisation signal: nothing is unlocked, hidden or scoped by it.
+   *
+   * The workspace-personalization route has returned this field since it was
+   * written; Notes simply dropped it because the type did not declare it.
+   * Declaring it is the whole of the wiring, so a couple's notebook can speak
+   * about a wedding without a new field, a new route or a migration.
+   */
+  activeDomain: string | null;
 };
 
 export type TasksWorkspaceDestination = {
@@ -233,6 +246,10 @@ export async function fetchTasksPersonalization(
       {
         headers: { authorization: `Bearer ${assertion}` },
         next: { revalidate: 300 },
+        // Same budget as the workspace catalog. This call now sits on the
+        // notebook's render path, and a slow Tasks must never hold the
+        // capture field back. Notes degrades to its generic register.
+        signal: AbortSignal.timeout(CATALOG_TIMEOUT_MS),
       },
     );
     if (!res.ok) return null;
@@ -244,4 +261,21 @@ export async function fetchTasksPersonalization(
   } catch {
     return null;
   }
+}
+
+/**
+ * The active domain of the signed-in person's workspace, or null.
+ *
+ * The only reason Notes asks. It decides whether the notebook speaks in the
+ * wedding register or the generic one, and nothing else. Any failure, any
+ * timeout, any missing secret returns null and Notes reads generic, so this
+ * can never block or break a capture.
+ */
+export async function fetchNotesWorkspaceDomain(
+  clerkId: string,
+): Promise<string | null> {
+  if (!clerkId.trim()) return null;
+  const personalization = await fetchTasksPersonalization(clerkId);
+  const domain = personalization?.activeDomain;
+  return typeof domain === "string" && domain.trim() ? domain : null;
 }

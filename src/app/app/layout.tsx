@@ -8,12 +8,23 @@ import { StudioBar } from "@/components/studio-bar/studio-bar";
 import { StudioRail } from "@/components/studio-bar/studio-rail";
 import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-context";
 import { isDemoMode } from "@/lib/access-mode";
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 
 export const dynamic = "force-dynamic";
 
 async function SharedAppGate({ children }: { children: React.ReactNode }) {
-  await requireAppAccess();
+  // Was requireAppAccess(), which is allowlist-only. That bounced every invited
+  // and every redeemed user to /waitlist after their token had already been
+  // burned — the exact failure app-access.ts was written to prevent, and which
+  // its own header comment describes. The membership-aware gate was wired only
+  // inside the nested Tasks shell, so this outer gate fired first and won.
+  //
+  // requireAppAccessTasks is a strict superset: same allowlist fast path, plus
+  // a fallback for a user holding a workspace_members row. Both routes in
+  // create that row — invite acceptance directly, and redemption via
+  // ensureUserProvisioned(), which comp.ts calls before writing the entitlement
+  // — so this covers the sponsored couple as well as the invited collaborator.
+  await requireAppAccessTasks();
   return children;
 }
 
