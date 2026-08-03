@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 /**
- * /lab/welcome-w — "W, the wildcard" exploration of the venue-branded
+ * /lab/welcome-w, "W, the wildcard" exploration of the venue-branded
  * welcome (the screen a couple sees the moment they redeem a venue's
  * gifted code). Standing wildcard fixture: the brief for this slot is
  * to ignore the house design register entirely and ask whether "how
@@ -17,8 +17,8 @@ import Link from "next/link";
  * operable, has correct built-in expanded/collapsed semantics, and
  * needs no hydration. One small inline, defensively-wrapped <script>
  * remembers (via localStorage) that a couple already opened it, so a
- * second visit lands open immediately — that script is the only part
- * of the page that requires JavaScript; everything else degrades to a
+ * second visit lands open immediately; that script is the only part
+ * of the page that requires JavaScript, everything else degrades to a
  * plain, working page without it.
  *
  * Review-only: no auth, no production mutation, no server actions.
@@ -305,8 +305,11 @@ const CSS = `
   place-items: center;
   width: var(--lw-seal-size);
   height: var(--lw-seal-size);
-  overflow: visible;
-  transition: width 0.5s ease 0.15s, height 0.5s ease 0.15s;
+  /* Collapses only after the seal graphic below has finished fading
+     (that transition ends around 0.55s), so the empty ring left by
+     the broken seal closes up cleanly instead of visibly squashing
+     still-visible artwork. */
+  transition: width 0.4s ease 0.55s, height 0.4s ease 0.55s;
 }
 .lw-details[open] .lw-seal {
   width: 0;

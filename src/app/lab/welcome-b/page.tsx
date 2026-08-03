@@ -239,7 +239,7 @@ export default function WelcomeHostedLabPage() {
               </motion.p>
               <motion.h1
                 variants={item}
-                className="h-title max-w-[16ch] text-ink outline-none"
+                className="h-title max-w-[22ch] text-balance text-ink outline-none"
               >
                 A Signal Studio workspace for Mara and Finn.
               </motion.h1>
@@ -298,7 +298,7 @@ export default function WelcomeHostedLabPage() {
                 ref={ownHeadingRef}
                 tabIndex={-1}
                 variants={item}
-                className="h-title max-w-[15ch] text-ink outline-none"
+                className="h-title max-w-[20ch] text-balance text-ink outline-none"
               >
                 This is Mara and Finn&rsquo;s <span className="marker">plan</span> now.
               </motion.h1>
