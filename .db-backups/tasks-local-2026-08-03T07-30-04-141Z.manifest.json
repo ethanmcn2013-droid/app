@@ -1,0 +1,488 @@
+{
+  "schemaVersion": "signal-db-backup/1",
+  "label": "tasks-local",
+  "takenAt": "2026-08-03T07:30:04.141Z",
+  "databaseIdentity": "0354610171ee6511",
+  "tableCount": 25,
+  "totalRows": 462,
+  "tables": [
+    {
+      "name": "__drizzle_migrations",
+      "columns": [
+        "id",
+        "hash",
+        "created_at"
+      ],
+      "rows": 13,
+      "sha256": "a568b5f826c60a5770f12e84ade40b0c73e51eb56352c6b914046ae06ea8152f"
+    },
+    {
+      "name": "activities",
+      "columns": [
+        "id",
+        "workspace_id",
+        "task_id",
+        "user_id",
+        "kind",
+        "payload",
+        "created_at"
+      ],
+      "rows": 0,
+      "sha256": "093f259a6a37c3c57b48fc75947c6f931e7641d18603ff38cd6352901a713b79"
+    },
+    {
+      "name": "attachments",
+      "columns": [
+        "id",
+        "workspace_id",
+        "task_id",
+        "uploader_user_id",
+        "filename",
+        "stored_path",
+        "mime_type",
+        "size_bytes",
+        "created_at"
+      ],
+      "rows": 0,
+      "sha256": "3872b870d6662067f595c24db54d071ca1c6cf1e39c65f48816b54adcc99f140"
+    },
+    {
+      "name": "comments",
+      "columns": [
+        "id",
+        "workspace_id",
+        "task_id",
+        "user_id",
+        "body",
+        "created_at"
+      ],
+      "rows": 0,
+      "sha256": "0a3c36b899fbe206a2b8f5c3c966fead6a1950a409d6a1fbb23169da7fd67e79"
+    },
+    {
+      "name": "comp_codes",
+      "columns": [
+        "code",
+        "tier",
+        "duration_days",
+        "quantity",
+        "redeemed",
+        "notes",
+        "created_at",
+        "expires_at"
+      ],
+      "rows": 0,
+      "sha256": "a67bdd9feaddb5190e535b49cd8d97ed11758a780497d6680f2a814add529bd6"
+    },
+    {
+      "name": "entitlements",
+      "columns": [
+        "id",
+        "workspace_id",
+        "user_id",
+        "tier",
+        "source",
+        "started_at",
+        "expires_at",
+        "notes",
+        "reached_board_at"
+      ],
+      "rows": 0,
+      "sha256": "fea3ea7ff26bc6f8dfa702c803a7bdc97ade90d5ccc1002174e0364bf96da6db"
+    },
+    {
+      "name": "meta",
+      "columns": [
+        "key",
+        "value",
+        "updated_at"
+      ],
+      "rows": 0,
+      "sha256": "ff3012dd900b87396de453df2a674c2a7f36cd07db581fc46f66c7e883c8c180"
+    },
+    {
+      "name": "notification_prefs",
+      "columns": [
+        "user_id",
+        "daily_digest",
+        "mentions",
+        "comment_replies",
+        "updated_at",
+        "nudges"
+      ],
+      "rows": 0,
+      "sha256": "c9583c594e14d7423f4dfb5ce7c9e519567c77aea9a831b62db2808ec3357aa3"
+    },
+    {
+      "name": "notifications",
+      "columns": [
+        "id",
+        "workspace_id",
+        "user_id",
+        "kind",
+        "task_id",
+        "payload",
+        "created_at",
+        "read_at"
+      ],
+      "rows": 0,
+      "sha256": "c3d55486d1b6a98f658d220f64b8c826b392bc4e9821017573c57ca98ea1f834"
+    },
+    {
+      "name": "pending_invites",
+      "columns": [
+        "token",
+        "workspace_id",
+        "email",
+        "invited_by_user_id",
+        "created_at",
+        "expires_at",
+        "accepted_at",
+        "accepted_by_user_id",
+        "role",
+        "last_sent_at"
+      ],
+      "rows": 0,
+      "sha256": "09121fce95907ed667647e88a3a48f85a53e877aa0fdad7a0d0fbd40c9ad1455"
+    },
+    {
+      "name": "planning_onboarding_sessions",
+      "columns": [
+        "id",
+        "user_id",
+        "context_type",
+        "state",
+        "status",
+        "revision",
+        "expires_at",
+        "completed_at",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": 0,
+      "sha256": "44e8af86d8a8bcdf1b6f7e08fbca47525841d05e0e49fef7af0566621cdd5c5e"
+    },
+    {
+      "name": "planning_periods",
+      "columns": [
+        "id",
+        "owner_user_id",
+        "name",
+        "context_type",
+        "start_date",
+        "end_date",
+        "timezone",
+        "archived_at",
+        "position",
+        "revision",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": 0,
+      "sha256": "ba5d80c22b627fa664d05d246b8402c5944ced867f720f4c7006e4c879e9e726"
+    },
+    {
+      "name": "processed_webhooks",
+      "columns": [
+        "event_id",
+        "event_type",
+        "processed_at"
+      ],
+      "rows": 0,
+      "sha256": "eae2e74ab2c0a32131aa2400c293d2349f90b9c9d48a4691c808970fc946bee3"
+    },
+    {
+      "name": "resources",
+      "columns": [
+        "id",
+        "workspace_id",
+        "task_id",
+        "kind",
+        "provider",
+        "external_id",
+        "title",
+        "url",
+        "mime_type",
+        "size_bytes",
+        "thumbnail",
+        "added_by_user_id",
+        "added_at",
+        "refreshed_at",
+        "access_state",
+        "counts_against_storage"
+      ],
+      "rows": 0,
+      "sha256": "bb60ce57e0991b5989002cf7753a0cfb23b73f235ee6e10dad01cbcabc75c21f"
+    },
+    {
+      "name": "share_link_visits",
+      "columns": [
+        "id",
+        "token",
+        "visited_at",
+        "user_agent_hint"
+      ],
+      "rows": 0,
+      "sha256": "26d6ea18c3f62e9cdf39a90305267643c9b9ad0fb3ae0d116190d47fe8253dc1"
+    },
+    {
+      "name": "share_links",
+      "columns": [
+        "token",
+        "workspace_id",
+        "view",
+        "mode",
+        "label",
+        "created_at",
+        "revoked_at",
+        "expires_at",
+        "visits"
+      ],
+      "rows": 8,
+      "sha256": "c766ca25d92a4004951b0f8443098d9a616d9fe53ae4db43ae2e4e9ba56b773d"
+    },
+    {
+      "name": "signal_schema_migrations",
+      "columns": [
+        "id",
+        "sha256",
+        "status",
+        "review_receipt_id",
+        "review_receipt_sha256",
+        "execution_receipt_id",
+        "execution_receipt_sha256",
+        "release_sha",
+        "environment",
+        "applied_at"
+      ],
+      "rows": 13,
+      "sha256": "4b5979de5d17b2c1b02d3b113068cb7b104eb0a76cc312cefd3a2e03bf840050"
+    },
+    {
+      "name": "suite_outbox",
+      "columns": [
+        "id",
+        "event_id",
+        "version",
+        "type",
+        "actor_user_id",
+        "workspace_id",
+        "object_ref",
+        "payload",
+        "trace_id",
+        "occurred_at",
+        "delivered_at",
+        "attempts",
+        "last_error"
+      ],
+      "rows": 0,
+      "sha256": "0abccc1f71e94e66a107c009a8c40a7e922187238469f41f543ee73084983e5e"
+    },
+    {
+      "name": "tasks",
+      "columns": [
+        "id",
+        "workspace_id",
+        "title",
+        "description",
+        "lane",
+        "priority",
+        "assignees",
+        "due",
+        "due_at",
+        "estimate",
+        "tags",
+        "idle_days",
+        "blocked_by",
+        "recurrence",
+        "start_day",
+        "duration_days",
+        "position",
+        "parent_task_id",
+        "external_contact_name",
+        "external_contact_email",
+        "cents",
+        "source_note_id",
+        "board_column_key",
+        "is_milestone",
+        "created_at",
+        "updated_at",
+        "source_note_extract_body",
+        "source_note_extract_sha256",
+        "archived_at",
+        "seq",
+        "completed_at"
+      ],
+      "rows": 400,
+      "sha256": "4a6e8946e41cc820479fd34682ba0109eae63045c1c6c6686cdacf6e22b66dbc"
+    },
+    {
+      "name": "user_preferences",
+      "columns": [
+        "user_id",
+        "daily_signal_cadence",
+        "weekly_summary",
+        "time_zone",
+        "updated_at",
+        "theme_mode"
+      ],
+      "rows": 0,
+      "sha256": "1db0df8a3e3db5f738c65feb8be2eccd7f47e786f139812138cbff74b9ee49bf"
+    },
+    {
+      "name": "users",
+      "columns": [
+        "id",
+        "clerk_id",
+        "email",
+        "handle",
+        "name",
+        "color",
+        "initials"
+      ],
+      "rows": 12,
+      "sha256": "1fe8afc0a019a2a9661737d7ffd5009c75fa5d1b43c689069fc9379a5dffee39"
+    },
+    {
+      "name": "workspace_events",
+      "columns": [
+        "id",
+        "workspace_id",
+        "user_id",
+        "kind",
+        "payload",
+        "created_at"
+      ],
+      "rows": 0,
+      "sha256": "eb97a3ab44543991c9f57f7cdaadf1d34c9fe4eaef8088244742d73682051221"
+    },
+    {
+      "name": "workspace_members",
+      "columns": [
+        "workspace_id",
+        "user_id",
+        "role",
+        "joined_at"
+      ],
+      "rows": 8,
+      "sha256": "4e3890e57ecb5d0668bc18b50e665ed608d196a7db8e7c02039f57cc1d8e1090"
+    },
+    {
+      "name": "workspace_sponsorships",
+      "columns": [
+        "id",
+        "workspace_id",
+        "sponsor_id",
+        "sponsor_ref",
+        "entitlement_ref",
+        "status",
+        "consented_metadata",
+        "metadata_version",
+        "consent_receipt_id",
+        "consented_at",
+        "revoked_at",
+        "created_at",
+        "updated_at"
+      ],
+      "rows": 0,
+      "sha256": "2bb23d355d20a6372289b631b8893af9a683d4c017df355530ab011583ac6bc6"
+    },
+    {
+      "name": "workspaces",
+      "columns": [
+        "id",
+        "slug",
+        "name",
+        "owner_user_id",
+        "planning_period_id",
+        "context_type",
+        "primary_date",
+        "primary_date_label",
+        "position",
+        "archived_at",
+        "revision",
+        "active_domain",
+        "primary_use_case",
+        "secondary_context",
+        "onboarding_completed_at",
+        "template_id",
+        "published_at",
+        "created_at",
+        "updated_at",
+        "description",
+        "currency",
+        "budget_cents"
+      ],
+      "rows": 8,
+      "sha256": "7fa4e77497404aee132ed42502d1ed532283bbdde81de07ad70d3c64f50a1743"
+    }
+  ],
+  "ddl": {
+    "tables": [
+      "__drizzle_migrations",
+      "activities",
+      "attachments",
+      "comments",
+      "comp_codes",
+      "entitlements",
+      "meta",
+      "notification_prefs",
+      "notifications",
+      "pending_invites",
+      "planning_onboarding_sessions",
+      "planning_periods",
+      "processed_webhooks",
+      "resources",
+      "share_link_visits",
+      "share_links",
+      "signal_schema_migrations",
+      "suite_outbox",
+      "tasks",
+      "user_preferences",
+      "users",
+      "workspace_events",
+      "workspace_members",
+      "workspace_sponsorships",
+      "workspaces"
+    ],
+    "indexes": [
+      "idx_activities_task_created",
+      "idx_activities_ws_created",
+      "idx_comments_task_id",
+      "idx_comments_user_id",
+      "idx_entitlements_user_workspace",
+      "idx_notifications_task_id",
+      "idx_notifications_user_created",
+      "idx_planning_onboarding_user_status",
+      "idx_planning_periods_owner_position",
+      "idx_resources_task_id",
+      "idx_resources_workspace_id",
+      "idx_share_link_visits_token_at",
+      "idx_share_links_workspace_id",
+      "idx_suite_outbox_pending",
+      "idx_suite_outbox_workspace",
+      "idx_tasks_due_at",
+      "idx_tasks_parent_task_id",
+      "idx_tasks_source_note_id",
+      "idx_tasks_workspace_id",
+      "idx_tasks_ws_lane",
+      "idx_tasks_ws_milestone",
+      "idx_workspace_events_workspace_created",
+      "idx_workspace_members_user_id",
+      "idx_workspace_sponsorships_sponsor",
+      "idx_workspace_sponsorships_workspace",
+      "idx_workspaces_period_position",
+      "suite_outbox_event_id_unique",
+      "tasks_workspace_seq_unique",
+      "users_clerk_id_unique",
+      "users_handle_unique",
+      "workspaces_slug_unique"
+    ],
+    "triggers": [
+      "tasks_parent_workspace_guard_insert",
+      "tasks_parent_workspace_guard_update"
+    ],
+    "views": []
+  },
+  "backupSha256": "39032535e9ceaa7c43212541a4ed603c99ba1d3758f33fb6da3bed29e6b7ec49"
+}

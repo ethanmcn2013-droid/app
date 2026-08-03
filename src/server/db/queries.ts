@@ -24,6 +24,11 @@ import {
   users,
   meta,
 } from "./schema";
+import {
+  hashShareToken,
+  isResolvableShareToken,
+  shareHashesEqual,
+} from "@/server/share-token";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
 import type { Notification, NotificationPayload, PublicTask } from "@/lib/data";
@@ -704,28 +709,15 @@ export async function resolveShareLink(
       domainId: DEMO_DOMAIN,
     };
   }
-  const [row] = await db
-    .select({
-      token: shareLinks.token,
-      view: shareLinks.view,
-      revokedAt: shareLinks.revokedAt,
-      expiresAt: shareLinks.expiresAt,
-      workspaceId: workspaces.id,
-      activeDomain: workspaces.activeDomain,
-    })
-    .from(shareLinks)
-    .innerJoin(workspaces, eq(workspaces.id, shareLinks.workspaceId))
-    .where(
-      and(
-        eq(shareLinks.token, token),
-        isNull(workspaces.archivedAt),
-      ),
-    );
+  // E08.06 / R-033. `token` here is the GUEST SECRET off the URL. It is
+  // never compared against anything stored: it is hashed first, and the
+  // stored sha256 is matched under a unique index, then re-compared in
+  // constant time. `resolveShareLinkRow` also carries the legacy branch for
+  // rows the 0027 backfill has not moved yet.
+  const row = await resolveShareLinkRow(token);
   if (!row || row.revokedAt) return null;
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
 
-  // The INNER JOIN above is deliberate: a share row never revives an
-  // absent Workspace, and archived work is private until restored.
   const wsId = row.workspaceId;
   const taskList = await getTasks(wsId);
   const candidateDomain = row.activeDomain as DomainId | null;
@@ -739,7 +731,9 @@ export async function resolveShareLink(
     .where(eq(meta.key, `board:${wsId}:columns`));
   const columnConfig = configRow ? parseColumnConfig(configRow.value) : null;
   return {
-    token,
+    // The non-secret row key, never the guest's secret. The visit log and any
+    // caller that needs to name this link key off this value.
+    token: row.publicId,
     view: row.view,
     tasks: taskList.map(toPublicTask),
     columns: publicBoardColumns(columnConfig, taskList.map(toPublicTask)),

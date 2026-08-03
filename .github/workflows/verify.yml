@@ -29,3 +29,10 @@ jobs:
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
       - run: pnpm build
+      # E08.10 — performance budgets, measured from the build above so this
+      # costs no extra build time. The check ratchets: it fails when a
+      # measured value exceeds the ceiling recorded in
+      # contracts/venue-surface-performance-budgets.v1.json. Ceilings may
+      # only be lowered; raising one is a founder decision.
+      - name: Performance budgets (bundle ratchet)
+        run: pnpm perf:budgets

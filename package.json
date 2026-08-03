@@ -10,6 +10,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
     "ds:check": "node scripts/ds/ds-check.mjs",
+    "perf:budgets": "node scripts/check-performance-budgets.mjs",
+    "perf:budgets:report": "node scripts/check-performance-budgets.mjs --report",
     "experience:self-test": "node scripts/experience/validate.mjs --self-test && node scripts/experience/critical-fixtures.mjs --self-test && node scripts/experience/review-materiality.mjs --self-test && node scripts/experience/attest-playwright.mjs --self-test && node scripts/experience/quality-council.mjs --self-test && node --import tsx scripts/experience/runtime-policy.self-test.ts",
     "experience:fixtures": "node scripts/experience/critical-fixtures.mjs",
     "experience:fixtures:write": "node scripts/experience/critical-fixtures.mjs --write",
