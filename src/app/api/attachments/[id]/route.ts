@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { getAttachmentById } from "@/server/db/queries";
 import { getActiveWorkspace } from "@/server/auth";
-import { resolveStoredPath } from "@/server/storage";
+import { openBlobStream, resolveStoredPath } from "@/server/storage";
 
 // node:fs isn't edge-friendly.
 export const runtime = "nodejs";
@@ -37,31 +37,43 @@ export async function GET(
 
   const resolved = await resolveStoredPath(att.storedPath);
 
-  if (resolved.kind === "redirect") {
-    return Response.redirect(resolved.url, 302);
-  }
-
   if (resolved.kind === "missing") {
     return notFound();
   }
 
-  // Disk path — stream bytes with security headers.
-  let size: number;
-  try {
-    const s = await stat(resolved.absPath);
-    size = s.size;
-  } catch {
-    return notFound();
+  let body: ReadableStream<Uint8Array>;
+  let size: number | null;
+
+  if (resolved.kind === "blob") {
+    // E08.07. Streamed, not redirected. `putBytes` writes private blobs, and a
+    // private blob URL is not fetchable by a browser — it needs the store
+    // token on the request. The 302 this replaces would have handed the user a
+    // URL they could not open. Streaming also keeps the security headers below
+    // on blob-backed files, which a redirect discarded.
+    const opened = await openBlobStream(resolved.url);
+    if (!opened) return notFound();
+    body = opened.stream;
+    size = opened.size;
+  } else {
+    let stats: Awaited<ReturnType<typeof stat>>;
+    try {
+      stats = await stat(resolved.absPath);
+    } catch {
+      return notFound();
+    }
+    size = stats.size;
+    body = Readable.toWeb(
+      createReadStream(resolved.absPath),
+    ) as ReadableStream<Uint8Array>;
   }
 
-  const nodeStream = createReadStream(resolved.absPath);
-  const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
-
-  return new Response(webStream, {
+  return new Response(body, {
     status: 200,
     headers: {
+      // The stored mime type is the one `validateUpload` accepted after
+      // reading the file's own bytes, never the raw string the client sent.
       "Content-Type": att.mimeType || "application/octet-stream",
-      "Content-Length": String(size),
+      ...(size != null ? { "Content-Length": String(size) } : {}),
       "Content-Disposition": dispositionHeader(att.filename, att.mimeType),
       // Defense against stored XSS via user-uploaded content:
       "X-Content-Type-Options": "nosniff",

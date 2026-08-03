@@ -2,10 +2,10 @@
 //
 // WHY THIS EXISTS
 // ---------------
-// docs/RECOVERY.md has said since 2026-06-19 that "a backup you have never
-// restored is not a backup", and its rehearsal checkbox has never been
-// ticked. This script is the rehearsal, as a command anyone can run and
-// anyone can re-run.
+// The recovery runbook — `studio/docs/RECOVERY.md`, not a file in this repo —
+// has said since 2026-06-19 that "a backup you have never restored is not a
+// backup", and its rehearsal checkbox has never been ticked. This script is
+// the rehearsal, as a command anyone can run and anyone can re-run.
 //
 // It does four things, in order, and fails loudly on any of them:
 //   1. Rebuilds the schema from the DDL recorded in the backup — tables,

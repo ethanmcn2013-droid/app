@@ -7,7 +7,12 @@ import { describe, it } from "node:test";
 import { createClient, type Client } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
-import { resolveShareLinkRowWith } from "@/server/db/queries";
+// NOT from `@/server/db/queries` — that module is `server-only` and cannot be
+// loaded by the test runner. The resolver was split into its own file for
+// exactly this reason. The checkpoint that wrote this suite kept the old
+// import, so the whole file threw `Cannot find module 'server-only'` on load
+// and none of it had ever run.
+import { resolveShareLinkRowWith } from "@/server/db/share-link-resolver";
 import {
   generateSharePublicId,
   generateShareSecret,
@@ -390,6 +395,10 @@ describe("resolveShareLinkRow", () => {
 // ── Source contract: no path may reintroduce a plaintext compare ─────────
 
 describe("source contract", () => {
+  const resolverSource = readFileSync(
+    new URL("./db/share-link-resolver.ts", import.meta.url),
+    "utf8",
+  );
   const queries = readFileSync(
     new URL("./db/queries.ts", import.meta.url),
     "utf8",
@@ -407,12 +416,23 @@ describe("source contract", () => {
     assert.doesNotMatch(actions, /function newToken\(/);
   });
 
+  it("keeps queries.ts out of the credential-comparison business", () => {
+    // The resolver moved to its own file. If a future edit puts a share-link
+    // lookup back into queries.ts it will be `server-only` again, untestable
+    // again, and the assertions below will be checking a file that no longer
+    // holds the control. Fail loudly instead.
+    assert.doesNotMatch(queries, /eq\(shareLinks\.token/);
+    assert.match(queries, /resolveShareLinkRowWith\(db, token\)/);
+    // And the resolver must not reach for the process handle itself: that is
+    // what dragged `server-only` back in and made this suite unloadable.
+    assert.doesNotMatch(resolverSource, /from "\.\/index"/);
+  });
+
   it("hashes before it queries, in every share-link read path", () => {
     // Any equality against shareLinks.token in the resolver must be paired
     // with the plaintext-scheme guard; a bare one is the R-033 bug returning.
-    const resolver = queries.slice(
-      queries.indexOf("export async function resolveShareLinkRowWith"),
-      queries.indexOf("/** Resolve a share token to its read-only payload."),
+    const resolver = resolverSource.slice(
+      resolverSource.indexOf("export async function resolveShareLinkRowWith"),
     );
     assert.match(resolver, /hashShareToken\(secret\)/);
     assert.match(resolver, /eq\(shareLinks\.tokenHash, wanted\)/);

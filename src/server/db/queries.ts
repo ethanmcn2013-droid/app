@@ -24,11 +24,7 @@ import {
   users,
   meta,
 } from "./schema";
-import {
-  hashShareToken,
-  isResolvableShareToken,
-  shareHashesEqual,
-} from "@/server/share-token";
+import { resolveShareLinkRowWith } from "./share-link-resolver";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
 import type { Notification, NotificationPayload, PublicTask } from "@/lib/data";
@@ -712,9 +708,11 @@ export async function resolveShareLink(
   // E08.06 / R-033. `token` here is the GUEST SECRET off the URL. It is
   // never compared against anything stored: it is hashed first, and the
   // stored sha256 is matched under a unique index, then re-compared in
-  // constant time. `resolveShareLinkRow` also carries the legacy branch for
-  // rows the 0027 backfill has not moved yet.
-  const row = await resolveShareLinkRow(token);
+  // constant time. `resolveShareLinkRowWith` also carries the legacy branch
+  // for rows the 0027 backfill has not moved yet. The database is passed in
+  // rather than imported by the resolver, so the control stays loadable by
+  // the test runner; this is the only place it is bound to the live handle.
+  const row = await resolveShareLinkRowWith(db, token);
   if (!row || row.revokedAt) return null;
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
 

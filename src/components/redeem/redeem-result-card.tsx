@@ -29,6 +29,10 @@ const FAILURE_COPY: Record<
     headline: "We're still setting up your account.",
     body: "This usually takes a second or two. Refresh the page and we'll try again.",
   },
+  "rate-limited": {
+    headline: "Too many tries in a short window.",
+    body: "Wait ten minutes and enter the code again. If it came from your venue and still won't open, send it back to us and we'll look it up.",
+  },
 };
 
 const TIER_LABEL = {

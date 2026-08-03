@@ -1,6 +1,7 @@
 import { and, eq, isNull } from "drizzle-orm";
-import { db } from "./index";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { shareLinks, workspaces } from "./schema";
+import * as schema from "./schema";
 import {
   hashShareToken,
   isResolvableShareToken,
@@ -15,6 +16,13 @@ import {
  * lines of board queries. And `queries.ts` is `server-only`, which makes it
  * unimportable from the test runner — a security control nobody can test
  * directly is a security control nobody has tested.
+ *
+ * That second reason is why this module imports NO server-only code, not even
+ * transitively: it takes its database as an argument. The same seam shape as
+ * `recordQualifiedViewWith` in the Timeline module, and for the same reason.
+ * An earlier draft imported `db` from `./index`, which re-introduced
+ * `server-only` through the back door and made the whole suite unloadable.
+ * Keep this file free of `./index`.
  */
 
 /** What a resolved share row exposes. `publicId` is the non-secret row key
@@ -29,14 +37,10 @@ export type ResolvedShareLinkRow = {
   scheme: "plaintext" | "sha256";
 };
 
-export type ShareLinkDatabase = Pick<typeof db, "select">;
-
-/** `resolveShareLinkRowWith` bound to the process database. */
-export async function resolveShareLinkRow(
-  secret: string,
-): Promise<ResolvedShareLinkRow | null> {
-  return resolveShareLinkRowWith(db, secret);
-}
+export type ShareLinkDatabase = Pick<
+  LibSQLDatabase<typeof schema>,
+  "select"
+>;
 
 /**
  * Resolve a guest secret to its share row, or null.

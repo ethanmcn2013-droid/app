@@ -37,12 +37,24 @@
  *             over budget, instead of being switched off until someone has
  *             time to fix the bundle.
  *
- * Exit codes: 0 pass · 2 a ceiling was exceeded · 3 no production build found.
+ * EVERY BUDGET CARRIES ITS POPULATION, and an empty population is never a
+ * pass. This is the failure mode that made the script this one replaces
+ * worthless: it reported `built: false, gzipBytes: 0` for four repositories
+ * and exited 0, so "nothing was measured" and "everything is within budget"
+ * produced the same green. Here, a budget whose population is zero exits 3
+ * unless the contract declares the emptiness with a reason, and even then it
+ * prints `no data (declared)` rather than `ok`.
+ *
+ * Exit codes:
+ *   0  pass
+ *   2  a ceiling was exceeded
+ *   3  nothing was measured, or the contract and the script disagree
  *
  * Usage:
- *   node scripts/check-performance-budgets.mjs            check
- *   node scripts/check-performance-budgets.mjs --report   print measurements only, never fails
- *   node scripts/check-performance-budgets.mjs --receipt <path>  write a JSON receipt
+ *   node scripts/check-performance-budgets.mjs             check
+ *   node scripts/check-performance-budgets.mjs --report    print only, never fails
+ *   node scripts/check-performance-budgets.mjs --receipt <path>   write a JSON receipt
+ *   node scripts/check-performance-budgets.mjs --self-test  prove the rules, no build needed
  */
 
 import fs from "node:fs";
@@ -53,7 +65,165 @@ const CONTRACT = "contracts/venue-surface-performance-budgets.v1.json";
 const NEXT_DIR = ".next";
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif"]);
 
+// ── The rules, as a pure function ────────────────────────────────────────────
+// Extracted so `--self-test` can prove them without a production build. A
+// checker whose own logic is never exercised is the same class of thing as a
+// budget nobody measures.
+
+export const NO_DATA = "no data (declared)";
+
+/**
+ * @param {object} contract  the parsed budget contract
+ * @param {Record<string, number>} measured    id -> measured value
+ * @param {Record<string, number>} populations id -> how many things that value was computed over
+ * @returns {{rows: object[], breaches: string[], errors: string[]}}
+ */
+export function evaluate(contract, measured, populations) {
+  const rows = [];
+  const breaches = [];
+  const errors = [];
+
+  for (const [id, spec] of Object.entries(contract.measured)) {
+    const value = measured[id];
+    const population = populations[id];
+
+    if (value == null) {
+      errors.push(`contract names a measured budget "${id}" this script does not produce`);
+      continue;
+    }
+    if (population == null) {
+      errors.push(`budget "${id}" was produced without a population count`);
+      continue;
+    }
+
+    if (population === 0) {
+      const declared = spec.emptyPopulation;
+      if (!declared?.expected || !declared.reason) {
+        errors.push(
+          `budget "${id}" measured nothing (population 0) and the contract does not declare that. ` +
+            `Refusing to report a green from an empty set. Either the measurement is broken, or ` +
+            `add "emptyPopulation": { "expected": true, "reason": "..." } to the contract entry.`,
+        );
+        continue;
+      }
+      rows.push({
+        id,
+        unit: spec.unit,
+        measured: value,
+        population,
+        ceiling: spec.ceiling,
+        budget: spec.budget,
+        state: NO_DATA,
+        surfaces: spec.surfaces,
+      });
+      continue;
+    }
+
+    const overCeiling = value > spec.ceiling;
+    const overBudget = value > spec.budget;
+    rows.push({
+      id,
+      unit: spec.unit,
+      measured: value,
+      population,
+      ceiling: spec.ceiling,
+      budget: spec.budget,
+      state: overCeiling ? "BREACH" : overBudget ? "over-budget (ratcheted)" : "ok",
+      surfaces: spec.surfaces,
+    });
+    if (overCeiling) {
+      breaches.push(`${id}: ${value}${spec.unit} exceeds ceiling ${spec.ceiling}${spec.unit}`);
+    }
+  }
+
+  return { rows, breaches, errors };
+}
+
+// ── Self-test ────────────────────────────────────────────────────────────────
+
+function selfTest() {
+  const assert = (condition, message) => {
+    if (!condition) {
+      console.error(`  FAIL  ${message}`);
+      process.exitCode = 1;
+    } else {
+      console.log(`  ok    ${message}`);
+    }
+  };
+
+  const spec = (extra = {}) => ({
+    unit: "KB gzip",
+    budget: 100,
+    ceiling: 120,
+    surfaces: ["x"],
+    ...extra,
+  });
+
+  console.log("check-performance-budgets --self-test");
+
+  {
+    const c = { measured: { a: spec() } };
+    const { rows, breaches, errors } = evaluate(c, { a: 90 }, { a: 5 });
+    assert(errors.length === 0 && breaches.length === 0, "a value under budget passes");
+    assert(rows[0].state === "ok", "a value under budget reads ok");
+  }
+  {
+    const c = { measured: { a: spec() } };
+    const { rows, breaches } = evaluate(c, { a: 110 }, { a: 5 });
+    assert(breaches.length === 0, "over budget but under ceiling does not fail the build");
+    assert(rows[0].state === "over-budget (ratcheted)", "over budget is stated, not hidden");
+  }
+  {
+    const c = { measured: { a: spec() } };
+    const { breaches } = evaluate(c, { a: 121 }, { a: 5 });
+    assert(breaches.length === 1, "over the ceiling is a breach");
+  }
+  {
+    const c = { measured: { a: spec() } };
+    const { breaches } = evaluate(c, { a: 120 }, { a: 5 });
+    assert(breaches.length === 0, "exactly at the ceiling is not a breach");
+  }
+  {
+    // The whole reason this function exists.
+    const c = { measured: { a: spec() } };
+    const { errors, rows } = evaluate(c, { a: 0 }, { a: 0 });
+    assert(errors.length === 1, "an empty population is an error, not a pass");
+    assert(rows.length === 0, "an undeclared empty population produces no green row");
+  }
+  {
+    const c = {
+      measured: {
+        a: spec({ emptyPopulation: { expected: true, reason: "there are none, and that is known" } }),
+      },
+    };
+    const { errors, rows } = evaluate(c, { a: 0 }, { a: 0 });
+    assert(errors.length === 0, "a declared empty population is allowed");
+    assert(rows[0].state === NO_DATA, "a declared empty population never reads ok");
+  }
+  {
+    const c = { measured: { a: spec(), ghost: spec() } };
+    const { errors } = evaluate(c, { a: 1 }, { a: 1 });
+    assert(errors.length === 1, "a contract budget the script cannot produce is an error");
+  }
+  {
+    const c = { measured: { a: spec() } };
+    const { errors } = evaluate(c, { a: 1 }, {});
+    assert(errors.length === 1, "a measurement with no population count is an error");
+  }
+
+  if (process.exitCode) {
+    console.error("\ncheck-performance-budgets: SELF-TEST FAILED");
+    process.exit(1);
+  }
+  console.log("\ncheck-performance-budgets: self-test ok");
+  process.exit(0);
+}
+
+// ── CLI ──────────────────────────────────────────────────────────────────────
+
 const args = process.argv.slice(2);
+if (args.includes("--self-test")) selfTest();
+
 const reportOnly = args.includes("--report");
 const receiptIndex = args.indexOf("--receipt");
 const receiptPath = receiptIndex >= 0 ? args[receiptIndex + 1] : null;
@@ -125,6 +295,13 @@ for (const file of chunks) {
 }
 
 const publicDir = contract.imageRoot ?? "public";
+if (!fs.existsSync(publicDir)) {
+  fail(
+    `imageRoot "${publicDir}" does not exist. A missing directory would otherwise be measured ` +
+      `as zero bytes and reported as within budget.`,
+    3,
+  );
+}
 let heaviestImage = { kb: 0, file: null };
 let imageCount = 0;
 for (const file of walk(publicDir)) {
@@ -141,6 +318,17 @@ const measured = {
   repo_images: round(heaviestImage.kb),
 };
 
+/**
+ * How many things each number was computed over. A budget with a population of
+ * zero is not within budget; it is unmeasured, and it says so.
+ */
+const populations = {
+  shared_runtime: sharedFiles.length,
+  total_client_js: chunks.length,
+  largest_chunk: chunks.length,
+  repo_images: imageCount,
+};
+
 const detail = {
   sharedChunkCount: sharedFiles.length,
   clientChunkCount: chunks.length,
@@ -149,56 +337,39 @@ const detail = {
   heaviestImageFile: heaviestImage.file,
 };
 
-const rows = [];
-const breaches = [];
-for (const [id, spec] of Object.entries(contract.measured)) {
-  const value = measured[id];
-  if (value == null) {
-    fail(`contract names a measured budget "${id}" this script does not produce`, 3);
-  }
-  const overCeiling = value > spec.ceiling;
-  const overBudget = value > spec.budget;
-  rows.push({
-    id,
-    unit: spec.unit,
-    measured: value,
-    ceiling: spec.ceiling,
-    budget: spec.budget,
-    state: overCeiling ? "BREACH" : overBudget ? "over-budget (ratcheted)" : "ok",
-    surfaces: spec.surfaces,
-  });
-  if (overCeiling) {
-    breaches.push(`${id}: ${value}${spec.unit} exceeds ceiling ${spec.ceiling}${spec.unit}`);
-  }
-}
+const { rows, breaches, errors } = evaluate(contract, measured, populations);
 
 const receipt = {
-  schema: "signal-performance-budgets/1",
+  schema: "signal-performance-budgets/2",
   measuredAt: new Date().toISOString(),
   repo: contract.repo,
   contractVersion: contract.version,
   measured,
+  populations,
   detail,
   rows,
   unmeasured: contract.unmeasured,
   breaches,
-  ok: breaches.length === 0,
+  errors,
+  ok: breaches.length === 0 && errors.length === 0,
 };
 
 const pad = (value, width) => String(value).padEnd(width);
 console.log(`performance budgets · ${contract.repo} · contract v${contract.version}`);
 console.log("");
 console.log(
-  `  ${pad("budget", 20)}${pad("measured", 16)}${pad("ceiling", 16)}${pad("target", 16)}state`,
+  `  ${pad("budget", 20)}${pad("measured", 16)}${pad("over", 10)}${pad("ceiling", 16)}${pad("target", 16)}state`,
 );
 for (const row of rows) {
   console.log(
-    `  ${pad(row.id, 20)}${pad(`${row.measured} ${row.unit}`, 16)}${pad(`${row.ceiling} ${row.unit}`, 16)}${pad(`${row.budget} ${row.unit}`, 16)}${row.state}`,
+    `  ${pad(row.id, 20)}${pad(`${row.measured} ${row.unit}`, 16)}${pad(row.population, 10)}${pad(`${row.ceiling} ${row.unit}`, 16)}${pad(`${row.budget} ${row.unit}`, 16)}${row.state}`,
   );
 }
 console.log("");
 console.log(`  largest chunk: ${detail.largestChunkFile ?? "none"}`);
-console.log(`  images in ${publicDir}: ${detail.repoImageCount} (heaviest ${detail.heaviestImageFile ?? "none"})`);
+console.log(
+  `  images in ${publicDir}: ${detail.repoImageCount} (heaviest ${detail.heaviestImageFile ?? "none"})`,
+);
 console.log("");
 console.log("  NOT measured here, and not claimed as passing:");
 for (const item of contract.unmeasured) {
@@ -212,6 +383,12 @@ if (receiptPath) {
 }
 
 if (reportOnly) process.exit(0);
+
+if (errors.length > 0) {
+  console.error("\nperformance-budgets: NOTHING MEASURED");
+  for (const error of errors) console.error(`  ${error}`);
+  process.exit(3);
+}
 
 if (breaches.length > 0) {
   console.error("\nperformance-budgets: FAILED");

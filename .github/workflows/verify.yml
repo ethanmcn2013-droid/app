@@ -34,5 +34,16 @@ jobs:
       # measured value exceeds the ceiling recorded in
       # contracts/venue-surface-performance-budgets.v1.json. Ceilings may
       # only be lowered; raising one is a founder decision.
+      # E08.11 — every segment of the sponsored journey is either covered by test
+      # files this suite actually runs, or declared uncovered with a reason and an
+      # owner. A test file that exists but is wired into nothing fails here.
+      - name: Sponsored journey coverage (self-test)
+        run: pnpm journey:coverage:self-test
+      - name: Sponsored journey coverage
+        run: pnpm journey:coverage
+      # The checker's own rules — the ratchet, and the refusal to report a green
+      # from an empty population — proven without needing a build.
+      - name: Performance budgets (self-test)
+        run: pnpm perf:budgets:self-test
       - name: Performance budgets (bundle ratchet)
         run: pnpm perf:budgets

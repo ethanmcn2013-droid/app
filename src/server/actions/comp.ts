@@ -14,17 +14,35 @@ import { TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 import { isDemoMode } from "@/lib/access-mode";
+import { allow } from "@/lib/ratelimit";
+import { generateCompCode } from "@/lib/comp-code";
+import { headers } from "next/headers";
 
 const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
-function newCode(prefix: string): string {
-  // STUDENT26-A4B2X9, readable + 7 random chars.
-  const raw =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2);
-  const suffix = raw.replace(/-/g, "").slice(0, 7).toUpperCase();
-  return `${prefix.toUpperCase()}-${suffix}`;
-}
+/**
+ * E08.06. Comp codes are bearer credentials for a paid tier, so they are
+ * generated the same way the venue invitation codes are.
+ *
+ * What was here before: seven hex characters sliced off a UUID, uppercased.
+ * Hex is a 16-symbol alphabet, so that was 16^7 = 268,435,456 ≈ **2^28**, with
+ * a publicly known prefix in front of it. Worse, it fell back to
+ * `Math.random()` when `crypto.randomUUID` was absent, which is not a
+ * cryptographic source at all and would have produced predictable codes
+ * without anything failing.
+ *
+ * Now: ten characters from the 31-symbol dictatable alphabet, drawn by
+ * rejection sampling over `crypto.getRandomValues`, which is 31^10 ≈ 2^49.5.
+ * `crypto` is required rather than fallen back from — a missing CSPRNG must
+ * stop minting, not silently weaken it.
+ *
+ * This mirrors `studio/src/lib/invitation-code.ts` deliberately. The two
+ * repositories cannot share a module, so the alphabet, the length and the
+ * entropy floor are held identical by the parity assertions in
+ * `src/server/invitation-code-security.test.ts`, which read the studio file
+ * directly and fail if the two drift.
+ */
+const newCode = generateCompCode;
 
 function newEntitlementId(): string {
   const raw =
@@ -86,6 +104,28 @@ export async function mintCompCodeAction(
   return mintCompCodeInternal(input);
 }
 
+/**
+ * E08.06 — redemption attempt limits.
+ *
+ * Read these two numbers with the entropy arithmetic in `newCode` above, not
+ * on their own. A ten-character code is 31^10 ≈ 2^49.5, so guessing is already
+ * infeasible without any limiter; this is defence in depth and, more usefully,
+ * it puts a ceiling on how fast the *legacy* five-character codes already in
+ * circulation (31^5 ≈ 2^24.8) can be swept.
+ *
+ * **The failure mode is OPEN, and that is not a detail.** `allow()` returns
+ * true when Upstash is unconfigured, and Upstash is NOT provisioned on the
+ * Tasks project today — it is still an open item on the HQ operator ledger.
+ * So on 2026-08-03 this limiter enforces nothing in production. It starts
+ * enforcing the moment the operator adds UPSTASH_REDIS_REST_URL and
+ * UPSTASH_REDIS_REST_TOKEN, with no code change. Until then the control that
+ * holds is entropy, and only for codes minted after this change.
+ */
+const REDEEM_ATTEMPTS_PER_USER = 10;
+const REDEEM_USER_WINDOW = "10 m" as const;
+const REDEEM_ATTEMPTS_PER_IP = 40;
+const REDEEM_IP_WINDOW = "1 h" as const;
+
 export type RedeemResult =
   | {
       ok: true;
@@ -104,7 +144,9 @@ export type RedeemResult =
         | "exhausted"
         | "expired"
         | "already-redeemed"
-        | "still-provisioning";
+        | "still-provisioning"
+        /** E08.06: too many redemption attempts from this account or address. */
+        | "rate-limited";
     };
 
 /**
@@ -158,7 +200,49 @@ export async function redeemCompCodeAction(
   }
 }
 
+/**
+ * Attempt limiting for redemption. Returns false when the caller has spent
+ * their budget. Both buckets are checked; either one can refuse.
+ *
+ * The user bucket is the one that matters, because `/redeem/[code]` sends an
+ * anonymous visitor through Clerk before the action runs, so every attempt is
+ * attributable to an account. The IP bucket catches the case the user bucket
+ * cannot: one attacker cycling throwaway accounts.
+ */
+async function redeemWithinAttemptLimits(userId: string): Promise<boolean> {
+  const byUser = await allow(
+    "redeem-user",
+    userId,
+    REDEEM_ATTEMPTS_PER_USER,
+    REDEEM_USER_WINDOW,
+  );
+  if (!byUser) return false;
+  let ip = "unknown";
+  try {
+    const h = await headers();
+    ip =
+      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      h.get("x-real-ip") ||
+      "unknown";
+  } catch {
+    // No request scope (a script, a test). Fall through on the user bucket
+    // alone rather than refusing a legitimate caller.
+    return true;
+  }
+  if (ip === "unknown") return true;
+  return allow("redeem-ip", ip, REDEEM_ATTEMPTS_PER_IP, REDEEM_IP_WINDOW);
+}
+
 async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
+  // E08.06. The identity and the attempt budget are resolved BEFORE the code
+  // is looked up. Doing the lookup first would leave an unmetered oracle that
+  // answers "does this code exist" as fast as the database can reply, which is
+  // exactly the primitive a guessing attack needs.
+  const userId = await getCurrentUser();
+  if (!(await redeemWithinAttemptLimits(userId))) {
+    return { ok: false, reason: "rate-limited" };
+  }
+
   const [row] = await db
     .select()
     .from(compCodes)
@@ -168,8 +252,6 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
     return { ok: false, reason: "expired" };
   }
-
-  const userId = await getCurrentUser();
 
   // Idempotency: did this user already redeem this code? Comes BEFORE
   // the exhausted check, see header doc for why.
