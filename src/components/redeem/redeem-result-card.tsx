@@ -51,9 +51,12 @@ export function RedeemResultCard({
   result: RedeemResult;
 }) {
   if (result.ok) {
+    // D-009 point 3 and D-021: no couple-facing surface may say "for life",
+    // "forever" or "in perpetuity". When there is no end date the sentence
+    // drops the clause rather than inventing an unconditional promise.
     const expiresLabel = result.expiresAt
       ? formatRedeemExpiryDate(result.expiresAt)
-      : "for life";
+      : null;
     // Venue-edition success: deep-link past /welcome direct to the
     // board with the sponsor banner. The template + workspace flag
     // are already applied server-side in redeemCompCodeAction.
@@ -89,8 +92,8 @@ export function RedeemResultCard({
           You&rsquo;re on{" "}
           <span className="text-aud-wedding">
             {TIER_LABEL[result.tier]}
-          </span>{" "}
-          until {expiresLabel}.
+          </span>
+          {expiresLabel ? ` until ${expiresLabel}` : ""}.
         </h1>
         {result.notes ? (
           <p className="mx-auto mt-3 max-w-[40ch] text-[12.5px] leading-[1.5] text-ink-soft">

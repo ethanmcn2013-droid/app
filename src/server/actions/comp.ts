@@ -13,6 +13,11 @@ import type { EntitlementTier } from "@/lib/data";
 import { TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+import {
+  compRedemptionExpiresAtMs,
+  weddingDateMsForWorkspace,
+} from "@/server/db/couple-access-term";
+import { coupleVisibleCompNotes } from "@/lib/comp-notes";
 import { isDemoMode } from "@/lib/access-mode";
 import { allow } from "@/lib/ratelimit";
 import { generateCompCode } from "@/lib/comp-code";
@@ -272,7 +277,8 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
       expiresAt: existing.expiresAt
         ? existing.expiresAt.toISOString()
         : "",
-      notes: existing.notes,
+      // `existing.notes` is the entitlement's own bookkeeping, `comp:<CODE>`.
+      notes: coupleVisibleCompNotes(existing.notes),
       sponsorSlug: sponsor?.sponsorSlug,
     };
   }
@@ -294,8 +300,32 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     return { ok: false, reason: "still-provisioning" };
   }
 
+  // R-015 · D-022. This used to be a flat
+  // `Date.now() + row.durationDays * 24 * 60 * 60 * 1000` for every code,
+  // Venue Edition included, while the ratified rule
+  // `max(redemption + 548 days, wedding date + 90 days)` lived only in the
+  // studio repository, which does not run this path. A couple booking a
+  // long-lead wedding lost the product before the wedding it was bought for.
+  //
+  // The decision now lives in one place, `@/server/db/couple-access-term`,
+  // over the rule ported into `@/lib/venue-access-term`. Non-Venue-Edition
+  // codes keep the flat duration unchanged.
+  //
+  // The wedding date is read from the couple's active workspace when it is
+  // already known. When it is not, the term falls back to the 548-day floor,
+  // which is never shorter than what shipped, and
+  // `extendCoupleAccessForWeddingDate` moves it later the moment a date is
+  // recorded.
+  const venueSponsor = row.tier === "wedding" ? await lookupSponsorByCode(code) : null;
   const expiresAt = new Date(
-    Date.now() + row.durationDays * 24 * 60 * 60 * 1000,
+    compRedemptionExpiresAtMs({
+      venueEdition: venueSponsor != null,
+      durationDays: row.durationDays,
+      redeemedAtMs: Date.now(),
+      weddingDateMs: venueSponsor
+        ? await weddingDateMsForWorkspace(db, ws)
+        : null,
+    }),
   );
 
   // Atomic claim BEFORE issuing. The earlier `row.redeemed >= row.quantity`
@@ -335,25 +365,25 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   // during the Server Component render this action runs inside.
   // That was the cycle-8.5 fresh-user 500.
   let sponsorSlug: string | undefined;
-  if (row.tier === "wedding") {
-    const sponsor = await lookupSponsorByCode(code);
-    if (sponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
-      await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
-      await db.run(sql`
-        UPDATE workspaces
-        SET template_id = ${VENUE_TEMPLATE_ID},
-            active_domain = 'wedding'
-        WHERE id = ${ws}
-      `);
-      sponsorSlug = sponsor.sponsorSlug;
-    }
+  if (venueSponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
+    await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
+    await db.run(sql`
+      UPDATE workspaces
+      SET template_id = ${VENUE_TEMPLATE_ID},
+          active_domain = 'wedding'
+      WHERE id = ${ws}
+    `);
+    sponsorSlug = venueSponsor.sponsorSlug;
   }
 
   return {
     ok: true,
     tier: row.tier,
     expiresAt: expiresAt.toISOString(),
-    notes: row.notes,
+    // On a Venue Edition code this column holds the sponsor JSON, not a
+    // message. Rendering it put a line of metadata on the couple's first
+    // screen. Prose passes, machine strings are dropped.
+    notes: coupleVisibleCompNotes(row.notes),
     sponsorSlug,
   };
 }
