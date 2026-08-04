@@ -4,6 +4,42 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-04 · T·128 · tightens · one story, one clock, and a board that answers the keyboard
+
+**A full pass over the four products, holding every surface to the same
+standard: nothing on screen may claim what a click can't confirm.** The
+review copy now tells one story on one clock — every date, greeting,
+count and "overdue" mark across Notes, Tasks, Timeline and Signal is
+derived from the same pinned morning, so the same person reads the same
+week everywhere, including on a phone in another timezone. Signal's
+briefing arithmetic is honest end to end: the headline count, the cards
+below it, and the closing line all reconcile against the same list, and
+every claim survives its own click-through.
+
+The board took the founder's round. The sidebar says who you are once,
+not three times. The toolbar row keeps only the four controls that do
+something today — Filter, Sort, Save view, Share — and Save view now
+answers with a confirmation and a way back to what you saved. Each
+column's plus does the job its position implies: it adds a column, and
+columns can be renamed and recolored in place. The planning rail was
+redrawn from information-dense gray to a paper-and-hairline instrument
+with one indigo mark for where you stand. And the stray white seam
+through the black wordmark corner is gone.
+
+The shared board is now a finished artifact rather than a stripped app
+screen. It renders the owner's own columns — names, order, tint — with
+no dead controls; an owner following their own link gets a quiet way
+back to the workspace, a guest gets the workspace's name and a single
+honest invitation. Overdue dates are marked in the recipient's reading
+of the board, not the sender's software's.
+
+Under the hood, the keyboard finally gets the whole product: opening a
+task moves focus into the panel, Tab stays inside it while it's open,
+and closing it puts you back on the card you left. The shared board's
+columns scroll from the keyboard. Where a value is absent, the row says
+so to a screen reader instead of showing an unlabeled dash. Every one
+of these was measured in the running product before it was called done.
+
 ## 2026-08-02 · T·127 · finishes · the artifact for the days that matter, and the template that points at one
 
 **The shared Timeline artifact repairs the three places it broke its own
