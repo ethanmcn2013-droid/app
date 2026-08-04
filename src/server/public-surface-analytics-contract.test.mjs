@@ -189,3 +189,41 @@ function listFiles(dir) {
   }
   return out;
 }
+
+/**
+ * R-032 is about THIRD-PARTY analytics, not about Google specifically. Sentry is
+ * a third party. Before this, instrumentation-client.ts excluded only `/s`, so
+ * `/p`, `/share` and `/embed` still initialised it and D-033 Option A was not
+ * satisfied by removing GA4 alone. A Wave 4 verifier found it.
+ */
+test("Sentry uses the shared analytics boundary, not its own route list", () => {
+  const client = readFileSync(
+    new URL("../instrumentation-client.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    client,
+    /isAnalyticsExcludedPath/,
+    "src/instrumentation-client.ts must gate Sentry on isAnalyticsExcludedPath. Sentry is a third party and D-033 Option A excludes third-party analytics from every couple-facing public surface, not just /s.",
+  );
+  assert.doesNotMatch(
+    client,
+    /pathname\s*===\s*"\/s"/,
+    "the hand-rolled /s-only check must be gone. Two lists drift; the shared boundary cannot.",
+  );
+});
+
+test("no couple-facing route is excluded from GA4 but not from Sentry", () => {
+  const client = readFileSync(
+    new URL("../instrumentation-client.ts", import.meta.url),
+    "utf8",
+  );
+  // The point of sharing the predicate is that this can never go out of sync,
+  // so the assertion is that the predicate is the gate — not a re-listing of
+  // the four routes, which would be the very duplication being removed.
+  const gate = client.match(/const\s+\w+\s*=\s*[\s\S]{0,200}?isAnalyticsExcludedPath\([^)]*\)/);
+  assert.ok(
+    gate,
+    "the Sentry init guard must derive from isAnalyticsExcludedPath(window.location.pathname)",
+  );
+});
