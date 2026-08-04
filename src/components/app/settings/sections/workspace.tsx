@@ -18,6 +18,11 @@ import {
 import { updateSegmentAction } from "@/server/actions/onboarding";
 import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 import { SectionHeader } from "../settings-app";
+import { formatCents, isProjectCurrency, PROJECT_CURRENCIES } from "@/lib/money";
+import {
+  setProjectBudgetAction,
+  setProjectCurrencyAction,
+} from "@/server/actions/settings";
 import type { SettingsWorkspace } from "../settings-app";
 
 const DOMAIN_IDS = new Set<DomainId>(DOMAIN_ORDER);
@@ -60,6 +65,46 @@ export function WorkspaceSection({
   );
   const inputRef = useRef<HTMLInputElement>(null);
   const canEdit = myRole === "owner";
+  const [currencyValue, setCurrencyValue] = useState<string | null>(workspace?.currency ?? null);
+  const [budgetValue, setBudgetValue] = useState<number | null>(workspace?.budgetCents ?? null);
+  const [budgetDraft, setBudgetDraft] = useState(
+    workspace?.budgetCents != null ? String(Math.round(workspace.budgetCents / 100)) : "",
+  );
+  const [moneyPending, startMoneyTransition] = useTransition();
+
+  function commitCurrency(raw: string) {
+    const next = raw === "" ? null : raw;
+    if (next !== null && !isProjectCurrency(next)) return;
+    const previous = currencyValue;
+    setCurrencyValue(next);
+    startMoneyTransition(async () => {
+      try {
+        await setProjectCurrencyAction(next);
+      } catch {
+        setCurrencyValue(previous);
+      }
+    });
+  }
+
+  function commitBudget() {
+    const trimmed = budgetDraft.trim();
+    const cents = trimmed === "" ? null : Number(trimmed) * 100;
+    if (cents !== null && (!Number.isInteger(cents) || cents < 0)) {
+      setBudgetDraft(budgetValue != null ? String(Math.round(budgetValue / 100)) : "");
+      return;
+    }
+    if (cents === budgetValue) return;
+    const previous = budgetValue;
+    setBudgetValue(cents);
+    startMoneyTransition(async () => {
+      try {
+        await setProjectBudgetAction(cents);
+      } catch {
+        setBudgetValue(previous);
+        setBudgetDraft(previous != null ? String(Math.round(previous / 100)) : "");
+      }
+    });
+  }
   const currentDomain = workspace?.activeDomain;
   const currentSegment =
     workspace?.primaryUseCase && isPrimaryUseCase(workspace.primaryUseCase)
@@ -152,7 +197,7 @@ export function WorkspaceSection({
     <div>
       <SectionHeader
         eyebrow="Workspace"
-        title="The shape of your workspace"
+        title="The shape of your project"
         description="Rename it, swap the starter pack, or review your workspace details. Changes save instantly, no save button to forget."
       />
 
@@ -160,7 +205,7 @@ export function WorkspaceSection({
         {/* Name */}
         <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
           <Label>Name</Label>
-          <Caption>What this workspace gets called everywhere, the header, share links, the daily digest.</Caption>
+          <Caption>What this project gets called everywhere, the header, share links, the daily digest.</Caption>
           <div className="mt-3 flex items-center gap-2">
             <input
               ref={inputRef}
@@ -179,6 +224,62 @@ export function WorkspaceSection({
             />
             <span className="text-[11.5px] text-ink-quiet">
               {pending ? "Saving…" : canEdit ? "Tab or click out to save" : "Owner-only"}
+            </span>
+          </div>
+        </div>
+
+        {/* Money, narrowly (T·124): one currency label and one operator
+            budget. Restated and summed against in the brief; never
+            computed from; never on share, print, embed or the public
+            page. */}
+        <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
+          <Label>Money</Label>
+          <Caption>
+            One currency for this project, and the budget you are working
+            to. The brief restates what you enter and how much of the
+            board it covers, nothing more.
+          </Caption>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-[12.5px] text-ink-soft">
+              Currency
+              <select
+                className="rounded-md border border-line bg-white px-2 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none disabled:opacity-60"
+                disabled={!canEdit || moneyPending}
+                onChange={(event) => commitCurrency(event.target.value)}
+                value={currencyValue ?? ""}
+              >
+                <option value="">USD (default)</option>
+                {PROJECT_CURRENCIES.map((code) => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-center gap-2 text-[12.5px] text-ink-soft">
+              Budget
+              <input
+                className="w-36 rounded-md border border-line bg-white px-3 py-1.5 text-[13px] text-ink shadow-sm focus:border-brand/60 focus:outline-none focus:ring-2 focus:ring-brand/15 disabled:opacity-60"
+                disabled={!canEdit || moneyPending}
+                inputMode="numeric"
+                onBlur={commitBudget}
+                onChange={(event) => setBudgetDraft(event.target.value.replace(/[^0-9]/g, ""))}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    (event.target as HTMLInputElement).blur();
+                  }
+                }}
+                placeholder="Whole amount, blank for none"
+                value={budgetDraft}
+              />
+            </label>
+            <span className="text-[11.5px] text-ink-quiet">
+              {moneyPending
+                ? "Saving…"
+                : budgetValue != null
+                  ? `Budget ${formatCents(budgetValue, currencyValue)}`
+                  : canEdit
+                    ? "Blank means no budget line"
+                    : "Owner-only"}
             </span>
           </div>
         </div>

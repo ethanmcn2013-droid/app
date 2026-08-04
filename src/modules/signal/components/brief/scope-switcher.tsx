@@ -62,13 +62,24 @@ export function SignalScopeSwitcher({
       className="mx-auto flex w-full max-w-[960px] items-end gap-3 px-6 pt-8 sm:px-8"
       aria-label="Signal scope"
     >
-      <label className="grid flex-1 gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[color:var(--ink-quiet)]">
-        Briefing scope
+      <label className="grid flex-1 gap-1">
+        {/* The ledger's mono metadata register (11px / 0.06em / --ink-quiet),
+            not a fourth uppercase micro-label at its own tracking. */}
+        <span
+          className="text-[11px] tracking-[0.06em] text-[color:var(--ink-quiet)]"
+          style={{ fontFamily: "var(--font-mono)" }}
+        >
+          Briefing scope
+        </span>
+        {/* min-h-[44px], never min-h-10: --space-10 is 64px in this system,
+            so the class would silently yield a 64px band. No component-level
+            ring either — the global :focus-visible outline is the only focus
+            mark, and --brand is deprecated. */}
         <select
           name="scope"
           value={selected}
           onChange={(event) => setSelected(event.target.value)}
-          className="min-h-10 border-0 border-b border-[color:var(--border)] bg-transparent text-[14px] font-normal normal-case tracking-normal text-[color:var(--ink)] outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand)]"
+          className="min-h-[44px] border-0 border-b border-[color:var(--hairline)] bg-transparent text-[14px] font-normal normal-case tracking-normal text-[color:var(--ink)]"
         >
           {catalog.periods.map((period) => (
             <option key={period.id} value={`planningPeriod:${period.id}`}>
@@ -85,7 +96,10 @@ export function SignalScopeSwitcher({
       <button
         type="submit"
         disabled={selected === key(activeScope)}
-        className="min-h-10 rounded-full border border-[color:var(--border)] px-4 text-[13px] text-[color:var(--ink-soft)] disabled:opacity-40"
+        /* Pill radius inline: the global :focus-visible rule also sets
+           border-radius: 6px, which squared the pill on focus. */
+        style={{ borderRadius: "var(--radius-pill)" }}
+        className="min-h-[44px] border border-[color:var(--hairline)] px-4 text-[13px] text-[color:var(--ink-soft)] disabled:opacity-40"
       >
         Show
       </button>

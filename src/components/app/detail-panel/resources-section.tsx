@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   useCallback,
   useEffect,
@@ -46,6 +46,7 @@ const MAX_BYTES = 50 * 1024 * 1024;
  * on local disk for local-disk deployments.
  */
 export function ResourcesSection({ task }: { task: Task }) {
+  const reduceMotion = useReducedMotion();
   const me = useCurrentUser();
   const { toast } = useToast();
   const [items, setItems] = useState<DisplayRow[] | null>(null);
@@ -102,7 +103,9 @@ export function ResourcesSection({ task }: { task: Task }) {
           addedByUserId: me,
           addedAt: Math.floor(Date.now() / 1000),
         };
-        setItems((cur) => (cur ? [...cur, placeholder] : [placeholder]));
+        const placeholderTimer = window.setTimeout(() => {
+          setItems((cur) => (cur ? [...cur, placeholder] : [placeholder]));
+        }, 300);
 
         const fd = new FormData();
         fd.append("file", file);
@@ -110,6 +113,7 @@ export function ResourcesSection({ task }: { task: Task }) {
         startTransition(async () => {
           try {
             const result: UploadAttachmentResult = await uploadAttachmentAction(task.id, fd);
+            window.clearTimeout(placeholderTimer);
             // Refresh from server to get the canonical resource row.
             const rows = await listTaskResourcesAction(task.id);
             setItems(rows.map(toDisplayRow));
@@ -124,6 +128,7 @@ export function ResourcesSection({ task }: { task: Task }) {
               });
             }
           } catch (err) {
+            window.clearTimeout(placeholderTimer);
             console.warn("resources: upload failed; rolling back", err);
             setItems((cur) =>
               cur
@@ -176,12 +181,23 @@ export function ResourcesSection({ task }: { task: Task }) {
 
   const remove = useCallback(
     (row: RealRow) => {
-      setItems((cur) => (cur ? cur.filter((r) => r !== row) : cur));
+      let priorIndex = -1;
+      setItems((cur) => {
+        if (!cur) return cur;
+        priorIndex = cur.indexOf(row);
+        return cur.filter((r) => r !== row);
+      });
       startTransition(async () => {
         try {
           await removeResourceAction(row.id);
         } catch (err) {
           console.warn("resources: remove failed", err);
+          setItems((cur) => {
+            if (!cur || cur.some((item) => item.kind === "real" && item.id === row.id)) return cur;
+            const next = [...cur];
+            next.splice(Math.max(0, priorIndex), 0, row);
+            return next;
+          });
           toast(`Couldn't remove ${row.title}`, { tone: "error" });
         }
       });
@@ -338,7 +354,7 @@ export function ResourcesSection({ task }: { task: Task }) {
             disabled={linkPending}
             className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[11.5px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
           >
-            Add
+            {linkPending ? "Adding…" : "Add"}
           </button>
         ) : null}
       </div>
@@ -350,7 +366,7 @@ export function ResourcesSection({ task }: { task: Task }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
+            transition={{ duration: reduceMotion ? 0.08 : 0.12 }}
             className="pointer-events-none absolute inset-2 flex items-center justify-center rounded-lg border border-dashed border-ink-soft/40 bg-white/80 text-[12px] font-medium text-ink-soft backdrop-blur-sm"
           >
             Drop to attach
@@ -414,6 +430,7 @@ function RealResourceRow({
   row: RealRow;
   onRemove: () => void;
 }) {
+  const reduceMotion = useReducedMotion();
   const isUpload = row.resourceKind === "upload";
   // Upload rows link to the authenticated download route using the
   // attachment id derived from the resource id ('res-' prefix stripped).
@@ -426,10 +443,10 @@ function RealResourceRow({
   return (
     <motion.li
       layout="position"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0 }}
-      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px)" }}
+      animate={{ opacity: 1, transform: "translateY(0)" }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: [0.23, 1, 0.32, 1] }}
       className="group/resource flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-bg-sunken/60"
     >
       <ResourceGlyph row={row} downloadUrl={downloadUrl} />
@@ -513,13 +530,14 @@ function RealResourceRow({
 }
 
 function PendingRow({ row }: { row: PendingUploadRow }) {
+  const reduceMotion = useReducedMotion();
   return (
     <motion.li
       layout="position"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 0.75, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0 }}
-      transition={{ duration: 0.18 }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px)" }}
+      animate={{ opacity: 0.75, transform: "translateY(0)" }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: reduceMotion ? 0.1 : 0.18 }}
       className="flex items-center gap-2.5 rounded-md px-1.5 py-1.5"
     >
       <FileGlyph mimeType={row.mimeType} />
@@ -534,8 +552,8 @@ function PendingRow({ row }: { row: PendingUploadRow }) {
         </div>
       </div>
       <motion.span
-        animate={{ rotate: 360 }}
-        transition={{ duration: 0.9, ease: "linear", repeat: Infinity }}
+        animate={reduceMotion ? { opacity: 0.65 } : { rotate: 360 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 0.9, ease: "linear", repeat: Infinity }}
         className="inline-block h-[10px] w-[10px] flex-shrink-0 rounded-full border-2 border-brand/30 border-t-brand"
         aria-label="Uploading"
       />

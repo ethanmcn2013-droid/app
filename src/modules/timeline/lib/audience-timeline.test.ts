@@ -5,6 +5,7 @@ import {
   assertSourceProvenance,
   calendarDateInTimeZone,
   digestSourceFields,
+  endOfCalendarDayInZone,
   freezeAudienceItem,
   generateAudienceToken,
   hashAudienceToken,
@@ -206,4 +207,29 @@ test("source divergence never mutates the frozen public copy", () => {
     frozen.sourceDigest,
     digestSourceFields(changedSource),
   );
+});
+
+test("a link expiry ends at the publication's own midnight, never bare UTC", () => {
+  // Dublin observes IST (UTC+1) on 3 Oct 2026: local midnight is 22:59:59.999Z + 1ms.
+  assert.equal(
+    endOfCalendarDayInZone("2026-10-03", "Europe/Dublin").toISOString(),
+    "2026-10-03T22:59:59.999Z",
+  );
+  // Tokyo is UTC+9: the date ends nine hours before UTC midnight.
+  assert.equal(
+    endOfCalendarDayInZone("2026-10-03", "Asia/Tokyo").toISOString(),
+    "2026-10-03T14:59:59.999Z",
+  );
+  // UTC stays UTC.
+  assert.equal(
+    endOfCalendarDayInZone("2026-10-03", "UTC").toISOString(),
+    "2026-10-03T23:59:59.999Z",
+  );
+  // Dublin's DST fall-back night (25 Oct 2026): the day ends at GMT midnight.
+  assert.equal(
+    endOfCalendarDayInZone("2026-10-25", "Europe/Dublin").toISOString(),
+    "2026-10-25T23:59:59.999Z",
+  );
+  assert.throws(() => endOfCalendarDayInZone("not-a-date", "Europe/Dublin"));
+  assert.throws(() => endOfCalendarDayInZone("2026-10-03", "Not/AZone"));
 });

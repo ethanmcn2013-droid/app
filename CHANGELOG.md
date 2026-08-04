@@ -4,6 +4,724 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-04 · T·129 · ships · Home is the front door, and the signal lives there now
+
+**Signal leaves the product line, not the product.** Signal Studio now
+opens on Home: a calm page that answers one question — what matters
+now? Today's Signal sits at the top, at most three things the system
+can defend: the task that went past its date, the work due today, the
+thread that has sat still too long. Each one says why it surfaced,
+where it came from, and opens the real thing in one press. Below it, a
+restrained look at what's coming up and what's waiting for review.
+When nothing needs you, Home says so plainly, with the honest count of
+what it read — a quiet day is a result, not an empty screen.
+
+The full read is one press deeper. "Open full briefing" leads to the
+same briefing that used to live behind the Signal tab — the ledger, the
+evidence, the dismissals — now at home inside Home. Nothing was lost in
+the move: the same engine reads your workspace, the same arithmetic
+keeps the count honest, and every old Signal link, bookmark and email
+lands exactly where it should.
+
+The rail now reads Home · Notes · Tasks · Timeline · Project. Three
+products, each with one job — capture the thinking, move the work, make
+the plan visible — and a front door that tells you where to start.
+Signal was never really a place to work; it was the system's voice.
+Now it speaks first thing, where you arrive.
+
+**A full pass over the four products, holding every surface to the same
+standard: nothing on screen may claim what a click can't confirm.** The
+review copy now tells one story on one clock — every date, greeting,
+count and "overdue" mark across Notes, Tasks, Timeline and Signal is
+derived from the same pinned morning, so the same person reads the same
+week everywhere, including on a phone in another timezone. Signal's
+briefing arithmetic is honest end to end: the headline count, the cards
+below it, and the closing line all reconcile against the same list, and
+every claim survives its own click-through.
+
+The board took the founder's round. The sidebar says who you are once,
+not three times. The toolbar row keeps only the four controls that do
+something today — Filter, Sort, Save view, Share — and Save view now
+answers with a confirmation and a way back to what you saved. Each
+column's plus does the job its position implies: it adds a column, and
+columns can be renamed and recolored in place. The planning rail was
+redrawn from information-dense gray to a paper-and-hairline instrument
+with one indigo mark for where you stand. And the stray white seam
+through the black wordmark corner is gone.
+
+The shared board is now a finished artifact rather than a stripped app
+screen. It renders the owner's own columns — names, order, tint — with
+no dead controls; an owner following their own link gets a quiet way
+back to the workspace, a guest gets the workspace's name and a single
+honest invitation. Overdue dates are marked in the recipient's reading
+of the board, not the sender's software's.
+
+Under the hood, the keyboard finally gets the whole product: opening a
+task moves focus into the panel, Tab stays inside it while it's open,
+and closing it puts you back on the card you left. The shared board's
+columns scroll from the keyboard. Where a value is absent, the row says
+so to a screen reader instead of showing an unlabeled dash. Every one
+of these was measured in the running product before it was called done.
+
+## 2026-08-02 · T·127 · finishes · the artifact for the days that matter, and the template that points at one
+
+**The shared Timeline artifact repairs the three places it broke its own
+promise, and the rail's marks become a system.** On the wedding day the
+countdown now renders "Today" whole — every metric face declares a
+width class and is sized to fit its column by construction, so no value
+can clip at any width. The completed ink is drawn to the furthest
+completed dot instead of the abstract count percentage; the fill and
+the beads are one statement, on screen, on phones and in print. And a
+pasted link finally unfurls as the product: a data-free Geist card
+(wordmark, rail motif, one solid indigo mark) with viewer vocabulary —
+"A shared wedding timeline.", never "couple" as an adjective — mirrored
+into the Twitter tags that previously dropped the couple's names.
+
+A couple's artifact now opens on the countdown; progress-% stays one
+press away. The milestone marks read as four states with one grammar —
+quiet hairline rings ahead, solid beads settled, one full solid indigo
+mark for the next milestone at full strength (operator call: no hollow
+ring; a single once-only ring of light on load), and the same solid
+mark in ink when it runs late; the diagonal overdue tick is gone. The phone's vertical rail caps long empty calendar stretches
+through the same honesty mapping Today already rode, the Today chip
+negotiates for space like every label does, and hidden horizontal
+overflow earns edge fades and snap. Print grows a second page instead
+of losing six milestone titles: a ruled index of every milestone, and a
+static "22% complete · 79 days left" line where the click instruction
+used to print. Sharing prefers the platform share sheet, failure is
+visible (not screen-reader-only), and the footer attribution finally
+walks — "Made with Signal Timeline", the growth loop's missing link.
+
+The rail earns its cartography. First-of-month ticks ride the same
+distortion mapping as the milestones — the calendar and the dots can
+never disagree — and sit under the line as quiet mono capitals, sized
+to whisper. Long spans thin themselves to quarters, January carries
+the year, and every label knows when to yield: near the Today chip, at
+the rail's edges, and wherever a neighbour sits too close to read.
+The phone's vertical rail keeps the tick rhythm and drops the text.
+Around it the composition tightens — the journey breathes against the
+frame's edge, planning decisions settle full-width on their own soft
+rule, and the milestone detail closes with room to land.
+
+Owner surfaces catch up on honesty: Revoke and Unpublish take two
+presses with a named consequence, "Link live" only shows while a link
+actually works, link expiry ends at the publication's own midnight
+(never bare UTC), completed milestones lose their strikethrough,
+switching projects keeps edit mode, and the anchor countdown reaches
+tablets. The artifact's own contract test — previously wired to no
+gate and failing — is repaired, extended to the new invariants, and
+runs in `test:timeline-owner`. Names with extended-Latin glyphs stop
+falling back mid-headline (`latin-ext` ships), the artifact display
+register is ratified once as `--x-artifact-*` tokens, and the module
+sheds its orphaned dashboard-era files.
+
+The template points at the day. The wedding workspace now declares the
+one date a couple always knows, and its eight planning milestones carry
+offsets counted back from it: the venue booking most of a year out,
+headcount and suppliers in the last six weeks, the walkthrough and the
+run of show in the final week. Hand the seeding path that date and every
+milestone lands on a real day, so a first artifact opens with a
+countdown and real calendar spacing instead of flat ordinal order.
+Stated plainly: nothing in this app asks the question yet. The
+workspace-creation route that seeds a timeline has no entry point in
+this repo, so what ships now is the template, the resolver and its
+tests; the form that asks travels with that flow. `pnpm sync:templates`
+also generates the Timeline slice it always claimed to, so seeds can no
+longer drift from the canonical templates in silence.
+
+Both metric faces now state both facts: the countdown carries "2 of 9
+settled", so a couple who never presses the toggle still sees how far
+the plan has come. The milestone detail's status echo takes the rail's
+three diameters, not only its colours. Four modules left unused since
+the port from the standalone repo are resolved rather than left in
+limbo: the Timeline empty state now reads its copy from the module that
+owns it, and three dead files are gone, including a shared-update page
+model the artifact itself replaced. The full review that drove this
+cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+
+## 2026-08-01 · T·126 · holds · experience, then design, then utility
+
+**The product north star is written down where every session reads it.**
+The operator set the direction on 2026-08-01: three priorities govern
+everything front-facing — experience (considered end to end, delightful
+in the right moments), design (the standard of the best studios working
+today, nothing default), utility (understandable unaided by someone who
+has never used a project-management tool) — and when they pull against
+each other, that order decides. The register's own hierarchy (A1.1:
+creativity and emotion outrank restraint) stands beneath it untouched.
+
+Nothing new was invented to enforce it. The three priorities bind to
+machinery that already exists: the delight catalog gates the moments,
+the 9.5 quality council gate proves the finish, and the first-contact
+test names what intuitive means here. AGENTS.md carries the ambient
+copy; the durable record — with its ~six-month review date, next
+2027-02 — is `studio/content/hq/decisions/product-north-star.md`, so
+HQ surfaces the re-derivation when it falls due.
+
+Also repaired in passing: CLAUDE.md pointed design voice at
+`studio/docs/BRAND.md`, which studio marked v1 history on 07-31; it
+now points at the successor `studio/BRAND.md`.
+
+## 2026-07-31 · T·125 · restores · the working tools return to every view
+
+**Filter, sort and saved views are back on all four views — wider than
+before: filter by priority, by column, by owner by name, or by date —
+and the Share, export, print and calendar-subscribe cluster rides the
+view bar again.** The July interior consolidation shipped the approved
+composition but silently dropped the working layer around it: the tools
+band, per-row completion on the schedule and list, the list's inline
+priority and description line, the calendar's phone layout, and the
+guided first-run states. The 2026-07-31 capability audit wrote down
+every loss; this dispatch returns them all to the composition that
+shipped.
+
+The Filter panel admits four honest dimensions: priority, column (your
+real columns, by name), owner (the project's real members, by name,
+plus has-an-owner and unassigned), and date (overdue, due today, the
+next seven days, or explicitly unscheduled). Filters and sort apply to
+every view. The brief and planning rail deliberately keep whole-project
+numbers, so receipts never quietly shrink to a filtered subset — and
+when filters admit nothing, the view says so and offers the way back.
+Saved views close their loop inside the panel: save, reopen, delete —
+and a saved view now restores density along with everything else.
+
+The list regains per-row completion, inline priority, the description
+line under each title, and owners by name beside their initials. The
+schedule regains per-row completion in both the planned rows and the
+unscheduled tray. The calendar regains its phone layout — a fourteen-day
+list starting today — and a visible Subscribe button that copies the
+live calendar feed. An empty project greets you with the guided
+first-run state on every view instead of bare chrome.
+
+With the tools remounted, the last pre-consolidation view components —
+the dead list, calendar and schedule implementations, the retired
+export menu and the old room view bar — are deleted: 2,856
+lines of unreachable code gone, and the four views' behavior now has
+exactly one source.
+
+Verified live against the seeded project: every filter dimension
+narrowing the board and list, the sort and saved-view round trips,
+completion toggling from list and schedule rows and reverting cleanly,
+the subscribe toast, and the phone day-list at 375 px — plus the full
+gate chain and the materiality suite.
+
+## 2026-07-31 · T·124 · ships · money, narrowly
+
+**Your project now has one currency, one budget, and one honest sentence
+about both: "EUR 1,684 of EUR 50,000. 2 tasks costed, 24 without a
+price."** Task amounts have existed for a while — editable on the panel,
+exported to CSV — but nothing summed them, and every amount rendered as
+dollars regardless of what the operator meant. A euro wedding read as a
+dollar wedding.
+
+Settings gains a Money card: choose the project's currency (a label from
+a short list — nothing is ever converted) and set the budget you are
+working to, or leave it blank for no budget line. The brief restates the
+sum of what you entered, always leading with coverage, so a number never
+pretends to be a total when a third of the board is uncosted. Existing
+projects keep the USD label their amounts were entered under — relabelling
+stored numbers would change your claim, and the boundary this ships under
+forbids that: Tasks restates and sums what you entered; it never
+computes, forecasts, converts or publishes a financial claim, and money
+never appears on share links, print sheets, embeds or the public page.
+
+Migration 0026 adds the two columns; both are empty until you choose,
+and everything renders exactly as before until then.
+
+Verified by the formatter and coverage suites, the full gate run, and a
+live walk of the real flow: currency chosen in Settings, the brief
+re-reading in euros, and the coverage sentence rendering to the letter.
+
+## 2026-07-31 · T·123 · cuts · the contract slims to what the repo actually is
+
+**AGENTS.md drops from a drifted mix of rule-text, dead paths, and a
+retired ritual to a 75-line pointer that says what this repo is, names
+its two hard constraints, and sends everything else to its real source.**
+The GitHub repo renamed tasks→app today because the product suite's
+operating contract moved up to the workspace file — this repo's copy no
+longer needs to restate Signal HQ's sync rules, a `log-cycle`
+post-mortem, or a personal-portfolio origin story. It needs to say what
+this repo is (the unified app at `app.signalstudio.ie`, four modules,
+GitHub name `app`), keep the Next.js caveat and the URL and database
+release-gate contracts intact, and point at `studio/AGENTS.md` and the
+workspace `AGENTS.md` for the rest.
+
+CLAUDE.md is now a three-line pointer at `@AGENTS.md` and the real design
+sources (`ds-foundation`, `studio/docs/BRAND.md`) instead of a dead
+`~/Projects/personal` path. CODEX.md is deleted — Claude Code is the only
+agent on this repo now.
+
+Twenty dated one-off GTM artifacts — the eight `posts-week-N` drafts,
+both launch-day runbooks, the Product Hunt and Show HN drafts, the press
+list, the phase plan, the KPI log, the launch checklist, the GTM plan,
+and the venue-outreach doc — moved into `docs/archive/`, next to the
+review notes already there. `docs/data-model.md`'s "GTM roadmap state"
+row pointed at `roadmap_items`, a table migration `0023` dropped months
+ago; it now says so and points at the archived plan instead of a table
+that no longer exists. The contracts, the decisions log, the URL and
+naming rules, the collaboration loop, and the living founder backlog
+stayed where they are — nothing that's still true moved.
+
+Two closed-out worktree checkouts (`elegant-mcnulty-cfcf0d`,
+`modest-blackwell-100af5`) were retired from `.claude/worktrees/` — both
+PRs were already merged into `main`. `modest-blackwell-100af5` is fully
+deleted; `elegant-mcnulty-cfcf0d` is unregistered from git and emptied,
+but its top-level folder is held open by a process outside this
+session's reach and still needs a manual delete.
+
+No application code changed. `pnpm typecheck`, `pnpm lint`, `pnpm test`
+(402 tests), and `pnpm db:contract` (19 tests) all pass unchanged.
+
+## 2026-07-31 · T·122 · ships · done means one thing
+
+**Rename Done to "Handed over", add a "Paid" column that also counts as
+finished — and the board, the brief, the digest, the exports and Signal all
+agree, because every one of them now asks the same question.** Done used to
+be a bare text comparison scattered through roughly thirty modules, with the
+progress percentage computed in exactly one of them. Once columns became
+yours to shape, that arithmetic was one rename away from lying. Now the
+column menu carries "Counts as done", the config records which columns mean
+finished (always at least one), and a single predicate answers for every
+surface: cards, subtasks, blockers, My week, the project brief, printed
+lists, the share card image, nudges, project duplication, and both Signal
+providers.
+
+Completion also has a timestamp now. Every way a task can cross the line —
+the checkbox, a drag into a done column, a keyboard move, a repeat
+completing, even creating a task straight into Done — stamps
+`completedAt`, and reopening clears it. Signal read completion time by
+reconstructing it from the activity log and flagged what it could not
+prove; it now reads the stamp first, and migration 0025 backfilled the
+column from the log wherever the log could prove a moment, leaving the
+rest honestly empty rather than invented.
+
+Two quiet repairs shipped inside this: marking a claimed task done (or
+moving it between lanes) now clears its custom-column claim, so the card
+lands where the action said it would; and the cross-project "Your work"
+rollup still counts only the canonical Done lane — a custom done column
+is not reflected there yet, recorded as the one known edge.
+
+Verified by the predicate suite, a seeded-database migration test
+covering stale-event and claimed-task shapes, the full gate run, and
+production counts measured read-only before execution.
+
+## 2026-07-31 · T·121 · ships · the columns are yours
+
+**Your board's columns are now yours to shape — add one, rename it, describe
+it, colour it, give it a soft limit, move it, or delete it with its tasks
+moved where you choose — and every copy of your board says the same thing.**
+Since the T·99 port the live board drew five fixed columns from a constant
+while a complete column system sat unreachable in a component nothing
+imported. That system is back, rebuilt into the board people actually use.
+
+The header "+" now adds a column after the one you pressed it on, and a
+pinned control past the last column appends one, so adding a column no
+longer requires knowing it was impossible. The collapse caret and the
+column menu are always visible rather than appearing on hover, which
+touch screens do not have. Soft limits show amber at and over the line and
+never block a drop. Column colour previews at the tint the lane actually
+paints — a whisper, not a swatch of paint — and column hues no longer
+share variables with teammate avatar colours, so a colour means one thing.
+
+The same column set now reaches every copy of the board: the share link,
+the print sheet, the public embed, and the CSV and Markdown exports group
+and label by your columns, where they previously spoke a four-lane
+vocabulary the app itself had stopped using — a guest could read "Blocked"
+on a column the operator saw as "Queued". The Waiting column's raw-text
+persistence is retired by data migration 0024: rows move to a proper
+column claim with a canonical lane, affected projects are seeded a config
+naming Waiting, and the board renders identically before and after.
+
+Also in this release: deleting a task asks first, everywhere; the
+design-lab "in session" menu labels are gone; the list's subtask expander
+shows an honest completion ratio instead of blank rows; the Nudge dialog
+rides the card menu with sending still disabled until its backend exists;
+and the retired "Open the workspace" phrasing becomes "Open the project"
+on the last pages that carried it.
+
+Verified by the full gate run, the migration ledger suite applying 0023
+to a fresh database with all six receipt proofs passing, and production
+row counts measured read-only before execution. Honest edges: reordering
+tasks by position inside a custom column appends rather than honouring
+the drop position (system lanes honour it), and rows that already carried
+a fixture assignee id keep it until a separate cleanup sized by the same
+measurement.
+
+## 2026-07-31 · T·120 · cuts · one name per database, and the scaffolding nobody used is gone
+
+**Every database the app touches now has exactly one name, in code, in
+Vercel, and in CI.** Four generations of environment-variable conventions
+had accumulated — the same physical database answered to
+`SIGNAL_ANALYTICS_DATABASE_URL` in this repo, `ANALYTICS_TURSO_URL` in
+studio, and `TURSO_DATABASE_URL` in its legacy repo — and the
+worst-named pair pointed at different databases than their names
+suggested. The reset collapses all of it to `<MODULE>_DATABASE_URL` +
+`<MODULE>_AUTH_TOKEN` for tasks, notes, timeline, signal, and
+entitlements, retires the separate signal-prefs database by folding
+`user_preferences` into the Signal database, and drops the retired
+aliases (`STRIPE_PRICE_PRO_MONTHLY`, `NEXT_PUBLIC_TIMELINE_URL`, the
+`TURSO_*` fallbacks in the migration runner).
+
+The launch scaffolding that never launched is gone with it: the
+`/roadmap` GTM page, its sync/seed/parser machinery, the log-cycle
+leftovers, and the three tables behind them — verified empty in
+production and in both local databases before migration 0023 dropped
+them. The Notes, Timeline, and Signal modules also gain tracked
+baseline migrations generated from their live schemas, which closes a
+real gap: two production tables (`note_task_send_outbox`,
+`audience_view_receipts`) existed in no migration file anywhere until
+today.
+
+Verified by the full db:contract gate (19 checks, including the
+amended durable baseline proof), typecheck, lint, and the test suite.
+Honest edge: this entry ships with the coordinated cutover — new
+databases created from the fresh baselines, environment variables
+replaced in Vercel and GitHub Actions, and a new execution receipt for
+the new database identity — so it lands together with that deploy, not
+before it.
+
+## 2026-07-31 · T·119 · tightens · the assign menu offers your project's people, not the design lab's
+
+**Assigning work now offers the people who are actually in your project, and
+their avatars render on every view.** Since the T·99 port, the mounted views
+resolved people from a design-lab registry that production never filled. The
+fallback was the lab's fixture roster: the assign menu listed eight invented
+teammates, choosing one stored a fixture id on the task, and a real member's
+id never resolved — so real assignees rendered as nothing on cards, list rows,
+schedule rows, and calendar chips.
+
+Members now resolve server-side from the project's membership (owner first,
+then A–Z, with each member's own colour and initials) and hydrate the views on
+first paint. The fixture roster is confined to the design lab: once the live
+mount sets the registry, it is authoritative, and an empty roster reads as
+empty rather than borrowing fake people. Unknown live tags now render as
+neutral chips under their own names for the same reason.
+
+Verified by a registry regression test (fixtures never leak past a set
+registry) and the full gate run. Honest edges: a task that already carries a
+fixture id from the affected window keeps it until the Phase 2 data pass
+measures and clears those rows, and a task assigned to someone who has since
+left the project shows no avatar rather than a guess.
+
+## 2026-07-30 · T·118 · tightens · the switcher check waits for the page to exist before reading it
+
+**T·117 fixed a real staleness gap in the project switcher but did not end the
+intermittent failure, and the trace it enabled showed why.** At the moment of
+failure the navigation had already committed, the document title read the new
+project, and the page body was still empty. The switcher was not showing the
+wrong project. It was not mounted yet.
+
+That is a cold render of a route the run has not visited before, and on a
+slower machine it can outlast the default eight second budget. The check now
+waits for the page itself to be present before asking what the switcher says,
+with a budget suited to a first render. T·117 also tightened that assertion
+from fifteen seconds to the default while restoring exact matching, which made
+the failure more likely rather than less; that is corrected here.
+
+The evidence came from the trace upload T·117 added. Three sessions had
+debugged this from a single line of error text because the artifacts were
+written and then discarded. The first failure after they were retained was
+diagnosed in one read.
+
+Verified locally at two runs per screen size, sixteen of sixteen green, and the
+experience registry validates clean.
+
+## 2026-07-30 · T·117 · tightens · the project switcher stops disagreeing with the page it is on
+
+**The Timeline switcher took its label from the server while the address bar
+changed instantly, so for a moment the URL said one project and the switcher
+said another.** It now reads the project from the route, which makes it correct
+the moment a switch commits.
+
+This surfaced as a test that failed on a different screen size every run and
+cost several full CI reruns. Two earlier attempts adjusted the assertion, which
+was the wrong instinct: the assertion was fine and the product had a real gap.
+`router.push` updates the URL before the new server payload arrives, and the
+switcher rendered from a prop that arrived with that payload, so it kept
+displaying the previous project until the round trip finished. Resolving the
+label from the route param closes the window. The switcher is now the fastest
+part of the switch rather than the slowest, and the check that used to need
+fifteen seconds finishes in under two.
+
+The test keeps its keyboard path and drops the assumption underneath it. It
+pressed an arrow key and trusted that the wanted project sat exactly one place
+below the focused one; it now asserts where the key landed before committing,
+so a reordered menu fails naming the ordering rather than as a wrong
+destination. An attempt to move focus directly was tried and reverted: the menu
+owns focus through its own effect, so a direct focus call is overridden and the
+selection silently goes to the wrong project. That failure is why this was run
+locally rather than reasoned about.
+
+One supporting change. The switcher suite's Playwright traces were being
+written on every failure and never uploaded, so each CI failure produced one
+line of output and nothing to read; they are now retained as evidence. That
+gap is why this took three attempts to diagnose.
+
+Retries on CI were tried and deliberately left out. The shared Playwright
+config is hashed into every materiality receipt, so adding a single line to it
+invalidated fifteen of them and would have required a full re-attestation run.
+That is a fair price for a change that improves the product and a poor one for
+a convenience setting, particularly now the race is fixed at its source.
+
+Verified by running the suite locally four times per screen size, thirty-two of
+thirty-two green, having first reproduced the failure deterministically on all
+four. Typecheck clean, the full test suite green, lint with no errors, and the
+production build passing.
+
+## 2026-07-30 · T·116 · ships · a shared board stops hiding the work parked in Waiting
+
+**Anything sitting in the Waiting column was invisible on every share link,
+every printed board and every public embed, and nothing said so.** A client
+opening a board you sent them saw four columns and no indication that a fifth
+existed. All three surfaces now render every column the board actually holds.
+
+The cause is a seam. The board runs a five-status model against a schema with
+four canonical lanes, so the fifth status is written as raw text into the lane
+column. The share, print and embed views each iterated the canonical four and
+grouped on an exact match, so a task in the fifth simply matched nothing and
+fell out. It did not error and it did not warn. On a guest-facing surface that
+is data loss, and it was the kind you only find by counting.
+
+Lane resolution for those three surfaces now lives in one place. Canonical
+lanes keep their order and their colour. Any other lane the data contains is
+appended in a stable order and rendered neutral, which is the same no-tint
+treatment custom columns already get inside the app, so an unrecognised column
+reads as a real column rather than borrowing a meaning it has not earned. Its
+name is derived from the stored value, so Waiting reads "Waiting".
+
+Eight tests pin the behaviour, including the one that matters: a task in a
+non-canonical lane must appear. This is the guest-facing half of the column
+work. The board's own column system is still the design-lab prototype and is
+addressed separately.
+
+Verified: typecheck clean, the full test suite green, lint with no errors, and
+the production build passing. No schema change and no migration; this is a
+render fix over data that was already stored.
+
+## 2026-07-30 · T·115 · cuts · the sidebar stops saying the same thing twice
+
+**The left column said "Signal Studio", then "Tasks", directly under a bar that
+already said Tasks, and then offered two rows that answered the same question.**
+It now opens on Inbox, My work and your projects. Nothing was added.
+
+"Assigned to me" and "My work" pointed at two routes that return the same list
+for anyone working alone or in a pair, which is most of this product's use. One
+row goes; the route stays live as a URL. Saved views leaves the column too, on
+the grounds that a saved view is made in the view bar and belongs per project,
+so having the create control in one place and the read control in another was
+the actual problem. Archived was sitting at the same level as live work while
+already appearing at the foot of the projects tree, so the promoted copy goes.
+The uppercase "PROJECTS" heading stays in the document outline for screen
+readers and leaves the visual field, which was carrying three typographic
+assertions in a 200px column before a single project name.
+
+The view bar loses its dead control. Fields configures list columns, and on
+every other view it rendered greyed out, so the board, which is the view you
+land on, shipped a disabled button in prime space. It now renders only on the
+list, where it does something.
+
+One test repair rides along. The Timeline project switcher smoke has been
+failing intermittently on main, on a different viewport each run, which is the
+signature of a race rather than a regression. Its final assertion matched the
+switcher by exact accessible name, so it asserted the punctuation of the whole
+label alongside the project and reported any difference as "element not found".
+It now matches by project name, the same way the rest of the file does, which
+proves the same thing without the brittleness.
+
+Verified: typecheck clean, the full test suite green, lint with no errors, and
+the production build passing. No board, column, task, or data behaviour changed
+in this release, and no migration was needed.
+
+## 2026-07-30 · T·114 · ships · the project name you type is the one everyone reads
+
+**The title and description above your board were being saved to your own
+browser, so nobody else ever saw them, and the product called the same thing a
+Workspace in one place and a Project in another.** Both are fixed. The
+supporting line now lives on the project record, the title commits through the
+rename the server already had, and the word "Workspace" is gone from every
+surface a person reads.
+
+The description was the worse of the two. It was written to localStorage under
+a key built from the project's *display name*, which meant three things at
+once: a collaborator opening the same board saw a sentence the owner had never
+written, two projects that happened to display the same name shared one
+description, and renaming a project orphaned the text with no way back.
+Migration `0022_workspaces_description` adds a nullable column to hold it. The
+old values cannot be recovered from the server because they only ever existed
+in each browser, so the first load of this release promotes whatever that
+browser still holds, once, and only into a field the server has no value for.
+The server always wins. The old default sentence is never promoted, because a
+line every project shipped with was never the owner's own.
+
+The title had a quieter version of the same fault. `renameBoardAction` and the
+per-project name record already existed and were already correct; the brief
+simply shadowed them with the local copy. It now renders and commits the
+stored value, so the name on the board, on a share link, in the print view and
+in the daily digest are the same name.
+
+On the naming: D-011 ratified "Projects = Tasks workspaces" on 2026-07-21 and
+it had not landed. The crumb above the title read "Workspace ›", a hardcoded
+literal that was neither a link nor a real hierarchy. It is gone, and nothing
+replaces it. The leak came from one line in the vocabulary map, where the
+generic context still answered "Workspace" while every other context was
+already right. A contract test now fails the build if any component writes the
+noun into JSX text, `aria-label`, `title`, `placeholder` or `alt`, with the
+vocabulary map as the only allowed source. That test immediately found fifteen
+more instances a manual search had missed, in Notes, Timeline, Signal, the
+share email and the onboarding picker, all now corrected. The share email's
+"Open the workspace" was BRAND.md §6.5's ratified call to action and now reads
+"Open the project"; §6.5 needs the same amendment.
+
+Editing is signalled by the caret and a hairline under the baseline rather
+than the full inset box the heading used to grow on hover, which read as a
+text input in costume. An empty description clears the record and shows its
+placeholder instead of storing the placeholder as though someone had typed it.
+The dead `room-brief.tsx`, which held the correct crumb-free header from T·94
+and was never rendered, is deleted.
+
+Verified: the migration contract at 19 of 19 with the new migration executed
+and its three proofs checked against a fresh database, typecheck clean, the
+full test suite green, lint clean, and the production build passing. No board,
+column, task, or data behaviour changed in this release.
+
+## 2026-07-30 · T·113 · tightens · the frame puts the command where the work begins
+
+**The black Signal Studio frame now reads as one deliberate command surface
+instead of a header and rail competing for attention.** Search moves to the
+left edge of the working canvas, New task closes the bar as the single light
+action, and the current product is held by one quiet indigo plate rather than
+an icon nested inside another tile. The product order, charcoal chassis,
+workspace geometry, and keyboard behavior stay fixed.
+
+The lower rail now keeps Updates, Help and account at rest. Help retains the
+existing workspace, team, account-settings and support paths, so reducing the
+visible controls does not remove a destination. No board, list, schedule,
+calendar, sidebar, data, or task behavior changed in this release.
+
+## 2026-07-30 · T·112 · tightens · tap targets stop inheriting the 80px spacing step
+
+**Every control that asked for the 44px touch minimum was rendering at 80px, and
+on a phone the Studio Bar wordmark was an 80px box inside a 56px bar.** The suite
+design tokens remap Tailwind's numeric spacing namespace: `src/ds/tokens.css`
+sets `--space-11: 80px` and `src/ds/tailwind.css` maps `--spacing-11` onto it, so
+`min-h-11` resolves to 80px rather than the 44px the idiom means in stock
+Tailwind. Forty-six index-11 sizing utilities across twelve files now carry
+explicit `[44px]` values, variant prefixes intact.
+
+Measured on the review server with Playwright at 390x844 and 1280x800: of 124
+control instances carrying an index-11 sizing utility, 72 sat at
+`min-height: 80px`. Afterwards, none exceed 44px. The suite menu rows went from
+194x80 to 194x44, the Studio Bar create button and account avatar from 80x80 to
+44x44, and the Timeline owner mode nav from 80px segments to 44px ones beside the
+44px primary button they already sat next to.
+
+The trap was armed in the governance layer too, which is why it survived so long.
+`scripts/check-chrome-contract.mjs` asserts the Studio Bar contains `h-10` with
+the message "slim 40px bar" while that token computes to 64px, and the bar
+measures 1280x64. Two accessibility contract tests asserted `min-h-11` and
+`pointer-coarse:h-11` under messages promising 44px. Those assertions now name
+the literal 44px, so a token whose value drifts can no longer pass a green gate.
+`scripts/check-tap-target-scale.mjs` joins `pnpm test` and fails the build on any
+new index-11 sizing utility, carrying a shrink-only ledger for the one Signal
+file left out of this pass.
+
+Two things are deliberately unfixed. The Studio Bar shell keeps `md:h-10`,
+because dropping the shell to a literal 40px while its own contents are still
+inflated by the same remap leaves those controls flush against the bar edges;
+shell and contents have to move together. And the wider divergence stands:
+indices 7 through 12 are remapped while 13 and up fall through to stock Tailwind,
+so `p-10` and `p-16` both mean 64px and `min-h-11` is larger than `min-h-16`.
+Un-remapping resizes roughly 501 uses across 108 files here, and Notes, Timeline
+and Signal vendor the same tokens. `docs/SPACING_SCALE_COLLISION.md` carries the
+compiled evidence and the proposed fix in the design system repo.
+
+One site is deferred rather than fixed. `/invite/[token]` is a critical-tier
+reviewed surface, and `experience/registry.json` pins a materiality hash for it,
+so changing the source requires an evidence-backed refresh signed by the design
+owner. That is not a review to self-attest, so its disabled demo-mode Accept
+invite button stays at 80px and is recorded in the gate's outstanding ledger for
+a pass that carries the review. The ledger only shrinks, and it fails the build
+if a listed file gets worse or becomes clean without the entry being removed.
+
+T·110 reached the same diagnosis independently, on the same day, and landed the
+mobile chrome half of it first. This entry keeps its bar-avatar treatment, which
+is better than the one written here: 32px of visible avatar with a transparent
+ring carrying the pointer target out to 44px, rather than a 44px circle that sits
+heavy in a 56px bar. What T·110 scoped to phone widths is now carried across the
+coarse-pointer variants too, since 44px is the floor wherever the pointer is
+coarse, not only below the medium breakpoint.
+## 2026-07-30 · T·111 · ships · the briefing shows its working, and a task keeps its own words
+
+**Signal now says how much it read, how much crossed a rule, and how much it
+cleared, and the arithmetic closes in front of the reader.** The read used to
+publish a numerator and ask to be trusted for the rest: three findings, no
+denominator. Every row now carries the pile it came from, drawn beside the
+headline in three weights, lit for what is on screen in that row's own tone,
+mid for work that crossed a rule but lost its slot, ghost for what cleared.
+Held-back work is never counted as clear, synthetic cluster rows are never
+counted as source items, and the contract enforces those invariants itself
+rather than trusting its callers. The close ends on a sentence and a green
+mark for the rest.
+
+Rows are grammatical again. A task title is the reader's own words, so it is
+now a headline and never a clause: "Approve the final seating plan" over "Two
+days past its date", where the page used to compose "Approve the final seating
+plan is 2 days overdue" out of an imperative. The same rule reaches upstream
+blockers, which are stripped of borrowed punctuation and counted rather than
+named when a question or a shout cannot sit inside a sentence. Every "Why
+this" names the rule that fired and then adds a fact the row had no room for,
+instead of restating it. Sections are Now and Next, each row sits on the
+hero's three columns with its action at the right edge, and the tone is
+present at rest rather than only under a pointer.
+
+Underneath, the read runs on the suite's pinned review clock instead of a
+day of its own, the honest loading skeleton is finally mounted and traces the
+settled page band for band, and every control is a real 44px rather than the
+80px `min-h-11` silently resolves to on this scale. Honest edge: the ordinal
+rail carries a number, not the hero's NOW/NEXT claim word, because the section
+headings already say it once; and the unmounted analytics shell is untouched,
+still awaiting its wire-or-retire decision.
+## 2026-07-30 · T·110 · tightens · the app chrome holds its own bounds on a phone
+
+**On a phone, the Studio Bar now keeps its controls inside the bar, and the in
+development notice sits above the product rail instead of across it.** The
+account avatar, the create button, and the product wordmark were each drawing at
+80px inside a 56px bar. The avatar read as a large black circle clipped by the
+right edge; the other two spilled invisible tap targets over the canvas below.
+The notice pill covered the Notes, Tasks, Timeline, and Signal tabs.
+
+One cause sat under all of it. The suite spacing scale is semantic, not derived
+from pixels: step 11 is 80px, not 44px. Chrome written as "the 44px touch step"
+therefore came out nearly twice its intended size. Sizes that have to land on
+real pixels are now written in pixels, with the reason recorded beside them.
+
+The notice measures the rail it has to clear rather than guessing at it, so it
+holds its place across both mobile rails and inside the phone's safe area.
+Desktop and tablet are untouched, byte for byte.
+
+## 2026-07-29 · T·109 · tightens · every task movement explains what changed
+
+**Tasks now keeps the work visibly continuous when it opens, moves, settles,
+saves, completes, or fails.** Board, List, Schedule, Calendar, the planning
+rail, project navigation, task detail, creation, menus, comments, resources,
+and feedback now share one restrained interaction grammar. The source task
+stays marked while its inspector is open, focus returns to that exact source
+when the inspector closes, placement resolves in the final slot, and pending
+feedback waits long enough to avoid flashing during fast saves.
+
+The 106-moment interaction ledger is enforced as a decision system rather than
+an invitation to animate every control. Keyboard movement, route changes,
+writing, density changes, and repeated data entry remain immediate. Reduced
+motion removes spatial travel while preserving state, errors restore the exact
+optimistic slot they displaced, and the only expressive treatment is a local,
+once-only first completion receipt.
+
+Two product models remain deliberately separate from this motion release:
+production tag editing and the Schedule first-open/range orientation contract.
+Both are recorded as a founder follow-up that Codex or Claude can complete in a
+later cycle. Direct manipulation is implemented, but production approval still
+requires a physical touch-device drag and resize pass.
+
 ## 2026-07-29 · T·108 · ships · the note stays in sight while the work moves
 
 **Notes now keeps a private thought visibly continuous as it becomes a saved

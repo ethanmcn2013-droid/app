@@ -21,18 +21,20 @@
 [data-timeline-module] .tl-skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    var(--bg-deep) 25%,
-    var(--bg-elev) 50%,
-    var(--bg-deep) 75%
+    var(--paper-deep) 25%,
+    var(--paper) 50%,
+    var(--paper-deep) 75%
   );
   background-size: 200% 100%;
-  animation: tl-skeleton-shimmer-anim 1.4s ease-in-out infinite;
+  /* Rides the canonical loading-system pulse (globals.css) so every
+     skeleton in the suite breathes at one tempo. */
+  animation: tl-skeleton-shimmer-anim var(--load-pulse-duration, 1.8s) ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-timeline-module] .tl-skeleton-shimmer {
     animation: none;
-    background: var(--bg-deep);
+    background: var(--paper-deep);
   }
 }
 
@@ -75,7 +77,7 @@
 
 /* A reordered row settles at its destination instead of teleporting. */
 [data-timeline-module] .tl-settle {
-  animation: tl-settle 400ms var(--ease-out);
+  animation: tl-settle var(--motion-slow) var(--ease-out);
 }
 
 /* Fold/collapse for <details> — CSS-only via interpolate-size; browsers

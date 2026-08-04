@@ -13,7 +13,7 @@ import {
 /**
  * Signal preferences helpers — ported from signal/src/lib/preferences.ts.
  *
- * S2 env rename: DB client is now signal-prefs-client (SIGNAL_PREFS_* vars).
+ * 2026-07-31 reset: prefs live in the Signal database (signal-prefs-client is a shim).
  * unsubscribeByToken / lookupByToken kept for fidelity; unused in the host
  * (email unsubscribe stays on the old deployment per S3).
  */

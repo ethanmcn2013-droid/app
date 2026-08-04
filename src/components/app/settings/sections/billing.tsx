@@ -36,7 +36,7 @@ const TIER_META: TierMeta[] = [
     id: "free",
     label: "Free",
     price: "€0",
-    blurb: "One workspace. All four products. Three editing guests.",
+    blurb: "One workspace. All three products. Three editing guests.",
     features: [
       "One workspace",
       "Board, list, calendar, and timeline views",
@@ -49,12 +49,12 @@ const TIER_META: TierMeta[] = [
     id: "workspace",
     label: "Workspace",
     price: "€12 / mo",
-    blurb: "Unlimited workspaces. Unlimited guests. All four products.",
+    blurb: "Unlimited workspaces. Unlimited guests. All three products.",
     paidTier: "workspace",
     features: [
       "Unlimited workspaces",
       "Unlimited guests and collaborators",
-      "All four products, Tasks, Roadmap, Analytics, Notes",
+      "All three products — Notes, Tasks, Timeline — with the daily briefing in Home",
       "Recurring tasks, blockers, NLP dates",
     ],
     selfServe: true,

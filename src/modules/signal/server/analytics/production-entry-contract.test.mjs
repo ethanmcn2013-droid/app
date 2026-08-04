@@ -122,5 +122,43 @@ test("Signal loading and disclosure controls announce their state", () => {
   assert.match(loading, /Building your Signal briefing/);
   assert.match(briefingLedger, /aria-controls=\{panelId\}/);
   assert.match(briefingLedger, /id=\{panelId\}/);
-  assert.match(briefingLedger, /min-h-11/);
+  // Touch targets are pinned by their real height. `min-h-11` used to stand
+  // here, but this design system maps --space-11 to 80px, so the class
+  // silently produced an 80px band rather than the 44px minimum it implies.
+  assert.match(briefingLedger, /min-height:\s*44px/);
+  assert.doesNotMatch(briefingLedger, /min-h-11\b/);
+});
+
+test("the ledger reveals itself without waiting for hydration", () => {
+  // An `initial="hidden"` motion variant ships the whole ledger at opacity 0
+  // and reveals it on hydration, so the honest skeleton hands off to a blank
+  // page. The entrance must be CSS on server-rendered markup instead.
+  assert.doesNotMatch(briefingLedger, /initial="hidden"/);
+  assert.match(briefingLedger, /@keyframes signal-rise/);
+  assert.match(
+    briefingLedger,
+    /prefers-reduced-motion: reduce[\s\S]*animation: none/,
+  );
+});
+
+test("the primary action reports its own busy state without dropping focus", () => {
+  assert.match(briefingLedger, /useFormStatus/);
+  // `aria-disabled`, never `disabled`: a disabled control drops keyboard
+  // focus to <body> and the reader loses their place mid-briefing. The
+  // click guard is what actually prevents the second submit, and a polite
+  // status is the announcement a disabled button can never make.
+  assert.match(briefingLedger, /aria-disabled=\{pending\}/);
+  assert.doesNotMatch(briefingLedger, /\sdisabled=\{pending\}/);
+  assert.match(briefingLedger, /if \(pending\) event\.preventDefault\(\)/);
+  assert.match(briefingLedger, /role="status"[\s\S]*aria-live="polite"/);
+});
+
+test("the entrance never fades, so the frame after the skeleton is content", () => {
+  // An opacity ramp leaves the handoff frame white for the whole stagger.
+  // The rise animates transform only.
+  const keyframes = briefingLedger.match(
+    /@keyframes signal-rise \{[\s\S]*?\n\}/,
+  );
+  assert.ok(keyframes, "signal-rise keyframes must exist");
+  assert.doesNotMatch(keyframes[0], /opacity/);
 });

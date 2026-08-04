@@ -1,5 +1,5 @@
-import { LANES, LANE_ORDER, PRIORITY_LABEL, type Task } from "@/lib/data";
-import { groupTasksByLane } from "@/lib/tasks/selectors";
+import { PRIORITY_LABEL, type Task } from "@/lib/data";
+import { publicColumnTasks, type PublicColumn } from "@/lib/public-board-lanes";
 
 function formatDue(due: string | null | undefined): string {
   if (!due) return "";
@@ -8,15 +8,15 @@ function formatDue(due: string | null | undefined): string {
 
 export function PrintBoard({
   tasks,
+  columns,
   workspaceName,
   generatedAt,
 }: {
   tasks: Task[];
+  columns: PublicColumn[];
   workspaceName: string;
   generatedAt: string;
 }) {
-  const grouped = groupTasksByLane(tasks);
-
   return (
     <div className="print-view print-board">
       <div className="print-doc-header">
@@ -25,18 +25,17 @@ export function PrintBoard({
       </div>
 
       <div className="print-board-grid">
-        {LANE_ORDER.map((laneId) => {
-          const lane = LANES[laneId];
-          const laneTasks = grouped[laneId];
+        {columns.map((column) => {
+          const laneTasks = publicColumnTasks(tasks, column.id);
           return (
-            <div key={laneId} className="print-board-lane">
+            <div key={column.id} className="print-board-lane">
               <div className="print-lane-header">
                 <span
                   className="print-lane-dot"
-                  style={{ background: lane.dot }}
+                  style={{ background: column.accent ?? "currentColor" }}
                   aria-hidden
                 />
-                <span className="print-lane-name">{lane.name}</span>
+                <span className="print-lane-name">{column.name}</span>
                 <span className="print-lane-count">{laneTasks.length}</span>
               </div>
               <div className="print-lane-cards">

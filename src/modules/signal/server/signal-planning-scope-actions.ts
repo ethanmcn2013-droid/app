@@ -31,7 +31,7 @@ export async function setSignalScope(formData: FormData): Promise<void> {
     if (kind === "workspace" && id) params.set("workspaceId", id);
     else if (kind === "planningPeriod" && id)
       params.set("planningPeriodId", id);
-    redirect(`/app/signal?${params.toString()}`);
+    redirect(`/app/home/briefing?${params.toString()}`);
   }
 
   const { userId } = await auth();
@@ -87,5 +87,5 @@ export async function setSignalScope(formData: FormData): Promise<void> {
   const params = new URLSearchParams({ contextVersion: "2" });
   if (scope.kind === "workspace") params.set("workspaceId", scope.workspaceId);
   else params.set("planningPeriodId", scope.planningPeriodId);
-  redirect(`/app/signal?${params.toString()}`);
+  redirect(`/app/home/briefing?${params.toString()}`);
 }

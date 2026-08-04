@@ -10,6 +10,7 @@
 
 import { cache } from "react";
 import { eq, and, asc, desc, lte, gte, ne, sql, like } from "drizzle-orm";
+import { applyTemplateAnchor } from "../../lib/template-anchor";
 import { db } from "./timeline-client";
 import {
   workspaces,
@@ -236,6 +237,7 @@ export async function createWorkspace({
 export async function seedWorkspaceFromTemplate({
   workspaceSlug,
   template,
+  anchorDate,
 }: {
   workspaceSlug: string;
   template: {
@@ -247,10 +249,19 @@ export async function seedWorkspaceFromTemplate({
         description: string;
         status: "shipped" | "in-flight" | "next" | "waiting" | "refused";
         targetDate?: string;
+        anchorOffsetDays?: number;
       }>;
     };
   };
+  /**
+   * The day the plan points at, when the template declared an anchor and the
+   * owner supplied it. Absent or unparseable, the items seed undated and the
+   * workspace behaves exactly as it did before templates could be anchored.
+   */
+  anchorDate?: string | null;
 }): Promise<{ projectCount: number; itemCount: number }> {
+  const items = applyTemplateAnchor(template.roadmap.items, anchorDate);
+
   // Wrap in a transaction so a partial failure leaves the workspace
   // un-seeded for a clean retry rather than half-populated.
   await db.transaction(async (tx) => {
@@ -270,9 +281,9 @@ export async function seedWorkspaceFromTemplate({
       );
     }
 
-    if (template.roadmap.items.length > 0) {
+    if (items.length > 0) {
       await tx.insert(tasks).values(
-        template.roadmap.items.map((it, i) => ({
+        items.map((it, i) => ({
           id: `${workspaceSlug}-${it.projectSlug}-${String(i + 1).padStart(3, "0")}`,
           projectSlug: it.projectSlug,
           workspaceSlug,
@@ -288,7 +299,7 @@ export async function seedWorkspaceFromTemplate({
 
   return {
     projectCount: template.roadmap.projects.length,
-    itemCount: template.roadmap.items.length,
+    itemCount: items.length,
   };
 }
 

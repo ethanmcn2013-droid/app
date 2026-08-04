@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useRef,
@@ -32,6 +32,7 @@ export function Popover({
   "aria-label"?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
@@ -67,16 +68,16 @@ export function Popover({
         {open ? (
           <motion.div
             ref={popRef}
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
+            animate={{ opacity: 1, transform: "scale(1)" }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
+            transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               "absolute z-50 mt-1.5 rounded-lg border border-line bg-white p-1 shadow-[0_18px_44px_-16px_rgba(20,21,26,0.22),0_0_0_1px_rgba(20,21,26,0.04)]",
               align === "end" ? "right-0" : "left-0",
               className,
             )}
-            style={{ width }}
+            style={{ transformOrigin: align === "end" ? "top right" : "top left", width }}
             role="dialog"
             aria-label={ariaLabel}
           >

@@ -98,8 +98,9 @@ export const mockSource: DataSource = mockSourceWith({
  *
  * Derivation rules:
  *  - `blocked` is NOT lane-derived. A task is `blocked` when
- *    `blockedBy.length > 0 && lane !== "done"`. Tasks models blocking
- *    via the `blockedBy` array, not via a lane. Applied in deriveStatus.
+ *    `blockedBy.length > 0` and the lane hasn't reached done. Tasks
+ *    models blocking via the `blockedBy` array, not via a lane. Applied
+ *    in deriveStatus.
  *  - `refused` does not materialize from Tasks's data, Tasks has no
  *    rejected/cancelled state. Triggers must not assume it appears in
  *    real WorkRead snapshots from tasksDbSource.

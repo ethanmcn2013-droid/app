@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tasks-review",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "--port", "3210"],
+      "port": 3210,
+      "env": {
+        "NEXT_PUBLIC_SIGNAL_ACCESS_MODE": "review"
+      }
+    }
+  ]
+}

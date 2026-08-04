@@ -2,6 +2,7 @@
 
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
 import {
@@ -92,6 +93,81 @@ export async function updateWorkspaceAction(input: {
     // tasks-changed event and revalidates /app.
     await seedDomainAction(input.domain);
   }
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/** Maximum stored length of the project's supporting line. The brief renders
+ *  it on one line under the title; longer text is the task detail's job. */
+const PROJECT_DESCRIPTION_MAX = 200;
+
+/**
+ * Set (or clear) the active project's supporting line — the sentence under
+ * the title in the brief (T·114).
+ *
+ * Before this action the text lived in localStorage keyed by *display name*,
+ * so it was invisible to collaborators, lost on rename, and shared between
+ * two projects that happened to display the same name. Storing it on the
+ * workspace row makes it one value that every reader sees.
+ *
+ * An empty string clears the column back to NULL, which is what makes the
+ * brief show its placeholder again rather than an empty line.
+ */
+export async function setProjectDescriptionAction(
+  description: string,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  const trimmed = description.replace(/\s+/g, " ").trim();
+  if (trimmed.length > PROJECT_DESCRIPTION_MAX) {
+    throw new Error(
+      `Keep the description under ${PROJECT_DESCRIPTION_MAX} characters.`,
+    );
+  }
+  await db
+    .update(workspaces)
+    .set({ description: trimmed.length > 0 ? trimmed : null })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set the project's one currency label (T·124). A curated ISO code or
+ * null to return to the USD default the existing amounts were entered
+ * under. A label only — nothing is converted.
+ */
+export async function setProjectCurrencyAction(
+  currency: string | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (currency !== null && !isProjectCurrency(currency)) {
+    throw new Error("Choose one of the supported currencies.");
+  }
+  await db
+    .update(workspaces)
+    .set({ currency })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set (or clear) the operator's budget for this project, in integer
+ * cents (T·124). Restated and summed against — never computed from.
+ */
+export async function setProjectBudgetAction(
+  budgetCents: number | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (budgetCents !== null) {
+    if (!Number.isInteger(budgetCents) || budgetCents < 0 || budgetCents > 9_999_999_999) {
+      throw new Error("Budget must be a whole amount in range.");
+    }
+  }
+  await db
+    .update(workspaces)
+    .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
+    .where(eq(workspaces.id, ws));
   revalidatePath("/app", "layout");
   return { ok: true };
 }

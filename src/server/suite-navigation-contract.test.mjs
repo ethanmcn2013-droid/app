@@ -46,6 +46,7 @@ const taskCalendarStyles = read(
 const studioBar = read("src/components/studio-bar/studio-bar.tsx");
 const studioChrome = read("src/components/studio-bar/studio-chrome-context.tsx");
 const studioRail = read("src/components/studio-bar/studio-rail.tsx");
+const signalShell = read("src/components/studio-bar/signal-shell.module.css");
 const contextHook = read("src/components/app/use-suite-context.ts");
 const userButton = read("src/components/app/user-button-with-suite.tsx");
 const notesPage = read("src/modules/notes/app/page.tsx");
@@ -101,12 +102,18 @@ test("Tasks owns the same product-specific document title as its siblings", () =
   );
 });
 
-test("the product rail derives ownership and carries allowlisted context hints", () => {
-  assert.match(studioRail, /productIdFromAppPath\(pathname\)/);
+test("the rail derives ownership and carries allowlisted context hints", () => {
+  // Signal → Home consolidation (D4): the rail resolves the active
+  // surface (Home included) and walks typed destination paths. Signal
+  // must never return as a rail destination.
+  assert.match(studioRail, /activeRailKey\(pathname\)/);
+  assert.match(studioRail, /suiteSurfaceFromAppPath/);
+  assert.match(studioRail, /\{ key: "home", label: "Home", path: HOME_APP_PATH \}/);
+  assert.doesNotMatch(studioRail, /\{ key: "signal"/);
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
     studioRail,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.key\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(destination\.path, suiteContext\)/,
   );
   assert.match(
     studioRail,
@@ -125,6 +132,35 @@ test("the product rail derives ownership and carries allowlisted context hints",
   }
 });
 
+test("the selected Command frame keeps search with the work and consolidates rail utilities", () => {
+  assert.match(studioBar, /data-slot="command-field"/);
+  assert.ok(
+    studioBar.indexOf('data-slot="command-field"') <
+      studioBar.indexOf('data-slot="signal-pulse"'),
+    "the command field must stay left of the reserved Signal pulse slot",
+  );
+  assert.match(studioBar, /aria-keyshortcuts="c"/);
+  assert.match(studioBar, /bg-\[var\(--x-studio-ink-strong\)\]/);
+
+  assert.doesNotMatch(studioRail, /aria-label="Search"/);
+  assert.doesNotMatch(studioRail, /aria-label="Team"/);
+  assert.doesNotMatch(studioRail, /aria-label="Settings"/);
+  assert.match(studioRail, /aria-label="Help and settings"/);
+  assert.match(studioRail, /href="\/app\/settings"/);
+  assert.match(studioRail, /href="\/settings\/profile"/);
+  assert.match(studioRail, /event\.key !== "Escape"/);
+  assert.match(studioRail, /triggerRef\.current\?\.focus/);
+
+  assert.match(
+    signalShell,
+    /\.railProduct\[data-active\]\s*\{[\s\S]*background:\s*color-mix/,
+  );
+  assert.doesNotMatch(
+    signalShell,
+    /\.railProduct\[data-active\]\s+\.railTile\s*\{[\s\S]{0,120}background:/,
+  );
+});
+
 test("suite context subscribes before its first storage read", () => {
   const subscribe = contextHook.indexOf(
     "window.addEventListener(SUITE_CONTEXT_EVENT, onContext)",
@@ -135,7 +171,7 @@ test("suite context subscribes before its first storage read", () => {
 });
 
 test("the Studio Bar keeps module identity when Tasks chrome data is absent", () => {
-  assert.match(studioBar, /productIdFromAppPath\(pathname\)/);
+  assert.match(studioBar, /suiteSurfaceFromAppPath\(pathname\)/);
   assert.match(
     studioBar,
     /<IdentityCell edition=\{data\?\.edition \?\? null\} \/>/,
@@ -150,7 +186,7 @@ test("the Studio Bar keeps module identity when Tasks chrome data is absent", ()
 
 test("every non-Tasks command event has one shared suite owner", () => {
   assert.match(appLayout, /<SuiteCommandRoot \/>/);
-  assert.match(suiteCommandRoot, /productIdFromAppPath\(pathname\)/);
+  assert.match(suiteCommandRoot, /suiteSurfaceFromAppPath\(pathname\)/);
   assert.match(
     suiteCommandRoot,
     /const ownsCommand = activeProduct !== "tasks"/,
@@ -209,17 +245,20 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
   assert.doesNotMatch(studioChrome, /useDomain/);
 });
 
-test("mobile sibling modules expose four canonical contextual destinations", () => {
+test("mobile suite nav exposes Home-first canonical destinations", () => {
+  // Signal → Home consolidation (D4): Home, the three products, then
+  // Project. Signal must not return as a tab.
   assert.match(appLayout, /<MobileSuiteNav \/>/);
-  assert.match(mobileSuiteNav, /if \(activeProduct === "tasks"\) return null;/);
+  assert.match(mobileSuiteNav, /if \(activeKey === "tasks"\) return null;/);
   assert.deepEqual(
-    [...mobileSuiteNav.matchAll(/\{ id: "(notes|tasks|timeline|signal)", label:/g)]
+    [...mobileSuiteNav.matchAll(/\{ id: "(home|notes|tasks|timeline|project)", label:/g)]
       .map((match) => match[1]),
-    ["notes", "tasks", "timeline", "signal"],
+    ["home", "notes", "tasks", "timeline", "project"],
   );
+  assert.doesNotMatch(mobileSuiteNav, /\{ id: "signal"/);
   assert.match(
     mobileSuiteNav,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.id\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(destination\.path, suiteContext\)/,
   );
   assert.doesNotMatch(
     mobileSuiteNav,
@@ -229,17 +268,20 @@ test("mobile sibling modules expose four canonical contextual destinations", () 
 
 test("mobile Tasks has one persistent product spine and one keyboard-complete views menu", () => {
   assert.equal((tasksSidebar.match(/<nav/g) ?? []).length, 1);
+  // Consolidation (D4): the Tasks mobile spine leads with Home and
+  // carries the three products; Signal is retired from the spine.
   assert.deepEqual(
     [
       ...tasksSidebar.matchAll(
-        /\{ id: "(notes|tasks|timeline|signal)", label: "(?:Notes|Tasks|Timeline|Signal)" \}/g,
+        /\{ id: "(home|notes|tasks|timeline)", label: "(?:Home|Notes|Tasks|Timeline)", path:/g,
       ),
     ].map((match) => match[1]),
-    ["notes", "tasks", "timeline", "signal"],
+    ["home", "notes", "tasks", "timeline"],
   );
+  assert.doesNotMatch(tasksSidebar, /\{ id: "signal"/);
   assert.match(
     tasksSidebar,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.id\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(product\.path, suiteContext\)/,
   );
   assert.match(tasksSidebar, /aria-haspopup="menu"/);
   assert.match(tasksSidebar, /role="menu"/);
@@ -333,8 +375,14 @@ test("Tasks mobile CSS contains dense canvases and preserves 44px primary target
   assert.match(taskCalendarStyles, /\.calendarPrimary[\s\S]*overflow-x: auto/);
   assert.match(taskCalendarStyles, /\.calendarWorkspace[\s\S]*min-width: 0/);
   assert.match(taskSharedStyles, /env\(safe-area-inset-bottom\)/);
-  assert.match(studioBar, /md:pointer-coarse:h-11/);
-  assert.match(userButton, /pointer-coarse:h-11/);
+  // Assert the literal 44px, not `h-11`. This repo remaps Tailwind's numeric
+  // spacing scale (--space-11 is 80px), so `h-11` asserted a token that
+  // rendered coarse-pointer targets at 80px while this test's name promised
+  // 44px. A bracketed 44px cannot drift with the scale.
+  assert.match(userButton, /pointer-coarse:h-\[44px\]/);
+  assert.match(userButton, /pointer-coarse:w-\[44px\]/);
+  assert.match(studioBar, /pointer-coarse:h-\[44px\]/);
+  assert.match(studioBar, /md:pointer-coarse:min-w-\[44px\]/);
 });
 
 test("the shared app frame starts with one stable skip-link destination", () => {

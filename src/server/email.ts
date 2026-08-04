@@ -170,7 +170,7 @@ export function shareLinkEmailHtml(
     <div style="font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#94a3b8">Shared with you</div>
     <h1 style="margin:6px 0 8px;font-size:20px;font-weight:600;letter-spacing:-0.01em">${escapeHtml(fromName)} sent you ${escapeHtml(workspaceName)}.</h1>
     <p style="margin:0 0 18px;color:#475569;font-size:14px;line-height:1.55">No sign-up needed to view. Open the link below to peek; sign up only if you want to comment or edit.</p>
-    <a href="${escapeHtml(url)}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 20px;border-radius:9999px;text-decoration:none;font-size:13.5px;font-weight:500">Open the workspace →</a>
+    <a href="${escapeHtml(url)}" style="display:inline-block;background:#4f46e5;color:#fff;padding:10px 20px;border-radius:9999px;text-decoration:none;font-size:13.5px;font-weight:500">Open the project →</a>
   </div>
 </body></html>`;
 }

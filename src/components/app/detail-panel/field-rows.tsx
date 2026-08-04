@@ -20,6 +20,7 @@ import { sendNudgeAction } from "@/server/actions/nudge";
 import { FIELD_CHIP, FIELD_CHIP_ACTIVE } from "./chip";
 import { Popover } from "./popover";
 import { DueCalendar, formatDueLabelOn } from "./due-calendar";
+import { useToast } from "@/components/primitives/toast";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
 const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
@@ -83,7 +84,7 @@ export function StatusRow({ task }: { task: Task }) {
             key={laneId}
             type="button"
             onClick={() => updateTask(task.id, { lane: laneId })}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-all"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-[background-color,border-color,color] duration-[var(--motion-fast)]"
             style={{
               color: active ? lane.ink : "var(--ink-soft)",
               background: active ? lane.bg : "transparent",
@@ -179,7 +180,7 @@ export function PriorityRow({ task }: { task: Task }) {
             className="block h-1.5 w-1.5 rounded-full"
             style={{ background: current.color }}
           />
-          {task.priority.toUpperCase()} · {current.label}
+          {current.label}
         </button>
       )}
     >
@@ -206,7 +207,7 @@ export function PriorityRow({ task }: { task: Task }) {
                       className="block h-1.5 w-1.5 rounded-full"
                       style={{ background: meta.color }}
                     />
-                    {p.toUpperCase()} · {meta.label}
+                    {meta.label}
                   </span>
                   <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[9.5px] text-ink-quiet">
                     {idx + 1}
@@ -340,6 +341,7 @@ export function AssigneesRow({ task }: { task: Task }) {
  */
 function NudgeButton({ taskId }: { taskId: string }) {
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
   // null = not yet sent; ISO string = sent (or rate-limited); shows "Nudged just now"
   const [sentAt, setSentAt] = useState<string | null>(null);
   // true = the last send was rate-limited
@@ -358,6 +360,12 @@ function NudgeButton({ taskId }: { taskId: string }) {
           setSentAt(new Date().toISOString());
           setRateLimited(false);
         }
+      }
+      if (!result.ok) {
+        toast("The reminder was not sent", {
+          body: "Nothing changed. Try again when the task has an eligible assignee.",
+          tone: "warn",
+        });
       }
       // Silently ignore ok:false (demo, no assignee, etc.) — button
       // visibility already guards against those states.
@@ -425,7 +433,7 @@ function NudgeButton({ taskId }: { taskId: string }) {
         <path d="M18 8a6 6 0 0 0-12 0v7a5 5 0 0 0 5 5h2a5 5 0 0 0 5-5V8z" />
         <path d="M12 2v6" />
       </svg>
-      Nudge
+      {isPending ? "Sending…" : "Nudge"}
     </button>
   );
 }

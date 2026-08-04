@@ -34,6 +34,7 @@ import {
   listMyWorkspaces,
 } from "@/server/auth";
 import { getBoardName, getColumnConfig } from "@/server/actions/board";
+import { getWorkspaceMemberMeta } from "@/server/db/members";
 import { getProjectsTreeData } from "@/server/actions/projects-tree";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getTagDefs } from "@/server/actions/tags";
@@ -81,6 +82,7 @@ export async function TasksRuntimeShell({
     boardName,
     columnConfig,
     tagDefs,
+    members,
     userPreferences,
   ] = await Promise.all([
     getTasks(workspaceId),
@@ -90,6 +92,9 @@ export async function TasksRuntimeShell({
       ? Promise.resolve({
           name: DEMO_WORKSPACE_NAME,
           slug: DEMO_WORKSPACE_SLUG,
+          description: null,
+          currency: null,
+          budgetCents: null,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
           planningPeriodId: "demo-planning-period",
         })
@@ -97,6 +102,9 @@ export async function TasksRuntimeShell({
           .select({
             name: workspaces.name,
             slug: workspaces.slug,
+            description: workspaces.description,
+            currency: workspaces.currency,
+            budgetCents: workspaces.budgetCents,
             primaryUseCase: workspaces.primaryUseCase,
             planningPeriodId: workspaces.planningPeriodId,
           })
@@ -109,6 +117,7 @@ export async function TasksRuntimeShell({
     getBoardName(workspaceId),
     getColumnConfig(workspaceId),
     getTagDefs(workspaceId),
+    getWorkspaceMemberMeta(workspaceId),
     isDemoMode()
       ? Promise.resolve(null)
       : getCurrentUser().then((userId) => getUserPreferences(userId)),
@@ -136,9 +145,13 @@ export async function TasksRuntimeShell({
         <DomainProvider
           domain={domain}
           boardName={boardName}
+          boardDescription={workspace?.description ?? null}
+          currency={workspace?.currency ?? null}
+          budgetCents={workspace?.budgetCents ?? null}
           columnConfig={columnConfig}
           personalization={personalization}
           tagDefs={tagDefs}
+          members={members}
           workspaceId={workspaceId}
           workspaceSlug={workspaceSlug}
         >

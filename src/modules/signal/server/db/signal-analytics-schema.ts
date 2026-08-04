@@ -11,8 +11,7 @@ import {
 /**
  * Signal analytics DB schema — ported from signal/src/server/db/schema.ts.
  *
- * S2 env rename: TURSO_DATABASE_URL / TURSO_AUTH_TOKEN →
- * SIGNAL_ANALYTICS_DATABASE_URL / SIGNAL_ANALYTICS_AUTH_TOKEN.
+ * Env: SIGNAL_DATABASE_URL / SIGNAL_AUTH_TOKEN (2026-07-31 convention).
  *
  * Tables managed by the signal.git migration stream (drizzle-signal/).
  * DO NOT run migrations against prod from this repo; tables already exist.
@@ -211,3 +210,8 @@ export const analyticsSchemaVersions = sqliteTable(
       .default(sql`(unixepoch())`),
   },
 );
+
+// 2026-07-31 fold: user_preferences (cadence/unsubscribe) lives in the
+// Signal database now — one module, one DB. Definition stays in lib/db so
+// client components can import CADENCES without a server-only boundary.
+export * from "../../lib/db/signal-prefs-schema";

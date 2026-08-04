@@ -29,15 +29,11 @@ export const stripeConfigured = Boolean(SECRET);
  *  is at the user level; entitlement rows for Studio carry
  *  `workspaceId = NULL` so `getEffectiveTier` resolves it across all
  *  owned workspaces in one read. */
-/** Stripe price IDs keyed by canonical tier name. The env-var names
- *  retain the historical _PRO_ + _TEAM_ slugs to avoid a coordinated
- *  Vercel rotation; the keys here are the tier vocabulary the rest
- *  of the codebase uses. */
+/** Stripe price IDs keyed by canonical tier name. One canonical env
+ *  name per tier since the 2026-07-31 reset (the historical _PRO_
+ *  alias is retired). */
 export const PRICE_IDS = {
-  workspace:
-    process.env.STRIPE_PRICE_WORKSPACE_MONTHLY ??
-    process.env.STRIPE_PRICE_PRO_MONTHLY ??
-    "",
+  workspace: process.env.STRIPE_PRICE_WORKSPACE_MONTHLY ?? "",
   studio: process.env.STRIPE_PRICE_STUDIO_MONTHLY ?? "",
   wedding: process.env.STRIPE_PRICE_WEDDING_ONETIME ?? "",
   event: process.env.STRIPE_PRICE_EVENT_ONETIME ?? "",

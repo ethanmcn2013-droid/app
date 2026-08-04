@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
+import { useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
 
 type Props = {
   blockedBy: string[];
@@ -22,6 +24,7 @@ export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const state = useTasksState();
   const { openTask } = useTaskPanel();
+  const columnConfig = useColumnConfig();
 
   useEffect(() => {
     if (!open) return;
@@ -42,7 +45,7 @@ export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
 
   // Done blockers don't actually block. Surface a softer "cleared" tone.
   const allCleared =
-    blockers.length > 0 && blockers.every((b) => b.lane === "done");
+    blockers.length > 0 && blockers.every((b) => isTaskDone(b, columnConfig));
 
   const fontSize = size === "sm" ? "text-[10px]" : "text-[11px]";
   const padding = size === "sm" ? "px-1 py-0.5" : "px-1.5 py-0.5";
@@ -95,7 +98,7 @@ export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
             </div>
             <ul className="space-y-px">
               {blockers.map((b) => {
-                const cleared = b.lane === "done";
+                const cleared = isTaskDone(b, columnConfig);
                 return (
                   <li key={b.id}>
                     <button

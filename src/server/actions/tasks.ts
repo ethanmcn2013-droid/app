@@ -4,6 +4,8 @@ import { unlink } from "node:fs/promises";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
 import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
@@ -87,6 +89,20 @@ async function nextPositionForLane(
   return max + 1.0;
 }
 
+/**
+ * The completedAt stamp for a done-state transition (T·122). Done-ness is
+ * the config predicate — a rename or an extra done column changes what
+ * counts — and the stamp only moves on a real transition, so nudging a
+ * task around inside done columns keeps its original completion time.
+ */
+function completionStamp(
+  wasDone: boolean,
+  isDoneNow: boolean,
+): { completedAt?: Date | null } {
+  if (wasDone === isDoneNow) return {};
+  return { completedAt: isDoneNow ? new Date() : null };
+}
+
 export async function moveTaskAction(
   id: string,
   toLane: LaneId,
@@ -100,16 +116,23 @@ export async function moveTaskAction(
   // knows a foreign task id gets a silent no-op instead of leaking the
   // lane value (or worse, re-parking the task).
   const [row] = await db
-    .select({ lane: tasks.lane })
+    .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row || row.lane === toLane) return getTasks(ws);
+  if (!row || (row.lane === toLane && !row.boardColumnKey)) return getTasks(ws);
   // Park the moved task at the end of its new lane so cross-lane drops
   // get a stable, predictable order without renumbering siblings.
   const position = await nextPositionForLane(toLane, ws);
+  // A lane move is canonical: it clears any custom-column claim (the same
+  // contract as moveTaskToColumnAction) and stamps the done transition.
+  const columnConfig = await readWorkspaceColumnConfig(ws);
+  const stamp = completionStamp(
+    isTaskDone(row, columnConfig),
+    isDoneColumnKey(toLane, columnConfig),
+  );
   await db
     .update(tasks)
-    .set({ lane: toLane, idleDays: null, position, ...bump() })
+    .set({ lane: toLane, boardColumnKey: null, idleDays: null, position, ...stamp, ...bump() })
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   await recordActivity(id, {
     kind: "move",
@@ -150,9 +173,13 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
       .update(tasks)
       .set({
         lane: "todo",
+        boardColumnKey: null,
         idleDays: null,
         dueAt: nextDueAt,
         due: formatDueLabelForStorage(nextDueAt),
+        // The recurring task bounces back open, but a completion DID
+        // happen — completedAt records the moment it was last finished.
+        completedAt: new Date(),
         ...bump(),
       })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
@@ -174,14 +201,26 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     return getTasks(ws);
   }
 
-  const target: LaneId = row.lane === "done" ? "todo" : "done";
+  // Done-ness is the config predicate: a task in a custom done column
+  // reopens to todo; anything open completes into the canonical done
+  // lane. Both directions clear any custom-column claim so the card
+  // lands where the action says it does.
+  const columnConfig = await readWorkspaceColumnConfig(ws);
+  const wasDone = isTaskDone(row, columnConfig);
+  const target: LaneId = wasDone ? "todo" : "done";
   await db
     .update(tasks)
-    .set({ lane: target, idleDays: null, ...bump() })
+    .set({
+      lane: target,
+      boardColumnKey: null,
+      idleDays: null,
+      ...completionStamp(wasDone, !wasDone),
+      ...bump(),
+    })
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   await recordActivity(id, {
     kind: "toggleComplete",
-    to: target === "done" ? "done" : "open",
+    to: wasDone ? "open" : "done",
   }, { workspaceId: ws });
   {
     const transition = classifyLaneTransition(row.lane, target);
@@ -193,7 +232,7 @@ export async function toggleCompleteAction(id: string): Promise<Task[]> {
     }
   }
   // Only award a milestone when the task actually became done.
-  if (target === "done") {
+  if (!wasDone) {
     await maybeAwardCompletionMilestone(me, id).catch(() => {});
   }
   revalidatePath("/app", "layout");
@@ -386,6 +425,20 @@ export async function updateTaskAction(
   if ("cents" in cleaned) {
     cleaned.cents = sanitizeCents(cleaned.cents as number | null);
   }
+  // A lane patch through the generic update is still a workflow move:
+  // clear any custom-column claim and stamp the done transition so no
+  // write path can change done-ness without moving completedAt (T·122).
+  if ("lane" in cleaned) {
+    const columnConfig = await readWorkspaceColumnConfig(ws);
+    cleaned.boardColumnKey = null;
+    Object.assign(
+      cleaned,
+      completionStamp(
+        isTaskDone(ownedTask, columnConfig),
+        isDoneColumnKey(cleaned.lane as string, columnConfig),
+      ),
+    );
+  }
   // Workspace guard: a write only lands when the row belongs to the
   // caller's active workspace. Without this clause an authenticated
   // user who knows any task id could overwrite cross-tenant rows.
@@ -473,6 +526,8 @@ export async function addTaskAction(input: {
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
   const lane = input.lane ?? "todo";
+  // Creating straight into a done column is a completion (T·122).
+  const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws));
   if (input.parentTaskId) {
     // A subtask inherits its parent's tenant. Require a top-level parent in
     // the active workspace; this rejects both foreign-parent injection and
@@ -501,6 +556,7 @@ export async function addTaskAction(input: {
     title: input.title,
     description: input.description,
     lane,
+    completedAt: createdDone ? new Date() : null,
     priority: input.priority ?? "p2",
     assignees: input.assignees ?? [],
     estimate: input.estimate,
@@ -558,17 +614,26 @@ export async function reorderTaskAction(
   // Workspace guard on the read so a caller with a foreign task id
   // gets a no-op rather than accidentally moving a cross-tenant row.
   const [row] = await db
-    .select({ lane: tasks.lane })
+    .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return getTasks(ws);
 
   const laneChanged = row.lane !== lane;
+  // Positional reorder is a canonical lane placement: clear any claim and
+  // stamp a done transition exactly like moveTaskAction (T·122).
+  const columnConfig = await readWorkspaceColumnConfig(ws);
+  const stamp = completionStamp(
+    isTaskDone(row, columnConfig),
+    isDoneColumnKey(lane, columnConfig),
+  );
   await db
     .update(tasks)
     .set({
       lane,
+      boardColumnKey: null,
       position,
+      ...stamp,
       ...(laneChanged ? { idleDays: null } : {}),
       ...bump(),
     })
@@ -763,6 +828,7 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
     cents: sanitizeCents(source.cents ?? null),
     isMilestone: source.isMilestone,
     boardColumnKey: source.boardColumnKey,
+    completedAt: source.completedAt ?? null,
     parentTaskId: null,
     ...bump(),
   });

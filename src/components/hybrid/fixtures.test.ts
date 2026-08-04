@@ -2,7 +2,18 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { scheduleIncludes } from "./dates";
-import { FIXTURE_MANIFEST_ID, FIXTURE_SHA256, LAB_TASKS, tasksForDataset } from "./fixtures";
+import {
+  FIXTURE_MANIFEST_ID,
+  FIXTURE_SHA256,
+  LAB_TASKS,
+  labelById,
+  listPeople,
+  personById,
+  resetRuntimeRegistriesForTests,
+  setRuntimeLabels,
+  setRuntimePeople,
+  tasksForDataset,
+} from "./fixtures";
 
 test("fixture manifest is stable, unique, and within the Phase 1 scale", () => {
   assert.equal(FIXTURE_MANIFEST_ID, "tasks-2026-07-16-v1-48");
@@ -50,5 +61,38 @@ test("every canonical range is valid", () => {
     if (task.schedule.kind === "range") {
       assert.ok(task.schedule.startOn <= task.schedule.dueOn, `${task.id} has an inverted range`);
     }
+  }
+});
+
+test("runtime registries are authoritative once set; fixtures never leak past them", () => {
+  resetRuntimeRegistriesForTests();
+  try {
+    // Lab default: fixtures resolve.
+    assert.ok(listPeople().length >= 8);
+    assert.ok(personById("maya"));
+    assert.equal(labelById("launch")?.tone, "accent");
+
+    // Production mount sets the registry: it becomes the only source.
+    setRuntimePeople([
+      { id: "user_2real", name: "Real Member", initials: "RM", role: "Owner", color: "var(--accent)" },
+    ]);
+    assert.deepEqual(listPeople().map((person) => person.id), ["user_2real"]);
+    assert.equal(personById("maya"), undefined);
+    assert.equal(personById("ethan"), undefined);
+
+    // An empty roster reads as empty — never eight fixture people.
+    setRuntimePeople([]);
+    assert.deepEqual(listPeople(), []);
+    assert.equal(personById("ethan"), undefined);
+
+    // Labels: once live tag defs are set, an unknown live tag renders as a
+    // neutral chip under its own name, never a fixture tone.
+    setRuntimeLabels([{ id: "Venue", name: "Venue", tone: "success" }]);
+    assert.equal(labelById("Venue")?.tone, "success");
+    assert.deepEqual(labelById("launch"), { id: "launch", name: "launch", tone: "neutral" });
+    setRuntimeLabels([]);
+    assert.deepEqual(labelById("platform"), { id: "platform", name: "platform", tone: "neutral" });
+  } finally {
+    resetRuntimeRegistriesForTests();
   }
 });

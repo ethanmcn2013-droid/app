@@ -40,12 +40,10 @@ function modeHref(
   context: { workspaceId?: string | null; planningPeriodId?: string | null },
   mode: OwnerMode,
 ) {
-  const href = buildTimelineProjectHref(projectSlug, context);
-  if (mode === "view") return href;
-  const [pathname, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set("mode", mode);
-  return `${pathname}?${params.toString()}`;
+  return buildTimelineProjectHref(projectSlug, {
+    ...context,
+    mode: mode === "edit" ? "edit" : null,
+  });
 }
 
 export default async function TimelineProjectPage({
@@ -80,9 +78,12 @@ export default async function TimelineProjectPage({
   if (!project) notFound();
 
   const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
+  // Mode rides the switcher context: changing projects mid-edit stays in
+  // edit. The mode toggle itself overrides it per destination (modeHref).
   const queryContext = {
     workspaceId: context?.workspaceId,
     planningPeriodId: context?.planningPeriodId,
+    mode: mode === "edit" ? ("edit" as const) : null,
   };
   const shareQuery = new URLSearchParams({ project: project.slug });
   if (queryContext.workspaceId) {
@@ -127,7 +128,9 @@ export default async function TimelineProjectPage({
               projects={projectOptions}
               context={queryContext}
             />
-            <span className="hidden min-w-0 lg:inline-flex">
+            {/* The countdown is the plan's pulse — phone owners deserve it
+                too. Only the smallest headers go without. */}
+            <span className="hidden min-w-0 sm:inline-flex">
               <AnchorChip milestones={projectNodes} now={now.getTime()} />
             </span>
           </div>
@@ -141,7 +144,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "view")}
                 aria-label="View timeline"
                 aria-current={mode === "view" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "view"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -153,7 +156,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "edit")}
                 aria-label="Edit milestones"
                 aria-current={mode === "edit" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "edit"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -251,13 +254,13 @@ function TimelineProjectContent({
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href={`/app/timeline/${encodeURIComponent(project.slug)}?mode=edit`}
-              className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Edit milestones
             </Link>
             <Link
               href="/app/tasks"
-              className="inline-flex min-h-11 items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Open Tasks
             </Link>

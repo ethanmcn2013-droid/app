@@ -181,7 +181,7 @@ export function ForFreelancers() {
         </h2>
         <ul className="mt-5 space-y-4">
           <Reason
-            title="One bill for unlimited workspaces."
+            title="One bill for unlimited projects."
             body="Five clients, five workspaces, €12 a month total. Compare against Linear's per-seat math (which charges your client to invite you) or Notion's plan tiers (which gate things you actually need). Tasks charges the freelancer once and stops there."
           />
           <Reason

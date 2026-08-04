@@ -36,6 +36,7 @@ export function PanelShell({
 
   // Lazy init: reads localStorage on client; SSR falls back to DEFAULT_WIDTH.
   const [width, setWidth] = useState(() => readStoredWidth());
+  const [resizing, setResizing] = useState(false);
   const dragging = useRef(false);
   const startX = useRef(0);
   const startW = useRef(DEFAULT_WIDTH);
@@ -44,6 +45,7 @@ export function PanelShell({
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       dragging.current = true;
+      setResizing(true);
       startX.current = e.clientX;
       startW.current = width;
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -61,6 +63,7 @@ export function PanelShell({
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragging.current) return;
     dragging.current = false;
+    setResizing(false);
     const delta = startX.current - e.clientX;
     const final = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW.current + delta));
     try {
@@ -86,6 +89,56 @@ export function PanelShell({
     return () => document.removeEventListener("keydown", onKey, true);
   }, [open, onClose]);
 
+  // Modal focus management. aria-modal alone tells screen readers the
+  // outside is inert; it does nothing for the keyboard. On open: remember
+  // the opener and move focus into the dialog (77 Tab presses used to
+  // stand between the opened card and the panel's first control). While
+  // open: Tab cycles inside the panel. On close: focus returns to the
+  // opener when it still exists.
+  const panelRef = useRef<HTMLElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const frame = requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const first = panel.querySelector<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? panel).focus({ preventScroll: true });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  const trapTab = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab" || hasOpenLayer()) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusables = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
   return (
     <AnimatePresence>
       {open ? (
@@ -98,8 +151,8 @@ export function PanelShell({
             exit={{ opacity: 0 }}
             transition={
               reduce
-                ? { duration: 0 }
-                : { duration: 0.18, ease: [0.16, 1, 0.3, 1] }
+                ? { duration: 0.12 }
+                : { duration: 0.16, ease: [0.23, 1, 0.32, 1] }
             }
             onClick={onClose}
             className="fixed inset-0 z-[80] bg-ink/12"
@@ -109,25 +162,30 @@ export function PanelShell({
           {/* Panel */}
           <motion.aside
             key="panel"
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="task-panel-title"
+            tabIndex={-1}
+            onKeyDown={trapTab}
             // A real entrance: the sheet travels in from the right edge and
             // settles on the glide spring. The previous 24px opacity-drift
             // was so subtle it read as the panel simply appearing. Exit is
             // faster than enter — leaving should feel lighter than arriving.
-            initial={{ x: "110%" }}
-            animate={{ x: 0 }}
+            initial={reduce ? { opacity: 0 } : { transform: "translateX(100%)" }}
+            animate={reduce ? { opacity: 1 } : { transform: "translateX(0)" }}
+            data-resizing={resizing || undefined}
+            data-task-detail-panel=""
             exit={{
-              x: "110%",
+              ...(reduce ? { opacity: 0 } : { transform: "translateX(100%)" }),
               transition: reduce
-                ? { duration: 0 }
-                : { duration: 0.26, ease: [0.32, 0.72, 0, 1] },
+                ? { duration: 0.1 }
+                : { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
             }}
             transition={
               reduce
-                ? { duration: 0 }
-                : { x: { duration: 0.42, ease: [0.16, 1, 0.3, 1] } }
+                ? { duration: 0.12 }
+                : { transform: { duration: 0.28, ease: [0.23, 1, 0.32, 1] } }
             }
             className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-auto"
             style={{

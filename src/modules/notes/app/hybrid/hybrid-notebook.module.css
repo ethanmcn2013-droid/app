@@ -255,6 +255,20 @@
   background: var(--paper);
 }
 
+/* Fields carry their own focus treatment: the accent border plus a
+   1px hugging ring reads as one crisp 2px indicator. The generic
+   offset outline on top of it looked like two competing rings. */
+.captureTextarea:focus-visible,
+.searchInput:focus-visible,
+.workspaceSelect:focus-visible,
+.extractionTextarea:focus-visible,
+.timelineFields input:focus-visible,
+.timelineFields select:focus-visible,
+.timelineFields textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 .capture[data-state="offline"] .captureTextarea,
 .capture[data-state="pending"] .captureTextarea {
   border-color: var(--status-flight);
@@ -435,7 +449,10 @@
 
 .searchBand {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Local search is subordinate to the notebook, not a second hero
+     band: the field holds a reading-column width instead of spanning
+     the full page. */
+  grid-template-columns: auto minmax(0, 34rem) 1fr;
   inline-size: 100%;
   align-items: center;
   gap: var(--space-3);
@@ -768,8 +785,10 @@
 }
 
 .detailTextarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  /* The reading surface is borderless; focus lands on the baseline rule
+     rather than boxing the whole page of writing. */
+  outline: none;
+  box-shadow: 0 1px 0 0 var(--accent);
 }
 
 .detailHelp {
@@ -1157,7 +1176,8 @@
   max-inline-size: 42ch;
   margin: var(--space-3) 0 var(--space-6);
   color: var(--ink-soft);
-  font-family: Georgia, "Times New Roman", serif;
+  /* Interface copy stays in the product sans; the serif reading voice is
+     reserved for the user's own words (note bodies and quoted excerpts). */
   font-size: var(--text-body);
   line-height: 1.65;
 }

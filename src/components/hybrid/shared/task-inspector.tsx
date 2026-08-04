@@ -7,12 +7,12 @@ import { LAB_PEOPLE, personById } from "../fixtures";
 import { useLabStore } from "../store";
 import {
   PRIORITY_LABELS,
-  STATUS_LABELS,
   TASK_PRIORITIES,
-  TASK_STATUSES,
   type LabTask,
   type TaskSchedule,
 } from "../types";
+import { columnDisplayName } from "@/lib/board-columns";
+import { useBoardColumns } from "../columns-context";
 import { Icon } from "./icons";
 import { AvatarStack, LabelList, ScheduleText, TaskSignals } from "./task-ui";
 import styles from "./shared.module.css";
@@ -122,6 +122,7 @@ function AssigneeEditor({ task }: { task: LabTask }) {
 
 function RelationshipSection({ task }: { task: LabTask }) {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const dependencyIds = [...task.blockedByIds, ...task.blockerIds];
   return (
     <section className={styles.inspectorSection}>
@@ -130,7 +131,7 @@ function RelationshipSection({ task }: { task: LabTask }) {
         <ul className={styles.relationshipList}>
           {dependencyIds.map((id) => {
             const related = store.taskById(id);
-            return <li key={id}><Icon name="dependency" size={14} /><span><b>{related?.title ?? "External dependency"}</b><small>{related ? STATUS_LABELS[related.status] : "Reference unavailable · handled safely"}</small></span></li>;
+            return <li key={id}><Icon name="dependency" size={14} /><span><b>{related?.title ?? "External dependency"}</b><small>{related ? columnDisplayName(columns, related.status) : "Reference unavailable · handled safely"}</small></span></li>;
           })}
         </ul>
       )}
@@ -140,6 +141,7 @@ function RelationshipSection({ task }: { task: LabTask }) {
 
 function InspectorBody({ task }: { task: LabTask }) {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const calendar = useCalendarFrame();
   const [commentDraft, setCommentDraft] = useState("");
   return (
@@ -154,7 +156,7 @@ function InspectorBody({ task }: { task: LabTask }) {
       <section className={styles.inspectorFields}>
         <Field label="Status">
           <select disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value as LabTask["status"])} value={task.status}>
-            {TASK_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+            {columns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
           </select>
         </Field>
         <Field label="Priority">
@@ -283,7 +285,7 @@ export function TaskInspector() {
           <button aria-label="Close task inspector" onClick={close} ref={closeRef} title="Close" type="button"><Icon name="close" size={17} /></button>
         </div>
       </header>
-      {task ? <InspectorBody task={task} /> : <div className={styles.inspectorMissing}><h2>Task not found</h2><p>This deep link does not match the active fixture.</p><button onClick={close} type="button">Return to workspace</button></div>}
+      {task ? <InspectorBody task={task} /> : <div className={styles.inspectorMissing}><h2>Task not found</h2><p>This deep link does not match the active fixture.</p><button onClick={close} type="button">Return to project</button></div>}
       {task ? <footer className={styles.inspectorFooter}><span>{formatSchedule(task.schedule)}</span><small>{task.schedule.kind === "unscheduled" ? "No date has been inferred" : `Visible from ${formatDateLong(task.schedule.kind === "range" ? task.schedule.startOn : task.schedule.kind === "milestone" ? task.schedule.on : task.schedule.dueOn)}`}</small></footer> : null}
     </aside>
   );

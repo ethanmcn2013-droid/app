@@ -9,6 +9,10 @@ function isTasksSurface(pathname: string): boolean {
   return (
     !pathname.startsWith("/app/notes") &&
     !pathname.startsWith("/app/timeline") &&
+    // Home and the Full Briefing are module canvases, not Tasks surfaces:
+    // they take the module <main id="app-main-content"> landmark below
+    // (Signal → Home consolidation; /app/signal stays for the redirects).
+    !pathname.startsWith("/app/home") &&
     !pathname.startsWith("/app/signal")
   );
 }

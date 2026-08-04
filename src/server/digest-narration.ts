@@ -9,6 +9,8 @@ import {
   type WeeklyDigestSnapshot,
 } from "@/server/ai";
 import { getTasks } from "@/server/db/queries";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { isTaskDone } from "@/lib/board-columns";
 
 /**
  * Server-only digest narration. Lives outside `actions/` because the
@@ -37,18 +39,23 @@ function staticStream(text: string): ReadableStream<string> {
 export async function buildWeeklySnapshotFor(
   workspaceId: string,
 ): Promise<WeeklyDigestSnapshot> {
-  const tasks = await getTasks(workspaceId);
+  // Fetched once alongside the task list and reused for both done-checks
+  // below (T·122).
+  const [tasks, columnConfig] = await Promise.all([
+    getTasks(workspaceId),
+    readWorkspaceColumnConfig(workspaceId),
+  ]);
   const now = Date.now();
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
   const closed = tasks.filter(
     (t) =>
-      t.lane === "done" &&
+      isTaskDone(t, columnConfig) &&
       now - t.updatedAt.getTime() <= WEEK_MS,
   );
   closed.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
-  const open = tasks.filter((t) => t.lane !== "done");
+  const open = tasks.filter((t) => !isTaskDone(t, columnConfig));
   const stillCircling = open
     .filter((t) => {
       const ageMs = now - t.updatedAt.getTime();

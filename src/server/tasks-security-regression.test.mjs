@@ -189,8 +189,21 @@ test("public routes use the explicit allowlisted projection", () => {
   assert.match(publicTask, /lane:\s*task\.lane/);
   assert.match(publicTask, /priority:\s*task\.priority/);
   assert.doesNotMatch(publicTask, /\.assignees|\.description|\.cents|\.workspaceId|\.sourceNoteId/);
-  assert.match(queries, /const taskList = \(await getTasks\(ws\.id\)\)\.map\(toPublicTask\)/);
-  assert.match(queries, /tasks:\s*taskList\.map\(toPublicTask\)/);
+  // The projection call sites take toPublicTask through a lambda now: the
+  // share path passes the serving instant (for the derived overdue flag,
+  // never the timestamp) and the /p path passes none. The property this
+  // test guards is unchanged — every public payload flows through the
+  // toPublicTask allowlist.
+  assert.match(
+    queries,
+    /const taskList = \(await getTasks\(ws\.id\)\)\.map\(\(task\) => toPublicTask\(task\)\)/,
+  );
+  assert.match(
+    queries,
+    /const publicTasks = taskList\.map\(\(task\) => toPublicTask\(task, servedAt\)\)/,
+  );
+  assert.match(queries, /tasks:\s*publicTasks/);
+  assert.match(queries, /toPublicTask\(task, demoNow\)/);
   assertDemoGuardBefore(
     queries,
     "getPublishedWorkspaceBySlug",
@@ -227,8 +240,9 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     ["getBoardName", ["await db"]],
     ["renameBoardAction", ["getActiveWorkspace", "db.run", "revalidatePath"]],
     ["getColumnConfig", ["readColumnConfig"]],
-    ["getColumnNames", ["readColumnConfig"]],
     ["renameColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnLimitAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
+    ["setColumnDoneAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],
