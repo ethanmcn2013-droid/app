@@ -382,6 +382,16 @@ function NewLinkForm({
         </div>
       </Field>
 
+      {/* E06.05: password-protected sharing is NOT built. D-016 forbids
+          implying a capability that does not exist, so the absence is stated
+          rather than left for a couple to assume from a missing control. The
+          sentence is what the couple reads; the reasoning is in the task spec. */}
+      <p className="mt-3 text-[11.5px] leading-relaxed text-ink-quiet">
+        There is no password on this link. Anyone you send it to can open it,
+        and so can anyone they forward it to. Set an expiry, or revoke the link,
+        when you want it to stop working.
+      </p>
+
       <button
         type="button"
         onClick={onGenerate}

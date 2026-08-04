@@ -3,23 +3,32 @@
 import { motion } from "motion/react";
 import { PRIORITY_LABEL, type PublicTask } from "@/lib/data";
 import { publicColumnTasks, type PublicColumn } from "@/lib/public-board-lanes";
-import { useGuestAuth } from "@/components/app/guest/guest-auth-context";
 
 /**
- * Read-only board for /share/[token]. Renders the operator's own columns
- * (names, order, tint) from the workspace config; every interactive
- * surface raises the progressive auth modal instead of mutating. Drag is
- * disabled.
+ * Read-only board for /share/[token] — a finished artifact, not a
+ * stripped-down app screen. It renders the operator's own columns
+ * (names, order, tint) from the workspace config, and no editing
+ * affordances render at all: a recipient can read the board; the single
+ * "Make this yours" action lives in the page header. Priority language
+ * matches the live board ("Urgent"/"High"), never internal codes.
  */
 export function ShareBoard({ tasks, columns }: { tasks: PublicTask[]; columns: PublicColumn[] }) {
-  const { promptSignUp } = useGuestAuth();
   return (
-    <div className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5">
+    // tabIndex: the horizontal scroller must be keyboard-operable — with
+    // no focusable children, arrow-scrolling to the clipped Done column
+    // is otherwise impossible (axe: scrollable-region-focusable).
+    <div
+      aria-label="Shared board columns, scrollable"
+      className="thin-scroll flex h-full flex-1 gap-3 overflow-x-auto overflow-y-hidden px-8 pb-8 pt-5 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]"
+      role="region"
+      tabIndex={0}
+    >
       {columns.map((column, idx) => {
         const laneTasks = publicColumnTasks(tasks, column.id);
         return (
-          <motion.div
+          <motion.section
             key={column.id}
+            aria-label={`${column.name}, ${laneTasks.length} ${laneTasks.length === 1 ? "task" : "tasks"}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -40,91 +49,68 @@ export function ShareBoard({ tasks, columns }: { tasks: PublicTask[]; columns: P
                   className="block h-2 w-2 rounded-full"
                   style={{ background: column.accent ?? "var(--ink-faint, currentColor)" }}
                 />
-                <span className="text-[12px] font-semibold text-ink-soft">
+                <span className="text-[12.5px] font-semibold text-ink-soft">
                   {column.name}
                 </span>
-                <span className="text-[11.5px] text-ink-quiet">
+                <span className="text-[11.5px] text-ink-soft">
                   {laneTasks.length}
                 </span>
               </div>
             </div>
-            <div className="flex flex-col gap-2 overflow-y-auto pr-0.5 thin-scroll">
+            <div className="thin-scroll flex flex-col gap-2 overflow-y-auto pr-0.5">
               {laneTasks.map((task) => (
-                <ReadCard
-                  key={task.id}
-                  task={task}
-                  onClick={() => promptSignUp("edit")}
-                />
+                <ReadCard key={task.id} task={task} />
               ))}
-              <button
-                type="button"
-                onClick={() => promptSignUp("addTask")}
-                className="mt-1 flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[12px] text-ink-soft transition-colors hover:bg-white/60 hover:text-ink"
-              >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add task
-              </button>
+              {laneTasks.length === 0 ? (
+                <p className="px-2 py-1.5 text-[12px] text-ink-soft">
+                  Nothing here yet.
+                </p>
+              ) : null}
             </div>
-          </motion.div>
+          </motion.section>
         );
       })}
     </div>
   );
 }
 
-function ReadCard({
-  task,
-  onClick,
-}: {
-  task: PublicTask;
-  onClick: () => void;
-}) {
+function ReadCard({ task }: { task: PublicTask }) {
   const prio = PRIORITY_LABEL[task.priority];
+  const showPriority = task.priority === "p0" || task.priority === "p1";
   return (
-    <motion.div
+    <motion.article
       layout
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      onClick={onClick}
-      whileHover={{ y: -1 }}
-      className="group cursor-pointer rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)] transition-shadow hover:shadow-[0_6px_18px_-6px_rgba(20,21,26,0.16)]"
+      className="rounded-[10px] border border-line-soft bg-white px-3 py-2.5 text-[13px] leading-snug shadow-[0_1px_2px_rgba(20,21,26,0.04)]"
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="line-clamp-2">{task.title}</span>
-        {task.priority === "p0" ? (
-          <span className="flex-shrink-0 rounded-md border border-red-200 bg-red-50 px-1.5 py-px text-[9.5px] font-semibold uppercase tracking-wider text-red-600">
-            P0
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="inline-flex items-center gap-1 rounded bg-bg-sunken px-1.5 py-0.5 text-[10.5px] font-medium text-ink-soft"
-            title={prio.label}
-          >
-            <span
-              className="block h-1.5 w-1.5 rounded-full"
-              style={{ background: prio.color }}
-            />
-            {task.priority.toUpperCase()}
-          </span>
+      <span className="line-clamp-2">{task.title}</span>
+      {showPriority || task.due ? (
+        <div className="mt-2 flex items-center gap-2">
+          {showPriority ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-soft">
+              <span
+                className="block h-1.5 w-1.5 rounded-full"
+                style={{ background: prio.color }}
+              />
+              {prio.label} priority
+            </span>
+          ) : null}
           {task.due ? (
-            <span className="text-[10.5px] text-ink-quiet">{task.due}</span>
+            task.overdue ? (
+              <span
+                className="text-[11px] font-medium"
+                style={{ color: "var(--x-task-danger)" }}
+              >
+                Overdue · {task.due}
+              </span>
+            ) : (
+              <span className="text-[11px] text-ink-quiet">{task.due}</span>
+            )
           ) : null}
         </div>
-      </div>
-    </motion.div>
+      ) : null}
+    </motion.article>
   );
 }

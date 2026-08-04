@@ -19,7 +19,11 @@ import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
 import { useSuiteContext } from "@/components/app/use-suite-context";
-import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import {
+  BRIEFING_APP_PATH,
+  HOME_APP_PATH,
+  PRODUCT_APP_PATHS,
+} from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import {
   ScopeChipRow,
@@ -632,6 +636,11 @@ const FACET_LEGEND: ScopeFacet[] = [
 
 const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
   {
+    word: "home",
+    tagline: "What matters now",
+    path: HOME_APP_PATH,
+  },
+  {
     word: "timeline",
     tagline: "Direction clarity",
     path: PRODUCT_APP_PATHS.timeline,
@@ -642,9 +651,9 @@ const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
     path: PRODUCT_APP_PATHS.notes,
   },
   {
-    word: "signal",
-    tagline: "Attention clarity",
-    path: PRODUCT_APP_PATHS.signal,
+    word: "briefing",
+    tagline: "The full read",
+    path: BRIEFING_APP_PATH,
   },
 ];
 

@@ -6,6 +6,12 @@ export type ProjectSwitcherOption = Readonly<{
 export type TimelineQueryContext = Readonly<{
   workspaceId?: string | null;
   planningPeriodId?: string | null;
+  /**
+   * The owner's current mode. Carried so switching projects mid-edit lands
+   * in the edit surface of the next project, not back in view mode. "view"
+   * is the default and stays out of the URL.
+   */
+  mode?: "view" | "edit" | null;
 }>;
 
 export function buildTimelineProjectHref(
@@ -24,6 +30,9 @@ export function buildTimelineProjectHref(
     if (planningPeriodId) {
       query.set("planningPeriodId", planningPeriodId);
     }
+  }
+  if (projectSlug && context.mode === "edit") {
+    query.set("mode", "edit");
   }
 
   const value = query.toString();

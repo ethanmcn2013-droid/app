@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import { LANES, USERS, type Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
 import { NudgesRail } from "@/components/app/my-week/nudges-rail";
 import { AvatarStack } from "@/components/showcase/avatar";
@@ -41,7 +42,14 @@ export function MyWeekApp() {
 
   const meId = useCurrentUser();
   const me = USERS[meId];
-  const buckets = bucketMyWeek(state.tasks, meId);
+  // The calendar frame is the only clock a Tasks client view may read
+  // (calendar-frame.ts): SSR and hydration agree about "today", and the
+  // demo stays pinned to its one anchor instead of drifting with the
+  // visitor's wall clock ("Good evening" over a board whose cards say
+  // "Due today" three weeks earlier).
+  const calendar = useCalendarFrame();
+  const now = useMemo(() => new Date(calendar.nowIso), [calendar.nowIso]);
+  const buckets = bucketMyWeek(state.tasks, meId, now);
   // Dayparts, "This evening" splits out of Today only when a task
   // carries an explicit evening time. No time typed, no daypart.
   const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
@@ -50,8 +58,8 @@ export function MyWeekApp() {
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure), the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
-    () => generateNudges(state.tasks, meId, columnConfig),
-    [state.tasks, meId, columnConfig],
+    () => generateNudges(state.tasks, meId, columnConfig, now),
+    [state.tasks, meId, columnConfig, now],
   );
 
   const totalAttention =
@@ -73,14 +81,14 @@ export function MyWeekApp() {
     );
   }
 
-  const greeting = greetingFor(new Date(), me?.name);
+  const greeting = greetingFor(now, calendar.timeZone, me?.name);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-6 py-5 md:px-10 md:py-7">
       <div className="mx-auto max-w-3xl">
         <header className="mb-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            {formatDateHeader(new Date())}
+            {formatDateHeader(now, calendar.locale, calendar.timeZone)}
           </p>
           <h2 className="mt-2 text-[22px] font-medium tracking-tight text-ink md:text-[26px]">
             {greeting}
@@ -298,8 +306,17 @@ function Row({
   );
 }
 
-function greetingFor(now: Date, name?: string): string {
-  const hour = now.getHours();
+function greetingFor(now: Date, timeZone: string, name?: string): string {
+  // The frame's zone, not the machine's: the server renders in UTC and a
+  // visitor renders in their own zone — getHours() would hydrate two
+  // different salutations from the same instant.
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hour12: false,
+      timeZone,
+    }).format(now),
+  );
   const first = name?.split(" ")[0];
   const opener =
     hour < 5
@@ -312,9 +329,13 @@ function greetingFor(now: Date, name?: string): string {
   return first ? `${opener}, ${first}.` : `${opener}.`;
 }
 
-function formatDateHeader(now: Date): string {
+function formatDateHeader(now: Date, locale: string, timeZone: string): string {
+  // Explicit locale + zone: `undefined` let the server's ICU default
+  // ("Thursday, July 16") fight the browser's ("Thursday 16 July") and
+  // hydration flagged the text node.
   return now
-    .toLocaleDateString(undefined, {
+    .toLocaleDateString(locale, {
+      timeZone,
       weekday: "long",
       day: "numeric",
       month: "long",

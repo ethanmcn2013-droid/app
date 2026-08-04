@@ -521,7 +521,7 @@ function PublishBlock({
         await publishWorkspaceAction();
         toast("Workspace published", {
           tone: "success",
-          body: "Anyone with the link can read the workspace.",
+          body: "Anyone with the link can read it. Search engines are asked not to list it.",
         });
       } catch (e) {
         toast("Couldn't publish", {
@@ -614,18 +614,34 @@ function PublishBlock({
           </div>
         </div>
       ) : (
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-[12px] text-ink-quiet">
-            This workspace is private. Only members can see it.
-          </span>
-          <button
-            type="button"
-            onClick={publish}
-            disabled={!canEdit || pending}
-            className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
-          >
-            {pending ? "Publishing…" : "Publish workspace"}
-          </button>
+        <div className="mt-4 space-y-3">
+          {/* D-033 (R-031 option B) requires the publish confirmation to state
+              plainly what publishing does. Until 2026-08-03 this was one button
+              whose caption never mentioned search engines or what ends up on
+              the page. Every line below is a fact about the shipped behaviour;
+              none of it sells the feature. */}
+          <div className="rounded-lg border border-line-soft bg-bg-sunken/50 px-3.5 py-3">
+            <p className="text-[12px] font-medium text-ink">Before you publish</p>
+            <ul className="mt-2 space-y-1.5 text-[12px] leading-relaxed text-ink-soft">
+              <li>Anyone who has the link can open the page. There is no sign-in and no account.</li>
+              <li>Your task titles and tags are on the page. Any names you wrote into them are on the page too.</li>
+              <li>Search engines are asked not to list this page. That is a request they usually honour, not a lock.</li>
+              <li>You can unpublish whenever you want. The link then returns a not-found page. Copies other people already saved stay with them.</li>
+            </ul>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[12px] text-ink-quiet">
+              This workspace is private. Only members can see it.
+            </span>
+            <button
+              type="button"
+              onClick={publish}
+              disabled={!canEdit || pending}
+              className="rounded-full bg-ink px-4 py-1.5 text-[12.5px] font-medium text-white shadow-sm hover:bg-ink-soft disabled:opacity-50"
+            >
+              {pending ? "Publishing…" : "Publish workspace"}
+            </button>
+          </div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CreateProjectForm } from "@/modules/timeline/app/_components/create-project-form";
 import TimelineProjectPage from "@/modules/timeline/app/plan/[projectSlug]/page";
+import { getProjectEmptyCopy } from "@/modules/timeline/lib/onboarding/personalization";
 import {
   getCurrentWorkspace,
   requireUser,
@@ -90,6 +91,11 @@ export default async function TimelineOwnerHome({
     });
   }
 
+  // The empty state speaks the workspace's own language. The copy lives in
+  // one place rather than being paraphrased here, so a venue that started
+  // from the wedding template is met in wedding words.
+  const emptyCopy = getProjectEmptyCopy({ templateId: workspace.templateId });
+
   return (
     <div
       data-timeline-module
@@ -100,11 +106,10 @@ export default async function TimelineOwnerHome({
           Timeline
         </p>
         <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">
-          Start your first project timeline.
+          {emptyCopy.headline}
         </h1>
         <p className="mt-3 max-w-xl text-sm leading-6 text-ink-soft">
-          A project holds one clear timeline. Add it here, then mark tasks as
-          milestones to build the line automatically.
+          {emptyCopy.body}
         </p>
         <div className="mt-7 max-w-md">
           <CreateProjectForm workspaceSlug={workspace.slug} />

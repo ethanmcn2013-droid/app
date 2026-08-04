@@ -40,12 +40,10 @@ function modeHref(
   context: { workspaceId?: string | null; planningPeriodId?: string | null },
   mode: OwnerMode,
 ) {
-  const href = buildTimelineProjectHref(projectSlug, context);
-  if (mode === "view") return href;
-  const [pathname, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set("mode", mode);
-  return `${pathname}?${params.toString()}`;
+  return buildTimelineProjectHref(projectSlug, {
+    ...context,
+    mode: mode === "edit" ? "edit" : null,
+  });
 }
 
 export default async function TimelineProjectPage({
@@ -80,9 +78,12 @@ export default async function TimelineProjectPage({
   if (!project) notFound();
 
   const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
+  // Mode rides the switcher context: changing projects mid-edit stays in
+  // edit. The mode toggle itself overrides it per destination (modeHref).
   const queryContext = {
     workspaceId: context?.workspaceId,
     planningPeriodId: context?.planningPeriodId,
+    mode: mode === "edit" ? ("edit" as const) : null,
   };
   const shareQuery = new URLSearchParams({ project: project.slug });
   if (queryContext.workspaceId) {
@@ -127,7 +128,9 @@ export default async function TimelineProjectPage({
               projects={projectOptions}
               context={queryContext}
             />
-            <span className="hidden min-w-0 lg:inline-flex">
+            {/* The countdown is the plan's pulse — phone owners deserve it
+                too. Only the smallest headers go without. */}
+            <span className="hidden min-w-0 sm:inline-flex">
               <AnchorChip milestones={projectNodes} now={now.getTime()} />
             </span>
           </div>

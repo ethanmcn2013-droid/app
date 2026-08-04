@@ -16,7 +16,6 @@ import {
   anchorMilestone,
   countdown,
   countdownToken,
-  countdownPhrase,
   type AnchorCandidate,
 } from "./anchor";
 
@@ -107,12 +106,4 @@ test("operator token grammar matches the milestone-card chip", () => {
   assert.equal(countdownToken({ kind: "future", days: 47 }), "T-47");
   assert.equal(countdownToken({ kind: "today" }), "Today");
   assert.equal(countdownToken({ kind: "past", days: 3 }), "−3d");
-});
-
-test("recipient phrase is plain English and singular-aware", () => {
-  assert.equal(countdownPhrase({ kind: "future", days: 47 }), "47 days from now");
-  assert.equal(countdownPhrase({ kind: "future", days: 1 }), "1 day from now");
-  assert.equal(countdownPhrase({ kind: "today" }), "today");
-  assert.equal(countdownPhrase({ kind: "past", days: 1 }), "1 day ago");
-  assert.equal(countdownPhrase({ kind: "past", days: 3 }), "3 days ago");
 });

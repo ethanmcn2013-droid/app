@@ -276,9 +276,9 @@ function fallbackAction(
   if (observation.sourceCounts.notes > 0) {
     return { label: "Open Notes", href: "/app/notes" };
   }
-  // "Keep reading" pointed at /app/signal, which is the page the reader
+  // "Keep reading" pointed at /app/home/briefing, which is the page the reader
   // is already on.
-  return { label: "Open Signal", href: "/app/signal" };
+  return { label: "Open the briefing", href: "/app/home/briefing" };
 }
 
 /**

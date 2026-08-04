@@ -10,6 +10,7 @@ import {
 import { DEMO_USER_ID, demoWorkspace } from "@/modules/timeline/lib/roadmap/demo-data";
 import { getWorkspacesForUser, getWorkspaceForSuiteIdForUser } from "@/modules/timeline/server/db/timeline-queries";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
+import { ensureTimelineWorkspaceForUser } from "@/modules/timeline/server/provision-workspace";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
 import { devFallbackEligible } from "./timeline-auth-policy";
 
@@ -91,7 +92,15 @@ export type ResolvedTimelineContext = Readonly<{
 }>;
 
 /**
- * Returns the first workspace owned by the current user, or null.
+ * Returns the first workspace owned by the current user, provisioning one
+ * against their Tasks workspace if they have none.
+ *
+ * The provisioning branch is production blocker 2 from the E05/E06 audit:
+ * nothing in the product ever created a Timeline workspace, so this function
+ * returned null forever and `/app/timeline` rendered a permanent empty state.
+ * See `ensureTimelineWorkspaceForUser` for when a Timeline is created and why
+ * then. It runs only when the user has none, so the normal path is unchanged
+ * and costs one query as before.
  */
 export async function getCurrentWorkspace(
   userId: string,
@@ -107,7 +116,8 @@ export async function getCurrentWorkspace(
     return localWorkspace;
   }
   const workspaces = await getWorkspacesForUser(userId);
-  return workspaces[0] ?? null;
+  if (workspaces[0]) return workspaces[0];
+  return ensureTimelineWorkspaceForUser(userId);
 }
 
 /**

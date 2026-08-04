@@ -6,7 +6,7 @@ export const metadata = {
 /**
  * The closed-beta holding page. A signed-in account that is not on the
  * allowlist is redirected here by requireAppAccess(). Public route, no product
- * data. Shared across all four product modules in this app.
+ * data. Shared across Home and all three product modules in this app.
  */
 export default function WaitlistPage() {
   return (

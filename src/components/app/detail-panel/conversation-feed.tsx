@@ -24,6 +24,7 @@ import {
   type UserId,
 } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useWorkspaceMembers } from "@/lib/domain-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { MentionField, toMentionPeople, type MentionPerson } from "@/components/ui/mention-field";
 import { formatRelativeTime } from "@/lib/utils";
@@ -63,17 +64,30 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
   const [, startTransition] = useTransition();
   const [pending, setPending] = useState(false);
   const me = useCurrentUser();
+  const members = useWorkspaceMembers();
 
-  // Mention pool: the task's assignees plus everyone who has spoken in the
-  // thread, resolved through the seed USERS map (real names, never raw ids).
-  // Names carry into the posted body as "@Name" — the server's existing
-  // mention scan turns those into notifications.
+  // Mention pool: everyone in the workspace, then the task's assignees, then
+  // everyone who has spoken in the thread. Members lead because that is who
+  // the writer can actually reach; assignees and past speakers are folded in
+  // so a person who has since left the workspace still resolves in an old
+  // thread. Before members were included the pool was assignees plus speakers
+  // only, so in a fresh workspace nobody could be mentioned until someone had
+  // already commented — a two-person wedding workspace could not @ its second
+  // person. Names carry into the posted body as "@Name" and the server's
+  // existing mention scan turns those into notifications.
   const people: MentionPerson[] = useMemo(() => {
     const commentAuthors = items
       .filter((it) => it.kind === "comment")
       .map((it) => it.comment.userId);
-    return toMentionPeople([...assigneeIds, ...commentAuthors], (id) => USERS[id]);
-  }, [assigneeIds, items]);
+    const memberNames = new Map(members.map((m) => [m.id, m.name]));
+    return toMentionPeople(
+      [...members.map((m) => m.id), ...assigneeIds, ...commentAuthors],
+      (id) => {
+        const name = memberNames.get(id);
+        return name ? { name } : USERS[id];
+      },
+    );
+  }, [assigneeIds, items, members]);
 
   const handleAdd = useCallback(
     (body: string) => {

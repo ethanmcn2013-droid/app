@@ -19,8 +19,16 @@
     "hex": 97,
     "ease": 2
   },
+  "src/app/lab/welcome-b/page.tsx": {
+    "hex": 3,
+    "ease": 0
+  },
+  "src/app/lab/welcome-w/page.tsx": {
+    "hex": 18,
+    "ease": 0
+  },
   "src/app/layout.tsx": {
-    "hex": 7,
+    "hex": 4,
     "ease": 0
   },
   "src/app/manifest.ts": {
@@ -33,6 +41,10 @@
   },
   "src/app/p/[slug]/opengraph-image.tsx": {
     "hex": 12,
+    "ease": 0
+  },
+  "src/app/s/[token]/opengraph-image.tsx": {
+    "hex": 6,
     "ease": 0
   },
   "src/app/share-card/[workspaceId]/opengraph-image.tsx": {
@@ -79,17 +91,9 @@
     "hex": 2,
     "ease": 0
   },
-  "src/components/app/board/board-app.tsx": {
-    "hex": 3,
-    "ease": 0
-  },
   "src/components/app/done-dopamine/dopamine-check.tsx": {
     "hex": 1,
     "ease": 0
-  },
-  "src/components/app/done-dopamine/first-completion-moment.tsx": {
-    "hex": 3,
-    "ease": 4
   },
   "src/components/app/focus-mode.tsx": {
     "hex": 2,
@@ -121,10 +125,6 @@
   },
   "src/components/app/suite-switcher-pills.tsx": {
     "hex": 9,
-    "ease": 1
-  },
-  "src/components/app/timeline/timeline-app.tsx": {
-    "hex": 0,
     "ease": 1
   },
   "src/components/dev-banner.tsx": {
@@ -243,12 +243,12 @@
     "hex": 6,
     "ease": 3
   },
-  "src/components/system/long-wait-status.tsx": {
-    "hex": 1,
-    "ease": 1
-  },
   "src/components/system/SuiteLoader.tsx": {
     "hex": 6,
+    "ease": 1
+  },
+  "src/components/system/long-wait-status.tsx": {
+    "hex": 1,
     "ease": 1
   },
   "src/lib/brand/suite-mark.tsx": {

@@ -3,17 +3,17 @@
   "experienceId": "tasks.page.print-calendar",
   "source": "tasks/src/app/print/calendar/page.tsx",
   "materialityHash": "b9f94c73108490b0",
-  "reviewedAt": "2026-07-30",
-  "reviewer": "Claude Opus 5, T·111 evidence-contract refresh",
+  "reviewedAt": "2026-08-04",
+  "reviewer": "claude-fable-5 (T·126 cycle)",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-5501ae463b99182192baa7cc-57620129dfe392df.json",
-    "attestationSha256": "ae07a250f0a04068ddac1f0479ea5ab03c0bb5e57ff38259c2559d4ce9a6275e",
-    "runId": "tasks-playwright-5501ae463b99182192baa7cc",
-    "canonicalEvidenceSha256": "5501ae463b99182192baa7ccb22e1f2f1c19ec5adb19a304768880a6f4b4a775",
-    "rawArtifactSha256": "57620129dfe392df07739d261a63cad36fa902f38d6f59012cb81bcf165c3509",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-8f5e9b1f0298cadf12e935f1-ea39fb9ecbf1f7c5.json",
+    "attestationSha256": "11863ddbc3ddda71444592d6a60a7c3dbdcdfdee56d21d0601fa172ab904c5f4",
+    "runId": "tasks-playwright-8f5e9b1f0298cadf12e935f1",
+    "canonicalEvidenceSha256": "8f5e9b1f0298cadf12e935f1d9031696b2b03dd36f02d262eaf5a5f8791a0e32",
+    "rawArtifactSha256": "ea39fb9ecbf1f7c54bc38446434715d2052a95919555b5fee0c0405e5f514cf5",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
-    "caseName": "populated demo workspace",
+    "caseName": "front door lands on Home",
     "projects": [
       "mobile",
       "tablet",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "The evidence contract changed with T·111: Signal's briefing renamed its sections to Now and Next, moved to the suite's pinned review clock, and registered a new supporting loading boundary, so every fixture assertion hash moved. No source change to this surface.",
-  "decision": "Re-attested against the current full-suite run, where this surface passes on mobile, tablet, desktop and wide with no axe violations."
+  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
+  "decision": "approve"
 }

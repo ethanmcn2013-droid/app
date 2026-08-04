@@ -42,7 +42,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: seed failed", e);
       }
-      router.push("/app/tasks");
+      router.push("/app/home");
     });
   };
 
@@ -55,7 +55,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: mark-first-run failed", e);
       }
-      router.push("/app/tasks");
+      router.push("/app/home");
     });
   };
 
@@ -67,7 +67,7 @@ export function WelcomePicker({
       } catch (e) {
         console.warn("welcome: mark-first-run failed", e);
       }
-      router.push("/app/tasks");
+      router.push("/app/home");
     });
   };
 

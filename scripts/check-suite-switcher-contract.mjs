@@ -61,8 +61,20 @@ if (switcher.file) {
   mustContain(
     switcher.file,
     switcher.source,
-    "canonical always-visible 4-product pill switcher",
-    "authed product switching must stay visible, not hidden behind a dropdown",
+    "canonical always-visible suite pill switcher",
+    "authed surface switching must stay visible, not hidden behind a dropdown",
+  );
+  mustContain(
+    switcher.file,
+    switcher.source,
+    'slug: "home"',
+    "Home is the front door and must stay first in the pills (consolidation D4)",
+  );
+  mustNotContain(
+    switcher.file,
+    switcher.source,
+    'slug: "signal"',
+    "Signal left the product line (consolidation D4) — it must not return as a nav pill",
   );
   mustContain(
     switcher.file,
@@ -144,8 +156,14 @@ if (!isStudio) {
     mustContain(
       launcher.file,
       launcher.source,
-      "Four products, one system.",
-      "new dropdown copy replaces the old generic panel",
+      "Notes. Tasks. Timeline. One clear system.",
+      "the launcher speaks the three-product model (consolidation D9)",
+    );
+    mustNotContain(
+      launcher.file,
+      launcher.source,
+      "Four products",
+      "the four-product claim must not return to the launcher",
     );
     mustContain(
       launcher.file,

@@ -100,10 +100,12 @@
 .intro h1 {
   max-width: 11ch;
   margin: 0.8rem 0 0;
-  font-size: clamp(3.2rem, 7vw, 7rem);
+  /* The artifact display register (globals.css --x-artifact-*), ratified
+     once instead of a re-typed clamp per surface. */
+  font-size: var(--x-artifact-display);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.065em;
-  line-height: 0.88;
+  letter-spacing: var(--x-artifact-display-tracking);
+  line-height: var(--x-artifact-display-leading);
   text-wrap: balance;
 }
 
@@ -118,7 +120,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: 92rem;
   margin-inline: auto;
   border-block: 1px solid var(--x-timeline-studio-line);
@@ -148,6 +150,16 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.045em;
   line-height: 1;
+}
+
+/* The withheld view count and the coarsened month both read as prose, not as a
+   number that failed to load. */
+.statNote {
+  margin: 0.55rem 0 0;
+  max-width: 34ch;
+  color: var(--x-timeline-studio-faint);
+  font-size: var(--text-small, 0.8125rem);
+  line-height: 1.45;
 }
 
 .sectionHeader {
@@ -190,7 +202,7 @@
   margin: 0.75rem 0 0;
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.065em;
+  letter-spacing: var(--x-artifact-display-tracking);
   line-height: 0.92;
 }
 

@@ -35,7 +35,7 @@ export default function AboutPage() {
               Part of something larger
             </div>
             <p className="mt-3 max-w-[60ch] text-[15.5px] leading-[1.6] text-ink-soft">
-              Signal Tasks is one of four products from{" "}
+              Signal Tasks is one of three products from{" "}
               <a
                 href={`${STUDIO_URL}/about`}
                 className="font-medium text-ink transition-colors hover:text-brand"
