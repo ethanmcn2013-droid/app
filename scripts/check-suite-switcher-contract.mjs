@@ -156,8 +156,14 @@ if (!isStudio) {
     mustContain(
       launcher.file,
       launcher.source,
-      "Four products, one system.",
-      "new dropdown copy replaces the old generic panel",
+      "Notes. Tasks. Timeline. One clear system.",
+      "the launcher speaks the three-product model (consolidation D9)",
+    );
+    mustNotContain(
+      launcher.file,
+      launcher.source,
+      "Four products",
+      "the four-product claim must not return to the launcher",
     );
     mustContain(
       launcher.file,

@@ -23,7 +23,7 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "populated demo workspace",
+          "name": "front door lands on Home",
           "path": "/app",
           "states": [
             "populated",
@@ -33,7 +33,7 @@
           "assertions": [
             {
               "kind": "url",
-              "pathname": "/app/tasks",
+              "pathname": "/app/home",
               "proves": [
                 "populated"
               ]
@@ -41,7 +41,7 @@
             {
               "kind": "role",
               "role": "heading",
-              "name": "The Orchard, events",
+              "name": "Good morning.",
               "proves": [
                 "populated"
               ]

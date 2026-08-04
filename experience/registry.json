@@ -61,7 +61,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c199785a0312181f"
+      "materialityHash": "166201f23ee5dfe4"
     },
     {
       "id": "tasks.page.app",
@@ -2250,7 +2250,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "dbe79371612be2b9"
+      "materialityHash": "23e82680a1e32a84"
     },
     {
       "id": "tasks.page.welcome",
@@ -2295,9 +2295,9 @@
       "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d9fe0d7f1603130c",
+      "materialityHash": "11d00f9a07f33588",
       "materialityReview": {
-        "materialityHash": "d9fe0d7f1603130c",
+        "materialityHash": "11d00f9a07f33588",
         "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.welcome-2026-07-30.json"
       }

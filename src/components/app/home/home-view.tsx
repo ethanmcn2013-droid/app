@@ -139,7 +139,7 @@ function TodaysSignal({
           properties={{}}
           className="inline-flex items-center gap-1.5 rounded-md text-[13px] font-medium text-ink-soft outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--bg)]"
         >
-          Open full briefing
+          <span>Open full briefing</span>
           <span aria-hidden>→</span>
         </HomeItemLink>
       </div>

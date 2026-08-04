@@ -46,7 +46,8 @@ export default async function WelcomePage({
   // Returning users skip the welcome (they came here from the URL bar
   // or an old bookmark). Push them straight back into the workspace.
   if (!(await isFirstRun(ws))) {
-    redirect("/app/tasks");
+    // Home is the authenticated front door (consolidation D6).
+    redirect("/app/home");
   }
 
   // Venue Editions bridge: if the signed-in user holds an active
