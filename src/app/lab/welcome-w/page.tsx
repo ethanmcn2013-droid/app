@@ -129,7 +129,7 @@ export default function WelcomeWildcardLabPage() {
             <Link href="/welcome/plan?context=wedding_season" className="lw-cta">
               Begin your plan
               <span className="lw-cta-arrow" aria-hidden="true">
-                &#8594;
+                &#8594; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
               </span>
             </Link>
           </div>
@@ -160,14 +160,14 @@ const CSS = `
 .lw-stage {
   --lw-serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", serif;
   --lw-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --lw-ink-deep: #0b0710;
-  --lw-cream: #f6ead4;
-  --lw-cream-dim: #e3d2b4;
-  --lw-gold: #e2b360;
-  --lw-garnet: #8a2b42;
-  --lw-garnet-deep: #4a1220;
-  --lw-parchment: #f7ecd8;
-  --lw-parchment-ink: #2b1811;
+  --lw-ink-deep: #0b0710; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-cream: #f6ead4; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-cream-dim: #e3d2b4; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-gold: #e2b360; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-garnet: #8a2b42; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-garnet-deep: #4a1220; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-parchment: #f7ecd8; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
+  --lw-parchment-ink: #2b1811; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
   --lw-seal-size: clamp(84px, 20vw, 128px);
 
   position: relative;
@@ -182,7 +182,7 @@ const CSS = `
   background:
     radial-gradient(1200px 620px at 50% -8%, rgba(226, 179, 96, 0.16), transparent 60%),
     radial-gradient(900px 500px at 84% 6%, rgba(138, 43, 66, 0.24), transparent 65%),
-    linear-gradient(180deg, #180d16 0%, #0b0710 55%, #0a060d 100%);
+    linear-gradient(180deg, #180d16 0%, #0b0710 55%, #0a060d 100%); /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
   color: var(--lw-cream);
   font-family: var(--lw-serif);
 }
@@ -320,13 +320,13 @@ const CSS = `
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, #a5384f, #4a1220 72%);
+  background: radial-gradient(circle at 34% 28%, #a5384f, #4a1220 72%); /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
   box-shadow:
     inset 0 -8px 14px rgba(0, 0, 0, 0.4),
     inset 0 5px 10px rgba(255, 255, 255, 0.1),
     0 14px 30px -10px rgba(0, 0, 0, 0.6);
   transform-origin: 50% 55%;
-  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.15, 1) 0.1s, opacity 0.45s ease 0.1s;
+  transition: transform 0.6s cubic-bezier(0.3, 0.7, 0.15, 1) 0.1s, opacity 0.45s ease 0.1s; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
 }
 .lw-seal-drip {
   position: absolute;
@@ -393,7 +393,7 @@ const CSS = `
   width: 100%;
   max-width: 560px;
   text-align: left;
-  background: linear-gradient(180deg, #fbf3e4, #f2e5cb);
+  background: linear-gradient(180deg, #fbf3e4, #f2e5cb); /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
   color: var(--lw-parchment-ink);
   border-radius: 20px;
   padding: clamp(28px, 5vw, 44px) clamp(24px, 6vw, 40px);
@@ -401,7 +401,7 @@ const CSS = `
     0 30px 60px -20px rgba(0, 0, 0, 0.55),
     inset 0 2px 0 rgba(255, 255, 255, 0.5),
     0 0 0 1px rgba(120, 70, 40, 0.12);
-  animation: lw-unfurl 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 0.18s both;
+  animation: lw-unfurl 0.65s cubic-bezier(0.2, 0.8, 0.2, 1) 0.18s both; /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
 }
 @keyframes lw-unfurl {
   from { opacity: 0; transform: translateY(18px) scale(0.98); }
@@ -441,7 +441,7 @@ const CSS = `
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--lw-parchment);
-  background: linear-gradient(180deg, #8a2b42, #5c1420);
+  background: linear-gradient(180deg, #8a2b42, #5c1420); /* ds-allow — lab exploration palette; three welcome directions under comparison, not shipped tokens. */
   padding: 13px 24px;
   border-radius: 999px;
   text-decoration: none;

@@ -20,8 +20,9 @@ import { motion, useReducedMotion } from "motion/react";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 const VENUE_NAME = "Glenmara House";
-const VENUE_INK = "#24402e";
-const VENUE_CREAM = "#f6f1e3";
+const VENUE_INK = "#24402e"; // ds-allow — lab exploration palette; venue-brand direction under comparison.
+const VENUE_CREAM = "#f6f1e3"; // ds-allow — lab exploration palette; venue-brand direction under comparison.
+const HANDOVER_PAPER = "#ffffff"; // ds-allow — lab exploration palette; venue-brand direction under comparison.
 const VENUE_SERIF =
   "'Iowan Old Style', 'Palatino Linotype', Georgia, 'Times New Roman', serif";
 
@@ -177,7 +178,7 @@ export default function WelcomeHostedLabPage() {
       <motion.div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0"
-        animate={{ backgroundColor: handedOver ? "#ffffff" : VENUE_CREAM }}
+        animate={{ backgroundColor: handedOver ? HANDOVER_PAPER : VENUE_CREAM }}
         transition={{ duration: reduceMotion ? 0 : 0.7, ease: EASE }}
       />
       <motion.div
