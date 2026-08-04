@@ -467,7 +467,7 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Make this yours",
+              "name": "Return to workspace",
               "href": "/app/tasks",
               "proves": [
                 "read-only"
@@ -931,7 +931,7 @@
             },
             {
               "kind": "text",
-              "text": "8 read · 6 flagged · 3 shown",
+              "text": "8 read · 4 flagged · 3 shown",
               "proves": [
                 "default"
               ]
