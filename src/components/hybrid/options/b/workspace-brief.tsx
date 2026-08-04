@@ -16,7 +16,7 @@ import {
   TASKS_SYNC_EVENT,
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
-import { isTaskOverdue } from "../../dates";
+import { formatDate, isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
 import { TaskOpenButton } from "../../shared/task-ui";
@@ -238,19 +238,28 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
           </span>
         </div>
         <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
+        {/* Each count wraps with its noun (nowrap spans): "… · 7 ⏎
+            unscheduled" severed the number from its unit at 1440. */}
         <p className={styles.progressFacts}>
-          {completed} of {store.tasks.length} done
+          <span>{completed} of {store.tasks.length} done</span>
           {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
-          {unscheduled > 0 ? <> · {unscheduled} no date</> : null}
+          {unscheduled > 0 ? <> · <span>{unscheduled} unscheduled</span></> : null}
         </p>
         {coverage ? (
-          <p aria-label="Budget coverage" className={styles.progressFacts}>{coverage}</p>
+          <p aria-label="Budget coverage" className={styles.progressFacts}>
+            {coverage.split(". ").map((sentence, index, all) => (
+              <span key={sentence}>
+                {sentence}
+                {index < all.length - 1 ? ". " : ""}
+              </span>
+            ))}
+          </p>
         ) : null}
       </section>
       {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>
         <ol>
-          {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? task.schedule.on.slice(5).replace("-", "/") : ""}</time><TaskOpenButton task={task} /></li>)}
+          {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? formatDate(task.schedule.on) : ""}</time><TaskOpenButton task={task} /></li>)}
         </ol>
         {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : null}
       </section> : null}

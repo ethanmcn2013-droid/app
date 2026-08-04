@@ -15,6 +15,7 @@ import { db } from "@/server/db";
 import { planningPeriods, tasks, workspaces } from "@/server/db/schema";
 import { listMyWorkspaces } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 
 export type ProjectsTreeLeaf = Readonly<{
@@ -72,7 +73,12 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
         {
           periodId: "demo-planning-period",
           periodName: "Wedding season",
-          dateRange: "12 Sep",
+          // Derived from the one pinned review frame, never a literal —
+          // the sidebar must state the same season end every other demo
+          // surface derives from.
+          dateRange: compactDate(
+            PINNED_REVIEW_CALENDAR_FRAME.planningPeriod?.endDate ?? "",
+          ),
           workspaces: [
             { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
           ],

@@ -38,9 +38,12 @@ test("calendar frame derives today in the server-selected timezone", () => {
 test("review frame is deliberately pinned and finite", () => {
   assert.equal(PINNED_REVIEW_CALENDAR_FRAME.source, "review");
   assert.equal(PINNED_REVIEW_CALENDAR_FRAME.today, "2026-07-16");
+  // A week past the wedding day (2026-10-03). 2026-09-12 is the retired
+  // wedding date and must not reappear; a period that closed three weeks
+  // before the day it plans was the tell.
   assert.equal(
     PINNED_REVIEW_CALENDAR_FRAME.planningPeriod?.endDate,
-    "2026-09-12",
+    "2026-10-10",
   );
 });
 

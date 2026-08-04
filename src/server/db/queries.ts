@@ -44,6 +44,8 @@ import { publicBoardColumns, type PublicColumn } from "@/lib/public-board-lanes"
 import { byWorkspace } from "./tenant";
 import { withReadRetry } from "./retry";
 import { isDemoMode } from "@/lib/access-mode";
+import { getCurrentUserOrNull } from "@/server/auth";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import {
   DEMO_DOMAIN,
   DEMO_SHARE_TOKEN,
@@ -200,7 +202,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
       name: DEMO_WORKSPACE_NAME,
       activeDomain: DEMO_DOMAIN,
       publishedAt: new Date("2026-01-01T00:00:00.000Z"),
-      tasks: demoTasks().map(toPublicTask),
+      tasks: demoTasks().map((task) => toPublicTask(task)),
     };
   }
 
@@ -215,7 +217,7 @@ export async function getPublishedWorkspaceBySlug(slug: string): Promise<
     .from(workspaces)
     .where(eq(workspaces.slug, slug));
   if (!ws || !ws.publishedAt) return null;
-  const taskList = (await getTasks(ws.id)).map(toPublicTask);
+  const taskList = (await getTasks(ws.id)).map((task) => toPublicTask(task));
   return {
     id: ws.id,
     slug: ws.slug,
@@ -528,7 +530,35 @@ export type ShareData = {
   workspaceTitle: string;
   workspaceCrumb: string;
   domainId: DomainId;
+  /** Server-side only: never serialized into the public payload. Lets the
+   *  share page offer a signed-in member their way back to the workspace. */
+  workspaceId: string | null;
 };
+
+/**
+ * True when the current viewer is a signed-in member of the workspace —
+ * the owner-preview affordance on public share pages. Never throws on an
+ * anonymous request; a public artifact must render without a session.
+ */
+export async function viewerIsWorkspaceMember(
+  workspaceId: string | null,
+): Promise<boolean> {
+  if (!workspaceId) return false;
+  if (isDemoMode()) return workspaceId === DEMO_WORKSPACE_ID;
+  const me = await getCurrentUserOrNull();
+  if (!me) return false;
+  const [match] = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(
+      and(
+        eq(workspaceMembers.userId, me),
+        eq(workspaceMembers.workspaceId, workspaceId),
+      ),
+    )
+    .limit(1);
+  return Boolean(match);
+}
 
 type NotificationRow = typeof notifications.$inferSelect;
 
@@ -693,15 +723,21 @@ export async function resolveShareLink(
   if (isDemoMode()) {
     if (token !== DEMO_SHARE_TOKEN) return null;
     const pack = DOMAINS[DEMO_DOMAIN];
-    const demoPublicTasks = demoTasks().map(toPublicTask);
+    const demoNow = new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso);
+    const demoPublicTasks = demoTasks().map((task) =>
+      toPublicTask(task, demoNow),
+    );
     return {
       token,
       view: "board",
       tasks: demoPublicTasks,
       columns: publicBoardColumns(null, demoPublicTasks),
-      workspaceTitle: pack.workspaceTitle,
+      // The real workspace name, never the persona pack's sample title —
+      // the recipient is looking at this workspace's board.
+      workspaceTitle: DEMO_WORKSPACE_NAME,
       workspaceCrumb: pack.workspaceCrumb,
       domainId: DEMO_DOMAIN,
+      workspaceId: DEMO_WORKSPACE_ID,
     };
   }
   const [row] = await db
@@ -711,6 +747,7 @@ export async function resolveShareLink(
       revokedAt: shareLinks.revokedAt,
       expiresAt: shareLinks.expiresAt,
       workspaceId: workspaces.id,
+      workspaceName: workspaces.name,
       activeDomain: workspaces.activeDomain,
     })
     .from(shareLinks)
@@ -738,14 +775,19 @@ export async function resolveShareLink(
     .from(meta)
     .where(eq(meta.key, `board:${wsId}:columns`));
   const columnConfig = configRow ? parseColumnConfig(configRow.value) : null;
+  const servedAt = new Date();
+  const publicTasks = taskList.map((task) => toPublicTask(task, servedAt));
   return {
     token,
     view: row.view,
-    tasks: taskList.map(toPublicTask),
-    columns: publicBoardColumns(columnConfig, taskList.map(toPublicTask)),
-    workspaceTitle: pack.workspaceTitle,
+    tasks: publicTasks,
+    columns: publicBoardColumns(columnConfig, publicTasks),
+    // The recipient sees the workspace's real name; the persona pack's
+    // sample title is only a fallback for unnamed legacy workspaces.
+    workspaceTitle: row.workspaceName?.trim() || pack.workspaceTitle,
     workspaceCrumb: pack.workspaceCrumb,
     domainId,
+    workspaceId: wsId,
   };
 }
 
