@@ -59,7 +59,7 @@ function markCell() {
     <a
       href={STUDIO_URL}
       title="Signal Studio"
-      className="flex h-full w-[60px] flex-none items-center justify-center border-r border-white/[0.07] outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
+      className="flex h-full w-[60px] flex-none items-center justify-center outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
     >
       <span
         aria-hidden="true"
@@ -105,7 +105,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 border-r border-white/[0.07] px-3 md:w-[248px] md:px-4">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 px-3 md:w-[248px] md:px-4">
       <a
         href={identity.home}
         aria-label={identity.label}

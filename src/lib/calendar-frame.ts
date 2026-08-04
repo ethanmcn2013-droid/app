@@ -79,6 +79,11 @@ export const PINNED_REVIEW_CALENDAR_FRAME: CalendarFrame = Object.freeze({
     id: "review-wedding-season",
     name: "Wedding season",
     startDate: "2026-07-06",
-    endDate: "2026-09-12",
+    // A week past the wedding day (2026-10-03): the season a venue plans
+    // runs THROUGH the day, not out three weeks before it. The old
+    // 2026-09-12 end closed the period before the wedding it exists to
+    // plan — and 12 Sep is the retired wedding date, which must not
+    // reappear anywhere in the story.
+    endDate: "2026-10-10",
   }),
 });
