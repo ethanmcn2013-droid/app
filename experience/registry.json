@@ -112,7 +112,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "28526dda3e716a36"
+      "materialityHash": "33abda03de781cce"
     },
     {
       "id": "tasks.page.app-tasks",
@@ -2439,48 +2439,6 @@
       "materialityHash": "6542651ed3b2dab6"
     },
     {
-      "id": "tasks.state.app-signal-loading",
-      "product": "tasks",
-      "surfaceType": "loading",
-      "route": "/app/signal",
-      "source": "tasks/src/app/app/signal/loading.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Understand and use app · signal.",
-      "primaryAction": "Complete the primary action on app · signal.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "reduced-motion"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "9f76837be523afe3"
-    },
-    {
       "id": "tasks.state.root-not-found",
       "product": "tasks",
       "surfaceType": "error",
@@ -2649,7 +2607,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "55fc56395b70514e"
+      "materialityHash": "7d1439eb0d445ae9"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -3026,8 +2984,8 @@
       "source": "tasks/src/app/app/signal/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "application-shell-and-navigation",
-      "primaryJob": "Access the Signal module from within the unified app shell.",
-      "primaryAction": "Open Signal.",
+      "primaryJob": "Land on the Full Briefing from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3060,7 +3018,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8df643b292a9a8cc"
+      "materialityHash": "827580f74018b68a"
     },
     {
       "id": "tasks.page.app-signal-onboarding",
@@ -3070,8 +3028,8 @@
       "source": "tasks/src/app/app/signal/onboarding/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Link a Signal Tasks workspace to the Signal briefing module.",
-      "primaryAction": "Confirm workspace and start receiving briefings.",
+      "primaryJob": "Land on briefing onboarding from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3106,7 +3064,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "5a57448960de5a04"
+      "materialityHash": "8a8464b6bd1c1af0"
     },
     {
       "id": "tasks.page.app-signal-settings-notifications",
@@ -3116,8 +3074,8 @@
       "source": "tasks/src/app/app/signal/settings/notifications/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Choose how often the Signal briefing lands in the inbox.",
-      "primaryAction": "Select a cadence (daily / weekly / off).",
+      "primaryJob": "Land on briefing notification settings from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3150,7 +3108,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "eee37871592f6462"
+      "materialityHash": "b9d4534ca90d6702"
     },
     {
       "id": "tasks.page.app-notes",
@@ -3282,48 +3240,6 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7702b4338ae795c5"
-    },
-    {
-      "id": "tasks.state.app-signal-error",
-      "product": "tasks",
-      "surfaceType": "error",
-      "route": "/app/signal",
-      "source": "tasks/src/app/app/signal/error.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Recover from a Signal briefing load failure and get back to the day's read.",
-      "primaryAction": "Try again.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "reduced-motion"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "64dcc157656bdcda"
     },
     {
       "id": "tasks.page.app-timeline",
@@ -3784,6 +3700,358 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ef156f3db12fed31"
+    },
+    {
+      "id": "tasks.page.app-home",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "dashboard-or-command-centre",
+      "primaryJob": "See what matters now across Notes, Tasks and Timeline, and act on the day's top item.",
+      "primaryAction": "Open the day's top item.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "populated",
+        "empty",
+        "first-use",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "legacy",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "416372ea123f5a5d"
+    },
+    {
+      "id": "tasks.page.app-home-briefing",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Access the Signal module from within the unified app shell.",
+      "primaryAction": "Open Signal.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "3c4b3edab7226e25"
+    },
+    {
+      "id": "tasks.page.app-home-briefing-onboarding",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing/onboarding",
+      "source": "tasks/src/app/app/home/briefing/onboarding/page.tsx",
+      "parentJourney": "access-and-onboarding",
+      "archetype": "onboarding-and-authentication",
+      "primaryJob": "Link a Signal Tasks workspace to the Signal briefing module.",
+      "primaryAction": "Confirm workspace and start receiving briefings.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "96ca62eb0ae859ef"
+    },
+    {
+      "id": "tasks.page.app-home-briefing-settings-notifications",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing/settings/notifications",
+      "source": "tasks/src/app/app/home/briefing/settings/notifications/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Choose how often the Signal briefing lands in the inbox.",
+      "primaryAction": "Select a cadence (daily / weekly / off).",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2a868aa4fac3031c"
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for Home without losing orientation.",
+      "primaryAction": "None — resolves automatically.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "43b9c13f874d4f0f"
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Home briefing read failure and keep the products one click away.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "8d27c34b75e7db78"
+    },
+    {
+      "id": "tasks.state.app-home-briefing-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for the Full Briefing without losing orientation.",
+      "primaryAction": "None — resolves automatically.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "1ed8540842490cd6"
+    },
+    {
+      "id": "tasks.state.app-home-briefing-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Full Briefing load failure.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7b7ed391aa1b72ab"
     }
   ]
 }

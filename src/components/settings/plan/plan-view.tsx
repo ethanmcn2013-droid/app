@@ -21,7 +21,7 @@ function FreeView() {
           Free
         </div>
         <p className="mt-2 max-w-[480px] text-[13.5px] leading-[1.6] text-ink-soft">
-          One workspace, all four products, three editing guests. The default
+          One workspace, all three products, three editing guests. The default
           we built around, most of what most people need.
         </p>
       </div>

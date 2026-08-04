@@ -156,7 +156,7 @@ export function ForTrades() {
         </h2>
         <p className="mt-5 text-[16.5px] leading-[1.6] text-ink-soft">
           One-truck operation: the Free tier covers the route, one
-          workspace, all four products, three editing guests for a
+          workspace, all three products, three editing guests for a
           small crew, no card. Running more than one truck: Workspace
           is €12 a month for unlimited workspaces, one per truck if
           you dispatch them separately, and inviting people never

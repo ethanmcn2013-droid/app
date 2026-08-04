@@ -81,7 +81,7 @@ const SEED: Seed[] = [
     due: "1 Aug",
     dueAt: REVIEW_MENU_MILESTONE.date ?? undefined,
     // NOTE: editedHoursAgo below is 15 days — the tasting was confirmed,
-    // then the dietary list stalled. This is the story's one long-quiet
+    // then the final list stalled. This is the story's one long-quiet
     // thread: Signal surfaces it, the inbox nudges it, and the task
     // header honestly reads "edited 1 Jul". One fact, every surface.
     isMilestone: true,

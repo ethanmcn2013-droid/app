@@ -1,4 +1,5 @@
 import { permanentRedirect } from "next/navigation";
+import { requireAppAccess } from "@/server/require-app-access";
 import { legacySignalTarget } from "@/lib/legacy-signal-redirect";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export async function generateMetadata({
 }: {
   searchParams: SearchParams;
 }) {
+  await requireAppAccess();
   permanentRedirect(
     legacySignalTarget(
       "/app/home/briefing/settings/notifications",
@@ -28,6 +30,7 @@ export default async function LegacySignalNotificationsRoute({
 }: {
   searchParams: SearchParams;
 }) {
+  await requireAppAccess();
   permanentRedirect(
     legacySignalTarget(
       "/app/home/briefing/settings/notifications",

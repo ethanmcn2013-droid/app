@@ -907,7 +907,7 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "demo morning briefing",
+          "name": "legacy link lands on the briefing",
           "path": "/app/signal",
           "states": [
             "default",
@@ -917,7 +917,7 @@
           "assertions": [
             {
               "kind": "url",
-              "pathname": "/app/signal",
+              "pathname": "/app/home/briefing",
               "proves": [
                 "default"
               ]
@@ -948,7 +948,7 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "demo workspace onboarding",
+          "name": "legacy link lands on briefing onboarding",
           "path": "/app/signal/onboarding",
           "states": [
             "first-use",
@@ -957,6 +957,13 @@
             "keyboard-only"
           ],
           "assertions": [
+            {
+              "kind": "url",
+              "pathname": "/app/home/briefing/onboarding",
+              "proves": [
+                "first-use"
+              ]
+            },
             {
               "kind": "role",
               "role": "heading",
@@ -979,7 +986,7 @@
       "evidence": "rendered",
       "cases": [
         {
-          "name": "demo briefing cadence",
+          "name": "legacy link lands on briefing cadence",
           "path": "/app/signal/settings/notifications",
           "states": [
             "default",
@@ -987,6 +994,13 @@
             "keyboard-only"
           ],
           "assertions": [
+            {
+              "kind": "url",
+              "pathname": "/app/home/briefing/settings/notifications",
+              "proves": [
+                "default"
+              ]
+            },
             {
               "kind": "role",
               "role": "heading",
@@ -1303,6 +1317,161 @@
       "remainingStates": [
         "error",
         "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.app-home",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "home front door",
+          "path": "/app/home",
+          "states": [
+            "default",
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
+          "assertions": [
+            {
+              "kind": "url",
+              "pathname": "/app/home",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Good morning.",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Order tonic + the good olives",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Open full briefing",
+              "proves": [
+                "default"
+              ]
+            }
+          ]
+        }
+      ],
+      "remainingStates": [
+        "empty",
+        "first-use",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted"
+      ]
+    },
+    {
+      "id": "tasks.page.app-home-briefing",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "full briefing ledger",
+          "path": "/app/home/briefing",
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
+          "assertions": [
+            {
+              "kind": "url",
+              "pathname": "/app/home/briefing",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "Thursday 09:00 · The Orchard, events",
+              "proves": [
+                "default"
+              ]
+            },
+            {
+              "kind": "text",
+              "text": "8 read · 4 flagged · 3 shown",
+              "proves": [
+                "default"
+              ]
+            }
+          ]
+        }
+      ],
+      "remainingStates": [
+        "loading"
+      ]
+    },
+    {
+      "id": "tasks.page.app-home-briefing-onboarding",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "briefing onboarding",
+          "path": "/app/home/briefing/onboarding",
+          "states": [
+            "first-use",
+            "populated",
+            "reduced-motion",
+            "keyboard-only"
+          ],
+          "assertions": [
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "Signal found your workspace.",
+              "proves": [
+                "first-use",
+                "populated"
+              ]
+            }
+          ]
+        }
+      ],
+      "remainingStates": [
+        "empty",
+        "loading"
+      ]
+    },
+    {
+      "id": "tasks.page.app-home-briefing-settings-notifications",
+      "evidence": "rendered",
+      "cases": [
+        {
+          "name": "briefing cadence",
+          "path": "/app/home/briefing/settings/notifications",
+          "states": [
+            "default",
+            "reduced-motion",
+            "keyboard-only"
+          ],
+          "assertions": [
+            {
+              "kind": "role",
+              "role": "heading",
+              "name": "The briefing is ready when you open it.",
+              "proves": [
+                "default"
+              ]
+            }
+          ]
+        }
+      ],
+      "remainingStates": [
+        "loading"
       ]
     }
   ],

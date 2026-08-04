@@ -6,23 +6,39 @@
 
 ## Product model
 
-Signal Studio is one app. It contains four products:
+**Amended 2026-08-04 (Signal → Home consolidation).** Signal Studio is
+one app. It contains three products, with Home as the authenticated
+front door:
 
-| Product ID | Full marketing name | In-app label |
-|---|---|---|
-| `notes` | Signal Notes | Notes |
-| `tasks` | Signal Tasks | Tasks |
-| `timeline` | Signal Timeline | Timeline |
-| `signal` | Signal | Signal |
+| ID | Full marketing name | In-app label | Role |
+|---|---|---|---|
+| `notes` | Signal Notes | Notes | Product — captures the thinking |
+| `tasks` | Signal Tasks | Tasks | Product — moves the work |
+| `timeline` | Signal Timeline | Timeline | Product — makes the plan visible |
+| `home` | — (not marketed as a product) | Home | Front door — Today's Signal + Full Briefing |
 
-Use the full name on marketing pages and at first reference in longer public copy. Use the short label in the product rail, commands, breadcrumbs, and product-local headings. Do not call them separate apps. Do not use old capability labels such as “Plans” or “Morning Briefing” as product names.
+Signal is the company, the brand, and the outcome the system produces —
+never "our fourth product". The briefing capability formerly presented
+as the Signal product lives inside Home ("Today's Signal"; "Full
+Briefing" at `/app/home/briefing`). The internal `signal` product ID
+survives in code as a legacy identifier; it must not appear in new
+navigation, marketing, or copy.
+
+Use the full name on marketing pages and at first reference in longer public copy. Use the short label in the rail, commands, breadcrumbs, and product-local headings. Do not call them separate apps. Do not use old capability labels such as “Plans” or “Morning Briefing” as product names.
 
 ## Canonical URLs
 
-| Intent | Notes | Tasks | Timeline | Signal |
-|---|---|---|---|---|
-| Marketing | `https://signalstudio.ie/notes` | `https://signalstudio.ie/tasks` | `https://signalstudio.ie/timeline` | `https://signalstudio.ie/signal` |
-| In-app | `https://app.signalstudio.ie/app/notes` | `https://app.signalstudio.ie/app/tasks` | `https://app.signalstudio.ie/app/timeline` | `https://app.signalstudio.ie/app/signal` |
+| Intent | Notes | Tasks | Timeline |
+|---|---|---|---|
+| Marketing | `https://signalstudio.ie/notes` | `https://signalstudio.ie/tasks` | `https://signalstudio.ie/timeline` |
+| In-app | `https://app.signalstudio.ie/app/notes` | `https://app.signalstudio.ie/app/tasks` | `https://app.signalstudio.ie/app/timeline` |
+
+Home: `https://app.signalstudio.ie/app/home` (the default authenticated
+destination; `/app` redirects here). Full Briefing:
+`https://app.signalstudio.ie/app/home/briefing`. The daily-briefing
+marketing story: `https://signalstudio.ie/features/daily-briefing`.
+Legacy `/app/signal*` and the old `signalstudio.ie/signal` product page
+permanently redirect to their successors.
 
 `https://signalstudio.ie` is the single marketing origin.  
 `https://app.signalstudio.ie` is the single signed-in app origin.
@@ -37,8 +53,10 @@ Tasks views live below the Tasks product entry:
 - Calendar: `/app/tasks/calendar`
 
 “Timeline” without the Tasks namespace always means the Signal Timeline
-product. “Signal” is the product name; “brief” is a view inside Signal, not a
-route or product label.
+product. “Signal” is the company and the outcome the system produces —
+never a product label. The briefing surfaces are named “Today's Signal”
+(inside Home) and “Full Briefing” (`/app/home/briefing`); “brief” alone
+is not a route or product label.
 
 ## Narrow public and service hosts
 
@@ -89,7 +107,16 @@ The 2026-07-25 canonical migration is:
 | `/app/list` | `/app/tasks/list` |
 | `/app/calendar` | `/app/tasks/calendar` |
 | `/app/plan/*` | `/app/timeline/*` |
-| `/app/brief/*` | `/app/signal/*` |
+| `/app/brief/*` | `/app/home/briefing/*` |
+
+The 2026-08-04 consolidation adds:
+
+| Retired path | Canonical path |
+|---|---|
+| `/app/signal` | `/app/home/briefing` |
+| `/app/signal/onboarding` | `/app/home/briefing/onboarding` |
+| `/app/signal/settings/notifications` | `/app/home/briefing/settings/notifications` |
+| `signalstudio.ie/signal` | `signalstudio.ie/features/daily-briefing` |
 
 The former Tasks view at `/app/timeline` moved to `/app/tasks/timeline`; that
 one collision cannot redirect because the product route now owns the canonical

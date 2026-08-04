@@ -4,33 +4,37 @@ import { useEffect } from "react";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import {
   APP_ORIGIN,
+  HOME_APP_URL,
   PRODUCT_APP_URLS,
   STUDIO_ORIGIN,
-  type ProductId,
+  type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 
 /**
- * SuiteSwitcher, canonical always-visible 4-product pill switcher.
+ * SuiteSwitcher, canonical always-visible suite pill switcher: Home plus
+ * the three products (Signal → Home consolidation, D4 — Signal left the
+ * product line; its briefing lives inside Home).
  *
- * CANONICAL SOURCE for all five repos (DESIGN.md §14, amended 2026-05-19).
- * Copy byte-identical into each repo at the path that repo's app chrome
- * imports. The ONLY value that differs per repo is the `current` prop the
- * parent passes. No per-product CSS, colours, or gestural differences.
+ * CANONICAL SOURCE for every repo carrying the suite chrome (DESIGN.md
+ * §14, amended 2026-05-19). Copy byte-identical into each repo at the
+ * path that repo's app chrome imports. The ONLY value that differs per
+ * repo is the `current` prop the parent passes. No per-product CSS,
+ * colours, or gestural differences.
  *
  * Why pills, not the SuiteLauncher popover:
  * - SuiteLauncher is the click-to-open popover behind the faint
  *   "signal studio." text trigger. Correct for the *unauthed* marketing
  *   nav (low chrome, one product in view), it stays there.
- * - In the authed app the operator switches products constantly. A hidden
- *   text trigger is poor discoverability. This makes all four destinations
+ * - In the authed app the operator switches surfaces constantly. A hidden
+ *   text trigger is poor discoverability. This makes every destination
  *   visible and one click away. (Resolves the §14/D6 discoverability cost.)
  *
  * Restraint contract (BRAND "Everything important. Nothing distracting."):
  * an always-on bar is more chrome than the brand's minimalism prefers, so
  * the pills are deliberately quiet, text-only at rest, no boxes/borders,
  * ink-faint. Hover lifts to ink with a faint sunken wash. The current
- * product is the only one carrying the indigo gesture dot + active wash.
+ * surface is the only one carrying the indigo gesture dot + active wash.
  *
  * Machinery (carried verbatim from suite-launcher.tsx):
  * - prefetch on hover/focus (instant-jump)
@@ -42,17 +46,17 @@ import { withSuiteContext } from "@/lib/suite-context";
  * scoped <style> for :hover. No Tailwind/token dependency, so the byte
  * for byte copy works in every repo regardless of its CSS config.
  *
- * Product order (operator-directed 2026-05-18): notes → tasks → timeline
- * → signal. Authed deep-links land on each product's /app entry.
+ * Order (consolidation 2026-08-04): home → notes → tasks → timeline.
+ * Authed deep-links land on Home and each product's /app entry.
  */
 
 const INDIGO = "#4f46e5";
 
-const PRODUCTS: { slug: ProductId; word: string; appUrl: string }[] = [
+const PRODUCTS: { slug: SuiteSurfaceId; word: string; appUrl: string }[] = [
+  { slug: "home", word: "home", appUrl: HOME_APP_URL },
   { slug: "notes", word: "notes", appUrl: PRODUCT_APP_URLS.notes },
   { slug: "tasks", word: "tasks", appUrl: PRODUCT_APP_URLS.tasks },
   { slug: "timeline", word: "timeline", appUrl: PRODUCT_APP_URLS.timeline },
-  { slug: "signal", word: "signal", appUrl: PRODUCT_APP_URLS.signal },
 ];
 
 const PRODUCT_ORIGINS = [APP_ORIGIN];
@@ -140,9 +144,9 @@ export function SuiteSwitcher({
    *  on signalstudio.ie itself, you are already on the umbrella. */
   showUmbrella = true,
 }: {
-  /** The product the user is in. Omit on the umbrella launcher (no
-   *  product is "current" there, every pill is an equal jump target). */
-  current?: ProductId;
+  /** The surface the user is in. Omit on the umbrella launcher (no
+   *  surface is "current" there, every pill is an equal jump target). */
+  current?: SuiteSurfaceId;
   showUmbrella?: boolean;
 }) {
   const suiteContext = useSuiteContext();
