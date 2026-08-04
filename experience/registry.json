@@ -312,7 +312,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "233768d6d170033f"
+      "materialityHash": "c4f897dcd789f7e3"
     },
     {
       "id": "tasks.page.app-tasks-list",
@@ -1850,7 +1850,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "207434165cbcb6c2"
+      "materialityHash": "fbc1fbfa4d6e555c"
     },
     {
       "id": "tasks.page.share-target",
@@ -3282,6 +3282,48 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7702b4338ae795c5"
+    },
+    {
+      "id": "tasks.state.app-signal-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/signal",
+      "source": "tasks/src/app/app/signal/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Signal briefing load failure and get back to the day's read.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "64dcc157656bdcda"
     },
     {
       "id": "tasks.page.app-timeline",
