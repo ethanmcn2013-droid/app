@@ -67,7 +67,7 @@ export function FirstCompletionMoment() {
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
-    const t = window.setTimeout(() => setShow(false), reduced ? 2600 : 3200);
+    const t = window.setTimeout(() => setShow(false), reduced ? 2200 : 2400);
     return () => window.clearTimeout(t);
   }, [show]);
 
@@ -103,67 +103,72 @@ export function FirstCompletionMoment() {
 const CSS = `
 .fcm2-root {
   position: fixed;
-  inset: 0;
+  left: 50%;
+  bottom: 28px;
   z-index: 240;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: none;
-  animation: fcm2-root 3200ms cubic-bezier(.22,.7,.2,1) both;
+  transform: translateX(-50%);
+  animation: fcm2-root 2400ms var(--ease-out) both;
 }
 .fcm2-cluster {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
-  gap: 16px;
-  text-align: center;
-  transform: translateY(-4%);
+  gap: 10px;
+  min-height: 44px;
+  padding: 7px 14px 7px 8px;
+  border: 1px solid var(--hairline, rgba(17,17,17,.1));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: var(--shadow-float, 0 6px 16px rgba(17,17,17,.08));
+  backdrop-filter: blur(14px) saturate(125%);
 }
 .fcm2-mark {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  color: var(--brand, #4f46e5);
-  animation: fcm2-mark 520ms cubic-bezier(.34,1.56,.64,1) both;
+  width: 30px;
+  height: 30px;
+  color: var(--brand);
+  animation: fcm2-mark 280ms var(--ease-out) both;
 }
 .fcm2-ring {
   position: absolute;
-  width: 56px;
-  height: 56px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  border: 2px solid var(--brand, #4f46e5);
-  animation: fcm2-ring 760ms cubic-bezier(.22,.7,.2,1) 120ms both;
+  border: 1px solid color-mix(in srgb, var(--brand) 64%, transparent);
+  animation: fcm2-ring 520ms var(--ease-out) 80ms both;
 }
 .fcm2-check {
   stroke-dasharray: 30;
   stroke-dashoffset: 30;
-  animation: fcm2-check 360ms ease-out 260ms both;
+  animation: fcm2-check 260ms var(--ease-out) 120ms both;
 }
 .fcm2-line {
   margin: 0;
   font-family: var(--font-geist-sans), "Geist", system-ui, sans-serif;
-  font-size: clamp(17px, 1rem + 0.6vw, 21px);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--ink, #111111);
+  letter-spacing: -0.01em;
+  color: var(--ink);
   opacity: 0;
-  animation: fcm2-line 640ms cubic-bezier(.22,.7,.2,1) 520ms both;
+  animation: fcm2-line 280ms var(--ease-out) 180ms both;
 }
 
 @keyframes fcm2-root {
-  0% { opacity: 0; } 8% { opacity: 1; } 76% { opacity: 1; } 100% { opacity: 0; }
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  82% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 0); }
 }
 @keyframes fcm2-mark {
-  0% { opacity: 0; transform: scale(0.3); }
-  60% { opacity: 1; transform: scale(1.12); }
+  0% { opacity: 0; transform: scale(0.92); }
   100% { opacity: 1; transform: scale(1); }
 }
 @keyframes fcm2-ring {
-  0% { transform: scale(0.7); opacity: 0.55; }
-  100% { transform: scale(1.9); opacity: 0; }
+  0% { transform: scale(0.92); opacity: 0.65; }
+  100% { transform: scale(1.45); opacity: 0; }
 }
 @keyframes fcm2-check {
   to { stroke-dashoffset: 0; }
@@ -174,13 +179,16 @@ const CSS = `
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fcm2-root { animation: fcm2-root-reduced 2600ms linear both; }
+  .fcm2-root { animation: fcm2-root-reduced 2200ms linear both; }
   .fcm2-mark, .fcm2-line { animation: none; opacity: 1; }
   .fcm2-ring { display: none; }
   .fcm2-check { stroke-dashoffset: 0; animation: none; }
   @keyframes fcm2-root-reduced {
     0% { opacity: 0; } 6% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; }
   }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .fcm2-cluster { background: var(--paper); backdrop-filter: none; }
 }
 @media print { .fcm2-root { display: none; } }
 `;

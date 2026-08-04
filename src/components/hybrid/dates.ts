@@ -97,6 +97,12 @@ export function formatScheduleRelative(schedule: TaskSchedule, today: CalendarDa
 
   switch (schedule.kind) {
     case "due":
+      // Past-due reads as plain overdue language ("2 days overdue"), not
+      // date arithmetic ("Due 2 days ago") — the reader needs the state,
+      // not the subtraction.
+      if (days < 0 && relative) {
+        return `${Math.abs(days)} ${Math.abs(days) === 1 ? "day" : "days"} overdue`;
+      }
       return relative ? `Due ${relative}` : `Due ${formatDate(schedule.dueOn)}`;
     case "milestone":
       return relative ? `Milestone · ${relative}` : `Milestone · ${formatDate(schedule.on)}`;

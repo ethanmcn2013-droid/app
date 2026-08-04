@@ -32,6 +32,24 @@ describe("Timeline project switcher model", () => {
     );
   });
 
+  it("keeps the owner's edit mode when switching projects", () => {
+    assert.equal(
+      buildTimelineProjectHref("spring", { mode: "edit" }),
+      "/app/timeline/spring?mode=edit",
+    );
+    assert.equal(
+      buildTimelineProjectHref("spring", {
+        workspaceId: "workspace-1",
+        mode: "edit",
+      }),
+      "/app/timeline/spring?workspaceId=workspace-1&mode=edit",
+    );
+    // View is the default register and stays out of the URL; the project
+    // list (null slug) never carries a mode.
+    assert.equal(buildTimelineProjectHref("spring", { mode: "view" }), "/app/timeline/spring");
+    assert.equal(buildTimelineProjectHref(null, { mode: "edit" }), "/app/timeline");
+  });
+
   it("exposes projects from the authorised workspace only", () => {
     const options = toAuthorizedProjectOptions(
       [

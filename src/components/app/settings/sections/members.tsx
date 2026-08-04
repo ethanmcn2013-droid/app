@@ -216,7 +216,7 @@ export function MembersSection({
     <div>
       <SectionHeader
         eyebrow="Members"
-        title="Who's in this workspace"
+        title="Who's in this project"
         description="Roles, tenure, and the door. The owner controls who stays, everyone else can look but not touch."
       />
 
@@ -244,7 +244,7 @@ export function MembersSection({
                   ? "bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-100"
                   : "bg-bg-sunken text-ink-soft")
               }
-              title="Free + Pro workspaces include the owner plus three editing guests."
+              title="Free + Pro projects include the owner plus three editing guests."
             >
               {memberCapacity.current} of {memberCapacity.max} used
             </span>

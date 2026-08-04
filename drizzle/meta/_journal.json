@@ -155,6 +155,41 @@
       "when": 1785196800000,
       "tag": "0021_tasks_seq",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1785369600000,
+      "tag": "0022_workspaces_description",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1785485242617,
+      "tag": "0023_retire_launch_scaffolding",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1785488000000,
+      "tag": "0024_retire_waiting_lane",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1785490000000,
+      "tag": "0025_tasks_completed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1785492000000,
+      "tag": "0026_workspace_money",
+      "breakpoints": true
     }
   ]
 }

@@ -742,22 +742,25 @@ export function buildBriefing(
 function briefingEmptyState(
   freshness: AnalyticsResponseMeta["freshness"],
 ): NonNullable<BriefingResponse["emptyState"]> {
+  // Same register as the ledger's coverage copy: state what is true, and
+  // never name a refresh the product does not have (the read happens when
+  // the reader opens Signal) or tell the reader what to do about it.
   if (freshness === "unavailable") {
     return {
-      headline: "Signal cannot confirm what needs you right now.",
-      body: "Connected work data is unavailable. Try again after the next successful refresh.",
+      headline: "Signal cannot reach the work right now.",
+      body: "The sources are out of reach, so everything in scope is still unread. Signal will have a read once they answer.",
     };
   }
   if (freshness === "stale") {
     return {
-      headline: "Signal's briefing may be out of date.",
-      body: "The latest available data is stale. Check its freshness before acting.",
+      headline: "This read is older than today.",
+      body: "The last full read of these sources ran earlier than it should have. What is below is that read, not this moment.",
     };
   }
   if (freshness === "partial") {
     return {
-      headline: "Signal has an incomplete view right now.",
-      body: "Some connected sources could not be checked, so Signal cannot confirm that work is moving normally.",
+      headline: "Signal has only part of the picture.",
+      body: "What is below came from the sources that answered. The rest is still unread, not clear.",
     };
   }
   return {

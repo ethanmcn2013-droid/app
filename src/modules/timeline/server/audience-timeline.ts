@@ -30,6 +30,7 @@ import {
   isAudienceTokenShape,
   resolveShareAccessState,
   validateAudienceTimelineDto,
+  endOfCalendarDayInZone,
   validateIanaTimezone,
   type AudienceTimelineDto,
   type ShareAccessState,
@@ -431,8 +432,19 @@ async function ownsPublication(
   publicationId: string,
   workspaceSlug: string,
 ): Promise<boolean> {
+  return (await ownedPublicationTimezone(publicationId, workspaceSlug)) !== null;
+}
+
+/**
+ * Ownership check that also returns the publication's calendar zone, so an
+ * expiry date can end at the publication's own midnight (never bare UTC).
+ */
+async function ownedPublicationTimezone(
+  publicationId: string,
+  workspaceSlug: string,
+): Promise<string | null> {
   const [row] = await db
-    .select({ id: timelinePublications.id })
+    .select({ timezone: timelinePublications.timezone })
     .from(timelinePublications)
     .where(
       and(
@@ -441,17 +453,19 @@ async function ownsPublication(
       ),
     )
     .limit(1);
-  return Boolean(row);
+  return row?.timezone ?? null;
 }
 
 export async function publishAudiencePublication(
   publicationId: string,
   workspaceSlug: string,
-  expiresAt: Date | null,
+  expiresOn: string | null,
 ): Promise<string> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
+  const timezone = await ownedPublicationTimezone(publicationId, workspaceSlug);
+  if (timezone === null) {
     throw new TypeError("Publication not found");
   }
+  const expiresAt = expiresOn ? endOfCalendarDayInZone(expiresOn, timezone) : null;
   const rawToken = generateAudienceToken();
   const tokenHash = hashAudienceToken(rawToken);
   const now = new Date();
@@ -506,11 +520,13 @@ export async function publishAudiencePublication(
 export async function rotateAudienceShare(
   publicationId: string,
   workspaceSlug: string,
-  expiresAt: Date | null,
+  expiresOn: string | null,
 ): Promise<string> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
+  const timezone = await ownedPublicationTimezone(publicationId, workspaceSlug);
+  if (timezone === null) {
     throw new TypeError("Publication not found");
   }
+  const expiresAt = expiresOn ? endOfCalendarDayInZone(expiresOn, timezone) : null;
   const rawToken = generateAudienceToken();
   const tokenHash = hashAudienceToken(rawToken);
   const now = new Date();

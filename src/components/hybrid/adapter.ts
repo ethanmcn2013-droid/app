@@ -3,14 +3,17 @@
 // verbatim hybrid views render real production data. It is intentionally the
 // ONLY place that knows both shapes.
 //
-// Status vocabulary (founder decision, 2026-07-19): the hybrid runs a 5-status
-// model. Production lane ids stay the canonical 4 (todo/doing/review/done);
-// the 5th status `waiting` is persisted as raw `lane` text via updateTaskAction
-// (the lane column is unconstrained and the action allowlist is by column name,
-// not value) so no schema/type migration is needed.
+// T·121: a LabTask's status IS its board column key, resolved by
+// effectiveColumnKey — a claim (boardColumnKey) wins, else the lane, so a
+// legacy row whose lane still holds raw "waiting" text resolves to the same
+// column the migrated shape does. The old 5-status mapping (and the raw-text
+// lane write it required) is gone: column moves persist ONLY through the
+// column-aware dispatchers, never through a lane patch.
 
-import type { LaneId, Priority, Task } from "@/lib/data";
+import type { Priority, Task } from "@/lib/data";
 import type { CalendarFrame } from "@/lib/calendar-frame";
+import { effectiveColumnKey, isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { addDays, asCalendarDate, differenceInDays } from "./dates";
 import type {
   CalendarDate,
@@ -19,25 +22,7 @@ import type {
   LabTask,
   TaskPriority,
   TaskSchedule,
-  TaskStatus,
 } from "./types";
-
-export const LANE_TO_STATUS: Record<string, TaskStatus> = {
-  todo: "queued",
-  doing: "active",
-  review: "review",
-  waiting: "waiting",
-  done: "done",
-};
-
-export const STATUS_TO_LANE: Record<TaskStatus, LaneId> = {
-  queued: "todo",
-  active: "doing",
-  review: "review",
-  // `waiting` has no canonical production lane; persisted as raw text.
-  waiting: "waiting" as LaneId,
-  done: "done",
-};
 
 const PRIORITY_TO_LAB: Record<Priority, TaskPriority> = {
   p0: "urgent",
@@ -52,14 +37,6 @@ const LAB_TO_PRIORITY: Record<TaskPriority, Priority> = {
   normal: "p2",
   low: "p3",
 };
-
-export function laneToStatus(lane: string): TaskStatus {
-  return LANE_TO_STATUS[lane] ?? "queued";
-}
-
-export function statusToLane(status: TaskStatus): LaneId {
-  return STATUS_TO_LANE[status] ?? "todo";
-}
 
 export function priorityToLab(priority: Priority): TaskPriority {
   return PRIORITY_TO_LAB[priority] ?? "normal";
@@ -191,6 +168,7 @@ export function taskToLab(
   task: Task,
   order: number,
   calendar?: CalendarFrame,
+  columnConfig: ColumnConfig | null = null,
 ): LabTask {
   const subtaskCount = task.subtaskCount ?? 0;
   const subtaskDone = task.subtaskDone ?? 0;
@@ -207,7 +185,7 @@ export function taskToLab(
     id: task.id,
     title: task.title,
     description: task.description ?? "",
-    status: laneToStatus(task.lane),
+    status: effectiveColumnKey(task),
     priority: priorityToLab(task.priority),
     assigneeIds: task.assignees ?? [],
     schedule: taskToSchedule(task, calendar),
@@ -223,14 +201,20 @@ export function taskToLab(
     })),
     blockedByIds: task.blockedBy ?? [],
     blockerIds: [],
-    completed: task.lane === "done",
+    completed: isTaskDone(task, columnConfig),
+    completedAt: task.completedAt ? task.completedAt.toISOString() : undefined,
+    cents: task.cents ?? null,
     workspaceId: task.workspaceId ?? "workspace",
     order,
   };
 }
 
 // General lab UpdateFields patch → production Task patch. Returns null when
-// nothing maps to a persistable column.
+// nothing maps to a persistable column. Column membership (`status`) and
+// completion are deliberately NOT here: both are workflow moves that must
+// persist through the column-aware dispatchers (moveStatus / toggleComplete)
+// so a claim is never faked through a lane patch — the hybrid store splits
+// them off before calling this.
 export function fieldsPatch(
   fields: Partial<LabTask>,
   calendar?: CalendarFrame,
@@ -238,7 +222,6 @@ export function fieldsPatch(
   const patch: Partial<Task> = {};
   if (fields.title !== undefined) patch.title = fields.title;
   if (fields.description !== undefined) patch.description = fields.description;
-  if (fields.status !== undefined) patch.lane = statusToLane(fields.status);
   if (fields.priority !== undefined) patch.priority = labToPriority(fields.priority);
   if (fields.assigneeIds !== undefined) patch.assignees = fields.assigneeIds;
   if (fields.labelIds !== undefined) patch.tags = fields.labelIds;
@@ -246,7 +229,6 @@ export function fieldsPatch(
   if (fields.schedule !== undefined) {
     Object.assign(patch, scheduleToPatch(fields.schedule, calendar));
   }
-  if (fields.completed !== undefined) patch.lane = fields.completed ? "done" : "doing";
   return Object.keys(patch).length > 0 ? patch : null;
 }
 

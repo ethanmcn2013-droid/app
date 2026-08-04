@@ -1,14 +1,19 @@
 import { LANES, LANE_ORDER, PRIORITY_LABEL, type Task } from "@/lib/data";
 import { groupTasksByLane } from "@/lib/tasks/selectors";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 
 export function PrintList({
   tasks,
   workspaceName,
   generatedAt,
+  columnConfig,
 }: {
   tasks: Task[];
   workspaceName: string;
   generatedAt: string;
+  /** Loaded by the page's readWorkspaceColumnConfig (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
   const grouped = groupTasksByLane(tasks);
 
@@ -46,7 +51,7 @@ export function PrintList({
               </tr>,
               ...laneTasks.map((task) => {
                 const prio = PRIORITY_LABEL[task.priority];
-                const isDone = task.lane === "done";
+                const isDone = isTaskDone(task, columnConfig);
                 return (
                   <tr key={task.id} className="print-list-row">
                     <td

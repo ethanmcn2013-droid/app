@@ -124,6 +124,17 @@ export async function createWorkspaceAction(
     return { error: `Unknown template id: ${fromTemplate}` };
   }
 
+  // A template whose plan points at one known day asks for that day here. The
+  // answer stays optional, so a workspace still seeds without it, but a date
+  // that was typed must be a real calendar day rather than a silently dropped
+  // typo. Templates with no anchor ignore the field entirely.
+  const anchorDateInput =
+    (formData.get("anchorDate") as string | null)?.trim() || null;
+  if (anchorDateInput && !isCalendarDate(anchorDateInput)) {
+    return { error: "Enter that date as a real calendar day, like 2026-10-03." };
+  }
+  const anchorDate = template?.roadmap.anchor ? anchorDateInput : null;
+
   // Uniqueness check
   const existing = await getWorkspace(slug);
   if (existing) {
@@ -159,7 +170,7 @@ export async function createWorkspaceAction(
   });
 
   if (template) {
-    await seedWorkspaceFromTemplate({ workspaceSlug: slug, template });
+    await seedWorkspaceFromTemplate({ workspaceSlug: slug, template, anchorDate });
   }
 
   revalidatePath("/app/timeline");

@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion } from "motion/react";
 import { LANES, USERS, type Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
 import { NudgesRail } from "@/components/app/my-week/nudges-rail";
 import { AvatarStack } from "@/components/showcase/avatar";
@@ -19,7 +20,9 @@ import {
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { EmptyStateOverlay } from "@/components/app/empty-state/empty-state-overlay";
 import { ListGhost } from "@/components/app/empty-state/ghost-views";
-import { usePersonalization } from "@/lib/domain-context";
+import { usePersonalization, useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 import { DopamineCheck } from "@/components/app/done-dopamine/dopamine-check";
 import { DoneTitle } from "@/components/app/done-dopamine/done-title";
 
@@ -35,10 +38,18 @@ export function MyWeekApp() {
   const state = useTasksState();
   const { toggleComplete } = useTasksDispatch();
   const { taskId: openTaskId, openTask } = useTaskPanel();
+  const columnConfig = useColumnConfig();
 
   const meId = useCurrentUser();
   const me = USERS[meId];
-  const buckets = bucketMyWeek(state.tasks, meId);
+  // The calendar frame is the only clock a Tasks client view may read
+  // (calendar-frame.ts): SSR and hydration agree about "today", and the
+  // demo stays pinned to its one anchor instead of drifting with the
+  // visitor's wall clock ("Good evening" over a board whose cards say
+  // "Due today" three weeks earlier).
+  const calendar = useCalendarFrame();
+  const now = useMemo(() => new Date(calendar.nowIso), [calendar.nowIso]);
+  const buckets = bucketMyWeek(state.tasks, meId, now);
   // Dayparts, "This evening" splits out of Today only when a task
   // carries an explicit evening time. No time typed, no daypart.
   const { day: todayDay, evening: todayEvening } = splitTodayDayparts(
@@ -47,8 +58,8 @@ export function MyWeekApp() {
   // Nudges are computed client-side from the same task list (generateNudges
   // is pure), the proactive "what's stuck" surface folded in from the inbox.
   const nudges = useMemo(
-    () => generateNudges(state.tasks, meId),
-    [state.tasks, meId],
+    () => generateNudges(state.tasks, meId, columnConfig, now),
+    [state.tasks, meId, columnConfig, now],
   );
 
   const totalAttention =
@@ -70,14 +81,14 @@ export function MyWeekApp() {
     );
   }
 
-  const greeting = greetingFor(new Date(), me?.name);
+  const greeting = greetingFor(now, calendar.timeZone, me?.name);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-6 py-5 md:px-10 md:py-7">
       <div className="mx-auto max-w-3xl">
         <header className="mb-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            {formatDateHeader(new Date())}
+            {formatDateHeader(now, calendar.locale, calendar.timeZone)}
           </p>
           <h2 className="mt-2 text-[22px] font-medium tracking-tight text-ink md:text-[26px]">
             {greeting}
@@ -90,6 +101,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty="Today is clear."
           // "Today is clear." is only true when the evening is clear
           // too; an evening-only day suppresses the empty line and
@@ -102,6 +114,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -110,6 +123,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -118,6 +132,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -126,6 +141,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
         />
         <Section
@@ -134,6 +150,7 @@ export function MyWeekApp() {
           openTaskId={openTaskId}
           openTask={openTask}
           toggleComplete={toggleComplete}
+          columnConfig={columnConfig}
           empty=""
           muted
         />
@@ -153,6 +170,7 @@ function Section({
   empty,
   showEmpty,
   muted,
+  columnConfig,
 }: {
   title: string;
   tasks: Task[];
@@ -162,6 +180,8 @@ function Section({
   empty: string;
   showEmpty?: boolean;
   muted?: boolean;
+  /** Threaded from MyWeekApp's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
   if (tasks.length === 0 && !showEmpty) return null;
   return (
@@ -189,6 +209,7 @@ function Section({
               onOpen={() => openTask(task.id)}
               onToggle={() => toggleComplete(task.id)}
               muted={muted}
+              columnConfig={columnConfig}
             />
           ))}
         </ul>
@@ -204,6 +225,7 @@ function Row({
   onOpen,
   onToggle,
   muted,
+  columnConfig,
 }: {
   task: Task;
   i: number;
@@ -211,9 +233,11 @@ function Row({
   onOpen: () => void;
   onToggle: () => void;
   muted?: boolean;
+  /** Threaded from MyWeekApp's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 }) {
   const lane = LANES[task.lane];
-  const isDone = task.lane === "done";
+  const isDone = isTaskDone(task, columnConfig);
   return (
     <motion.li
       layout
@@ -282,8 +306,17 @@ function Row({
   );
 }
 
-function greetingFor(now: Date, name?: string): string {
-  const hour = now.getHours();
+function greetingFor(now: Date, timeZone: string, name?: string): string {
+  // The frame's zone, not the machine's: the server renders in UTC and a
+  // visitor renders in their own zone — getHours() would hydrate two
+  // different salutations from the same instant.
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hour12: false,
+      timeZone,
+    }).format(now),
+  );
   const first = name?.split(" ")[0];
   const opener =
     hour < 5
@@ -296,9 +329,13 @@ function greetingFor(now: Date, name?: string): string {
   return first ? `${opener}, ${first}.` : `${opener}.`;
 }
 
-function formatDateHeader(now: Date): string {
+function formatDateHeader(now: Date, locale: string, timeZone: string): string {
+  // Explicit locale + zone: `undefined` let the server's ICU default
+  // ("Thursday, July 16") fight the browser's ("Thursday 16 July") and
+  // hydration flagged the text node.
   return now
-    .toLocaleDateString(undefined, {
+    .toLocaleDateString(locale, {
+      timeZone,
       weekday: "long",
       day: "numeric",
       month: "long",

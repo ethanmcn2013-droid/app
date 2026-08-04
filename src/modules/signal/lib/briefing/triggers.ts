@@ -1,12 +1,20 @@
-import type { TaskSignal, TriggerKind } from "./types";
+import type { Lane, TaskSignal, TriggerKind } from "./types";
 import { calendarDayDifference } from "./calendar-time";
+import { capitalise, numberWord, plural } from "./prose";
 
 const DAY = 86_400_000;
 
 /**
- * v1 triggers. Six, intentionally. The old Plan 6 spec'd ten —
+ * v1 triggers. Six, intentionally. The old Plan 6 spec'd ten,
  * overbuilt for an engine no user has stressed yet. Ship six, see
  * which land, expand only what works.
+ *
+ * `reasons` is the "Why this" panel. The rule for every line in it: it
+ * must carry a fact the row above did not already carry. A row reading
+ * "Due today." under a reason reading "Surfaced because the date is
+ * near" spends the reader's click on nothing. In practice that means
+ * one line naming the rule that actually fired, and one line of
+ * evidence the headline had no room for.
  */
 
 export type Triggered = {
@@ -15,6 +23,32 @@ export type Triggered = {
   reasons: string[];
   severity: number; // higher = more attention
 };
+
+/**
+ * Where the work has actually got to, as a sentence. Lane names are
+ * board vocabulary; "Still sitting in In flight" is not a thing anyone
+ * says. This is the fact a date alone cannot give the reader: whether
+ * the item has been started at all.
+ */
+function lanePosition(lane: Lane): string {
+  switch (lane) {
+    case "next":
+      return "Not started yet.";
+    case "in-flight":
+      return "Started, and still open.";
+    case "review":
+      return "Sitting in review.";
+    case "shipped":
+      return "Already closed.";
+  }
+}
+
+/** Plain phrase for a date this many calendar days out (always ≥ 0). */
+function dueWhen(daysOut: number): string {
+  if (daysOut < 1) return "today";
+  if (daysOut < 2) return "tomorrow";
+  return `in ${plural(Math.floor(daysOut), "day", "days")}`;
+}
 
 /** Stuck work: open task, idle ≥ 3 days, not blocked by something
  *  else (otherwise it's a blocker problem not a stuck-work problem). */
@@ -29,11 +63,15 @@ export function detectStuckWork(signals: TaskSignal[]): Triggered[] {
     .map((task) => ({
       task,
       trigger: "stuck-work" as const,
+      // The row above already reads "Nothing has moved on it for eighteen
+      // days", so a first bullet reading "Last update was eighteen days
+      // ago" spent the reader's click restating it in different words.
+      // Rule first, then the one fact the row has no room for: whether
+      // the work has been started at all.
       reasons: [
-        `No status update in ${task.idleDays} days.`,
-        task.priority <= 1
-          ? "High-priority item, threshold crossed for attention."
-          : "Threshold crossed → surfaced for attention.",
+        "Signal flags anything quiet for three days or more.",
+        lanePosition(task.lane),
+        ...(task.priority === 0 ? ["You marked this high priority."] : []),
       ],
       severity: Math.min(100, task.idleDays * 4 + (3 - task.priority) * 6),
     }));
@@ -53,20 +91,27 @@ export function detectDueSoon(
       if (daysOut > 2) return null;
       const isOverdue = daysOut < 0;
       const overdueDays = Math.round(Math.abs(daysOut));
+      // The row already states the date position, so neither line here
+      // repeats it. Line one names the rule that fired; line two is the
+      // fact the date alone does not give you, which is whether anyone
+      // has touched it and where it is sitting.
+      const evidence =
+        task.idleDays >= 1
+          ? `No update on it in ${plural(task.idleDays, "day", "days")}.`
+          : lanePosition(task.lane);
       return {
         task,
         trigger: "due-soon",
-        reasons: isOverdue
-          ? [
-              `${overdueDays} ${overdueDays === 1 ? "day" : "days"} overdue.`,
-              task.priority <= 1
-                ? "High priority + past due → flagged."
-                : "Past due → flagged.",
-            ]
-          : [
-              daysOut < 1 ? "Due today." : `Due within ${Math.ceil(daysOut)} days.`,
-              "Surfaced because the date is near.",
-            ],
+        reasons: [
+          isOverdue
+            ? "Signal flags anything past its date."
+            : "Signal flags anything due inside two days.",
+          evidence,
+          // Gated at P0, not at P0-or-P1. At the old threshold the line
+          // appeared on very nearly every row, so it discriminated
+          // nothing and read as decoration.
+          ...(task.priority === 0 ? ["You marked this high priority."] : []),
+        ],
         severity: isOverdue
           ? 80 + Math.min(20, overdueDays * 2)
           : 60 + Math.max(0, (2 - daysOut) * 8),
@@ -91,8 +136,10 @@ export function detectJustShipped(
       task,
       trigger: "just-shipped" as const,
       reasons: [
-        "Moved to shipped in the last 24h.",
-        "Calibrates the noise of what's wrong.",
+        "Signal keeps a closed item in the read for a day after it moves.",
+        task.priority === 0
+          ? "You had it marked high priority before it closed."
+          : "Nothing is being asked of you here.",
       ],
       severity: 40 + (3 - task.priority) * 5,
     }));
@@ -120,9 +167,16 @@ export function detectCrowdedWeek(
   );
   if (upcoming.length < 3) return [];
 
+  const soonest = Math.min(
+    ...upcoming.map((s) => calendarDayDifference(s.dueAt!, now, timezone)),
+  );
+
   const synthetic: TaskSignal = {
     id: "synthetic:crowded-week",
-    title: `${upcoming.length} items due this week`,
+    // Words, not a numeral: this title renders as a row headline in
+    // display type beside "Two things calling." and "One risk worth
+    // watching." A "3" in that line was the only figure on the page.
+    title: `${capitalise(numberWord(upcoming.length))} items due this week`,
     lane: "in-flight",
     priority: 1,
     dueAt: null,
@@ -137,8 +191,8 @@ export function detectCrowdedWeek(
       task: synthetic,
       trigger: "crowded-week",
       reasons: [
-        `${upcoming.length} items have due dates inside the next seven days.`,
-        "Cluster threshold crossed → surfaced before the crunch.",
+        "Signal flags three or more dates landing in the same seven days.",
+        `The closest is due ${dueWhen(soonest)}.`,
       ],
       severity: 55 + Math.min(30, upcoming.length * 4),
     },
@@ -162,10 +216,11 @@ export function detectBlockedTooLong(signals: TaskSignal[]): Triggered[] {
       task,
       trigger: "blocked-too-long" as const,
       reasons: [
-        `Waiting for ${task.idleDays} days, the blocker is outlasting reasonable waiting.`,
+        "Signal flags blocked work after five days without movement.",
+        lanePosition(task.lane),
         task.blockedBy.length === 1
-          ? "One upstream dependency hasn't cleared."
-          : `${task.blockedBy.length} upstream dependencies haven't cleared.`,
+          ? "One upstream item has not cleared."
+          : `${capitalise(numberWord(task.blockedBy.length))} upstream items have not cleared.`,
       ],
       severity: Math.min(90, 30 + task.idleDays * 3 + task.blockedBy.length * 4),
     }));
@@ -180,9 +235,12 @@ export function detectOverload(signals: TaskSignal[]): Triggered[] {
   );
   if (inFlight.length <= 5) return [];
 
+  const inReview = inFlight.filter((s) => s.lane === "review").length;
+
   const synthetic: TaskSignal = {
     id: "synthetic:overload",
-    title: `${inFlight.length} items in flight at once`,
+    /** Words, not a numeral, for the same reason as crowded-week. */
+    title: `${capitalise(numberWord(inFlight.length))} items open at once`,
     lane: "in-flight",
     priority: 1,
     dueAt: null,
@@ -197,8 +255,10 @@ export function detectOverload(signals: TaskSignal[]): Triggered[] {
       task: synthetic,
       trigger: "overload",
       reasons: [
-        `${inFlight.length} items are open in flight at the same time.`,
-        "Capacity threshold (5) crossed → flagged as cognitive load.",
+        "Signal flags anything over five open at once.",
+        inReview > 0
+          ? `${capitalise(numberWord(inReview))} of them ${inReview === 1 ? "is" : "are"} already in review.`
+          : "None of them have reached review yet.",
       ],
       severity: 50 + (inFlight.length - 5) * 4,
     },

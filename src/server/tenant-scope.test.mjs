@@ -42,7 +42,7 @@ import { fileURLToPath } from "node:url";
 
 // Tables whose rows belong to a single workspace (a tenant). Keep in sync
 // with schema.ts. Excludes the genuinely global tables (comp_codes,
-// processed_webhooks, meta, roadmap_items, blockers, action_items, users).
+// processed_webhooks, meta, users).
 const OWNER_TABLES = [
   "tasks",
   "comments",

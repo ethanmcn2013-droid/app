@@ -1,9 +1,11 @@
-Read `AGENTS.md` first.
+Design tokens are vendored at `src/ds/tokens.css` (signal-design-system;
+regenerate via `scripts/ds-vendor.mjs`, never edit). Voice rules live in
+`studio/BRAND.md` — not a local DESIGN.md.
 
-For any UI work, load the suite design tokens and refusals from `~/Projects/personal/studio/DESIGN.md` (agent-readable subset of `studio/BRAND.md`). When DESIGN.md and this repo's CSS diverge, the CSS is the live value — propose a DESIGN.md update.
-
-Claude Code must also follow the Signal HQ sync rule in `AGENTS.md`: meaningful Tasks changes must be reflected in the Studio repo's Signal HQ data before the task is complete.
-
-Before collaborator, invite, sharing, guest access, template, or public-output work, read `docs/COLLABORATION_LOOP.md`.
+Always show, never just tell: when presenting UI or design work — a
+change, a review, a proposal — include visual evidence rendered from
+the real app (screenshots, print PDFs, unfurl cards), captured AFTER
+the final code state, at the sizes that matter. Prose describing a
+pixel is not a substitute for the pixel.
 
 @AGENTS.md

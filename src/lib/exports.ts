@@ -1,5 +1,10 @@
 import type { LaneId, Task } from "@/lib/data";
-import { LANES, LANE_ORDER, PRIORITY_LABEL } from "@/lib/data";
+import { PRIORITY_LABEL } from "@/lib/data";
+import {
+  publicBoardColumns,
+  publicColumnTasks,
+  type PublicColumn,
+} from "@/lib/public-board-lanes";
 import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 
 /**
@@ -34,18 +39,19 @@ function csvCell(s: string): string {
 
 /** CSV with header row. Compatible with Google Sheets, Excel,
  *  Numbers, and anything that imports CSV. */
-export function formatTasksAsCsv(tasks: Task[]): string {
+export function formatTasksAsCsv(tasks: Task[], columns?: PublicColumn[]): string {
   const rows: string[] = [CSV_COLS.join(",")];
-  // Iterate in lane order so the CSV is grouped + scannable when
-  // pasted into a spreadsheet without sorting.
-  const byLane = groupByLane(tasks);
-  for (const laneId of LANE_ORDER) {
-    const list = byLane.get(laneId) ?? [];
+  // Iterate in column order so the CSV is grouped + scannable when
+  // pasted into a spreadsheet without sorting, and the status cell says
+  // what the operator's board says (T·121).
+  const boardColumns = columns ?? publicBoardColumns(null, tasks);
+  for (const column of boardColumns) {
+    const list = publicColumnTasks(tasks, column.id);
     for (const t of list) {
       rows.push(
         [
           csvCell(t.title),
-          csvCell(LANES[t.lane].name),
+          csvCell(column.name),
           csvCell(PRIORITY_LABEL[t.priority].label),
           csvCell(t.due ?? ""),
           csvCell((t.tags ?? []).join(", ")),
@@ -66,6 +72,7 @@ export function formatTasksAsCsv(tasks: Task[]): string {
 export function formatTasksAsMarkdown(
   tasks: Task[],
   workspaceName: string,
+  columns?: PublicColumn[],
 ): string {
   const lines: string[] = [];
   lines.push(`# ${workspaceName}`);
@@ -73,14 +80,16 @@ export function formatTasksAsMarkdown(
   lines.push(`*${tasks.length} task${tasks.length === 1 ? "" : "s"} · exported from Tasks*`);
   lines.push("");
 
-  const byLane = groupByLane(tasks);
-  for (const laneId of LANE_ORDER) {
-    const list = byLane.get(laneId) ?? [];
+  const boardColumns = columns ?? publicBoardColumns(null, tasks);
+  for (const column of boardColumns) {
+    const list = publicColumnTasks(tasks, column.id);
     if (list.length === 0) continue;
-    lines.push(`## ${LANES[laneId].name}`);
+    lines.push(`## ${column.name}`);
     lines.push("");
+    // Column membership decides the checkbox, not a per-task lane read —
+    // every task in `list` already belongs to this column (T·122).
+    const checkbox = column.isDone ? "[x]" : "[ ]";
     for (const t of list) {
-      const checkbox = laneId === "done" ? "[x]" : "[ ]";
       const meta: string[] = [];
       if (t.due) meta.push(`due ${t.due}`);
       if (t.priority !== "p3")
@@ -102,16 +111,6 @@ function escapeMd(s: string): string {
   // Escape characters that would be interpreted as markdown syntax.
   // Conservative: handles brackets, asterisks, underscores, backticks.
   return s.replace(/([\\`*_{}[\]()#+!|])/g, "\\$1");
-}
-
-function groupByLane(tasks: Task[]): Map<LaneId, Task[]> {
-  const m = new Map<LaneId, Task[]>();
-  for (const id of LANE_ORDER) m.set(id, []);
-  for (const t of tasks) {
-    const arr = m.get(t.lane);
-    if (arr) arr.push(t);
-  }
-  return m;
 }
 
 function formatDollars(cents: number): string {

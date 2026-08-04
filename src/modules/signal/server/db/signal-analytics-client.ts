@@ -3,14 +3,13 @@ import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./signal-analytics-schema";
 
 /**
- * Signal analytics DB client.
+ * Signal DB client — the briefing engine tables plus, since the 2026-07-31
+ * data-layer reset, the folded-in `user_preferences` table (the old separate
+ * signal-prefs database is retired; one Signal module, one database).
  *
- * S2 env rename: TURSO_DATABASE_URL / TURSO_AUTH_TOKEN →
- * SIGNAL_ANALYTICS_DATABASE_URL / SIGNAL_ANALYTICS_AUTH_TOKEN.
- *
- * Dev fallback: when SIGNAL_ANALYTICS_DATABASE_URL is unset, falls back to
- * file:analytics.db (matching the source repo's dev pattern, updated for the
- * renamed var).
+ * Env: SIGNAL_DATABASE_URL / SIGNAL_AUTH_TOKEN.
+ * Dev fallback: file:signal.db when SIGNAL_DATABASE_URL is unset outside
+ * production.
  *
  * Lazy singleton — construction is deferred to first use so marketing routes
  * and processes without the env vars don't throw at module import.
@@ -23,13 +22,13 @@ let _db: DB | null = null;
 function getDb(): DB {
   if (_db) return _db;
   const url =
-    process.env.SIGNAL_ANALYTICS_DATABASE_URL ??
-    (process.env.NODE_ENV !== "production" ? "file:analytics.db" : undefined);
-  const authToken = process.env.SIGNAL_ANALYTICS_AUTH_TOKEN;
+    process.env.SIGNAL_DATABASE_URL ??
+    (process.env.NODE_ENV !== "production" ? "file:signal.db" : undefined);
+  const authToken = process.env.SIGNAL_AUTH_TOKEN;
   if (!url) {
     throw new Error(
-      "SIGNAL_ANALYTICS_DATABASE_URL is not set. Create a Turso database and " +
-        "add the URL to .env.local (or SIGNAL_ANALYTICS_DATABASE_URL in Vercel).",
+      "SIGNAL_DATABASE_URL is not set. Create a Turso database and " +
+        "add the URL to .env.local (or SIGNAL_DATABASE_URL in Vercel).",
     );
   }
   _db = drizzle(createClient({ url, authToken }), { schema });

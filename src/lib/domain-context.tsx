@@ -6,6 +6,7 @@ import type { WorkspacePersonalization } from "@/lib/onboarding/personalization"
 import type { LaneId } from "@/lib/data";
 import type { ColumnConfig } from "@/server/actions/board";
 import type { TagDef } from "@/lib/tags";
+import type { WorkspaceMemberMeta } from "@/lib/members";
 
 /** Active-workspace + domain context. The app layout resolves the
  *  active workspace once at the server-component boundary; this
@@ -20,6 +21,12 @@ type DomainCtx = {
    *  Null when no override has been set, consumers fall back to
    *  `shortenTitle(pack.workspaceTitle)` in that case. */
   boardName: string | null;
+  /** The project's supporting line, from `workspaces.description` (T·114).
+   *  Null when the owner hasn't written one; the brief shows its
+   *  placeholder rather than inventing a sentence. Server-backed, so
+   *  collaborators and the share, print and embed surfaces read the same
+   *  text the owner sees — the previous localStorage value did not. */
+  boardDescription: string | null;
   /** Full column config: system overrides + custom columns + render order.
    *  Null when no config has been stored, consumers fall back to LANES
    *  defaults and LANE_ORDER. */
@@ -27,6 +34,15 @@ type DomainCtx = {
   /** Reusable tag definitions (name + colour) for the workspace. Empty
    *  when none are defined; chips fall back to neutral. Phase 3A. */
   tagDefs: TagDef[];
+  /** T·124: the project currency label (null = USD default) and the
+   *  operator budget in cents (null = unset). App surfaces only —
+   *  money never reaches share, print, embed or /p/{slug}. */
+  currency: string | null;
+  budgetCents: number | null;
+  /** Real workspace members (owner first, then A–Z), resolved by
+   *  getWorkspaceMemberMeta() in the layout. The assign menu and avatar
+   *  stacks hydrate from this — never from design-lab fixtures. */
+  members: WorkspaceMemberMeta[];
   /** Segment-aware copy for empty states and chrome. */
   personalization: WorkspacePersonalization;
 };
@@ -38,8 +54,12 @@ export function DomainProvider({
   workspaceId,
   workspaceSlug,
   boardName,
+  boardDescription,
+  currency,
+  budgetCents,
   columnConfig,
   tagDefs,
+  members,
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
    *  migrated yet; merged into a synthetic ColumnConfig if columnConfig is absent. */
   columnNames,
@@ -52,10 +72,17 @@ export function DomainProvider({
   personalization: WorkspacePersonalization;
   /** Resolved from meta table in the layout server component. */
   boardName?: string | null;
+  /** Resolved from `workspaces.description` in the layout server component. */
+  boardDescription?: string | null;
   /** Full column config resolved by getColumnConfig() in the layout. */
   columnConfig?: ColumnConfig | null;
   /** Reusable tag definitions resolved by getTagDefs() in the layout. */
   tagDefs?: TagDef[];
+  /** Workspace members resolved by getWorkspaceMemberMeta() in the layout. */
+  members?: WorkspaceMemberMeta[];
+  /** Project currency + budget resolved from the workspaces row (T·124). */
+  currency?: string | null;
+  budgetCents?: number | null;
   /** @deprecated Legacy prop, use columnConfig. */
   columnNames?: Partial<Record<LaneId, string>> | null;
   children: ReactNode;
@@ -65,7 +92,7 @@ export function DomainProvider({
   const resolvedConfig: ColumnConfig | null =
     columnConfig ??
     (columnNames
-      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {} }
+      ? { system: columnNames, custom: [], order: ["todo", "doing", "review", "done"], colors: {}, descriptions: {}, limits: {}, doneKeys: ["done"] }
       : null);
 
   return (
@@ -75,8 +102,12 @@ export function DomainProvider({
         workspaceId,
         workspaceSlug,
         boardName: boardName ?? null,
+        boardDescription: boardDescription ?? null,
         columnConfig: resolvedConfig,
         tagDefs: tagDefs ?? [],
+        members: members ?? [],
+        currency: currency ?? null,
+        budgetCents: budgetCents ?? null,
         personalization,
       }}
     >
@@ -88,6 +119,8 @@ export function DomainProvider({
 export function useDomain(): DomainPack & {
   /** Resolved board-name override (null = not overridden). */
   boardName: string | null;
+  /** Resolved project description (null = the owner hasn't written one). */
+  boardDescription: string | null;
 } {
   const v = useContext(DomainContext);
   if (!v) {
@@ -95,9 +128,9 @@ export function useDomain(): DomainPack & {
     // outside the app shell (e.g. marketing pages embed components).
     // Wedding (not marketing) so an out-of-shell render still shows a
     // real 80% audience, never the tech-company dogfood board.
-    return { ...DOMAINS.wedding, boardName: null };
+    return { ...DOMAINS.wedding, boardName: null, boardDescription: null };
   }
-  return { ...v.pack, boardName: v.boardName };
+  return { ...v.pack, boardName: v.boardName, boardDescription: v.boardDescription };
 }
 
 /** Active workspace metadata. Returns null when called outside the
@@ -126,15 +159,19 @@ export function useTagDefs(): TagDef[] {
   return v?.tagDefs ?? [];
 }
 
-/**
- * Per-workspace column-name overrides (system lanes only).
- * @deprecated Use useColumnConfig() for the full picture (custom columns
- *   + render order). Kept for board-app.tsx and Card component that only
- *   needed system renames before step 5.
- */
-export function useColumnNames(): Partial<Record<LaneId, string>> | null {
+/** The project money settings (T·124). Null currency renders as the
+ *  USD default; null budget hides the coverage line. */
+export function useProjectMoney(): { currency: string | null; budgetCents: number | null } {
   const v = useContext(DomainContext);
-  return v?.columnConfig?.system ?? null;
+  return { currency: v?.currency ?? null, budgetCents: v?.budgetCents ?? null };
+}
+
+/** Real members of the active workspace, owner first. Empty outside the
+ *  app shell — consumers must treat empty as "no one to offer", never
+ *  fall back to fixture people. */
+export function useWorkspaceMembers(): WorkspaceMemberMeta[] {
+  const v = useContext(DomainContext);
+  return v?.members ?? [];
 }
 
 /** Segment-aware workspace copy, empty states, examples, titles. */

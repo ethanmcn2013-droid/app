@@ -6,12 +6,45 @@
 import { useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
+type TaskPanelFocusOrigin = {
+  element: HTMLElement;
+  taskId: string;
+};
+
+// `openTask` and `closeTask` are consumed by different hook instances (the
+// workspace and the globally-mounted detail panel), so the return target must
+// live at module scope rather than in a hook-local ref.
+let taskPanelFocusOrigin: TaskPanelFocusOrigin | null = null;
+
+function restoreTaskPanelFocus(): void {
+  const origin = taskPanelFocusOrigin;
+  taskPanelFocusOrigin = null;
+  if (!origin) return;
+
+  window.requestAnimationFrame(() => {
+    const fallback = document.querySelector<HTMLElement>(
+      `button[data-task-id="${CSS.escape(origin.taskId)}"]`,
+    );
+    const target = origin.element.isConnected ? origin.element : fallback;
+    target?.focus({ preventScroll: true });
+  });
+}
+
 export function useTaskPanel() {
   const sp = useSearchParams();
   const taskId = sp?.get("task") ?? null;
 
   const openTask = useCallback(
     (id: string) => {
+      // Preserve the source only when entering the inspector. j/k navigation
+      // and subtask traversal must not replace it with a control inside the
+      // panel, otherwise close would return focus to a disappearing element.
+      if (!taskId && document.activeElement instanceof HTMLElement) {
+        taskPanelFocusOrigin = {
+          element: document.activeElement,
+          taskId: id,
+        };
+      }
       const params = new URLSearchParams(sp?.toString() ?? "");
       params.set("task", id);
       // pushState, back-button closes the panel, which is the intent.
@@ -25,7 +58,7 @@ export function useTaskPanel() {
       // need this nudge.
       window.dispatchEvent(new PopStateEvent("popstate"));
     },
-    [sp],
+    [sp, taskId],
   );
 
   const closeTask = useCallback(() => {
@@ -39,6 +72,7 @@ export function useTaskPanel() {
       qs ? `${window.location.pathname}?${qs}` : window.location.pathname,
     );
     window.dispatchEvent(new PopStateEvent("popstate"));
+    restoreTaskPanelFocus();
   }, [sp]);
 
   return { taskId, openTask, closeTask };

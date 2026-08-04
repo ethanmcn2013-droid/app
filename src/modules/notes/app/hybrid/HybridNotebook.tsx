@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
@@ -51,6 +52,17 @@ import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-per
 import styles from "./hybrid-notebook.module.css";
 
 const TASKS_APP_PATH = PRODUCT_APP_PATHS.tasks;
+
+/** ⌘ on Apple platforms, Ctrl elsewhere. Server renders ⌘; the client
+ *  snapshot corrects it during hydration without a set-state. */
+const subscribeNever = () => () => {};
+function useSaveChordLabel(): string {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => (/Mac|iPhone|iPad|iPod/.test(navigator.platform) ? "⌘" : "Ctrl"),
+    () => "⌘",
+  );
+}
 const RECOVERY_DRAFT_PREFIX = "signal-notes.hybrid-draft.v2";
 const RECOVERY_CAPTURES_PREFIX = "signal-notes.hybrid-pending-captures.v2";
 const RECOVERY_EDITS_PREFIX = "signal-notes.hybrid-detail-edits.v2";
@@ -1262,7 +1274,7 @@ export function HybridNotebook({
       setDetailBaseUpdatedAt(note.updatedAt);
       setExtract({ ...extract, status: "sent", error: null, receipt, immutableRetry: null });
       setPendingApprovedTaskSends((current) => current.filter((send) => send.noteId !== note.id));
-      showToast({ state: "saved", message: receipt.created ? "Approved action sent. The private source note stayed here." : "Existing Tasks receipt recovered. No duplicate was created." });
+      showToast({ state: "saved", message: receipt.created ? "Sent to Tasks. The original stays here." : "Already sent earlier. No duplicate was created." });
       window.setTimeout(() => receiptLinkRef.current?.focus({ preventScroll: true }), 0);
     } catch (error) {
       const message = friendlyError(error, "Tasks is unavailable. Nothing was removed from Notes.");
@@ -1647,19 +1659,6 @@ export function HybridNotebook({
     }, 0);
   }
 
-  function insertCaptureNewline(): void {
-    const textarea = captureRef.current;
-    if (!textarea || readOnly) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    captureGenerationRef.current += 1;
-    setDraft((current) => `${current.slice(0, start)}\n${current.slice(end)}`);
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + 1, start + 1);
-    }, 0);
-  }
-
   function trapMobileDetailFocus(event: ReactKeyboardEvent<HTMLElement>): void {
     if (!mobileDetailOpen || event.key !== "Tab") return;
     const focusables = Array.from(
@@ -1698,6 +1697,7 @@ export function HybridNotebook({
     }
   }
 
+  const saveChord = useSaveChordLabel();
   const voice = useVoiceCapture({
     appendTranscript: (chunk) => {
       captureGenerationRef.current += 1;
@@ -1719,7 +1719,10 @@ export function HybridNotebook({
 
   function onCaptureKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>): void {
     if (event.nativeEvent.isComposing) return;
-    if (event.key === "Enter" && !event.shiftKey) {
+    // Familiar text-entry convention: Enter adds a line (textarea
+    // default), the platform command chord saves. Notes is a place to
+    // write, not a chat box.
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       void commitDraft();
       return;
@@ -1763,13 +1766,12 @@ export function HybridNotebook({
           <h1 className={styles.wordmark}>Notes<span className={styles.wordmarkDot} aria-hidden="true">.</span></h1>
           <span className={styles.privateLabel}>Private notebook</span>
         </div>
-        <span className={styles.headerAssurance}>Yours until you approve a handoff</span>
+        <span className={styles.headerAssurance}>Private by default. Nothing leaves Notes until you send it.</span>
       </header>
       <section className={styles.capture} data-state={captureState} aria-labelledby="hybrid-capture-label" inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
         <div className={styles.captureHeader}>
           <div className={styles.captureIdentity}>
             <label id="hybrid-capture-label" className={styles.captureLabel} htmlFor="hybrid-capture">Capture</label>
-            <span className={styles.privacyAssurance}>Private until you approve exact wording</span>
           </div>
           <span className={styles.searchMeta}>{draft.length.toLocaleString()} / {MAX_NOTE_BODY_CHARS.toLocaleString()}</span>
         </div>
@@ -1799,7 +1801,7 @@ export function HybridNotebook({
         />
         <div className={styles.captureFooter}>
           <div className={styles.captureGuidance}>
-            <p id="hybrid-capture-hint" className={styles.captureHint}>Enter saves · Shift + Enter adds a line · Escape asks before discarding</p>
+            <p id="hybrid-capture-hint" className={styles.captureHint}>{saveChord} + Enter saves · Escape asks before discarding</p>
             {captureEmailState ? (
               <CaptureEmailRow
                 state={captureEmailState}
@@ -1808,7 +1810,6 @@ export function HybridNotebook({
             ) : null}
           </div>
           <div className={styles.captureActions}>
-            {!readOnly ? <button type="button" className={`${styles.quietButton} ${styles.mobileOnly}`} onClick={insertCaptureNewline}>New line</button> : null}
             {voice.supported && !readOnly ? (
               <button type="button" className={styles.quietButton} aria-pressed={voice.listening} onClick={voice.toggle}>
                 {voice.listening ? "Stop listening" : "Dictate"}
@@ -2194,9 +2195,9 @@ export function HybridNotebook({
               </AnimatePresence>
 
               <section className={styles.extractionPanel} aria-labelledby="hybrid-extract-heading">
-                <div className={styles.privacyBoundary}><strong>Your note stays here.</strong> Tasks can receive only the exact wording you select, review, and approve below.</div>
+                <div className={styles.privacyBoundary}><strong>Your note stays here.</strong> Only the exact wording you approve below goes to Tasks.</div>
                 <div className={styles.extractionHeader}>
-                  <h3 id="hybrid-extract-heading">Make this work</h3>
+                  <h3 id="hybrid-extract-heading">Send to Tasks</h3>
                   <span className={styles.searchMeta}>{extract?.approvedBody.length ?? 0} / {MAX_APPROVED_EXTRACT_CHARS}</span>
                 </div>
                 <AnimatePresence initial={false}>
@@ -2256,7 +2257,7 @@ export function HybridNotebook({
                   >
                     <strong>Sent to {taskReceipt.workspaceName}.</strong>
                     <p>{openNote.extractBody}</p>
-                    <p>The source note remains private and editable here. Receipt {taskReceipt.taskId}.</p>
+                    <p>The original stays here, private and editable.</p>
                     <a ref={receiptLinkRef} href={taskReceipt.taskUrl || TASKS_APP_PATH}>Open in Tasks</a>
                   </motion.div>
                 ) : (
@@ -2357,12 +2358,12 @@ export function HybridNotebook({
                           readOnly={readOnly || noteInteractionLocked || Boolean(conflict)}
                           onChange={(event) => setExtract({ ...extract, approvedBody: event.target.value, status: "review", error: null })}
                         />
-                        <p className={styles.payloadReceipt}>{extract.immutableRetry ? "Pending exact retry: wording and destination stay locked until Tasks returns the receipt." : "Will send: approved wording · note ID · workspace ID. Will not send: the rest of this note."}</p>
+                        <p className={styles.payloadReceipt}>{extract.immutableRetry ? "Retrying the same send: wording and destination stay locked until Tasks confirms." : "Sends the wording above. Nothing else from this note leaves Notes."}</p>
                         {extract.error ? <p className={styles.errorReceipt} role="alert">{extract.error}</p> : null}
                         <div className={styles.actionRow}>
-                          {!extract.immutableRetry ? <button type="button" className={styles.quietButton} disabled={navigationInFlight || Boolean(conflict)} onClick={() => { setExtract(null); window.setTimeout(() => approvalTriggerRef.current?.focus({ preventScroll: true }), 0); }}>Cancel approval</button> : null}
+                          {!extract.immutableRetry ? <button type="button" className={styles.quietButton} disabled={navigationInFlight || Boolean(conflict)} onClick={() => { setExtract(null); window.setTimeout(() => approvalTriggerRef.current?.focus({ preventScroll: true }), 0); }}>Cancel</button> : null}
                           <button type="button" className={styles.primaryButton} disabled={readOnly || !online || navigationInFlight || Boolean(conflict) || !(extract.immutableRetry?.workspaceId ?? selectedWorkspaceId) || !extract.approvedBody.trim()} onClick={() => void sendApprovedExtract()}>
-                            {extract.status === "sending" ? "Sending approved action…" : extract.status === "failed" ? "Retry approved send" : "Send approved extract to Tasks"}
+                            {extract.status === "sending" ? "Sending…" : extract.status === "failed" ? "Retry send" : "Send to Tasks"}
                           </button>
                         </div>
                       </>
@@ -2385,7 +2386,7 @@ export function HybridNotebook({
                   </div>
                   <p className={styles.payloadReceipt}>Exact preview: {timelineDraft.title || "Selected extract"} · {timelineDraft.date || "choose a date"} · {timelineDraft.completion}% · for {timelineDraft.audienceLabel || "named audience"}</p>
                   <div className={styles.actionRow}><button type="button" className={styles.quietButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !openNote.workspaceId || !timelineDraft.title.trim() || !timelineDraft.date || !timelineDraft.audienceLabel.trim()} onClick={() => void sendTimelinePreview()}>{timelineSending ? "Checking Timeline…" : "Send this preview to Timeline"}</button></div>
-                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a workspace when capturing or sending this note first.</p> : null}
+                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a project when capturing or sending this note first.</p> : null}
                   {timelineReceipt ? <p className={styles.receipt}>{timelineReceipt}</p> : null}
                 </details>
               ) : null}
@@ -2394,12 +2395,13 @@ export function HybridNotebook({
           ) : (
             <aside className={`${styles.artifactPanel} ${styles.desktopOnly}`} aria-labelledby="hybrid-previous-heading">
               <div className={styles.artifactHeader}>
-                <span className={styles.emptyEyebrow}>Artifact history</span>
-                <span className={styles.searchMeta}>{archivedNotes.length} archived</span>
+                <span className={styles.emptyEyebrow}>History</span>
+                <span className={styles.searchMeta}>{archivedNotes.length} sent</span>
               </div>
-              <h2 id="hybrid-previous-heading">Previously sent</h2>
+              <h2 id="hybrid-previous-heading">Sent to Tasks</h2>
               <p className={styles.artifactIntroduction}>
-                Earlier handoffs live here as an explicit history. Restore one at a time; nothing private moves automatically.
+                Notes you&rsquo;ve sent to Tasks. Restore any of them; the
+                original wording is kept here.
               </p>
               {archivedNotes.length ? (
                 <motion.ul layout className={styles.artifactList}>
@@ -2416,7 +2418,7 @@ export function HybridNotebook({
                         <blockquote>{presentNoteBody(note.body).title}</blockquote>
                         {note.extractBody ? <p>Sent wording: {note.extractBody}</p> : null}
                         <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>
-                          {restoringId === note.id ? "Restoringâ€¦" : "Restore private note"}
+                          {restoringId === note.id ? "Restoring…" : "Restore to notebook"}
                         </button>
                       </motion.li>
                     ))}
@@ -2424,11 +2426,10 @@ export function HybridNotebook({
                 </motion.ul>
               ) : (
                 <div className={styles.artifactEmpty}>
-                  <strong>Nothing is archived.</strong>
-                  <p>Choose a note when you want to edit it, or select exact wording to make it work in Tasks.</p>
+                  <strong>Nothing sent yet.</strong>
+                  <p>Select a note to read, edit or send it to Tasks.</p>
                 </div>
               )}
-              <p className={styles.artifactFootnote}>A Tasks receipt never removes its private source from this notebook.</p>
             </aside>
           )}
         </motion.section>

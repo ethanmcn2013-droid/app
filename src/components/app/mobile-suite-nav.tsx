@@ -5,41 +5,61 @@ import { usePathname } from "next/navigation";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { RailIcon } from "@/components/studio-bar/rail-icons";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
-  productIdFromAppPath,
-  type ProductId,
+  suiteSurfaceFromAppPath,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 
-const PRODUCTS: readonly Readonly<{ id: ProductId; label: string }>[] =
-  Object.freeze([
-    { id: "notes", label: "Notes" },
-    { id: "tasks", label: "Tasks" },
-    { id: "timeline", label: "Timeline" },
-    { id: "signal", label: "Signal" },
-  ]);
+/**
+ * Mobile destinations (Signal → Home consolidation, D4): Home first,
+ * the three products, then Project. Signal is no longer a tab; the
+ * briefing lives inside Home. "More" stays the account cluster in the
+ * top bar — a sixth 44px tab does not fit a 375px viewport.
+ */
+const DESTINATIONS: readonly Readonly<{
+  id: "home" | "notes" | "tasks" | "timeline" | "project";
+  label: string;
+  path: string;
+}>[] = Object.freeze([
+  { id: "home", label: "Home", path: HOME_APP_PATH },
+  { id: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
+  { id: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
+  { id: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
+  { id: "project", label: "Project", path: "/app/project" },
+]);
+
+function activeMobileKey(pathname: string): string {
+  if (pathname === "/app/project" || pathname.startsWith("/app/project/")) {
+    return "project";
+  }
+  return suiteSurfaceFromAppPath(pathname);
+}
 
 /**
- * Mobile counterpart to the desktop product rail.
+ * Mobile counterpart to the desktop rail.
  *
  * Tasks already owns a task-specific mobile navigation bar, so this compact
- * suite rail appears only on the three sibling canvases. Tasks remains one
+ * suite rail appears on Home and the sibling canvases. Tasks remains one
  * tap away and its account menu retains the cross-product escape hatch.
  */
 export function MobileSuiteNav() {
   const pathname = usePathname() ?? "";
-  const activeProduct = productIdFromAppPath(pathname);
+  const activeKey = activeMobileKey(pathname);
   const suiteContext = useSuiteContext();
 
-  if (activeProduct === "tasks") return null;
+  if (activeKey === "tasks") return null;
 
   return (
     <nav
       aria-label="Signal Studio products"
+      /* Marks this as the rail that owns the foot of the mobile viewport, so
+         floating chrome (the dev notice) can measure it and sit clear. */
+      data-signal-bottom-nav="suite"
       className="z-40 flex flex-none border-t border-white/[0.08] bg-[var(--x-studio-chrome)] pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      {PRODUCTS.map((product) => {
-        const active = product.id === activeProduct;
+      {DESTINATIONS.map((destination) => {
+        const active = destination.id === activeKey;
         return (
           <Link
             aria-current={active ? "page" : undefined}
@@ -50,15 +70,12 @@ export function MobileSuiteNav() {
                 : "text-[var(--x-studio-ink-quiet)] hover:bg-white/[0.05] hover:text-[var(--x-studio-ink)]",
               "focus-visible:bg-white/[0.07] focus-visible:text-white",
             ].join(" ")}
-            href={withSuiteContext(
-              PRODUCT_APP_PATHS[product.id],
-              suiteContext,
-            )}
-            key={product.id}
+            href={withSuiteContext(destination.path, suiteContext)}
+            key={destination.id}
           >
-            <RailIcon name={product.id} size={18} />
+            <RailIcon name={destination.id} size={18} />
             <span className="text-[10px] font-medium leading-none">
-              {product.label}
+              {destination.label}
             </span>
             {active ? (
               <span

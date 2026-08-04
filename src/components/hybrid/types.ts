@@ -3,7 +3,6 @@ export const LAB_VIEWS = ["board", "list", "timeline", "calendar"] as const;
 export const LAB_DATASETS = ["sparse", "normal", "dense", "edge"] as const;
 export const LAB_DENSITIES = ["compact", "comfortable"] as const;
 export const LAB_MODES = ["default", "empty", "loading", "error", "readonly"] as const;
-export const TASK_STATUSES = ["queued", "active", "review", "waiting", "done"] as const;
 export const TASK_PRIORITIES = ["urgent", "high", "normal", "low"] as const;
 
 export type LabOption = (typeof LAB_OPTIONS)[number];
@@ -11,7 +10,13 @@ export type LabView = (typeof LAB_VIEWS)[number];
 export type LabDataset = (typeof LAB_DATASETS)[number];
 export type LabDensity = (typeof LAB_DENSITIES)[number];
 export type LabMode = (typeof LAB_MODES)[number];
-export type TaskStatus = (typeof TASK_STATUSES)[number];
+/**
+ * T·121: a task's status IS its board column key — one of the four
+ * permanent lanes (todo/doing/review/done) or a custom column key such as
+ * the default "waiting". The five-value const this replaced is gone; the
+ * column set now comes from the workspace config via useBoardColumns().
+ */
+export type TaskStatus = string;
 export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export type CalendarDate = `${number}-${number}-${number}`;
 
@@ -73,6 +78,8 @@ export type LabTask = {
   blockerIds: string[];
   completed: boolean;
   completedAt?: string;
+  /** Integer cents the operator put on the task; app surfaces only. */
+  cents?: number | null;
   workspaceId: string;
   order: number;
 };
@@ -101,14 +108,6 @@ export type LabDragOperation =
       targetDate: CalendarDate | null;
     }
   | null;
-
-export const STATUS_LABELS: Record<TaskStatus, string> = {
-  queued: "Queued",
-  active: "In progress",
-  review: "Review",
-  waiting: "Waiting",
-  done: "Done",
-};
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   urgent: "Urgent",

@@ -18,10 +18,14 @@ function legacyItem(
 ): BriefItem {
   return {
     id,
-    text: "Wedding invites haven't moved in 9 days",
+    text: "Send the wedding invites",
+    detail: "Nothing has moved on it for nine days.",
     sourceLabel: "Tasks · Personal",
     trigger: "stuck-work",
-    reasons: ["No status update in 9 days."],
+    reasons: [
+      "Signal flags anything quiet for three days or more.",
+      "Started, and still open.",
+    ],
     workspaceId,
     planningPeriodId: null,
   };
@@ -40,6 +44,8 @@ function legacyBriefing(
     quietRisks: items,
     suggestedFocus: [],
     isEmpty: items.length === 0,
+    readCount: 0,
+    triggeredCount: items.length,
     ...overrides,
   };
 }
@@ -61,7 +67,13 @@ describe("legacy Signal ledger adapter", () => {
 
     assert.equal(groups.length, 1);
     assert.equal(ledger.entries.length, 1);
-    assert.equal(ledger.entries[0]?.text, "Wedding invites haven't moved in 9 days");
+    // The headline is the reader's own title, verbatim; the observation
+    // sits underneath it as detail.
+    assert.equal(ledger.entries[0]?.text, "Send the wedding invites");
+    assert.equal(
+      ledger.entries[0]?.detail,
+      "Nothing has moved on it for nine days.",
+    );
     assert.equal(ledger.entries[0]?.receipt.evidenceCount, 2);
     assert.equal(ledger.entries[0]?.receipt.sourceCounts.tasks, 2);
     assert.deepEqual(ledger.entries[0]?.primaryAction, {
@@ -77,6 +89,137 @@ describe("legacy Signal ledger adapter", () => {
     ]);
 
     assert.equal(groupLegacyBriefItems(briefing).length, 2);
+  });
+
+  it("does not merge a shared title whose observations differ", () => {
+    const briefing = legacyBriefing([
+      legacyItem("task-one"),
+      {
+        ...legacyItem("task-two"),
+        detail: "Nothing has moved on it for twenty days.",
+      },
+    ]);
+
+    assert.equal(groupLegacyBriefItems(briefing).length, 2);
+  });
+
+  it("carries the engine's read count into the accounting", () => {
+    const ledger = ledgerFromLegacyBriefing(
+      legacyBriefing([legacyItem("task-counted")], { readCount: 41 }),
+      {
+        generatedAtLabel: "Sunday, 09:00",
+        scopeLabel: "Personal",
+        scopeKind: "workspace",
+        allowedAppOrigin: APP_ORIGIN,
+      },
+    );
+
+    assert.equal(ledger.readCounts?.read, 41);
+    assert.equal(ledger.readCounts?.flagged, 1);
+    assert.equal(ledger.readCounts?.shown, 1);
+    assert.equal(ledger.readCounts?.cleared, 40);
+  });
+
+  it("states the denominator on a clear day instead of asserting it", () => {
+    const withCount = ledgerFromLegacyBriefing(
+      legacyBriefing([], { readCount: 41 }),
+      {
+        generatedAtLabel: "Sunday, 09:00",
+        scopeLabel: "Personal",
+        scopeKind: "workspace",
+        allowedAppOrigin: APP_ORIGIN,
+      },
+    );
+    const withoutCount = ledgerFromLegacyBriefing(
+      legacyBriefing([], {
+        readCount: 0,
+        emptyStateBody:
+          "No event work in this scope crossed Signal’s attention rules.",
+      }),
+      {
+        generatedAtLabel: "Sunday, 09:00",
+        scopeLabel: "Personal",
+        scopeKind: "workspace",
+        allowedAppOrigin: APP_ORIGIN,
+      },
+    );
+
+    assert.equal(
+      withCount.emptyState?.body,
+      "Signal read 41 items in this scope. Nothing crossed Signal’s attention rules.",
+    );
+    assert.equal(
+      withoutCount.emptyState?.body,
+      "No event work in this scope crossed Signal’s attention rules.",
+    );
+  });
+
+  // The ledger's entries are attention and risks only, so a lone
+  // just-shipped item leaves the page empty while having crossed a rule.
+  // "Nothing crossed Signal's attention rules" over that day was a false
+  // all-clear the reader had no way to catch.
+  it("never calls an empty page an all-clear when something crossed", () => {
+    const ledger = ledgerFromLegacyBriefing(
+      legacyBriefing([], { readCount: 2, triggeredCount: 1 }),
+      {
+        generatedAtLabel: "Sunday, 09:00",
+        scopeLabel: "Personal",
+        scopeKind: "workspace",
+        allowedAppOrigin: APP_ORIGIN,
+      },
+    );
+
+    assert.equal(ledger.emptyState?.kind, "healthy");
+    assert.equal(
+      ledger.emptyState?.body,
+      "Signal read two items in this scope. One of them crossed a rule without asking anything of you.",
+    );
+    assert.doesNotMatch(ledger.emptyState!.body, /nothing crossed/i);
+  });
+
+  it("signs off with the same sentence the briefing voice uses", () => {
+    const ledger = ledgerFromLegacyBriefing(
+      legacyBriefing([legacyItem("task-one")]),
+      {
+        generatedAtLabel: "Sunday, 09:00",
+        scopeLabel: "Personal",
+        scopeKind: "workspace",
+        allowedAppOrigin: APP_ORIGIN,
+      },
+    );
+
+    // One row, so the sign-off stops after the read: the row already
+    // carries its own "Review in Tasks" control.
+    assert.equal(ledger.closingLine, "That’s the read.");
+  });
+
+  it("never signs off with an order the page does not carry out", () => {
+    for (const count of [0, 1, 2, 3]) {
+      const ledger = ledgerFromLegacyBriefing(
+        legacyBriefing(
+          Array.from({ length: count }, (_, index) =>
+            legacyItem(`task-${index}`),
+          ).map((item, index) => ({
+            ...item,
+            detail: `Nothing has moved on it for ${index + 3} days.`,
+          })),
+        ),
+        {
+          generatedAtLabel: "Sunday, 09:00",
+          scopeLabel: "Personal",
+          scopeKind: "workspace",
+          allowedAppOrigin: APP_ORIGIN,
+        },
+      );
+      if (!ledger.closingLine) continue;
+      assert.doesNotMatch(ledger.closingLine, /open tasks/i, ledger.closingLine);
+      assert.doesNotMatch(
+        ledger.closingLine,
+        /waiting longest/i,
+        ledger.closingLine,
+      );
+      assert.doesNotMatch(ledger.closingLine, /'/, ledger.closingLine);
+    }
   });
 
   it("does not serialize the legacy reader id or hidden focus projection", () => {
@@ -263,7 +406,155 @@ describe("progressive Signal ledger adapter", () => {
       "/app/signal?evidence=observation-one",
     );
   });
+
+  it("counts the heading in words and closes with the briefing voice", () => {
+    const response = progressiveBriefing();
+    const two = {
+      ...response,
+      observations: [
+        { ...response.observations[0]!, state: "needs_attention" as const },
+        {
+          ...response.observations[0]!,
+          id: "observation-two",
+          state: "needs_attention" as const,
+        },
+      ],
+    };
+    const ledger = ledgerFromProgressiveBriefing(two, {
+      generatedAtLabel: "26 Jul, 09:00",
+      scopeLabel: "Personal",
+      allowedAppOrigin: APP_ORIGIN,
+      evidenceHref: (id) => `/app/signal?evidence=${id}`,
+    });
+
+    assert.equal(ledger.heading, "Two things genuinely need you.");
+    assert.doesNotMatch(ledger.heading, /\d/);
+    assert.equal(
+      ledger.closingLine,
+      "That’s the read. Dates came first, then the quiet ones.",
+    );
+  });
+
+  it("withholds the accounting when no provider reported a record count", () => {
+    const ledger = ledgerFromProgressiveBriefing(progressiveBriefing(), {
+      generatedAtLabel: "26 Jul, 09:00",
+      scopeLabel: "Personal",
+      allowedAppOrigin: APP_ORIGIN,
+      evidenceHref: (id) => `/app/signal?evidence=${id}`,
+    });
+
+    assert.equal(ledger.readCounts, null);
+  });
+
+  it("sums the provider record counts on a complete read", () => {
+    const response = progressiveBriefing();
+    const ledger = ledgerFromProgressiveBriefing(
+      {
+        ...response,
+        meta: {
+          ...response.meta,
+          coverage: {
+            ...response.meta.coverage,
+            providers: {
+              tasks: providerCoverage("tasks", 31),
+              timeline: providerCoverage("timeline", 10),
+            },
+          },
+        },
+      },
+      {
+        generatedAtLabel: "26 Jul, 09:00",
+        scopeLabel: "Personal",
+        allowedAppOrigin: APP_ORIGIN,
+        evidenceHref: (id) => `/app/signal?evidence=${id}`,
+      },
+    );
+
+    assert.equal(ledger.readCounts?.read, 41);
+    // Counted in items, not rows: this row stands for two source records.
+    assert.equal(ledger.readCounts?.shown, 2);
+    // The progressive engine caps its observations and passes no pre-cap
+    // total, so the raw candidate count (1) would have published a state the
+    // contract calls impossible: two items shown out of one flagged. Anything
+    // on screen demonstrably crossed a rule, so `shown` floors `flagged`.
+    assert.equal(ledger.readCounts?.flagged, 2);
+    assert.ok(
+      ledger.readCounts!.shown <= ledger.readCounts!.flagged,
+      "shown must never exceed flagged",
+    );
+    assert.equal(
+      ledger.readCounts!.flagged + ledger.readCounts!.cleared,
+      ledger.readCounts!.read,
+      "read must equal flagged + cleared",
+    );
+  });
+
+  it("drops the updated segment rather than composing a placeholder", () => {
+    const response = progressiveBriefing();
+    const ledger = ledgerFromProgressiveBriefing(
+      {
+        ...response,
+        observations: [
+          { ...response.observations[0]!, updatedAt: "not-an-instant" },
+        ],
+      },
+      {
+        generatedAtLabel: "26 Jul, 09:00",
+        scopeLabel: "Personal",
+        allowedAppOrigin: APP_ORIGIN,
+        evidenceHref: (id) => `/app/signal?evidence=${id}`,
+      },
+    );
+
+    assert.equal(ledger.entries[0]?.receipt.updatedAtLabel, null);
+  });
+
+  it("never offers to send the reader to the page they are on", () => {
+    const response = progressiveBriefing();
+    const ledger = ledgerFromProgressiveBriefing(
+      {
+        ...response,
+        observations: [
+          {
+            ...response.observations[0]!,
+            actions: [],
+            sourceCounts: { notes: 0, tasks: 0, milestones: 0 },
+          },
+        ],
+      },
+      {
+        generatedAtLabel: "26 Jul, 09:00",
+        scopeLabel: "Personal",
+        allowedAppOrigin: APP_ORIGIN,
+        evidenceHref: (id) => `/app/signal?evidence=${id}`,
+      },
+    );
+
+    // Consolidation: the briefing's own base moved into Home; the
+    // fallback action names the surface, never the retired product.
+    assert.deepEqual(ledger.entries[0]?.primaryAction, {
+      label: "Open the briefing",
+      href: "/app/home/briefing",
+    });
+  });
 });
+
+function providerCoverage(
+  provider: "tasks" | "timeline",
+  sourceRecordCount: number,
+) {
+  return {
+    provider,
+    status: "ready" as const,
+    capabilities: [],
+    historyStartAt: null,
+    historyEndAt: null,
+    calculatedAt: "2026-07-26T08:00:00.000Z",
+    staleAfter: null,
+    sourceRecordCount,
+    issues: [],
+  };
+}
 
 function progressiveBriefing(): BriefingResponse {
   const start = "2026-05-03T00:00:00.000Z";

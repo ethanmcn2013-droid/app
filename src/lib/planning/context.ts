@@ -57,11 +57,17 @@ export const CONTEXT_TERMINOLOGY: Readonly<
     audienceTimeline: "Couple Timeline",
     defaultPlanningPeriodName: "Weddings",
   },
+  // D-011 (2026-07-21) ratified "Projects = Tasks workspaces". `workspace` is
+  // the code name for the entity; `Project` is the only name a user sees. Every
+  // other context here was already right — this generic default was the single
+  // line that leaked the internal noun into the product, and the contract test
+  // in vocabulary.test.ts allowlists this file alone so it cannot come back
+  // through a component authoring the word itself.
   general: {
-    planningPeriod: "Planning period",
-    planningPeriodPlural: "Planning periods",
-    workspace: "Workspace",
-    workspacePlural: "Workspaces",
+    planningPeriod: "Season",
+    planningPeriodPlural: "Seasons",
+    workspace: "Project",
+    workspacePlural: "Projects",
     audienceTimeline: "Timeline",
     defaultPlanningPeriodName: "Active work",
   },

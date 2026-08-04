@@ -110,7 +110,7 @@ export function AboutManifesto() {
             href="/app/tasks"
             className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[14px] font-medium text-white shadow-[0_8px_24px_-8px_rgba(20,21,26,0.4)] transition-transform hover:-translate-y-px"
           >
-            Open the workspace
+            Open the project
             <svg
               width="14"
               height="14"

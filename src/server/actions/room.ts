@@ -40,7 +40,7 @@ export type RoomBriefData = {
   /** Planning-period name for the breadcrumb; null when none is assigned. */
   periodName: string | null;
   /** Human date-window line: planning period range, or the workspace's
-   *  primary-date label ("The wedding · 12 Sep 2026"), or null. */
+   *  primary-date label ("The wedding · 3 Oct 2026"), or null. */
   dateWindow: string | null;
   /** Workspace owner's display name; null when unresolvable. */
   ownerName: string | null;

@@ -1,4 +1,6 @@
 import type { LaneId, Priority, Recurrence, UserId } from "@/lib/data";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 
 export type TaskDuplicationChoices = Readonly<{
   copyReusableTasks: boolean;
@@ -39,6 +41,9 @@ export function planDuplicatedTasks(
   choices: TaskDuplicationChoices,
   copiedMemberIds: ReadonlySet<string>,
   createId: () => string,
+  /** Threaded from the caller's readWorkspaceColumnConfig (T·122); defaults
+   *  to null (["done"]) for callers that haven't wired it. */
+  columnConfig: ColumnConfig | null = null,
 ): readonly DuplicatedTaskValues[] {
   const copyable = sourceTasks.filter((task) =>
     task.isMilestone
@@ -51,7 +56,7 @@ export function planDuplicatedTasks(
     id: ids.get(task.id)!,
     title: task.title,
     description: task.description,
-    lane: task.lane === "done" ? "todo" : task.lane,
+    lane: isTaskDone(task, columnConfig) ? "todo" : task.lane,
     priority: task.priority,
     assignees: task.assignees.filter((assignee) => copiedMemberIds.has(assignee)),
     due: task.due,

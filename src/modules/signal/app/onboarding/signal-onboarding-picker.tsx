@@ -9,6 +9,19 @@ import { completeOnboarding } from "./signal-onboarding-actions";
  *
  * S5 link rewrite: TASKS_URL external link → /app/tasks (in-app board).
  */
+
+/**
+ * The suite's one mono metadata register, taken from the Quiet Briefing
+ * Ledger: 11px at 0.06em. Onboarding used to run its own 12px / 0.02em
+ * variant, which read as a third micro-label register at a glance.
+ */
+const MONO_LABEL: React.CSSProperties = {
+  fontSize: 11,
+  fontFamily: "var(--font-mono)",
+  letterSpacing: "0.06em",
+  color: "var(--ink-quiet)",
+};
+
 export function SignalOnboardingPicker({
   candidates,
 }: {
@@ -45,7 +58,7 @@ export function SignalOnboardingPicker({
             await completeOnboarding(formData);
           } catch {
             setFailure(
-              "Signal could not link this workspace. Check your connection and try again.",
+              "Signal couldn't link this workspace. Nothing was saved. Try again.",
             );
           }
         });
@@ -61,12 +74,10 @@ export function SignalOnboardingPicker({
             value={candidates[0].workspaceId}
           />
           <div
+            className="mb-6 rounded-lg border p-6"
             style={{
-              padding: 20,
-              borderRadius: "var(--r-3)",
-              border: "1px solid var(--border)",
-              background: "var(--bg-elev)",
-              marginBottom: 24,
+              borderColor: "var(--hairline)",
+              background: "var(--paper)",
             }}
           >
             <div
@@ -74,15 +85,7 @@ export function SignalOnboardingPicker({
             >
               {candidates[0].name}
             </div>
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                fontFamily: "var(--font-mono-stack)",
-                color: "var(--ink-quiet)",
-                letterSpacing: "0.02em",
-              }}
-            >
+            <div style={MONO_LABEL}>
               {candidates[0].role === "owner" ? "Owner" : "Member"}
             </div>
           </div>
@@ -90,7 +93,7 @@ export function SignalOnboardingPicker({
       ) : (
         <div
           role="radiogroup"
-          aria-label="Workspace"
+          aria-label="Project"
           style={{
             display: "flex",
             flexDirection: "column",
@@ -103,18 +106,12 @@ export function SignalOnboardingPicker({
             return (
               <label
                 key={c.workspaceId}
+                className="flex cursor-pointer items-center gap-3 rounded-lg border p-4"
                 style={{
-                  cursor: "pointer",
-                  padding: 16,
-                  borderRadius: "var(--r-3)",
-                  border: `1px solid ${active ? "var(--brand)" : "var(--border-soft)"}`,
-                  background: active
-                    ? "color-mix(in srgb, var(--brand) 4%, var(--bg-elev))"
-                    : "var(--bg-elev)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  transition: "border-color 200ms, background 200ms",
+                  borderColor: active ? "var(--accent)" : "var(--hairline)",
+                  background: active ? "var(--accent-tint)" : "var(--paper)",
+                  transition:
+                    "border-color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out)",
                 }}
               >
                 <input
@@ -126,7 +123,7 @@ export function SignalOnboardingPicker({
                     setFailure(null);
                     setSelected(c.workspaceId);
                   }}
-                  style={{ accentColor: "var(--brand)" }}
+                  style={{ accentColor: "var(--accent)" }}
                 />
                 <div style={{ flex: 1 }}>
                   <div
@@ -138,15 +135,7 @@ export function SignalOnboardingPicker({
                   >
                     {c.name}
                   </div>
-                  <div
-                    style={{
-                      marginTop: 2,
-                      fontSize: 12,
-                      fontFamily: "var(--font-mono-stack)",
-                      color: "var(--ink-quiet)",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
+                  <div style={{ ...MONO_LABEL, marginTop: 2 }}>
                     {c.role === "owner" ? "Owner" : "Member"}
                   </div>
                 </div>
@@ -179,7 +168,7 @@ export function SignalOnboardingPicker({
           fontWeight: 600,
           cursor: pending || !timezone ? "default" : "pointer",
           opacity: pending || !selected || !timezone ? 0.6 : 1,
-          transition: "opacity 200ms",
+          transition: "opacity var(--motion-fast) var(--ease-out)",
         }}
       >
         {pending
@@ -194,13 +183,7 @@ export function SignalOnboardingPicker({
       <p
         role="status"
         aria-live="polite"
-        style={{
-          marginTop: 16,
-          fontSize: 12,
-          fontFamily: "var(--font-mono-stack)",
-          color: "var(--ink-soft)",
-          letterSpacing: "0.02em",
-        }}
+        style={{ ...MONO_LABEL, marginTop: 16 }}
       >
         {pending
           ? "Linking this workspace…"
@@ -211,9 +194,10 @@ export function SignalOnboardingPicker({
           role="alert"
           style={{
             marginTop: 12,
+            maxWidth: 510,
             fontSize: 13,
-            lineHeight: 1.5,
-            color: "var(--status-blocked)",
+            lineHeight: 1.55,
+            color: "var(--x-task-danger)",
           }}
         >
           {failure}

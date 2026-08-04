@@ -258,6 +258,17 @@ function buildTask(seed: Seed, index: number): LabTask {
 
 export const LAB_TASKS: LabTask[] = SEEDS.map(buildTask);
 
+/** The frozen fixture data predates T·121 and stores the old five status
+ *  words; the views now speak column keys (lane ids + custom keys). The
+ *  projection maps at the boundary so the hashed fixture stays untouched. */
+const FIXTURE_STATUS_TO_COLUMN: Record<string, string> = {
+  queued: "todo",
+  active: "doing",
+  review: "review",
+  waiting: "waiting",
+  done: "done",
+};
+
 export function tasksForDataset(dataset: LabDataset): LabTask[] {
   const source = dataset === "sparse"
     ? LAB_TASKS.filter((task) => SPARSE_IDS.has(task.id))
@@ -266,38 +277,59 @@ export function tasksForDataset(dataset: LabDataset): LabTask[] {
       : dataset === "edge"
         ? LAB_TASKS.filter((task) => EDGE_IDS.has(task.id))
         : LAB_TASKS;
-  return structuredClone(source);
+  return structuredClone(source).map((task) => ({
+    ...task,
+    status: FIXTURE_STATUS_TO_COLUMN[task.status] ?? task.status,
+  }));
 }
 
-// Runtime registries. In the design-lab route these stay empty and the fixed
-// LAB_PEOPLE/LAB_LABELS seeds are used. In production the hybrid mount populates
-// them from real workspace members and tag definitions so avatars and label
-// chips resolve to live data, while the verbatim views keep importing
-// personById/labelById from here unchanged.
+// Runtime registries. In the design-lab route these are never set and the
+// fixed LAB_PEOPLE/LAB_LABELS seeds are used. In production the hybrid mount
+// calls setRuntimePeople/setRuntimeLabels on every render, which makes the
+// registry AUTHORITATIVE: once set, an id that is not in it does not resolve,
+// and an empty registry yields an empty list. Fixture people must never be
+// offered or rendered against live data — before this gate, a workspace with
+// an unpopulated registry listed eight design-lab people in the real assign
+// menu, and choosing one wrote a fixture id into the production database.
 const runtimePeople = new Map<string, LabPerson>();
 const runtimeLabels = new Map<string, LabLabel>();
+let runtimePeopleActive = false;
+let runtimeLabelsActive = false;
 
 export function setRuntimePeople(people: LabPerson[]): void {
+  runtimePeopleActive = true;
   runtimePeople.clear();
   for (const person of people) runtimePeople.set(person.id, person);
 }
 
 export function setRuntimeLabels(labels: LabLabel[]): void {
+  runtimeLabelsActive = true;
   runtimeLabels.clear();
   for (const label of labels) runtimeLabels.set(label.id, label);
 }
 
 export function personById(id: string): LabPerson | undefined {
-  return runtimePeople.get(id) ?? LAB_PEOPLE.find((person) => person.id === id);
+  if (runtimePeopleActive) return runtimePeople.get(id);
+  return LAB_PEOPLE.find((person) => person.id === id);
 }
 
 export function listPeople(): LabPerson[] {
-  return runtimePeople.size > 0 ? [...runtimePeople.values()] : LAB_PEOPLE;
+  if (runtimePeopleActive) return [...runtimePeople.values()];
+  return LAB_PEOPLE;
 }
 
 export function labelById(id: string): LabLabel | undefined {
-  if (runtimeLabels.size > 0) {
+  if (runtimeLabelsActive) {
+    // Unknown live tag → neutral chip with its own name; never a fixture tone.
     return runtimeLabels.get(id) ?? { id, name: id, tone: "neutral" };
   }
   return LAB_LABELS.find((label) => label.id === id);
+}
+
+/** Test-only: return both registries to the lab-fixture default. */
+export function resetRuntimeRegistriesForTests(): void {
+  runtimePeopleActive = false;
+  runtimeLabelsActive = false;
+  runtimePeople.clear();
+  runtimeLabels.clear();
 }

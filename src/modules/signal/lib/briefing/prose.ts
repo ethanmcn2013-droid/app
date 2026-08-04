@@ -5,6 +5,15 @@ import type { TaskSignal, TriggerKind } from "./types";
  * applied per (user, day) via a stable hash in build.ts so users
  * don't get the same phrasing two days running.
  *
+ * Each phrasing returns the OBSERVATION only, never the task title.
+ * The row's headline is the title itself (build.ts owns that split),
+ * so every sentence here has to stay grammatical against any title
+ * shape: an imperative ("Send the invitations."), a question ("Do we
+ * need a marquee?"), a shout ("URGENT: confirm the band"). The subject
+ * is therefore a pronoun or implicit, never an interpolated title.
+ * Interpolating the title was the old failure: "Approve the final
+ * seating plan is 2 days overdue".
+ *
  * Voice rules (from docs/COLLABORATION_LOOP.md):
  *  - Plain English.
  *  - Never chart language.
@@ -23,79 +32,141 @@ type Phrasing = (
 ) => string;
 
 const STUCK: Phrasing[] = [
-  (t, days = 0) => `${t.title} has been held up since ${ago(days)}`,
-  (t, days = 0) => `${t.title} hasn't moved in ${plural(days, "day", "days")}`,
-  (t, days = 0) => `${t.title} is sitting open, ${ago(days)}`,
+  (_t, days = 0) => `Nothing has moved on it for ${duration(days)}.`,
+  (_t, days = 0) => `Quiet for ${plural(days, "day", "days")} now.`,
+  (_t, days = 0) => `Open and untouched, ${duration(days)}.`,
 ];
 
 const DUE_SOON: Phrasing[] = [
-  (t, daysOut = 0) =>
+  (_t, daysOut = 0) =>
     daysOut < 0
-      ? `${t.title} is ${plural(Math.abs(daysOut), "day", "days")} overdue`
+      ? `${capitalise(plural(Math.abs(daysOut), "day", "days"))} past its date.`
       : daysOut < 1
-        ? `${t.title} is due today`
-        : `${t.title} needs to land ${byWhen(daysOut)}`,
-  (t, daysOut = 0) =>
+        ? "Due today."
+        : `Due ${byWhen(daysOut)}.`,
+  (_t, daysOut = 0) =>
     daysOut < 0
-      ? `${t.title} slipped past its date ${plural(Math.abs(daysOut), "day", "days")} ago`
-      : `${t.title} comes due ${byWhen(daysOut)}`,
-  (t, daysOut = 0) =>
-    daysOut < 0
-      ? `${t.title} is overdue by ${plural(Math.abs(daysOut), "day", "days")}`
+      ? `The date passed ${plural(Math.abs(daysOut), "day", "days")} ago.`
       : daysOut < 1
-        ? `${t.title} closes today`
-        : `${t.title} is up ${byWhen(daysOut)}`,
+        ? "The date is today."
+        : `The date lands ${byWhen(daysOut)}.`,
+  (_t, daysOut = 0) =>
+    daysOut < 0
+      ? `Still open ${plural(Math.abs(daysOut), "day", "days")} after it was due.`
+      : daysOut < 1
+        ? "It falls due today."
+        : `It comes due ${byWhen(daysOut)}.`,
 ];
 
+// Only the 24-hour window is known here, so the prose claims the
+// window and not a weekday. "Closed out yesterday" would be a guess
+// for anything shipped this morning.
 const JUST_SHIPPED: Phrasing[] = [
-  (t) => `${t.title} landed`,
-  (t) => `${t.title}, done`,
-  (t) => `${t.title} closed out`,
+  () => "Closed out in the last day.",
+  () => "Marked done within the last twenty-four hours.",
+  () => "Moved to shipped since this time yesterday.",
 ];
 
+// The headline already carries the count, so the detail interprets
+// rather than repeats. The old rotations said "in flight" twice in one
+// line, borrowed clinical register ("cognitive load is high"), and
+// lower-cased a synthetic title for no gain.
 const OVERLOAD: Phrasing[] = [
-  (t) => `Too much in flight, ${t.title.toLowerCase()}`,
-  (t) => `${t.title.toLowerCase()}, that's heavy for one person`,
-  (t) => `Cognitive load is high, ${t.title.toLowerCase()}`,
+  () => "That is a lot to hold open at the same time.",
+  () => "Everything is started and nothing is narrowed.",
+  () => "Enough at once that some of it will sit.",
 ];
 
 const CROWDED_WEEK: Phrasing[] = [
-  (t) => `Heavy week, ${t.title.toLowerCase()}`,
-  (t) => `${t.title.toLowerCase()}, plan the week early`,
-  (t) => `A pile-up is forming, ${t.title.toLowerCase()}`,
+  () => "They all land inside the same seven days.",
+  () => "The dates sit on top of each other.",
+  () => "One week is carrying all of them.",
 ];
 
-// Build the blocker subject string. Centralised so all three
-// phrasings produce consistent multi-blocker form.
-//   0 titles  → null (generic fallback)
-//   1 title   → "X"
-//   2 titles  → "X and Y"            (both named, conversational)
-//   3+ titles → "X and 2 more"       (lead + count)
-function blockerSubject(titles: string[]): string | null {
-  if (titles.length === 0) return null;
-  if (titles.length === 1) return titles[0];
-  if (titles.length === 2) return `${titles[0]} and ${titles[1]}`;
-  return `${titles[0]} and ${titles.length - 1} more`;
+/**
+ * A title cleared to run inside a sentence, or null when it cannot.
+ *
+ * The rule the whole engine turns on is that a title is the reader's own
+ * words, so it is a headline and never a clause. The one place the split
+ * leaks is the upstream blocker, which has no row of its own and can only
+ * be named inline. Two title shapes cannot survive that:
+ *
+ *  - a question or a shout carries its own mark wherever it goes, so it
+ *    can never be the object of a clause. "Blocked by Do we need a
+ *    marquee? for nine days." was the live string.
+ *  - a shouted prefix ("URGENT: confirm the band") drags its register
+ *    into a sentence that is meant to be quiet.
+ *
+ * Both are counted instead of named. Everything else keeps its words and
+ * loses only its terminal punctuation, because the sentence supplies its
+ * own full stop and "waiting on Send the invitations.." is not a sentence.
+ */
+function inlineTitle(raw: string | undefined): string | null {
+  const title = (raw ?? "").trim();
+  if (!title) return null;
+  if (title.includes("?") || title.includes("!")) return null;
+  if (/^[A-Z][A-Z0-9]{2,}[A-Z0-9 ]*:/.test(title)) return null;
+  const trimmed = title.replace(/[.,;:]+$/, "").trim();
+  return trimmed.length ? trimmed : null;
 }
 
+/** What the sentence says when a blocker cannot be named inline. */
+function unnamedBlockers(count: number): string {
+  return count === 1
+    ? "one upstream item"
+    : `${numberWord(count)} upstream items`;
+}
+
+// Build the blocker subject string. Centralised so all three
+// phrasings produce consistent multi-blocker form. Only the titles that
+// actually get rendered are cleared, so one unnameable title at the back
+// of a long list does not silence the lead.
+//   0 titles  → null (generic fallback)
+//   1 title   → "X"                   or "one upstream item"
+//   2 titles  → "X and Y"             or "two upstream items"
+//   3+ titles → "X and two more"      or "four upstream items"
+function blockerSubject(titles: string[]): string | null {
+  const total = titles.length;
+  if (total === 0) return null;
+  if (total === 1) return inlineTitle(titles[0]) ?? unnamedBlockers(1);
+  if (total === 2) {
+    const first = inlineTitle(titles[0]);
+    const second = inlineTitle(titles[1]);
+    return first && second ? `${first} and ${second}` : unnamedBlockers(2);
+  }
+  const lead = inlineTitle(titles[0]);
+  return lead
+    ? `${lead} and ${numberWord(total - 1)} more`
+    : unnamedBlockers(total);
+}
+
+// The blocker subject can be plural ("X and Y"), so no phrasing here
+// may put a verb in agreement with it. No phrasing may follow the
+// subject with a preposition either: the second rotation used to read
+// "Blocked by {title} for nine days", which handed every imperative
+// title a second reading ("send the invitations for nine days"). The
+// subject now always sits at the end of its clause, in front of a
+// full stop.
 const BLOCKED_TOO_LONG: Phrasing[] = [
-  (t, days = 0, byTitles = []) => {
+  (_t, days = 0, byTitles = []) => {
     const subject = blockerSubject(byTitles);
+    const age = capitalise(plural(days, "day", "days"));
     return subject
-      ? `${t.title} has been blocked by ${subject} for ${plural(days, "day", "days")}`
-      : `${t.title} has been waiting for ${plural(days, "day", "days")}`;
+      ? `Waiting on ${subject}. ${age} now.`
+      : `Waiting on something upstream. ${age} now.`;
   },
-  (t, days = 0, byTitles = []) => {
+  (_t, days = 0, byTitles = []) => {
     const subject = blockerSubject(byTitles);
     return subject
-      ? `${t.title} is waiting on ${subject}, ${plural(days, "day", "days")} now`
-      : `${t.title} is waiting on something, ${plural(days, "day", "days")} now`;
+      ? `Blocked for ${plural(days, "day", "days")}, still waiting on ${subject}.`
+      : `Blocked for ${plural(days, "day", "days")}.`;
   },
-  (t, days = 0, byTitles = []) => {
+  (_t, days = 0, byTitles = []) => {
     const subject = blockerSubject(byTitles);
+    const age = capitalise(plural(days, "day", "days"));
     return subject
-      ? `${t.title} hasn't cleared ${subject} in ${plural(days, "day", "days")}`
-      : `${t.title} hasn't cleared its blocker in ${plural(days, "day", "days")}`;
+      ? `${age} waiting on ${subject}.`
+      : `${age} waiting, with nothing upstream cleared.`;
   },
 ];
 
@@ -108,6 +179,10 @@ const LIBRARY: Record<TriggerKind, Phrasing[]> = {
   "blocked-too-long": BLOCKED_TOO_LONG,
 };
 
+/**
+ * The observation for a row, never its headline. Callers pair the
+ * return value with the task title, which they render verbatim.
+ */
 export function phraseFor(
   trigger: TriggerKind,
   task: TaskSignal,
@@ -115,8 +190,7 @@ export function phraseFor(
   context?: {
     idleDays?: number;
     daysOut?: number;
-    /** Resolved titles of upstream blocker tasks (in order). Only
-     *  the first is used today; future phrasings may enumerate. */
+    /** Resolved titles of upstream blocker tasks (in order). */
     blockedByTitles?: string[];
   },
 ): string {
@@ -139,24 +213,68 @@ export function phraseFor(
 // helpers, kept terse, prose lives in the phrasings themselves
 // ─────────────────────────────────────────────────────────────
 
-function plural(n: number, single: string, many: string): string {
-  return `${Math.round(n)} ${Math.round(n) === 1 ? single : many}`;
+const NUMBER_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+  "eleven",
+  "twelve",
+  "thirteen",
+  "fourteen",
+  "fifteen",
+  "sixteen",
+  "seventeen",
+  "eighteen",
+  "nineteen",
+  "twenty",
+] as const;
+
+/**
+ * Spell a small number, print anything past twenty as a figure. Prose
+ * reads as prose ("quiet for eighteen days"); a large count reads
+ * better as a figure ("41 days"). Shared with triggers.ts so the row
+ * and its "Why this" receipt say the number the same way.
+ */
+export function numberWord(n: number): string {
+  const whole = Math.max(0, Math.round(n));
+  return whole <= 20 ? NUMBER_WORDS[whole] : String(whole);
 }
 
-function ago(days: number): string {
-  if (days <= 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 7) return `${days} days ago`;
-  if (days < 14) return "over a week ago";
-  if (days < 30) return `${Math.round(days / 7)} weeks ago`;
-  return `${Math.round(days / 30)} months ago`;
+export function capitalise(value: string): string {
+  return value.length ? value[0].toUpperCase() + value.slice(1) : value;
 }
 
+export function plural(n: number, single: string, many: string): string {
+  const whole = Math.max(0, Math.round(n));
+  return `${numberWord(whole)} ${whole === 1 ? single : many}`;
+}
+
+/**
+ * Duration phrase for "nothing has moved on it for X". It states the day
+ * count and nothing else. The row must never be coarser than its own
+ * evidence: an earlier version called 18 days "3 weeks" beside a receipt
+ * reading "No status update in 18 days", and the repair kept a vague
+ * branch past 30 days, so at 59 idle days the row said "over a month"
+ * while the reader could still count 59. One unit, one number, no split.
+ */
+function duration(days: number): string {
+  const whole = Math.max(0, Math.floor(days));
+  if (whole <= 1) return "a day";
+  return plural(whole, "day", "days");
+}
+
+/** Same no-rounding-up rule as duration(): weeks are floored. */
 function byWhen(daysOut: number): string {
   if (daysOut < 1) return "today";
   if (daysOut < 2) return "tomorrow";
-  if (daysOut < 5) return `in ${Math.round(daysOut)} days`;
-  if (daysOut < 8) return "this week";
-  if (daysOut < 15) return "next week";
-  return `in ${Math.round(daysOut / 7)} weeks`;
+  if (daysOut < 7) return `in ${plural(Math.floor(daysOut), "day", "days")}`;
+  return `in ${plural(Math.floor(daysOut / 7), "week", "weeks")}`;
 }

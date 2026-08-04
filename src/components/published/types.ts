@@ -1,4 +1,5 @@
 import type { PublicTask } from "@/lib/data";
+import type { PublicColumn } from "@/lib/public-board-lanes";
 import type { DomainId } from "@/lib/domains";
 
 /**
@@ -20,4 +21,7 @@ export type PublishedWorkspaceProps = {
     publishedAt: Date;
   };
   tasks: PublicTask[];
+  /** Resolved workspace columns (T·121). Optional so the /p themes that
+   *  do not group by column keep their existing contract. */
+  columns?: PublicColumn[];
 };

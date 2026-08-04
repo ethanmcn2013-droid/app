@@ -1,60 +1,97 @@
+# Signal Studio app — repo contract
+
+Read the workspace contract at `../AGENTS.md` first (company, products,
+autonomy, design register, record-keeping), then this file, then only
+what the task needs.
+
+## What this repo is
+
+This is the unified signed-in Signal Studio app at `app.signalstudio.ie`
+— one app, four modules: **Notes** (capture), **Tasks** (execution),
+**Timeline** (direction), **Signal** (attention). The GitHub repo is
+named `app` (`ethanmcn2013-droid/app`); local clones should sit in a
+matching `app/` directory.
+
+## North star (set 2026-08 · operator re-derives ~every six months)
+
+Three priorities govern everything front-facing, in this order:
+
+1. **Experience.** Using the product should feel considered end to end,
+   and in the right moments delightful. Delight is deliberate: candidate
+   moments are appended to `docs/DELIGHT_CATALOG.md` for an
+   animate-or-restrained verdict — never sprinkled ad hoc.
+2. **Design.** Every front-facing surface ships at the standard of the
+   best studios working today — spacing, type, motion, empty, loading,
+   and error states, microcopy, all deliberate, nothing default. The bar
+   is the design register plus the 9.5 gate
+   (`experience/QUALITY_COUNCIL_EVIDENCE.md`).
+3. **Utility.** Someone who has never used a project-management tool
+   must be able to pick this up and understand it unaided — the
+   first-contact test. No jargon, no technical lock-out; a surface that
+   needs explaining is not done.
+
+When the three pull against each other, that order decides. The durable
+record and the review date live in
+`studio/content/hq/decisions/product-north-star.md`.
+
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# Signal HQ sync
+## URL and naming contract
 
-This repo is part of the Signal Studio suite. Signal HQ lives in the Studio repo at `ethanmcn2013-droid/studio` and is the internal source of truth for product, launch, growth, decisions, risks, metrics, and next actions.
+Full rules: `docs/SUITE_URL_AND_NAMING_CONTRACT.md`. Marketing:
+`signalstudio.ie/{notes|tasks|timeline|signal}`; signed-in:
+`app.signalstudio.ie/app/{notes|tasks|timeline|signal}`. Use the typed
+constants in `src/lib/product-urls.ts` — never invent hostnames or
+product names in components. `/app/board`, `/app/plan`, and `/app/brief`
+are retired compatibility inputs; new UI, docs, analytics, and email
+must never emit them.
 
-## One app and four products
+## Database release gate
 
-Signal Studio is one app containing Notes, Tasks, Timeline, and Signal. The load-bearing URL and naming rules are in `docs/SUITE_URL_AND_NAMING_CONTRACT.md`.
+Never run `drizzle-kit push` or `drizzle-kit migrate` directly against
+production — the historical `0000`–`0013` chain is non-idempotent.
+The only paths in are the receipt-backed runner (`pnpm db:migrate`) and
+the `db-migrate` GitHub workflow (`command=execute`); `pnpm db:contract`
+is the pre-flight gate. Full contract: `DEPLOY.md` §4 and
+`drizzle/MIGRATIONS.md`.
 
-- Marketing uses `signalstudio.ie/{notes|tasks|timeline|signal}`.
-- Signed-in product navigation uses
-  `app.signalstudio.ie/app/{notes|tasks|timeline|signal}`.
-- Product subdomains are narrow public/service compatibility surfaces, not separate apps or marketing homes.
-- Use the typed constants in `src/lib/product-urls.ts`; do not invent hostnames, fragment destinations, or alternate product names in components.
+## Signal HQ sync
 
-Tasks views live beneath the Tasks product route: `/app/tasks`,
-`/app/tasks/list`, `/app/tasks/timeline`, and `/app/tasks/calendar`.
-`/app/board`, `/app/plan`, and `/app/brief` are retired compatibility inputs
-and must never be emitted by new UI, documentation, analytics, or email.
+Product-state changes here — feature scope, risk, decisions, campaigns,
+cross-product flows, messaging, shipped work — feed Signal HQ, the
+founder's source of truth, which lives in the `studio` repo. Open or
+update a Studio PR against the matching source file in the same cycle:
 
-When a change in Tasks affects product state, roadmap, launch readiness, GTM, messaging, campaigns, demos, templates, outreach, pilots, metrics, decisions, risks, or strategic learning, update Signal HQ before the task is complete.
+| Change here | Source file in studio |
+|---|---|
+| feature scope, status, or impact | `content/hq/features/<id>.md` |
+| risk surfaced or mitigation changed | `content/hq/risks/<id>.md` |
+| decision on pricing, brand, GTM, product | `content/hq/decisions/<id>.md` |
+| campaign goal, blocker, or progress | `content/hq/campaigns/<id>.md` |
+| cross-product flow, data shape, cron schedule | `content/atlas/<slug>.md` (bump `lastVerified`) |
+| messaging, hooks, pitches | `content/hq/messaging.md` |
+| shipped operator-visible change | this repo's `CHANGELOG.md` |
 
-Before invite, sharing, guest access, template, public-output, or collaborator-facing work, read `docs/COLLABORATION_LOOP.md`. Tasks owns the execution-clarity moment in the collaboration loop.
+Canonical rules live in `studio/AGENTS.md`.
 
-In practice, open or update a Studio PR that changes the right source file for the change you made:
+## Collaboration surfaces
 
-| Change you made in Tasks                                          | Source file in studio                                            |
-|-------------------------------------------------------------------|------------------------------------------------------------------|
-| feature scope, status, or impact                                  | `content/hq/features/<id>.md`                                    |
-| risk surfaced or mitigation changed                               | `content/hq/risks/<id>.md`                                       |
-| a decision that affects pricing, brand, GTM, product             | `content/hq/decisions/<id>.md`                                   |
-| campaign goal, blocker, or progress                               | `content/hq/campaigns/<id>.md`                                   |
-| cross-product flow / data shape / cron schedule                   | `content/atlas/<slug>.md` — and bump `lastVerified`              |
-| messaging, hooks, pitches                                         | `content/hq/messaging.md`                                        |
-| shipped operator-visible change                                   | `CHANGELOG.md` — dispatch shape per Studio BRAND.md §6.5: `## YYYY-MM-DD · T·NN · verb · headline`, bold impact-lead sentence, then prose. Verbs: `ships / tightens / cuts / holds / reads`. |
+Before invite, sharing, guest access, template, or public-output work,
+read `docs/COLLABORATION_LOOP.md`.
 
-The old rule (update `src/lib/hq/data.ts`) is superseded — that seed was emptied on 2026-05-14 (Studio dispatch `S·24`). The dashboard now reads from the markdown files above. Don't write to `data.ts` for migrated sections; the markdown is canonical.
+## Design
 
-Tasks-repo files referenced by atlas entries (e.g. `tasks/drizzle/`, `tasks/src/app/api/checkout/`, `tasks/docs/STRIPE_SETUP.md`) flag drift on the atlas via the pre-commit hook at `.githooks/pre-commit` (Studio dispatch `S·22`). Activate with `git config core.hooksPath .githooks` if you haven't. The hook never blocks commits — drift is a signal.
+The design register lives in the workspace `../AGENTS.md` — do not
+duplicate it here.
 
-# End-of-cycle ritual
+## History
 
-After a cycle ships in Tasks (Vercel deploy succeeded, dispatch entry written in CHANGELOG.md per Studio BRAND.md §6.5, phase.md bumped), run:
-
-```bash
-node scripts/log-cycle.mjs \
-  --cycle <N> \
-  --title "<one-line headline>" \
-  --date YYYY-MM-DD \
-  --description "<one-paragraph what-and-why>"
-```
-
-This pushes a row into the shared TimelineTurso DB so `ethanmcnamara.com/roadmap` stays accurate across all three products. The wrapper delegates to the canonical `log-cycle.ts` that lives alongside it in this repo's `scripts/` directory.
-
-Don't pass `--project` — it's forced to `tasks` in the wrapper.
+The `log-cycle` / `check-cycles` scripts (leftovers from this codebase's
+personal-portfolio origins) were retired 2026-07-30 and deleted
+2026-07-31. A shipped cycle's only records are the dispatch entry in
+this repo's `CHANGELOG.md` and the Signal HQ record in
+`studio/content/hq/**`.

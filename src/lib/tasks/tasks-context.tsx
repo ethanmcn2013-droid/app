@@ -40,6 +40,8 @@ import { moveTaskToColumnAction } from "@/server/actions/board";
 import { isDemoMode } from "@/lib/access-mode";
 import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
+import { beginTaskSync } from "./delight-events";
+import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
 
 /** Gap-numbered float position so inserts never need to renumber the
  *  whole lane. Conventions:
@@ -207,16 +209,16 @@ export function TasksProvider({
       }
       const prior = stateRef.current.tasks;
       optimistic();
+      const finishSync = beginTaskSync();
       startTransition(async () => {
         try {
           const fresh = await server();
           dispatch({ type: "hydrate", tasks: fresh });
+          finishSync();
         } catch (err) {
-          // Revert. Console-warn for dev visibility; toast UX arrives
-          // when the toast primitive ships.
-
           console.warn("tasks: server action failed; reverting", err);
           dispatch({ type: "hydrate", tasks: prior });
+          finishSync(err);
         }
       });
     },
@@ -317,23 +319,30 @@ export function TasksProvider({
           () => dispatch({ type: "remove", id }),
           () => setTaskArchivedAction(id, true),
         ),
-      toggleComplete: (id) =>
+      toggleComplete: (id) => {
+        const task = stateRef.current.tasks.find((item) => item.id === id);
+        if (task?.lane !== "done") maybeFireFirstCompletion();
         withServerSync(
           () => dispatch({ type: "toggleComplete", id }),
           () => toggleCompleteAction(id),
-        ),
+        );
+      },
       duplicateTask: (id) => {
+        const finishSync = beginTaskSync();
         startTransition(async () => {
           try {
             const fresh = await duplicateTaskAction(id);
             dispatch({ type: "hydrate", tasks: fresh });
+            finishSync();
           } catch (err) {
             console.warn("tasks: duplicateTask failed", err);
+            finishSync(err);
           }
         });
       },
       setParent: (id, parentId) => {
         const prior = stateRef.current.tasks;
+        const finishSync = beginTaskSync();
         // Optimistically remove from board when reparenting (task becomes a subtask
         // and leaves the flat lane view). Promoting to top-level (null) has no
         // optimistic visual since the task re-enters at an unknown position.
@@ -343,13 +352,16 @@ export function TasksProvider({
             const result = await setParentAction(id, parentId);
             if (result.ok) {
               dispatch({ type: "hydrate", tasks: result.tasks });
+              finishSync();
             } else {
               console.warn("tasks: setParent failed;", result.error);
               dispatch({ type: "hydrate", tasks: prior });
+              finishSync(new Error(result.error));
             }
           } catch (err) {
             console.warn("tasks: setParent threw; reverting", err);
             dispatch({ type: "hydrate", tasks: prior });
+            finishSync(err);
           }
         });
       },

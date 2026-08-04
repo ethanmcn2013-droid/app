@@ -53,5 +53,6 @@ export function rowToTask(row: TaskRow): Task {
     // migration 0016 (libSQL returns undefined for an absent column).
     archivedAt: row.archivedAt ?? null,
     updatedAt: row.updatedAt,
+    completedAt: row.completedAt ?? null,
   };
 }

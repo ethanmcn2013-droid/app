@@ -5,8 +5,8 @@
  * task with an unresolved blocker referenced from another item."
  *
  * Status here is post-canonicalization (PRODUCT.md §6 lane mapping):
- * `blocked` = `blockedBy.length > 0 && lane !== "done"`. The two
- * branches in PRODUCT.md collapse to one in our derived model.
+ * `blocked` = `blockedBy.length > 0` and the lane hasn't reached done.
+ * The two branches in PRODUCT.md collapse to one in our derived model.
  */
 
 import type { Trigger, Insight } from "./types";

@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { focusTask } from "./quiet-command-model";
 import { useLabStore } from "../../store";
-import { STATUS_LABELS, type CalendarDate, type LabTask } from "../../types";
+import { columnDisplayName } from "@/lib/board-columns";
+import { useBoardColumns } from "../../columns-context";
+import { type CalendarDate, type LabTask } from "../../types";
 import { Icon } from "../../shared/icons";
 import {
   AvatarStack,
@@ -35,6 +38,9 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
     }
     if (title !== task.title) store.updateTitle(task.id, title);
     store.clearEditing();
+    // F2 editing must hand focus back to the card it came from, or the
+    // advertised arrow-key model dead-ends after every rename.
+    focusTask(task.id);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -45,6 +51,7 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
       setDraft(task.title);
       setError("");
       store.clearEditing();
+      focusTask(task.id);
       return;
     }
     if (event.key === "Enter") {
@@ -74,6 +81,7 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
 
 export function TaskPeek() {
   const store = useLabStore();
+  const columns = useBoardColumns();
   const task = store.previewId ? store.taskById(store.previewId) : undefined;
   if (!task || store.inspectedId === task.id) return null;
   return (
@@ -85,7 +93,7 @@ export function TaskPeek() {
         </button>
       </header>
       <div className={styles.peekMeta}>
-        <span className={styles.statusText} data-status={task.status}>{STATUS_LABELS[task.status]}</span>
+        <span className={styles.statusText} data-status={task.status}>{columnDisplayName(columns, task.status)}</span>
         <PriorityMark task={task} withLabel />
         <ScheduleText task={task} />
       </div>

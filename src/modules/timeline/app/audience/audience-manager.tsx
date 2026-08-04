@@ -14,6 +14,7 @@ import {
   type AudienceActionState,
 } from "@/modules/timeline/server/actions/audience-timeline";
 import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
+import type { AudienceKind } from "@/modules/timeline/lib/audience-timeline";
 import {
   audienceKindLabel,
   calendarDateLabel,
@@ -26,7 +27,7 @@ const fieldClass =
 const quietButton =
   "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 const primaryButton =
-  "inline-flex min-h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 
 type SourceNode = Readonly<{
   id: string;
@@ -34,6 +35,47 @@ type SourceNode = Readonly<{
   targetDate: string | null;
   lane: string;
 }>;
+
+/**
+ * Two presses for actions that kill live links. The first press arms the
+ * button and names the consequence; the second submits. Arming lapses on its
+ * own, so an accidental click costs nothing and a modal never interrupts.
+ */
+function ArmedSubmitButton({
+  label,
+  armedLabel,
+  disabled,
+}: {
+  label: string;
+  armedLabel: string;
+  disabled?: boolean;
+}) {
+  const [armed, setArmed] = useState(false);
+  const disarmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      aria-live="polite"
+      className={quietButton}
+      style={armed ? { borderColor: "var(--x-timeline-alarm)", color: "var(--x-timeline-alarm)" } : undefined}
+      onClick={(event) => {
+        if (armed) return;
+        event.preventDefault();
+        setArmed(true);
+        if (disarmTimer.current) clearTimeout(disarmTimer.current);
+        disarmTimer.current = setTimeout(() => setArmed(false), 4000);
+      }}
+      onBlur={() => {
+        if (disarmTimer.current) clearTimeout(disarmTimer.current);
+        setArmed(false);
+      }}
+    >
+      {armed ? armedLabel : label}
+    </button>
+  );
+}
 
 function ActionNotice({ state }: { state: AudienceActionState }) {
   if (state.status === "idle") return null;
@@ -140,6 +182,7 @@ export function AudienceManager({
   sourceNodes,
   publications,
   defaultLabel,
+  defaultAudienceKind = "class",
   projectName,
   projectSlug,
 }: {
@@ -149,6 +192,8 @@ export function AudienceManager({
   sourceNodes: readonly SourceNode[];
   publications: readonly AudienceOwnerPublication[];
   defaultLabel?: string;
+  /** Derived from the workspace template — a wedding workspace offers Couple first. */
+  defaultAudienceKind?: AudienceKind;
   projectName?: string;
   projectSlug?: string;
 }) {
@@ -193,19 +238,19 @@ export function AudienceManager({
             Connect the canonical workspace
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
-            Use the immutable Signal Tasks workspace ID. Labels and slugs are never used as a suite join key.
+            Use the immutable Signal Tasks project ID. Labels and slugs are never used as a suite join key.
           </p>
           <form action={connectAction} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             <label className="flex-1">
-              <span className="sr-only">Signal Tasks workspace ID</span>
+              <span className="sr-only">Signal Tasks project ID</span>
               <input
                 name="suiteWorkspaceId"
                 required
                 maxLength={120}
                 autoComplete="off"
                 className={fieldClass}
-                placeholder="Signal Tasks workspace ID"
+                placeholder="Signal Tasks project ID"
               />
             </label>
             <button disabled={connectPending} className={primaryButton}>
@@ -257,10 +302,10 @@ export function AudienceManager({
               </label>
               <label className="text-sm font-medium text-ink-soft">
                 Named audience
-                <select className={`${fieldClass} mt-1.5`} name="audienceKind" defaultValue="class">
-                  <option value="class">Class</option>
-                  <option value="module">Module</option>
+                <select className={`${fieldClass} mt-1.5`} name="audienceKind" defaultValue={defaultAudienceKind}>
                   <option value="couple">Couple</option>
+                  <option value="class">Class</option>
+                  <option value="module">Project</option>
                 </select>
               </label>
               <label className="text-sm font-medium text-ink-soft">
@@ -327,7 +372,18 @@ export function AudienceManager({
           <p className="mt-3 text-sm text-ink-quiet">No Audience Timeline drafts yet.</p>
         ) : (
           <div className="mt-4 space-y-6">
-            {publications.map((publication) => (
+            {publications.map((publication) => {
+              // "Link live" must mean a viewer can open one. A published
+              // record whose links were all revoked says so, and the dot
+              // only earns its indigo while a link actually works.
+              const linkLive =
+                publication.state === "published" && publication.activeShareCount > 0;
+              const effectiveState = linkLive
+                ? "published"
+                : publication.state === "published"
+                  ? "revoked"
+                  : publication.state;
+              return (
               <article key={publication.id} className="overflow-hidden rounded-xl border border-line-soft bg-white">
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
@@ -337,13 +393,10 @@ export function AudienceManager({
                           aria-hidden
                           className="h-1.5 w-1.5 rounded-full"
                           style={{
-                            background:
-                              publication.state === "published"
-                                ? "var(--accent)"
-                                : "var(--ink-ghost)",
+                            background: linkLive ? "var(--accent)" : "var(--ink-ghost)",
                           }}
                         />
-                        {audienceKindLabel(publication.audienceKind)} · {publicationStateLabel(publication.state)}
+                        {audienceKindLabel(publication.audienceKind)} · {publicationStateLabel(effectiveState)}
                       </p>
                       <h3 className="mt-1.5 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
@@ -443,12 +496,20 @@ export function AudienceManager({
                         <form action={revokeAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={revokePending} className={quietButton}>Revoke links</button>
+                          <ArmedSubmitButton
+                            label="Revoke links"
+                            armedLabel="Confirm: revoke every link"
+                            disabled={revokePending}
+                          />
                         </form>
                         <form action={unpublishAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={unpublishPending} className={quietButton}>Unpublish</button>
+                          <ArmedSubmitButton
+                            label="Unpublish"
+                            armedLabel="Confirm: unpublish and revoke"
+                            disabled={unpublishPending}
+                          />
                         </form>
                       </>
                     )}
@@ -463,7 +524,8 @@ export function AudienceManager({
                   {unpublishState.publicationId === publication.id ? <ActionNotice state={unpublishState} /> : null}
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
