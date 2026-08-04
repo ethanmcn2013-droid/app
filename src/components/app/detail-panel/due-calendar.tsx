@@ -67,16 +67,37 @@ export function formatDueLabelOn(d: Date, today: Date): string {
 
 export function DueCalendar({
   value,
+  anchorDate = null,
+  anchorNote = null,
   onSelect,
   onClear,
 }: {
   /** Currently-set due date, or null when unset. */
   value: Date | null;
+  /** The workspace's anchor date as YYYY-MM-DD, the wedding day in a wedding
+   *  workspace. Marked in the grid so a date can be placed against it instead
+   *  of counted out. Null when the workspace has never had one set. */
+  anchorDate?: string | null;
+  /** One line above the grid saying how far off the anchor is. */
+  anchorNote?: string | null;
   onSelect: (date: Date, label: string) => void;
   onClear: () => void;
 }) {
   const today = startOfDay(new Date());
   const selected = value ? startOfDay(value) : null;
+  // Parsed at noon so no timezone offset can roll the marked day backwards.
+  const anchor = (() => {
+    if (!anchorDate) return null;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(anchorDate);
+    if (!match) return null;
+    const parsed = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      12,
+    );
+    return Number.isNaN(parsed.getTime()) ? null : startOfDay(parsed);
+  })();
   // The month currently shown. Opens on the selected date's month, else today.
   const [view, setView] = useState(() => {
     const base = selected ?? today;
@@ -105,6 +126,16 @@ export function DueCalendar({
 
   return (
     <div className="w-[248px] select-none p-1.5">
+      {/* The one date the others are judged by, when the workspace has one. */}
+      {anchorNote ? (
+        <p
+          className="mb-1.5 px-0.5 text-[11px] text-ink-quiet"
+          data-due-anchor-note=""
+        >
+          {anchorNote}
+        </p>
+      ) : null}
+
       {/* Quick picks */}
       <div className="mb-1.5 flex items-center gap-1">
         {quicks.map((q) => (
@@ -161,6 +192,7 @@ export function DueCalendar({
           if (!d) return <span key={i} className="h-7" />;
           const isToday = sameDay(d, today);
           const isSelected = selected ? sameDay(d, selected) : false;
+          const isAnchor = anchor ? sameDay(d, anchor) : false;
           return (
             <button
               key={i}
@@ -168,13 +200,16 @@ export function DueCalendar({
               onClick={() => commit(d)}
               aria-label={`${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`}
               aria-pressed={isSelected}
+              data-anchor-day={isAnchor ? "" : undefined}
               className={
                 "flex h-7 items-center justify-center rounded-md text-[12px] tabular-nums transition-colors " +
                 (isSelected
                   ? "bg-brand font-semibold text-white"
                   : isToday
                     ? "font-semibold text-brand ring-1 ring-inset ring-brand/40 hover:bg-brand-soft"
-                    : "text-ink-soft hover:bg-bg-sunken hover:text-ink")
+                    : isAnchor
+                      ? "font-semibold text-ink ring-1 ring-inset ring-line hover:bg-bg-sunken"
+                      : "text-ink-soft hover:bg-bg-sunken hover:text-ink")
               }
             >
               {d.getDate()}

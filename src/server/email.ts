@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import type { DailyDigest } from "@/server/db/daily-digest";
 import { APP_DOMAIN, APP_ORIGIN, CONTACT_EMAIL } from "@/lib/product-urls";
+import { opLog, redactEmail } from "@/server/operational-log";
 
 const KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.RESEND_FROM ?? `Signal Tasks <${CONTACT_EMAIL}>`;
@@ -20,18 +21,35 @@ type SendArgs = {
   text?: string;
 };
 
-/** Single send entry-point. In dev (no key) it logs to the console
- *  so the action's caller still sees the payload that would have
- *  shipped. In prod, swallows transient errors and returns the id. */
+/** Single send entry-point. When there is no API key the send is skipped.
+ *  In prod, swallows transient errors and returns the id.
+ *
+ *  On the no-key path this used to log the recipient address, the subject
+ *  line and the first 120 characters of the body. That is useful locally and
+ *  wrong anywhere else: `RESEND_API_KEY` being unset is a CONFIGURATION
+ *  state, not an environment, so a production deploy that lost the key would
+ *  have written every couple's address and a slice of every wedding email
+ *  into the platform's operational log (E08.08). The full payload is now
+ *  gated on `NODE_ENV === "development"`; every other environment gets a line
+ *  that says a send was skipped and names the recipient's domain only. */
 export async function sendEmail(
   args: SendArgs,
 ): Promise<{ ok: boolean; id?: string; error?: string }> {
   if (!resend) {
-    console.warn("[email] not configured, would have sent:", {
-      to: args.to,
-      subject: args.subject,
-      preview: args.text?.slice(0, 120) ?? args.html.slice(0, 120),
-    });
+    if (process.env.NODE_ENV === "development") {
+      // op-log-safe: gated on NODE_ENV === "development", so this line cannot
+      // reach a platform log. A developer running locally needs the payload to
+      // see what would have shipped; nobody else may have it.
+      console.warn("[email] not configured, would have sent:", {
+        to: args.to,
+        subject: args.subject,
+        preview: args.text?.slice(0, 120) ?? args.html.slice(0, 120),
+      });
+    } else {
+      opLog("error", "email", "RESEND_API_KEY is unset; send skipped", {
+        recipient: redactEmail(args.to),
+      });
+    }
     return { ok: true, id: "dev-no-resend" };
   }
   try {

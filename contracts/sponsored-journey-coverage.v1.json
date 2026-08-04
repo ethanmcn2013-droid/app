@@ -1,0 +1,81 @@
+{
+  "schema": "signal-journey-coverage/1",
+  "version": 1,
+  "repo": "app",
+  "setOn": "2026-08-03",
+  "setBy": "E08.11",
+  "entryScripts": ["pretest", "test"],
+  "note": "The segments of the venue-sponsored journey that this repository owns. The venue-side segments — venue invited, venue pays, venue issues the invitation, venue reads its own metrics — live in the studio repository's copy of this manifest. Every segment here is either covered by named test files that `pnpm test` actually runs, or declared uncovered with a reason and an owner. There is no third state. A named file that exists but is not run by `pnpm test` fails this check: that is exactly the defect found on 2026-08-03, when seven test files across the two repositories were executed by nothing.",
+  "segments": [
+    {
+      "id": "couple_redeems",
+      "what": "A couple opens an invitation code and gets a sponsored workspace with the right access term.",
+      "coveredBy": [
+        "src/server/invitation-code-security.test.ts",
+        "src/components/redeem/redeem-expiry-date.test.ts",
+        "src/lib/entitlements-shared/edition.test.ts"
+      ],
+      "notCoveredHere": "The mint-side guards, the wedding-date capture and the D-022 term arithmetic live in studio's entitlements-db and venue-lifecycle. See the studio manifest."
+    },
+    {
+      "id": "couple_workspace_is_private",
+      "what": "One couple's workspace is unreachable from any other tenant, on every scoped read and write.",
+      "coveredBy": [
+        "src/server/tenant-scope.test.mjs",
+        "src/server/cross-tenant-isolation.test.mjs",
+        "src/server/tasks-security-regression.test.mjs",
+        "src/server/security-membership-regression.test.ts",
+        "src/server/planning-security-contract.test.mjs"
+      ]
+    },
+    {
+      "id": "couple_plans",
+      "what": "The four products the couple actually uses — Notes, Tasks, Timeline, Signal — enforce their own auth policy.",
+      "coveredBy": [
+        "src/modules/notes/server/notes-auth.test.ts",
+        "src/modules/timeline/server/timeline-auth-policy.test.ts",
+        "src/modules/signal/server/signal-auth-policy.test.ts",
+        "src/lib/planning/sponsorship.test.ts"
+      ]
+    },
+    {
+      "id": "couple_publishes",
+      "what": "A published workspace is reachable only through the link the couple chose to create, and revocation is immediate.",
+      "coveredBy": [
+        "src/server/share-token-security.test.ts",
+        "src/server/share-revocation-contract.test.mjs",
+        "src/modules/timeline/timeline-public-url-contract.test.ts",
+        "src/modules/timeline/server/qualified-view-security.test.mjs"
+      ],
+      "openRisk": "R-031 and R-033 are undecided, not defects these tests can close. /p is deliberately search-indexable while the privacy documentation models every published surface as token-bound, and /embed renders a published workspace inside any third-party page. Both are product decisions that have not been taken. No test here should be read as clearing either."
+    },
+    {
+      "id": "venue_reads_metrics",
+      "what": "The only venue-directed read in this repository projects four aggregate numbers and can reach no couple content.",
+      "coveredBy": ["src/app/api/internal/partner-stats/partner-stats-boundary.test.mjs"],
+      "openRisk": "The route applies no D-011 suppression floor. That is not a disclosure today because its only consumer is the founder-only /hq/marketing roll-up, and the test pins that fact in place. It becomes R-027 on a new surface the moment a per-venue caller is added."
+    },
+    {
+      "id": "couple_leaves",
+      "what": "A couple can take their content out and can have it erased.",
+      "coveredBy": ["src/server/account-export.test.ts", "src/server/account-erasure.test.ts"],
+      "openRisk": "R-023: account deletion destroys the shared workspace. D-027 point 1 schedules the fix before Cohort 1 is contacted. These tests cover the mechanism as built, not the product answer."
+    },
+    {
+      "id": "browser_responsive_device",
+      "what": "The sponsored journey driven through a real browser, at real breakpoints, on a real device profile.",
+      "uncovered": {
+        "reason": "There is no end-to-end browser test of the sponsored journey. Playwright exists in this repository and runs under `pnpm experience:test`, but that suite covers the experience-quality fixtures, not the venue-to-couple path, and it is not part of `pnpm test`. Nothing anywhere drives redeem to plan to publish in a browser, and nothing tests a device profile or a throttled connection. Every segment above is proven at the module and query level only.",
+        "owner": "founder decision — see the E08.11 evidence document. Building this before the 2026-08-20 UI freeze is a scope call, not a gap an agent should close unasked."
+      }
+    },
+    {
+      "id": "attribution_is_correct",
+      "what": "The unit a venue metric counts is the unit the definition names.",
+      "uncovered": {
+        "reason": "R-029, open: every adoption definition counts workspaces, but the attribution join runs on a subject id. One person with two workspaces and one workspace with two owners break the count in opposite directions, and the Tasks call site passes a different subject id from the other three products. A test written today would pin the wrong behaviour in place.",
+        "owner": "R-029, owner Claude Code, unresolved. E09.02 and E09.03 territory, not E08.11's to decide."
+      }
+    }
+  ]
+}

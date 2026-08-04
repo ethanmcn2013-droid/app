@@ -25,6 +25,9 @@ export async function captureServerEvent(
   const apiKey = process.env.POSTHOG_API_KEY;
   if (!apiKey) {
     if (process.env.NODE_ENV === "development") {
+      // op-log-safe: gated on NODE_ENV === "development". This is the local
+      // echo of an event that would otherwise have gone to PostHog, and it
+      // cannot reach a platform log. Do not remove the guard (E08.08).
       console.info(`[analytics] ${event}`, { distinctId, ...properties });
     }
     return;

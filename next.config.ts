@@ -34,24 +34,44 @@ const googleTag = "https://www.googletagmanager.com";
 const googleAnalytics =
   "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com";
 
-const csp = [
-  `default-src 'self'`,
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io ${googleTag}`,
-  `style-src 'self' 'unsafe-inline'`,
-  `img-src 'self' data: blob: https:`,
-  `font-src 'self' data:`,
-  `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${googleTag} ${googleAnalytics}`,
-  `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
-  `worker-src 'self' blob:`,
-  `frame-ancestors 'none'`,
-  `base-uri 'self'`,
-  `form-action 'self'`,
-  `object-src 'none'`,
-  // CSP violation reporting — collected at /api/csp-report so we can verify
-  // the policy is clean before promoting Report-Only → enforce.
-  `report-uri /api/csp-report`,
-  `report-to csp`,
-].join("; ");
+/**
+ * R-032, decided as Option A in D-033: the couple-facing public routes carry
+ * no third-party analytics. `analytics: false` drops the Google tag and
+ * Analytics hosts from script-src and connect-src, so the policy itself
+ * refuses what `@/lib/public-analytics-boundary` already stops the component
+ * from rendering. Two layers, deliberately: the component seam is the control
+ * that runs today, this is defence in depth.
+ */
+function buildCsp({
+  analytics,
+  frameAncestors,
+}: {
+  analytics: boolean;
+  frameAncestors: string;
+}) {
+  const tagScript = analytics ? ` ${googleTag}` : "";
+  const tagConnect = analytics ? ` ${googleTag} ${googleAnalytics}` : "";
+  return [
+    `default-src 'self'`,
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io${tagScript}`,
+    `style-src 'self' 'unsafe-inline'`,
+    `img-src 'self' data: blob: https:`,
+    `font-src 'self' data:`,
+    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com${tagConnect}`,
+    `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
+    `worker-src 'self' blob:`,
+    `frame-ancestors ${frameAncestors}`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `object-src 'none'`,
+    // CSP violation reporting — collected at /api/csp-report so we can verify
+    // the policy is clean before promoting Report-Only → enforce.
+    `report-uri /api/csp-report`,
+    `report-to csp`,
+  ].join("; ");
+}
+
+const csp = buildCsp({ analytics: true, frameAncestors: `'none'` });
 
 const securityHeaders = [
   { key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: csp },
@@ -93,6 +113,69 @@ const audienceArtifactHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
 ];
+
+/**
+ * ── No third-party analytics on couple-facing public surfaces ──────────
+ *
+ * D-033 ratified R-032 option A: `/p`, `/s`, `/share` and `/embed` are excluded
+ * from GA4 entirely and unconditionally. `/s` already receives
+ * `audienceArtifactHeaders`, whose enforced CSP names no third-party host at
+ * all. These headers cover the other three.
+ *
+ * This is the third of three layers. The first is `isAnalyticsExcludedPath` in
+ * src/lib/public-analytics-boundary.ts; the second is `<GoogleTag>` calling it
+ * itself rather than trusting its `enabled` prop. The component seam is the
+ * control that actually runs today; this one means the browser refuses the
+ * loader and the beacon even if a tag were somehow rendered.
+ *
+ * Deliberately a PARTIAL policy — script-src, connect-src and three cheap
+ * hardening directives identical to the baseline. It sets no `default-src`, so
+ * it can only ever restrict what a page executes and connects to, never what it
+ * may load or render. The baseline CSP still ships alongside it. Two policies
+ * of the same name intersect, which is the standards-defined way to add a
+ * restriction to one route without touching the global rule's source literal
+ * (scripts/check-frame-headers.mjs pins that literal).
+ *
+ * Emitted ENFORCED, not Report-Only. The baseline ships Report-Only until
+ * SIGNAL_ENFORCE_CSP is set; a privacy control that only reports is not a
+ * control. Restricting rather than granting is what makes that safe here.
+ *
+ * `frame-ancestors` is repeated at the value each route already has, so that if
+ * SIGNAL_ENFORCE_CSP is ever set — making the baseline use this same header key
+ * — an override cannot silently relax framing on these routes.
+ */
+function noThirdPartyAnalyticsCsp(frameAncestors: string): string {
+  const policy = [
+    `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com ${clerkHosts} ${turnstile} https://clerk.accounts.dev https://js.stripe.com https://*.sentry.io`,
+    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io`,
+    `frame-ancestors ${frameAncestors}`,
+    `base-uri 'self'`,
+    `form-action 'self'`,
+    `object-src 'none'`,
+  ].join("; ");
+  if (policy.includes(googleTag) || policy.includes("google-analytics.com")) {
+    throw new Error(
+      "next.config: the couple-facing analytics policy names a Google host. R-032 forbids it.",
+    );
+  }
+  return policy;
+}
+
+const publicSurfaceAnalyticsHeaders = [
+  { key: "Content-Security-Policy", value: noThirdPartyAnalyticsCsp("'none'") },
+];
+
+const embedSurfaceAnalyticsHeaders = [
+  { key: "Content-Security-Policy", value: noThirdPartyAnalyticsCsp("*") },
+];
+
+// Reconciliation note. Two Wave 3 packages implemented R-032 in this file
+// concurrently. Both shipped an enforced, analytics-free CSP for /p and
+// /share; the difference was full policy versus partial. The partial policy
+// above is kept because an unconditionally enforced `default-src 'self'` on
+// /p and /share is a behaviour change the baseline has not yet been promoted
+// to make, and the privacy control does not need it. Same outcome for
+// analytics, smaller blast radius.
 
 const productionAppHosts = [
   "app.signalstudio.ie",
@@ -139,7 +222,9 @@ function retiredMarketingRedirects() {
 // so /embed must receive no X-Frame-Options at all: the global rule excludes
 // /embed/* via negative lookahead, and /embed/:path* gets the full security
 // header set minus XFO, with frame-ancestors * in its CSP.
-const embedCsp = csp.replace("frame-ancestors 'none'", "frame-ancestors *");
+// Analytics off here too (R-032 / D-033): /embed renders a couple's published
+// workspace inside somebody else's page.
+const embedCsp = buildCsp({ analytics: false, frameAncestors: "*" });
 const embedFrameHeaders = [
   { key: enforceCsp ? "Content-Security-Policy" : "Content-Security-Policy-Report-Only", value: embedCsp },
   ...securityHeaders.filter(
@@ -174,11 +259,21 @@ const nextConfig: NextConfig = {
       // minus X-Frame-Options, CSP with frame-ancestors *.
       {
         source: "/embed/:path*",
-        headers: embedFrameHeaders,
+        headers: [...embedFrameHeaders, ...embedSurfaceAnalyticsHeaders],
       },
       {
         source: "/s/:path*",
         headers: audienceArtifactHeaders,
+      },
+      // R-032 / D-033: no third-party analytics on the couple-facing public
+      // surfaces. /s already carries an enforced, analytics-free policy above.
+      {
+        source: "/p/:path*",
+        headers: publicSurfaceAnalyticsHeaders,
+      },
+      {
+        source: "/share/:path*",
+        headers: publicSurfaceAnalyticsHeaders,
       },
     ];
   },

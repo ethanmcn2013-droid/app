@@ -1060,7 +1060,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "00369662d92592ec"
+      "materialityHash": "304646b7eb51fa55"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -1105,7 +1105,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b9bb63051226703e"
+      "materialityHash": "c281fb7642e216ff"
     },
     {
       "id": "tasks.page.press",
@@ -1985,7 +1985,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "3664af6396c14003"
+      "materialityHash": "79381570db7105f5"
     },
     {
       "id": "tasks.page.status",

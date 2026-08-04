@@ -42,9 +42,33 @@ export async function generateMetadata({
     ? `${ws.name}, a real ${domainLabel.toLowerCase()} workspace made public on Tasks. Same items, four lenses: ${lensClause}`
     : `${ws.name}, a real workspace made public on Tasks. Same items, four lenses: ${lensClause}`;
 
+  // R-031 / D-033 Option B. /p exists to be crawled and that stays true for an
+  // ordinary published workspace: a findable, unfurlable link is the point.
+  //
+  // A WEDDING workspace is different. Its task titles and tags carry guests' and
+  // suppliers' names, and the couple did not ask to be indexed when they pressed
+  // publish. So a wedding workspace is noindex BY DEFAULT here, and search
+  // visibility becomes an explicit couple opt-in rather than a consequence of
+  // publishing. Until that opt-in exists, the default is the whole behaviour.
+  //
+  // robots.ts also disallows /p, but robots.txt is a request a crawler may ignore
+  // and it does nothing about a link shared into a system that fetches previews.
+  // This header is the control; robots.txt is the courtesy.
+  const isWedding = ws.activeDomain === "wedding";
+
   return {
     title,
     description,
+    ...(isWedding
+      ? {
+          robots: {
+            index: false,
+            follow: false,
+            noarchive: true,
+            nosnippet: true,
+          },
+        }
+      : {}),
     openGraph: {
       title,
       description,

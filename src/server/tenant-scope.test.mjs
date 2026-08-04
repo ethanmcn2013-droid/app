@@ -1,34 +1,68 @@
 /**
- * Tenant-scope READ guard — Signal Tasks.
+ * Tenant-scope READ guard — Signal Studio app (all four products).
  *
  * Companion to cross-tenant-isolation.test.mjs. That test guards the
  * MUTATION path (every mutating action resolves the validated tenant via
- * the auth choke points). This one guards the READ path: Tasks has no
- * row-level security (libSQL/SQLite over Turso), so the only thing
- * stopping workspace A from reading workspace B is a tenant predicate on
- * every SELECT. A single forgotten scope on a collection read is a silent
- * cross-tenant leak with no database safety net beneath it.
+ * the auth choke points). This one guards the READ path.
  *
- * RULE. Every `select … .from(t)` against a workspace-scoped table must,
- * in the chain AFTER `.from(` (i.e. its joins / `.where(...)` — never the
- * projection), reference a tenant scope token, OR carry an explicit
- * `isolation-ok:` justification.
+ * ── The control this file IS, stated plainly ────────────────────────────
  *
- * Tasks' tenant model is by-authorized-id, not inline-workspace-only (see
- * cross-tenant-isolation.test.mjs header), so the accepted scope tokens are
- * broader than a single `workspace_id`:
- *   - workspace boundary:   workspaceId / workspace_id (canonically via
- *                           byWorkspace() — see db/tenant.ts)
- *   - membership join:      workspaceMembers (scopes by who-belongs)
- *   - per-user boundary:    userId / user_id (entitlements, notifications)
- *   - by authorized row id: a primary-key / unique-key equality the choke
- *                           points authorize before the read — .id / .token
- *                           / .slug / .code / .email / taskId / parentTaskId
+ * There is NO database row-level security anywhere in this app. Every
+ * tenant surface runs on libSQL/SQLite over Turso, which has no RLS and
+ * no per-row policy engine. Turso offers no per-row policy engine of any
+ * kind, so this is not a configuration that was left off — it is not
+ * available on the provider. The ONLY thing stopping workspace A from
+ * reading workspace B is a tenant predicate on every SELECT, written by
+ * hand, remembered every time.
  *
- * The escape hatch (`isolation-ok:`) is deliberate: genuinely global reads
- * exist (the seedIfEmpty count, cross-user reconcilers). They are allowed —
- * but only when a human writes down WHY, in the statement, where the next
- * reviewer sees it. Unmarked + unscoped = failure.
+ * A rule that depends on remembering is not a control. This file is the
+ * mechanism that makes a forgotten predicate FAIL CI instead of shipping:
+ * it reads the source, finds every read of a tenant-scoped table, and
+ * demands either a tenant predicate or a written justification. It is a
+ * detector, not a boundary. Nothing beneath it fails closed.
+ *
+ * Say that plainly wherever this control is described. It is application
+ * -level scoping plus a static gate. It is not row-level security and no
+ * evidence record may call it that.
+ *
+ * ── Where the rules live, and why ───────────────────────────────────────
+ *
+ * The detection rules are in `tenant-scope-rules.mjs`, and their own
+ * sensitivity is proven in `tenant-scope-rules.test.mjs` against synthetic
+ * statements with known answers. That separation is deliberate: this file
+ * can only ever show that the detector finds nothing in a repository that
+ * currently passes, which is exactly the evidence a broken detector also
+ * produces. Read that file before trusting this one.
+ *
+ * ── Four data surfaces, not one (E08.04) ───────────────────────────────
+ *
+ * Until 2026-08-03 this gate scanned `src/server` only, which is the
+ * Tasks data layer and nothing else. Signal, Notes and Timeline each
+ * carry their own database, their own schema module and their own tenant
+ * key, and none of them was scanned.
+ *
+ *   tasks     src/server/db/schema.ts                 workspace_id
+ *   signal    src/modules/signal/…/signal-tasks-db-schema.ts  (reads the
+ *             Tasks database through its own client)   workspace_id
+ *   notes     src/modules/notes/server/db/notes-schema.ts     user_id
+ *   timeline  src/modules/timeline/server/db/timeline-schema.ts
+ *                                                     workspace_slug
+ *
+ * ── The rule ───────────────────────────────────────────────────────────
+ *
+ * Every `select … .from(t)` against a tenant-scoped table must prove
+ * tenant scope in the chain AFTER `.from(` — never the projection — or
+ * carry an explicit `isolation-ok:` justification in the same statement.
+ * Strong tokens (which name a tenant column) count anywhere after
+ * `.from(`; weak bare-column tokens count only inside `.where(`. See
+ * `tenant-scope-rules.mjs` for why, and for the verified false negative
+ * that distinction closes.
+ *
+ * The escape hatch is deliberate: genuinely global and genuinely public
+ * reads exist (Timeline has no private workspaces at all; the seedIfEmpty
+ * count is a bare existence check). They are allowed — but only when a
+ * human writes down WHY, in the statement, where the next reviewer sees
+ * it. Unmarked and unscoped is a failure.
  *
  * Pure source inspection — no DB, no server-only imports. Runs under plain
  * `node --test`. Run: node --test src/server/tenant-scope.test.mjs
@@ -36,127 +70,153 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  TENANT_SURFACES,
+  OK_MARKER,
+  statements,
+  classifyRead,
+  collectSourceFiles,
+  parseTables,
+  driftProblems,
+} from "./tenant-scope-rules.mjs";
 
-// Tables whose rows belong to a single workspace (a tenant). Keep in sync
-// with schema.ts. Excludes the genuinely global tables (comp_codes,
-// processed_webhooks, meta, users).
-const OWNER_TABLES = [
-  "tasks",
-  "comments",
-  "activities",
-  "attachments",
-  "notifications",
-  "shareLinks",
-  "shareLinkVisits",
-  "entitlements",
-  "pendingInvites",
-  "workspaceMembers",
-  "workspaces",
-];
-
-// A read is "scoped" if the chain after `.from(` references any of these.
-const SCOPE_TOKENS = [
-  "workspaceId",
-  "workspace_id",
-  "workspaceMembers",
-  "userId",
-  "user_id",
-  "taskId",
-  "task_id",
-  "parentTaskId",
-  "parent_task_id",
-  ".id",
-  ".token",
-  ".slug",
-  ".code",
-  ".email",
-];
-
-// If the scan finds fewer than this, the scanner is broken (wrong path /
-// changed API) and must fail rather than pass vacuously.
-const MIN_EXPECTED_READS = 60;
-
-const OK_MARKER = "isolation-ok";
 const serverDir = dirname(fileURLToPath(import.meta.url)); // src/server
-
-function collectSourceFiles(dir) {
-  const out = [];
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    const s = statSync(full);
-    if (s.isDirectory()) {
-      if (name === "node_modules") continue;
-      out.push(...collectSourceFiles(full));
-    } else if (
-      (name.endsWith(".ts") || name.endsWith(".tsx")) &&
-      !name.includes(".test.") &&
-      !name.endsWith(".d.ts")
-    ) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
-const tableAlt = OWNER_TABLES.join("|");
-const FROM_RE = new RegExp(`\\.from\\(\\s*(${tableAlt})\\b`, "g");
+const repoRoot = join(serverDir, "..", ".."); // repo root
 
 /**
- * Split source into coarse statements on `;` (drizzle chains terminate
- * with `;`). Semicolons inside `//` comments are neutralised first so a
- * `;` in a waiver/comment can't split a statement from its marker.
+ * If the scan finds fewer than this, the scanner is broken (wrong path /
+ * changed API) and must fail rather than pass vacuously. Measured at
+ * 2026-08-03: 247 across the four surfaces. Floor set below the measured
+ * count so ordinary refactors do not trip it, high enough that losing a
+ * whole product's data layer does.
  */
-function statements(src) {
-  const safe = src
-    .split("\n")
-    .map((line) => {
-      const c = line.indexOf("//");
-      if (c === -1) return line;
-      return line.slice(0, c) + line.slice(c).replaceAll(";", "․");
-    })
-    .join("\n");
-  return safe.split(";");
+const MIN_EXPECTED_READS = 200;
+
+function rel(file) {
+  return relative(repoRoot, file).replaceAll("\\", "/");
 }
 
-test("every workspace-scoped read is tenant-scoped or explicitly waived", () => {
-  const files = collectSourceFiles(serverDir);
+// ── Invariant 1: every governed read is scoped or explicitly waived ─────
+
+test("every tenant-scoped read is tenant-scoped or explicitly waived", () => {
   const violations = [];
   let scanned = 0;
 
-  for (const file of files) {
-    const src = readFileSync(file, "utf8");
-    for (const stmt of statements(src)) {
-      FROM_RE.lastIndex = 0;
-      const m = FROM_RE.exec(stmt);
-      if (!m) continue;
-      scanned++;
+  for (const surface of TENANT_SURFACES) {
+    const files = surface.roots.flatMap((root) =>
+      collectSourceFiles(join(repoRoot, root)),
+    );
 
-      // Scope must be proven in the chain AFTER `.from(` — the joins and
-      // the `.where(...)`. The projection (before `.from`) is excluded so a
-      // SELECT that merely returns `tasks.id` can't masquerade as scoped.
-      const afterFrom = stmt.slice(stmt.indexOf(".from("));
-      const scoped = SCOPE_TOKENS.some((tok) => afterFrom.includes(tok));
-      const waived = stmt.includes(OK_MARKER);
-
-      if (!scoped && !waived) {
-        const rel = file.slice(file.indexOf("src"));
-        violations.push(`${rel}: read of ${m[1]} is neither tenant-scoped nor marked "${OK_MARKER}:"`);
+    for (const file of files) {
+      const src = readFileSync(file, "utf8");
+      for (const stmt of statements(src)) {
+        const read = classifyRead(stmt, surface);
+        if (!read) continue;
+        scanned++;
+        if (read.scoped || read.waived) continue;
+        violations.push(
+          `[${surface.id}] ${rel(file)}: read of ${read.table} is neither ` +
+            `tenant-scoped nor marked "${OK_MARKER}:"`,
+        );
       }
     }
   }
 
   assert.ok(
     scanned >= MIN_EXPECTED_READS,
-    `Tenant-scope scan only found ${scanned} workspace-table reads (expected ≥ ${MIN_EXPECTED_READS}). ` +
-      `The scanner is probably broken or the data layer moved — fix the guard before trusting it.`,
+    `Tenant-scope scan only found ${scanned} tenant-table reads (expected ≥ ${MIN_EXPECTED_READS}). ` +
+      `The scanner is probably broken or a product's data layer moved — fix the guard before trusting it.`,
   );
 
   assert.deepEqual(
-    violations,
+    [...new Set(violations)],
     [],
-    `Unscoped cross-tenant read (possible data leak):\n  ${violations.join("\n  ")}`,
+    `Unscoped cross-tenant read (possible data leak):\n  ${[...new Set(violations)].join("\n  ")}`,
+  );
+});
+
+// ── Invariant 2: the governed list cannot drift from the schema ─────────
+
+test("every tenant-keyed table is governed (schema drift guard)", () => {
+  const problems = [];
+
+  for (const surface of TENANT_SURFACES) {
+    const schemaPath = join(repoRoot, surface.schema);
+    assert.ok(
+      existsSync(schemaPath),
+      `[${surface.id}] schema moved: ${surface.schema} no longer exists — ` +
+        `update TENANT_SURFACES before trusting this gate.`,
+    );
+    const parsed = parseTables(readFileSync(schemaPath, "utf8"));
+    assert.ok(
+      parsed.length > 0,
+      `[${surface.id}] parsed 0 tables out of ${surface.schema} — the ` +
+        `parser is broken, not the schema.`,
+    );
+    problems.push(...driftProblems(surface, parsed));
+  }
+
+  assert.deepEqual(problems, [], `Tenant table governance drift:\n  ${problems.join("\n  ")}`);
+});
+
+// ── Invariant 3: the venue axis never reaches couple content ────────────
+
+/**
+ * `workspace_sponsorships` is the join between a venue and a couple's
+ * workspace, and therefore the one place a venue-scoped read could walk
+ * into a couple's private planning content. The sponsor-scoped DTO must
+ * project sponsorship facts only — never the workspace id it is joined
+ * to, and never anything from tasks, comments, attachments or notes.
+ *
+ * D-011 and D-027 point 4: the venue sees aggregate access evidence.
+ * Notes, Tasks, an unpublished Timeline and a briefing are never in it.
+ */
+test("a sponsor-scoped read never projects couple content", () => {
+  const dtoPath = join(repoRoot, "src/lib/planning/sponsorship.ts");
+  const queriesPath = join(repoRoot, "src/server/planning/queries.ts");
+  assert.ok(existsSync(dtoPath), "sponsorship DTO moved — update this guard");
+  assert.ok(existsSync(queriesPath), "planning queries moved — update this guard");
+
+  const dto = readFileSync(dtoPath, "utf8");
+  const forbiddenInDto = [
+    "workspaceId",
+    "workspaceSlug",
+    "title",
+    "content",
+    "body",
+    "taskId",
+    "noteId",
+    "email",
+  ];
+  const dtoTypeStart = dto.indexOf("export type SponsorActivationDTO");
+  assert.notEqual(dtoTypeStart, -1, "SponsorActivationDTO no longer exported");
+  const dtoType = dto.slice(dtoTypeStart, dto.indexOf("}", dtoTypeStart));
+  for (const field of forbiddenInDto) {
+    assert.ok(
+      !dtoType.includes(field),
+      `SponsorActivationDTO must never carry "${field}". A venue-scoped ` +
+        `read that returns a workspace handle or any couple content is the ` +
+        `venue/couple boundary failing, not a convenience.`,
+    );
+  }
+
+  // The query that reads by sponsorId must not select a workspace handle
+  // either, regardless of what the DTO type says.
+  const queries = readFileSync(queriesPath, "utf8");
+  const fnStart = queries.indexOf("export async function listSponsorActivationDTOs");
+  assert.notEqual(
+    fnStart,
+    -1,
+    "listSponsorActivationDTOs moved — update this guard rather than deleting it",
+  );
+  const fnEnd = queries.indexOf("\nexport ", fnStart + 1);
+  const fn = queries.slice(fnStart, fnEnd === -1 ? queries.length : fnEnd);
+  assert.ok(
+    !/workspaceSponsorships\.workspaceId/.test(fn),
+    "listSponsorActivationDTOs must not select workspaceSponsorships.workspaceId — " +
+      "it is the handle that turns a venue-scoped read into a couple-scoped one.",
   );
 });
