@@ -188,7 +188,7 @@ test("the rail flips its axis below 620px rather than being the same rail, rewra
   const vertical = verticalBlock();
   assert.match(vertical, /\.progressGeometry\s*\{[^}]*width:\s*2px;\s*height:\s*auto;/);
   assert.match(vertical, /\.todayMarker\s*\{[^}]*width:\s*2rem;\s*height:\s*1px;/);
-  assert.match(vertical, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position\);/);
+  assert.match(vertical, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position-stack,\s*var\(--timeline-position\)\);/);
   assert.match(vertical, /\.completedRail\s*\{\s*display:\s*none;\s*\}/);
   assert.match(vertical, /\.completedRailVertical\s*\{\s*display:\s*block;/);
 });
