@@ -138,6 +138,9 @@ const PRODUCT_PATHS = [
   "/app/notes",
   "/app/tasks",
   "/app/timeline",
+  "/app/home",
+  // Legacy briefing base: serialized actions minted before the Home
+  // consolidation may still carry it; the route permanently redirects.
   "/app/signal",
 ] as const;
 

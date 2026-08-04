@@ -68,7 +68,7 @@ export function EvidenceDrawer({
     // back to the content region. Two shells render this drawer and they name
     // that region differently: the standalone Signal shell and the brief page
     // wrap the ledger in #signal-main-content, while the consolidated app
-    // shell — the only one present on the default /app/signal — labels its
+    // shell — the only one present on the default /app/home/briefing — labels its
     // <main> #app-main-content. Querying one id only left focus on <body>
     // wherever the other was in play. Prefer the Signal region when it exists,
     // because that is the region the trigger lived in.

@@ -27,8 +27,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  const session = await auth();
-  const distinctId = session.userId ?? "anonymous";
+  // Analytics must never 500 the client: in demo/review mode the Clerk
+  // middleware doesn't cover this route and auth() throws — capture the
+  // event as anonymous instead of failing the request.
+  let distinctId = "anonymous";
+  try {
+    const session = await auth();
+    distinctId = session.userId ?? "anonymous";
+  } catch {
+    // no Clerk context (demo/review mode) — stay anonymous
+  }
 
   const props: Record<string, string | number | boolean | null | undefined> =
     {};

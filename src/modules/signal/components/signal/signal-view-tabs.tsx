@@ -10,7 +10,7 @@ import type { SignalView } from "./signal-types";
 // candidate) — until they exist, only the Briefing tab renders. Pointing
 // unported tabs at /app/brief would be two lying dead-ends (Opus P6 MINOR-1).
 const VIEWS: ReadonlyArray<{ view: SignalView; label: string; pathname: string }> = [
-  { view: "briefing", label: "Briefing", pathname: "/app/signal" },
+  { view: "briefing", label: "Briefing", pathname: "/app/home/briefing" },
 ];
 
 interface SignalViewTabsProps {
