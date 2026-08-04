@@ -54,8 +54,20 @@ jobs:
       - name: Design-system drift gate
         run: pnpm run ds:check
 
+      # The D-022 access-term differential test (venue-access-term.test.ts)
+      # hard-fails in CI without a live studio checkout to compare against.
+      # Checked out here, after typecheck and ds:check, so no other gate
+      # ever scans a second repository's sources.
+      - name: Checkout studio for access-term parity
+        uses: actions/checkout@v4
+        with:
+          repository: ethanmcn2013-droid/studio
+          path: studio-parity
+
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
+        env:
+          STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
 
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser
