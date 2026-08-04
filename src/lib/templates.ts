@@ -1,6 +1,7 @@
 import type { LaneId, Priority } from "@/lib/data";
 import type { DomainId } from "@/lib/domains";
 import { SYNCED_TEMPLATES } from "./templates.generated";
+import { withWeddingTimelinePoints } from "./wedding-template-timeline";
 
 /**
  * Drop-in task lists users can apply to an existing workspace.
@@ -28,6 +29,17 @@ export type TemplateTaskInput = {
   /** Human due label, same shape as `Task.due` ("Today", "Fri", "Mar 12"). */
   due?: string;
   tags?: string[];
+  /** Seed this task as a Timeline milestone (`tasks.is_milestone`).
+   *  Timeline's milestone source reads `WHERE is_milestone = 1`, so a
+   *  template that sets none renders an empty Timeline. Restraint is the
+   *  point: a handful of real milestones, not one per task. */
+  milestone?: boolean;
+  /** Signed whole days from the workspace's anchor date
+   *  (`workspaces.primary_date`, the wedding day for a wedding workspace).
+   *  Negative is before the day, 0 is the day, positive is after.
+   *  Resolved by `resolveTemplateDueAt`; with no anchor there is no
+   *  `due_at`, deliberately. See src/lib/template-anchor.ts. */
+  dueOffsetDays?: number;
 };
 
 export type Template = {
@@ -864,9 +876,16 @@ const _weddingSectionStart = TEMPLATES_INLINE.findIndex(
 const _splicePoint =
   _weddingSectionStart === -1 ? TEMPLATES_INLINE.length : _weddingSectionStart;
 
+/**
+ * The wedding template's Timeline points are declared in
+ * `./wedding-template-timeline`, not in the synced artifact, because the
+ * artifact is generated and would lose them on the next `pnpm sync:templates`.
+ * The bridge is a no-op the moment the canonical studio template declares a
+ * milestone of its own. Everything else passes through untouched.
+ */
 export const TEMPLATES: Template[] = [
   ...TEMPLATES_INLINE.slice(0, _splicePoint),
-  ...SYNCED_TEMPLATES,
+  ...SYNCED_TEMPLATES.map(withWeddingTimelinePoints),
   ...TEMPLATES_INLINE.slice(_splicePoint),
 ];
 

@@ -23,6 +23,14 @@
     "hex": 24,
     "ease": 0
   },
+  "src/app/lab/welcome-b/page.tsx": {
+    "hex": 3,
+    "ease": 0
+  },
+  "src/app/lab/welcome-w/page.tsx": {
+    "hex": 18,
+    "ease": 0
+  },
   "src/app/layout.tsx": {
     "hex": 4,
     "ease": 0

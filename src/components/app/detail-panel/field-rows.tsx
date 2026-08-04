@@ -16,6 +16,12 @@ import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
+import {
+  describeAnchorFromToday,
+  relateDueToAnchor,
+  toCalendarDate,
+} from "@/lib/tasks/anchor-due";
 import { sendNudgeAction } from "@/server/actions/nudge";
 import { FIELD_CHIP, FIELD_CHIP_ACTIVE } from "./chip";
 import { Popover } from "./popover";
@@ -23,7 +29,6 @@ import { DueCalendar, formatDueLabelOn } from "./due-calendar";
 import { useToast } from "@/components/primitives/toast";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
-const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
 
 export function FieldRows({ task }: { task: Task }) {
   return (
@@ -222,10 +227,23 @@ export function PriorityRow({ task }: { task: Task }) {
   );
 }
 
+/**
+ * Who this task belongs to.
+ *
+ * The roster is the workspace's real members, resolved server-side by
+ * `getWorkspaceMemberMeta` and handed down through DomainProvider. It used to
+ * be a five-name constant of seed personas, so a couple opening a task in
+ * their own wedding workspace was offered Chloe, David, Alex, Ada and Marcus
+ * and could assign work to people who do not exist. An empty roster now reads
+ * as empty: the menu says there is no one else here yet and offers nobody.
+ */
 export function AssigneesRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const me = useCurrentUser();
+  const members = useWorkspaceMembers();
   const assigned = task.assignees;
+  const nameFor = (id: string) =>
+    members.find((member) => member.id === id)?.name ?? USERS[id].name;
   // Show Nudge button only when there is at least one assignee that is not
   // the current user — hidden entirely when task has no other assignee.
   const hasOtherAssignee = assigned.some((a) => a !== me);
@@ -236,7 +254,7 @@ export function AssigneesRow({ task }: { task: Task }) {
           <button
             key={u}
             type="button"
-            title={`Remove ${USERS[u].name}`}
+            title={`Remove ${nameFor(u)}`}
             onClick={() =>
               updateTask(task.id, {
                 assignees: assigned.filter((a) => a !== u),
@@ -244,7 +262,7 @@ export function AssigneesRow({ task }: { task: Task }) {
             }
             className="group relative"
           >
-            <Avatar user={u} size={22} ring />
+            <Avatar user={u} name={nameFor(u)} size={22} ring />
             <span className="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-white group-hover:flex">
               <svg
                 width="12"
@@ -285,9 +303,16 @@ export function AssigneesRow({ task }: { task: Task }) {
           </button>
         )}
       >
-        {() => (
+        {() =>
+          members.length === 0 ? (
+            <p className="px-2 py-1.5 text-[12.5px] text-ink-quiet">
+              No one else is in this workspace yet. Invite someone from
+              Settings, then assign the task to them.
+            </p>
+          ) : (
           <ul className="text-[12.5px]">
-            {ALL_USERS.map((u) => {
+            {members.map((member) => {
+              const u = member.id as UserId;
               const isAssigned = assigned.includes(u);
               return (
                 <li key={u}>
@@ -301,9 +326,9 @@ export function AssigneesRow({ task }: { task: Task }) {
                     }}
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken"
                   >
-                    <Avatar user={u} size={18} />
+                    <Avatar user={u} name={member.name} size={18} />
                     <span className="flex-1 text-ink-soft">
-                      {USERS[u].name}
+                      {member.name}
                     </span>
                     {isAssigned ? (
                       <svg
@@ -323,7 +348,8 @@ export function AssigneesRow({ task }: { task: Task }) {
               );
             })}
           </ul>
-        )}
+          )
+        }
       </Popover>
       {hasOtherAssignee ? <NudgeButton taskId={task.id} /> : null}
     </div>
@@ -554,8 +580,18 @@ function sameRecurrence(
 export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const frame = useCalendarFrame();
+  const anchor = useWorkspaceAnchor();
   const current = task.dueAt ? new Date(task.dueAt) : null;
   const hasDate = Boolean(task.due || task.dueAt);
+  // A wedding workspace has one date every other date is judged by. A bare
+  // "14 May" does not say whether that is four months out or four days out;
+  // this does, in exact calendar days. Renders only when the workspace has an
+  // anchor date and the task has a structured due date, never from a guess.
+  const anchorRelation = relateDueToAnchor(
+    current ? toCalendarDate(current) : null,
+    anchor.date,
+    anchor.label,
+  );
   // `task.due` is a label denormalised at write time. Writers that bypass the
   // picker — the Notes hand-off, imports — store the raw ISO date, and a label
   // written last week ("Tomorrow") is wrong by the time it is read. The
@@ -567,6 +603,7 @@ export function DueRow({ task }: { task: Task }) {
     ? formatDueLabelOn(current, new Date(frame.nowIso))
     : task.due;
   return (
+    <div className="flex flex-col items-start gap-0.5">
     <Popover
       align="start"
       width={264}
@@ -604,6 +641,12 @@ export function DueRow({ task }: { task: Task }) {
       {(close) => (
         <DueCalendar
           value={current}
+          anchorDate={anchor.date}
+          anchorNote={describeAnchorFromToday(
+            frame.today,
+            anchor.date,
+            anchor.label,
+          )}
           onSelect={(date, label) => {
             updateTask(task.id, { due: label, dueAt: date });
             close();
@@ -621,5 +664,14 @@ export function DueRow({ task }: { task: Task }) {
         />
       )}
     </Popover>
+    {anchorRelation ? (
+      <span
+        className="text-[11px] text-ink-quiet"
+        data-due-anchor-relation={anchorRelation.state}
+      >
+        {anchorRelation.label}
+      </span>
+    ) : null}
+    </div>
   );
 }

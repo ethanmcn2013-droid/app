@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { shareLinks, users, workspaces } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
@@ -12,11 +12,24 @@ import {
 } from "@/server/db/queries";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_SHARE_TOKEN } from "@/server/demo/tasks-demo";
+import {
+  generateSharePublicId,
+  generateShareSecret,
+  hashShareToken,
+  isResolvableShareToken,
+} from "@/server/share-token";
 
 export type ShareView = "board" | "list" | "timeline" | "calendar";
 export type ShareMode = "view" | "comment" | "edit";
 
 export type ShareLinkSummary = {
+  /**
+   * E08.06: the NON-SECRET row id (`share_links.token`), not the guest's
+   * secret. Safe to render, safe to log, and it is what `revokeShareLinkAction`
+   * takes. It cannot be turned back into a working URL — that is the point.
+   * Rows the 0027 backfill has not moved yet still carry their old secret
+   * here, which is exactly the exposure the backfill closes.
+   */
   token: string;
   view: ShareView;
   mode: ShareMode;
@@ -28,22 +41,21 @@ export type ShareLinkSummary = {
 };
 
 /**
- * Mint a 128-bit (16-byte) cryptographically random share token,
- * hex-encoded to 32 chars. Replaces the previous 16-hex-char (~64-bit)
- * token which was too narrow for a public-facing guessability surface.
- * 128 bits matches OWASP recommendation for session tokens.
- */
-function newToken(): string {
-  const bytes = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(bytes);
-  return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/**
- * Mint a fresh share token. New options: `mode` (view/comment/edit),
+ * Mint a fresh share link. New options: `mode` (view/comment/edit),
  * `expiresInDays` (null = no expiry), and a `label` for the manage UI.
+ *
+ * E08.06 / R-033. Two values are minted and they are not interchangeable.
+ * The **secret** is 256 bits, is returned to the caller so it can be put in
+ * the URL, and is never stored — only its sha256 goes to the database, under
+ * a unique index. The **public id** is stored in `share_links.token` (still
+ * the primary key) so the manage list and the visit log keep a stable
+ * handle that discloses nothing.
+ *
+ * The consequence, stated because it is a real product change and not a
+ * detail: a share link's URL can no longer be recovered after it is minted.
+ * The manage popover can label, count and revoke a link, but "copy this link
+ * again" is gone. That is what storing a hash costs, and it is the correct
+ * trade for a bearer token handed to a stranger.
  *
  * D-020: mode is clamped to 'view' server-side. The 'comment' and 'edit'
  * values have no enforced write path — the share surface is always read-only
@@ -59,7 +71,7 @@ export async function createShareLinkAction(input: {
 }): Promise<{ token: string }> {
   if (isDemoMode()) return { token: DEMO_SHARE_TOKEN };
   const ws = await getActiveWorkspace();
-  const token = newToken();
+  const secret = generateShareSecret();
   const expiresAt =
     input.expiresInDays != null
       ? new Date(Date.now() + input.expiresInDays * 24 * 60 * 60 * 1000)
@@ -67,14 +79,18 @@ export async function createShareLinkAction(input: {
   // D-020: clamp mode to 'view' — comment/edit have no enforced write path.
   const mode: ShareMode = "view";
   await db.insert(shareLinks).values({
-    token,
+    token: generateSharePublicId(),
+    tokenHash: hashShareToken(secret),
+    tokenScheme: "sha256",
     workspaceId: ws,
     view: input.view,
     mode,
     label: input.label ?? null,
     expiresAt,
   });
-  return { token };
+  // The secret leaves this function once, for the URL. It is not readable
+  // back out of the database afterwards, by us or by anyone else.
+  return { token: secret };
 }
 
 /** List every minted share link, newest first. Used by the manage-
@@ -114,10 +130,15 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
   }));
 }
 
-/** Soft-revoke a token. Future visitors see a 404. Visits already
+/** Soft-revoke a link. Future visitors see a 404. Visits already
  *  in flight stay open until they close their tab. Scoped to the
- *  caller's active workspace so a token owned by another tenant
- *  can't be revoked through this surface. */
+ *  caller's active workspace so a link owned by another tenant
+ *  can't be revoked through this surface.
+ *
+ *  E08.06: `token` is the NON-SECRET row id from `listShareLinksAction`.
+ *  Revocation deliberately does not require the secret — an owner who has
+ *  lost the URL must still be able to kill the link, and requiring the
+ *  credential to revoke the credential is how tokens outlive their welcome. */
 export async function revokeShareLinkAction(token: string): Promise<void> {
   if (!/^[A-Za-z0-9_-]{8,256}$/.test(token)) return;
   if (isDemoMode()) return;
@@ -142,16 +163,20 @@ export async function revokeShareLinkAction(token: string): Promise<void> {
  * helper, used later for a "looks like a phone vs desktop" hint.
  */
 export async function bumpShareLinkVisitAction(
-  token: string,
+  publicId: string,
   userAgent?: string | null,
 ): Promise<void> {
   if (isDemoMode()) return;
+  // E08.06: this takes the NON-SECRET row id (`resolveShareLink().token`),
+  // never the guest's secret. Counting a visit must not require holding the
+  // credential, and the visit log must not become a second place the secret
+  // is written down.
   await db.run(sql`
-    UPDATE share_links SET visits = visits + 1 WHERE token = ${token}
+    UPDATE share_links SET visits = visits + 1 WHERE token = ${publicId}
   `);
   // Best-effort visit log, never blocks the read-only render path.
   try {
-    await recordShareLinkVisit(token, userAgent ?? null);
+    await recordShareLinkVisit(publicId, userAgent ?? null);
   } catch (e) {
     console.warn("share: visit-log insert failed", e);
   }
@@ -229,10 +254,26 @@ export async function emailShareLinkAction(input: {
   }
   if (isDemoMode()) return { ok: true };
 
+  // E08.06 / R-033. `input.token` is the guest SECRET the owner just minted,
+  // because that is what has to go in the emailed URL. It is resolved the
+  // same way the public route resolves it — hashed, matched under the unique
+  // index, with the legacy branch for rows the 0027 backfill has not moved —
+  // so no code path anywhere compares a stored value to a raw secret.
+  if (!isResolvableShareToken(input.token)) {
+    return { ok: false, error: "link-not-found" };
+  }
   const [link] = await db
     .select()
     .from(shareLinks)
-    .where(eq(shareLinks.token, input.token));
+    .where(
+      or(
+        eq(shareLinks.tokenHash, hashShareToken(input.token)),
+        and(
+          eq(shareLinks.token, input.token),
+          eq(shareLinks.tokenScheme, "plaintext"),
+        ),
+      ),
+    );
   if (!link || link.revokedAt) {
     return { ok: false, error: "link-not-found" };
   }

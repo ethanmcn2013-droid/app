@@ -27,6 +27,26 @@ export const runtime = "nodejs";
  *     reachedBoard:            number,  // entitlements.reached_board_at IS NOT NULL
  *     mostRecentRedemptionAt:  number | null,  // ms epoch
  *   }
+ *
+ * R-027 — READ THIS BEFORE MAKING THIS ENDPOINT VENUE-FACING.
+ *
+ * `reachedBoard` is a behavioural count: how many sponsored couples opened
+ * their board. D-011 ratified a suppression floor of 3 eligible sponsored
+ * workspaces for behavioural counts, and WP-07 made that floor two-sided in
+ * studio's `src/lib/account/instrumentation/suppression.ts`. This endpoint
+ * applies no floor at all: a venue with two sponsored couples would be told
+ * exactly how many of them opened the product.
+ *
+ * That is not a disclosure today because this route is NOT venue-facing. Its
+ * only consumer is studio's `/hq/marketing`, which sums across every sponsor
+ * and sits behind the founder-only HQ password. It becomes a disclosure the
+ * moment D-027 point 4's "aggregate adoption evidence" is turned on per venue
+ * after 1 September.
+ *
+ * Adding a per-venue caller without first applying the D-011 floor to
+ * `reachedBoard` (and to any other behavioural count added here) reproduces
+ * R-027 on a surface the suppression fix never reached.
+ * Pinned by partner-stats-boundary.test.mjs.
  */
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -74,6 +94,13 @@ export async function GET(req: Request) {
   const notesValues = sponsorCodes.map((c) => `comp:${c}`);
   const cutoff = new Date(Date.now() - 30 * DAY_MS);
 
+  // isolation-ok: sponsor-scoped, not workspace-scoped, and the scope is
+  // a value set rather than a column the guard can name. `notesValues` is
+  // derived above from comp_codes that carry THIS sponsor's slug, so the
+  // read can only reach entitlements minted from this sponsor's own
+  // codes. The projection is two timestamps; no workspace handle, no
+  // user id, no couple content leaves this query. That is what keeps the
+  // venue axis from becoming a route into a couple's workspace.
   const entitlementRows = await db
     .select({
       startedAt: entitlements.startedAt,

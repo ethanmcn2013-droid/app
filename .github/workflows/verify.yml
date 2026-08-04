@@ -26,6 +26,39 @@ jobs:
       - run: pnpm db:contract
       - run: pnpm lint
       - run: pnpm typecheck
+      # The D-022 access-term differential test (venue-access-term.test.ts)
+      # hard-fails in CI without a live studio checkout to compare against.
+      # Checked out here, after lint and typecheck, so no other gate ever
+      # scans a second repository's sources.
+      - name: Checkout studio for access-term parity
+        uses: actions/checkout@v4
+        with:
+          repository: ethanmcn2013-droid/studio
+          path: studio-parity
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
         run: pnpm test
+        env:
+          STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
+      # The parity checkout exists only for the differential step above;
+      # removed so the build and later gates never see a second repository.
+      - name: Remove parity checkout
+        run: rm -rf studio-parity
       - run: pnpm build
+      # E08.10 — performance budgets, measured from the build above so this
+      # costs no extra build time. The check ratchets: it fails when a
+      # measured value exceeds the ceiling recorded in
+      # contracts/venue-surface-performance-budgets.v1.json. Ceilings may
+      # only be lowered; raising one is a founder decision.
+      # E08.11 — every segment of the sponsored journey is either covered by test
+      # files this suite actually runs, or declared uncovered with a reason and an
+      # owner. A test file that exists but is wired into nothing fails here.
+      - name: Sponsored journey coverage (self-test)
+        run: pnpm journey:coverage:self-test
+      - name: Sponsored journey coverage
+        run: pnpm journey:coverage
+      # The checker's own rules — the ratchet, and the refusal to report a green
+      # from an empty population — proven without needing a build.
+      - name: Performance budgets (self-test)
+        run: pnpm perf:budgets:self-test
+      - name: Performance budgets (bundle ratchet)
+        run: pnpm perf:budgets

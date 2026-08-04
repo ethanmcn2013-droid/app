@@ -24,6 +24,7 @@ import {
   users,
   meta,
 } from "./schema";
+import { resolveShareLinkRowWith } from "./share-link-resolver";
 import { DOMAINS, type DomainId } from "@/lib/domains";
 import { LANE_ORDER } from "@/lib/data";
 import type { Notification, NotificationPayload, PublicTask } from "@/lib/data";
@@ -740,29 +741,17 @@ export async function resolveShareLink(
       workspaceId: DEMO_WORKSPACE_ID,
     };
   }
-  const [row] = await db
-    .select({
-      token: shareLinks.token,
-      view: shareLinks.view,
-      revokedAt: shareLinks.revokedAt,
-      expiresAt: shareLinks.expiresAt,
-      workspaceId: workspaces.id,
-      workspaceName: workspaces.name,
-      activeDomain: workspaces.activeDomain,
-    })
-    .from(shareLinks)
-    .innerJoin(workspaces, eq(workspaces.id, shareLinks.workspaceId))
-    .where(
-      and(
-        eq(shareLinks.token, token),
-        isNull(workspaces.archivedAt),
-      ),
-    );
+  // E08.06 / R-033. `token` here is the GUEST SECRET off the URL. It is
+  // never compared against anything stored: it is hashed first, and the
+  // stored sha256 is matched under a unique index, then re-compared in
+  // constant time. `resolveShareLinkRowWith` also carries the legacy branch
+  // for rows the 0027 backfill has not moved yet. The database is passed in
+  // rather than imported by the resolver, so the control stays loadable by
+  // the test runner; this is the only place it is bound to the live handle.
+  const row = await resolveShareLinkRowWith(db, token);
   if (!row || row.revokedAt) return null;
   if (row.expiresAt && row.expiresAt.getTime() < Date.now()) return null;
 
-  // The INNER JOIN above is deliberate: a share row never revives an
-  // absent Workspace, and archived work is private until restored.
   const wsId = row.workspaceId;
   const taskList = await getTasks(wsId);
   const candidateDomain = row.activeDomain as DomainId | null;
@@ -778,7 +767,9 @@ export async function resolveShareLink(
   const servedAt = new Date();
   const publicTasks = taskList.map((task) => toPublicTask(task, servedAt));
   return {
-    token,
+    // The non-secret row key, never the guest's secret. The visit log and any
+    // caller that needs to name this link key off this value.
+    token: row.publicId,
     view: row.view,
     tasks: publicTasks,
     columns: publicBoardColumns(columnConfig, publicTasks),

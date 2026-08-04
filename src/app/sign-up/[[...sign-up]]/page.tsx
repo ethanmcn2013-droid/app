@@ -50,7 +50,8 @@ export default async function SignUpPage({
               {sponsor.name}
             </div>
             <p className="mt-2 text-[14.5px] leading-[1.5] text-ink-soft">
-              Almost there. {sponsor.name} is covering your year.
+              Almost there. {sponsor.name} is covering it. Eighteen months, or
+              three months past your wedding, whichever is later.
             </p>
             <div className="mt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
               Code

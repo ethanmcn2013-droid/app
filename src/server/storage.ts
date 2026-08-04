@@ -110,15 +110,26 @@ export async function deleteBytes(storedPath: string): Promise<void> {
 }
 
 /**
- * Given an attachments row's stored_path, produce a Response that serves
- * the bytes. Call this from the download route handler.
+ * Given an attachments row's stored_path, say how the download route should
+ * serve it: stream it off a private blob, stream it off disk, or 404.
  *
- * Returns null when the stored_path points to a blob URL (caller should
- * redirect) or when the path is missing (caller should 404). Returns a
- * { redirect: string } when the path is a blob URL so the route can 302.
+ * E08.07 — WHY THIS IS NO LONGER A REDIRECT. `putBytes` writes with
+ * `access: "private"`, and a private Vercel Blob is not fetchable by URL: the
+ * SDK's own type documentation says it "requires authentication to access", and
+ * `get()` sets the Authorization header from `BLOB_READ_WRITE_TOKEN`. The route
+ * used to answer `302 → <blob url>`, sending the browser to a URL it cannot
+ * authenticate. Attachment downloads would have failed the moment the operator
+ * provisioned the store, which is an open P1 on the HQ ledger
+ * (`premium-blob-storage`) — so the defect had never fired and would have
+ * fired on the day it was hardest to diagnose.
+ *
+ * Streaming through the route is also the correct posture, not just the
+ * working one: the bytes only leave the server after `getActiveWorkspace()`
+ * has matched the attachment's workspace, and the security headers the disk
+ * path already sets now apply to blob-backed files too.
  */
 export type ServeResult =
-  | { kind: "redirect"; url: string }
+  | { kind: "blob"; url: string }
   | { kind: "disk"; absPath: string }
   | { kind: "missing" };
 
@@ -126,7 +137,7 @@ export async function resolveStoredPath(storedPath: string): Promise<ServeResult
   if (!storedPath) return { kind: "missing" };
 
   if (storedPath.startsWith("https://") || storedPath.startsWith("http://")) {
-    return { kind: "redirect", url: storedPath };
+    return { kind: "blob", url: storedPath };
   }
 
   // Disk path: confirm the file exists before the route opens a stream.
@@ -135,5 +146,28 @@ export async function resolveStoredPath(storedPath: string): Promise<ServeResult
     return { kind: "disk", absPath: storedPath };
   } catch {
     return { kind: "missing" };
+  }
+}
+
+/**
+ * Open a read stream for a private blob. Returns null when the blob is gone or
+ * the store is not reachable, so the route can 404 rather than 500.
+ *
+ * The caller MUST have already checked that the attachment belongs to the
+ * requesting workspace. This function performs no authorization of its own —
+ * holding the stored_path is not permission to read it.
+ */
+export async function openBlobStream(url: string): Promise<{
+  stream: ReadableStream<Uint8Array>;
+  size: number | null;
+} | null> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
+  try {
+    const { get } = await import("@vercel/blob");
+    const result = await get(url, { access: "private" });
+    if (!result || result.statusCode !== 200 || !result.stream) return null;
+    return { stream: result.stream, size: result.blob.size ?? null };
+  } catch {
+    return null;
   }
 }

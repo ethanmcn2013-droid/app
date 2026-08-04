@@ -97,6 +97,8 @@ export async function TasksRuntimeShell({
           budgetCents: null,
           primaryUseCase: DEMO_PRIMARY_USE_CASE,
           planningPeriodId: "demo-planning-period",
+          primaryDate: null,
+          primaryDateLabel: null,
         })
       : db
           .select({
@@ -107,6 +109,11 @@ export async function TasksRuntimeShell({
             budgetCents: workspaces.budgetCents,
             primaryUseCase: workspaces.primaryUseCase,
             planningPeriodId: workspaces.planningPeriodId,
+            // The workspace's one anchor date. In a wedding workspace this is
+            // the wedding day, and the task panel reads every due date
+            // against it.
+            primaryDate: workspaces.primaryDate,
+            primaryDateLabel: workspaces.primaryDateLabel,
           })
           .from(workspaces)
           .where(eq(workspaces.id, workspaceId))
@@ -152,6 +159,8 @@ export async function TasksRuntimeShell({
           personalization={personalization}
           tagDefs={tagDefs}
           members={members}
+          anchorDate={workspace?.primaryDate ?? null}
+          anchorLabel={workspace?.primaryDateLabel ?? null}
           workspaceId={workspaceId}
           workspaceSlug={workspaceSlug}
         >
