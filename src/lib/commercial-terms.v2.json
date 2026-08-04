@@ -1,0 +1,100 @@
+{
+  "version": 2,
+  "accepts": [1, 2],
+  "supersedes": 1,
+  "basis": "content/hq/decisions/venue-edition-founding-25-2026-08-03.md",
+  "currency": "EUR",
+  "vat": {
+    "basis": "inclusive",
+    "publicStatement": "inclusive of VAT at the prevailing rate",
+    "accountablePersonStatus": "unconfirmed",
+    "note": "Every published venue price is the amount the venue pays. VAT at the prevailing rate comes out of it, not on top of it. Whether Signal Studio is an accountable person is unconfirmed pending a written Revenue reply; the wording discloses the position either way."
+  },
+  "accessState": "waitlist_first",
+  "broadLaunchDate": null,
+  "plans": {
+    "free": {
+      "publicName": "Free",
+      "amountCents": 0,
+      "cadence": "forever",
+      "workspaceLimit": 1,
+      "editingGuestLimit": 3,
+      "status": "verified"
+    },
+    "student": {
+      "publicName": "Student",
+      "amountCents": 999,
+      "cadence": "year",
+      "workspaceLimit": null,
+      "editingGuestLimit": null,
+      "status": "price_verified_payment_unverified"
+    },
+    "pro": {
+      "publicName": "Pro",
+      "internalEntitlement": "workspace",
+      "monthlyAmountCents": 1200,
+      "annualAmountCents": null,
+      "annualCandidatesCents": [10000, 12000],
+      "workspaceLimit": null,
+      "editingGuestLimit": null,
+      "status": "monthly_verified_annual_unresolved"
+    },
+    "event": {
+      "publicName": "Event",
+      "amountCents": 8900,
+      "cadence": "one_time",
+      "activeWindowMonths": 12,
+      "postWindow": "read_only",
+      "status": "verified_price_retention_wording_pending"
+    },
+    "venue": {
+      "publicName": "Venue Edition",
+      "annualAmountCents": 150000,
+      "priceBasis": "vat_inclusive",
+      "founding": {
+        "programmeName": "Founding 25",
+        "annualAmountCents": 100000,
+        "cohortSize": 25,
+        "numbering": "01/25 through 25/25",
+        "numberAssignedOn": "payment",
+        "placeHoldDays": 14,
+        "placeHoldRepeatable": false,
+        "outreachCohortSize": 25,
+        "outreachCohortRelease": "sequential",
+        "lockScope": "base_annual_agreement",
+        "lockCondition": "continuous_renewal_without_lapse",
+        "lockFollows": "property",
+        "lockTransfersToNewProperties": false,
+        "forbiddenWording": ["for life", "forever", "in perpetuity", "lifetime"],
+        "publicWording": "€500 a year less, for as long as you stay."
+      },
+      "coupleAccessMonths": 18,
+      "operationalAccessDays": 548,
+      "weddingGraceDays": 90,
+      "coupleAccessRule": "max(redeemedAt + 548 days, weddingDate + 90 days)",
+      "activationAllowance": "unlimited",
+      "activationAllowanceBasis": "every couple with a signed booking at the venue, while the licence is current",
+      "fairUseBehaviour": "notify_never_block",
+      "redeemedWorkspaceSurvivesLicenceEnd": true,
+      "releasedWorkspaceBrandingRemovalHours": 24,
+      "annualWeddingCountCollectedAt": "onboarding_after_signature",
+      "annualWeddingCountAffectsPrice": false,
+      "status": "verified"
+    }
+  },
+  "unresolved": [
+    "pro_annual_amount",
+    "pro_workspace_limit",
+    "student_workspace_limit",
+    "student_verification_and_payment",
+    "committee_offer",
+    "editing_guest_semantics",
+    "event_retention_promise",
+    "school_pricing_and_seats",
+    "broad_launch_date"
+  ],
+  "resolvedSinceV1": {
+    "venue_activation_allowance": "Resolved by D-020: every booked couple, unlimited, with no number in the commercial terms. The internal issuance ceiling notifies and never blocks, so it is not an entitlement.",
+    "venue_calendar_month_semantics": "Resolved by D-020 and D-022. With no allowance there is no reset boundary to define, and the couple term is computed in days from the redemption instant and the wedding date, never in calendar months."
+  }
+}
