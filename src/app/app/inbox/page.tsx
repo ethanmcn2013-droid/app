@@ -15,6 +15,7 @@ import { db } from "@/server/db";
 import { users, workspaces } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import {
   DEMO_USER_ID,
   DEMO_WORKSPACE_ID,
@@ -47,10 +48,15 @@ export default async function InboxPage() {
             forDate: new Date().toISOString().slice(0, 10),
             user: DEMO_USER_ID,
             completedYesterday: completed,
-            dueToday: open.filter((task) => task.due).slice(0, 2),
+            dueToday: open.filter(
+              (task) =>
+                task.dueAt &&
+                task.dueAt.toISOString().slice(0, 10) ===
+                  PINNED_REVIEW_CALENDAR_FRAME.today,
+            ),
             mentions: [],
           }}
-          nudges={generateNudges(tasks, DEMO_USER_ID)}
+          nudges={generateNudges(tasks, DEMO_USER_ID, null, new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso))}
           weeklySnapshot={{
             closedThisWeek: completed.length,
             closedTitles: completed.map((task) => task.title),
@@ -64,6 +70,13 @@ export default async function InboxPage() {
           overdueCount={0}
           userName={USERS[DEMO_USER_ID].name}
           personalityPrefs={PERSONALITY_DEFAULTS}
+          pinnedHour={Number(
+            new Intl.DateTimeFormat("en-GB", {
+              hour: "numeric",
+              hour12: false,
+              timeZone: PINNED_REVIEW_CALENDAR_FRAME.timeZone,
+            }).format(new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)),
+          )}
         />
       </>
     );

@@ -44,7 +44,7 @@ export async function SignalOnboardingPage() {
         candidate.workspaceId === analyticsUser?.linkedWorkspaceId,
     );
     if (linkedWorkspaceStillExists) {
-      redirect("/app/signal");
+      redirect("/app/home/briefing");
     }
   }
 
@@ -100,7 +100,7 @@ export async function SignalOnboardingPage() {
             >
               Once you have a workspace,{" "}
               <a
-                href="/app/signal/onboarding"
+                href="/app/home/briefing/onboarding"
                 className="underline underline-offset-2"
                 style={{ color: "var(--ink-soft)" }}
               >

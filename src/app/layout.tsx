@@ -8,14 +8,17 @@ import { isDemoMode } from "@/lib/access-mode";
 import { APP_ORIGIN } from "@/lib/product-urls";
 import "./globals.css";
 
+// latin-ext included deliberately: on a shared wedding timeline the couple's
+// names ARE the headline, and "Łukasz & Zofia" must not fall back to a
+// system face mid-h1.
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const viewport: Viewport = {

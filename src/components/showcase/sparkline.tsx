@@ -39,7 +39,7 @@ export function Sparkline({
       height={height}
       className="overflow-visible"
       role="img"
-      aria-label="Open work burndown sparkline"
+      aria-label="Open work winding down over the week"
     >
       <defs>
         <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">

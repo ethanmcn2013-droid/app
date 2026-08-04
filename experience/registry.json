@@ -61,7 +61,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c199785a0312181f"
+      "materialityHash": "166201f23ee5dfe4"
     },
     {
       "id": "tasks.page.app",
@@ -112,7 +112,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "28526dda3e716a36"
+      "materialityHash": "33abda03de781cce"
     },
     {
       "id": "tasks.page.app-tasks",
@@ -203,13 +203,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "e6572d73e8304e38",
       "materialityReview": {
         "materialityHash": "e6572d73e8304e38",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-30.json"
       }
     },
@@ -312,7 +312,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "233768d6d170033f"
+      "materialityHash": "c4f897dcd789f7e3"
     },
     {
       "id": "tasks.page.app-tasks-list",
@@ -360,13 +360,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "86ee3a76a13d8bc0",
       "materialityReview": {
         "materialityHash": "86ee3a76a13d8bc0",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-30.json"
       }
     },
@@ -460,13 +460,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-31",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d9988ba395545970",
       "materialityReview": {
         "materialityHash": "d9988ba395545970",
-        "reviewedAt": "2026-07-31",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-settings-2026-07-31.json"
       }
     },
@@ -509,13 +509,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f20fd2dc1b67ab0e",
       "materialityReview": {
         "materialityHash": "f20fd2dc1b67ab0e",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-30.json"
       }
     },
@@ -565,13 +565,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d94465a3f791a266",
       "materialityReview": {
         "materialityHash": "d94465a3f791a266",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-30.json"
       }
     },
@@ -704,13 +704,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-31",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d226ac71e96df95f",
       "materialityReview": {
         "materialityHash": "d226ac71e96df95f",
-        "reviewedAt": "2026-07-31",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-07-31.json"
       }
     },
@@ -1280,13 +1280,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-31",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "05f3816d6030a501",
       "materialityReview": {
         "materialityHash": "05f3816d6030a501",
-        "reviewedAt": "2026-07-31",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.print-board-2026-07-31.json"
       }
     },
@@ -1328,13 +1328,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "b9f94c73108490b0",
       "materialityReview": {
         "materialityHash": "b9f94c73108490b0",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-30.json"
       }
     },
@@ -1383,13 +1383,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-31",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d68e7b7dc1af8677",
       "materialityReview": {
         "materialityHash": "d68e7b7dc1af8677",
-        "reviewedAt": "2026-07-31",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.print-list-2026-07-31.json"
       }
     },
@@ -1431,13 +1431,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d90764270932869e",
       "materialityReview": {
         "materialityHash": "d90764270932869e",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-30.json"
       }
     },
@@ -1698,13 +1698,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ee2b4660f7b40532",
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-30.json"
       }
     },
@@ -1747,13 +1747,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "c2599ecd3d094b3d",
       "materialityReview": {
         "materialityHash": "c2599ecd3d094b3d",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-30.json"
       }
     },
@@ -1796,13 +1796,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a24a1b85fe91dad0",
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-30.json"
       }
     },
@@ -1850,7 +1850,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "207434165cbcb6c2"
+      "materialityHash": "fbc1fbfa4d6e555c"
     },
     {
       "id": "tasks.page.share-target",
@@ -2250,7 +2250,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "dbe79371612be2b9"
+      "materialityHash": "23e82680a1e32a84"
     },
     {
       "id": "tasks.page.welcome",
@@ -2292,13 +2292,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d9fe0d7f1603130c",
+      "materialityHash": "11d00f9a07f33588",
       "materialityReview": {
-        "materialityHash": "d9fe0d7f1603130c",
-        "reviewedAt": "2026-07-30",
+        "materialityHash": "11d00f9a07f33588",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.welcome-2026-07-30.json"
       }
     },
@@ -2343,13 +2343,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f532c7ecbb8ab980",
       "materialityReview": {
         "materialityHash": "f532c7ecbb8ab980",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-30.json"
       }
     },
@@ -2437,48 +2437,6 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "6542651ed3b2dab6"
-    },
-    {
-      "id": "tasks.state.app-signal-loading",
-      "product": "tasks",
-      "surfaceType": "loading",
-      "route": "/app/signal",
-      "source": "tasks/src/app/app/signal/loading.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Understand and use app · signal.",
-      "primaryAction": "Complete the primary action on app · signal.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "reduced-motion"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-26",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "9f76837be523afe3"
     },
     {
       "id": "tasks.state.root-not-found",
@@ -2649,7 +2607,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "55fc56395b70514e"
+      "materialityHash": "7d1439eb0d445ae9"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2832,13 +2790,13 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-30",
+      "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "36c47fbab79ad4f1",
       "materialityReview": {
         "materialityHash": "36c47fbab79ad4f1",
-        "reviewedAt": "2026-07-30",
+        "reviewedAt": "2026-08-04",
         "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-30.json"
       }
     },
@@ -3026,8 +2984,8 @@
       "source": "tasks/src/app/app/signal/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "application-shell-and-navigation",
-      "primaryJob": "Access the Signal module from within the unified app shell.",
-      "primaryAction": "Open Signal.",
+      "primaryJob": "Land on the Full Briefing from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3060,7 +3018,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8df643b292a9a8cc"
+      "materialityHash": "827580f74018b68a"
     },
     {
       "id": "tasks.page.app-signal-onboarding",
@@ -3070,8 +3028,8 @@
       "source": "tasks/src/app/app/signal/onboarding/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Link a Signal Tasks workspace to the Signal briefing module.",
-      "primaryAction": "Confirm workspace and start receiving briefings.",
+      "primaryJob": "Land on briefing onboarding from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3106,7 +3064,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "5a57448960de5a04"
+      "materialityHash": "8a8464b6bd1c1af0"
     },
     {
       "id": "tasks.page.app-signal-settings-notifications",
@@ -3116,8 +3074,8 @@
       "source": "tasks/src/app/app/signal/settings/notifications/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Choose how often the Signal briefing lands in the inbox.",
-      "primaryAction": "Select a cadence (daily / weekly / off).",
+      "primaryJob": "Land on briefing notification settings from a legacy Signal link, bookmark or notification without breaking.",
+      "primaryAction": "None — permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3150,7 +3108,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "eee37871592f6462"
+      "materialityHash": "b9d4534ca90d6702"
     },
     {
       "id": "tasks.page.app-notes",
@@ -3422,6 +3380,48 @@
       "materialityHash": "7fb18a74b8982d11"
     },
     {
+      "id": "tasks.state.app-timeline-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/timeline",
+      "source": "tasks/src/app/app/timeline/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand that Timeline failed and find the way back to the plan.",
+      "primaryAction": "Try again, or return to the project timeline.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "error",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "cda813d9937ca3e2"
+    },
+    {
       "id": "tasks.page.app-timeline-audience",
       "product": "tasks",
       "surfaceType": "page",
@@ -3567,7 +3567,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "13aaa53c7f4e9ca9"
+      "materialityHash": "29b91131a150d465"
     },
     {
       "id": "tasks.state.s-by-token-loading",
@@ -3611,7 +3611,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "257cbd064fa4bf9f"
+      "materialityHash": "24b4c8d44e92c504"
     },
     {
       "id": "tasks.page.the-wedding",
@@ -3699,7 +3699,359 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "4158f3cd5d9036eb"
+      "materialityHash": "ef156f3db12fed31"
+    },
+    {
+      "id": "tasks.page.app-home",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "dashboard-or-command-centre",
+      "primaryJob": "See what matters now across Notes, Tasks and Timeline, and act on the day's top item.",
+      "primaryAction": "Open the day's top item.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "populated",
+        "empty",
+        "first-use",
+        "loading",
+        "partial-failure",
+        "error",
+        "restricted",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "legacy",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "416372ea123f5a5d"
+    },
+    {
+      "id": "tasks.page.app-home-briefing",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "application-shell-and-navigation",
+      "primaryJob": "Access the Signal module from within the unified app shell.",
+      "primaryAction": "Open Signal.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "3c4b3edab7226e25"
+    },
+    {
+      "id": "tasks.page.app-home-briefing-onboarding",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing/onboarding",
+      "source": "tasks/src/app/app/home/briefing/onboarding/page.tsx",
+      "parentJourney": "access-and-onboarding",
+      "archetype": "onboarding-and-authentication",
+      "primaryJob": "Link a Signal Tasks workspace to the Signal briefing module.",
+      "primaryAction": "Confirm workspace and start receiving briefings.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "96ca62eb0ae859ef"
+    },
+    {
+      "id": "tasks.page.app-home-briefing-settings-notifications",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/app/home/briefing/settings/notifications",
+      "source": "tasks/src/app/app/home/briefing/settings/notifications/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Choose how often the Signal briefing lands in the inbox.",
+      "primaryAction": "Select a cadence (daily / weekly / off).",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "loading",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-07-26",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "2a868aa4fac3031c"
+    },
+    {
+      "id": "tasks.state.app-home-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for Home without losing orientation.",
+      "primaryAction": "None — resolves automatically.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "43b9c13f874d4f0f"
+    },
+    {
+      "id": "tasks.state.app-home-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/home",
+      "source": "tasks/src/app/app/home/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Home briefing read failure and keep the products one click away.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "26f1ff021e20a08c"
+    },
+    {
+      "id": "tasks.state.app-home-briefing-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Wait for the Full Briefing without losing orientation.",
+      "primaryAction": "None — resolves automatically.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "1ed8540842490cd6"
+    },
+    {
+      "id": "tasks.state.app-home-briefing-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/home/briefing",
+      "source": "tasks/src/app/app/home/briefing/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Recover from a Full Briefing load failure.",
+      "primaryAction": "Try again.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "7b7ed391aa1b72ab"
     }
   ]
 }

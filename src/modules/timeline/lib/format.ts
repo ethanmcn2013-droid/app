@@ -76,7 +76,8 @@ export function freshnessStamp(updated: Date, now: Date = new Date()): string {
 export function audienceKindLabel(kind: string): string {
   if (kind === "couple") return "Couple";
   if (kind === "class") return "Class";
-  if (kind === "module") return "Module";
+  // "module" is the stored enum; owners and viewers both read "Project".
+  if (kind === "module") return "Project";
   return kind.charAt(0).toUpperCase() + kind.slice(1);
 }
 

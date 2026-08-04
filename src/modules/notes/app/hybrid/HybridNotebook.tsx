@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
@@ -52,6 +53,17 @@ import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-per
 import styles from "./hybrid-notebook.module.css";
 
 const TASKS_APP_PATH = PRODUCT_APP_PATHS.tasks;
+
+/** ⌘ on Apple platforms, Ctrl elsewhere. Server renders ⌘; the client
+ *  snapshot corrects it during hydration without a set-state. */
+const subscribeNever = () => () => {};
+function useSaveChordLabel(): string {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => (/Mac|iPhone|iPad|iPod/.test(navigator.platform) ? "⌘" : "Ctrl"),
+    () => "⌘",
+  );
+}
 const RECOVERY_DRAFT_PREFIX = "signal-notes.hybrid-draft.v2";
 const RECOVERY_CAPTURES_PREFIX = "signal-notes.hybrid-pending-captures.v2";
 const RECOVERY_EDITS_PREFIX = "signal-notes.hybrid-detail-edits.v2";
@@ -1658,19 +1670,6 @@ export function HybridNotebook({
     }, 0);
   }
 
-  function insertCaptureNewline(): void {
-    const textarea = captureRef.current;
-    if (!textarea || readOnly) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    captureGenerationRef.current += 1;
-    setDraft((current) => `${current.slice(0, start)}\n${current.slice(end)}`);
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + 1, start + 1);
-    }, 0);
-  }
-
   function trapMobileDetailFocus(event: ReactKeyboardEvent<HTMLElement>): void {
     if (!mobileDetailOpen || event.key !== "Tab") return;
     const focusables = Array.from(
@@ -1709,6 +1708,7 @@ export function HybridNotebook({
     }
   }
 
+  const saveChord = useSaveChordLabel();
   const voice = useVoiceCapture({
     appendTranscript: (chunk) => {
       captureGenerationRef.current += 1;
@@ -1730,7 +1730,10 @@ export function HybridNotebook({
 
   function onCaptureKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>): void {
     if (event.nativeEvent.isComposing) return;
-    if (event.key === "Enter" && !event.shiftKey) {
+    // Familiar text-entry convention: Enter adds a line (textarea
+    // default), the platform command chord saves. Notes is a place to
+    // write, not a chat box.
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       void commitDraft();
       return;
@@ -1810,7 +1813,7 @@ export function HybridNotebook({
         />
         <div className={styles.captureFooter}>
           <div className={styles.captureGuidance}>
-            <p id="hybrid-capture-hint" className={styles.captureHint}>Enter saves · Shift + Enter adds a line · Escape asks before discarding</p>
+            <p id="hybrid-capture-hint" className={styles.captureHint}>{saveChord} + Enter saves · Escape asks before discarding</p>
             {/*
               E05.04. Dictation runs on the browser's own speech engine,
               which sends the audio to the browser maker's speech service.
@@ -1840,7 +1843,6 @@ export function HybridNotebook({
             ) : null}
           </div>
           <div className={styles.captureActions}>
-            {!readOnly ? <button type="button" className={`${styles.quietButton} ${styles.mobileOnly}`} onClick={insertCaptureNewline}>New line</button> : null}
             {voice.supported && !readOnly ? (
               <button
                 type="button"
@@ -2439,12 +2441,13 @@ export function HybridNotebook({
           ) : (
             <aside className={`${styles.artifactPanel} ${styles.desktopOnly}`} aria-labelledby="hybrid-previous-heading">
               <div className={styles.artifactHeader}>
-                <span className={styles.emptyEyebrow}>Artifact history</span>
-                <span className={styles.searchMeta}>{archivedNotes.length} archived</span>
+                <span className={styles.emptyEyebrow}>History</span>
+                <span className={styles.searchMeta}>{archivedNotes.length} sent</span>
               </div>
-              <h2 id="hybrid-previous-heading">Previously sent</h2>
+              <h2 id="hybrid-previous-heading">Sent to Tasks</h2>
               <p className={styles.artifactIntroduction}>
-                Earlier handoffs live here as an explicit history. Restore one at a time; nothing private moves automatically.
+                Notes you&rsquo;ve sent to Tasks. Restore any of them; the
+                original wording is kept here.
               </p>
               {archivedNotes.length ? (
                 <motion.ul layout className={styles.artifactList}>
@@ -2461,7 +2464,7 @@ export function HybridNotebook({
                         <blockquote>{presentNoteBody(note.body).title}</blockquote>
                         {note.extractBody ? <p>Sent wording: {note.extractBody}</p> : null}
                         <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>
-                          {restoringId === note.id ? "Restoringâ€¦" : "Restore private note"}
+                          {restoringId === note.id ? "Restoring…" : "Restore to notebook"}
                         </button>
                       </motion.li>
                     ))}
@@ -2469,11 +2472,10 @@ export function HybridNotebook({
                 </motion.ul>
               ) : (
                 <div className={styles.artifactEmpty}>
-                  <strong>Nothing is archived.</strong>
-                  <p>Choose a note when you want to edit it, or select exact wording to make it work in Tasks.</p>
+                  <strong>Nothing sent yet.</strong>
+                  <p>Select a note to read, edit or send it to Tasks.</p>
                 </div>
               )}
-              <p className={styles.artifactFootnote}>A Tasks receipt never removes its private source from this notebook.</p>
             </aside>
           )}
         </motion.section>

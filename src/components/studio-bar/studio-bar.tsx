@@ -37,10 +37,10 @@
 import { useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
-  STUDIO_URL,
-  productIdFromAppPath,
-  type ProductId,
+  suiteSurfaceFromAppPath,
+  type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import { StudioBarSearch } from "./studio-bar-search";
@@ -55,11 +55,14 @@ import {
    soft/quiet/bright ink steps, and the indigo accent off the ramp. */
 
 function markCell() {
+  // The dot walks to Home — the authenticated front door — so the mark
+  // and the rail's Home tile agree (consolidation D4: the dot must not
+  // be the only Home affordance, and it must not disagree with it).
   return (
     <a
-      href={STUDIO_URL}
-      title="Signal Studio"
-      className="flex h-full w-[60px] flex-none items-center justify-center border-r border-white/[0.07] outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
+      href={HOME_APP_PATH}
+      title="Home"
+      className="flex h-full w-[60px] flex-none items-center justify-center outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
     >
       <span
         aria-hidden="true"
@@ -67,7 +70,7 @@ function markCell() {
       >
         <span className="h-2.5 w-2.5 rounded-full bg-[var(--x-studio-accent)]" />
       </span>
-      <span className="sr-only">Signal Studio home</span>
+      <span className="sr-only">Signal Studio Home</span>
     </a>
   );
 }
@@ -78,19 +81,22 @@ function markCell() {
  * the string and its home link change. Tasks remains the default for all
  * Tasks-owned routes.
  */
-const MODULE_LABELS: Readonly<Record<ProductId, string>> = Object.freeze({
+const MODULE_LABELS: Readonly<Record<SuiteSurfaceId, string>> = Object.freeze({
+  home: "Home",
   notes: "Notes",
   tasks: "Tasks",
   timeline: "Timeline",
+  // Legacy id: /app/signal permanently redirects into Home, so this
+  // identity never renders; kept for type completeness only.
   signal: "Signal",
 });
 
 function activeModuleIdentity(pathname: string): { word: string; home: string; label: string } {
-  const productId = productIdFromAppPath(pathname);
+  const surfaceId = suiteSurfaceFromAppPath(pathname);
   return {
-    word: productId,
-    home: PRODUCT_APP_PATHS[productId],
-    label: MODULE_LABELS[productId],
+    word: surfaceId,
+    home: surfaceId === "home" ? HOME_APP_PATH : PRODUCT_APP_PATHS[surfaceId],
+    label: MODULE_LABELS[surfaceId],
   };
 }
 
@@ -105,7 +111,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 border-r border-white/[0.07] px-3 md:w-[248px] md:px-4">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 px-3 md:w-[248px] md:px-4">
       <a
         href={identity.home}
         aria-label={identity.label}
@@ -141,11 +147,19 @@ export function StudioBar() {
   const { data } = useStudioChrome();
   const keyLabel = useCommandKeyLabel();
   const pathname = usePathname() ?? "";
-  const activeProduct = productIdFromAppPath(pathname);
+  const activeProduct = suiteSurfaceFromAppPath(pathname);
+  const homeSurface = activeProduct === "home";
   const tasksSurface =
+    !homeSurface &&
     !pathname.startsWith("/app/notes") &&
     !pathname.startsWith("/app/timeline") &&
     !pathname.startsWith("/app/signal");
+  // Home is cross-product, so its command field speaks for the suite
+  // (the suite command root owns ⌘K there). The create action stays a
+  // Tasks-surface control: its event bridge lives in the Tasks runtime,
+  // which does not wrap Home — a create button on Home would be a dead
+  // control, and Home's quick capture is the palette instead.
+  const showCreate = tasksSurface;
   const commandLabel = tasksSurface
     ? "Search tasks and projects"
     : "Search Signal Studio";
@@ -211,7 +225,7 @@ export function StudioBar() {
             the icon morphs into an inline field that seeds the palette. */}
         <StudioBarSearch label={commandLabel} />
 
-        {tasksSurface ? (
+        {showCreate ? (
           <button
             type="button"
             aria-keyshortcuts="c"

@@ -5,7 +5,9 @@ export default function SharedTimelineNotFound() {
         <p className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-ink-faint">
           timeline
         </p>
-        <h1 className="mt-16 max-w-[9ch] text-[clamp(3rem,12vw,5.5rem)] font-semibold leading-[0.88] tracking-[-0.065em]">
+        {/* Sized for the 404's narrow measure; voice (tracking + leading)
+            rides the ratified artifact display register. */}
+        <h1 className="mt-16 max-w-[9ch] text-[clamp(3rem,12vw,5.5rem)] font-semibold leading-[var(--x-artifact-display-leading)] tracking-[var(--x-artifact-display-tracking)]">
           This link has reached its end.
         </h1>
         <p className="mt-8 max-w-sm text-sm leading-6 text-[color-mix(in_srgb,var(--ink-faint)_88%,var(--ink))]">

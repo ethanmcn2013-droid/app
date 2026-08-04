@@ -19,7 +19,15 @@ export type SyncedTemplateRoadmap = {
       description: string;
       status: "shipped" | "in-flight" | "next" | "waiting" | "refused";
       targetDate?: string;
+      /** Days from the seed's anchor date, negative meaning before it. */
+      anchorOffsetDays?: number;
     }>;
+    /** Declared when this template's plan points at one known day. */
+    anchor?: {
+      label: string;
+      prompt: string;
+      hint?: string;
+    };
   };
 };
 
@@ -28,6 +36,11 @@ export const SYNCED_TEMPLATE_ROADMAPS: SyncedTemplateRoadmap[] = [
     "id": "wedding-planning-workspace",
     "name": "Wedding planning workspace",
     "roadmap": {
+      "anchor": {
+        "label": "The wedding day",
+        "prompt": "When is the wedding?",
+        "hint": "Every milestone below is placed relative to this day. You can move any of them afterwards."
+      },
       "projects": [
         {
           "slug": "planning",
@@ -41,49 +54,57 @@ export const SYNCED_TEMPLATE_ROADMAPS: SyncedTemplateRoadmap[] = [
           "projectSlug": "planning",
           "title": "Venue contract and deposit schedule",
           "description": "Locked at booking. Final-week walkthrough date confirmed.",
-          "status": "shipped"
+          "status": "shipped",
+          "anchorOffsetDays": -300
         },
         {
           "projectSlug": "planning",
           "title": "Ceremony room layout agreed",
           "description": "Venue, couple, and officiant have signed off on aisle direction, seating block, and signing-table placement.",
-          "status": "shipped"
+          "status": "shipped",
+          "anchorOffsetDays": -150
         },
         {
           "projectSlug": "planning",
           "title": "Confirm final guest numbers",
           "description": "Couple to confirm the final headcount before the venue locks table layout and catering quantities.",
-          "status": "in-flight"
+          "status": "in-flight",
+          "anchorOffsetDays": -45
         },
         {
           "projectSlug": "planning",
           "title": "Supplier arrival times need confirmation",
           "description": "Photographer, florist, and band arrival times are not all confirmed yet. This is the main planning risk.",
-          "status": "waiting"
+          "status": "waiting",
+          "anchorOffsetDays": -30
         },
         {
           "projectSlug": "planning",
           "title": "Menu decisions sent to catering",
           "description": "Venue has sent the couple's menu decisions to catering and is waiting for final dietary notes.",
-          "status": "in-flight"
+          "status": "in-flight",
+          "anchorOffsetDays": -25
         },
         {
           "projectSlug": "planning",
           "title": "Final-week walkthrough",
           "description": "Venue, planner, and couple walk through room setup, ceremony flow, supplier access, and backup weather plan.",
-          "status": "next"
+          "status": "next",
+          "anchorOffsetDays": -6
         },
         {
           "projectSlug": "planning",
           "title": "Day-of timeline shared with suppliers",
           "description": "One-page run of show with arrival windows, ceremony cue, meal service, and band start time. Goes to every supplier.",
-          "status": "next"
+          "status": "next",
+          "anchorOffsetDays": -4
         },
         {
           "projectSlug": "planning",
           "title": "Weather backup plan confirmed",
           "description": "Indoor ceremony fallback + supplier coverage if outdoor ceremony moves inside. Venue holds the final call.",
-          "status": "next"
+          "status": "next",
+          "anchorOffsetDays": -2
         }
       ]
     }

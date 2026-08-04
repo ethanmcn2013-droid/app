@@ -52,6 +52,7 @@ export function InboxApp({
   overdueCount,
   userName,
   personalityPrefs,
+  pinnedHour,
 }: {
   notifications: Notification[];
   digest: DailyDigest;
@@ -83,6 +84,11 @@ export function InboxApp({
   /** Personality prefs threaded from the page. When omitted, greeting
    *  and tips default to off (safe fallback for legacy callers). */
   personalityPrefs?: PersonalityPrefs;
+  /** Demo/review only: pins the greeting's hour to the demo clock so the
+   *  salutation cannot drift from the pinned "today" (or contradict the
+   *  digest's "Good morning" on the same screen). Omitted in production,
+   *  where the visitor's own local hour is the right one. */
+  pinnedHour?: number;
 }) {
   const { openTask } = useTaskPanel();
   const me = USERS[digest.user];
@@ -100,6 +106,7 @@ export function InboxApp({
           dueToday={digest.dueToday.length}
           overdueCount={overdueCount ?? 0}
           enabled={personalityPrefs?.greeting ?? false}
+          pinnedHour={pinnedHour}
         />
 
         <TipCard context="inbox" enabled={personalityPrefs?.tips ?? false} />
@@ -242,7 +249,7 @@ function NudgesSection({
       <SectionHead
         eyebrow="What's stuck"
         title={`${visible.length} ${visible.length === 1 ? "thing wants" : "things want"} a nudge.`}
-        subtitle="Idle cards, past-due dates, blockers that already cleared. Triaged with love. Ignore freely."
+        subtitle="Idle work, past-due dates, tasks that are free to move. Dismiss anything you don't need."
       />
       <ul className="mt-4 space-y-2">
         <AnimatePresence initial={false}>
@@ -704,11 +711,13 @@ function GreetingBanner({
   dueToday,
   overdueCount,
   enabled,
+  pinnedHour,
 }: {
   name: string | null;
   dueToday: number;
   overdueCount: number;
   enabled: boolean;
+  pinnedHour?: number;
 }) {
   const [line, setLine] = useState<string | null>(null);
 
@@ -724,7 +733,9 @@ function GreetingBanner({
         // sessionStorage unavailable (private browsing edge case)
         return;
       }
-      const hour = new Date().getHours();
+      // Demo pins the hour to the demo clock; production greets by the
+      // visitor's own local hour (computed on mount, so no SSR mismatch).
+      const hour = pinnedHour ?? new Date().getHours();
       const result = buildGreeting({
         name,
         hour,
@@ -742,7 +753,7 @@ function GreetingBanner({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [name, dueToday, overdueCount, enabled]);
+  }, [name, dueToday, overdueCount, enabled, pinnedHour]);
 
   if (!line) return null;
 

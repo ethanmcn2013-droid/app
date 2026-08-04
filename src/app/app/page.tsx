@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { resolvePlanningFeatureFlags } from "@/lib/planning/flags";
+import { HOME_APP_PATH } from "@/lib/product-urls";
 
 type SearchParams = Promise<{
   contextVersion?: string;
@@ -28,9 +28,8 @@ export default async function AppIndex({
     if (params.projectId) query.set("projectId", params.projectId);
     redirect(`/api/suite-context?${query.toString()}`);
   }
-  redirect(
-    resolvePlanningFeatureFlags().planningPeriods
-      ? "/app/your-work"
-      : "/app/tasks",
-  );
+  // Home is the authenticated front door: the default landing for
+  // sign-in, onboarding hand-off, and bare /app visits. Deep links into
+  // products are untouched; only this index redirect changed.
+  redirect(HOME_APP_PATH);
 }

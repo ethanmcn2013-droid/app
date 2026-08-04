@@ -100,10 +100,12 @@
 .intro h1 {
   max-width: 11ch;
   margin: 0.8rem 0 0;
-  font-size: clamp(3.2rem, 7vw, 7rem);
+  /* The artifact display register (globals.css --x-artifact-*), ratified
+     once instead of a re-typed clamp per surface. */
+  font-size: var(--x-artifact-display);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.065em;
-  line-height: 0.88;
+  letter-spacing: var(--x-artifact-display-tracking);
+  line-height: var(--x-artifact-display-leading);
   text-wrap: balance;
 }
 
@@ -200,7 +202,7 @@
   margin: 0.75rem 0 0;
   font-size: clamp(2.5rem, 5vw, 5rem);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.065em;
+  letter-spacing: var(--x-artifact-display-tracking);
   line-height: 0.92;
 }
 

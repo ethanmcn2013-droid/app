@@ -46,9 +46,9 @@ test("card labels read relative to today inside a week, absolute beyond it", () 
 
   assert.equal(formatScheduleRelative(due("2026-07-28"), today), "Due today");
   assert.equal(formatScheduleRelative(due("2026-07-29"), today), "Due tomorrow");
-  assert.equal(formatScheduleRelative(due("2026-07-27"), today), "Due yesterday");
+  assert.equal(formatScheduleRelative(due("2026-07-27"), today), "1 day overdue");
   assert.equal(formatScheduleRelative(due("2026-07-31"), today), "Due in 3 days");
-  assert.equal(formatScheduleRelative(due("2026-07-25"), today), "Due 3 days ago");
+  assert.equal(formatScheduleRelative(due("2026-07-25"), today), "3 days overdue");
 
   // Past a week either way the exact date carries more than the day count.
   assert.equal(formatScheduleRelative(due("2026-08-14"), today), "Due 14 Aug");

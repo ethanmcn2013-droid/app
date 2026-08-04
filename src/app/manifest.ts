@@ -11,7 +11,7 @@ import type { MetadataRoute } from "next";
  * surface, a home-screen tap should land on the board, not the
  * marketing homepage.
  *
- * `id: "/signal-tasks"` scopes the PWA identity so the four products
+ * `id: "/signal-tasks"` scopes the PWA identity so the suite surfaces
  * don't collide if origins are ever consolidated.
  *
  * Maskable icon at /icon1 (512×512), content inside the

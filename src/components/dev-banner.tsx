@@ -212,5 +212,12 @@ const CSS = `
   .signal-devbanner { animation: none; }
   .signal-devbanner__dot { animation: none; }
 }
+/* Below md the app shows a bottom navigation bar; the pill sits above
+   it instead of covering the tabs. */
+@media (max-width: 767px) {
+  .signal-devbanner {
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}
 @media print { .signal-devbanner { display: none; } }
 `;

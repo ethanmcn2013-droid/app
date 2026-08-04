@@ -78,10 +78,9 @@ function optionalCalendarDate(formData: FormData, name: string): string | null {
   return value;
 }
 
-function expiryInstant(formData: FormData): Date | null {
-  const date = optionalCalendarDate(formData, "expiresOn");
-  return date ? new Date(`${date}T23:59:59.999Z`) : null;
-}
+// The expiry travels as a calendar date; the server converts it to an
+// instant at the PUBLICATION's own midnight (endOfCalendarDayInZone), so a
+// Dublin link never outlives its printed date into the next morning.
 
 async function ownerWorkspace(formData: FormData) {
   const userId = await requireUser();
@@ -238,7 +237,7 @@ export async function publishAudiencePublicationAction(
       async () => publishAudiencePublication(
         publicationId,
         workspace.slug,
-        expiryInstant(formData),
+        optionalCalendarDate(formData, "expiresOn"),
       ),
     );
     revalidatePath("/app/timeline/audience");
@@ -269,7 +268,7 @@ export async function rotateAudienceShareAction(
       async () => rotateAudienceShare(
         publicationId,
         workspace.slug,
-        expiryInstant(formData),
+        optionalCalendarDate(formData, "expiresOn"),
       ),
     );
     revalidatePath("/app/timeline/audience");

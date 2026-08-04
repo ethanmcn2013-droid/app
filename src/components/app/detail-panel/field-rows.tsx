@@ -185,7 +185,7 @@ export function PriorityRow({ task }: { task: Task }) {
             className="block h-1.5 w-1.5 rounded-full"
             style={{ background: current.color }}
           />
-          {task.priority.toUpperCase()} · {current.label}
+          {current.label}
         </button>
       )}
     >
@@ -212,7 +212,7 @@ export function PriorityRow({ task }: { task: Task }) {
                       className="block h-1.5 w-1.5 rounded-full"
                       style={{ background: meta.color }}
                     />
-                    {p.toUpperCase()} · {meta.label}
+                    {meta.label}
                   </span>
                   <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[9.5px] text-ink-quiet">
                     {idx + 1}

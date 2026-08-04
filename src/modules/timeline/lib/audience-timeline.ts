@@ -288,6 +288,58 @@ export function calendarDateInTimeZone(
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * The UTC instant at which a calendar date ends in a named zone — the last
+ * millisecond before the zone's next local midnight. A Dublin link that
+ * "expires 3 Oct" dies at Dublin midnight, not 00:59 the next morning; a
+ * Tokyo link does not outlive its date by nine hours. Converges through the
+ * wall-clock correction loop so DST boundaries around midnight resolve to
+ * the real transition instant.
+ */
+export function endOfCalendarDayInZone(date: string, timeZone: string): Date {
+  validateIanaTimezone(timeZone);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new TypeError("Expiry must be a calendar date");
+  }
+  const nextMidnightUtc = new Date(`${date}T00:00:00.000Z`);
+  nextMidnightUtc.setUTCDate(nextMidnightUtc.getUTCDate() + 1);
+  const target = nextMidnightUtc.getTime();
+
+  const formatter = new Intl.DateTimeFormat("en", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  const wallClockAsUtc = (instant: number): number => {
+    const parts = formatter.formatToParts(new Date(instant));
+    const read = (type: Intl.DateTimeFormatPartTypes) =>
+      Number(parts.find((candidate) => candidate.type === type)?.value ?? "0");
+    // "24" appears for midnight under hourCycle h24 quirks; normalise.
+    const hour = read("hour") % 24;
+    return Date.UTC(
+      read("year"),
+      read("month") - 1,
+      read("day"),
+      hour,
+      read("minute"),
+      read("second"),
+    );
+  };
+
+  let guess = target;
+  for (let pass = 0; pass < 3; pass += 1) {
+    const drift = wallClockAsUtc(guess) - target;
+    if (drift === 0) break;
+    guess -= drift;
+  }
+  return new Date(guess - 1);
+}
+
 export function safeAudienceItemState(status: string, targetDate: string | null): AudienceItemState {
   if (status === "shipped") return "covered";
   if (status === "refused") return "cancelled";

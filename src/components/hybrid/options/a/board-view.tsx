@@ -661,6 +661,9 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   return (
     <div aria-label="Board lanes" className={styles.boardSurface}>
       <LayoutGroup id="tasks-board">
+      {/* Row pair: the horizontal lane track and, beside it, the pinned
+          add-column rail — the rail must never stack UNDER the track. */}
+      <div className={styles.boardTrack}>
       <div className={styles.boardScroll}>
         {boardColumns.map((column, columnIndex) => {
           const status = column.key;
@@ -818,6 +821,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             <span>Add column</span>
           </button>
         )}
+      </div>
       </div>
       </LayoutGroup>
       <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits title.</KeyboardLegend>

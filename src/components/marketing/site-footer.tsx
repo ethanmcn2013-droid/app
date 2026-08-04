@@ -88,7 +88,8 @@ export function SiteFooter() {
             { href: PRODUCT_MARKETING_URLS.notes, label: "Notes", external: true },
             { href: PRODUCT_MARKETING_URLS.tasks, label: "Tasks", external: true },
             { href: PRODUCT_MARKETING_URLS.timeline, label: "Timeline", external: true },
-            { href: PRODUCT_MARKETING_URLS.signal, label: "Signal", external: true },
+            // The daily briefing lives inside Home, not a standalone product.
+            { href: `${STUDIO_URL}/features/daily-briefing`, label: "Daily briefing", external: true },
           ]}
         />
       </div>

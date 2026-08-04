@@ -269,8 +269,8 @@ export function ListView({
         </select>
       );
     }
-    if (column.id === "estimate") return <span className={styles.monoValue}>{task.estimate ?? "Not set"}</span>;
-    if (column.id === "progress") return <span className={styles.monoValue}>{task.subtasks.length ? `${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}` : "None"}</span>;
+    if (column.id === "estimate") return task.estimate ? <span className={styles.monoValue}>{task.estimate}</span> : <span aria-label="No estimate" className={styles.absentValue}>—</span>;
+    if (column.id === "progress") return task.subtasks.length ? <span className={styles.monoValue}>{`${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}`}</span> : <span aria-label="No subtasks" className={styles.absentValue}>—</span>;
     if (column.id === "activity") return <TaskSignals task={task} />;
     return null;
   };

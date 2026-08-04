@@ -33,6 +33,7 @@ export type ResolvedShareLinkRow = {
   revokedAt: Date | null;
   expiresAt: Date | null;
   workspaceId: string;
+  workspaceName: string | null;
   activeDomain: string | null;
   scheme: "plaintext" | "sha256";
 };
@@ -86,6 +87,7 @@ export async function resolveShareLinkRowWith(
     revokedAt: shareLinks.revokedAt,
     expiresAt: shareLinks.expiresAt,
     workspaceId: workspaces.id,
+    workspaceName: workspaces.name,
     activeDomain: workspaces.activeDomain,
   };
 
@@ -105,6 +107,7 @@ export async function resolveShareLinkRowWith(
       revokedAt: hashed.revokedAt,
       expiresAt: hashed.expiresAt,
       workspaceId: hashed.workspaceId,
+      workspaceName: hashed.workspaceName,
       activeDomain: hashed.activeDomain,
       scheme: hashed.scheme,
     };
@@ -128,6 +131,7 @@ export async function resolveShareLinkRowWith(
     revokedAt: legacy.revokedAt,
     expiresAt: legacy.expiresAt,
     workspaceId: legacy.workspaceId,
+    workspaceName: legacy.workspaceName,
     activeDomain: legacy.activeDomain,
     scheme: legacy.scheme,
   };

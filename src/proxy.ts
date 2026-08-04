@@ -200,7 +200,27 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   ],
 });
 
+/**
+ * Legacy Signal routes → Full Briefing (Signal → Home consolidation).
+ * Edge-level 308 so old links, bookmarks and notification deep-links
+ * carry a real Location header before any rendering starts, in every
+ * access mode. Query state (scope, evidence, planning-period params)
+ * travels intact. The route files repeat the redirect as belt-and-braces
+ * for any path that bypasses the proxy matcher.
+ */
+function legacySignalRedirect(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  if (pathname !== "/app/signal" && !pathname.startsWith("/app/signal/")) {
+    return null;
+  }
+  const url = request.nextUrl.clone();
+  url.pathname = pathname.replace(/^\/app\/signal/, "/app/home/briefing");
+  return NextResponse.redirect(url, 308);
+}
+
 export default function proxy(req: NextRequest, event: NextFetchEvent) {
+  const legacySignal = legacySignalRedirect(req);
+  if (legacySignal) return legacySignal;
   if (isBareArtifactPath(req.nextUrl.pathname)) {
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-signal-bare-artifact", "1");

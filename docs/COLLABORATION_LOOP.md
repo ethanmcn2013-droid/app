@@ -104,5 +104,11 @@ Next implementation targets:
 
 - connect template use to source/campaign tracking
 - add first-run guidance for venue coordinators, planners, and couples
-- connect the template to the Roadmap wedding shared update
 - add Notes meeting follow-up and Analytics Today Signal examples against the same wedding scene
+
+The "connect the template to the Roadmap wedding shared update" target was
+retired with T·127. The shared update it pointed at (`lib/roadmap/shared-update.ts`,
+a model for a `/[workspace]/update` page that was never built) is superseded by
+the shared Timeline artifact at `/s/<token>`, which is the travelling object the
+target wanted. The template now connects to it the way that matters: declaring
+its anchor day so a first-run artifact carries a real countdown.

@@ -6,18 +6,23 @@ import { useSuiteContext } from "@/components/app/use-suite-context";
 import { RailIcon } from "@/components/studio-bar/rail-icons";
 import { STUDIO_PALETTE_EVENT } from "@/components/studio-bar/studio-chrome-context";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
-  productIdFromAppPath,
-  type ProductId,
+  suiteSurfaceFromAppPath,
+  type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 
 type SuiteDestination = Readonly<{
-  id: ProductId;
+  id: SuiteSurfaceId;
   name: string;
   promise: string;
   searchTerms: string;
 }>;
+
+function destinationPath(id: SuiteSurfaceId): string {
+  return id === "home" ? HOME_APP_PATH : PRODUCT_APP_PATHS[id];
+}
 
 const DESTINATIONS: readonly SuiteDestination[] = Object.freeze([
   {
@@ -39,10 +44,11 @@ const DESTINATIONS: readonly SuiteDestination[] = Object.freeze([
     searchTerms: "milestone plan progress publish share project",
   },
   {
-    id: "signal",
-    name: "Signal",
-    promise: "Read the few things that need attention.",
-    searchTerms: "briefing risk attention daily quiet evidence",
+    id: "home",
+    name: "Home",
+    promise: "Start with what needs you.",
+    searchTerms:
+      "briefing risk attention daily quiet evidence signal home what matters now",
   },
 ]);
 
@@ -66,7 +72,9 @@ export function SuiteCommandRoot() {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   const suiteContext = useSuiteContext();
-  const activeProduct = productIdFromAppPath(pathname);
+  const activeProduct = suiteSurfaceFromAppPath(pathname);
+  // Home has no product runtime of its own, so the suite switcher owns
+  // the command field there, exactly as on the sibling canvases.
   const ownsCommand = activeProduct !== "tasks";
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -104,7 +112,7 @@ export function SuiteCommandRoot() {
         return;
       }
       router.push(
-        withSuiteContext(PRODUCT_APP_PATHS[destination.id], suiteContext),
+        withSuiteContext(destinationPath(destination.id), suiteContext),
       );
     },
     [activeProduct, router, suiteContext],

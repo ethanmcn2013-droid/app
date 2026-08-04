@@ -46,7 +46,7 @@ export async function requireAnalyticsPageContext(
 ): Promise<AnalyticsPageContext> {
   const context = await resolveAnalyticsPageContext(searchParams);
   // S1: redirect to /app/brief/onboarding instead of /app/onboarding
-  if (!context) redirect("/app/signal/onboarding");
+  if (!context) redirect("/app/home/briefing/onboarding");
   return context;
 }
 
