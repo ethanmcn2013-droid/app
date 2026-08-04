@@ -3967,7 +3967,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8d27c34b75e7db78"
+      "materialityHash": "26f1ff021e20a08c"
     },
     {
       "id": "tasks.state.app-home-briefing-loading",
