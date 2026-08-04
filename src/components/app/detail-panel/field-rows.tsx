@@ -19,9 +19,8 @@ import { COLUMN_COLORS } from "@/lib/board-colors";
 import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
-import { useColumnConfig, useWorkspaceMembers } from "@/lib/domain-context";
+import { useColumnConfig, useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
 import {
   describeAnchorFromToday,
   relateDueToAnchor,

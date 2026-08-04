@@ -40,51 +40,12 @@ export function PanelShell({
   const dragging = useRef(false);
   const startX = useRef(0);
   const startW = useRef(DEFAULT_WIDTH);
-  const panelRef = useRef<HTMLElement>(null);
 
   const persistWidth = useCallback((value: number) => {
     try {
       localStorage.setItem(LS_KEY, String(value));
     } catch {
       // ignore storage errors
-    }
-  }, []);
-
-  // aria-modal is a promise, not a behaviour: focus must actually move into
-  // the dialog on open and stay there. Focus lands on the panel container
-  // (not a control — j/k task navigation keeps open=true, so this runs once
-  // per opening, never while the reader is mid-panel); use-task-panel owns
-  // the exact return to the opening card on close.
-  useEffect(() => {
-    if (!open) return;
-    const frame = window.requestAnimationFrame(() => {
-      const panel = panelRef.current;
-      if (panel && !panel.contains(document.activeElement)) {
-        panel.focus({ preventScroll: true });
-      }
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [open]);
-
-  // Keep Tab inside the dialog. The dim overlay already owns the pointer;
-  // without this, keyboard users tab out into dimmed controls behind it.
-  const trapTab = useCallback((event: React.KeyboardEvent) => {
-    if (event.key !== "Tab" || !panelRef.current) return;
-    const focusable = [
-      ...panelRef.current.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
-      ),
-    ].filter((element) => element.offsetParent !== null);
-    if (focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-    if (event.shiftKey && (active === first || active === panelRef.current)) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
     }
   }, []);
 
@@ -233,7 +194,6 @@ export function PanelShell({
             role="dialog"
             aria-modal="true"
             aria-labelledby="task-panel-title"
-            ref={panelRef}
             tabIndex={-1}
             onKeyDown={trapTab}
             // A real entrance: the sheet travels in from the right edge and
