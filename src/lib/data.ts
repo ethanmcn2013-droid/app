@@ -296,7 +296,12 @@ export type Task = {
 export type PublicTask = Pick<
   Task,
   "id" | "title" | "lane" | "priority" | "due" | "tags" | "boardColumnKey"
->;
+> & {
+  /** Derived at projection time from dueAt vs the serving instant; lets a
+   *   shared board keep the one signal that matters most ("this is late")
+   *   without exposing the timestamp itself. */
+  overdue?: boolean;
+};
 
 /**
  * Natural-language recurrence spec. Three patterns only, no RRULE,

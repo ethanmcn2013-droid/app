@@ -69,7 +69,7 @@ test("desktop opens on artifact history and enters detail only by intent", async
 
   await expect(capture).toBeFocused();
   await expect(
-    page.getByRole("heading", { name: "Previously sent" }),
+    page.getByRole("heading", { name: "Sent to Tasks" }),
   ).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Private note body" }),
@@ -169,7 +169,7 @@ test("Tasks destination appears only after exact wording enters approval", async
 
   await expect(page.getByLabel("Tasks destination")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Make this work" }),
+    page.getByRole("heading", { name: "Send to Tasks" }),
   ).toBeVisible();
   await expect(
     page.getByText("Your note stays here.", { exact: true }),
@@ -227,7 +227,7 @@ test("all six approved delight moments are integrated into the real Notes flow",
 
   const capture = page.getByRole("textbox", { name: "Capture" });
   await capture.fill("Confirm the handwritten place cards before Friday.");
-  await capture.press("Enter");
+  await capture.press("Control+Enter");
   await expect(page.locator("[data-note-row]").first()).toContainText(
     "Confirm the handwritten place cards",
   );
@@ -259,7 +259,7 @@ test("all six approved delight moments are integrated into the real Notes flow",
   ).toContainText("Approved source");
 
   await page
-    .getByRole("button", { name: "Send approved extract to Tasks" })
+    .getByRole("button", { name: "Send to Tasks", exact: true })
     .click();
   await expect(
     page.locator('[data-delight-moment="approved-to-tasks"]'),
@@ -306,7 +306,7 @@ test("lost Tasks receipts retry immutably without replaying handoff travel", asy
   });
   await page.getByRole("button", { name: "Use selection" }).click();
   await page
-    .getByRole("button", { name: "Send approved extract to Tasks" })
+    .getByRole("button", { name: "Send to Tasks", exact: true })
     .click();
 
   const retry = page.getByRole("button", { name: "Retry approved send" });
@@ -341,7 +341,7 @@ test("capture, conflict, and archive recovery use one attached decision grammar"
   await capture.fill("");
 
   const activeBefore = await page.locator("[data-note-row]").count();
-  await page.getByRole("button", { name: "Restore private note" }).first().click();
+  await page.getByRole("button", { name: "Restore to notebook" }).first().click();
   await expect(page.locator("[data-note-row]")).toHaveCount(activeBefore + 1);
   await expect(
     page
