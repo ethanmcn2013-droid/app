@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { opLog } from "@/server/operational-log";
 
 /**
  * CSP violation collector.
@@ -23,14 +24,24 @@ type CspReportBody = {
   "blocked-uri"?: string;
 };
 
+/**
+ * One line per violation, through the operational-log redactor (E08.08).
+ *
+ * `document-uri` is browser-supplied and is the full URL of the page that
+ * violated the policy. On a shared workspace that is `/share/<token>` or
+ * `/s/<token>` — a bearer credential. Logging it verbatim wrote a live share
+ * token into the function logs, which are retained by the platform and read by
+ * whoever is debugging. Sentry already redacted exactly this shape; the
+ * console path did not, so the same string was safe when thrown and unsafe
+ * when logged. `opLog` closes that gap by applying the same rule.
+ */
 function logViolation(r: CspReportBody | undefined): void {
   if (!r) return;
-  const directive =
-    r["effective-directive"] || r["violated-directive"] || "?";
-  console.warn(
-    `[csp-report] blocked=${r["blocked-uri"] ?? "?"} ` +
-      `directive=${directive} doc=${r["document-uri"] ?? "?"}`,
-  );
+  opLog("warn", "csp-report", "policy violation reported", {
+    blocked: r["blocked-uri"] ?? "?",
+    directive: r["effective-directive"] || r["violated-directive"] || "?",
+    doc: r["document-uri"] ?? "?",
+  });
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
