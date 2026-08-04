@@ -65,7 +65,7 @@ function SectionLabel({
         <span
           aria-hidden
           className="inline-block h-[7px] w-[7px] rounded-full"
-          style={{ background: "var(--brand, #4f46e5)" }}
+          style={{ background: "var(--brand)" }}
         />
       ) : null}
       {children}
@@ -216,7 +216,7 @@ export function HomeNewUser() {
         <span
           aria-hidden
           className="mb-5 inline-block h-[9px] w-[9px] rounded-full"
-          style={{ background: "var(--brand, #4f46e5)" }}
+          style={{ background: "var(--brand)" }}
         />
         <h1 className="text-[24px] font-medium tracking-tight text-ink md:text-[28px]">
           Welcome to Signal Studio.

@@ -70,7 +70,7 @@ export default function HomeError({
           onClick={reset}
           style={{
             background: "var(--color-accent, var(--accent))",
-            color: "var(--paper, #ffffff)",
+            color: "var(--paper)",
             border: "none",
             borderRadius: "8px",
             padding: "0.6rem 1.1rem",
