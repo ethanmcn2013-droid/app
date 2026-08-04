@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-tasks-timeline",
+  "source": "tasks/src/app/app/tasks/timeline/page.tsx",
+  "materialityHash": "f20fd2dc1b67ab0e",
+  "reviewedAt": "2026-08-04",
+  "reviewer": "claude-fable-5 (T·126 cycle)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-8f5e9b1f0298cadf12e935f1-ea39fb9ecbf1f7c5.json",
+    "attestationSha256": "11863ddbc3ddda71444592d6a60a7c3dbdcdfdee56d21d0601fa172ab904c5f4",
+    "runId": "tasks-playwright-8f5e9b1f0298cadf12e935f1",
+    "canonicalEvidenceSha256": "8f5e9b1f0298cadf12e935f1d9031696b2b03dd36f02d262eaf5a5f8791a0e32",
+    "rawArtifactSha256": "ea39fb9ecbf1f7c54bc38446434715d2052a95919555b5fee0c0405e5f514cf5",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
+  "decision": "approve"
+}

@@ -4,6 +4,8 @@ import {
   addDays,
   differenceInDays,
   formatSchedule,
+  formatScheduleRelative,
+  isTaskDueToday,
   isTaskOverdue,
   moveSchedule,
   resizeScheduleEnd,
@@ -36,6 +38,43 @@ test("schedule kinds remain explicit", () => {
 test("range resize cannot create an inverted range", () => {
   const range: TaskSchedule = { kind: "range", startOn: "2026-07-20", dueOn: "2026-07-24" };
   assert.deepEqual(resizeScheduleEnd(range, -20), { kind: "range", startOn: "2026-07-20", dueOn: "2026-07-20" });
+});
+
+test("card labels read relative to today inside a week, absolute beyond it", () => {
+  const today = "2026-07-28" as const;
+  const due = (dueOn: string): TaskSchedule => ({ kind: "due", dueOn: dueOn as never });
+
+  assert.equal(formatScheduleRelative(due("2026-07-28"), today), "Due today");
+  assert.equal(formatScheduleRelative(due("2026-07-29"), today), "Due tomorrow");
+  assert.equal(formatScheduleRelative(due("2026-07-27"), today), "1 day overdue");
+  assert.equal(formatScheduleRelative(due("2026-07-31"), today), "Due in 3 days");
+  assert.equal(formatScheduleRelative(due("2026-07-25"), today), "3 days overdue");
+
+  // Past a week either way the exact date carries more than the day count.
+  assert.equal(formatScheduleRelative(due("2026-08-14"), today), "Due 14 Aug");
+  assert.equal(formatScheduleRelative(due("2026-07-01"), today), "Due 1 Jul");
+
+  assert.equal(formatScheduleRelative({ kind: "unscheduled" }, today), "Unscheduled");
+  assert.equal(
+    formatScheduleRelative({ kind: "milestone", on: "2026-07-28" }, today),
+    "Milestone · today",
+  );
+  // A range that has already ended keeps both of its dates.
+  assert.equal(
+    formatScheduleRelative({ kind: "range", startOn: "2026-07-20", dueOn: "2026-07-24" }, today),
+    formatSchedule({ kind: "range", startOn: "2026-07-20", dueOn: "2026-07-24" }),
+  );
+});
+
+test("due today is distinct from overdue and yields to completion", () => {
+  const base = { ...LAB_TASKS[0], id: "test-due-today" };
+  const dueToday = { ...base, completed: false, schedule: { kind: "due", dueOn: "2026-07-28" } as const };
+
+  assert.equal(isTaskDueToday(dueToday, "2026-07-28"), true);
+  assert.equal(isTaskOverdue(dueToday, "2026-07-28"), false);
+  assert.equal(isTaskDueToday({ ...dueToday, completed: true }, "2026-07-28"), false);
+  assert.equal(isTaskDueToday(dueToday, "2026-07-29"), false);
+  assert.equal(isTaskOverdue(dueToday, "2026-07-29"), true);
 });
 
 test("completed historical work is not labelled overdue", () => {

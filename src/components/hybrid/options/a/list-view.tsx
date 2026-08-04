@@ -1,21 +1,25 @@
 "use client";
 
 import { useMemo, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
+import { personById } from "../../fixtures";
 import {
   PRIORITY_LABELS,
-  STATUS_LABELS,
   TASK_PRIORITIES,
-  TASK_STATUSES,
   type LabTask,
+  type TaskPriority,
   type TaskStatus,
 } from "../../types";
+import type { BoardColumn } from "@/lib/board-columns";
+import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
 import {
   AvatarStack,
   PriorityMark,
   ScheduleText,
+  TaskCompletion,
   TaskOpenButton,
   TaskSelection,
   TaskSignals,
@@ -60,8 +64,17 @@ export function ListFieldsPanel({
   onClose: () => void;
 }) {
   const store = useLabStore();
+  const reduceMotion = useReducedMotion();
   return (
-    <section aria-label="List fields" aria-modal="false" className={styles.fieldsPanel} role="dialog">
+    <motion.section
+      animate={{ opacity: 1, transform: "scale(1)" }}
+      aria-label="List fields"
+      aria-modal="false"
+      className={styles.fieldsPanel}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
+      role="dialog"
+      transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+    >
       <header>
         <div><strong>List fields</strong><span>Session-only column layout</span></div>
         <button aria-label="Close fields" onClick={onClose} type="button"><Icon name="close" size={15} /></button>
@@ -103,26 +116,43 @@ export function ListFieldsPanel({
         <button disabled={store.readOnly} onClick={() => setColumns(INITIAL_LIST_COLUMNS.map((column) => ({ ...column })))} type="button">Reset fields</button>
         <span>Drag headers or use these controls.</span>
       </footer>
-    </section>
+    </motion.section>
   );
 }
 
-function groupsFor(tasks: LabTask[], group: QuietGroup): ListGroup[] {
+function groupsFor(tasks: LabTask[], group: QuietGroup, boardColumns: readonly BoardColumn[]): ListGroup[] {
   if (group === "priority") {
     return TASK_PRIORITIES.map((priority) => ({
       key: priority,
       label: `${PRIORITY_LABELS[priority]} priority`,
       tasks: tasks.filter((task) => task.priority === priority),
-      addStatus: "queued" as TaskStatus,
+      addStatus: "todo" as TaskStatus,
     }));
   }
-  if (group === "none") return [{ key: "all", label: "All tasks", tasks, addStatus: "queued" }];
-  return TASK_STATUSES.map((status) => ({
-    key: status,
-    label: STATUS_LABELS[status],
-    tasks: tasks.filter((task) => task.status === status),
-    addStatus: status,
+  if (group === "none") return [{ key: "all", label: "All tasks", tasks, addStatus: "todo" }];
+  return boardColumns.map((column) => ({
+    key: column.key,
+    label: column.name,
+    tasks: tasks.filter((task) => task.status === column.key),
+    addStatus: column.key,
   }));
+}
+
+/**
+ * Owner cell: the avatar stack plus the first assignee's name, so a row
+ * reads "who" without opening the task. The overflow count reuses
+ * AvatarStack's own "+N" convention rather than list-app.tsx's "and N
+ * more" phrasing off its first two names — one overflow idiom per option.
+ */
+function AssigneeCell({ task }: { task: LabTask }) {
+  const people = task.assigneeIds.map(personById).filter(Boolean);
+  const [first, ...rest] = people;
+  return (
+    <span className={styles.assigneeCell}>
+      <AvatarStack limit={3} task={task} />
+      {first ? <span className={styles.assigneeNames}>{first.name}{rest.length ? ` +${rest.length}` : ""}</span> : null}
+    </span>
+  );
 }
 
 export function ListView({
@@ -137,13 +167,14 @@ export function ListView({
   group: QuietGroup;
 }) {
   const store = useLabStore();
+  const boardColumns = useBoardColumns();
   const context = useTaskContextMenu();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [draggedColumn, setDraggedColumn] = useState<ListColumnId | null>(null);
   const visibleColumns = columns.filter((column) => column.visible);
   const orderedIds = tasks.map((task) => task.id);
-  const groups = useMemo(() => groupsFor(tasks, group), [group, tasks]);
+  const groups = useMemo(() => groupsFor(tasks, group, boardColumns), [boardColumns, group, tasks]);
   const allSelected = orderedIds.length > 0 && orderedIds.every((id) => store.selectedIds.includes(id));
 
   const toggleGroup = (key: string) => {
@@ -219,16 +250,27 @@ export function ListView({
   const renderCell = (task: LabTask, column: ListColumn) => {
     if (column.id === "status") {
       return (
-        <select aria-label={`Status for ${task.title}`} disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value as TaskStatus)} value={task.status}>
-          {TASK_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
+        <select aria-label={`Status for ${task.title}`} disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value)} value={task.status}>
+          {boardColumns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
         </select>
       );
     }
-    if (column.id === "assignees") return <AvatarStack limit={3} task={task} />;
+    if (column.id === "assignees") return <AssigneeCell task={task} />;
     if (column.id === "schedule") return <ScheduleText task={task} />;
-    if (column.id === "priority") return <PriorityMark task={task} withLabel />;
-    if (column.id === "estimate") return <span className={styles.monoValue}>{task.estimate ?? "Not set"}</span>;
-    if (column.id === "progress") return <span className={styles.monoValue}>{task.subtasks.length ? `${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}` : "None"}</span>;
+    if (column.id === "priority") {
+      return (
+        <select
+          aria-label={`Priority for ${task.title}`}
+          disabled={store.readOnly}
+          onChange={(event) => store.updatePriority(task.id, event.target.value as TaskPriority)}
+          value={task.priority}
+        >
+          {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{PRIORITY_LABELS[priority]}</option>)}
+        </select>
+      );
+    }
+    if (column.id === "estimate") return task.estimate ? <span className={styles.monoValue}>{task.estimate}</span> : <span aria-label="No estimate" className={styles.absentValue}>—</span>;
+    if (column.id === "progress") return task.subtasks.length ? <span className={styles.monoValue}>{`${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}`}</span> : <span aria-label="No subtasks" className={styles.absentValue}>—</span>;
     if (column.id === "activity") return <TaskSignals task={task} />;
     return null;
   };
@@ -237,7 +279,7 @@ export function ListView({
     <div className={styles.listSurface}>
       <div className={styles.tableScroll}>
         <table className={styles.taskTable}>
-          <caption>Launch workspace tasks. Columns can be resized, reordered, and hidden for this session.</caption>
+          <caption>Launch project tasks. Columns can be resized, reordered, and hidden for this session.</caption>
           <colgroup>{visibleColumns.map((column) => <col key={column.id} style={{ width: column.width }} />)}</colgroup>
           <thead>
             <tr>
@@ -295,12 +337,31 @@ export function ListView({
             const complete = taskGroup.tasks.filter((task) => task.completed).length;
             return (
               <tbody data-group={taskGroup.key} key={taskGroup.key}>
-                <tr className={styles.groupRow}>
+                {/*
+                  The group cell spans every column, so the band runs the full
+                  row. It used to carry display:flex directly, which voids a
+                  table cell's colSpan and painted the band only as wide as
+                  the title column — every section header stopped partway
+                  across the table with a hole to its right. The flex lives
+                  on an inner div now; the cell stays a real table cell.
+                  Status groups carry the board's lane tone (2px leading rule
+                  + 6% wash + pip) so a lane means one colour in every view.
+                */}
+                <tr
+                  className={styles.groupRow}
+                  data-lane-tone={group === "status" && taskGroup.key !== "todo" ? taskGroup.key : undefined}
+                >
                   <th colSpan={visibleColumns.length} scope="rowgroup">
-                    <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button"><Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />{taskGroup.label}</button>
-                    <span>{taskGroup.tasks.length} tasks</span>
-                    <span>{complete}/{taskGroup.tasks.length || 0} complete</span>
-                    <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
+                    <div className={styles.groupBand}>
+                      <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
+                        <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
+                        {group === "status" ? <span className={styles.statusPip} data-status={taskGroup.key} /> : null}
+                        {taskGroup.label}
+                      </button>
+                      <span>{taskGroup.tasks.length} tasks</span>
+                      <span>{complete}/{taskGroup.tasks.length || 0} complete</span>
+                      <button disabled={store.readOnly} onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>
+                    </div>
                   </th>
                 </tr>
                 {!isCollapsed && taskGroup.tasks.length === 0 ? (
@@ -315,6 +376,9 @@ export function ListView({
                       className={styles.taskRow}
                       data-active={store.activeId === task.id || undefined}
                       data-completed={task.completed || undefined}
+                      data-inspected={store.inspectedId === task.id || undefined}
+                      data-recently-placed={store.recentlyPlacedId === task.id || undefined}
+                      data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
                       data-task-id={task.id}
                       key={task.id}
                       onContextMenu={(event) => context.openMenu(task.id, event)}
@@ -330,8 +394,12 @@ export function ListView({
                           <div className={styles.titleCell}>
                             {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : <span className={styles.expandSpacer} />}
                             <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                            <TaskCompletion task={task} />
                             <PriorityMark task={task} />
-                            {store.editing?.taskId === task.id && store.editing.field === "title" ? <InlineTaskTitle className={styles.listTitleEdit} task={task} /> : <TaskOpenButton className={styles.listTitle} task={task}>{task.title}</TaskOpenButton>}
+                            <div className={styles.titleStack}>
+                              {store.editing?.taskId === task.id && store.editing.field === "title" ? <InlineTaskTitle className={styles.listTitleEdit} task={task} /> : <TaskOpenButton className={styles.listTitle} task={task}>{task.title}</TaskOpenButton>}
+                              {task.description ? <span className={styles.listDescription}>{task.description}</span> : null}
+                            </div>
                           </div>
                         </th>
                       ) : <td data-column={column.id} key={column.id} style={{ minWidth: column.minWidth, width: column.width }}>{renderCell(task, column)}</td>)}
@@ -339,9 +407,17 @@ export function ListView({
                     isExpanded ? (
                       <tr className={styles.subtaskRows} key={`${task.id}-subtasks`}>
                         <td colSpan={visibleColumns.length}>
-                          <ul aria-label={`Subtasks for ${task.title}`}>
-                            {task.subtasks.map((subtask) => <li key={subtask.id}><Icon name={subtask.completed ? "check" : "chevron-right"} size={12} /><span data-completed={subtask.completed || undefined}>{subtask.title}</span></li>)}
-                          </ul>
+                          {task.subtasks.some((subtask) => subtask.title.trim()) ? (
+                            <ul aria-label={`Subtasks for ${task.title}`}>
+                              {task.subtasks.filter((subtask) => subtask.title.trim()).map((subtask) => <li key={subtask.id}><Icon name={subtask.completed ? "check" : "chevron-right"} size={12} /><span data-completed={subtask.completed || undefined}>{subtask.title}</span></li>)}
+                            </ul>
+                          ) : (
+                            /* The top-level fetch hydrates counts, not titles;
+                               blank rows read as breakage, a ratio reads true. */
+                            <p aria-label={`Subtasks for ${task.title}`}>
+                              {task.subtasks.filter((subtask) => subtask.completed).length} of {task.subtasks.length} subtasks complete. Open the task to see them.
+                            </p>
+                          )}
                         </td>
                       </tr>
                     ) : null,

@@ -12,20 +12,23 @@ import type { ActionItem } from "@/components/primitives/context-actions";
 import type { Task } from "@/lib/data";
 import { LANES, LANE_ORDER, PRIORITY_LABEL } from "@/lib/data";
 import type { TasksDispatchers } from "@/lib/tasks/tasks-context";
-import { setTaskMilestoneAction } from "@/server/actions/tasks";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 
 export type TaskDetailActionDeps = {
   dispatchers: TasksDispatchers;
   isFocus: boolean;
   onOpenFocus: () => void;
   onClosePanel: () => void;
+  /** Threaded from the caller's useColumnConfig() (T·122). */
+  columnConfig: ColumnConfig | null;
 };
 
 export function buildTaskDetailActions(
   task: Task,
   deps: TaskDetailActionDeps,
 ): ActionItem[] {
-  const { dispatchers, isFocus, onOpenFocus, onClosePanel } = deps;
+  const { dispatchers, isFocus, onOpenFocus, onClosePanel, columnConfig } = deps;
 
   // ── open ──────────────────────────────────────────────────────────────────
   const displayId = task.id.replace(/^t-/, "T-").toUpperCase();
@@ -85,7 +88,7 @@ export function buildTaskDetailActions(
   const workflowItems: ActionItem[] = [
     {
       id: "toggle-complete",
-      label: task.lane === "done" ? "Reopen" : "Mark done",
+      label: isTaskDone(task, columnConfig) ? "Reopen" : "Mark done",
       group: "workflow" as const,
       onSelect: () => dispatchers.toggleComplete(task.id),
     },
@@ -132,7 +135,9 @@ export function buildTaskDetailActions(
       label: task.isMilestone ? "Remove milestone" : "Mark as milestone",
       group: "organisation" as const,
       onSelect: () => {
-        void setTaskMilestoneAction(task.id, !task.isMilestone);
+        // Optimistic via the dedicated dispatcher — the fire-and-forget
+        // server action gave no visual feedback until the next refetch.
+        dispatchers.setMilestone(task.id, !task.isMilestone);
       },
     },
     {

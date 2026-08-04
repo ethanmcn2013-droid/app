@@ -16,7 +16,7 @@ import { analyticsUsers } from "../db/signal-analytics-schema";
 import type { Cadence } from "../../lib/db/signal-prefs-schema";
 import { dataSource } from "../../lib/data/source";
 import { buildBriefing } from "../../lib/briefing/build";
-import type { Briefing } from "../../lib/briefing/types";
+import type { Briefing, TaskSignal } from "../../lib/briefing/types";
 import type { BriefingSource } from "../../lib/briefing/source";
 import type { TriggerId } from "../../lib/triggers/types";
 import { bumpRotations } from "./signal-rotation";
@@ -44,6 +44,7 @@ import {
   dateOnlyToTimestamp,
 } from "../../lib/briefing/calendar-time";
 import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
 export type BriefingForUserResult =
   | {
@@ -51,21 +52,61 @@ export type BriefingForUserResult =
       briefing: Briefing;
       authorizedScope: AuthorizedSignalScope;
       catalog: PlanningCatalog;
+      /**
+       * The authorization-scoped signals the engine read — the exact
+       * rows buildBriefing saw, captured from the same single source
+       * read. Home derives its Coming up / Needs review slices from
+       * these so there is one read, one scope check, one ranking
+       * engine across every briefing consumer.
+       */
+      signals: readonly TaskSignal[];
     }
   | { kind: "no-workspace" };
 
 /**
- * Fixed synthetic clock for deterministic demo/review screenshots and audits.
- * 07:42 UTC is 08:42 in Europe/London on 15 July 2026.
+ * Capture decorator: hands the engine an identical source while keeping
+ * the rows it read. No second read, no scope divergence.
  */
-export const DEMO_BRIEFING_NOW = Date.UTC(2026, 6, 15, 7, 42);
+function captureSignals(inner: BriefingSource): {
+  source: BriefingSource;
+  taken: TaskSignal[];
+} {
+  const taken: TaskSignal[] = [];
+  return {
+    taken,
+    source: {
+      getSignalsForUser: async (context) => {
+        const signals = await inner.getSignalsForUser(context);
+        taken.length = 0;
+        taken.push(...signals);
+        return signals;
+      },
+    },
+  };
+}
+
+/**
+ * Fixed synthetic clock for deterministic demo/review screenshots and audits.
+ * Derived from the suite's pinned review calendar frame so Signal, Tasks, and
+ * Timeline narrate the same "today" in the shared review story.
+ */
+export const DEMO_BRIEFING_NOW = Date.parse(
+  PINNED_REVIEW_CALENDAR_FRAME.nowIso,
+);
 
 export async function buildBriefingForUser(opts: {
   clerkId: string;
   cadence: Cadence;
   scope?: SignalScope;
+  /**
+   * When false, the build is a pure read: surfaced-item ages and
+   * trigger rotations are not advanced. Home passes false — it is a
+   * glance; the Full Briefing remains the read of record.
+   */
+  recordReadState?: boolean;
 }): Promise<BriefingForUserResult> {
   const { clerkId } = opts;
+  const recordReadState = opts.recordReadState ?? true;
 
   // Demo/Review: build a real briefing from the shared suite fixture through
   // the pure buildBriefing engine. No DB touch.
@@ -173,8 +214,9 @@ export async function buildBriefingForUser(opts: {
           workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
           sourceLabel: `Tasks · ${REVIEW_SUITE_FIXTURE.workspace.name} · Mara & Finn`,
         });
+    const demoCapture = captureSignals(demoSource);
     const briefing = await buildBriefing(
-      demoSource,
+      demoCapture.source,
       { userId: clerkId || "demo-user", email: "" },
       DEMO_BRIEFING_NOW,
     );
@@ -190,6 +232,7 @@ export async function buildBriefingForUser(opts: {
       },
       authorizedScope,
       catalog,
+      signals: demoCapture.taken,
     };
   }
 
@@ -302,32 +345,35 @@ export async function buildBriefingForUser(opts: {
     getSurfacedAges(clerkId, now),
   ]);
 
+  const capture = captureSignals(source);
   const briefing = await buildBriefing(
-    source,
+    capture.source,
     { userId: clerkId, email: "" },
     now,
     { suppressed, ages, timezone: authorizedScope.timezone },
   );
 
-  const fired = new Set<TriggerId>();
-  const allItems = [
-    ...briefing.needsAttention,
-    ...briefing.movingWell,
-    ...briefing.quietRisks,
-  ];
-  for (const item of allItems) {
-    fired.add(item.trigger as unknown as TriggerId);
-  }
-  await bumpRotations(clerkId, Array.from(fired));
+  if (recordReadState) {
+    const fired = new Set<TriggerId>();
+    const allItems = [
+      ...briefing.needsAttention,
+      ...briefing.movingWell,
+      ...briefing.quietRisks,
+    ];
+    for (const item of allItems) {
+      fired.add(item.trigger as unknown as TriggerId);
+    }
+    await bumpRotations(clerkId, Array.from(fired));
 
-  await recordSurfaced(
-    clerkId,
-    [...briefing.needsAttention, ...briefing.quietRisks].map((item) => ({
-      itemKey: item.id,
-      triggerId: item.trigger,
-    })),
-    now,
-  );
+    await recordSurfaced(
+      clerkId,
+      [...briefing.needsAttention, ...briefing.quietRisks].map((item) => ({
+        itemKey: item.id,
+        triggerId: item.trigger,
+      })),
+      now,
+    );
+  }
 
   return {
     kind: "ok",
@@ -338,5 +384,6 @@ export async function buildBriefingForUser(opts: {
     },
     authorizedScope,
     catalog,
+    signals: capture.taken,
   };
 }

@@ -7,6 +7,7 @@ import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { aiConfigured } from "@/server/ai";
 import { buildWeeklySnapshotFor } from "@/server/digest-narration";
 import { getOverdueTodayCount } from "@/server/actions/roll-forward";
@@ -14,6 +15,7 @@ import { db } from "@/server/db";
 import { users, workspaces } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import {
   DEMO_USER_ID,
   DEMO_WORKSPACE_ID,
@@ -24,14 +26,18 @@ import {
 import { USERS } from "@/lib/data";
 import { readPersonalityPrefs } from "@/server/personality-read";
 import { PERSONALITY_DEFAULTS } from "@/lib/personality-prefs";
+import { isTaskDone } from "@/lib/board-columns";
 
 export const dynamic = "force-dynamic";
 
 export default async function InboxPage() {
   if (isDemoMode()) {
     const tasks = demoTasks();
-    const completed = tasks.filter((task) => task.lane === "done");
-    const open = tasks.filter((task) => task.lane !== "done");
+    // Demo/review never touches the DB (access-mode.ts safety invariant), so
+    // there is no per-workspace column config to read here; null resolves to
+    // the default ["done"] doneKeys, identical to the literal check it replaces.
+    const completed = tasks.filter((task) => isTaskDone(task, null));
+    const open = tasks.filter((task) => !isTaskDone(task, null));
 
     return (
       <>
@@ -42,10 +48,15 @@ export default async function InboxPage() {
             forDate: new Date().toISOString().slice(0, 10),
             user: DEMO_USER_ID,
             completedYesterday: completed,
-            dueToday: open.filter((task) => task.due).slice(0, 2),
+            dueToday: open.filter(
+              (task) =>
+                task.dueAt &&
+                task.dueAt.toISOString().slice(0, 10) ===
+                  PINNED_REVIEW_CALENDAR_FRAME.today,
+            ),
             mentions: [],
           }}
-          nudges={generateNudges(tasks, DEMO_USER_ID)}
+          nudges={generateNudges(tasks, DEMO_USER_ID, null, new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso))}
           weeklySnapshot={{
             closedThisWeek: completed.length,
             closedTitles: completed.map((task) => task.title),
@@ -59,6 +70,13 @@ export default async function InboxPage() {
           overdueCount={0}
           userName={USERS[DEMO_USER_ID].name}
           personalityPrefs={PERSONALITY_DEFAULTS}
+          pinnedHour={Number(
+            new Intl.DateTimeFormat("en-GB", {
+              hour: "numeric",
+              hour12: false,
+              timeZone: PINNED_REVIEW_CALENDAR_FRAME.timeZone,
+            }).format(new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)),
+          )}
         />
       </>
     );
@@ -100,7 +118,7 @@ export default async function InboxPage() {
       // Personality prefs for greeting + tips gating.
       readPersonalityPrefs(me),
     ]);
-  const nudges = generateNudges(tasks, me);
+  const nudges = generateNudges(tasks, me, await readWorkspaceColumnConfig(ws));
   return (
     <>
       <AppPageHeader />

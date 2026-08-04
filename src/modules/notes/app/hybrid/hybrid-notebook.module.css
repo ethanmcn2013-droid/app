@@ -1,20 +1,39 @@
 .root {
-  --notes-workspace-max: 84rem;
+  --notes-workspace-max: 88rem;
 
   position: relative;
   display: grid;
   flex: 1 1 0;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  block-size: 100%;
+  place-items: stretch center;
+  block-size: calc(100dvh - 4rem);
   min-block-size: 0;
   inline-size: 100%;
   overflow: hidden;
-  background: var(--paper);
+  padding: clamp(0.75rem, 1.7vw, 1.5rem);
+  background:
+    radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--paper) 84%, transparent), transparent 52%),
+    var(--paper-deep);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: var(--leading-body);
   accent-color: var(--accent);
+}
+
+.notebookFrame {
+  position: relative;
+  display: grid;
+  grid-template-rows: 3.25rem auto auto minmax(0, 1fr);
+  block-size: 100%;
+  inline-size: min(100%, var(--notes-workspace-max));
+  min-block-size: 0;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: clamp(0.7rem, 1.2vw, 0.95rem);
+  background: var(--paper);
+  box-shadow:
+    0 1.35rem 3.4rem rgba(17, 17, 17, 0.1),
+    0 0.15rem 0.45rem rgba(17, 17, 17, 0.05);
 }
 
 .root *,
@@ -60,15 +79,12 @@
 }
 
 .notebookHeader {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 4;
   display: flex;
-  min-block-size: var(--nav-h);
+  min-block-size: 3.25rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding-inline: clamp(var(--space-4), 4vw, var(--space-7));
+  padding-inline: clamp(var(--space-4), 2.2vw, var(--space-6));
   border-block-end: 1px solid var(--hairline);
   background: var(--paper);
 }
@@ -83,9 +99,9 @@
 .wordmark {
   margin: 0;
   color: var(--ink);
-  font-size: var(--text-heading);
+  font-size: 1.125rem;
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-heading);
+  letter-spacing: -0.045em;
   line-height: var(--leading-heading);
 }
 
@@ -105,10 +121,15 @@
   text-transform: uppercase;
 }
 
+.headerAssurance {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  white-space: nowrap;
+}
+
 .capture {
-  inline-size: min(100%, var(--notes-workspace-max));
-  margin-inline: auto;
-  padding: var(--space-4) clamp(var(--space-4), 3vw, var(--space-7)) var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-3) clamp(var(--space-4), 2.2vw, var(--space-6)) var(--space-2);
   border-block-end: 1px solid var(--hairline);
   background: var(--paper);
 }
@@ -206,12 +227,12 @@
 .captureTextarea {
   display: block;
   inline-size: 100%;
-  min-block-size: 84px;
-  max-block-size: 40dvh;
+  min-block-size: 4rem;
+  max-block-size: 28dvh;
   resize: vertical;
-  padding: var(--space-3) var(--space-4);
-  background: var(--paper-soft);
-  font-size: var(--text-body-lg);
+  padding: var(--space-2) var(--space-3);
+  background: var(--paper);
+  font-size: var(--text-body);
   line-height: var(--leading-body-lg);
 }
 
@@ -234,6 +255,20 @@
   background: var(--paper);
 }
 
+/* Fields carry their own focus treatment: the accent border plus a
+   1px hugging ring reads as one crisp 2px indicator. The generic
+   offset outline on top of it looked like two competing rings. */
+.captureTextarea:focus-visible,
+.searchInput:focus-visible,
+.workspaceSelect:focus-visible,
+.extractionTextarea:focus-visible,
+.timelineFields input:focus-visible,
+.timelineFields select:focus-visible,
+.timelineFields textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 .capture[data-state="offline"] .captureTextarea,
 .capture[data-state="pending"] .captureTextarea {
   border-color: var(--status-flight);
@@ -250,7 +285,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3) var(--space-5);
-  margin-block-start: var(--space-2);
+  margin-block-start: var(--space-1);
 }
 
 .captureGuidance {
@@ -295,10 +330,10 @@
 .recoveryRow button,
 .conflictActions button {
   display: inline-flex;
-  min-block-size: var(--control-h-md);
+  min-block-size: 2.1rem;
   align-items: center;
   justify-content: center;
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
@@ -324,20 +359,10 @@
   color: var(--paper);
 }
 
-.primaryButton:hover:not(:disabled) {
-  border-color: var(--ink-soft);
-  background: var(--ink-soft);
-}
-
 .extractionPanel .primaryButton {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--paper);
-}
-
-.extractionPanel .primaryButton:hover:not(:disabled) {
-  border-color: var(--accent-hover);
-  background: var(--accent-hover);
 }
 
 .quietButton,
@@ -348,22 +373,10 @@
   color: var(--ink-soft);
 }
 
-.quietButton:hover:not(:disabled),
-.recoveryRow button:hover:not(:disabled),
-.conflictActions button:hover:not(:disabled) {
-  border-color: var(--ink-ghost);
-  background: var(--paper-soft);
-  color: var(--ink);
-}
-
 .dangerButton {
   border: 1px solid var(--status-blocked);
   background: var(--paper);
   color: var(--ink);
-}
-
-.dangerButton:hover:not(:disabled) {
-  background: var(--status-blocked-bg);
 }
 
 .primaryButton:active:not(:disabled),
@@ -436,19 +449,21 @@
 
 .searchBand {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  inline-size: min(100%, var(--notes-workspace-max));
+  /* Local search is subordinate to the notebook, not a second hero
+     band: the field holds a reading-column width instead of spanning
+     the full page. */
+  grid-template-columns: auto minmax(0, 34rem) 1fr;
+  inline-size: 100%;
   align-items: center;
   gap: var(--space-3);
-  margin-inline: auto;
-  padding: var(--space-3) clamp(var(--space-4), 3vw, var(--space-7));
+  padding: var(--space-2) clamp(var(--space-4), 2.2vw, var(--space-6));
   border-block-end: 1px solid var(--hairline);
   background: var(--paper);
 }
 
 .searchInput,
 .workspaceSelect {
-  min-block-size: var(--control-h-md);
+  min-block-size: 2.1rem;
   min-inline-size: 0;
   padding-inline: var(--space-3);
 }
@@ -487,9 +502,9 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(20rem, 0.56fr) minmax(0, 1fr);
+  grid-template-columns: minmax(22rem, 1.12fr) minmax(24rem, 0.88fr);
   block-size: 100%;
-  inline-size: min(100%, var(--notes-workspace-max));
+  inline-size: 100%;
   min-block-size: 0;
   margin-inline: auto;
   background: var(--paper);
@@ -506,6 +521,7 @@
 
 .streamPane {
   border-inline-end: 1px solid var(--hairline);
+  background: var(--paper-soft);
 }
 
 .streamHeader {
@@ -513,13 +529,14 @@
   inset-block-start: 0;
   z-index: 2;
   display: flex;
-  min-block-size: var(--nav-h);
+  min-block-size: 2.65rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-2) clamp(var(--space-4), 2vw, var(--space-5));
   border-block-end: 1px solid var(--hairline);
-  background: var(--paper);
+  background: color-mix(in srgb, var(--paper-soft) 94%, transparent);
+  backdrop-filter: blur(0.6rem);
 }
 
 .streamHeader h2,
@@ -554,8 +571,8 @@
 .noteButton {
   display: block;
   inline-size: 100%;
-  min-block-size: var(--table-row-h);
-  padding: var(--space-4) var(--space-5);
+  min-block-size: 4.4rem;
+  padding: var(--space-3) clamp(var(--space-4), 2vw, var(--space-5));
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -579,21 +596,11 @@
   margin-block-start: 0;
 }
 
-.noteButton:hover {
-  background: var(--paper-soft);
-}
-
 .noteSelected,
 .noteButton[data-selected="true"],
 .noteItem[data-selected="true"] .noteButton {
   background: var(--accent-tint);
   box-shadow: inset 2px 0 0 var(--accent);
-}
-
-.noteSelected:hover,
-.noteButton[data-selected="true"]:hover,
-.noteItem[data-selected="true"] .noteButton:hover {
-  background: var(--accent-tint);
 }
 
 .noteSelected .noteMeta,
@@ -622,8 +629,8 @@
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: var(--text-body);
-  font-weight: var(--weight-semibold);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-heading);
   line-height: var(--leading-heading);
   overflow-wrap: anywhere;
@@ -637,7 +644,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--ink-soft);
-  font-size: var(--text-body-sm);
+  font-size: var(--text-caption);
   line-height: var(--leading-body);
   overflow-wrap: anywhere;
   -webkit-box-orient: vertical;
@@ -719,7 +726,7 @@
 }
 
 .detailPane {
-  padding: var(--space-6) clamp(var(--space-5), 4vw, var(--space-8)) var(--space-8);
+  padding: clamp(var(--space-5), 3vw, var(--space-7)) clamp(var(--space-5), 3vw, var(--space-7)) var(--space-8);
   background: var(--paper);
 }
 
@@ -732,7 +739,7 @@
 .detailTitle {
   max-inline-size: 72ch;
   color: var(--ink);
-  font-size: var(--text-heading);
+  font-size: clamp(1.05rem, 1.55vw, 1.35rem);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-heading);
   line-height: var(--leading-heading);
@@ -750,7 +757,7 @@
 
 .detailTextarea {
   display: block;
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   block-size: auto;
   min-block-size: clamp(8rem, 18dvh, 11rem);
   max-block-size: min(50dvh, 28rem);
@@ -762,8 +769,9 @@
   border-radius: 0;
   background: var(--paper);
   color: var(--ink);
-  font-size: var(--text-body-lg);
-  line-height: var(--leading-body-lg);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.68;
   caret-color: var(--ink);
   overflow-y: auto;
   overflow-wrap: anywhere;
@@ -777,31 +785,105 @@
 }
 
 .detailTextarea:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  /* The reading surface is borderless; focus lands on the baseline rule
+     rather than boxing the whole page of writing. */
+  outline: none;
+  box-shadow: 0 1px 0 0 var(--accent);
 }
 
 .detailHelp {
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   margin-block-start: var(--space-2);
 }
 
 .detailToolbar {
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   justify-content: space-between;
   margin-block-start: var(--space-5);
 }
 
 .selectionStatus {
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   margin-block-start: var(--space-3);
 }
 
+.selectionChip,
+.approvalSelection {
+  display: grid;
+  inline-size: min(100%, 68ch);
+  gap: var(--space-1);
+  margin-block-start: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--hairline));
+  border-radius: var(--radius-md);
+  background: var(--accent-tint);
+}
+
+.selectionChip > span,
+.approvalSelection > span {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.selectionChip q,
+.approvalSelection q {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--text-body);
+  line-height: 1.55;
+  quotes: none;
+}
+
+.approvalSelection {
+  margin-block-end: var(--space-4);
+  margin-block-start: 0;
+}
+
 .extractionPanel {
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   margin-block-start: var(--space-8);
   padding-block-start: var(--space-5);
   border-block-start: 1px solid var(--hairline);
+}
+
+.approvalComposer {
+  min-inline-size: 0;
+}
+
+.handoffState {
+  display: grid;
+  grid-template-columns: auto minmax(4rem, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-3) var(--space-4);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.handoffState[data-state="complete"] {
+  color: var(--accent);
+}
+
+.handoffTrack {
+  position: relative;
+  display: block;
+  block-size: 2px;
+  overflow: hidden;
+  background: var(--accent-soft);
+}
+
+.handoffTrack > span {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
 }
 
 .privacyBoundary {
@@ -921,6 +1003,11 @@
   overflow-wrap: anywhere;
 }
 
+.receipt {
+  border-inline-start-color: var(--accent);
+  background: color-mix(in srgb, var(--accent-tint) 60%, var(--paper));
+}
+
 .errorReceipt {
   border-color: var(--status-blocked);
   background: var(--status-blocked-bg);
@@ -933,7 +1020,7 @@
 
 .conflictPanel,
 .discardPanel {
-  inline-size: min(100%, 72ch);
+  inline-size: min(100%, 68ch);
   margin-block-start: var(--space-6);
   padding: var(--space-4);
   border-block: 1px solid var(--status-flight);
@@ -1061,6 +1148,100 @@
   overflow-wrap: anywhere;
 }
 
+.artifactPanel {
+  min-block-size: 100%;
+  padding: clamp(var(--space-6), 4vw, var(--space-8));
+  background: var(--paper);
+}
+
+.artifactHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block-end: var(--space-6);
+}
+
+.artifactPanel h2 {
+  max-inline-size: 18ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.45rem, 2.3vw, 2rem);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+.artifactIntroduction {
+  max-inline-size: 42ch;
+  margin: var(--space-3) 0 var(--space-6);
+  color: var(--ink-soft);
+  /* Interface copy stays in the product sans; the serif reading voice is
+     reserved for the user's own words (note bodies and quoted excerpts). */
+  font-size: var(--text-body);
+  line-height: 1.65;
+}
+
+.artifactList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--hairline);
+  list-style: none;
+}
+
+.artifactList li {
+  display: grid;
+  min-inline-size: 0;
+  gap: var(--space-2);
+  padding-block: var(--space-4);
+  border-block-end: 1px solid var(--hairline-soft);
+}
+
+.artifactList blockquote,
+.artifactList p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.artifactList blockquote {
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: var(--text-body);
+  line-height: 1.55;
+}
+
+.artifactList p {
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+}
+
+.artifactList .quietButton {
+  inline-size: fit-content;
+  margin-block-start: var(--space-1);
+}
+
+.artifactEmpty {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-5);
+  border-block: 1px solid var(--hairline);
+  color: var(--ink-soft);
+}
+
+.artifactEmpty > * {
+  margin: 0;
+}
+
+.artifactFootnote {
+  max-inline-size: 42ch;
+  margin: var(--space-6) 0 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: 1.55;
+}
+
 .srOnly {
   position: absolute;
   inline-size: 1px;
@@ -1089,10 +1270,26 @@
     block-size: auto;
     min-block-size: 100%;
     overflow: visible;
+    padding: 0;
+    background: var(--paper);
+  }
+
+  .notebookFrame {
+    display: block;
+    block-size: auto;
+    min-block-size: 100%;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .notebookHeader {
     padding-inline: var(--space-4);
+  }
+
+  .headerAssurance {
+    display: none;
   }
 
   .capture {
@@ -1182,7 +1379,7 @@
     position: fixed;
     inset: 0;
     z-index: 60;
-    display: none;
+    display: block;
     inline-size: 100%;
     block-size: 100dvh;
     min-block-size: 100dvh;
@@ -1190,12 +1387,13 @@
     overscroll-behavior: contain;
     padding: 0 var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom));
     background: var(--paper);
+    pointer-events: none;
   }
 
   .detailPane[data-open="true"],
   .detailPane[data-state="open"],
   .detailPane[data-selected="true"] {
-    display: block;
+    pointer-events: auto;
   }
 
   .detailHeader {
@@ -1295,6 +1493,40 @@
 
   .detailMeta {
     text-align: start;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .primaryButton:hover:not(:disabled) {
+    border-color: var(--ink-soft);
+    background: var(--ink-soft);
+  }
+
+  .extractionPanel .primaryButton:hover:not(:disabled) {
+    border-color: var(--accent-hover);
+    background: var(--accent-hover);
+  }
+
+  .quietButton:hover:not(:disabled),
+  .recoveryRow button:hover:not(:disabled),
+  .conflictActions button:hover:not(:disabled) {
+    border-color: var(--ink-ghost);
+    background: var(--paper-soft);
+    color: var(--ink);
+  }
+
+  .dangerButton:hover:not(:disabled) {
+    background: var(--status-blocked-bg);
+  }
+
+  .noteButton:hover {
+    background: var(--paper);
+  }
+
+  .noteSelected:hover,
+  .noteButton[data-selected="true"]:hover,
+  .noteItem[data-selected="true"] .noteButton:hover {
+    background: var(--accent-tint);
   }
 }
 

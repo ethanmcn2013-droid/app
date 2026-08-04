@@ -16,9 +16,9 @@ import { RailIcon } from "@/components/studio-bar/rail-icons";
 import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
 import { useCurrentUser } from "@/lib/auth-context";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   TASKS_VIEW_PATHS,
-  type ProductId,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -33,13 +33,14 @@ const VIEWS = [
 ] as const;
 
 const MOBILE_PRODUCTS: ReadonlyArray<{
-  id: ProductId;
+  id: "home" | "notes" | "tasks" | "timeline";
   label: string;
+  path: string;
 }> = [
-  { id: "notes", label: "Notes" },
-  { id: "tasks", label: "Tasks" },
-  { id: "timeline", label: "Timeline" },
-  { id: "signal", label: "Signal" },
+  { id: "home", label: "Home", path: HOME_APP_PATH },
+  { id: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
+  { id: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
+  { id: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
 ];
 
 export function AppSidebar({
@@ -246,6 +247,9 @@ function MobileTabBar({ active }: { active: string }) {
     <nav
       ref={wrapRef}
       aria-label="Signal Studio products and Tasks views"
+      /* Marks this as the rail that owns the foot of the mobile viewport, so
+         floating chrome (the dev notice) can measure it and sit clear. */
+      data-signal-bottom-nav="tasks"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-white/95 shadow-[0_-16px_34px_-30px_rgba(20,21,26,0.36)] backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
@@ -267,7 +271,7 @@ function MobileTabBar({ active }: { active: string }) {
                 ref={(element) => registerMenuItem(element, index)}
                 aria-current={current ? "page" : undefined}
                 className={[
-                  "flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium outline-none transition-colors",
+                  "flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium outline-none transition-colors",
                   current
                     ? "bg-brand-soft text-brand"
                     : "text-ink-soft hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink",
@@ -295,7 +299,7 @@ function MobileTabBar({ active }: { active: string }) {
           <Link
             ref={(element) => registerMenuItem(element, 4)}
             aria-current={active === "/app/inbox" ? "page" : undefined}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             href={withSuiteContext("/app/inbox", suiteContext)}
             onClick={() => closeViews(false)}
             role="menuitem"
@@ -313,7 +317,7 @@ function MobileTabBar({ active }: { active: string }) {
           <Link
             ref={(element) => registerMenuItem(element, 5)}
             aria-current={active === "/app/my-tasks" ? "page" : undefined}
-            className="flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             href={withSuiteContext("/app/my-tasks", suiteContext)}
             onClick={() => closeViews(false)}
             role="menuitem"
@@ -330,7 +334,7 @@ function MobileTabBar({ active }: { active: string }) {
           </Link>
           <button
             ref={(element) => registerMenuItem(element, 6)}
-            className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
+            className="flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-[13px] font-medium text-ink-soft outline-none transition-colors hover:bg-bg-sunken focus-visible:bg-bg-sunken focus-visible:text-ink"
             onClick={() => {
               closeViews(false);
               triggerRef.current?.focus({ preventScroll: true });
@@ -354,16 +358,13 @@ function MobileTabBar({ active }: { active: string }) {
               <Link
                 aria-current={current ? "page" : undefined}
                 className={[
-                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[9.5px] font-semibold outline-none transition-colors",
+                  "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] font-semibold outline-none transition-colors",
                   current
                     ? "bg-brand-soft/60 text-brand"
                     : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",
                 ].join(" ")}
                 data-product={product.id}
-                href={withSuiteContext(
-                  PRODUCT_APP_PATHS[product.id],
-                  suiteContext,
-                )}
+                href={withSuiteContext(product.path, suiteContext)}
               >
                 <RailIcon name={product.id} size={17} />
                 <span className="max-w-full truncate">{product.label}</span>
@@ -378,7 +379,7 @@ function MobileTabBar({ active }: { active: string }) {
             aria-expanded={viewsOpen}
             aria-haspopup="menu"
             className={[
-              "flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[9.5px] font-semibold outline-none transition-colors",
+              "flex min-h-14 w-full min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-0.5 text-[10px] font-semibold outline-none transition-colors",
               isViewActive || viewsOpen
                 ? "bg-brand-soft/60 text-brand"
                 : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",

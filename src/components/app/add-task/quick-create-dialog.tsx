@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { LANES } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { Dialog } from "@/components/primitives/dialog";
@@ -23,6 +23,7 @@ export function QuickCreateDialog({
   const { addTask } = useTasksDispatch();
   const { toast } = useToast();
   const [title, setTitle] = useState("");
+  const reduceMotion = useReducedMotion();
   const todoLane = LANES.todo;
   const pack = useDomain();
 
@@ -69,7 +70,7 @@ export function QuickCreateDialog({
   }
 
   return (
-    <Dialog open={open} onClose={close} labelledBy="quick-create-input">
+    <Dialog open={open} onClose={close} labelledBy="quick-create-input" motionMode="instant">
       <div className="px-5 pt-4.5 pb-4">
         <input
           id="quick-create-input"
@@ -100,15 +101,11 @@ export function QuickCreateDialog({
           {(dateDetected || recurrenceDetected || tagsDetected) ? (
             <motion.div
               key="nlp-preview"
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{
-                opacity: 1,
-                height: "auto",
-                marginTop: 10,
-              }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+              animate={{ opacity: 1, transform: "translateY(0)" }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-1px)" }}
+              transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="mt-2.5 overflow-hidden"
             >
               <div className="flex items-center gap-2 rounded-lg border border-line-soft/80 bg-bg-sunken/40 px-2.5 py-1.5 text-[12px] text-ink-soft">
                 <svg
@@ -172,11 +169,11 @@ export function QuickCreateDialog({
           {recurrenceRefusal ? (
             <motion.div
               key="recurrence-refusal"
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: "auto", marginTop: 8 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="overflow-hidden"
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+              animate={{ opacity: 1, transform: "translateY(0)" }}
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-1px)" }}
+              transition={{ duration: reduceMotion ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+              className="mt-2 overflow-hidden"
             >
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-[1.4] text-amber-700">
                 Recurrence not supported, try &ldquo;every Tuesday&rdquo; or remove the timing language to skip recurrence.

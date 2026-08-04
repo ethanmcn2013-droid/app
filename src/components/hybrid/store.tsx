@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
+import { columnDisplayName, isDoneColumnKey, resolveBoardColumns } from "@/lib/board-columns";
 import { addDays, formatSchedule, moveSchedule, resizeScheduleEnd } from "./dates";
 import type {
   CalendarDate,
@@ -18,7 +20,11 @@ import type {
   TaskSchedule,
   TaskStatus,
 } from "./types";
-import { STATUS_LABELS } from "./types";
+
+// The lab store always runs the default five-column board (no workspace
+// config exists in the design lab), so announcements resolve names here.
+const LAB_COLUMNS = resolveBoardColumns(null);
+const labColumnName = (key: TaskStatus) => columnDisplayName(LAB_COLUMNS, key);
 
 type StoreState = {
   tasks: LabTask[];
@@ -27,6 +33,8 @@ type StoreState = {
   selectionAnchorId: string | null;
   activeId: string | null;
   inspectedId: string | null;
+  recentlyPlacedId: string | null;
+  recentlyUpdatedId: string | null;
   previewId: string | null;
   editing: { taskId: string; field: string } | null;
   drag: LabDragOperation;
@@ -56,7 +64,7 @@ type Action =
   | { type: "BULK_STATUS"; status: TaskStatus }
   | { type: "BULK_COMPLETE"; completed: boolean; nowIso: string }
   | { type: "BULK_DELETE" }
-  | { type: "ADD_TASK"; status: TaskStatus; schedule?: TaskSchedule }
+  | { type: "ADD_TASK"; status: TaskStatus; schedule?: TaskSchedule; title?: string }
   | { type: "DELETE_TASK"; id: string }
   | { type: "DUPLICATE_TASK"; id: string }
   | { type: "SAVE_VIEW"; key: string }
@@ -111,6 +119,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, action.label),
         tasks: state.tasks.map((item) => item.id === action.id ? { ...item, ...action.fields } : item),
+        recentlyUpdatedId: action.id,
         announcement: `${task.title}: ${action.label}`,
       };
     }
@@ -120,18 +129,19 @@ function reducer(state: StoreState, action: Action): StoreState {
       if (!moving) return state;
       const statusTasks = state.tasks.filter((task) => task.status === action.status && task.id !== action.id);
       const index = Math.max(0, Math.min(action.index ?? statusTasks.length, statusTasks.length));
-      statusTasks.splice(index, 0, { ...moving, status: action.status, completed: action.status === "done" });
+      statusTasks.splice(index, 0, { ...moving, status: action.status, completed: isDoneColumnKey(action.status, null) });
       const ranks = new Map(statusTasks.map((task, rank) => [task.id, rank]));
       return {
         ...state,
-        ...snapshot(state, `Move to ${STATUS_LABELS[action.status]}`),
+        ...snapshot(state, `Move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => task.id === action.id
-          ? { ...task, status: action.status, completed: action.status === "done", order: index }
+          ? { ...task, status: action.status, completed: isDoneColumnKey(action.status, null), order: index }
           : task.status === action.status
             ? { ...task, order: ranks.get(task.id) ?? task.order }
             : task),
         activeId: action.id,
-        announcement: `${moving.title} moved to ${STATUS_LABELS[action.status]}, position ${index + 1}`,
+        recentlyUpdatedId: action.id,
+        announcement: `${moving.title} moved to ${labColumnName(action.status)}, position ${index + 1}`,
       };
     }
     case "MOVE_SCHEDULE": {
@@ -143,6 +153,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, "Move schedule"),
         tasks: state.tasks.map((item) => item.id === action.id ? { ...item, schedule } : item),
+        recentlyUpdatedId: action.id,
         announcement: `${task.title} moved to ${formatSchedule(schedule)}`,
       };
     }
@@ -155,6 +166,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, "Resize date range"),
         tasks: state.tasks.map((item) => item.id === action.id ? { ...item, schedule } : item),
+        recentlyUpdatedId: action.id,
         announcement: `${task.title} resized to ${formatSchedule(schedule)}`,
       };
     }
@@ -163,11 +175,11 @@ function reducer(state: StoreState, action: Action): StoreState {
       const selected = new Set(state.selectedIds);
       return {
         ...state,
-        ...snapshot(state, `Bulk move to ${STATUS_LABELS[action.status]}`),
+        ...snapshot(state, `Bulk move to ${labColumnName(action.status)}`),
         tasks: state.tasks.map((task) => selected.has(task.id)
-          ? { ...task, status: action.status, completed: action.status === "done" }
+          ? { ...task, status: action.status, completed: isDoneColumnKey(action.status, null) }
           : task),
-        announcement: `${selected.size} tasks moved to ${STATUS_LABELS[action.status]}`,
+        announcement: `${selected.size} tasks moved to ${labColumnName(action.status)}`,
       };
     }
     case "BULK_COMPLETE": {
@@ -179,7 +191,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         tasks: state.tasks.map((task) => selected.has(task.id) ? {
           ...task,
           completed: action.completed,
-          status: action.completed ? "done" : task.status === "done" ? "active" : task.status,
+          status: action.completed ? "done" : isDoneColumnKey(task.status, null) ? "doing" : task.status,
           completedAt: action.completed ? action.nowIso : undefined,
         } : task),
         announcement: `${selected.size} tasks ${action.completed ? "completed" : "reopened"}`,
@@ -202,9 +214,10 @@ function reducer(state: StoreState, action: Action): StoreState {
       if (state.readOnly) return { ...state, announcement: "Read-only prototype: changes are disabled" };
       const count = state.tasks.filter((task) => task.id.startsWith("session-")).length + 1;
       const id = `session-${count}`;
+      const titled = Boolean(action.title?.trim());
       const task: LabTask = {
         id,
-        title: "Untitled task",
+        title: action.title?.trim() || "Untitled task",
         description: "Session-only design-lab task.",
         status: action.status,
         priority: "normal",
@@ -225,9 +238,13 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...state,
         ...snapshot(state, "Add task"),
         tasks: [...state.tasks, task],
-        inspectedId: id,
+        // A titled add comes from the inline composer: the author is mid-flow
+        // on the board and the panel must not steal the keyboard. Untitled
+        // adds (list/calendar affordances) still open for naming.
+        inspectedId: titled ? state.inspectedId : id,
         activeId: id,
-        announcement: `Untitled task added to ${STATUS_LABELS[action.status]}`,
+        recentlyPlacedId: id,
+        announcement: `${task.title} added to ${labColumnName(action.status)}`,
       };
     }
     case "DELETE_TASK": {
@@ -253,6 +270,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...snapshot(state, "Duplicate task"),
         tasks: [...state.tasks, { ...structuredClone(task), id, title: `${task.title} (copy)`, order: state.tasks.length }],
         inspectedId: id,
+        recentlyPlacedId: id,
         announcement: `${task.title} duplicated in this session`,
       };
     }
@@ -282,6 +300,8 @@ function reducer(state: StoreState, action: Action): StoreState {
         selectionAnchorId: null,
         activeId: null,
         inspectedId: null,
+        recentlyPlacedId: null,
+        recentlyUpdatedId: null,
         previewId: null,
         editing: null,
         drag: null,
@@ -316,7 +336,7 @@ export type LabStore = StoreState & {
   bulkComplete: (completed?: boolean) => void;
   bulkDelete: () => void;
   toggleComplete: (id: string) => void;
-  addTask: (status: TaskStatus, schedule?: TaskSchedule) => void;
+  addTask: (status: TaskStatus, schedule?: TaskSchedule, title?: string) => void;
   deleteTask: (id: string) => void;
   duplicateTask: (id: string) => void;
   saveView: (key: string) => void;
@@ -348,6 +368,8 @@ export function LabStoreProvider({
     selectionAnchorId: null,
     activeId: null,
     inspectedId: initialTasks.some((task) => task.id === initialInspectedId) ? initialInspectedId : null,
+    recentlyPlacedId: null,
+    recentlyUpdatedId: null,
     previewId: null,
     editing: null,
     drag: null,
@@ -389,27 +411,33 @@ export function LabStoreProvider({
     moveScheduleByDays: (id, days) => dispatch({ type: "MOVE_SCHEDULE", id, days }),
     resizeScheduleByDays: (id, days) => dispatch({ type: "RESIZE_SCHEDULE", id, days }),
     bulkStatus: (status) => dispatch({ type: "BULK_STATUS", status }),
-    bulkComplete: (completed = true) => dispatch({
-      type: "BULK_COMPLETE",
-      completed,
-      nowIso: calendar.nowIso,
-    }),
+    bulkComplete: (completed = true) => {
+      if (completed && state.tasks.some((task) => state.selectedIds.includes(task.id) && !task.completed)) {
+        maybeFireFirstCompletion();
+      }
+      dispatch({
+        type: "BULK_COMPLETE",
+        completed,
+        nowIso: calendar.nowIso,
+      });
+    },
     bulkDelete: () => dispatch({ type: "BULK_DELETE" }),
     toggleComplete: (id) => {
       const task = state.tasks.find((item) => item.id === id);
       if (!task) return;
+      if (!task.completed) maybeFireFirstCompletion();
       dispatch({
         type: "UPDATE_TASK",
         id,
         fields: {
           completed: !task.completed,
-          status: !task.completed ? "done" : "active",
+          status: !task.completed ? "done" : "doing",
           completedAt: !task.completed ? calendar.nowIso : undefined,
         },
         label: !task.completed ? "Completed" : "Reopened",
       });
     },
-    addTask: (status, schedule) => dispatch({ type: "ADD_TASK", status, schedule }),
+    addTask: (status, schedule, title) => dispatch({ type: "ADD_TASK", status, schedule, title }),
     deleteTask: (id) => dispatch({ type: "DELETE_TASK", id }),
     duplicateTask: (id) => dispatch({ type: "DUPLICATE_TASK", id }),
     saveView: (key) => dispatch({ type: "SAVE_VIEW", key }),

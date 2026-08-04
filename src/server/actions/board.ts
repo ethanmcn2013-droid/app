@@ -26,7 +26,7 @@
  * matches every other action in this suite).
  */
 
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { meta, tasks } from "@/server/db/schema";
@@ -37,14 +37,25 @@ import {
   type ColumnColorKey,
 } from "@/lib/board-colors";
 import {
+  MAX_COLUMN_LIMIT,
   MAX_CUSTOM_COLUMNS,
   MAX_DESCRIPTION_LEN,
   MAX_NAME_LEN,
-  emptyConfig,
   parseColumnConfig,
   serializeColumnConfig,
   type ColumnConfig,
 } from "@/lib/board-config";
+// T·121: a workspace that has never stored a config operates on the default
+// five-column board (Waiting is a default custom column). Every mutation
+// therefore bases its first write on defaultColumnConfig(), never on the
+// bare four-lane emptyConfig() — otherwise the first rename on a fresh
+// board would persist a config without Waiting and the column would vanish.
+import {
+  defaultColumnConfig,
+  isDoneColumnKey,
+  isTaskDone,
+  resolveDoneKeys,
+} from "@/lib/board-columns";
 import { isDemoMode } from "@/lib/access-mode";
 import { DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
 
@@ -147,25 +158,6 @@ export async function getColumnConfig(
   return readColumnConfig(workspaceId);
 }
 
-/**
- * Backward-compat alias: returns the system-lane name overrides slice only.
- * Layout code imports this and passes columnNames into DomainProvider.
- * Kept so the layout doesn't need a bigger refactor; getColumnConfig is
- * the full read path.
- *
- * @deprecated Use getColumnConfig. This will be removed once board-app.tsx
- *   is updated to consume the full config.
- */
-export async function getColumnNames(
-  workspaceId: string,
-): Promise<Partial<Record<LaneId, string>> | null> {
-  if (isDemoMode()) return null;
-  const config = await readColumnConfig(workspaceId);
-  if (!config) return null;
-  const hasAny = LANE_ORDER.some((id) => typeof config.system[id] === "string");
-  return hasAny ? config.system : null;
-}
-
 // ─── Column mutations ─────────────────────────────────────────────────────────
 
 /**
@@ -184,7 +176,7 @@ export async function renameColumnAction(
   const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
 
-  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   if ((LANE_ORDER as string[]).includes(columnKey)) {
     // System lane rename.
@@ -219,7 +211,7 @@ export async function setColumnColorAction(
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
 
-  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   // Store the chosen colour explicitly, including "neutral", so an owner
   // can override a system lane's semantic default back to no tint. The
@@ -245,8 +237,63 @@ export async function setColumnDescriptionAction(
   const ws = await getActiveWorkspace();
   const clamped = description.trim().slice(0, MAX_DESCRIPTION_LEN);
 
-  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
   existing.descriptions = { ...existing.descriptions, [columnKey]: clamped };
+
+  await writeColumnConfig(ws, existing);
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set (or clear) a column's soft work-in-progress limit (T·121). Works for
+ * system lanes and custom columns alike. `null` (or 0) clears the limit.
+ * Advisory only: the board shows amber at and over the limit; nothing is
+ * ever blocked.
+ */
+export async function setColumnLimitAction(
+  columnKey: string,
+  limit: number | null,
+): Promise<{ ok: true }> {
+  if (limit !== null) {
+    if (!Number.isInteger(limit) || limit < 0 || limit > MAX_COLUMN_LIMIT) {
+      throw new Error("Column limit must be a whole number in range.");
+    }
+  }
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
+
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  const limits = { ...existing.limits };
+  if (limit === null || limit === 0) delete limits[columnKey];
+  else limits[columnKey] = limit;
+  existing.limits = limits;
+
+  await writeColumnConfig(ws, existing);
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Mark (or unmark) a column as done-meaning (T·122). Guard: the board
+ * must always keep at least one done column, or progress, briefs and
+ * exports would have nothing to count — unmarking the last one throws.
+ */
+export async function setColumnDoneAction(
+  columnKey: string,
+  isDone: boolean,
+): Promise<{ ok: true }> {
+  if (isDemoMode()) return { ok: true };
+  const ws = await getActiveWorkspace();
+
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
+  const current = new Set(resolveDoneKeys(existing));
+  if (isDone) current.add(columnKey);
+  else current.delete(columnKey);
+  if (current.size === 0) {
+    throw new Error("At least one column must count as done.");
+  }
+  existing.doneKeys = [...current];
 
   await writeColumnConfig(ws, existing);
   revalidatePath("/app", "layout");
@@ -299,7 +346,7 @@ export async function addColumnAction(
   }
   const ws = await getActiveWorkspace();
 
-  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   if (existing.custom.length >= MAX_CUSTOM_COLUMNS) {
     throw new Error(
@@ -357,7 +404,7 @@ export async function reorderColumnsAction(
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
-  const existing = (await readColumnConfig(ws)) ?? emptyConfig();
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   const allKeys = new Set([
     ...LANE_ORDER,
@@ -426,8 +473,10 @@ export async function deleteColumnAction(
   if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
 
   const ws = await getActiveWorkspace();
-  const existing = await readColumnConfig(ws);
-  if (!existing) throw new Error("No column config found.");
+  // A fresh workspace holds no stored config but still shows the default
+  // board, whose Waiting column is deletable like any custom column — so
+  // the delete bases on the default config rather than refusing.
+  const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   const col = existing.custom.find((c) => c.key === columnKey);
   if (!col) throw new Error(`Unknown custom column key: ${columnKey}`);
@@ -445,36 +494,55 @@ export async function deleteColumnAction(
     destination = destinationKey;
   }
 
+  // A task belongs to this column through its claim (boardColumnKey) OR,
+  // for a non-canonical key, through raw `lane` text — the pre-0024 shape
+  // of the Waiting column and any other stray value that ever leaked into
+  // the unconstrained lane column. Deleting the column must move both
+  // kinds, or the raw-lane rows would re-materialise as an orphan column.
+  // The tenant clause stays inline at every callsite below so the
+  // tenant-scope contract can verify it; only the column-membership OR is
+  // shared.
+  const memberOfDeletedColumn = or(
+    eq(tasks.boardColumnKey, columnKey),
+    and(isNull(tasks.boardColumnKey), eq(tasks.lane, columnKey as LaneId)),
+  );
+
   // Count tasks in this column before moving, for the toast copy.
   const [countRow] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(tasks)
-    .where(
-      and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)),
-    );
+    .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
   const tasksReassigned = Number(countRow?.count ?? 0);
 
   // Move the tasks. With an explicit destination the client picked where
   // they go: into a system lane (set `lane`, clear boardColumnKey) or
-  // another custom column (set boardColumnKey). Without one, fall back to
-  // clearing boardColumnKey so tasks return to their canonical system lane
-  // — no data loss either way.
+  // another custom column (set boardColumnKey, canonicalising any raw
+  // lane text to "doing"). Without one, fall back to clearing the claim
+  // so tasks return to their canonical system lane — no data loss either
+  // way, and no raw-text lane survives the delete.
+  const canonicalisedLane = sql`CASE WHEN ${tasks.lane} = ${columnKey} THEN 'doing' ELSE ${tasks.lane} END`;
   if (tasksReassigned > 0) {
     if (destination && (LANE_ORDER as string[]).includes(destination)) {
       await db
         .update(tasks)
         .set({ lane: destination as LaneId, boardColumnKey: null, idleDays: null })
-        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     } else if (destination) {
       await db
         .update(tasks)
-        .set({ boardColumnKey: destination })
-        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+        .set({
+          boardColumnKey: destination,
+          lane: canonicalisedLane as unknown as LaneId,
+        })
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     } else {
       await db
         .update(tasks)
-        .set({ boardColumnKey: null })
-        .where(and(eq(tasks.workspaceId, ws), eq(tasks.boardColumnKey, columnKey)));
+        .set({
+          boardColumnKey: null,
+          lane: canonicalisedLane as unknown as LaneId,
+        })
+        .where(and(eq(tasks.workspaceId, ws), memberOfDeletedColumn));
     }
   }
 
@@ -528,19 +596,41 @@ export async function moveTaskToColumnAction(
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   if (!row) return { ok: true }; // workspace guard, silent no-op for foreign ids
 
+  // Done transitions stamp completedAt whichever way the claim moves —
+  // a custom "Paid" column that counts as done completes the task the
+  // same as the canonical Done lane (T·122).
+  const config = await readColumnConfig(ws);
+  const wasDone = isTaskDone(row, config);
   if (isSystemLane) {
     const toLane = columnKey as LaneId;
     if (row.lane === toLane && !row.boardColumnKey) return { ok: true };
     await db
       .update(tasks)
-      .set({ lane: toLane, boardColumnKey: null, idleDays: null })
+      .set({
+        lane: toLane,
+        boardColumnKey: null,
+        idleDays: null,
+        ...(wasDone === isDoneColumnKey(toLane, config)
+          ? {}
+          : { completedAt: isDoneColumnKey(toLane, config) ? new Date() : null }),
+      })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   } else {
-    // Custom column: only update boardColumnKey; leave lane as canonical.
+    // Custom column: set the claim. Lane normally stays canonical; a row
+    // still holding raw lane text (pre-0024 "waiting") is canonicalised to
+    // "doing" on touch so stray text never outlives a deliberate move.
     if (row.boardColumnKey === columnKey) return { ok: true };
+    const laneIsCanonical = (LANE_ORDER as string[]).includes(row.lane);
+    const nowDone = isDoneColumnKey(columnKey, config);
     await db
       .update(tasks)
-      .set({ boardColumnKey: columnKey })
+      .set({
+        boardColumnKey: columnKey,
+        ...(laneIsCanonical ? {} : { lane: "doing" as LaneId }),
+        ...(wasDone === nowDone
+          ? {}
+          : { completedAt: nowDone ? new Date() : null }),
+      })
       .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
   }
 

@@ -10,18 +10,26 @@ import {
   revokeAudienceShareAction,
   rotateAudienceShareAction,
   unpublishAudiencePublicationAction,
+  updateAudiencePrimaryDateAction,
   updateAudiencePublicationItemAction,
   type AudienceActionState,
 } from "@/modules/timeline/server/actions/audience-timeline";
 import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
+import type { AudienceKind } from "@/modules/timeline/lib/audience-timeline";
+import {
+  audienceKindLabel,
+  calendarDateLabel,
+  publicationStateLabel,
+} from "@/modules/timeline/lib/format";
+import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
 
 const INITIAL: AudienceActionState = { status: "idle" };
 const fieldClass =
-  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2";
+  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
 const quietButton =
-  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 const primaryButton =
-  "inline-flex min-h-11 items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 
 type SourceNode = Readonly<{
   id: string;
@@ -30,13 +38,54 @@ type SourceNode = Readonly<{
   lane: string;
 }>;
 
+/**
+ * Two presses for actions that kill live links. The first press arms the
+ * button and names the consequence; the second submits. Arming lapses on its
+ * own, so an accidental click costs nothing and a modal never interrupts.
+ */
+function ArmedSubmitButton({
+  label,
+  armedLabel,
+  disabled,
+}: {
+  label: string;
+  armedLabel: string;
+  disabled?: boolean;
+}) {
+  const [armed, setArmed] = useState(false);
+  const disarmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      aria-live="polite"
+      className={quietButton}
+      style={armed ? { borderColor: "var(--x-timeline-alarm)", color: "var(--x-timeline-alarm)" } : undefined}
+      onClick={(event) => {
+        if (armed) return;
+        event.preventDefault();
+        setArmed(true);
+        if (disarmTimer.current) clearTimeout(disarmTimer.current);
+        disarmTimer.current = setTimeout(() => setArmed(false), 4000);
+      }}
+      onBlur={() => {
+        if (disarmTimer.current) clearTimeout(disarmTimer.current);
+        setArmed(false);
+      }}
+    >
+      {armed ? armedLabel : label}
+    </button>
+  );
+}
+
 function ActionNotice({ state }: { state: AudienceActionState }) {
   if (state.status === "idle") return null;
   return (
     <p
       role="status"
       className="mt-3 text-sm leading-6"
-      style={{ color: state.status === "error" ? "var(--status-waiting, var(--ink))" : "var(--ink-soft)" }}
+      style={{ color: state.status === "error" ? "var(--x-timeline-alarm)" : "var(--ink-soft)" }}
     >
       {state.message}
     </p>
@@ -70,8 +119,14 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
   }
 
   return (
-    <div className="mt-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-indigo-700">
+    <div
+      className="tl-rise-in mt-3 rounded-lg border border-line-soft bg-white p-3"
+      style={{ boxShadow: "inset 2px 0 0 var(--accent)" }}
+    >
+      <p
+        className="font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
+        style={{ color: "var(--accent-hover)" }}
+      >
         One-time share link
       </p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
@@ -97,7 +152,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
         className={
           copyStatus === "idle"
             ? "sr-only"
-            : "mt-2 text-xs text-indigo-800"
+            : "mt-2 text-xs text-ink-soft"
         }
       >
         {copyStatus === "copied"
@@ -115,7 +170,7 @@ function ShareReceipt({ state }: { state: AudienceActionState }) {
           Select link again
         </button>
       ) : null}
-      <p className="mt-2 text-xs text-indigo-800">
+      <p className="mt-2 text-xs text-ink-quiet">
         Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
       </p>
     </div>
@@ -129,6 +184,7 @@ export function AudienceManager({
   sourceNodes,
   publications,
   defaultLabel,
+  defaultAudienceKind = "class",
   projectName,
   projectSlug,
 }: {
@@ -138,6 +194,8 @@ export function AudienceManager({
   sourceNodes: readonly SourceNode[];
   publications: readonly AudienceOwnerPublication[];
   defaultLabel?: string;
+  /** Derived from the workspace template — a wedding workspace offers Couple first. */
+  defaultAudienceKind?: AudienceKind;
   projectName?: string;
   projectSlug?: string;
 }) {
@@ -173,6 +231,8 @@ export function AudienceManager({
     refreshAudienceDivergenceAction,
     INITIAL,
   );
+  const [primaryDateState, primaryDateAction, primaryDatePending] =
+    useActionState(updateAudiencePrimaryDateAction, INITIAL);
 
   return (
     <div className="space-y-10">
@@ -182,19 +242,19 @@ export function AudienceManager({
             Connect the canonical workspace
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
-            Use the immutable Signal Tasks workspace ID. Labels and slugs are never used as a suite join key.
+            Use the immutable Signal Tasks project ID. Labels and slugs are never used as a suite join key.
           </p>
           <form action={connectAction} className="mt-4 flex max-w-xl flex-col gap-3 sm:flex-row">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             <label className="flex-1">
-              <span className="sr-only">Signal Tasks workspace ID</span>
+              <span className="sr-only">Signal Tasks project ID</span>
               <input
                 name="suiteWorkspaceId"
                 required
                 maxLength={120}
                 autoComplete="off"
                 className={fieldClass}
-                placeholder="Signal Tasks workspace ID"
+                placeholder="Signal Tasks project ID"
               />
             </label>
             <button disabled={connectPending} className={primaryButton}>
@@ -219,7 +279,7 @@ export function AudienceManager({
       ) : suiteWorkspaceId ? (
         <section aria-labelledby="new-audience-heading">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Frozen projection</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Frozen projection</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
               {projectName ? `Publish ${projectName}` : "Create a shared timeline"}
             </h2>
@@ -246,10 +306,10 @@ export function AudienceManager({
               </label>
               <label className="text-sm font-medium text-ink-soft">
                 Named audience
-                <select className={`${fieldClass} mt-1.5`} name="audienceKind" defaultValue="class">
-                  <option value="class">Class</option>
-                  <option value="module">Module</option>
+                <select className={`${fieldClass} mt-1.5`} name="audienceKind" defaultValue={defaultAudienceKind}>
                   <option value="couple">Couple</option>
+                  <option value="class">Class</option>
+                  <option value="module">Project</option>
                 </select>
               </label>
               <label className="text-sm font-medium text-ink-soft">
@@ -291,7 +351,7 @@ export function AudienceManager({
                         name="sourceId"
                         value={node.id}
                         defaultChecked={Boolean(projectName)}
-                        className="h-4 w-4 rounded border-line-soft accent-indigo-600"
+                        className="h-4 w-4 rounded border-line-soft accent-accent"
                       />
                       <span className="min-w-0 flex-1 text-sm text-ink">{node.title}</span>
                       <span className="text-xs tabular-nums text-ink-quiet">{node.targetDate ?? node.lane}</span>
@@ -316,17 +376,38 @@ export function AudienceManager({
           <p className="mt-3 text-sm text-ink-quiet">No Audience Timeline drafts yet.</p>
         ) : (
           <div className="mt-4 space-y-6">
-            {publications.map((publication) => (
+            {publications.map((publication) => {
+              // "Link live" must mean a viewer can open one. A published
+              // record whose links were all revoked says so, and the dot
+              // only earns its indigo while a link actually works.
+              const linkLive =
+                publication.state === "published" && publication.activeShareCount > 0;
+              const effectiveState = linkLive
+                ? "published"
+                : publication.state === "published"
+                  ? "revoked"
+                  : publication.state;
+              return (
               <article key={publication.id} className="overflow-hidden rounded-xl border border-line-soft bg-white">
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
-                        {publication.audienceKind} · {publication.state}
+                      <p className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+                        <span
+                          aria-hidden
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            background: linkLive ? "var(--accent)" : "var(--ink-ghost)",
+                          }}
+                        />
+                        {audienceKindLabel(publication.audienceKind)} · {publicationStateLabel(effectiveState)}
                       </p>
-                      <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
+                      <h3 className="mt-1.5 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
-                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"} · {publication.qualifiedViewCount.toLocaleString("en-GB")} view{publication.qualifiedViewCount === 1 ? "" : "s"}
+                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"}
+                        {viewerCountSummary({ count: publication.qualifiedViewCount })
+                          ? ` · ${viewerCountSummary({ count: publication.qualifiedViewCount })}`
+                          : ""}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -350,26 +431,90 @@ export function AudienceManager({
                   <div className="mb-4 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink-soft">
                     {publication.ownerDisplayLabel ? <span>{publication.ownerDisplayLabel}</span> : null}
                     {publication.primaryDate && publication.primaryDateLabel ? (
-                      <span>{publication.primaryDateLabel}: <time dateTime={publication.primaryDate}>{publication.primaryDate}</time></span>
+                      <span>{publication.primaryDateLabel}: <time dateTime={publication.primaryDate}>{calendarDateLabel(publication.primaryDate)}</time></span>
+                    ) : (
+                      <span>No main date on the shared page</span>
+                    )}
+                  </div>
+
+                  {/* E06.06. The main date is the one field a couple most often
+                      wants off a page other people can see. Until now it was
+                      fixed at creation, so hiding it meant unpublishing. */}
+                  <div className="mb-5 rounded-lg border border-line-soft bg-bg-deep p-4">
+                    <p className="text-sm font-medium text-ink">The main date</p>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">
+                      Shown at the top of the shared timeline and used for the
+                      countdown. Hide it and the date is removed from the page
+                      itself, not just from view. Your own plan keeps it.
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-end gap-2">
+                      <form action={primaryDateAction} className="flex flex-wrap items-end gap-2">
+                        <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                        <input type="hidden" name="publicationId" value={publication.id} />
+                        <label className="text-xs font-medium text-ink-quiet">
+                          What to call it
+                          <input
+                            className={`${fieldClass} mt-1 w-44`}
+                            name="primaryDateLabel"
+                            maxLength={40}
+                            defaultValue={publication.primaryDateLabel ?? ""}
+                            placeholder="The day"
+                          />
+                        </label>
+                        <label className="text-xs font-medium text-ink-quiet">
+                          Date
+                          <input
+                            className={`${fieldClass} mt-1 w-44`}
+                            type="date"
+                            name="primaryDate"
+                            defaultValue={publication.primaryDate ?? ""}
+                          />
+                        </label>
+                        <button disabled={primaryDatePending} className={quietButton}>
+                          Save
+                        </button>
+                      </form>
+                      {publication.primaryDate && publication.primaryDateLabel ? (
+                        <form action={primaryDateAction}>
+                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                          <input type="hidden" name="publicationId" value={publication.id} />
+                          <input type="hidden" name="intent" value="conceal" />
+                          <button disabled={primaryDatePending} className={quietButton}>
+                            Hide the date
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                    {primaryDateState.publicationId === publication.id ? (
+                      <ActionNotice state={primaryDateState} />
                     ) : null}
                   </div>
-                  <div className="space-y-3">
+                  {/* One visible header row; per-row labels stay for screen
+                      readers. Ten stacked label grids read as a form farm —
+                      a single ruled list reads as the plan it is. */}
+                  <div aria-hidden className="hidden border-b border-line-soft pb-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">
+                    <span>Shared title</span>
+                    <span>Date</span>
+                    <span>State</span>
+                    <span />
+                  </div>
+                  <div className="divide-y divide-line-soft">
                     {publication.items.map((item) => (
-                      <form key={item.publicId} action={updateAction} className="grid gap-2 rounded-lg border border-line-soft p-3 sm:grid-cols-[1fr_10rem_8rem_auto] sm:items-end">
+                      <form key={item.publicId} action={updateAction} className="grid gap-2 py-2.5 sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:items-center sm:gap-3">
                         <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                         <input type="hidden" name="publicationId" value={publication.id} />
                         <input type="hidden" name="publicId" value={item.publicId} />
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Shared title
-                          <input className={`${fieldClass} mt-1`} name="title" required maxLength={180} defaultValue={item.title} />
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Shared title</span>
+                          <input className={`${fieldClass} mt-1 sm:mt-0`} name="title" required maxLength={180} defaultValue={item.title} />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Calendar date
-                          <input className={`${fieldClass} mt-1`} type="date" name="calendarDate" defaultValue={item.calendarDate ?? ""} />
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Calendar date</span>
+                          <input className={`${fieldClass} mt-1 sm:mt-0`} type="date" name="calendarDate" defaultValue={item.calendarDate ?? ""} />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Shared state
-                          <select className={`${fieldClass} mt-1`} name="state" defaultValue={item.state}>
+                        <label className="text-xs font-medium text-ink-quiet sm:contents">
+                          <span className="sm:sr-only">Shared state</span>
+                          <select className={`${fieldClass} mt-1 sm:mt-0`} name="state" defaultValue={item.state}>
                             <option value="covered">Covered</option>
                             <option value="now">Now</option>
                             <option value="next">Next</option>
@@ -377,7 +522,7 @@ export function AudienceManager({
                             <option value="cancelled">Cancelled</option>
                           </select>
                         </label>
-                        <button disabled={updatePending} className={quietButton}>Save public copy</button>
+                        <button disabled={updatePending} className={quietButton}>Save copy</button>
                         {item.divergedAt ? (
                           <p className="text-xs text-ink-quiet sm:col-span-4">
                             The source changed after copying. This shared milestone stayed frozen.
@@ -413,12 +558,20 @@ export function AudienceManager({
                         <form action={revokeAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={revokePending} className={quietButton}>Revoke links</button>
+                          <ArmedSubmitButton
+                            label="Revoke links"
+                            armedLabel="Confirm: revoke every link"
+                            disabled={revokePending}
+                          />
                         </form>
                         <form action={unpublishAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={unpublishPending} className={quietButton}>Unpublish</button>
+                          <ArmedSubmitButton
+                            label="Unpublish"
+                            armedLabel="Confirm: unpublish and revoke"
+                            disabled={unpublishPending}
+                          />
                         </form>
                       </>
                     )}
@@ -433,7 +586,8 @@ export function AudienceManager({
                   {unpublishState.publicationId === publication.id ? <ActionNotice state={unpublishState} /> : null}
                 </div>
               </article>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

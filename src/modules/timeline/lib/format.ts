@@ -67,3 +67,36 @@ export function freshnessStamp(updated: Date, now: Date = new Date()): string {
       : {}),
   })}`;
 }
+
+/**
+ * Human labels for audience-publication enums. Raw values ("couple",
+ * "published") are storage words, not sentences; the owner reads these on
+ * the sharing surfaces, so they get the same care as any other copy.
+ */
+export function audienceKindLabel(kind: string): string {
+  if (kind === "couple") return "Couple";
+  if (kind === "class") return "Class";
+  // "module" is the stored enum; owners and viewers both read "Project".
+  if (kind === "module") return "Project";
+  return kind.charAt(0).toUpperCase() + kind.slice(1);
+}
+
+export function publicationStateLabel(state: string): string {
+  if (state === "published") return "Link live";
+  if (state === "draft") return "Private draft";
+  if (state === "unpublished") return "Unpublished";
+  if (state === "revoked") return "Links revoked";
+  return state.charAt(0).toUpperCase() + state.slice(1);
+}
+
+/** "3 Oct 2026" from an ISO calendar date, UTC-stable. */
+export function calendarDateLabel(iso: string): string {
+  const parsed = Date.parse(`${iso}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed)) return iso;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(parsed));
+}

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AnchorChip } from "@/modules/timeline/app/_components/anchor-countdown";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
 import { TimelineArtifact } from "@/modules/timeline/components/artifact";
 import { ownerProjectToTimelineDto } from "@/modules/timeline/lib/owner-artifact";
 import { isDemoMode } from "@/lib/access-mode";
-import { REVIEW_SUITE_FIXTURE } from "@/lib/review-suite-fixture";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import {
   buildTimelineProjectHref,
   toAuthorizedProjectOptions,
@@ -39,12 +40,10 @@ function modeHref(
   context: { workspaceId?: string | null; planningPeriodId?: string | null },
   mode: OwnerMode,
 ) {
-  const href = buildTimelineProjectHref(projectSlug, context);
-  if (mode === "view") return href;
-  const [pathname, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set("mode", mode);
-  return `${pathname}?${params.toString()}`;
+  return buildTimelineProjectHref(projectSlug, {
+    ...context,
+    mode: mode === "edit" ? "edit" : null,
+  });
 }
 
 export default async function TimelineProjectPage({
@@ -79,9 +78,12 @@ export default async function TimelineProjectPage({
   if (!project) notFound();
 
   const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
+  // Mode rides the switcher context: changing projects mid-edit stays in
+  // edit. The mode toggle itself overrides it per destination (modeHref).
   const queryContext = {
     workspaceId: context?.workspaceId,
     planningPeriodId: context?.planningPeriodId,
+    mode: mode === "edit" ? ("edit" as const) : null,
   };
   const shareQuery = new URLSearchParams({ project: project.slug });
   if (queryContext.workspaceId) {
@@ -91,11 +93,26 @@ export default async function TimelineProjectPage({
     shareQuery.set("planningPeriodId", queryContext.planningPeriodId);
   }
   const shareHref = `/app/timeline/audience?${shareQuery.toString()}`;
-  const content = await TimelineProjectContent({
+  // One clock: review mode reads the pinned suite calendar frame; production
+  // reads the request clock at this RSC boundary only.
+  const now = isDemoMode()
+    ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)
+    : new Date();
+  const [effectiveNodes, publications] = await Promise.all([
+    getEffectiveNodesForWorkspace(workspace.slug),
+    getOwnerAudiencePublications(workspace.slug),
+  ]);
+  const projectNodes = effectiveNodes.filter(
+    (node) => node.projectSlug === project.slug,
+  );
+  const content = TimelineProjectContent({
     mode,
     project,
     workspace,
     shareHref,
+    projectNodes,
+    publications,
+    now,
   });
 
   return (
@@ -111,6 +128,11 @@ export default async function TimelineProjectPage({
               projects={projectOptions}
               context={queryContext}
             />
+            {/* The countdown is the plan's pulse — phone owners deserve it
+                too. Only the smallest headers go without. */}
+            <span className="hidden min-w-0 sm:inline-flex">
+              <AnchorChip milestones={projectNodes} now={now.getTime()} />
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -122,7 +144,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "view")}
                 aria-label="View timeline"
                 aria-current={mode === "view" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "view"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -134,7 +156,7 @@ export default async function TimelineProjectPage({
                 href={modeHref(project.slug, queryContext, "edit")}
                 aria-label="Edit milestones"
                 aria-current={mode === "edit" ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   mode === "edit"
                     ? "bg-white text-ink shadow-sm"
                     : "text-ink-soft hover:text-ink"
@@ -146,7 +168,7 @@ export default async function TimelineProjectPage({
             <Link
               href={shareHref}
               aria-label="Preview and share"
-              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               <span className="sm:hidden">Share</span>
               <span className="hidden sm:inline">Preview and share</span>
@@ -160,30 +182,28 @@ export default async function TimelineProjectPage({
   );
 }
 
-async function TimelineProjectContent({
+function TimelineProjectContent({
   mode,
   project,
   workspace,
   shareHref,
+  projectNodes,
+  publications,
+  now,
 }: {
   mode: OwnerMode;
   project: Awaited<ReturnType<typeof getProjectsForWorkspace>>[number];
   workspace: NonNullable<Awaited<ReturnType<typeof getCurrentWorkspace>>>;
   shareHref: string;
+  projectNodes: Awaited<ReturnType<typeof getEffectiveNodesForWorkspace>>;
+  publications: Awaited<ReturnType<typeof getOwnerAudiencePublications>>;
+  now: Date;
 }) {
-  const [effectiveNodes, publications] = await Promise.all([
-    getEffectiveNodesForWorkspace(workspace.slug),
-    getOwnerAudiencePublications(workspace.slug),
-  ]);
-  const projectNodes = effectiveNodes.filter(
-    (node) => node.projectSlug === project.slug,
-  );
-
   if (mode === "edit") {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="mb-7 border-b border-line-soft pb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-indigo-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-accent-hover">
             Private owner edit
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-ink">
@@ -220,7 +240,7 @@ async function TimelineProjectContent({
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8">
         <section className="w-full rounded-2xl border border-dashed border-line-soft bg-bg-sunken p-7 text-center sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-indigo-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-accent-hover">
             {project.name}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">
@@ -234,13 +254,13 @@ async function TimelineProjectContent({
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href={`/app/timeline/${encodeURIComponent(project.slug)}?mode=edit`}
-              className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Edit milestones
             </Link>
             <Link
               href="/app/tasks"
-              className="inline-flex min-h-11 items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Open Tasks
             </Link>
@@ -265,14 +285,17 @@ async function TimelineProjectContent({
           timezone: latestPublication.timezone,
         }
       : undefined,
-    now: isDemoMode()
-      ? new Date(`${REVIEW_SUITE_FIXTURE.reviewToday}T12:00:00.000Z`)
-      : undefined,
+    now,
   });
 
   return (
     <div className="w-full flex-1 bg-white">
-      <TimelineArtifact timeline={timeline} embedded />
+      <div className="mx-auto w-full max-w-[100rem] px-[clamp(1rem,4.2vw,4rem)]">
+        <p className="border-b border-line-soft pb-2.5 pt-4 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+          Owner view · the page your audience receives
+        </p>
+      </div>
+      <TimelineArtifact timeline={timeline} embedded showProductHeader={false} />
     </div>
   );
 }

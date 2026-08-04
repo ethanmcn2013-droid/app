@@ -32,12 +32,16 @@ import {
   removeTaskAction,
   reorderTaskAction,
   setTaskArchivedAction,
+  setTaskMilestoneAction,
   toggleCompleteAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
 import { moveTaskToColumnAction } from "@/server/actions/board";
+import { isDemoMode } from "@/lib/access-mode";
 import { setParentAction } from "@/server/actions/set-parent";
 import { useRealtimeSync } from "./use-realtime-sync";
+import { beginTaskSync } from "./delight-events";
+import { maybeFireFirstCompletion } from "@/components/app/done-dopamine/first-completion-moment";
 
 /** Gap-numbered float position so inserts never need to renumber the
  *  whole lane. Conventions:
@@ -97,6 +101,11 @@ export type TasksDispatchers = {
    *  calling the server. */
   reorderTask: (id: string, toLane: LaneId, toIndex: number) => void;
   updateTask: (id: string, patch: Partial<Omit<Task, "id">>) => void;
+  /** Toggle the structural milestone flag. Optimistic like updateTask, but
+   *  synced through its dedicated server action — updateTaskAction strips
+   *  isMilestone from patches, so routing it through updateTask would show
+   *  the change and then silently revert it on reconcile. */
+  setMilestone: (id: string, isMilestone: boolean) => void;
   addTask: (input: {
     title: string;
     description?: string;
@@ -189,18 +198,27 @@ export function TasksProvider({
    *  failure. */
   const withServerSync = useCallback(
     (optimistic: () => void, server: () => Promise<Task[]>) => {
+      // Demo/review posture: the server actions are stateless no-ops that
+      // return the seed, so reconciling would visibly revert every edit
+      // ~1s after it was made — a board that appears to reject its user.
+      // The optimistic state IS the session's truth (in-memory only; the
+      // demo safety invariant means no real DB is reachable either way).
+      if (isDemoMode()) {
+        optimistic();
+        return;
+      }
       const prior = stateRef.current.tasks;
       optimistic();
+      const finishSync = beginTaskSync();
       startTransition(async () => {
         try {
           const fresh = await server();
           dispatch({ type: "hydrate", tasks: fresh });
+          finishSync();
         } catch (err) {
-          // Revert. Console-warn for dev visibility; toast UX arrives
-          // when the toast primitive ships.
-
           console.warn("tasks: server action failed; reverting", err);
           dispatch({ type: "hydrate", tasks: prior });
+          finishSync(err);
         }
       });
     },
@@ -258,6 +276,11 @@ export function TasksProvider({
           () => dispatch({ type: "update", id, patch }),
           () => updateTaskAction(id, patch),
         ),
+      setMilestone: (id, isMilestone) =>
+        withServerSync(
+          () => dispatch({ type: "update", id, patch: { isMilestone } }),
+          () => setTaskMilestoneAction(id, isMilestone),
+        ),
       addTask: (input) => {
         const task: Task = {
           id: generateId(),
@@ -296,23 +319,30 @@ export function TasksProvider({
           () => dispatch({ type: "remove", id }),
           () => setTaskArchivedAction(id, true),
         ),
-      toggleComplete: (id) =>
+      toggleComplete: (id) => {
+        const task = stateRef.current.tasks.find((item) => item.id === id);
+        if (task?.lane !== "done") maybeFireFirstCompletion();
         withServerSync(
           () => dispatch({ type: "toggleComplete", id }),
           () => toggleCompleteAction(id),
-        ),
+        );
+      },
       duplicateTask: (id) => {
+        const finishSync = beginTaskSync();
         startTransition(async () => {
           try {
             const fresh = await duplicateTaskAction(id);
             dispatch({ type: "hydrate", tasks: fresh });
+            finishSync();
           } catch (err) {
             console.warn("tasks: duplicateTask failed", err);
+            finishSync(err);
           }
         });
       },
       setParent: (id, parentId) => {
         const prior = stateRef.current.tasks;
+        const finishSync = beginTaskSync();
         // Optimistically remove from board when reparenting (task becomes a subtask
         // and leaves the flat lane view). Promoting to top-level (null) has no
         // optimistic visual since the task re-enters at an unknown position.
@@ -322,13 +352,16 @@ export function TasksProvider({
             const result = await setParentAction(id, parentId);
             if (result.ok) {
               dispatch({ type: "hydrate", tasks: result.tasks });
+              finishSync();
             } else {
               console.warn("tasks: setParent failed;", result.error);
               dispatch({ type: "hydrate", tasks: prior });
+              finishSync(new Error(result.error));
             }
           } catch (err) {
             console.warn("tasks: setParent threw; reverting", err);
             dispatch({ type: "hydrate", tasks: prior });
+            finishSync(err);
           }
         });
       },

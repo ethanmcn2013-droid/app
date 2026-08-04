@@ -17,6 +17,11 @@ import {
   WARN_THRESHOLDS,
 } from "@/lib/storage-config";
 import { putBytes, deleteBytes } from "@/server/storage";
+import {
+  SNIFF_BYTES,
+  uploadRejectionMessage,
+  validateUpload,
+} from "@/lib/upload-validation";
 
 /**
  * File attachment server actions.
@@ -31,18 +36,16 @@ import { putBytes, deleteBytes } from "@/server/storage";
  * (https://...). The download route distinguishes by prefix.
  */
 
-/** Mime types refused outright. Not a full antivirus pass; enough to
- *  block the obvious executable + stored-XSS shapes. */
-const BLOCKED_MIME_TYPES = new Set<string>([
-  "application/x-msdownload",
-  "application/x-msdos-program",
-  "text/x-shellscript",
-  "text/html",
-  "application/xhtml+xml",
-  "image/svg+xml",
-  "application/xml",
-  "text/xml",
-]);
+/**
+ * E08.07. The eight-entry `BLOCKED_MIME_TYPES` denylist that used to live here
+ * is gone. It checked a client-supplied `file.type` string against a list of
+ * things to refuse, which meant anything not on the list passed and the string
+ * could simply be changed. `validateUpload` in `@/lib/upload-validation` is an
+ * ALLOWLIST checked against the file's own leading bytes.
+ *
+ * This is content-type validation. It is NOT malware scanning; none exists.
+ * See the E08.07 evidence for what a scanner costs and why it is deferred.
+ */
 
 function newAttachmentId(): string {
   const raw =
@@ -171,12 +174,25 @@ export async function uploadAttachmentAction(
     );
   }
 
-  const mimeType = file.type || "application/octet-stream";
-  if (BLOCKED_MIME_TYPES.has(mimeType)) {
+  // E08.07. Read the bytes ONCE, up front, and validate against them. The
+  // buffer is reused for the write below so a large file is not materialised
+  // twice. The declared type is only a hint; the verdict comes from the file.
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const verdict = validateUpload(
+    file.type || "application/octet-stream",
+    bytes.subarray(0, SNIFF_BYTES),
+    file.size,
+  );
+  if (!verdict.ok) {
     throw new Error(
-      `uploadAttachmentAction: mime type ${mimeType} is not allowed`,
+      `uploadAttachmentAction: ${uploadRejectionMessage(verdict.reason)} (${verdict.detail})`,
     );
   }
+  // The type STORED is the validated one, never the raw client string. The
+  // download route serves this value as `Content-Type`, so letting an
+  // unvalidated label reach the database would let the uploader choose how the
+  // browser treats their file.
+  const mimeType = verdict.mimeType;
 
   // Confirm the task belongs to the active workspace.
   const [parent] = await db
@@ -223,7 +239,6 @@ export async function uploadAttachmentAction(
   // (f) Write bytes. If this fails, delete the claim row.
   let finalStoredPath: string;
   try {
-    const bytes = Buffer.from(await file.arrayBuffer());
     finalStoredPath = await putBytes(storageKey, bytes, mimeType);
   } catch (err) {
     await db.delete(attachments).where(eq(attachments.id, attachmentId));

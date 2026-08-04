@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { formatSchedule, isTaskOverdue } from "../dates";
+import { formatSchedule, formatScheduleRelative, isTaskDueToday, isTaskOverdue } from "../dates";
 import { labelById, personById } from "../fixtures";
 import { useLabStore } from "../store";
 import { PRIORITY_LABELS, type LabTask } from "../types";
@@ -63,16 +63,49 @@ export function PriorityMark({ task, withLabel = false }: { task: LabTask; withL
 
 export function ScheduleText({ task, compact = false }: { task: LabTask; compact?: boolean }) {
   const calendar = useCalendarFrame();
+  const overdue = isTaskOverdue(task, calendar.today);
+  const dueToday = isTaskDueToday(task, calendar.today);
+  // Compact is the card context, where a date the reader has to compare
+  // against today is a date the reader has to do arithmetic on. The absolute
+  // date stays on the tooltip so nothing is lost.
+  const label = compact
+    ? formatScheduleRelative(task.schedule, calendar.today)
+    : formatSchedule(task.schedule);
   return (
     <span
       className={styles.schedule}
-      data-overdue={isTaskOverdue(task, calendar.today) || undefined}
+      data-due-today={dueToday || undefined}
+      data-overdue={overdue || undefined}
       data-unscheduled={task.schedule.kind === "unscheduled" || undefined}
       title={formatSchedule(task.schedule)}
     >
       {task.schedule.kind === "milestone" ? <Icon name="milestone" size={compact ? 12 : 14} /> : null}
-      {compact && task.schedule.kind === "unscheduled" ? "No date" : formatSchedule(task.schedule)}
+      {compact && task.schedule.kind === "unscheduled" ? "No date" : label}
     </span>
+  );
+}
+
+/**
+ * Completion checkbox for a task card.
+ *
+ * Deliberately distinct from `TaskSelection`: a checkbox on a task card
+ * reads as "mark this done" everywhere else in software, and the board used
+ * to spend that affordance on multi-select — which is why a completed card
+ * showed a struck-through title above an empty box. Selection keeps its
+ * keyboard path (Space) and its modifier-click path on the card body.
+ */
+export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: boolean }) {
+  const store = useLabStore();
+  return (
+    <input
+      aria-label={`${task.completed ? "Reopen" : "Mark done"} ${task.title}`}
+      checked={task.completed}
+      className={styles.selectionBox}
+      disabled={disabled || store.readOnly}
+      onChange={() => { if (!store.readOnly) store.toggleComplete(task.id); }}
+      onClick={(event) => event.stopPropagation()}
+      type="checkbox"
+    />
   );
 }
 

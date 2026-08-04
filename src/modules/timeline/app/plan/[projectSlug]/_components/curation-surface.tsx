@@ -31,6 +31,7 @@ import {
 } from "@/modules/timeline/lib/owner-reorder";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 import type { AudienceItemState } from "@/modules/timeline/server/db/timeline-schema";
+import styles from "./curation-surface.module.css";
 
 const PUBLIC_STATE_OPTIONS: ReadonlyArray<{
   value: AudienceItemState;
@@ -66,95 +67,34 @@ function sourceStateForDate(
 
 // ── Lane helpers ──────────────────────────────────────────────────────────────
 
-/** Human-readable eyebrow for a lane separator. Matches CREATIVE_SPEC §1.1. */
-function LaneSeparator({ lane }: { lane: string }) {
+/**
+ * Lane header carrying the board's earned tone grammar: a 2px rule in the
+ * lane tone, a full-strength pip, the label mixed toward the tone, and a
+ * whisper wash that releases below (toned lanes only — Later and cancelled
+ * stay deliberately plain, exactly as the board's backlog does).
+ */
+const LANE_TONE: Record<AudienceItemState, string> = {
+  covered: "done",
+  now: "flight",
+  next: "next",
+  later: "plain",
+  cancelled: "cancelled",
+};
+
+function LaneHeader({ label, count }: { label: string; count: number }) {
   return (
-    <div
-      style={{
-        paddingTop: 32,
-        borderTop: "1px solid var(--hairline)",
-        marginBottom: 4,
-      }}
-    >
-      <span
-        style={{
-          fontFamily: "var(--font-mono-stack)",
-          fontSize: 11,
-          textTransform: "uppercase",
-          letterSpacing: "0.14em",
-          color: "var(--ink-quiet)",
-        }}
-      >
-        {lane}
-      </span>
+    <div className={styles.laneHeader}>
+      <span className={styles.lanePip} aria-hidden />
+      <span className={styles.laneLabel}>{label}</span>
+      <span className={styles.laneCount}>{count}</span>
     </div>
   );
 }
 
-// ── Status circle ─────────────────────────────────────────────────────────────
+// ── Status dot ────────────────────────────────────────────────────────────────
 
-function StatusCircle({
-  state,
-  isMilestone,
-}: {
-  state: AudienceItemState;
-  isMilestone: boolean;
-}) {
-  const accentBorder = `1.5px solid var(--indigo)`;
-  const ghostBorder = `1.5px solid var(--ink-ghost)`;
-
-  const style: React.CSSProperties = {
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    flexShrink: 0,
-    display: "inline-block",
-    marginTop: 2,
-  };
-
-  if (state === "covered") {
-    return (
-      <span
-        style={{
-          ...style,
-          background: "var(--ink-ghost)",
-          border: ghostBorder,
-        }}
-      />
-    );
-  }
-  if (state === "now") {
-    return (
-      <span
-        style={{
-          ...style,
-          background: "color-mix(in srgb, var(--ink-ghost) 50%, transparent)",
-          border: isMilestone ? accentBorder : ghostBorder,
-        }}
-      />
-    );
-  }
-  if (state === "later" || state === "cancelled") {
-    return (
-      <span
-        style={{
-          ...style,
-          background: "transparent",
-          border: "1.5px dashed var(--ink-ghost)",
-        }}
-      />
-    );
-  }
-  // Next
-  return (
-    <span
-      style={{
-        ...style,
-        background: "transparent",
-        border: isMilestone ? accentBorder : ghostBorder,
-      }}
-    />
-  );
+function StatusCircle({ state }: { state: AudienceItemState }) {
+  return <span className={styles.statusDot} data-state={state} aria-hidden />;
 }
 
 // ── Node card ─────────────────────────────────────────────────────────────────
@@ -179,6 +119,7 @@ function NodeCard({
   canMoveUp,
   canMoveDown,
   isDraggingOver,
+  isSettled = false,
   canReorder = true,
 }: {
   node: EffectiveNode;
@@ -204,6 +145,7 @@ function NodeCard({
   canMoveUp: boolean;
   canMoveDown: boolean;
   isDraggingOver: boolean;
+  isSettled?: boolean;
   canReorder?: boolean;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
@@ -551,67 +493,56 @@ function NodeCard({
         e.preventDefault();
         onDrop(node.id);
       }}
-      style={{
-        paddingBlock: 12,
-        paddingInline: 16,
-        borderBottom: "1px solid var(--hairline)",
-        opacity: node.hidden ? 0.4 : isPending ? 0.7 : 1,
-        transition: "opacity 160ms ease-out",
-        borderLeft: isDraggingOver
-          ? "2px solid var(--indigo)"
-          : "2px solid var(--indigo-soft)",
-        background: isDraggingOver ? "var(--paper-soft)" : "var(--paper)",
-        cursor: canReorder ? "grab" : "default",
-      }}
+      className={`${styles.card}${isSettled ? " tl-settle" : ""}`}
+      data-hidden={node.hidden ? "true" : undefined}
+      data-pending={isPending ? "true" : undefined}
+      data-drag-over={isDraggingOver ? "true" : undefined}
+      data-can-reorder={canReorder ? "true" : undefined}
     >
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        {/* Drag handle, BV-1: Pointer Events for mouse+touch+pen (iOS Safari) */}
-        <span
-          aria-hidden
-          onPointerDown={(e) => {
-            if (!canReorder) return;
-            // Only primary button / first touch
-            if (e.pointerType === "mouse" && e.button !== 0) return;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            onPointerDragStart(node.id);
-          }}
-          onPointerMove={(e) => {
-            if (!canReorder) return;
-            if (e.buttons === 0 && e.pointerType === "mouse") return;
-            // Find the element under the pointer (excluding the handle itself)
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            const card = target?.closest("[data-node-id]");
-            const targetId = card?.getAttribute("data-node-id");
-            if (targetId && targetId !== node.id) onPointerDragOver(targetId);
-          }}
-          onPointerUp={(e) => {
-            if (!canReorder) return;
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            const card = target?.closest("[data-node-id]");
-            const targetId = card?.getAttribute("data-node-id");
-            if (targetId && targetId !== node.id) onPointerDrop(targetId);
-            else onPointerDrop(node.id); // dropped on self, no-op in handler
-          }}
-          style={{
-            flexShrink: 0,
-            marginTop: 4,
-            color: "var(--ink-faint)",
-            cursor: canReorder ? "grab" : "default",
-            visibility: canReorder ? "visible" : "hidden",
-            lineHeight: 1,
-            fontSize: 10,
-            letterSpacing: "0.1em",
-            userSelect: "none",
-            touchAction: "none", // required for Pointer Events on touch (iOS Safari)
-          }}
-        >
-          ⠿
-        </span>
-        {/* Status circle */}
-        <StatusCircle state={node.audienceState} isMilestone />
+      {/* Drag handle, BV-1: Pointer Events for mouse+touch+pen (iOS Safari) */}
+      <span
+        aria-hidden
+        className={styles.dragHandle}
+        style={{ visibility: canReorder ? "visible" : "hidden" }}
+        onPointerDown={(e) => {
+          if (!canReorder) return;
+          // Only primary button / first touch
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          onPointerDragStart(node.id);
+        }}
+        onPointerMove={(e) => {
+          if (!canReorder) return;
+          if (e.buttons === 0 && e.pointerType === "mouse") return;
+          // Find the element under the pointer (excluding the handle itself)
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          const card = target?.closest("[data-node-id]");
+          const targetId = card?.getAttribute("data-node-id");
+          if (targetId && targetId !== node.id) onPointerDragOver(targetId);
+        }}
+        onPointerUp={(e) => {
+          if (!canReorder) return;
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          const card = target?.closest("[data-node-id]");
+          const targetId = card?.getAttribute("data-node-id");
+          if (targetId && targetId !== node.id) onPointerDrop(targetId);
+          else onPointerDrop(node.id); // dropped on self, no-op in handler
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <circle cx="9" cy="5" r="1.4" />
+          <circle cx="9" cy="12" r="1.4" />
+          <circle cx="9" cy="19" r="1.4" />
+          <circle cx="15" cy="5" r="1.4" />
+          <circle cx="15" cy="12" r="1.4" />
+          <circle cx="15" cy="19" r="1.4" />
+        </svg>
+      </span>
+      {/* Status dot */}
+      <StatusCircle state={node.audienceState} />
 
-        {/* Main content */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+      {/* Main content */}
+      <div className={styles.cardBody}>
           {/* Title */}
           {editingTitle ? (
             <input
@@ -628,61 +559,28 @@ function NodeCard({
               }}
               autoFocus
               maxLength={120}
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: "var(--ink)",
-                letterSpacing: "-0.01em",
-                lineHeight: 1.4,
-                background: "transparent",
-                border: "none",
-                borderBottom: "1px solid var(--indigo)",
-                outline: "none",
-                width: "100%",
-                padding: "0 0 2px",
-                textDecoration: isShipped ? "line-through" : "none",
-                opacity: isShipped ? 0.7 : 1,
-              }}
+              className={styles.titleInput}
+              data-settled={isShipped ? "true" : undefined}
             />
           ) : (
             <button
               type="button"
+              className={styles.titleButton}
+              data-settled={isShipped ? "true" : undefined}
               onClick={() => {
                 setTitleValue(node.title);
                 setEditingTitle(true);
-              }}
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-                lineHeight: 1.4,
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "text",
-                textAlign: "left",
-                textDecoration: isShipped
-                  ? "line-through"
-                  : "none",
-                opacity: isShipped ? 0.7 : 1,
-                color: isShipped
-                  ? "color-mix(in srgb, var(--ink) 70%, transparent)"
-                  : "var(--ink)",
               }}
             >
               {node.title}
               {node.labelOverride && (
                 <span
-                  style={{
-                    marginLeft: 6,
-                    fontSize: 10,
-                    color: "var(--ink-quiet)",
-                    fontWeight: 400,
-                    verticalAlign: "middle",
-                  }}
+                  className={styles.editedMark}
                   title="Label overridden from Tasks"
                 >
-                  ✎
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                  </svg>
                 </span>
               )}
             </button>
@@ -690,14 +588,7 @@ function NodeCard({
 
           {/* Drift affordance (D10 / ARCH_SPEC §1.5(2)) */}
           {node.driftDetected && (
-            <p
-              style={{
-                fontSize: 10,
-                color: "var(--ink-quiet)",
-                marginTop: 2,
-                fontFamily: "var(--font-mono-stack)",
-              }}
-            >
+            <p className={styles.driftNote}>
               Source changed in Tasks. Your edits are shown.
             </p>
           )}
@@ -708,21 +599,7 @@ function NodeCard({
               fires a write, just shows the owner what to look at. */}
           {attention && (
             <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 4,
-                padding: "1px 6px",
-                borderRadius: 4,
-                fontSize: 9.5,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                background:
-                  "color-mix(in srgb, var(--status-flight) 12%, transparent)",
-                color: "var(--status-flight)",
-              }}
+              className={styles.attentionPill}
               aria-label={
                 attention === "overdue"
                   ? "Needs attention: overdue"
@@ -734,41 +611,17 @@ function NodeCard({
                   : "Idle for 14+ days"
               }
             >
-              <span
-                aria-hidden
-                style={{
-                  display: "inline-block",
-                  width: 4,
-                  height: 4,
-                  borderRadius: "50%",
-                  background: "var(--status-flight)",
-                }}
-              />
               {attention === "overdue" ? "Overdue" : "Idle"}
             </span>
           )}
 
           {/* Meta row: lane selector + date */}
-          <div
-            style={{
-              marginTop: 6,
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 8,
-              alignItems: "center",
-            }}
-          >
+          <div className={styles.metaRow}>
             {/* Public-state segmented control */}
             <div
               role="radiogroup"
               aria-label={`Public state for ${node.title}`}
-              style={{
-                display: "flex",
-                gap: 0,
-                border: "1px solid var(--hairline)",
-                borderRadius: 6,
-                overflow: "hidden",
-              }}
+              className={styles.stateGroup}
             >
               {PUBLIC_STATE_OPTIONS.map((option) => (
                 <button
@@ -778,23 +631,7 @@ function NodeCard({
                   aria-checked={node.audienceState === option.value}
                   disabled={isPending}
                   onClick={() => setPublicState(option.value)}
-                  style={{
-                    fontSize: 11,
-                    padding: "4px 10px",
-                    border: "none",
-                    background:
-                      node.audienceState === option.value
-                        ? "var(--ink)"
-                        : "transparent",
-                    color:
-                      node.audienceState === option.value
-                        ? "var(--paper)"
-                        : "var(--ink-quiet)",
-                    cursor: "pointer",
-                    fontWeight:
-                      node.audienceState === option.value ? 500 : 400,
-                    transition: "background 120ms, color 120ms",
-                  }}
+                  className={styles.stateOption}
                 >
                   {option.label}
                 </button>
@@ -805,16 +642,7 @@ function NodeCard({
                 type="button"
                 disabled={isPending}
                 onClick={inheritPublicState}
-                className="quiet-link-hover"
-                style={{
-                  minHeight: 32,
-                  border: 0,
-                  padding: "4px 6px",
-                  background: "transparent",
-                  color: "var(--ink-quiet)",
-                  fontSize: 11,
-                  cursor: "pointer",
-                }}
+                className={styles.quietAction}
               >
                 Use Tasks state
               </button>
@@ -822,7 +650,7 @@ function NodeCard({
 
             {/* Date input, M2/fix3: same .date-input-wrapper/.date-input-custom treatment
                 as ManualAddForm. Button wraps the SVG and calls showPicker?.(). */}
-            <div className="date-input-wrapper" style={{ display: "inline-flex" }}>
+            <div className={`date-input-wrapper ${styles.dateWrapper}`}>
               <input
                 ref={dateInputRef}
                 type="date"
@@ -830,18 +658,7 @@ function NodeCard({
                 value={node.targetDate ?? ""}
                 onChange={(e) => setDate(e.target.value)}
                 disabled={isPending}
-                className="date-input-custom"
-                style={{
-                  fontSize: 11,
-                  fontFamily: "var(--font-mono-stack)",
-                  color: "var(--ink-quiet)",
-                  border: "1px solid var(--hairline)",
-                  borderRadius: 4,
-                  padding: "3px 7px",
-                  paddingRight: 22,
-                  background: "transparent",
-                  cursor: "pointer",
-                }}
+                className={`date-input-custom ${styles.dateField}`}
               />
               <button
                 type="button"
@@ -876,16 +693,7 @@ function NodeCard({
                 type="button"
                 disabled={isPending}
                 onClick={inheritDate}
-                className="quiet-link-hover"
-                style={{
-                  minHeight: 32,
-                  border: 0,
-                  padding: "4px 6px",
-                  background: "transparent",
-                  color: "var(--ink-quiet)",
-                  fontSize: 11,
-                  cursor: "pointer",
-                }}
+                className={styles.quietAction}
               >
                 Use Tasks date
               </button>
@@ -893,19 +701,8 @@ function NodeCard({
 
             {/* Source indicator, chain-link icon per CREATIVE_SPEC (DRAG: replace ⇄ glyph) */}
             {node.source === "synced" && (
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 3,
-                  fontSize: 9,
-                  color: "var(--ink-faint)",
-                  fontFamily: "var(--font-mono-stack)",
-                  letterSpacing: "0.05em",
-                }}
-                title="Synced from Signal Tasks"
-              >
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <span className={styles.sourceChip} title="Synced from Signal Tasks">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
@@ -914,35 +711,14 @@ function NodeCard({
             )}
           </div>
           {rowError ? (
-            <div
-              role="alert"
-              style={{
-                marginTop: 8,
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                gap: 8,
-                color: "var(--alarm)",
-                fontSize: 11,
-              }}
-            >
+            <div role="alert" className={styles.rowError}>
               <span>{rowError}</span>
               {retryAction ? (
                 <button
                   type="button"
                   disabled={isPending}
                   onClick={retryAction}
-                  style={{
-                    minHeight: 32,
-                    border: "1px solid currentColor",
-                    borderRadius: 6,
-                    padding: "4px 9px",
-                    background: "transparent",
-                    color: "inherit",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
+                  className={styles.retryButton}
                 >
                   Retry
                 </button>
@@ -951,14 +727,7 @@ function NodeCard({
           ) : null}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            flexShrink: 0,
-          }}
-        >
+        <div className={styles.cardControls}>
           {canReorder ? (
             <div
               role="group"
@@ -971,19 +740,7 @@ function NodeCard({
                 onClick={() => onMoveUp(node.id)}
                 aria-label={`Move ${node.title} up`}
                 title="Move up"
-                style={{
-                  width: 32,
-                  minHeight: 32,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "1px solid var(--hairline)",
-                  borderRadius: 6,
-                  background: "var(--paper)",
-                  color: "var(--ink-quiet)",
-                  cursor: canMoveUp ? "pointer" : "not-allowed",
-                  opacity: canMoveUp ? 1 : 0.38,
-                }}
+                className={styles.iconButton}
               >
                 <svg
                   aria-hidden
@@ -1005,19 +762,7 @@ function NodeCard({
                 onClick={() => onMoveDown(node.id)}
                 aria-label={`Move ${node.title} down`}
                 title="Move down"
-                style={{
-                  width: 32,
-                  minHeight: 32,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "1px solid var(--hairline)",
-                  borderRadius: 6,
-                  background: "var(--paper)",
-                  color: "var(--ink-quiet)",
-                  cursor: canMoveDown ? "pointer" : "not-allowed",
-                  opacity: canMoveDown ? 1 : 0.38,
-                }}
+                className={styles.iconButton}
               >
                 <svg
                   aria-hidden
@@ -1043,18 +788,8 @@ function NodeCard({
             onClick={toggleHidden}
             aria-label={node.hidden ? "Show this milestone" : "Hide this milestone"}
             title={node.hidden ? "Show" : "Hide from public roadmap"}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: node.hidden ? "var(--indigo)" : "var(--ink-ghost)",
-              padding: 4,
-              borderRadius: 4,
-              flexShrink: 0,
-              fontSize: 13,
-              lineHeight: 1,
-              transition: "color 120ms",
-            }}
+            className={styles.iconButton}
+            data-active={node.hidden ? "true" : undefined}
           >
             {node.hidden ? (
               // Eye-slash
@@ -1070,7 +805,6 @@ function NodeCard({
               </svg>
             )}
           </button>
-        </div>
       </div>
     </div>
   );
@@ -1168,22 +902,11 @@ function ManualAddForm({
   }
 
   return (
-    <div
-      style={{
-        border: "1px solid var(--hairline)",
-        borderRadius: 10,
-        padding: 16,
-        background: "var(--paper-soft)",
-        marginTop: 8,
-      }}
-    >
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className={`${styles.addForm} tl-rise-in`}>
+      <div className={styles.addFormGrid}>
         {/* Title */}
         <div>
-          <label
-            htmlFor="manual-milestone-title"
-            style={{ fontSize: 11, color: "var(--ink-quiet)", display: "block", marginBottom: 4 }}
-          >
+          <label htmlFor="manual-milestone-title" className={styles.fieldLabel}>
             What&apos;s the milestone?
           </label>
           <input
@@ -1194,31 +917,20 @@ function ManualAddForm({
             placeholder="Tasting menu confirmed"
             maxLength={80}
             autoFocus
-            className="manual-add-title-input"
-            style={{
-              width: "100%",
-              fontSize: 13,
-              padding: "6px 10px",
-              border: "1px solid var(--hairline)",
-              borderRadius: 6,
-              background: "var(--paper)",
-              color: "var(--ink)",
-            }}
+            className={`manual-add-title-input ${styles.textField}`}
           />
         </div>
 
         {/* Lane */}
         <div>
-          <label
-            id="manual-add-lane-label"
-            style={{ fontSize: 11, color: "var(--ink-quiet)", display: "block", marginBottom: 4 }}
-          >
+          <label id="manual-add-lane-label" className={styles.fieldLabel}>
             Which lane?
           </label>
           <div
             role="radiogroup"
             aria-labelledby="manual-add-lane-label"
-            style={{ display: "flex", gap: 0, border: "1px solid var(--hairline)", borderRadius: 6, overflow: "hidden", width: "fit-content" }}
+            className={styles.stateGroup}
+            style={{ width: "fit-content" }}
           >
             {(["Next", "In flight", "Shipped"] as const).map((l) => (
               <button
@@ -1227,15 +939,7 @@ function ManualAddForm({
                 role="radio"
                 aria-checked={lane === l}
                 onClick={() => setLane(l)}
-                style={{
-                  fontSize: 11,
-                  padding: "4px 10px",
-                  border: "none",
-                  background: lane === l ? "var(--ink)" : "transparent",
-                  color: lane === l ? "var(--paper)" : "var(--ink-quiet)",
-                  cursor: "pointer",
-                  transition: "background 120ms, color 120ms",
-                }}
+                className={styles.stateOption}
               >
                 {l}
               </button>
@@ -1251,30 +955,18 @@ function ManualAddForm({
             Keyboard and screen-reader behavior unchanged, the native <input> is
             the real control. focus-visible ring applied via globals.css. */}
         <div>
-          <label
-            style={{ fontSize: 11, color: "var(--ink-quiet)", display: "block", marginBottom: 4 }}
-          >
+          <label htmlFor="manual-milestone-date" className={styles.fieldLabel}>
             Date (optional)
           </label>
-          <div className="date-input-wrapper">
+          <div className={`date-input-wrapper ${styles.dateWrapper}`} style={{ width: "100%" }}>
             <input
               id="manual-milestone-date"
               ref={manualDateInputRef}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="date-input-custom"
-              style={{
-                fontSize: 12,
-                fontFamily: "var(--font-mono-stack)",
-                padding: "4px 8px",
-                paddingRight: 28,
-                border: "1px solid var(--hairline)",
-                borderRadius: 6,
-                background: "var(--paper)",
-                color: "var(--ink-quiet)",
-                width: "100%",
-              }}
+              className={`date-input-custom ${styles.dateField}`}
+              style={{ width: "100%", background: "var(--paper)" }}
             />
             {/* M2/fix4: button wraps the SVG so clicking it calls showPicker?.(). Cross-browser:
                 on Firefox the WebKit pseudo-element doesn't exist; the button is the real trigger.
@@ -1312,26 +1004,15 @@ function ManualAddForm({
         </div>
 
         {error && (
-          <p role="alert" style={{ fontSize: 11, color: "var(--alarm)", margin: 0 }}>{error}</p>
+          <p role="alert" className={styles.formError}>{error}</p>
         )}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className={styles.formActions}>
           <button
             type="button"
             onClick={handleAdd}
             disabled={isPending}
-            style={{
-              fontSize: 12,
-              fontWeight: 500,
-              padding: "6px 14px",
-              minHeight: 44,
-              borderRadius: 999,
-              background: "var(--ink)",
-              color: "var(--paper)",
-              border: "none",
-              cursor: isPending ? "default" : "pointer",
-              opacity: isPending ? 0.6 : 1,
-            }}
+            className={styles.primaryButton}
           >
             {isPending ? "Adding…" : "Add"}
           </button>
@@ -1345,16 +1026,7 @@ function ManualAddForm({
               setError(null);
               onClose("cancel");
             }}
-            style={{
-              fontSize: 12,
-              padding: "6px 14px",
-              minHeight: 44,
-              borderRadius: 999,
-              background: "transparent",
-              color: "var(--ink-quiet)",
-              border: "1px solid var(--hairline)",
-              cursor: "pointer",
-            }}
+            className={styles.secondaryButton}
           >
             Cancel
           </button>
@@ -1424,22 +1096,7 @@ function SyncButton({
         type="button"
         onClick={handleSync}
         disabled={isPending}
-        className="sync-button"
-        style={{
-          fontSize: 12,
-          fontWeight: 500,
-          padding: "6px 14px",
-          borderRadius: 999,
-          background: "transparent",
-          color: "var(--ink-soft)",
-          border: "1px solid var(--hairline)",
-          cursor: isPending ? "default" : "pointer",
-          opacity: isPending ? 0.6 : 1,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          transition: "background 120ms, border-color 120ms, opacity 160ms",
-        }}
+        className={`sync-button ${styles.syncButton}`}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <polyline points="1 4 1 10 7 10"/>
@@ -1452,53 +1109,27 @@ function SyncButton({
           Fix 5: copy names real Tasks affordance ("Milestone" button), no em-dash.
           Fix 6: flex + maxWidth so chip wraps cleanly at 320px. */}
       {result === "zero" && (
-        <span
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 5,
-            maxWidth: "min(400px, 92vw)",
-            fontSize: 11,
-            fontWeight: 500,
-            color: "var(--ink-soft)",
-            background: "var(--paper)",
-            border: "1px solid var(--hairline)",
-            borderRadius: 6,
-            padding: "3px 9px",
-            lineHeight: 1.4,
-          }}
-        >
+        <span className={styles.syncZeroChip}>
           <span>
             No milestones found yet.{" "}
-            <span style={{ fontWeight: 400, color: "var(--ink-quiet)" }}>
+            <span style={{ fontWeight: 400, color: "var(--ink-faint)" }}>
               Open a task in Signal Tasks and tap the Milestone button. It&apos;ll appear here automatically.
             </span>
           </span>{" "}
-          <a
-            href={tasksUrl}
-            style={{
-              color: "var(--indigo)",
-              textDecoration: "none",
-              fontWeight: 500,
-              whiteSpace: "nowrap",
-            }}
-          >
-            Open Tasks
-          </a>
+          <a href={tasksUrl}>Open Tasks</a>
         </span>
       )}
 
       {/* Count confirmation */}
       {result === "count" && (
-        <span role="status" style={{ fontSize: 11, color: "var(--ink-quiet)" }}>
+        <span role="status" className={styles.syncCount}>
           {syncCount} milestone{syncCount === 1 ? "" : "s"} synced.
         </span>
       )}
 
       {/* Error state uses the shared alarm token. */}
       {result === "error" && (
-        <span role="alert" style={{ fontSize: 11, color: "var(--alarm)" }}>{errorMsg}</span>
+        <span role="alert" className={styles.syncError}>{errorMsg}</span>
       )}
     </div>
   );
@@ -1557,6 +1188,20 @@ export function CurationSurface({
   const pointerDragNodeId = useRef<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [reorderAnnouncement, setReorderAnnouncement] = useState("");
+  // Wave 4 settle: the row that just landed carries a brief tint fade so a
+  // successful reorder reads as arrival, not teleportation.
+  const [settledId, setSettledId] = useState<string | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const markSettled = useCallback((nodeId: string) => {
+    setSettledId(null);
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    // Re-arm on the next frame so consecutive moves of the same row restart
+    // the CSS animation instead of silently continuing the old one.
+    requestAnimationFrame(() => {
+      setSettledId(nodeId);
+      settleTimerRef.current = setTimeout(() => setSettledId(null), 450);
+    });
+  }, []);
 
   // UX-2: router.refresh() instead of window.location.reload()
   const refresh = useCallback(() => {
@@ -1707,8 +1352,10 @@ export function CurationSurface({
     updated: EffectiveNode[],
     previousNodes: EffectiveNode[],
     successAnnouncement?: string,
+    movedId?: string,
   ) {
     setNodes(updated);
+    if (movedId) markSettled(movedId);
     startTransition(async () => {
       try {
         const result = await reorderNodesAction(
@@ -1760,7 +1407,7 @@ export function CurationSurface({
     // to the exact prior order. Same shape as the NodeCard inline-edit pattern.
     const previousNodes = nodes;
     // BV-2: batch-write ALL sibling sortOverrides so reload order is deterministic.
-    persistReorderedNodes(updated, previousNodes);
+    persistReorderedNodes(updated, previousNodes, undefined, sourceId);
   }
 
   function moveNodeByKeyboard(
@@ -1781,6 +1428,7 @@ export function CurationSurface({
       updated,
       nodes,
       `Moved ${result.title} ${directionLabel}. Position ${result.position} of ${result.siblingCount}.`,
+      sourceId,
     );
   }
 
@@ -1847,40 +1495,20 @@ export function CurationSurface({
         </span>
         <Link
           href={shareHref}
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           Preview public copy
         </Link>
       </div>
 
       {/* Toolbar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <h2
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.14em",
-              color: "var(--ink-quiet)",
-              margin: 0,
-            }}
-          >
-            Milestones
-          </h2>
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarCluster}>
+          <h2 className={styles.toolbarHeading}>Milestones</h2>
           {/* DRAG: "Saved" 1.5s tick */}
           {isSaved && (
-            <span
-              style={{
-                fontSize: 10,
-                color: "var(--ink-quiet)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                transition: "opacity 160ms",
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <span className={styles.savedTick}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
               Saved
@@ -1890,18 +1518,8 @@ export function CurationSurface({
               role="status" (not alert), non-blocking, polite-announce.
               Mutually exclusive with the Saved tick. Auto-clears at 4s. */}
           {errorFlash && !isSaved && (
-            <span
-              role="status"
-              style={{
-                fontSize: 10,
-                color: "var(--ink-soft)",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                transition: "opacity 160ms",
-              }}
-            >
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <span role="status" className={styles.errorFlash}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1910,9 +1528,7 @@ export function CurationSurface({
             </span>
           )}
           {autoSyncState.status === "syncing" && (
-            <span style={{ fontSize: 10, color: "var(--ink-faint)" }}>
-              Syncing…
-            </span>
+            <span className={styles.syncingNote}>Syncing…</span>
           )}
         </div>
         <SyncButton
@@ -1941,7 +1557,7 @@ export function CurationSurface({
           <button
             type="button"
             onClick={() => void runAutoSync()}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-line-soft bg-white px-3 font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-line-soft bg-white px-3 font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Retry sync
           </button>
@@ -1955,7 +1571,7 @@ export function CurationSurface({
         manualAddOpen ? (
           /* H2: form replaces empty state in the same container/position.
              Fix 7: matching padding to empty state to prevent layout jump on swap. */
-          <div style={{ padding: "48px 24px" }}>
+          <div className={styles.emptyState}>
             <ManualAddForm
               workspaceSlug={workspaceSlug}
               projectSlug={projectSlug}
@@ -1975,72 +1591,28 @@ export function CurationSurface({
             />
           </div>
         ) : (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "48px 24px",
-              color: "var(--ink-quiet)",
-            }}
-          >
-            <div style={{ fontSize: 24, marginBottom: 16, opacity: 0.4 }}>◇</div>
-            <p
-              style={{
-                fontSize: 15,
-                fontWeight: 500,
-                color: "var(--ink-soft)",
-                marginBottom: 8,
-              }}
-            >
-              Your plan fills itself in.
-            </p>
-            <p
-              style={{
-                fontSize: 13,
-                color: "var(--ink-quiet)",
-                lineHeight: 1.55,
-                maxWidth: 320,
-                margin: "0 auto 16px",
-              }}
-            >
+          <div className={styles.emptyState}>
+            <span className={styles.emptyMark} aria-hidden>
+              {/* The milestone diamond, drawn — the same mark a task earns on the board. */}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+                <path d="M12 2.5 21.5 12 12 21.5 2.5 12Z" />
+              </svg>
+            </span>
+            <p className={styles.emptyTitle}>Your plan fills itself in.</p>
+            <p className={styles.emptyCopy}>
               Mark tasks as milestones in Signal Tasks and they&apos;ll appear here automatically.
             </p>
-            {/* Fix 8: marginBottom 16 (was 12) */}
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 16 }}>
-              <a
-                href={PRODUCT_APP_URLS.tasks}
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                  padding: "8px 18px",
-                  minHeight: 44,
-                  borderRadius: 999,
-                  background: "var(--ink)",
-                  color: "var(--paper)",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                }}
-              >
+            <div className={styles.emptyActions}>
+              <a href={PRODUCT_APP_URLS.tasks} className={styles.emptyPrimary}>
                 Open Tasks
               </a>
             </div>
-            {/* Quiet inline manual-add link, no background, no border, no pill.
-                Fix 9: hover underline via className. */}
+            {/* Quiet inline manual-add link, no background, no border, no pill. */}
             <button
               ref={manualAddTriggerRef}
               type="button"
               onClick={openManualAdd}
-              className="quiet-link-hover"
-              style={{
-                fontSize: 13,
-                color: "var(--ink-quiet)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "8px 0",
-                lineHeight: 1.5,
-                minHeight: 44,
-              }}
+              className={styles.addTrigger}
             >
               or add one manually
             </button>
@@ -2049,41 +1621,23 @@ export function CurationSurface({
       ) : (
         <>
           {/* Lane-grouped node list with drag-to-reorder (UX-1) */}
-          <div
-            style={{
-              border: "1px solid var(--hairline)",
-              borderRadius: 10,
-              overflow: "hidden",
-            }}
-          >
-            {publicStates.map((stateOption, li) => {
+          <div className={styles.listFrame}>
+            {publicStates.map((stateOption) => {
               const stateNodes = nodes.filter(
                 (node) =>
                   node.audienceState === stateOption.value &&
                   !node.hidden,
               );
               return (
-                <div key={stateOption.value}>
-                  {li > 0 && (
-                    <div style={{ paddingInline: 16 }}>
-                      <LaneSeparator lane={stateOption.label} />
-                    </div>
-                  )}
-                  {li === 0 && (
-                    <div style={{ paddingInline: 16, paddingTop: 16, marginBottom: -4 }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono-stack)",
-                          fontSize: 11,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.14em",
-                          color: "var(--ink-quiet)",
-                        }}
-                      >
-                        {stateOption.label}
-                      </span>
-                    </div>
-                  )}
+                <div
+                  key={stateOption.value}
+                  className={styles.laneGroup}
+                  data-tone={LANE_TONE[stateOption.value]}
+                >
+                  <LaneHeader
+                    label={stateOption.label}
+                    count={stateNodes.length}
+                  />
                   {stateNodes.map((node, nodeIndex) => (
                     <NodeCard
                       key={node.id}
@@ -2109,6 +1663,7 @@ export function CurationSurface({
                       canMoveUp={nodeIndex > 0}
                       canMoveDown={nodeIndex < stateNodes.length - 1}
                       isDraggingOver={dragOverId === node.id}
+                      isSettled={settledId === node.id}
                     />
                   ))}
                 </div>
@@ -2118,39 +1673,12 @@ export function CurationSurface({
 
           {/* Hidden milestones remain recoverable from the owner surface. */}
           {hiddenNodes.length > 0 && (
-            <details
-              style={{
-                marginTop: 12,
-                border: "1px solid var(--hairline)",
-                borderRadius: 10,
-                overflow: "hidden",
-              }}
-            >
-              <summary
-                style={{
-                  minHeight: 44,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "0 16px",
-                  cursor: "pointer",
-                  color: "var(--ink-soft)",
-                  fontSize: 12,
-                  fontWeight: 600,
-                }}
-              >
+            <details className={`${styles.hiddenDetails} tl-fold`}>
+              <summary className={styles.hiddenSummary}>
                 <span>Hidden milestones</span>
-                <span
-                  style={{
-                    color: "var(--ink-quiet)",
-                    fontFamily: "var(--font-mono-stack)",
-                    fontWeight: 400,
-                  }}
-                >
-                  {hiddenNodes.length}
-                </span>
+                <span className={styles.hiddenCount}>{hiddenNodes.length}</span>
               </summary>
-              <div style={{ borderTop: "1px solid var(--hairline)" }}>
+              <div className={styles.hiddenBody}>
                 {hiddenNodes.map((node) => (
                   <NodeCard
                     key={node.id}
@@ -2211,24 +1739,14 @@ export function CurationSurface({
               setDate={setDraftDate}
             />
           ) : (
-            /* Fix 9: hover underline via className */
             <button
               ref={manualAddTriggerRef}
               type="button"
               onClick={openManualAdd}
-              className="quiet-link-hover"
-              style={{
-                fontSize: 12,
-                color: "var(--indigo)",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "8px 0",
-                display: "block",
-                minHeight: 44,
-              }}
+              className={styles.addTrigger}
+              style={{ display: "block" }}
             >
-              + Add a milestone
+              <span className={styles.addTriggerAccent}>+ Add a milestone</span>
             </button>
           )}
         </div>

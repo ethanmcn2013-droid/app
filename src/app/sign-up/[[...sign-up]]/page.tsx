@@ -51,33 +51,42 @@ export default async function SignUpPage({
   }
 
   // A sponsored signup keeps its own headline: the person arrived because
-  // somebody paid for their year, and that is the first thing they should
-  // read. The code stays directly under it.
+  // somebody is paying for their access, and that is the first thing they
+  // should read. The ratified term (R-015) lives in the panel below; the
+  // headline never states a duration.
   const headline = sponsor
-    ? `${sponsor.name} is covering your year.`
+    ? `${sponsor.name} is covering this.`
     : "Create your Signal Studio account.";
 
   return (
-    <AuthStage headline={headline}>
-      {sponsor ? (
-        <p className="mb-5 text-[13.5px] leading-[1.55] text-ink-soft">
-          Almost there. Your code{" "}
-          <span className="font-mono uppercase tracking-[0.06em] text-ink">
-            {sponsor.code}
-          </span>{" "}
-          is applied once you finish.
-        </p>
-      ) : segmentLabel ? (
-        <p className="mb-5 text-[13.5px] leading-[1.55] text-ink-soft">
-          Setting up for{" "}
-          <span className="font-medium text-ink">{segmentLabel}</span>.
-        </p>
-      ) : null}
-      <SignUp
-        appearance={signalAuthPageAppearance}
-        fallbackRedirectUrl={welcomeUrl}
-        forceRedirectUrl={welcomeUrl}
-      />
-    </AuthStage>
+      <AuthStage headline={headline}>
+        {sponsor ? (
+          <div className="mb-5 flex w-full flex-col items-center text-center">
+            <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-quiet">
+              {sponsor.name}
+            </div>
+            <p className="mt-2 text-[13.5px] leading-[1.55] text-ink-soft">
+              Almost there. {sponsor.name} is covering it. Eighteen months, or
+              three months past your wedding, whichever is later.
+            </p>
+            <div className="mt-3 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-faint">
+              Code
+            </div>
+            <div className="mt-1 font-mono text-[14px] uppercase tracking-[0.08em] tabular-nums text-ink-quiet">
+              {sponsor.code}
+            </div>
+          </div>
+        ) : segmentLabel ? (
+          <p className="mb-5 text-[13.5px] leading-[1.55] text-ink-soft">
+            Setting up for{" "}
+            <span className="font-medium text-ink">{segmentLabel}</span>.
+          </p>
+        ) : null}
+        <SignUp
+          appearance={signalAuthPageAppearance}
+          fallbackRedirectUrl={welcomeUrl}
+          forceRedirectUrl={welcomeUrl}
+        />
+      </AuthStage>
   );
 }

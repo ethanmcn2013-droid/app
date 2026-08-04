@@ -1,3 +1,30 @@
+/**
+ * Legacy Signal analytics stylesheet.
+ *
+ * This file is imported by src/app/app/signal/layout.tsx, so it loads on
+ * every Signal route — including the progressive Quiet Ledger, which is
+ * styled entirely with Tailwind utilities and uses none of it. It is kept
+ * because the flag-gated analytics shell (SignalAppShell) still depends on
+ * it end to end.
+ *
+ * Two families live here, and the boundary is load-bearing:
+ *
+ *   1. Analytics shell — everything from .signal-analytics down to
+ *      .signal-breakdown-*. Only ever rendered inside .signal-analytics.
+ *   2. Evidence drawer — .signal-evidence-drawer and everything it
+ *      contains (.signal-drawer-*, .signal-evidence-reasons,
+ *      .signal-record-*, .signal-coverage-*), plus the shared atoms
+ *      .signal-eyebrow, .signal-actions, .signal-freshness and the three
+ *      .signal-button* variants. This family is shared: EvidenceDrawer
+ *      renders on the ledger route too, outside .signal-analytics.
+ *
+ * Leak rule: every selector in this file must stay anchored to a
+ * .signal-* class. No bare element, attribute-only, or descendant-of-body
+ * selectors, and no :root / * rules — those are the only things that could
+ * reach the ledger's Tailwind markup. Keep @keyframes names signal-* too.
+ * Verified against the live ledger route: no rule here matches any ledger
+ * element outside the drawer subtree.
+ */
 .signal-analytics {
   --signal-sidebar-width: 216px;
   min-height: 100%;
@@ -690,8 +717,59 @@
   box-shadow: var(--shadow-modal);
 }
 
+/* Structural sheet entrance, same register as the Tasks detail panel:
+   420ms glide in from the right edge, 260ms out. The exit is driven by
+   the component setting data-closing before dialog.close().
+
+   The entrance is scoped away from the closing state on purpose. A running
+   CSS animation outranks a transition on the same property, so an unscoped
+   [open] rule kept animating the sheet inward for the whole exit window and
+   then snapped it to translateX(100%) when the animation ended. Scoping the
+   entrance hands transform back to the exit transition immediately; the
+   component pins the sheet's current offset for one frame so the transition
+   has a real position to glide from. */
+.signal-evidence-drawer[open]:not([data-closing]) {
+  animation: signal-drawer-in 420ms var(--spring-glide);
+}
+
+.signal-evidence-drawer[data-closing] {
+  transform: translateX(100%);
+  transition: transform 260ms var(--spring-glide);
+}
+
+@keyframes signal-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 .signal-evidence-drawer::backdrop {
   background: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.signal-evidence-drawer[open]:not([data-closing])::backdrop {
+  animation: signal-backdrop-in 260ms var(--ease-out);
+}
+
+/* Same handoff as the sheet. ::backdrop inherits custom properties from its
+   originating element, so the component pins the backdrop's live opacity in
+   --signal-drawer-backdrop-hold for one frame and then drops it, leaving the
+   0 fallback for the transition to land on. */
+.signal-evidence-drawer[data-closing]::backdrop {
+  opacity: var(--signal-drawer-backdrop-hold, 0);
+  transition: opacity 260ms var(--ease-out);
+}
+
+@keyframes signal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .signal-drawer-header {
@@ -759,6 +837,32 @@
   background: var(--accent);
 }
 
+/* The paging busy surface. `aria-busy` on a plain container announces
+   nothing and shows nothing, so the round-trip gets two honest signals: this
+   dim on the page being replaced, and the polite status line below it.
+   0.7 is a resting value, not a pulse — the only motion is the settle
+   between the two states. It is deliberately shallow: at 0.7 the record
+   title and reason (--ink / --ink-soft) still clear 4.5:1 on paper, and the
+   meta lines are the only thing that drops, for the length of one fetch. */
+.signal-record-pane {
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.signal-record-pane[data-paging] {
+  opacity: 0.7;
+}
+
+.signal-drawer-status {
+  /* One line held open at rest, so the announcement arriving mid-fetch does
+     not push the records it describes. */
+  min-height: 16px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: 16px;
+  color: var(--ink-faint);
+}
+
 .signal-record-list {
   display: grid;
   border-top: 1px solid var(--hairline-soft);
@@ -804,7 +908,7 @@
 }
 
 .signal-chart a:focus-visible .signal-chart-hit {
-  stroke: var(--brand);
+  stroke: var(--accent);
   stroke-width: 3;
 }
 
@@ -1036,12 +1140,33 @@
   }
 }
 
+/* Reduced motion is absolute. This block must cover every transition and
+   animation this file introduces; re-audited 2026-07-29 against the whole
+   file, and the full inventory is:
+     transition — .signal-skip-link, .signal-context-link, the three button
+                  variants, .signal-record-pane,
+                  .signal-evidence-drawer[data-closing] and its ::backdrop
+     animation  — the drawer entrance and its ::backdrop entrance
+   Nothing else in this file declares either. The dim itself survives here:
+   only its settle is dropped, because the dim is state, not motion.
+   The entrance selectors carry :not([data-closing]) so they match the
+   specificity of the rules above and actually win here. */
 @media (prefers-reduced-motion: reduce) {
   .signal-skip-link,
   .signal-context-link,
   .signal-button,
   .signal-button-secondary,
-  .signal-button-quiet {
+  .signal-button-quiet,
+  .signal-record-pane,
+  .signal-evidence-drawer[data-closing],
+  .signal-evidence-drawer[data-closing]::backdrop {
     transition: none;
+  }
+
+  .signal-evidence-drawer[open],
+  .signal-evidence-drawer[open]::backdrop,
+  .signal-evidence-drawer[open]:not([data-closing]),
+  .signal-evidence-drawer[open]:not([data-closing])::backdrop {
+    animation: none;
   }
 }

@@ -52,13 +52,13 @@ export function DemoAuthCard({
       >
         <Link
           href="/app/tasks"
-          className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-[13.5px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-ink px-5 text-[13.5px] font-medium text-white transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           Open the demo workspace
         </Link>
         <Link
           href="/"
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-5 text-[13.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-line bg-white px-5 text-[13.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           Back to Signal Studio
         </Link>

@@ -2,22 +2,22 @@ import {
   anchorMilestone,
   countdown,
   countdownToken,
-  countdownPhrase,
   type AnchorCandidate,
 } from "@/modules/timeline/lib/roadmap/anchor";
 
 /**
- * The countdown to a plan's anchor day, in the suite's two registers.
+ * The countdown to a plan's anchor day, in the operator register.
  *
- * AnchorChip is the operator register: a quiet mono readout for the owner's
- * own surfaces (the dashboard, the editor), the "good context" of seeing
- * how far out the launch is without opening anything. AnchorSentence is the
- * recipient register: one plain-English line for the person the plan is
- * shared with, no chrome, no T-N (voice rule 7).
+ * AnchorChip is a quiet mono readout for the owner's own surfaces (the
+ * dashboard, the editor), the "good context" of seeing how far out the day is
+ * without opening anything. The recipient register that once lived beside it
+ * was retired with T·127: the shared artifact answers "how far out is this"
+ * with its own metric face, and a second plain-English countdown on the same
+ * page would have stated the fact twice in two voices.
  *
- * Both are pure server components, zero client JS, and both resolve the
- * anchor themselves so a caller passes the milestone list it already has
- * and gets null when there is no upcoming day to count to.
+ * A pure server component, zero client JS, resolving the anchor itself so a
+ * caller passes the milestone list it already has and gets null when there is
+ * no upcoming day to count to.
  *
  * Refusals held here on purpose: days only (never hours/minutes), no red on
  * an overdue date, no animation. A day that has passed renders nothing, a
@@ -94,52 +94,5 @@ export function AnchorChip({
         {formatDay(anchor.targetDate, now)}
       </span>
     </span>
-  );
-}
-
-export function AnchorSentence({
-  targetDate,
-  now,
-  weekday = true,
-}: {
-  /** ISO YYYY-MM-DD of the anchor day. */
-  targetDate: string;
-  /** Request-time clock, threaded from the RSC boundary (see AnchorChip). */
-  now: number;
-  /** Include the weekday ("Saturday, June 20"). Off for a bare date. */
-  weekday?: boolean;
-}) {
-  const c = countdown(targetDate, now);
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(targetDate);
-  if (!match) return null;
-
-  const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  const dateLabel = d.toLocaleDateString(undefined, {
-    ...(weekday ? { weekday: "long" as const } : {}),
-    month: "long",
-    day: "numeric",
-    ...(Number(match[1]) !== new Date(now).getFullYear()
-      ? { year: "numeric" as const }
-      : {}),
-  });
-
-  // Self-correcting: the day is always stated as a fact; the live countdown
-  // clause only rides along when the day is still ahead, so a stale example
-  // degrades to "The day is …" rather than "… 22 days ago".
-  const clause =
-    c.kind === "past" ? null : (
-      <>
-        {" — "}
-        <span style={{ fontWeight: 500, color: "var(--ink)" }}>
-          {c.kind === "today" ? "today" : countdownPhrase(c)}
-        </span>
-      </>
-    );
-
-  return (
-    <>
-      The day is {dateLabel}
-      {clause}.
-    </>
   );
 }

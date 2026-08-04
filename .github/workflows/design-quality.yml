@@ -109,5 +109,6 @@ jobs:
             experience/output/quality-council-input.json
             experience/output/playwright-report
             experience/output/playwright-results
+            experience/output/timeline-project-switcher-results
           if-no-files-found: ignore
           retention-days: 14

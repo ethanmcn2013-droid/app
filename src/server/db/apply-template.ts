@@ -2,10 +2,12 @@ import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "./index";
-import { tasks } from "./schema";
+import { tasks, workspaces } from "./schema";
 import { recordActivity } from "./activity";
+import { nextTaskSeq } from "./task-seq";
 import { type LaneId } from "@/lib/data";
 import { getTemplate, TEMPLATES } from "@/lib/templates";
+import { resolveTemplateDueAt } from "@/lib/template-anchor";
 
 /**
  * Apply a template to a known workspace without touching the Next.js
@@ -22,11 +24,30 @@ import { getTemplate, TEMPLATES } from "@/lib/templates";
 export async function applyTemplateToWorkspace(
   templateId: string,
   workspaceId: string,
+  options?: {
+    /**
+     * Calendar date (`YYYY-MM-DD`) that this template's `dueOffsetDays` are
+     * measured from. For a wedding workspace this is the wedding day.
+     * Omitted means "read `workspaces.primary_date`"; a workspace with no
+     * primary date gets no `due_at` on any seeded task, which is exactly
+     * today's behaviour.
+     */
+    anchorDate?: string | null;
+  },
 ): Promise<void> {
   if (!TEMPLATES.some((t) => t.id === templateId)) {
     throw new Error(`Unknown template id: ${templateId}`);
   }
   const template = getTemplate(templateId);
+
+  let anchorDate = options?.anchorDate ?? null;
+  if (options === undefined || options.anchorDate === undefined) {
+    const [wsRow] = await db
+      .select({ primaryDate: workspaces.primaryDate })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceId));
+    anchorDate = wsRow?.primaryDate ?? null;
+  }
 
   const lanes = Array.from(new Set(template.tasks.map((t) => t.lane)));
   const lanePositions = new Map<LaneId, number>();
@@ -46,11 +67,17 @@ export async function applyTemplateToWorkspace(
     await db.insert(tasks).values({
       id,
       workspaceId,
+      seq: nextTaskSeq(workspaceId),
       title: t.title,
       lane: t.lane,
       priority: t.priority,
       assignees: [],
       due: t.due,
+      dueAt: resolveTemplateDueAt({
+        anchorDate,
+        dueOffsetDays: t.dueOffsetDays,
+      }),
+      isMilestone: t.milestone === true,
       tags: t.tags,
       position,
       updatedAt: now,

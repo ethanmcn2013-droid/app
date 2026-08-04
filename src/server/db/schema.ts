@@ -39,6 +39,13 @@ export const tasks = sqliteTable("tasks", {
    *  NOT NULL after the legacy backfill lands. Cascade on workspace
    *  delete kills the workspace's whole task tree. */
   workspaceId: text("workspace_id"),
+  /** Human-readable per-workspace counter (T-14), display + reference
+   *  only — `id` stays the stable primary key everywhere. Allocated by
+   *  `nextTaskSeq()` (an atomic MAX+1 subquery inside the INSERT; the
+   *  unique (workspace_id, seq) index in 0021 is the concurrency
+   *  backstop). Nullable: legacy rows were backfilled by 0021, and a
+   *  writer that skips allocation degrades to the hex-id display. */
+  seq: integer("seq"),
   title: text("title").notNull(),
   description: text("description"),
   lane: text("lane").$type<LaneId>().notNull(),
@@ -117,6 +124,13 @@ export const tasks = sqliteTable("tasks", {
    *
    *  Steps 1-4 of T·69 are independently shippable without this column. */
   boardColumnKey: text("board_column_key"),
+  /** T·122: when the task last became done (any config done column), in
+   *  epoch seconds like every timestamp here. NULL means not done, or
+   *  done before this column existed and not reconstructable from the
+   *  activity log (migration 0025 backfills what the log can prove).
+   *  Maintained by every done-transition write path; Signal reads this
+   *  before falling back to activity-log reconstruction. */
+  completedAt: integer("completed_at", { mode: "timestamp" }),
   /** RW-3b: milestone promotion flag. True when the owner explicitly
    *  "promotes to milestone" in the task panel. The flag is additive
    *  and reversible, a milestone is still a normal board task; the
@@ -261,6 +275,23 @@ export const workspaces = sqliteTable("workspaces", {
    *  identifier and as the public `/p/{slug}` URL when published. */
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  /** T·124: the project's ONE currency (curated ISO-4217 label). It
+   *  labels amounts, never converts them. NULL keeps the USD label the
+   *  existing amounts were entered under. */
+  currency: text("currency"),
+  /** T·124: the operator's budget in integer cents of `currency`.
+   *  Restated and summed against, never computed from. NULL = unset. */
+  budgetCents: integer("budget_cents"),
+  /** The project's supporting line, shown under the title in the brief
+   *  (T·114). Nullable: null renders the brief's placeholder rather than
+   *  a sentence nobody wrote. Before 0022 this text lived in localStorage
+   *  keyed by *display name*, so two projects sharing a display name
+   *  shared one description and a rename orphaned it — the value was
+   *  invisible to every collaborator and to share, print and embed.
+   *
+   *  MIGRATION REQUIRED before this column is readable from prod:
+   *  see drizzle/0022_workspaces_description.sql. */
+  description: text("description"),
   /** Nullable so the schema push doesn't fail on the legacy backfill;
    *  tightened to NOT NULL after the user webhook lands real owners. */
   ownerUserId: text("owner_user_id").references(() => users.id),
@@ -704,8 +735,34 @@ export const userPreferences = sqliteTable("user_preferences", {
  * a friendly label for the manage-links UI, and a redemption counter.
  */
 export const shareLinks = sqliteTable("share_links", {
-  /** URL-safe random token, also the primary key. */
+  /**
+   * Primary key, and the stable handle the manage-links UI and the visit
+   * log key off.
+   *
+   * E08.06 / R-033 changed what this column HOLDS, not its type or its role.
+   * Rows minted from migration 0027 onward store an opaque, non-secret public
+   * id (`sl_…`); the guest's secret lives only in the URL and only its sha256
+   * is stored, in `tokenHash`. Rows minted before 0027 still hold the raw
+   * secret here until the backfill runs — `tokenScheme` says which, per row.
+   * Never render this value as a share URL.
+   */
   token: text("token").primaryKey(),
+  /**
+   * sha256 (hex) of the guest's secret, under a unique index. Nullable only
+   * for the duration of the cutover: `plaintext`-scheme rows have not been
+   * backfilled yet. Once every row reads `sha256` this becomes the only way a
+   * link resolves.
+   */
+  tokenHash: text("token_hash"),
+  /**
+   * Which of the two shapes above this row uses. `plaintext` = pre-0027,
+   * `token` holds the secret and `tokenHash` is null. `sha256` = current.
+   * The resolver reads both; the backfill script moves rows one way only.
+   */
+  tokenScheme: text("token_scheme")
+    .$type<"plaintext" | "sha256">()
+    .notNull()
+    .default("plaintext"),
   /** Per-tenant boundary. Resolves which workspace the guest sees. */
   workspaceId: text("workspace_id"),
   /** Default view shown when the guest opens the link. */
@@ -737,6 +794,11 @@ export const shareLinks = sqliteTable("share_links", {
   // Mirror drizzle/0003_hot_indexes.sql, manage-links UI lists a
   // workspace's share links.
   index("idx_share_links_workspace_id").on(t.workspaceId),
+  // Mirror drizzle/0027_share_link_token_hash.sql. UNIQUE at the index
+  // level, not in arithmetic: two links can never resolve to one hash even
+  // under a concurrent mint. SQLite permits many NULLs in a unique index,
+  // which is what lets the not-yet-backfilled rows coexist during cutover.
+  uniqueIndex("uq_share_links_token_hash").on(t.tokenHash),
 ]);
 
 /**
@@ -796,65 +858,6 @@ export const processedWebhooks = sqliteTable("processed_webhooks", {
  * Tokens are URL-safe random strings; expiry is 7 days from mint.
  */
 /**
- * Interactive GTM roadmap item, one row per actionable line in
- * `~/Projects/tasks/docs/gtm-plan.md`. The parser at
- * `src/server/roadmap/parser.ts` walks the §3 asset checklist, §7
- * 8-week content calendar, §9 14-day press Gantt, plus the launch
- * milestones, and synthesizes deterministic IDs of the shape
- * `${kind}-w${week}-${date}-${slug}` so re-parsing is idempotent and
- * status survives across re-syncs. The UI at `/roadmap` toggles
- * `status` per row; new items in the markdown auto-appear on next
- * load.
- */
-export const roadmapItems = sqliteTable("roadmap_items", {
-  /** Deterministic key, see parser. */
-  id: text("id").primaryKey(),
-  /** 1..8 for content-calendar weeks; 0 for press/asset/milestone rows
-   *  that don't have a week column. */
-  week: integer("week").notNull(),
-  weekTheme: text("week_theme"),
-  weekRange: text("week_range"),
-  /** ISO date 2026-MM-DD. Null for asset checklist rows that key off
-   *  a target date but live outside the weekly cadence. */
-  date: text("date"),
-  day: text("day"),
-  /** post · asset · press · paid · launch · kpi · milestone */
-  kind: text("kind").notNull(),
-  channel: text("channel"),
-  format: text("format"),
-  source: text("source"),
-  cta: text("cta"),
-  postingTime: text("posting_time"),
-  /** Free-text body, for asset rows it's the asset name; for press
-   *  rows it's the action verb; for posts it's the format text. */
-  body: text("body"),
-  status: text("status")
-    .$type<"pending" | "in_progress" | "completed">()
-    .notNull()
-    .default("pending"),
-  /** True when the markdown surrounded the row in **bold**, flags
-   *  Show HN, PH, IH launch beats and the paid-ad rows. */
-  isLaunch: integer("is_launch", { mode: "boolean" })
-    .notNull()
-    .default(false),
-  /** Free-form note the user can attach via the UI ("got 47 likes",
-   *  "slipped to Wednesday"). UI clamps to 140 chars. */
-  note: text("note"),
-  /** Optional FK to `blockers.id`, the user-action that has to land
-   *  before this item can move. NULL = independent / scheduled-only. */
-  blockerId: text("blocker_id"),
-  /** Position within its week+date for stable rendering. */
-  ord: integer("ord").notNull().default(0),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-});
-
-/**
  * File attachments, one row per uploaded file bound to a task. The
  * actual bytes live on disk under `<repo>/.data/uploads/...` (outside
  * `public/` so the Next static handler never streams them); this row
@@ -895,78 +898,6 @@ type _SchemaCoversAttachment =
   keyof Attachment extends keyof typeof attachments.$inferSelect ? true : never;
 const _checkAttachment: _SchemaCoversAttachment = true;
 void _checkAttachment;
-
-/**
- * GTM blockers, the small set of user-only actions that gate large
- * groups of roadmap items. Domain purchase, ElevenLabs subscription,
- * X/Bluesky/PH handle claims, ScreenStudio recording session, Sentry
- * alert config, paid spend authorization, the live launch beats. Each
- * `roadmap_items.blocker_id` points here; `/roadmap` filters by
- * blocker so the user can see "everything domain unblocks" in one
- * pass. Resolved blockers stay in the table with `resolved_at` set so
- * the audit trail survives.
- */
-export const blockers = sqliteTable("blockers", {
-  /** Stable string id like `B-domain`, `B-elevenlabs`, `B-handles-x`. */
-  id: text("id").primaryKey(),
-  title: text("title").notNull(),
-  /** purchase · account · recording · auth · ad-spend · launch-beat · kpi · config */
-  kind: text("kind").notNull(),
-  /** ISO target date (YYYY-MM-DD). */
-  targetDate: text("target_date"),
-  /** ≤180 char one-liner about what this blocker unblocks. */
-  description: text("description").notNull(),
-  /** Free-form note the user can attach via the UI. UI clamps to 140 chars. */
-  note: text("note"),
-  /** Null = unresolved. Non-null = the user marked it done. */
-  resolvedAt: integer("resolved_at", { mode: "timestamp" }),
-  ord: integer("ord").notNull().default(0),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-});
-
-/**
- * Action items, the launch-readiness QA checklist. Independent of
- * `gtm-plan.md` and the marketing roadmap; this is the *engineering*
- * and *product* checklist (test SSO with a friend, mobile overlap
- * audit, security headers, BigQuery decision, etc.). Seeded once via
- * `seedActionItemsIfEmpty()`; new items can be added directly from
- * the seed file (re-running picks up adds without losing user state
- * because the deterministic id keys the upsert).
- */
-export const actionItems = sqliteTable("action_items", {
-  /** Stable id like `AI-domain-purchase`, `AI-test-sso-google`. */
-  id: text("id").primaryKey(),
-  /** Display category, see seed for the canonical set. */
-  category: text("category").notNull(),
-  title: text("title").notNull(),
-  /** ≤200 char description shown in the row's expanded subline. */
-  description: text("description"),
-  status: text("status")
-    .$type<"pending" | "in_progress" | "completed">()
-    .notNull()
-    .default("pending"),
-  /** Optional FK to `blockers.id`, links a test/QA item to whatever
-   *  user-action has to land before the test can run (e.g. "test SSO
-   *  with a friend" depends on `B-domain` so deliverability works). */
-  blockerId: text("blocker_id"),
-  /** Free-form note. UI clamps to 140 chars. */
-  note: text("note"),
-  /** "P0" / "P1" / "P2", P0 must close before launch (06-16). */
-  priority: text("priority").$type<"P0" | "P1" | "P2">().notNull().default("P1"),
-  ord: integer("ord").notNull().default(0),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  completedAt: integer("completed_at", { mode: "timestamp" }),
-});
 
 /**
  * Unified resource model. Absorbs file attachments (kind='upload') and

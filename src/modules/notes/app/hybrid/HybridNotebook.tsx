@@ -7,8 +7,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 
 import {
   FirstCaptureMoment,
@@ -21,6 +23,7 @@ import {
   type CaptureState as CaptureEmailState,
 } from "@/modules/notes/app/CaptureEmailRow";
 import { useVoiceCapture } from "@/modules/notes/app/notebook/hooks";
+import { notesCopyForDomain } from "@/modules/notes/lib/notes-copy";
 import { NoteProvenanceChip } from "@/modules/notes/components/NoteProvenanceChip";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import {
@@ -50,10 +53,26 @@ import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-per
 import styles from "./hybrid-notebook.module.css";
 
 const TASKS_APP_PATH = PRODUCT_APP_PATHS.tasks;
+
+/** ⌘ on Apple platforms, Ctrl elsewhere. Server renders ⌘; the client
+ *  snapshot corrects it during hydration without a set-state. */
+const subscribeNever = () => () => {};
+function useSaveChordLabel(): string {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => (/Mac|iPhone|iPad|iPod/.test(navigator.platform) ? "⌘" : "Ctrl"),
+    () => "⌘",
+  );
+}
 const RECOVERY_DRAFT_PREFIX = "signal-notes.hybrid-draft.v2";
 const RECOVERY_CAPTURES_PREFIX = "signal-notes.hybrid-pending-captures.v2";
 const RECOVERY_EDITS_PREFIX = "signal-notes.hybrid-detail-edits.v2";
 const DELETE_UNDO_MS = 6_000;
+const MOTION_EASE_OUT = [0.23, 1, 0.32, 1] as const;
+const MOTION_EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
+const MOTION_ENTER = { duration: 0.2, ease: MOTION_EASE_OUT };
+const MOTION_EXIT = { duration: 0.14, ease: MOTION_EASE_OUT };
+const MOTION_LAYOUT = { duration: 0.2, ease: MOTION_EASE_IN_OUT };
 
 type MutationState = "pending" | "failed" | "offline" | "saved";
 type CaptureStatus = "idle" | "pending" | "failed" | "offline" | "saved";
@@ -116,6 +135,12 @@ interface HybridNotebookProps {
   planningPeriodsEnabled: boolean;
   initialWorkspaceId: string | null;
   initialPendingApprovedTaskSends: PendingApprovedTasksSendRead[];
+  /**
+   * The workspace's active domain, as Tasks reports it. Chooses which
+   * register the notebook's own copy speaks in and nothing else. Null, or
+   * anything other than "wedding", reads the generic register.
+   */
+  activeDomain?: string | null;
   reviewFirstCapture?: boolean;
   referenceTime?: number;
   recoveryScope: string;
@@ -312,11 +337,15 @@ export function HybridNotebook({
   planningPeriodsEnabled,
   initialWorkspaceId,
   initialPendingApprovedTaskSends,
+  activeDomain = null,
   reviewFirstCapture = false,
   referenceTime,
   recoveryScope,
   demoMode,
 }: HybridNotebookProps) {
+  // Every user-visible string in capture and hand-off comes from here, so a
+  // couple's notebook and a generic notebook cannot drift apart by accident.
+  const copy = notesCopyForDomain(activeDomain);
   const recoveryKeys = useMemo(
     () => ({
       draft: `${RECOVERY_DRAFT_PREFIX}:${recoveryScope}`,
@@ -337,7 +366,7 @@ export function HybridNotebook({
   const [captureError, setCaptureError] = useState<string | null>(null);
   const [captureDiscardOpen, setCaptureDiscardOpen] = useState(false);
   const [recoveryStorageAvailable, setRecoveryStorageAvailable] = useState(true);
-  const [pendingCaptures, setPendingCaptures] = useState<PendingCapture[]>([]);
+  const [, setPendingCaptures] = useState<PendingCapture[]>([]);
   const [recoveredEditIds, setRecoveredEditIds] = useState<string[]>([]);
   const [orphanedRecoveries, setOrphanedRecoveries] = useState<Record<string, RecoveredEdit>>({});
   const [mutationStates, setMutationStates] = useState<Record<string, MutationState>>({});
@@ -398,8 +427,6 @@ export function HybridNotebook({
   const lostTasksReplyOnce = useRef(false);
   const earlySaveQueued = useRef(false);
   const bootstrapped = useRef(false);
-  const autoPreviewedRef = useRef(false);
-  const passivePreviewRef = useRef(false);
   const pendingRef = useRef<PendingCapture[]>([]);
   const pendingApprovedTaskSendsRef = useRef(initialPendingApprovedTaskSends);
   const openVersionRef = useRef<{ id: string; body: string; updatedAt: number } | null>(null);
@@ -443,6 +470,7 @@ export function HybridNotebook({
     const pendingMatches = localResults.filter((note) => mutationStates[note.id]);
     return pendingMatches.reduce((current, note) => upsertNote(current, note), serverResults);
   }, [localResults, mutationStates, query, serverResults]);
+  const filteringNotes = Boolean(query.trim());
 
   const setPending = useCallback((next: PendingCapture[]): boolean => {
     const persisted = writeSession(recoveryKeys.captures, next);
@@ -542,20 +570,6 @@ export function HybridNotebook({
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-
-  useEffect(() => {
-    if (
-      isNarrow !== false ||
-      autoPreviewedRef.current ||
-      openId ||
-      notes.length === 0
-    ) {
-      return;
-    }
-    autoPreviewedRef.current = true;
-    passivePreviewRef.current = true;
-    setOpenId(notes[0].id);
-  }, [isNarrow, notes, openId]);
 
   useEffect(() => {
     if (!mobileDetailOpen) return;
@@ -942,7 +956,7 @@ export function HybridNotebook({
             sourceSelection: pendingApprovedSend.sourceSelection,
             approvedBody: pendingApprovedSend.approvedBody,
             status: "failed",
-            error: "This exact approved send is pending. Retry it unchanged to recover the Tasks receipt; no duplicate will be created.",
+            error: copy.errors.retryPending,
             receipt: null,
             immutableRetry: {
               workspaceId: pendingApprovedSend.workspaceId,
@@ -960,11 +974,7 @@ export function HybridNotebook({
           }
         : null,
     );
-    if (passivePreviewRef.current) {
-      passivePreviewRef.current = false;
-    } else {
-      window.setTimeout(() => detailRef.current?.focus({ preventScroll: true }), 0);
-    }
+    window.setTimeout(() => detailRef.current?.focus({ preventScroll: true }), 0);
   }, [openId]); // Intentionally resets only when navigating, not on every optimistic row merge.
 
   useEffect(() => {
@@ -1127,9 +1137,9 @@ export function HybridNotebook({
     if (navigationBlocked) {
       setDetailError(
         uncertainTasksReceipt
-          ? "Retry this exact approved send to confirm its Tasks receipt before leaving the note."
+          ? copy.errors.leaveBlockedRetry
           : tasksSendInFlight
-          ? "Wait for Tasks to confirm this exact send before leaving the note."
+          ? copy.errors.leaveBlockedSending
           : timelineSending
             ? "Wait for Timeline to confirm this exact preview before leaving the note."
             : "Wait for this edit to finish saving before leaving the note.",
@@ -1174,11 +1184,11 @@ export function HybridNotebook({
   function beginExtraction(): void {
     if (!openNote || conflict || noteInteractionLocked) return;
     if (detailDirty) {
-      setDetailError("Save this note before approving wording for Tasks.");
+      setDetailError(copy.errors.unsavedNote);
       return;
     }
     if (!selection.trim()) {
-      setDetailError("Select the exact source wording in the note first.");
+      setDetailError(copy.errors.nothingSelected);
       detailRef.current?.focus();
       return;
     }
@@ -1188,7 +1198,7 @@ export function HybridNotebook({
       approvedBody: selection.slice(0, MAX_APPROVED_EXTRACT_CHARS),
       status: "review",
       error: selection.length > MAX_APPROVED_EXTRACT_CHARS
-        ? "The source selection is longer than a Tasks action. Edit the approved wording to 280 characters or fewer."
+        ? copy.errors.selectionTooLong
         : null,
       receipt: null,
       immutableRetry: null,
@@ -1200,19 +1210,19 @@ export function HybridNotebook({
     const targetWorkspaceId = extract.immutableRetry?.workspaceId ?? selectedWorkspaceId;
     const targetExpectedUpdatedAt = extract.immutableRetry?.expectedUpdatedAt ?? detailBaseUpdatedAt;
     if (!targetWorkspaceId) {
-      setExtract({ ...extract, status: "failed", error: "Choose a Tasks workspace first." });
+      setExtract({ ...extract, status: "failed", error: copy.errors.noDestination });
       return;
     }
     if (!extract.approvedBody.trim()) {
-      setExtract({ ...extract, status: "failed", error: "Approved wording cannot be empty." });
+      setExtract({ ...extract, status: "failed", error: copy.errors.emptyWording });
       return;
     }
     if (extract.approvedBody.length > MAX_APPROVED_EXTRACT_CHARS) {
-      setExtract({ ...extract, status: "failed", error: "Approved wording must be 280 characters or fewer." });
+      setExtract({ ...extract, status: "failed", error: copy.errors.tooLong });
       return;
     }
     if (!online) {
-      setExtract({ ...extract, status: "failed", error: "Reconnect before sending. Nothing has left Notes." });
+      setExtract({ ...extract, status: "failed", error: copy.errors.offline });
       return;
     }
     setExtract({ ...extract, status: "sending", error: null });
@@ -1221,11 +1231,11 @@ export function HybridNotebook({
       let receipt: ExtractSendResult;
       if (demoMode) {
         if (reviewMode === "tasks-error") {
-          throw new Error("Tasks is unavailable. Nothing left Notes; your approval is retained.");
+          throw new Error(copy.errors.tasksUnavailable);
         }
         if (reviewMode === "tasks-lost-reply" && !lostTasksReplyOnce.current) {
           lostTasksReplyOnce.current = true;
-          throw new Error("Tasks may have accepted this action, but the receipt was lost. Retry safely with the same note identity.");
+          throw new Error(copy.errors.replyLost);
         }
         const taskId = `review_task_${openNote.id.replace(/[^a-z0-9]/gi, "_")}`;
         note = {
@@ -1263,8 +1273,8 @@ export function HybridNotebook({
             ...extract,
             status: "failed",
             error: recovered
-              ? "The source changed before send. Both versions are preserved; resolve the note and select again."
-              : "The source changed before send. Both versions are visible, but local recovery is blocked; keep this tab open.",
+              ? copy.errors.sourceChanged
+              : copy.errors.sourceChangedNoRecovery,
           });
           return;
         }
@@ -1275,10 +1285,10 @@ export function HybridNotebook({
       setDetailBaseUpdatedAt(note.updatedAt);
       setExtract({ ...extract, status: "sent", error: null, receipt, immutableRetry: null });
       setPendingApprovedTaskSends((current) => current.filter((send) => send.noteId !== note.id));
-      showToast({ state: "saved", message: receipt.created ? "Approved action sent. The private source note stayed here." : "Existing Tasks receipt recovered. No duplicate was created." });
+      showToast({ state: "saved", message: receipt.created ? copy.receipts.sent : copy.receipts.recovered });
       window.setTimeout(() => receiptLinkRef.current?.focus({ preventScroll: true }), 0);
     } catch (error) {
-      const message = friendlyError(error, "Tasks is unavailable. Nothing was removed from Notes.");
+      const message = friendlyError(error, copy.errors.tasksUnavailable);
       if (!demoMode && openNote) {
         try {
           const recovery = await getApprovedTaskSendRecoveryForHybrid(openNote.id);
@@ -1294,7 +1304,7 @@ export function HybridNotebook({
               receipt: recovery.result,
               immutableRetry: null,
             } : current);
-            showToast({ state: "saved", message: "Tasks receipt recovered. No duplicate was created." });
+            showToast({ state: "saved", message: copy.receipts.recovered });
             window.setTimeout(() => receiptLinkRef.current?.focus({ preventScroll: true }), 0);
             return;
           }
@@ -1334,6 +1344,13 @@ export function HybridNotebook({
           ...current,
           status: "failed",
           error: message,
+          immutableRetry:
+            reviewMode === "tasks-lost-reply"
+              ? {
+                  workspaceId: targetWorkspaceId,
+                  expectedUpdatedAt: targetExpectedUpdatedAt,
+                }
+              : current.immutableRetry,
         } : current);
       }
     }
@@ -1540,7 +1557,7 @@ export function HybridNotebook({
         setNotes((current) => upsertNote(current, result.remote));
         showToast({
           state: "error",
-          message: "Delete stopped because this note changed or an approved Tasks send is still pending. The latest note was restored.",
+          message: copy.errors.deleteBlocked,
         });
       }
     } catch (error) {
@@ -1653,19 +1670,6 @@ export function HybridNotebook({
     }, 0);
   }
 
-  function insertCaptureNewline(): void {
-    const textarea = captureRef.current;
-    if (!textarea || readOnly) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    captureGenerationRef.current += 1;
-    setDraft((current) => `${current.slice(0, start)}\n${current.slice(end)}`);
-    window.setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(start + 1, start + 1);
-    }, 0);
-  }
-
   function trapMobileDetailFocus(event: ReactKeyboardEvent<HTMLElement>): void {
     if (!mobileDetailOpen || event.key !== "Tab") return;
     const focusables = Array.from(
@@ -1704,6 +1708,7 @@ export function HybridNotebook({
     }
   }
 
+  const saveChord = useSaveChordLabel();
   const voice = useVoiceCapture({
     appendTranscript: (chunk) => {
       captureGenerationRef.current += 1;
@@ -1716,16 +1721,19 @@ export function HybridNotebook({
     if (!voice.message) return;
     announce(
       voice.message.kind === "denied"
-        ? "Microphone access was not granted."
+        ? copy.voice.denied
         : voice.message.kind === "no-speech"
-          ? "No speech was heard."
-          : "Dictation stopped unexpectedly.",
+          ? copy.voice.noSpeech
+          : copy.voice.failed,
     );
-  }, [announce, voice.message]);
+  }, [announce, copy, voice.message]);
 
   function onCaptureKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>): void {
     if (event.nativeEvent.isComposing) return;
-    if (event.key === "Enter" && !event.shiftKey) {
+    // Familiar text-entry convention: Enter adds a line (textarea
+    // default), the platform command chord saves. Notes is a place to
+    // write, not a chat box.
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
       void commitDraft();
       return;
@@ -1754,18 +1762,28 @@ export function HybridNotebook({
         created: false,
       }
     : null;
+  const handoffTravel = taskReceipt
+    ? taskReceipt.created
+    : extract?.status === "sending" && !extract.immutableRetry;
 
   // Demoted from <main> to <div>: the /app layout already owns the sole
   // <main> landmark. A nested <main> causes landmark-main-is-top-level +
   // landmark-no-duplicate-main axe violations (Phase 7 / Phase 9 fixes).
   return (
     <div id="main-content" className={styles.root} data-hybrid-notebook="true" data-review-mode={reviewMode} data-sentry-mask="true" data-clarity-mask="true" data-dd-privacy="mask" data-1p-ignore="true">
-      <h1 className={styles.srOnly}>Notes</h1>
+      <div className={styles.notebookFrame}>
+      <header className={styles.notebookHeader}>
+        <div className={styles.identity}>
+          <h1 className={styles.wordmark}>Notes<span className={styles.wordmarkDot} aria-hidden="true">.</span></h1>
+          <span className={styles.privateLabel}>Private notebook</span>
+        </div>
+        <span className={styles.headerAssurance}>{copy.capture.headerAssurance}</span>
+      </header>
       <section className={styles.capture} data-state={captureState} aria-labelledby="hybrid-capture-label" inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
         <div className={styles.captureHeader}>
           <div className={styles.captureIdentity}>
             <label id="hybrid-capture-label" className={styles.captureLabel} htmlFor="hybrid-capture">Capture</label>
-            <span className={styles.privacyAssurance}>Private until you approve exact wording</span>
+            <span className={styles.privacyAssurance}>{copy.capture.privacyAssurance}</span>
           </div>
           <span className={styles.searchMeta}>{draft.length.toLocaleString()} / {MAX_NOTE_BODY_CHARS.toLocaleString()}</span>
         </div>
@@ -1782,7 +1800,7 @@ export function HybridNotebook({
           value={draft}
           maxLength={MAX_NOTE_BODY_CHARS}
           readOnly={readOnly}
-          placeholder={readOnly ? "Review fixture is read-only." : "Write the thought before it disappears…"}
+          placeholder={readOnly ? "Review fixture is read-only." : copy.capture.placeholder}
           aria-describedby={`hybrid-capture-hint${captureFeedbackVisible ? " hybrid-capture-state" : ""}`}
           onChange={(event) => {
             captureGenerationRef.current += 1;
@@ -1795,14 +1813,45 @@ export function HybridNotebook({
         />
         <div className={styles.captureFooter}>
           <div className={styles.captureGuidance}>
-            <p id="hybrid-capture-hint" className={styles.captureHint}>Enter saves · Shift + Enter adds a line · Escape asks before discarding</p>
-            {captureEmailState ? <CaptureEmailRow state={captureEmailState} /> : null}
+            <p id="hybrid-capture-hint" className={styles.captureHint}>{saveChord} + Enter saves · Escape asks before discarding</p>
+            {/*
+              E05.04. Dictation runs on the browser's own speech engine,
+              which sends the audio to the browser maker's speech service.
+              That is a third party the couple did not choose, and nothing in
+              the product said so before this task. The line is standing, not
+              a one-time dialog, and it is rendered before the first word is
+              spoken rather than after. `aria-describedby` on the dictate
+              button points here, so a screen reader reaches it too.
+
+              Visual treatment is deliberately the existing quiet hint style.
+              E05.11 owns the motion and polish pass; this task owns the fact
+              being stated at all.
+            */}
+            {voice.engine === "ready" && !readOnly ? (
+              <p id="hybrid-voice-disclosure" className={styles.captureHint}>
+                {copy.voice.disclosure}
+              </p>
+            ) : null}
+            {voice.engine === "unavailable" && !readOnly ? (
+              <p className={styles.captureHint}>{copy.voice.unavailable}</p>
+            ) : null}
+            {captureEmailState ? (
+              <CaptureEmailRow
+                state={captureEmailState}
+                onFeedback={showToast}
+              />
+            ) : null}
           </div>
           <div className={styles.captureActions}>
-            {!readOnly ? <button type="button" className={`${styles.quietButton} ${styles.mobileOnly}`} onClick={insertCaptureNewline}>New line</button> : null}
             {voice.supported && !readOnly ? (
-              <button type="button" className={styles.quietButton} aria-pressed={voice.listening} onClick={voice.toggle}>
-                {voice.listening ? "Stop listening" : "Dictate"}
+              <button
+                type="button"
+                className={styles.quietButton}
+                aria-pressed={voice.listening}
+                aria-describedby="hybrid-voice-disclosure"
+                onClick={voice.toggle}
+              >
+                {voice.listening ? copy.voice.stop : copy.voice.start}
               </button>
             ) : null}
             <button type="button" className={styles.primaryButton} disabled={readOnly || !draft.trim() || captureStatus === "pending"} onClick={() => void commitDraft()}>
@@ -1814,22 +1863,37 @@ export function HybridNotebook({
           <div id="hybrid-capture-state" className={styles.stateLine} data-state={captureState} role="status">
             {captureStatus === "saved" ? "Saved privately. Ready for another thought." : null}
             {captureStatus === "pending" ? "Saving this exact text…" : null}
-            {!online ? "Offline — held in this tab and queued for reconnect." : null}
+            {!online ? "Offline. Held in this tab and queued for reconnect." : null}
             {!recoveryStorageAvailable && draft ? <span className={styles.errorText}>Device recovery is unavailable. Keep this tab open until Notes confirms the save.</span> : null}
             {captureError ? <span className={styles.errorText}>{captureError}</span> : null}
-            {voice.message ? <span>{voice.message.kind === "denied" ? "Microphone access was not granted." : voice.message.kind === "no-speech" ? "No speech was heard." : "Dictation stopped unexpectedly."}</span> : null}
+            {voice.message ? <span>{voice.message.kind === "denied" ? copy.voice.denied : voice.message.kind === "no-speech" ? copy.voice.noSpeech : copy.voice.failed}</span> : null}
           </div>
         ) : null}
+        <AnimatePresence initial={false}>
         {captureDiscardOpen ? (
-          <div className={styles.discardPanel} role="region" aria-labelledby="capture-discard-heading">
+          <motion.div
+            className={styles.discardPanel}
+            data-delight-moment="decision-region"
+            role="region"
+            aria-labelledby="capture-discard-heading"
+            initial={{ opacity: 0, transform: "translateY(-6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(-4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
             <strong id="capture-discard-heading">Discard this unsaved capture?</strong>
             <p>Your words stay in the field until you explicitly discard them.</p>
             <div className={styles.actionRow}>
               <button ref={captureKeepRef} type="button" className={styles.quietButton} onClick={() => { setCaptureDiscardOpen(false); captureRef.current?.focus({ preventScroll: true }); }}>Keep writing</button>
               <button type="button" className={styles.dangerButton} onClick={() => { captureGenerationRef.current += 1; setDraft(""); setCaptureDiscardOpen(false); captureRef.current?.focus(); }}>Discard capture</button>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
       </section>
 
       <section className={styles.searchBand} aria-label="Find in Notes" inert={mobileDetailOpen ? true : undefined} aria-hidden={mobileDetailOpen ? true : undefined}>
@@ -1875,19 +1939,49 @@ export function HybridNotebook({
             <span className={styles.searchMeta}>{notes.length} active</span>
           </div>
           {displayedNotes.length ? (
-            <ol className={styles.streamList}>
+            <motion.ol
+              layout={!filteringNotes}
+              className={styles.streamList}
+              data-delight-moment="artifact-presence"
+              data-motion-policy={filteringNotes ? "immediate-filter" : "artifact-presence"}
+            >
+              <AnimatePresence initial={false} mode="popLayout">
               {displayedNotes.map((note) => {
                 const presentation = presentNoteBody(note.body);
                 const snippet = contextualSnippet(note.body, query);
                 const mutation = mutationStates[note.id];
                 const failed = mutation === "failed" || mutation === "offline";
                 return (
-                  <li
+                  <motion.li
                     key={note.id}
+                    layout={filteringNotes ? false : "position"}
                     className={styles.noteItem}
                     data-density={snippet ? "standard" : "terse"}
                     data-selected={note.id === openId ? "true" : undefined}
                     data-state={mutation}
+                    initial={
+                      filteringNotes
+                        ? false
+                        : { opacity: 0, transform: "translateY(-4px)" }
+                    }
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={
+                      filteringNotes
+                        ? {
+                            opacity: 1,
+                            transform: "translateY(0px)",
+                            transition: { duration: 0 },
+                          }
+                        : {
+                            opacity: 0,
+                            transform: "translateY(-4px)",
+                          }
+                    }
+                    transition={{
+                      layout: filteringNotes ? { duration: 0 } : MOTION_LAYOUT,
+                      opacity: filteringNotes ? { duration: 0 } : MOTION_EXIT,
+                      transform: filteringNotes ? { duration: 0 } : MOTION_ENTER,
+                    }}
                   >
                     <button
                       type="button"
@@ -1926,14 +2020,15 @@ export function HybridNotebook({
                         </span>
                       </div>
                     ) : null}
-                  </li>
+                  </motion.li>
                 );
               })}
-            </ol>
+              </AnimatePresence>
+            </motion.ol>
           ) : (
             <div className={styles.emptyState}>
-              <strong>{query.trim() ? "No matching notes" : "Your notebook starts with one private thought."}</strong>
-              <p>{query.trim() ? "Try a different word. Search never changes your notes." : "The capture field is ready above."}</p>
+              <strong>{query.trim() ? "No matching notes" : copy.capture.emptyTitle}</strong>
+              <p>{query.trim() ? "Try a different word. Search never changes your notes." : copy.capture.emptyBody}</p>
             </div>
           )}
           {Object.keys(orphanedRecoveries).length ? (
@@ -1953,31 +2048,28 @@ export function HybridNotebook({
               </ul>
             </section>
           ) : null}
-          {archivedNotes.length ? (
-            <section className={styles.previousSection} aria-labelledby="hybrid-previous-heading">
-              <h3 id="hybrid-previous-heading">Previously sent</h3>
-              <p className={styles.detailHelp}>These notes used the earlier archive-on-send behavior. Restore one at a time; no private note is moved automatically.</p>
-              <ul className={styles.previousList}>
-                {archivedNotes.map((note) => (
-                  <li key={note.id} className={styles.previousRow}>
-                    <span>{presentNoteBody(note.body).title}{note.extractBody ? ` · ${note.extractBody}` : ""}</span>
-                    <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>{restoringId === note.id ? "Restoring…" : "Restore private note"}</button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </section>
 
-        <section
+        <motion.section
           id="hybrid-note-detail"
           className={styles.detailPane}
+          data-delight-moment="stream-to-detail"
           data-open={openNote ? "true" : "false"}
           role={mobileDetailOpen ? "dialog" : undefined}
           aria-modal={mobileDetailOpen ? true : undefined}
           aria-label={openNote ? undefined : "Selected note"}
           aria-labelledby={openNote ? "hybrid-detail-title" : undefined}
           onKeyDown={trapMobileDetailFocus}
+          initial={false}
+          animate={{
+            opacity: isNarrow ? (openNote ? 1 : 0) : 1,
+            transform: isNarrow
+              ? openNote
+                ? "translateX(0%)"
+                : "translateX(100%)"
+              : "translateX(0%)",
+          }}
+          transition={isNarrow ? MOTION_ENTER : { duration: 0 }}
         >
           {openNote ? (
             <>
@@ -2043,11 +2135,38 @@ export function HybridNotebook({
                   <button type="button" className={styles.dangerButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict)} onClick={requestDelete}>Delete…</button>
                 </span>
               </div>
+              <LayoutGroup id={`notes-approval-${openNote.id}`}>
               <p className={styles.selectionStatus}>{selection ? `${selection.length} selected character${selection.length === 1 ? "" : "s"}.` : "No source wording selected."}</p>
+              {selection && !extract ? (
+                <motion.div
+                  layoutId="approved-source-wording"
+                  className={styles.selectionChip}
+                  data-delight-moment="private-to-approved"
+                  data-motion-policy="immediate-selection"
+                  initial={false}
+                >
+                  <span>Selected privately</span>
+                  <q>{selection}</q>
+                </motion.div>
+              ) : null}
               {detailError ? <p className={styles.errorReceipt} role="alert">{detailError}</p> : null}
 
+              <AnimatePresence initial={false}>
               {navigationPrompt ? (
-                <div className={styles.discardPanel} role="region" aria-labelledby="navigation-prompt-heading">
+                <motion.div
+                  className={styles.discardPanel}
+                  data-delight-moment="decision-region"
+                  role="region"
+                  aria-labelledby="navigation-prompt-heading"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <strong id="navigation-prompt-heading">Save this edit before leaving?</strong>
                   <p>Your local version stays visible until you choose.</p>
                   <div className={styles.actionRow}>
@@ -2055,22 +2174,51 @@ export function HybridNotebook({
                     <button type="button" className={styles.dangerButton} disabled={detailSaveInFlight} onClick={discardAndNavigate}>Discard edit</button>
                     <button type="button" className={styles.quietButton} disabled={detailSaveInFlight} onClick={() => { setNavigationPrompt(null); detailRef.current?.focus({ preventScroll: true }); }}>Stay here</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
+              <AnimatePresence initial={false}>
               {deleteConfirm ? (
-                <div className={styles.discardPanel} role="region" aria-labelledby="delete-confirm-heading">
+                <motion.div
+                  className={styles.discardPanel}
+                  data-delight-moment="decision-region"
+                  role="region"
+                  aria-labelledby="delete-confirm-heading"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <strong id="delete-confirm-heading">Delete this private note?</strong>
                   <p>You will have six seconds to undo. Tasks receipts, if any, are not deleted from Tasks.</p>
                   <div className={styles.actionRow}>
                     <button ref={deletePrimaryRef} type="button" className={styles.dangerButton} onClick={confirmDelete}>Delete note</button>
                     <button type="button" className={styles.quietButton} onClick={() => { setDeleteConfirm(false); detailRef.current?.focus({ preventScroll: true }); }}>Cancel</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
+              <AnimatePresence initial={false}>
               {conflict ? (
-                <div className={styles.conflictPanel} data-state="conflict">
+                <motion.div
+                  className={styles.conflictPanel}
+                  data-delight-moment="decision-region"
+                  data-state="conflict"
+                  initial={{ opacity: 0, transform: "translateY(-6px)" }}
+                  animate={{ opacity: 1, transform: "translateY(0px)" }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(-4px)",
+                    transition: MOTION_EXIT,
+                  }}
+                  transition={MOTION_ENTER}
+                >
                   <p role="alert"><strong>This note changed somewhere else.</strong> Nothing was overwritten. Compare both exact versions, then choose.</p>
                   <div className={styles.conflictVersions}>
                     <section className={styles.conflictVersion}><h3>Your local version</h3><pre>{detailBody}</pre></section>
@@ -2081,32 +2229,114 @@ export function HybridNotebook({
                     <button type="button" disabled={detailSaveInFlight || conflictResolving} onClick={useRemoteVersion}>Use latest</button>
                     <button type="button" disabled={detailSaveInFlight || conflictResolving} onClick={() => void keepBothVersions()}>Keep both as notes</button>
                   </div>
-                </div>
+                </motion.div>
               ) : null}
+              </AnimatePresence>
 
               <section className={styles.extractionPanel} aria-labelledby="hybrid-extract-heading">
-                <div className={styles.privacyBoundary}><strong>Your note stays here.</strong> Tasks can receive only the exact wording you select, review, and approve below.</div>
+                <div className={styles.privacyBoundary}>{copy.handoff.boundary}</div>
                 <div className={styles.extractionHeader}>
-                  <h3 id="hybrid-extract-heading">Make this work</h3>
+                  <h3 id="hybrid-extract-heading">{copy.handoff.heading}</h3>
                   <span className={styles.searchMeta}>{extract?.approvedBody.length ?? 0} / {MAX_APPROVED_EXTRACT_CHARS}</span>
                 </div>
+                <AnimatePresence initial={false}>
+                  {extract?.status === "sending" || taskReceipt ? (
+                    <motion.div
+                      key={taskReceipt ? "receipt-confirmed" : "handoff-sending"}
+                      className={styles.handoffState}
+                      data-delight-moment="approved-to-tasks"
+                      data-state={taskReceipt ? "complete" : "sending"}
+                      data-handoff-travel={handoffTravel ? "true" : "false"}
+                      initial={{
+                        opacity: 0.84,
+                        transform: "translateY(2px)",
+                      }}
+                      animate={{ opacity: 1, transform: "translateY(0px)" }}
+                      exit={{ opacity: 0, transition: MOTION_EXIT }}
+                      transition={MOTION_ENTER}
+                      aria-hidden="true"
+                    >
+                      <span>{taskReceipt ? copy.handoff.confirmed : copy.handoff.inFlight}</span>
+                      <span className={styles.handoffTrack}>
+                        <motion.span
+                          initial={{
+                            transform: handoffTravel
+                              ? "scaleX(0.04)"
+                              : "scaleX(1)",
+                          }}
+                          animate={{ transform: "scaleX(1)" }}
+                          transition={
+                            !handoffTravel
+                              ? { duration: 0 }
+                              : taskReceipt
+                              ? MOTION_EXIT
+                              : {
+                                  duration: 0.24,
+                                  ease: MOTION_EASE_IN_OUT,
+                                }
+                          }
+                        />
+                      </span>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+                <AnimatePresence initial={false} mode="wait">
                 {taskReceipt ? (
-                  <div className={styles.receipt}>
+                  <motion.div
+                    key="tasks-receipt"
+                    className={styles.receipt}
+                    initial={{ opacity: 0, transform: "translateY(5px)" }}
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      transform: "translateY(2px)",
+                      transition: MOTION_EXIT,
+                    }}
+                    transition={MOTION_ENTER}
+                  >
+                    {/*
+                      The task id used to be printed in this sentence as
+                      "Receipt review_task_abc123." It is an internal
+                      identifier and it meant nothing to the person reading
+                      it, so it moves to a data attribute where support and
+                      tests can still reach it without putting it on screen.
+                    */}
                     <strong>Sent to {taskReceipt.workspaceName}.</strong>
                     <p>{openNote.extractBody}</p>
-                    <p>The source note remains private and editable here. Receipt {taskReceipt.taskId}.</p>
-                    <a ref={receiptLinkRef} href={taskReceipt.taskUrl || TASKS_APP_PATH}>Open in Tasks</a>
-                  </div>
+                    <p data-task-id={taskReceipt.taskId}>{copy.handoff.stayedPut}</p>
+                    <a ref={receiptLinkRef} href={taskReceipt.taskUrl || TASKS_APP_PATH}>{copy.handoff.open}</a>
+                  </motion.div>
                 ) : (
-                  <>
+                  <motion.div
+                    key="approval-composer"
+                    className={styles.approvalComposer}
+                    initial={{ opacity: 0, transform: "translateY(3px)" }}
+                    animate={{ opacity: 1, transform: "translateY(0px)" }}
+                    exit={{
+                      opacity: 0,
+                      transform: "translateY(2px)",
+                      transition: MOTION_EXIT,
+                    }}
+                    transition={MOTION_ENTER}
+                  >
                     {!extract ? (
                       <div className={styles.actionRow}>
-                        <button ref={approvalTriggerRef} type="button" className={styles.primaryButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !selection.trim()} onClick={beginExtraction}>Use selection</button>
+                        <button ref={approvalTriggerRef} type="button" className={styles.primaryButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !selection.trim()} onClick={beginExtraction}>{copy.handoff.begin}</button>
                       </div>
                     ) : (
                       <>
+                        <motion.div
+                          layoutId="approved-source-wording"
+                          className={styles.approvalSelection}
+                          data-delight-moment="private-to-approved"
+                          data-motion-policy="shared-approval-continuity"
+                          transition={MOTION_ENTER}
+                        >
+                          <span>{copy.handoff.sourceLabel}</span>
+                          <q>{extract.sourceSelection}</q>
+                        </motion.div>
                         <div className={styles.destinationField}>
-                          <span className={styles.destinationLabel}>Tasks destination</span>
+                          <span className={styles.destinationLabel}>{copy.handoff.destinationLabel}</span>
                           {extract.immutableRetry ? (
                             <div className={styles.destinationLocked}>
                               <strong>
@@ -2114,15 +2344,15 @@ export function HybridNotebook({
                                   (workspace) =>
                                     workspace.id ===
                                     extract.immutableRetry?.workspaceId,
-                                )?.name ?? "Previously approved project"}
+                                )?.name ?? copy.handoff.lockedDestinationUnknown}
                               </strong>
-                              <span>Locked for this exact receipt retry</span>
+                              <span>{copy.handoff.lockedDestination}</span>
                             </div>
                           ) : availableWorkspaces.length ? (
                             <select
                               id="hybrid-workspace"
                               className={styles.workspaceSelect}
-                              aria-label="Tasks destination"
+                              aria-label={copy.handoff.destinationLabel}
                               value={selectedWorkspaceId}
                               disabled={readOnly || noteInteractionLocked}
                               onChange={(event) =>
@@ -2152,15 +2382,15 @@ export function HybridNotebook({
                             >
                               <span>
                                 {!online
-                                  ? "Reconnect before sending. Your note remains private here."
+                                  ? copy.destination.offline
                                   : tasksCatalogAvailable
-                                    ? "No Tasks project is available yet. Your note remains private here."
-                                    : "Tasks destinations are unavailable right now. Your note remains private here."}
+                                    ? copy.destination.empty
+                                    : copy.destination.unavailable}
                               </span>
                               <a href={TASKS_APP_PATH}>
                                 {tasksCatalogAvailable
-                                  ? "Open Tasks to create a project"
-                                  : "Open Tasks"}
+                                  ? copy.destination.createLink
+                                  : copy.destination.openLink}
                               </a>
                             </div>
                           )}
@@ -2170,23 +2400,25 @@ export function HybridNotebook({
                           className={styles.extractionTextarea}
                           value={extract.approvedBody}
                           maxLength={MAX_APPROVED_EXTRACT_CHARS}
-                          aria-label="Approved Tasks wording"
+                          aria-label={copy.handoff.wordingLabel}
                           readOnly={readOnly || noteInteractionLocked || Boolean(conflict)}
                           onChange={(event) => setExtract({ ...extract, approvedBody: event.target.value, status: "review", error: null })}
                         />
-                        <p className={styles.payloadReceipt}>{extract.immutableRetry ? "Pending exact retry: wording and destination stay locked until Tasks returns the receipt." : "Will send: approved wording · note ID · workspace ID. Will not send: the rest of this note."}</p>
+                        <p className={styles.payloadReceipt}>{extract.immutableRetry ? copy.handoff.payloadLocked : copy.handoff.payload}</p>
                         {extract.error ? <p className={styles.errorReceipt} role="alert">{extract.error}</p> : null}
                         <div className={styles.actionRow}>
-                          {!extract.immutableRetry ? <button type="button" className={styles.quietButton} disabled={navigationInFlight || Boolean(conflict)} onClick={() => { setExtract(null); window.setTimeout(() => approvalTriggerRef.current?.focus({ preventScroll: true }), 0); }}>Cancel approval</button> : null}
+                          {!extract.immutableRetry ? <button type="button" className={styles.quietButton} disabled={navigationInFlight || Boolean(conflict)} onClick={() => { setExtract(null); window.setTimeout(() => approvalTriggerRef.current?.focus({ preventScroll: true }), 0); }}>{copy.handoff.cancel}</button> : null}
                           <button type="button" className={styles.primaryButton} disabled={readOnly || !online || navigationInFlight || Boolean(conflict) || !(extract.immutableRetry?.workspaceId ?? selectedWorkspaceId) || !extract.approvedBody.trim()} onClick={() => void sendApprovedExtract()}>
-                            {extract.status === "sending" ? "Sending approved action…" : extract.status === "failed" ? "Retry approved send" : "Send approved extract to Tasks"}
+                            {extract.status === "sending" ? copy.handoff.sending : extract.status === "failed" ? copy.handoff.retry : copy.handoff.send}
                           </button>
                         </div>
                       </>
                     )}
-                  </>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </section>
+              </LayoutGroup>
 
               {planningPeriodsEnabled ? (
                 <details className={styles.timelinePanel}>
@@ -2200,45 +2432,98 @@ export function HybridNotebook({
                   </div>
                   <p className={styles.payloadReceipt}>Exact preview: {timelineDraft.title || "Selected extract"} · {timelineDraft.date || "choose a date"} · {timelineDraft.completion}% · for {timelineDraft.audienceLabel || "named audience"}</p>
                   <div className={styles.actionRow}><button type="button" className={styles.quietButton} disabled={readOnly || noteInteractionLocked || Boolean(conflict) || !openNote.workspaceId || !timelineDraft.title.trim() || !timelineDraft.date || !timelineDraft.audienceLabel.trim()} onClick={() => void sendTimelinePreview()}>{timelineSending ? "Checking Timeline…" : "Send this preview to Timeline"}</button></div>
-                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a workspace when capturing or sending this note first.</p> : null}
+                  {!openNote.workspaceId ? <p className={styles.errorText}>Choose a project when capturing or sending this note first.</p> : null}
                   {timelineReceipt ? <p className={styles.receipt}>{timelineReceipt}</p> : null}
                 </details>
               ) : null}
 
-              {mobileDetailOpen ? (
-                deleteUndo ? (
-                  <div className={styles.toast} data-state="saved" data-hybrid-toast="true">
-                    Note deleted. <button ref={undoButtonRef} type="button" className={styles.quietButton} onClick={undoDeleteNote}>Undo</button>
-                  </div>
-                ) : toast ? (
-                  <div className={styles.toast} data-state={toast.state} data-hybrid-toast="true">{toast.message}</div>
-                ) : null
-              ) : null}
-
             </>
           ) : (
-            <div className={`${styles.emptyState} ${styles.emptyDetail} ${styles.desktopOnly}`}>
-              <span className={styles.emptyEyebrow}>{notes.length ? "Private notebook" : "Start here"}</span>
-              <strong>{notes.length ? "Choose a note when you want to shape it." : "One private thought is enough."}</strong>
-              <p>
-                {notes.length
-                  ? "Capture stays ready. A note only becomes work when you select and approve the exact wording."
-                  : "Write above and press Enter. Notes keeps the stream flat, private, and newest-first."}
+            <aside className={`${styles.artifactPanel} ${styles.desktopOnly}`} aria-labelledby="hybrid-previous-heading">
+              <div className={styles.artifactHeader}>
+                <span className={styles.emptyEyebrow}>History</span>
+                <span className={styles.searchMeta}>{archivedNotes.length} sent</span>
+              </div>
+              <h2 id="hybrid-previous-heading">Sent to Tasks</h2>
+              <p className={styles.artifactIntroduction}>
+                Notes you&rsquo;ve sent to Tasks. Restore any of them; the
+                original wording is kept here.
               </p>
-            </div>
+              {archivedNotes.length ? (
+                <motion.ul layout className={styles.artifactList}>
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {archivedNotes.map((note) => (
+                      <motion.li
+                        layout="position"
+                        key={note.id}
+                        initial={{ opacity: 0, transform: "translateY(-4px)" }}
+                        animate={{ opacity: 1, transform: "translateY(0px)" }}
+                        exit={{ opacity: 0, transform: "translateY(-4px)" }}
+                        transition={{ layout: MOTION_LAYOUT, opacity: MOTION_EXIT, transform: MOTION_ENTER }}
+                      >
+                        <blockquote>{presentNoteBody(note.body).title}</blockquote>
+                        {note.extractBody ? <p>Sent wording: {note.extractBody}</p> : null}
+                        <button type="button" className={styles.quietButton} disabled={readOnly || restoringId === note.id} onClick={() => void restoreArchived(note)}>
+                          {restoringId === note.id ? "Restoring…" : "Restore to notebook"}
+                        </button>
+                      </motion.li>
+                    ))}
+                  </AnimatePresence>
+                </motion.ul>
+              ) : (
+                <div className={styles.artifactEmpty}>
+                  <strong>Nothing sent yet.</strong>
+                  <p>Select a note to read, edit or send it to Tasks.</p>
+                </div>
+              )}
+            </aside>
           )}
-        </section>
+        </motion.section>
+      </div>
       </div>
 
-      {!mobileDetailOpen ? (
-        deleteUndo ? (
-          <div className={styles.toast} data-state="saved" data-hybrid-toast="true">
+      <AnimatePresence initial={false} mode="popLayout">
+        {deleteUndo ? (
+          <motion.div
+            key="delete-undo"
+            className={styles.toast}
+            data-state="saved"
+            data-hybrid-toast="true"
+            data-delight-moment="toast-lifecycle"
+            role="status"
+            initial={{ opacity: 0, transform: "translateY(6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
             Note deleted. <button ref={undoButtonRef} type="button" className={styles.quietButton} onClick={undoDeleteNote}>Undo</button>
-          </div>
+          </motion.div>
         ) : toast ? (
-          <div className={styles.toast} data-state={toast.state} data-hybrid-toast="true">{toast.message}</div>
+          <motion.div
+            key={toast.message}
+            className={styles.toast}
+            data-state={toast.state}
+            data-hybrid-toast="true"
+            data-delight-moment="toast-lifecycle"
+            role="status"
+            initial={{ opacity: 0, transform: "translateY(6px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)" }}
+            exit={{
+              opacity: 0,
+              transform: "translateY(4px)",
+              transition: MOTION_EXIT,
+            }}
+            transition={MOTION_ENTER}
+          >
+            {toast.message}
+          </motion.div>
         ) : null
-      ) : null}
+        }
+      </AnimatePresence>
       <span className={styles.srOnly} aria-live="polite" aria-atomic="true">{announcement}</span>
       {firstCapture ? <FirstCaptureMoment onDone={() => setFirstCapture(false)} /> : null}
     </div>

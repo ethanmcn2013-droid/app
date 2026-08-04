@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { EvidenceResponse } from "../../lib/analytics/contracts";
 import { ActionLink } from "./action-link";
@@ -23,26 +29,93 @@ export function EvidenceDrawer({
   projectNames,
 }: EvidenceDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // Pagination is a server round-trip. isPending is the honest busy window:
+  // React holds it true until the new evidence page commits.
+  const [isPaging, startPaging] = useTransition();
+  // Which page the round-trip is fetching, so the status line can name it.
+  // The committed page is still the old one for the whole busy window, so it
+  // cannot be derived from `evidence`. It is never reset: it is written before
+  // every transition and read only while `isPaging` holds, so a stale value is
+  // unreachable, and clearing it in an effect would be setState-in-effect for
+  // no observable gain.
+  const [pendingPage, setPendingPage] = useState<number | null>(null);
   const totalPages = Math.max(
     1,
     Math.ceil(evidence.pagination.total / evidence.pagination.perPage),
   );
 
+  const goToPage = useCallback(
+    (href: string, page: number) => {
+      setPendingPage(page);
+      startPaging(() => {
+        router.replace(href, { scroll: false });
+      });
+    },
+    [router],
+  );
+
   const restoreFocus = useCallback(() => {
     const returnTarget = returnFocusRef.current;
-    if (returnTarget?.isConnected) returnTarget.focus();
-    else document.querySelector<HTMLElement>("#signal-main-content")?.focus();
+    if (returnTarget?.isConnected) {
+      returnTarget.focus();
+      return;
+    }
+    // The trigger is gone (pagination re-render, scope change), so focus falls
+    // back to the content region. Two shells render this drawer and they name
+    // that region differently: the standalone Signal shell and the brief page
+    // wrap the ledger in #signal-main-content, while the consolidated app
+    // shell — the only one present on the default /app/home/briefing — labels its
+    // <main> #app-main-content. Querying one id only left focus on <body>
+    // wherever the other was in play. Prefer the Signal region when it exists,
+    // because that is the region the trigger lived in.
+    const region =
+      document.querySelector<HTMLElement>("#signal-main-content") ??
+      document.querySelector<HTMLElement>("#app-main-content");
+    region?.focus();
   }, []);
 
   const closeDrawer = useCallback(() => {
-    if (dialogRef.current?.open) dialogRef.current.close();
-    restoreFocus();
-    router.replace(closeHref, { scroll: false });
+    const dialog = dialogRef.current;
+    const finish = () => {
+      if (dialog?.open) dialog.close();
+      restoreFocus();
+      router.replace(closeHref, { scroll: false });
+    };
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (!dialog?.open || reduceMotion) {
+      finish();
+      return;
+    }
+    // Structural sheet exit (260ms, matching the Tasks panel register).
+    if (dialog.hasAttribute("data-closing")) return;
+
+    // [data-closing] cancels the entrance animation. A cancelled animation
+    // leaves no before-change style for the exit transition to start from, so
+    // the sheet would jump straight off-screen when the drawer is dismissed
+    // inside the 420ms entrance. Pin where the sheet and backdrop actually
+    // are, commit that as a real style, then release it on the next frame so
+    // the exit glides from the pinned position instead of teleporting.
+    const heldTransform = window.getComputedStyle(dialog).transform;
+    const heldBackdrop = window.getComputedStyle(dialog, "::backdrop").opacity;
+    if (heldTransform && heldTransform !== "none") {
+      dialog.style.transform = heldTransform;
+    }
+    dialog.style.setProperty("--signal-drawer-backdrop-hold", heldBackdrop);
+    dialog.setAttribute("data-closing", "");
+    void dialog.offsetWidth; // commit the pinned position
+
+    window.requestAnimationFrame(() => {
+      if (!dialog.isConnected) return;
+      dialog.style.transform = "";
+      dialog.style.removeProperty("--signal-drawer-backdrop-hold");
+      window.setTimeout(finish, 260);
+    });
   }, [closeHref, restoreFocus, router]);
 
   useEffect(() => {
@@ -56,8 +129,16 @@ export function EvidenceDrawer({
         ? active
         : findEvidenceTrigger(evidence.observation.id);
     if (!dialog.open) {
+      dialog.removeAttribute("data-closing");
+      dialog.style.transform = "";
+      dialog.style.removeProperty("--signal-drawer-backdrop-hold");
       dialog.showModal();
-      closeButtonRef.current?.focus();
+      // showModal() focuses the first focusable descendant, which is the Close
+      // button, so a screen reader reads "Close, button" before the sheet says
+      // what it is. Focus the dialog itself instead: it is labelled by the
+      // sheet's own h2, so the announcement leads with the observation.
+      // showModal() keeps focus trapped in the top layer either way.
+      dialog.focus();
     }
 
     const handleCancel = (event: Event) => {
@@ -78,6 +159,7 @@ export function EvidenceDrawer({
       ref={dialogRef}
       className="signal-evidence-drawer"
       aria-labelledby="signal-evidence-title"
+      tabIndex={-1}
       onClick={(event) => {
         if (event.target === event.currentTarget) closeDrawer();
       }}
@@ -85,7 +167,6 @@ export function EvidenceDrawer({
       <div className="signal-drawer-header">
         <span className="signal-eyebrow">Evidence</span>
         <button
-          ref={closeButtonRef}
           className="signal-button-quiet"
           type="button"
           onClick={closeDrawer}
@@ -93,7 +174,7 @@ export function EvidenceDrawer({
           Close
         </button>
       </div>
-      <div className="signal-drawer-body">
+      <div className="signal-drawer-body" aria-busy={isPaging}>
         <header>
           <p className="signal-eyebrow">What Signal observed</p>
           <h2 id="signal-evidence-title">{evidence.observed}</h2>
@@ -121,40 +202,64 @@ export function EvidenceDrawer({
           <h3 id="evidence-records">
             Contributing work · {evidence.pagination.total}
           </h3>
-          <SourceRecordList
-            records={evidence.records}
-            timezone={evidence.meta.period.timezone}
-            ownerNames={ownerNames}
-            projectNames={projectNames}
-          />
+          {/* The list holds the page that is being replaced. Dimming it is
+              the only thing a sighted user could see during the round-trip:
+              aria-busy on the body below is silent, and the records are
+              identical until the new page commits. */}
+          <div
+            className="signal-record-pane"
+            data-paging={isPaging ? "" : undefined}
+          >
+            <SourceRecordList
+              records={evidence.records}
+              timezone={evidence.meta.period.timezone}
+              ownerNames={ownerNames}
+              projectNames={projectNames}
+            />
+          </div>
           {totalPages > 1 ? (
-            <nav className="signal-actions" aria-label="Evidence pages">
-              {evidence.pagination.page > 1 ? (
-                <Link
-                  className="signal-button-secondary"
-                  href={signalHref(pathname, searchParams, {
-                    evidence_page: String(evidence.pagination.page - 1),
-                  })}
-                  scroll={false}
-                >
-                  Previous
-                </Link>
-              ) : null}
-              <span className="signal-freshness">
-                Page {evidence.pagination.page} of {totalPages}
-              </span>
-              {evidence.pagination.page < totalPages ? (
-                <Link
-                  className="signal-button-secondary"
-                  href={signalHref(pathname, searchParams, {
-                    evidence_page: String(evidence.pagination.page + 1),
-                  })}
-                  scroll={false}
-                >
-                  Next
-                </Link>
-              ) : null}
-            </nav>
+            <>
+              <nav className="signal-actions" aria-label="Evidence pages">
+                {evidence.pagination.page > 1 ? (
+                  <PageLink
+                    href={signalHref(pathname, searchParams, {
+                      evidence_page: String(evidence.pagination.page - 1),
+                    })}
+                    page={evidence.pagination.page - 1}
+                    onNavigate={goToPage}
+                  >
+                    Previous
+                  </PageLink>
+                ) : null}
+                <span className="signal-freshness">
+                  Page {evidence.pagination.page} of {totalPages}
+                </span>
+                {evidence.pagination.page < totalPages ? (
+                  <PageLink
+                    href={signalHref(pathname, searchParams, {
+                      evidence_page: String(evidence.pagination.page + 1),
+                    })}
+                    page={evidence.pagination.page + 1}
+                    onNavigate={goToPage}
+                  >
+                    Next
+                  </PageLink>
+                ) : null}
+              </nav>
+              {/* A screen reader never announces an aria-busy toggle on a
+                  plain container, so the busy window says so itself. Mounted
+                  with the pagination and holding an empty line at rest, so
+                  the announcement costs no layout shift when it arrives. */}
+              <p
+                className="signal-drawer-status"
+                role="status"
+                aria-live="polite"
+              >
+                {isPaging && pendingPage !== null
+                  ? `Loading page ${pendingPage} of ${totalPages}…`
+                  : ""}
+              </p>
+            </>
           ) : null}
         </section>
 
@@ -191,6 +296,40 @@ export function EvidenceDrawer({
         </section>
       </div>
     </dialog>
+  );
+}
+
+/**
+ * A pagination link that routes its client-side navigation through the
+ * drawer's transition, so the busy window it opens — the dimmed record pane
+ * and the polite status line — covers the real round-trip. Still a plain
+ * anchor: the href, middle-click, and open-in-new-tab all behave normally.
+ * `page` is the destination the status line names; it is the one thing the
+ * href carries that the drawer cannot read back until the page commits.
+ */
+function PageLink({
+  href,
+  page,
+  onNavigate,
+  children,
+}: {
+  href: string;
+  page: number;
+  onNavigate: (href: string, page: number) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      className="signal-button-secondary"
+      href={href}
+      scroll={false}
+      onNavigate={(event) => {
+        event.preventDefault();
+        onNavigate(href, page);
+      }}
+    >
+      {children}
+    </Link>
   );
 }
 

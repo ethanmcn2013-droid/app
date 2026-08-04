@@ -158,30 +158,31 @@ export const LANES: Record<
   LaneId,
   { id: LaneId; name: string; ink: string; bg: string; dot: string }
 > = {
-  // Phase 2 (2026-07-18): the four standard columns display as
-  // Blocked · In Progress · Reviewing · Done. Internal LaneId values
-  // (todo/doing/review/done) are STABLE — only the display labels
-  // changed — so no task, seed, selector, nudge, or migration moves.
-  // LANE_ORDER is already [todo, doing, review, done], so the required
-  // left-to-right order holds by position with zero data risk. Labels
-  // are further overridable per workspace via the column config `system` map.
+  // T·121: the default display names are the ones the shipped board has
+  // used since 2026-07-20 — Queued · In progress · Review · Done. The
+  // 2026-07-18 relabel (Blocked · In Progress · Reviewing) never rendered
+  // in the app after the T·99 port, but share, print, embed and export
+  // kept it, so a guest's copy disagreed with the operator's screen.
+  // Internal LaneId values (todo/doing/review/done) are STABLE — only
+  // labels change — and every label is overridable per workspace via the
+  // column config `system` map, which wins wherever a config exists.
   todo: {
     id: "todo",
-    name: "Blocked",
+    name: "Queued",
     ink: "var(--lane-todo-ink)",
     bg: "var(--lane-todo)",
     dot: "var(--lane-todo-dot)",
   },
   doing: {
     id: "doing",
-    name: "In Progress",
+    name: "In progress",
     ink: "var(--lane-doing-ink)",
     bg: "var(--lane-doing)",
     dot: "var(--lane-doing-dot)",
   },
   review: {
     id: "review",
-    name: "Reviewing",
+    name: "Review",
     ink: "var(--lane-review-ink)",
     bg: "var(--lane-review)",
     dot: "var(--lane-review-dot)",
@@ -204,6 +205,11 @@ export type Task = {
    *  Server actions guard writes on this column to keep updates and
    *  deletes inside the caller's active workspace. */
   workspaceId?: string | null;
+  /** Human-readable per-workspace counter ("T-14"). Display + reference
+   *  only — `id` is the stable key in every link and action. Absent on
+   *  legacy/seed rows and on writers that skip allocation; the id chip
+   *  falls back to the hex id. */
+  seq?: number | null;
   title: string;
   description?: string;
   lane: LaneId;
@@ -276,6 +282,9 @@ export type Task = {
   archivedAt?: Date | null;
   /** Last time any field was mutated. Drives "edited Xh ago" copy. */
   updatedAt: Date;
+  /** When the task last became done (any config done column); null when
+   *  open, or done from before the column existed (T·122). */
+  completedAt?: Date | null;
 };
 
 /**
@@ -286,8 +295,13 @@ export type Task = {
  */
 export type PublicTask = Pick<
   Task,
-  "id" | "title" | "lane" | "priority" | "due" | "tags"
->;
+  "id" | "title" | "lane" | "priority" | "due" | "tags" | "boardColumnKey"
+> & {
+  /** Derived at projection time from dueAt vs the serving instant; lets a
+   *   shared board keep the one signal that matters most ("this is late")
+   *   without exposing the timestamp itself. */
+  overdue?: boolean;
+};
 
 /**
  * Natural-language recurrence spec. Three patterns only, no RRULE,

@@ -48,14 +48,14 @@ export default function AppError({
         <button
           type="button"
           onClick={reset}
-          className="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium text-white transition-all"
+          className="inline-flex min-h-[44px] items-center rounded-lg px-4 text-sm font-medium text-white transition-all"
           style={{ background: "var(--brand)" }}
         >
           Try again
         </button>
         <Link
           href="/app/timeline"
-          className="inline-flex min-h-11 items-center rounded-lg border px-4 text-sm font-medium transition-colors"
+          className="inline-flex min-h-[44px] items-center rounded-lg border px-4 text-sm font-medium transition-colors"
           style={{ borderColor: "var(--border)", color: "var(--ink-soft)" }}
         >
           Back to timelines

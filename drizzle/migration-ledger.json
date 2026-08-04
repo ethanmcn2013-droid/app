@@ -155,7 +155,7 @@
       "snapshot": "drizzle/meta/0014_snapshot.json",
       "snapshotSha256": "6e253924090c0abd9738b2988752dbc970117a969923f83c6069bd1c96075bed",
       "receipt": "drizzle/receipts/current-schema-baseline.json",
-      "receiptSha256": "1ec8652b81c83c14495463a49c43e8d81c883795057b2b59d999b53ec98f3107"
+      "receiptSha256": "85edbc37473bac32d665d4a9404be90893b62a367c440b98936bf456905299e8"
     },
     {
       "ordinal": 15,
@@ -218,6 +218,76 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/user-preferences-theme-mode-2026-07-21.json",
       "receiptSha256": "e43df8972d80d671ee0b53bbca380be37604f77511f95c5b476184d61eeeab7c"
+    },
+    {
+      "ordinal": 21,
+      "id": "0021_tasks_seq",
+      "file": "drizzle/0021_tasks_seq.sql",
+      "when": 1785196800000,
+      "sha256": "97f290913eecb62d3a60c412bb7c908d2a519512ef835727396551615725491b",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/tasks-seq-2026-07-28.json",
+      "receiptSha256": "c29507098c928654cd1fb5a2cf4b6d069d5ee3a6bbaf9b2c4b73df8fd19b063d"
+    },
+    {
+      "ordinal": 22,
+      "id": "0022_workspaces_description",
+      "file": "drizzle/0022_workspaces_description.sql",
+      "when": 1785369600000,
+      "sha256": "4c77afd07791a89a358252842b6fcb017f666b9cc49ff300297e251642d5c84c",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/workspaces-description-2026-07-30.json",
+      "receiptSha256": "3abe189926a4fae4a717f93640d9dbee2e92ba136010e5d65f7a59a0f7005815"
+    },
+    {
+      "ordinal": 23,
+      "id": "0023_retire_launch_scaffolding",
+      "file": "drizzle/0023_retire_launch_scaffolding.sql",
+      "when": 1785485242617,
+      "sha256": "6cba388bf386737cba7931191f847cbfc32b021b9250eb2a9d9013ed6b1c0c7d",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/retire-launch-scaffolding-2026-07-31.json",
+      "receiptSha256": "8ced3894e40dba89329ee7d104cb9e83d1c80e157bc03bbe3b2bfa1327b29697"
+    },
+    {
+      "ordinal": 24,
+      "id": "0024_retire_waiting_lane",
+      "file": "drizzle/0024_retire_waiting_lane.sql",
+      "when": 1785488000000,
+      "sha256": "63a96b5effdf633c0341193506225d209777ca6353234522cdbb1fd439d3a9a9",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/retire-waiting-lane-2026-07-31.json",
+      "receiptSha256": "b4b4dd9a266cba899120abac958d6221902ea622d9c49afffc1304e21c8b515b"
+    },
+    {
+      "ordinal": 25,
+      "id": "0025_tasks_completed_at",
+      "file": "drizzle/0025_tasks_completed_at.sql",
+      "when": 1785490000000,
+      "sha256": "0d169a3ca395616c3d81868da31f732fd3181d7a5efc624bf703192ff3155613",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/tasks-completed-at-2026-07-31.json",
+      "receiptSha256": "727bd3ae86594a541c2f8bf00b03395dc5547b9317d17ee79e7f61406f3b64f7"
+    },
+    {
+      "ordinal": 26,
+      "id": "0026_workspace_money",
+      "file": "drizzle/0026_workspace_money.sql",
+      "when": 1785492000000,
+      "sha256": "025060ee078882de300df2e06388d89353ebf1504120bb297b82a7707d31225a",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/workspace-money-2026-07-31.json",
+      "receiptSha256": "b1c29017c308d03b43ff921d9d1c1f2c959fcb6efc36cad66698cdc971e4189c"
+    },
+    {
+      "ordinal": 27,
+      "id": "0027_share_link_token_hash",
+      "file": "drizzle/0027_share_link_token_hash.sql",
+      "when": 1785494000000,
+      "sha256": "a4d68de27671b09197ed88ae1e7e8cd8a52e04deafd38ccbee1f03d456b97fde",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/share-link-token-hash-2026-08-03.json",
+      "receiptSha256": "a23495b8358c10182caff25e13146aed0a77cafd07eb8d825153aa5308264ad3"
     }
   ]
 }

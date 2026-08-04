@@ -15,6 +15,7 @@ import {
 } from "@/modules/notes/server/demo/notes-demo";
 import { resolveDemoFixture } from "@/modules/notes/server/demo/notes-fixtures";
 import {
+  fetchNotesWorkspaceDomain,
   fetchTasksWorkspaceCatalog,
   selectAuthorizedWorkspaceHint,
 } from "@/modules/notes/server/tasks-personalization";
@@ -79,6 +80,11 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   let captureEmail: Awaited<ReturnType<typeof getCaptureEmail>>;
   let tasksCatalog: Awaited<ReturnType<typeof fetchTasksWorkspaceCatalog>>;
   let pendingApprovedTaskSends: Awaited<ReturnType<typeof listPendingApprovedTaskSendsForHybrid>>;
+  // Which register the notebook speaks in. Presentation only: it selects
+  // wording and unlocks nothing. Any failure resolves to null and Notes
+  // reads its generic register, so a slow or absent Tasks never blocks
+  // capture.
+  let activeDomain: string | null = null;
 
   if (demoMode) {
     initialNotes = demoNotes(fixture);
@@ -96,16 +102,23 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
     tasksCatalog = { status: "unavailable", planningPeriods: [], workspaces: [] };
     pendingApprovedTaskSends = [];
   } else {
-    [initialNotes, initialArchivedNotes, captureEmail, tasksCatalog, pendingApprovedTaskSends] =
-      await Promise.all([
-        listNotes(),
-        listArchivedNotes(),
-        getCaptureEmail(),
-        fetchTasksWorkspaceCatalog(userId as string),
-        hybridNotebookEnabled
-          ? listPendingApprovedTaskSendsForHybrid()
-          : Promise.resolve([]),
-      ]);
+    [
+      initialNotes,
+      initialArchivedNotes,
+      captureEmail,
+      tasksCatalog,
+      pendingApprovedTaskSends,
+      activeDomain,
+    ] = await Promise.all([
+      listNotes(),
+      listArchivedNotes(),
+      getCaptureEmail(),
+      fetchTasksWorkspaceCatalog(userId as string),
+      hybridNotebookEnabled
+        ? listPendingApprovedTaskSendsForHybrid()
+        : Promise.resolve([]),
+      fetchNotesWorkspaceDomain(userId as string),
+    ]);
   }
 
   // URL context is navigation state, never authorization. Only select a hint
@@ -153,6 +166,7 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
             {...notebookProps}
             captureEmailState={captureState}
             initialPendingApprovedTaskSends={pendingApprovedTaskSends}
+            activeDomain={activeDomain}
             demoMode={demoMode}
           />
         </>

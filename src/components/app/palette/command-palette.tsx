@@ -12,14 +12,18 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { LANES, LANE_ORDER, USERS, type Task } from "@/lib/data";
 import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { AvatarStack } from "@/components/showcase/avatar";
 import { useSuiteContext } from "@/components/app/use-suite-context";
-import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import {
+  BRIEFING_APP_PATH,
+  HOME_APP_PATH,
+  PRODUCT_APP_PATHS,
+} from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import {
   ScopeChipRow,
@@ -240,7 +244,6 @@ function Palette({
   const dialogRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listboxId = useId();
-  const reduceMotion = useReducedMotion();
   const state = useTasksState();
   const { openTask } = useTaskPanel();
   // "…or create": the palette is the Studio Bar's universal field (T·94),
@@ -401,14 +404,10 @@ function Palette({
       {open ? (
         <motion.div
           data-tasks-command-palette-layer
-          initial={reduceMotion ? false : { opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : { duration: 0.16, ease: [0.16, 1, 0.3, 1] }
-          }
+          exit={{ opacity: 1 }}
+          transition={{ duration: 0 }}
           className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/15 px-4 pt-[14vh] backdrop-blur-[2px]"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
@@ -419,16 +418,10 @@ function Palette({
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            initial={
-              reduceMotion ? false : { opacity: 0, y: -6, scale: 0.98 }
-            }
+            initial={false}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.985 }}
-            transition={
-              reduceMotion
-                ? { duration: 0 }
-                : { duration: 0.22, ease: [0.16, 1, 0.3, 1] }
-            }
+            exit={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0 }}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 event.preventDefault();
@@ -643,6 +636,11 @@ const FACET_LEGEND: ScopeFacet[] = [
 
 const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
   {
+    word: "home",
+    tagline: "What matters now",
+    path: HOME_APP_PATH,
+  },
+  {
     word: "timeline",
     tagline: "Direction clarity",
     path: PRODUCT_APP_PATHS.timeline,
@@ -653,9 +651,9 @@ const SUITE_JUMPS: { word: string; tagline: string; path: string }[] = [
     path: PRODUCT_APP_PATHS.notes,
   },
   {
-    word: "signal",
-    tagline: "Attention clarity",
-    path: PRODUCT_APP_PATHS.signal,
+    word: "briefing",
+    tagline: "The full read",
+    path: BRIEFING_APP_PATH,
   },
 ];
 

@@ -23,13 +23,10 @@ export type Tip = {
 };
 
 export const TIPS: Tip[] = [
-  {
-    id: "task-panel-navigate",
-    version: 1,
-    context: "task-panel",
-    // Verified: j/k/e keyboard handler in task-detail.tsx useEffect onKey
-    body: "Press j or k to move between tasks, e to open focus mode.",
-  },
+  // Retired 2026-07-28: "Press j or k to move between tasks, e to open focus
+  // mode." The task panel prints that same hint permanently, beside Mark
+  // done. A tip that teaches what the surface already says out loud spends a
+  // session slot and reads as the product repeating itself.
   {
     id: "task-panel-resize",
     version: 1,

@@ -15,6 +15,7 @@ type TaskRow = typeof tasks.$inferSelect & {
 export function rowToTask(row: TaskRow): Task {
   return {
     id: row.id,
+    seq: row.seq ?? undefined,
     title: row.title,
     description: row.description ?? undefined,
     lane: row.lane,
@@ -52,5 +53,6 @@ export function rowToTask(row: TaskRow): Task {
     // migration 0016 (libSQL returns undefined for an absent column).
     archivedAt: row.archivedAt ?? null,
     updatedAt: row.updatedAt,
+    completedAt: row.completedAt ?? null,
   };
 }

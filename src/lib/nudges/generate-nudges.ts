@@ -1,4 +1,6 @@
 import type { Task, UserId } from "@/lib/data";
+import { isTaskDone } from "@/lib/board-columns";
+import type { ColumnConfig } from "@/lib/board-config";
 
 export type NudgeKind =
   | "idle-doing"
@@ -25,7 +27,7 @@ export type Nudge = {
   taskId?: string;
   /** Punchy one-liner. */
   headline: string;
-  /** The wry "yeah, we noticed" sub-line. */
+  /** The plain "here's what we noticed" sub-line. */
   body: string;
   /** Higher = more urgent. Used for ordering. */
   severity: number;
@@ -44,58 +46,76 @@ function pickRand<T>(arr: T[], seed: string): T {
 }
 
 // ────────────────────────────────────────────────────────────────────
-// Cheeky copy banks. Each rule has a few variants so the inbox doesn't
-// read identical week-over-week. Tone reference: dry, observational,
-// never preachy. We notice; we don't lecture.
+// Copy banks. Each rule has a few variants so the inbox doesn't read
+// identical week-over-week. Tone: dry, observational, never preachy —
+// and plain. We notice; we don't lecture, and we don't do bits.
 // ────────────────────────────────────────────────────────────────────
 
 const IDLE_DOING_4: string[] = [
-  "Day 4 in Moving. The motion is implied.",
-  "This is starting to look load-bearing. Maybe poke it?",
-  "Quietly enjoying its life in the Moving lane.",
+  "In progress, but quiet for {days}.",
+  "Started, then nothing for {days}.",
+  "No movement in {days}. A small push would do it.",
 ];
 
 const IDLE_DOING_7: string[] = [
-  "Officially marinating. {n} days unmoved.",
-  "This card knows your name now.",
-  "Older than most TikTok trends. Just saying.",
+  "Quiet for {days} now.",
+  "Untouched for {days}. Still worth doing?",
+  "In progress for {days} without a change.",
 ];
 
 const IDLE_REVIEW_4: string[] = [
-  "Waiting for {n} days. Are we reviewing it or admiring it?",
-  "Five days waiting reads less like review and more like a museum exhibit.",
-  "Review status: pending, vibes: stagnant.",
+  "Waiting on a look for {days}.",
+  "In review for {days}. One decision moves it.",
+  "Ready for a yes or no. {days} waiting.",
 ];
 
 const PAST_DUE_NEAR: string[] = [
-  "Due was {n} day ago. We're aware. Just sitting with it.",
-  "Yesterday wanted to be the day. Wasn't.",
-  "Mildly past due. Still recoverable. Still possible.",
+  "Past due by {days}. Still very recoverable.",
+  "Due {days} ago. A small push lands it.",
+  "Slipped by {days}. Today works.",
 ];
 
 const PAST_DUE_FAR: string[] = [
-  "{n} days past due. The deadline was a suggestion, apparently.",
-  "We've stopped counting. (Lie. It's {n} days.)",
-  "This due date filed a missing-persons report.",
+  "{days} past due. Reschedule it or let it go.",
+  "Due {days} ago. Worth one honest decision.",
+  "Open and {days} past due. Pick a new date or drop it.",
 ];
 
 const BLOCKER_CLEARED: string[] = [
-  "Your blocker shipped. Downstream is just vibing.",
-  "Upstream's done. Nothing's stopping you. Except, you know, you.",
-  "All clear. Permission granted. The path is open.",
+  "What this was waiting on is done. It can move now.",
+  "Everything upstream is finished. Nothing is holding this.",
+  "The wait is over. This is free to start.",
 ];
 
 const REVIEW_PILE: string[] = [
-  "{n} tasks Waiting. Bottleneck-shaped, isn't it?",
-  "{n} reviews queued. The reviewer's name rhymes with 'you'.",
-  "{n} tasks waiting on a yes-or-no. Most are yes. Just guessing.",
+  "{n} tasks waiting on a look. Most need one decision.",
+  "{n} waiting for review. A short pass would clear most of it.",
+  "The review queue is {n} deep. Worth ten minutes.",
 ];
 
 const DOING_EMPTY: string[] = [
-  "{todo} in To do, nothing Moving. We can do one.",
-  "Nothing currently in flight. The runway is yours.",
-  "Moving is suspiciously empty. Coincidence?",
+  "{todo} queued, nothing in progress. Start one.",
+  "Nothing in flight. Pick one and begin.",
+  "{todo} ready to go. One at a time works.",
 ];
+
+/** "1 day" / "6 days" — templates use {days} so singulars read correctly. */
+function formatDays(n: number): string {
+  return `${n} ${n === 1 ? "day" : "days"}`;
+}
+
+/**
+ * Whole calendar days between two instants (UTC midnights), so a task due
+ * on the 14th reads "2 days" past due on the 16th regardless of the time
+ * of day either instant carries. Millisecond flooring made the nudge say
+ * "1 day" while the board (calendar-date maths) said "2 days overdue" for
+ * the same task.
+ */
+function calendarDaysBetween(from: Date, to: Date): number {
+  const a = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+  const b = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  return Math.round((b - a) / DAY_MS);
+}
 
 // ────────────────────────────────────────────────────────────────────
 // Rule engine
@@ -104,12 +124,15 @@ const DOING_EMPTY: string[] = [
 export function generateNudges(
   tasks: Task[],
   currentUser: UserId,
+  /** Threaded from the caller's useColumnConfig() / readWorkspaceColumnConfig
+   *  (T·122); defaults to null (["done"]) for callers that haven't wired it. */
+  columnConfig: ColumnConfig | null = null,
   now: Date = new Date(),
 ): Nudge[] {
   const out: Nudge[] = [];
 
   const myOpen = tasks.filter(
-    (t) => t.assignees.includes(currentUser) && t.lane !== "done",
+    (t) => t.assignees.includes(currentUser) && !isTaskDone(t, columnConfig),
   );
 
   // Rule 1, idle in_progress
@@ -122,7 +145,7 @@ export function generateNudges(
         kind: "idle-doing",
         taskId: t.id,
         headline: t.title,
-        body: tpl.replace("{n}", String(days)),
+        body: tpl.replaceAll("{days}", formatDays(days)),
         severity: 80,
       });
     } else if (days >= 4) {
@@ -132,7 +155,7 @@ export function generateNudges(
         kind: "idle-doing",
         taskId: t.id,
         headline: t.title,
-        body: tpl.replace("{n}", String(days)),
+        body: tpl.replaceAll("{days}", formatDays(days)),
         severity: 60,
       });
     }
@@ -148,7 +171,7 @@ export function generateNudges(
         kind: "idle-review",
         taskId: t.id,
         headline: t.title,
-        body: tpl.replace("{n}", String(days)),
+        body: tpl.replaceAll("{days}", formatDays(days)),
         severity: 50,
       });
     }
@@ -157,7 +180,7 @@ export function generateNudges(
   // Rule 3, past due (mine)
   for (const t of myOpen) {
     if (!t.dueAt) continue;
-    const dDays = Math.floor((now.getTime() - t.dueAt.getTime()) / DAY_MS);
+    const dDays = calendarDaysBetween(t.dueAt, now);
     if (dDays > 0 && dDays <= 3) {
       const tpl = pickRand(PAST_DUE_NEAR, t.id + "due-near");
       out.push({
@@ -165,7 +188,7 @@ export function generateNudges(
         kind: "past-due",
         taskId: t.id,
         headline: t.title,
-        body: tpl.replace("{n}", String(dDays)),
+        body: tpl.replaceAll("{days}", formatDays(dDays)),
         severity: 75,
       });
     } else if (dDays > 3) {
@@ -175,9 +198,7 @@ export function generateNudges(
         kind: "past-due",
         taskId: t.id,
         headline: t.title,
-        body: tpl
-          .replace("{n}", String(dDays))
-          .replace("{n}", String(dDays)),
+        body: tpl.replaceAll("{days}", formatDays(dDays)),
         severity: 90,
       });
     }
@@ -193,7 +214,7 @@ export function generateNudges(
     );
     const allDone =
       blockers.length > 0 &&
-      blockers.every((b) => b && b.lane === "done");
+      blockers.every((b) => b && isTaskDone(b, columnConfig));
     if (!allDone) continue;
     const tpl = pickRand(BLOCKER_CLEARED, t.id + "blocker");
     out.push({
@@ -213,7 +234,7 @@ export function generateNudges(
     out.push({
       id: `review-pile-${reviewCount}`,
       kind: "review-pile",
-      headline: "Waiting pile is getting top-heavy",
+      headline: "The review queue is backing up",
       body: tpl.replace("{n}", String(reviewCount)),
       severity: 40,
     });
@@ -233,9 +254,18 @@ export function generateNudges(
     });
   }
 
-  // Sort high → low severity, cap to 6 to avoid spam.
+  // Sort high → low severity, keep one nudge per task (the most urgent
+  // reason wins — a task that is both past due and idle is one problem,
+  // not two), cap to 6 to avoid spam.
   out.sort((a, b) => b.severity - a.severity);
-  return out.slice(0, 6);
+  const seenTasks = new Set<string>();
+  const deduped = out.filter((n) => {
+    if (!n.taskId) return true;
+    if (seenTasks.has(n.taskId)) return false;
+    seenTasks.add(n.taskId);
+    return true;
+  });
+  return deduped.slice(0, 6);
 }
 
 /** Approximate idle days from `idleDays` field if present, else from

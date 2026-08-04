@@ -18,18 +18,17 @@ import {
   useState,
 } from "react";
 import type { Task } from "@/lib/data";
-import { LANES, LANE_ORDER } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
-import { useDomain } from "@/lib/domain-context";
+import { useDomain, useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
 import { getTaskConversationAction } from "@/server/actions/conversation";
 import type { ConversationItem } from "@/server/db/queries";
 
-import { TaskIdChip, EditedStamp, FromNotesChip } from "@/components/app/detail-panel/panel-header";
+import { TaskIdChip, EditedStamp } from "@/components/app/detail-panel/panel-header";
 import { DescriptionEditor } from "@/components/app/detail-panel/description-editor";
 import { SubtasksSection } from "@/components/app/detail-panel/subtasks-section";
 import { ResourcesSection } from "@/components/app/detail-panel/resources-section";
 import { ConversationFeed } from "@/components/app/detail-panel/conversation-feed";
-import { Popover } from "@/components/app/detail-panel/popover";
 import { ActionsDropdown } from "@/components/primitives/context-actions";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
 import { MetadataRail } from "./metadata-rail";
@@ -165,70 +164,6 @@ function TitleTextarea({ task }: { task: Task }) {
   );
 }
 
-// ─── Status pill popover ──────────────────────────────────────────────────────
-
-function StatusPillPopover({ task }: { task: Task }) {
-  const { updateTask } = useTasksDispatch();
-  const lane = LANES[task.lane];
-
-  return (
-    <Popover
-      width={200}
-      aria-label="Change task status"
-      trigger={({ onClick, ref, "aria-expanded": expanded }) => (
-        <button
-          ref={ref}
-          type="button"
-          onClick={onClick}
-          aria-expanded={expanded}
-          aria-haspopup="listbox"
-          className="mt-0.5 inline-flex flex-shrink-0 items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] font-medium transition-all focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
-          style={{ background: lane.bg, color: lane.ink }}
-        >
-          <span
-            className="block h-1.5 w-1.5 rounded-full"
-            style={{ background: lane.dot }}
-            aria-hidden
-          />
-          {lane.name}
-        </button>
-      )}
-    >
-      {(close) => (
-        <ul className="text-[12.5px]" role="listbox" aria-label="Task status">
-          {LANE_ORDER.map((laneId) => {
-            const l = LANES[laneId];
-            const active = task.lane === laneId;
-            return (
-              <li key={laneId} role="option" aria-selected={active}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateTask(task.id, { lane: laneId });
-                    close();
-                  }}
-                  aria-pressed={active}
-                  className={[
-                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken",
-                    active ? "font-medium text-ink" : "text-ink-soft",
-                  ].join(" ")}
-                >
-                  <span
-                    className="block h-1.5 w-1.5 flex-shrink-0 rounded-full"
-                    style={{ background: l.dot }}
-                    aria-hidden
-                  />
-                  {l.name}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </Popover>
-  );
-}
-
 // ─── ConversationSkeleton ─────────────────────────────────────────────────────
 
 function ConversationSkeleton() {
@@ -256,21 +191,26 @@ function ConversationSkeleton() {
   );
 }
 
+/**
+ * Conversation timeout.
+ *
+ * Was two stacked grey sentences and an underlined text link, which read as
+ * broken page furniture rather than a state with a way out. One line of
+ * plain cause, one real button.
+ */
 function ConversationTimeout({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="py-1">
-      <div className="text-[13px] text-ink-quiet">Could not load conversation.</div>
-      <div className="mt-1 text-[12px] text-ink-faint">
-        Took too long to load.{" "}
-        <button
-          type="button"
-          onClick={onRetry}
-          className="underline decoration-ink-faint underline-offset-2 transition-colors hover:text-ink-soft hover:decoration-ink-soft"
-        >
-          Try again
-        </button>
-        .
-      </div>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-line-soft bg-bg-sunken/40 px-3 py-2.5">
+      <span className="text-[12.5px] text-ink-soft">
+        The conversation took too long to load.
+      </span>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex items-center rounded-full border border-line-soft bg-white px-2.5 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-ghost hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        Try again
+      </button>
     </div>
   );
 }
@@ -292,7 +232,8 @@ function TaskDetailHeader({
 }) {
   const dispatchers = useTasksDispatch();
   const { boardName } = useDomain();
-  const projectLabel = boardName ?? "Workspace";
+  const columnConfig = useColumnConfig();
+  const projectLabel = boardName ?? "Project";
   const isFocus = shell === "focus";
 
   const actions = buildTaskDetailActions(task, {
@@ -300,21 +241,24 @@ function TaskDetailHeader({
     isFocus,
     onOpenFocus: onFocusToggle,
     onClosePanel: onClose,
+    columnConfig,
   });
 
-  const primaryLabel = task.lane === "done" ? "Reopen" : "Mark done";
+  const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
 
   return (
     <header className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-5 pb-3 pt-4">
       {/* Top row: breadcrumb + controls */}
       <div className="flex items-center justify-between gap-2">
         {/* Breadcrumb */}
-        <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-ink-quiet">
-          <span className="truncate">{projectLabel}</span>
+        {/* One line, truncating from the project name — the id chip and
+            stamp never wrap into a second row. Provenance ("From Notes")
+            is a Source field in the metadata rail, not header furniture. */}
+        <div className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-[11px] text-ink-quiet">
+          <span className="min-w-0 truncate">{projectLabel}</span>
           <span className="text-ink-faint" aria-hidden>/</span>
-          <TaskIdChip id={task.id} />
+          <TaskIdChip id={task.id} seq={task.seq} />
           <EditedStamp updatedAt={task.updatedAt} />
-          {task.sourceNoteId ? <FromNotesChip /> : null}
         </div>
 
         {/* Right controls */}
@@ -401,20 +345,23 @@ function TaskDetailHeader({
         </div>
       </div>
 
-      {/* Title row */}
-      <div className="mt-2.5 flex items-start gap-3">
-        <StatusPillPopover task={task} />
+      {/* Title row. Status lives with the other properties in the metadata
+          rail; a coloured pill up here dragged the title sideways and gave
+          the header two competing focal points. */}
+      <div className="mt-2.5">
         <TitleTextarea task={task} />
       </div>
 
-      {/* Primary action row */}
+      {/* Primary action row. The panel's one primary action carries the
+          suite's primary treatment — indigo and a pill, per the design
+          system. Ink-black read as a neutral control among neutral controls. */}
       <div className="mt-3 flex items-center gap-2">
         <button
           type="button"
           onClick={() => dispatchers.toggleComplete(task.id)}
-          className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[11.5px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[11.5px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          {task.lane !== "done" ? (
+          {!isTaskDone(task, columnConfig) ? (
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
               <polyline points="20 6 9 17 4 12" />
             </svg>
@@ -457,7 +404,12 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
         ) : timedOut ? (
           <ConversationTimeout onRetry={retry} />
         ) : (
-          <ConversationFeed key={task.id} taskId={task.id} initialItems={items} />
+          <ConversationFeed
+            key={task.id}
+            taskId={task.id}
+            initialItems={items}
+            assigneeIds={task.assignees}
+          />
         )}
       </section>
     </div>
@@ -528,14 +480,14 @@ export function TaskDetail({
           <div className="border-b border-line-soft px-6 py-4">
             <MetadataRail task={task} compact />
           </div>
-          {/* Tip card mounts after content to avoid layout shift. No
-              `enabled` prop: the panel has no prefs in scope, so TipCard
-              self-gates on the "Tips while you work" preference (memoized
-              fetch) plus the stored session/weekly caps. */}
-          <div className="px-6 pt-4">
+          <PrimaryContent task={task} conversation={conversation} />
+          {/* Tip card mounts after the content: a hint is the least
+              important thing on the panel and must never sit between the
+              fields and the description. TipCard self-gates on the "Tips
+              while you work" preference plus the session/weekly caps. */}
+          <div className="px-6 pb-5">
             <TipCard context="task-panel" />
           </div>
-          <PrimaryContent task={task} conversation={conversation} />
         </div>
       )}
     </div>

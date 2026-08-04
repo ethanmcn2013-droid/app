@@ -9,17 +9,18 @@
 // UI-only concerns the server never sees (selection, focus, inspection,
 // preview, inline-edit target, drag) live in a small local reducer here.
 
-import { useCallback, useMemo, useReducer, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { LANE_ORDER, type LaneId } from "@/lib/data";
 import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { setTaskMilestoneAction } from "@/server/actions/tasks";
+import { useColumnConfig } from "@/lib/domain-context";
+import { isTaskDone } from "@/lib/board-columns";
 import {
   fieldsPatch,
   labToPriority,
   scheduleToPatch,
-  statusToLane,
   taskToLab,
   taskToSchedule,
 } from "./adapter";
@@ -39,6 +40,8 @@ type UiState = {
   selectionAnchorId: string | null;
   activeId: string | null;
   inspectedId: string | null;
+  recentlyPlacedId: string | null;
+  recentlyUpdatedId: string | null;
   previewId: string | null;
   editing: { taskId: string; field: string } | null;
   drag: LabDragOperation;
@@ -49,6 +52,8 @@ type UiState = {
 type UiAction =
   | { type: "SET_ACTIVE"; id: string | null }
   | { type: "SET_INSPECTED"; id: string | null }
+  | { type: "SET_PLACED"; id: string | null }
+  | { type: "SET_UPDATED"; id: string | null }
   | { type: "SET_PREVIEW"; id: string | null }
   | { type: "SET_EDITING"; editing: UiState["editing"] }
   | { type: "SET_DRAG"; drag: LabDragOperation }
@@ -62,6 +67,8 @@ const INITIAL_UI: UiState = {
   selectionAnchorId: null,
   activeId: null,
   inspectedId: null,
+  recentlyPlacedId: null,
+  recentlyUpdatedId: null,
   previewId: null,
   editing: null,
   drag: null,
@@ -75,6 +82,10 @@ function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, activeId: action.id };
     case "SET_INSPECTED":
       return { ...state, inspectedId: action.id };
+    case "SET_PLACED":
+      return { ...state, recentlyPlacedId: action.id };
+    case "SET_UPDATED":
+      return { ...state, recentlyUpdatedId: action.id };
     case "SET_PREVIEW":
       return { ...state, previewId: action.id };
     case "SET_EDITING":
@@ -127,17 +138,49 @@ export function HybridStoreProvider({
   const prod = useTasksDispatch();
   const taskPanel = useTaskPanel();
   const calendar = useCalendarFrame();
+  const columnConfig = useColumnConfig();
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
+  const knownTaskIds = useRef(new Set(prodTasks.map((task) => task.id)));
+  const knownUpdatedAt = useRef(new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()])));
+  const updateReceiptTimer = useRef<number | undefined>(undefined);
+  const pendingDuplicate = useRef(false);
 
   const labTasks = useMemo<LabTask[]>(
-    () => prodTasks.map((task, index) => taskToLab(task, index, calendar)),
-    [calendar, prodTasks],
+    () => prodTasks.map((task, index) => taskToLab(task, index, calendar, columnConfig)),
+    [calendar, columnConfig, prodTasks],
   );
 
   const prodById = useMemo(() => {
     const map = new Map<string, Task>();
     for (const task of prodTasks) map.set(task.id, task);
     return map;
+  }, [prodTasks]);
+
+  useEffect(() => {
+    const nextIds = new Set(prodTasks.map((task) => task.id));
+    const changed = prodTasks.find((task) => {
+      const prior = knownUpdatedAt.current.get(task.id);
+      return prior !== undefined && prior !== task.updatedAt.getTime();
+    });
+    if (pendingDuplicate.current) {
+      const added = prodTasks.find((task) => !knownTaskIds.current.has(task.id));
+      if (added) {
+        pendingDuplicate.current = false;
+        dispatch({ type: "SET_PLACED", id: added.id });
+      }
+    }
+    if (changed) {
+      dispatch({ type: "SET_UPDATED", id: changed.id });
+      if (updateReceiptTimer.current !== undefined) window.clearTimeout(updateReceiptTimer.current);
+      updateReceiptTimer.current = window.setTimeout(() => {
+        dispatch({ type: "SET_UPDATED", id: null });
+      }, 360);
+    }
+    knownTaskIds.current = nextIds;
+    knownUpdatedAt.current = new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()]));
+    return () => {
+      if (updateReceiptTimer.current !== undefined) window.clearTimeout(updateReceiptTimer.current);
+    };
   }, [prodTasks]);
 
   const openTask = useCallback(
@@ -160,8 +203,10 @@ export function HybridStoreProvider({
       const current = prodById.get(id);
       const wantMilestone = schedule.kind === "milestone";
       if (current && Boolean(current.isMilestone) !== wantMilestone) {
-        // Structural flag is stripped by updateTaskAction; persist separately.
-        void setTaskMilestoneAction(id, wantMilestone);
+        // Structural flag is stripped by updateTaskAction; the dedicated
+        // dispatcher applies it optimistically and persists it separately,
+        // so the board's diamond flips the moment it is clicked.
+        prod.setMilestone(id, wantMilestone);
       }
     },
     [calendar, prod, prodById, readOnly],
@@ -169,17 +214,24 @@ export function HybridStoreProvider({
 
   const value = useMemo<LabStore>(() => {
     const byId = (id: string) => labTasks.find((task) => task.id === id);
-    const isDone = (id: string) => prodById.get(id)?.lane === "done";
+    const isDone = (id: string) => {
+      const task = prodById.get(id);
+      return task ? isTaskDone(task, columnConfig) : false;
+    };
 
+    // A status IS a column key. The four permanent lanes move canonically
+    // (with positional reorder); any other key is a custom-column claim,
+    // persisted through the column-aware dispatcher — the raw-text lane
+    // write that used to serve the Waiting column is gone.
     const moveStatus = (id: string, status: TaskStatus, index?: number) => {
       if (readOnly) return;
-      if (status === "waiting") {
-        prod.updateTask(id, { lane: "waiting" as Task["lane"] });
+      if ((LANE_ORDER as string[]).includes(status)) {
+        const lane = status as LaneId;
+        if (typeof index === "number") prod.reorderTask(id, lane, index);
+        else prod.moveTask(id, lane);
         return;
       }
-      const lane = statusToLane(status);
-      if (typeof index === "number") prod.reorderTask(id, lane, index);
-      else prod.moveTask(id, lane);
+      prod.moveTaskToColumn(id, status);
     };
 
     return {
@@ -189,7 +241,9 @@ export function HybridStoreProvider({
       selectedIds: ui.selectedIds,
       selectionAnchorId: ui.selectionAnchorId,
       activeId: ui.activeId,
-      inspectedId: ui.inspectedId,
+      inspectedId: taskPanel.taskId,
+      recentlyPlacedId: ui.recentlyPlacedId,
+      recentlyUpdatedId: ui.recentlyUpdatedId,
       previewId: ui.previewId,
       editing: ui.editing,
       drag: ui.drag,
@@ -219,7 +273,15 @@ export function HybridStoreProvider({
       // ---- mutations → production dispatchers ----
       updateTask: (id, fields: UpdateFields) => {
         if (readOnly) return;
-        const patch = fieldsPatch(fields, calendar);
+        // Column membership and completion are workflow moves, not field
+        // patches — route them through their dispatchers so claims and
+        // completion always persist correctly.
+        const { status, completed, ...rest } = fields;
+        if (status !== undefined) moveStatus(id, status);
+        if (completed !== undefined && isDone(id) !== completed) {
+          prod.toggleComplete(id);
+        }
+        const patch = fieldsPatch(rest, calendar);
         if (patch) prod.updateTask(id, patch);
       },
       updateTitle: (id, title) => !readOnly && prod.updateTask(id, { title }),
@@ -260,28 +322,40 @@ export function HybridStoreProvider({
         dispatch({ type: "CLEAR_SELECTION" });
       },
       toggleComplete: (id) => !readOnly && prod.toggleComplete(id),
-      addTask: (status, schedule?: TaskSchedule) => {
+      addTask: (status, schedule?: TaskSchedule, title?: string) => {
         if (readOnly) return;
-        const lane = status === "waiting" ? "todo" : statusToLane(status);
+        const trimmed = title?.trim();
+        const isLaneKey = (LANE_ORDER as string[]).includes(status);
+        const lane = isLaneKey ? (status as LaneId) : "doing";
         const patch = schedule ? scheduleToPatch(schedule, calendar) : {};
         const created = prod.addTask({
-          title: "Untitled task",
+          title: trimmed || "Untitled task",
           lane,
           priority: "p2",
           ...(patch.dueAt ? { dueAt: patch.dueAt, due: patch.due } : {}),
         });
-        if (status === "waiting") prod.updateTask(created.id, { lane: "waiting" as Task["lane"] });
+        // A custom-column add claims the new task for that column; its
+        // lane stays canonical ("doing").
+        if (!isLaneKey) prod.moveTaskToColumn(created.id, status);
         if (schedule && (patch.startDay != null || patch.durationDays != null)) {
           prod.updateTask(created.id, { startDay: patch.startDay, durationDays: patch.durationDays });
         }
-        openTask(created.id);
+        dispatch({ type: "SET_PLACED", id: created.id });
+        // Titled adds come from the board's inline composer: the author is
+        // mid-flow adding several tasks, so the panel must not steal focus.
+        // Untitled adds still open the panel to be named.
+        if (!trimmed) openTask(created.id);
       },
       deleteTask: (id) => !readOnly && prod.removeTask(id),
-      duplicateTask: (id) => !readOnly && prod.duplicateTask(id),
+      duplicateTask: (id) => {
+        if (readOnly) return;
+        pendingDuplicate.current = true;
+        prod.duplicateTask(id);
+      },
       archiveTask: (id: string) => { if (!readOnly) prod.archiveTask(id); },
       makeSubtaskOf: (id: string, parentId: string | null) => { if (!readOnly) prod.setParent(id, parentId); },
     };
-  }, [applySchedule, calendar, labTasks, openTask, prod, prodById, readOnly, ui]);
+  }, [applySchedule, calendar, columnConfig, labTasks, openTask, prod, prodById, readOnly, taskPanel.taskId, ui]);
 
   return <LabStoreContext.Provider value={value}>{children}</LabStoreContext.Provider>;
 }

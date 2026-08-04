@@ -9,7 +9,7 @@
 // production source. Geometry changes must land in both.
 
 export type RailIconName =
-  | "notes" | "tasks" | "timeline" | "signal" | "more"
+  | "home" | "notes" | "tasks" | "timeline" | "signal" | "project" | "more"
   | "search" | "updates" | "team" | "settings";
 
 type RailPrimitive =
@@ -21,6 +21,20 @@ type RailPrimitive =
 export const RAIL_ICON_STROKE = 1.75;
 
 const RAIL_ICONS: Record<RailIconName, readonly RailPrimitive[]> = {
+  // Home: the front door. Roofline + walls in the rail grammar, with the
+  // Signal Point living inside — the dot is home here (consolidation D4).
+  home: [
+    { t: "p", d: "M4.75 11.5L12 4.75L19.25 11.5" },
+    { t: "p", d: "M6.75 9.75V17.25A2.5 2.5 0 0 0 9.25 19.75H14.75A2.5 2.5 0 0 0 17.25 17.25V9.75" },
+    { t: "d", cx: 12, cy: 14, r: 2 },
+  ],
+  // Project: a planted flag — the workspace's declared direction. The
+  // Signal Point plants the pole (D-011 project overview).
+  project: [
+    { t: "p", d: "M7.25 16.5V5.5" },
+    { t: "p", d: "M7.25 5.75H15.25L13.5 8.5L15.25 11.25H7.25" },
+    { t: "d", cx: 7.25, cy: 19, r: 2 },
+  ],
   notes: [
     { t: "p", d: "M12.5 4H8.25A2.5 2.5 0 0 0 5.75 6.5V17.5A2.5 2.5 0 0 0 8.25 20H15.75A2.5 2.5 0 0 0 18.25 17.5V9.75" },
     { t: "p", d: "M9.25 12.25H14.75" },

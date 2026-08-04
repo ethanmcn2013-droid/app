@@ -22,8 +22,25 @@ export type TimelineArtifactDensity =
 export type TimelineArtifactPoint = Readonly<{
   item: AudienceTimelineItemDto;
   position: number;
+  /**
+   * Position on the vertical (stacked) axis. Identical to `position` except
+   * that long empty calendar stretches are capped, so a phone never spends a
+   * full screen on one quiet gap. Today rides the same remap.
+   */
+  stackPosition: number;
   state: TimelineArtifactPointState;
   isNext: boolean;
+}>;
+
+export type TimelineMonthTick = Readonly<{
+  /** Rail-percent on the horizontal axis, ridden through the same
+      distortion as the points — the cartography cannot disagree with
+      the dots it annotates. */
+  position: number;
+  /** The stacked (vertical) axis position, capped like everything else. */
+  stackPosition: number;
+  /** Short month name, e.g. "Feb"; January carries its year: "Jan ’27". */
+  label: string;
 }>;
 
 export type TimelineArtifactModel = Readonly<{
@@ -35,6 +52,20 @@ export type TimelineArtifactModel = Readonly<{
   remainingCount: number;
   percent: number;
   todayPosition: number | null;
+  todayStackPosition: number | null;
+  /**
+   * Month boundaries inside the plan's span, for the rail's cartography.
+   * Empty when the timeline has no usable calendar axis, or when the span
+   * is so long the ticks would become noise (they thin to quarters first).
+   */
+  monthTicks: readonly TimelineMonthTick[];
+  /**
+   * The rail-percent of the furthest completed milestone, or null when
+   * nothing is complete. The completed ink is drawn to THIS, never to the
+   * abstract count-percentage, so the fill and the dots are one statement.
+   */
+  completedFrontier: number | null;
+  completedStackFrontier: number | null;
   nextMilestoneId: string | null;
   defaultSelectedId: string | null;
 }>;
@@ -143,17 +174,87 @@ function artifactDensity(count: number): TimelineArtifactDensity {
   return "standard";
 }
 
+/**
+ * Map a raw calendar percentage through the same distortion the points
+ * received. `collisionSafePositions` may move clustered points a long way
+ * from their raw calendar spots; anything else placed on the rail (the Today
+ * dash) must ride the identical mapping or the artifact lies about order.
+ * Piecewise-linear between each dated point's (raw, adjusted) pair, with the
+ * rail's own edges as end anchors, keeps "between those two milestones"
+ * truthful even when spacing is no longer calendar-proportional.
+ */
+function mapThroughPointDistortion(
+  rawValue: number,
+  anchors: ReadonlyArray<{ raw: number; adjusted: number }>,
+  edge: number,
+): number {
+  const sorted = [...anchors].sort((left, right) => left.raw - right.raw);
+  const full = [
+    { raw: 0, adjusted: edge },
+    ...sorted,
+    { raw: 100, adjusted: 100 - edge },
+  ];
+  for (let index = 1; index < full.length; index += 1) {
+    const lower = full[index - 1];
+    const upper = full[index];
+    if (rawValue > upper.raw) continue;
+    if (upper.raw === lower.raw) return upper.adjusted;
+    const ratio = (rawValue - lower.raw) / (upper.raw - lower.raw);
+    return clampPercent(lower.adjusted + ratio * (upper.adjusted - lower.adjusted));
+  }
+  return clampPercent(100 - edge);
+}
+
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  month: "short",
+  timeZone: "UTC",
+});
+
+/**
+ * First-of-month instants strictly inside (axisStart, axisEnd). When a plan
+ * spans years the ticks thin to quarters, then to Januarys, so cartography
+ * never becomes noise. January ticks carry their year.
+ */
+function monthBoundaries(axisStart: number, axisEnd: number): Array<{ day: number; label: string }> {
+  const boundaries: Array<{ day: number; label: string }> = [];
+  const cursor = new Date(axisStart);
+  cursor.setUTCDate(1);
+  cursor.setUTCHours(0, 0, 0, 0);
+  cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  while (cursor.getTime() < axisEnd) {
+    const month = cursor.getUTCMonth();
+    boundaries.push({
+      day: cursor.getTime(),
+      label: month === 0
+        ? `Jan ’${String(cursor.getUTCFullYear() % 100).padStart(2, "0")}`
+        : MONTH_FORMATTER.format(cursor),
+    });
+    cursor.setUTCMonth(month + 1);
+  }
+  if (boundaries.length > 14) {
+    const quarters = boundaries.filter(({ day }) => new Date(day).getUTCMonth() % 3 === 0);
+    return quarters.length > 14
+      ? quarters.filter(({ day }) => new Date(day).getUTCMonth() === 0)
+      : quarters;
+  }
+  return boundaries;
+}
+
 function calendarPositions(
   items: readonly AudienceTimelineItemDto[],
   today: string,
   primaryDate: string | undefined,
-): { pointPositions: number[]; todayPosition: number | null } {
+): {
+  pointPositions: number[];
+  todayPosition: number | null;
+  monthTicks: Array<{ position: number; label: string }>;
+} {
   const todayDay = calendarDay(today);
   const primaryDay = calendarDay(primaryDate);
   const itemDays = items.map((item) => calendarDay(item.date));
   const datedItemDays = itemDays.filter((day): day is number => day !== null);
   if (datedItemDays.length === 0) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const axisDays = [
@@ -164,13 +265,13 @@ function calendarPositions(
   const distinctAxisDays = new Set(axisDays);
 
   if (distinctAxisDays.size < 2) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const axisStart = Math.min(...axisDays);
   const axisEnd = Math.max(...axisDays);
   if (axisEnd <= axisStart) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null };
+    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
   }
 
   const rawPointPositions = interpolateUndatedPositions(
@@ -179,11 +280,60 @@ function calendarPositions(
       : ((day - axisStart) / (axisEnd - axisStart)) * 100),
   );
   const safePointPositions = collisionSafePositions(rawPointPositions);
-  const todayPosition = todayDay === null
-    ? null
-    : clampPercent(4 + (((todayDay - axisStart) / (axisEnd - axisStart)) * 92));
+  const edge = Math.min(6, Math.max(3, 36 / rawPointPositions.length));
+  const datedAnchors = itemDays.flatMap((day, index) =>
+    day === null
+      ? []
+      : [{
+          raw: ((day - axisStart) / (axisEnd - axisStart)) * 100,
+          adjusted: safePointPositions[index],
+        }],
+  );
+  const mapDay = (day: number): number => mapThroughPointDistortion(
+    ((day - axisStart) / (axisEnd - axisStart)) * 100,
+    datedAnchors,
+    edge,
+  );
+  const todayPosition = todayDay === null ? null : mapDay(todayDay);
+  const monthTicks = monthBoundaries(axisStart, axisEnd).map(({ day, label }) => ({
+    position: mapDay(day),
+    label,
+  }));
 
-  return { pointPositions: safePointPositions, todayPosition };
+  return { pointPositions: safePointPositions, todayPosition, monthTicks };
+}
+
+/**
+ * Cap long empty stretches for the stacked (vertical) axis. Horizontal
+ * whitespace reads as time; vertical whitespace reads as a broken page. Gaps
+ * are limited to `capRatio` × the mean gap and the sequence is rescaled back
+ * onto the original span, so order and edge padding are preserved exactly.
+ * Returns the input unchanged when nothing exceeds the cap.
+ */
+export function capStackGaps(
+  positions: readonly number[],
+  capRatio = 1.9,
+): number[] {
+  if (positions.length < 3) return [...positions];
+  const first = positions[0];
+  const last = positions[positions.length - 1];
+  const span = last - first;
+  if (span <= 0) return [...positions];
+
+  const mean = span / (positions.length - 1);
+  const cap = mean * capRatio;
+  const gaps = positions.slice(1).map((position, index) =>
+    Math.min(position - positions[index], cap),
+  );
+  const total = gaps.reduce((sum, gap) => sum + gap, 0);
+  if (total <= 0 || Math.abs(total - span) < 1e-9) return [...positions];
+
+  const scale = span / total;
+  const stacked = [first];
+  for (const gap of gaps) {
+    stacked.push(stacked[stacked.length - 1] + gap * scale);
+  }
+  return stacked.map(clampPercent);
 }
 
 function nextMilestone(items: readonly AudienceTimelineItemDto[]): AudienceTimelineItemDto | null {
@@ -204,6 +354,22 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
   const schedule = calendarPositions(activeItems, dto.today, dto.primaryDate?.date);
   const todayDay = calendarDay(dto.today);
 
+  const stackPositions = capStackGaps(schedule.pointPositions);
+  const stackAnchors = schedule.pointPositions.map((position, index) => ({
+    raw: position,
+    adjusted: stackPositions[index],
+  }));
+  const mapStack = (position: number): number =>
+    mapThroughPointDistortion(position, stackAnchors, 0);
+  const todayStackPosition = schedule.todayPosition === null
+    ? null
+    : mapStack(schedule.todayPosition);
+  const monthTicks: TimelineMonthTick[] = schedule.monthTicks.map((tick) => ({
+    position: tick.position,
+    stackPosition: mapStack(tick.position),
+    label: tick.label,
+  }));
+
   const points = activeItems.map((item, index): TimelineArtifactPoint => {
     const itemDay = calendarDay(item.date);
     const isNext = item.publicId === next?.publicId;
@@ -214,6 +380,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     return {
       item,
       position: schedule.pointPositions[index] ?? 50,
+      stackPosition: stackPositions[index] ?? 50,
       isNext,
       state: item.state === "covered"
         ? "complete"
@@ -225,6 +392,13 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     };
   });
   const defaultPoint = points.find((point) => point.isNext) ?? points.at(-1) ?? null;
+  const completedPoints = points.filter((point) => point.state === "complete");
+  const completedFrontier = completedPoints.length
+    ? Math.max(...completedPoints.map((point) => point.position))
+    : null;
+  const completedStackFrontier = completedPoints.length
+    ? Math.max(...completedPoints.map((point) => point.stackPosition))
+    : null;
 
   return {
     density: artifactDensity(totalCount),
@@ -235,9 +409,57 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     remainingCount: Math.max(0, totalCount - completedCount),
     percent,
     todayPosition: schedule.todayPosition,
+    todayStackPosition,
+    monthTicks,
+    completedFrontier,
+    completedStackFrontier,
     nextMilestoneId: next?.publicId ?? null,
     defaultSelectedId: defaultPoint?.item.publicId ?? null,
   };
+}
+
+/**
+ * Indices that may carry a persistent label beyond the mandatory set (the
+ * next milestone, the completed point before it, the final point). Greedy
+ * left-to-right: a point earns its label when every labelled neighbour on
+ * the SAME side of the rail (sides alternate by index) is at least `minGap`
+ * rail-percent away — the same collision thinking the point positions use,
+ * applied to their titles. Wide rails label everything that fits instead of
+ * defaulting to three titles and six anonymous dots; the CSS gates these to
+ * containers wide enough for the label boxes.
+ */
+export function extraLabelIndices(
+  positions: readonly number[],
+  mandatory: ReadonlySet<number>,
+  labelWidth = 16,
+): Set<number> {
+  // Labels are centred on their point except at the rail's edges, where the
+  // CSS anchors them inward (start label grows right, end label grows left).
+  // Compare occupied INTERVALS, not centre distances, or the end-anchored
+  // label collides with its inboard neighbour on mid-width rails.
+  const interval = (index: number): [number, number] => {
+    const position = positions[index];
+    if (index === 0) return [position, position + labelWidth];
+    if (index === positions.length - 1) return [position - labelWidth, position];
+    return [position - labelWidth / 2, position + labelWidth / 2];
+  };
+  const granted = new Set(mandatory);
+  for (let index = 0; index < positions.length; index += 1) {
+    if (granted.has(index)) continue;
+    const [start, end] = interval(index);
+    let fits = true;
+    for (const other of granted) {
+      if ((other - index) % 2 !== 0) continue;
+      const [otherStart, otherEnd] = interval(other);
+      if (start < otherEnd && otherStart < end) {
+        fits = false;
+        break;
+      }
+    }
+    if (fits) granted.add(index);
+  }
+  for (const index of mandatory) granted.delete(index);
+  return granted;
 }
 
 export function buildTimelineCountdown(
@@ -272,6 +494,22 @@ export function formatTimelineDate(value: string, style: "short" | "long" = "sho
   const day = calendarDay(value);
   if (day === null) return value;
   return (style === "long" ? LONG_DATE_FORMATTER : SHORT_DATE_FORMATTER).format(new Date(day));
+}
+
+export type MetricValueScale = "base" | "three" | "four" | "word";
+
+/**
+ * The metric face must fit its column by construction, not by hoping the
+ * value stays short. Tabular numerals make digit width deterministic, so the
+ * face declares its width class and the CSS sizes each class to fit: one or
+ * two digits ride the display size, longer counts step down, and word values
+ * ("Today") take a size measured to clear the column on the day it matters.
+ */
+export function metricValueScale(value: string): MetricValueScale {
+  if (!/^\d+$/.test(value)) return "word";
+  if (value.length >= 4) return "four";
+  if (value.length === 3) return "three";
+  return "base";
 }
 
 export function timelinePointStatus(point: TimelineArtifactPoint): string {

@@ -15,6 +15,7 @@ import { db } from "@/server/db";
 import { planningPeriods, tasks, workspaces } from "@/server/db/schema";
 import { listMyWorkspaces } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 
 export type ProjectsTreeLeaf = Readonly<{
@@ -40,14 +41,29 @@ export type ProjectsTreeData = Readonly<{
   archived: readonly ProjectsTreeLeaf[];
 }>;
 
-function compactDate(value: string): string {
+function compactDate(value: string, withYear = false): string {
   const parsed = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
+    ...(withYear ? { year: "numeric" } : {}),
     timeZone: "UTC",
   });
+}
+
+/**
+ * A period's span, carrying the year only when the span needs it.
+ *
+ * The default planning horizon runs a full year — 2026-05-18 to 2027-05-17 —
+ * and with the year dropped from both ends that rendered as
+ * "18 May – 17 May", which reads as a backwards one-day range rather than a
+ * twelve-month one. The dates were always right; the label was hiding the
+ * one field that made them make sense.
+ */
+function formatDateRange(startDate: string, endDate: string): string {
+  const crossesYears = startDate.slice(0, 4) !== endDate.slice(0, 4);
+  return `${compactDate(startDate, crossesYears)} – ${compactDate(endDate, crossesYears)}`;
 }
 
 export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
@@ -57,7 +73,12 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
         {
           periodId: "demo-planning-period",
           periodName: "Wedding season",
-          dateRange: "12 Sep",
+          // Derived from the one pinned review frame, never a literal —
+          // the sidebar must state the same season end every other demo
+          // surface derives from.
+          dateRange: compactDate(
+            PINNED_REVIEW_CALENDAR_FRAME.planningPeriod?.endDate ?? "",
+          ),
           workspaces: [
             { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
           ],
@@ -134,7 +155,7 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
     const p = periodById.get(key)!;
     const dateRange =
       p.startDate && p.endDate
-        ? `${compactDate(p.startDate)} – ${compactDate(p.endDate)}`
+        ? formatDateRange(p.startDate, p.endDate)
         : p.startDate
           ? compactDate(p.startDate)
           : null;

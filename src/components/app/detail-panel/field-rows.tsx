@@ -15,12 +15,20 @@ import { formatRecurrenceLabel } from "@/lib/nlp/parse-recurrence";
 import { Avatar } from "@/components/showcase/avatar";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
+import {
+  describeAnchorFromToday,
+  relateDueToAnchor,
+  toCalendarDate,
+} from "@/lib/tasks/anchor-due";
 import { sendNudgeAction } from "@/server/actions/nudge";
+import { FIELD_CHIP, FIELD_CHIP_ACTIVE } from "./chip";
 import { Popover } from "./popover";
-import { DueCalendar } from "./due-calendar";
+import { DueCalendar, formatDueLabelOn } from "./due-calendar";
+import { useToast } from "@/components/primitives/toast";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
-const ALL_USERS: UserId[] = ["chloe", "david", "alex", "ada", "marcus"];
 
 export function FieldRows({ task }: { task: Task }) {
   return (
@@ -81,7 +89,7 @@ export function StatusRow({ task }: { task: Task }) {
             key={laneId}
             type="button"
             onClick={() => updateTask(task.id, { lane: laneId })}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-all"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-[background-color,border-color,color] duration-[var(--motion-fast)]"
             style={{
               color: active ? lane.ink : "var(--ink-soft)",
               background: active ? lane.bg : "transparent",
@@ -102,6 +110,64 @@ export function StatusRow({ task }: { task: Task }) {
   );
 }
 
+/**
+ * Compact status value for the metadata rail: the current lane as a toned
+ * pill that opens a lane picker. Replaces the pill that used to sit beside
+ * the panel title, where its colour block dragged the title sideways —
+ * status is a property of the task, so it lives with the other properties.
+ */
+export function StatusPillRow({ task }: { task: Task }) {
+  const { updateTask } = useTasksDispatch();
+  const lane = LANES[task.lane];
+  return (
+    <Popover
+      width={200}
+      aria-label="Change task status"
+      trigger={({ onClick, ref, "aria-expanded": expanded }) => (
+        <button
+          ref={ref}
+          type="button"
+          onClick={onClick}
+          aria-expanded={expanded}
+          aria-haspopup="listbox"
+          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          style={{ background: lane.bg, color: lane.ink }}
+        >
+          <span className="block h-1.5 w-1.5 rounded-full" style={{ background: lane.dot }} aria-hidden />
+          {lane.name}
+        </button>
+      )}
+    >
+      {(close) => (
+        <ul className="text-[12.5px]" role="listbox" aria-label="Task status">
+          {LANE_ORDER.map((laneId) => {
+            const l = LANES[laneId];
+            const active = task.lane === laneId;
+            return (
+              <li key={laneId} role="option" aria-selected={active}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateTask(task.id, { lane: laneId });
+                    close();
+                  }}
+                  className={[
+                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken",
+                    active ? "font-medium text-ink" : "text-ink-soft",
+                  ].join(" ")}
+                >
+                  <span className="block h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ background: l.dot }} aria-hidden />
+                  {l.name}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Popover>
+  );
+}
+
 export function PriorityRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = PRIORITY_LABEL[task.priority];
@@ -113,13 +179,13 @@ export function PriorityRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft bg-white px-2 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+          className={FIELD_CHIP}
         >
           <span
             className="block h-1.5 w-1.5 rounded-full"
             style={{ background: current.color }}
           />
-          {task.priority.toUpperCase()} · {current.label}
+          {current.label}
         </button>
       )}
     >
@@ -146,7 +212,7 @@ export function PriorityRow({ task }: { task: Task }) {
                       className="block h-1.5 w-1.5 rounded-full"
                       style={{ background: meta.color }}
                     />
-                    {p.toUpperCase()} · {meta.label}
+                    {meta.label}
                   </span>
                   <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[9.5px] text-ink-quiet">
                     {idx + 1}
@@ -161,10 +227,23 @@ export function PriorityRow({ task }: { task: Task }) {
   );
 }
 
+/**
+ * Who this task belongs to.
+ *
+ * The roster is the workspace's real members, resolved server-side by
+ * `getWorkspaceMemberMeta` and handed down through DomainProvider. It used to
+ * be a five-name constant of seed personas, so a couple opening a task in
+ * their own wedding workspace was offered Chloe, David, Alex, Ada and Marcus
+ * and could assign work to people who do not exist. An empty roster now reads
+ * as empty: the menu says there is no one else here yet and offers nobody.
+ */
 export function AssigneesRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const me = useCurrentUser();
+  const members = useWorkspaceMembers();
   const assigned = task.assignees;
+  const nameFor = (id: string) =>
+    members.find((member) => member.id === id)?.name ?? USERS[id].name;
   // Show Nudge button only when there is at least one assignee that is not
   // the current user — hidden entirely when task has no other assignee.
   const hasOtherAssignee = assigned.some((a) => a !== me);
@@ -175,7 +254,7 @@ export function AssigneesRow({ task }: { task: Task }) {
           <button
             key={u}
             type="button"
-            title={`Remove ${USERS[u].name}`}
+            title={`Remove ${nameFor(u)}`}
             onClick={() =>
               updateTask(task.id, {
                 assignees: assigned.filter((a) => a !== u),
@@ -183,7 +262,7 @@ export function AssigneesRow({ task }: { task: Task }) {
             }
             className="group relative"
           >
-            <Avatar user={u} size={22} ring />
+            <Avatar user={u} name={nameFor(u)} size={22} ring />
             <span className="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-full bg-black/40 text-white group-hover:flex">
               <svg
                 width="12"
@@ -224,9 +303,16 @@ export function AssigneesRow({ task }: { task: Task }) {
           </button>
         )}
       >
-        {() => (
+        {() =>
+          members.length === 0 ? (
+            <p className="px-2 py-1.5 text-[12.5px] text-ink-quiet">
+              No one else is in this workspace yet. Invite someone from
+              Settings, then assign the task to them.
+            </p>
+          ) : (
           <ul className="text-[12.5px]">
-            {ALL_USERS.map((u) => {
+            {members.map((member) => {
+              const u = member.id as UserId;
               const isAssigned = assigned.includes(u);
               return (
                 <li key={u}>
@@ -240,9 +326,9 @@ export function AssigneesRow({ task }: { task: Task }) {
                     }}
                     className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken"
                   >
-                    <Avatar user={u} size={18} />
+                    <Avatar user={u} name={member.name} size={18} />
                     <span className="flex-1 text-ink-soft">
-                      {USERS[u].name}
+                      {member.name}
                     </span>
                     {isAssigned ? (
                       <svg
@@ -262,7 +348,8 @@ export function AssigneesRow({ task }: { task: Task }) {
               );
             })}
           </ul>
-        )}
+          )
+        }
       </Popover>
       {hasOtherAssignee ? <NudgeButton taskId={task.id} /> : null}
     </div>
@@ -280,6 +367,7 @@ export function AssigneesRow({ task }: { task: Task }) {
  */
 function NudgeButton({ taskId }: { taskId: string }) {
   const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
   // null = not yet sent; ISO string = sent (or rate-limited); shows "Nudged just now"
   const [sentAt, setSentAt] = useState<string | null>(null);
   // true = the last send was rate-limited
@@ -299,17 +387,26 @@ function NudgeButton({ taskId }: { taskId: string }) {
           setRateLimited(false);
         }
       }
+      if (!result.ok) {
+        toast("The reminder was not sent", {
+          body: "Nothing changed. Try again when the task has an eligible assignee.",
+          tone: "warn",
+        });
+      }
       // Silently ignore ok:false (demo, no assignee, etc.) — button
       // visibility already guards against those states.
     });
   }
 
   const isDisabled = isPending || (rateLimited && sentAt !== null);
+  // The resting state used to carry no tooltip at all, so the one control on
+  // the panel that sends something to another person said nothing about what
+  // it would send. The accessible name and the hover text now agree.
   const tooltipText = rateLimited
     ? "You nudged this task in the last day."
     : isPending
       ? "Sending nudge…"
-      : undefined;
+      : "Sends the assignee a reminder about this task. Once a day at most.";
 
   if (sentAt && !rateLimited) {
     // Post-send success state: quiet confirmation, same size as the button.
@@ -362,7 +459,7 @@ function NudgeButton({ taskId }: { taskId: string }) {
         <path d="M18 8a6 6 0 0 0-12 0v7a5 5 0 0 0 5 5h2a5 5 0 0 0 5-5V8z" />
         <path d="M12 2v6" />
       </svg>
-      Nudge
+      {isPending ? "Sending…" : "Nudge"}
     </button>
   );
 }
@@ -398,12 +495,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className={
-            "inline-flex w-fit items-center gap-1.5 rounded-md border px-2 py-1 text-[11.5px] font-medium transition-colors " +
-            (current
-              ? "border-brand/30 bg-brand-soft/40 text-brand hover:bg-brand-soft/60"
-              : "border-line-soft bg-white text-ink-soft hover:border-ink-soft/30 hover:text-ink")
-          }
+          className={current ? FIELD_CHIP_ACTIVE : FIELD_CHIP}
         >
           <svg
             width="11"
@@ -487,9 +579,31 @@ function sameRecurrence(
 
 export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
+  const frame = useCalendarFrame();
+  const anchor = useWorkspaceAnchor();
   const current = task.dueAt ? new Date(task.dueAt) : null;
-  const hasDate = Boolean(task.due);
+  const hasDate = Boolean(task.due || task.dueAt);
+  // A wedding workspace has one date every other date is judged by. A bare
+  // "14 May" does not say whether that is four months out or four days out;
+  // this does, in exact calendar days. Renders only when the workspace has an
+  // anchor date and the task has a structured due date, never from a guess.
+  const anchorRelation = relateDueToAnchor(
+    current ? toCalendarDate(current) : null,
+    anchor.date,
+    anchor.label,
+  );
+  // `task.due` is a label denormalised at write time. Writers that bypass the
+  // picker — the Notes hand-off, imports — store the raw ISO date, and a label
+  // written last week ("Tomorrow") is wrong by the time it is read. The
+  // structured date is the truth, so derive from it whenever it exists.
+  // "Today" comes from the server calendar frame, not the browser clock, so
+  // this agrees with the board cards and survives SSR without a hydration
+  // guard.
+  const dueLabel = current
+    ? formatDueLabelOn(current, new Date(frame.nowIso))
+    : task.due;
   return (
+    <div className="flex flex-col items-start gap-0.5">
     <Popover
       align="start"
       width={264}
@@ -501,10 +615,7 @@ export function DueRow({ task }: { task: Task }) {
           onClick={onClick}
           aria-expanded={expanded}
           aria-haspopup="dialog"
-          className={
-            "inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-[12.5px] transition-colors hover:border-line-soft focus:border-brand focus:outline-none " +
-            (hasDate ? "text-ink" : "text-ink-faint")
-          }
+          className={FIELD_CHIP + (hasDate ? "" : " text-ink-faint")}
         >
           <svg
             width="12"
@@ -523,13 +634,19 @@ export function DueRow({ task }: { task: Task }) {
             <line x1="8" y1="2.5" x2="8" y2="6" />
             <line x1="16" y1="2.5" x2="16" y2="6" />
           </svg>
-          {task.due || "No due date"}
+          {dueLabel || "No due date"}
         </button>
       )}
     >
       {(close) => (
         <DueCalendar
           value={current}
+          anchorDate={anchor.date}
+          anchorNote={describeAnchorFromToday(
+            frame.today,
+            anchor.date,
+            anchor.label,
+          )}
           onSelect={(date, label) => {
             updateTask(task.id, { due: label, dueAt: date });
             close();
@@ -547,5 +664,14 @@ export function DueRow({ task }: { task: Task }) {
         />
       )}
     </Popover>
+    {anchorRelation ? (
+      <span
+        className="text-[11px] text-ink-quiet"
+        data-due-anchor-relation={anchorRelation.state}
+      >
+        {anchorRelation.label}
+      </span>
+    ) : null}
+    </div>
   );
 }

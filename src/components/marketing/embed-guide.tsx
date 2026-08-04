@@ -74,7 +74,7 @@ export function EmbedGuide() {
   height="480"
   style="border: 0; border-radius: 12px"
   loading="lazy"
-  title="Tasks workspace"
+  title="Tasks project"
 ></iframe>`}
         </pre>
         <p className="mt-3 text-[13px] leading-[1.55] text-ink-quiet">

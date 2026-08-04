@@ -64,7 +64,9 @@ const SEED: Seed[] = [
       "Mara + Finn, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
     lane: "todo",
     priority: "p1",
-    due: "Thu",
+    // Deliberately undated: "by Thursday" lives in the description as
+    // context, not as a scheduled commitment. A fake weekday label here
+    // made the public share board look like it carried real dates.
     tags: ["mara-finn"],
     externalContactName: "County Marquee Hire",
     editedHoursAgo: 1,
@@ -78,18 +80,23 @@ const SEED: Seed[] = [
     priority: "p1",
     due: "1 Aug",
     dueAt: REVIEW_MENU_MILESTONE.date ?? undefined,
+    // NOTE: editedHoursAgo below is 15 days — the tasting was confirmed,
+    // then the final list stalled. This is the story's one long-quiet
+    // thread: Signal surfaces it, the inbox nudges it, and the task
+    // header honestly reads "edited 1 Jul". One fact, every surface.
     isMilestone: true,
     sourceNoteId: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
     tags: [REVIEW_PRIMARY_PROJECT.slug],
     externalContactName: "Mara Doyle",
-    editedHoursAgo: 3,
+    editedHoursAgo: 15 * 24,
   },
   {
     id: "demo-t-03",
     title: "Reprint the faded welcome sign before the open day",
     lane: "todo",
     priority: "p3",
-    due: "next week",
+    // Deliberately undated: loose venue upkeep. An absent date reads
+    // calmer than a fake-precise "next week" label with no timestamp.
     tags: ["venue"],
     editedHoursAgo: 6,
   },
@@ -99,7 +106,8 @@ const SEED: Seed[] = [
     description: "~80 guests, budget-conscious. Follow up Friday if no reply.",
     lane: "todo",
     priority: "p2",
-    due: "Fri",
+    // Undated: the Friday in the description is the follow-up plan, not
+    // a due date on this task.
     tags: ["enquiry"],
     cents: 0,
     editedHoursAgo: 9,
@@ -111,7 +119,11 @@ const SEED: Seed[] = [
     description: "Ceremony 2pm orchard, drinks terrace, dinner 5:30. Share with the floor team.",
     lane: "doing",
     priority: "p1",
-    due: "Fri",
+    // Due on the review frame's pinned today (2026-07-16) so the board's
+    // relative labels ("Due today", warm treatment) are visible in review
+    // captures rather than only proven by the dates.test.ts assertions.
+    due: "Today",
+    dueAt: "2026-07-16",
     tags: ["mara-finn"],
     comments: 2,
     editedHoursAgo: 2,
@@ -122,7 +134,11 @@ const SEED: Seed[] = [
     description: "Two extra cases of tonic; last olive delivery was short.",
     lane: "doing",
     priority: "p2",
-    due: "Thu",
+    // Two days behind the pinned today: the overdue register on a card.
+    // 14 Jul 2026 is a Tuesday; the display string states the date rather
+    // than guessing a weekday.
+    due: "14 Jul",
+    dueAt: "2026-07-14",
     tags: ["bar"],
     externalContactName: "Greenfield Wholesale",
     cents: 18400,
@@ -194,5 +210,5 @@ function toTask(s: Seed): Task {
 }
 
 export function demoTasks(): Task[] {
-  return SEED.map(toTask);
+  return SEED.map((s, index) => ({ ...toTask(s), seq: index + 1 }));
 }

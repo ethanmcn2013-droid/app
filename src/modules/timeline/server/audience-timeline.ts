@@ -30,6 +30,7 @@ import {
   isAudienceTokenShape,
   resolveShareAccessState,
   validateAudienceTimelineDto,
+  endOfCalendarDayInZone,
   validateIanaTimezone,
   type AudienceTimelineDto,
   type ShareAccessState,
@@ -431,8 +432,19 @@ async function ownsPublication(
   publicationId: string,
   workspaceSlug: string,
 ): Promise<boolean> {
+  return (await ownedPublicationTimezone(publicationId, workspaceSlug)) !== null;
+}
+
+/**
+ * Ownership check that also returns the publication's calendar zone, so an
+ * expiry date can end at the publication's own midnight (never bare UTC).
+ */
+async function ownedPublicationTimezone(
+  publicationId: string,
+  workspaceSlug: string,
+): Promise<string | null> {
   const [row] = await db
-    .select({ id: timelinePublications.id })
+    .select({ timezone: timelinePublications.timezone })
     .from(timelinePublications)
     .where(
       and(
@@ -441,17 +453,19 @@ async function ownsPublication(
       ),
     )
     .limit(1);
-  return Boolean(row);
+  return row?.timezone ?? null;
 }
 
 export async function publishAudiencePublication(
   publicationId: string,
   workspaceSlug: string,
-  expiresAt: Date | null,
+  expiresOn: string | null,
 ): Promise<string> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
+  const timezone = await ownedPublicationTimezone(publicationId, workspaceSlug);
+  if (timezone === null) {
     throw new TypeError("Publication not found");
   }
+  const expiresAt = expiresOn ? endOfCalendarDayInZone(expiresOn, timezone) : null;
   const rawToken = generateAudienceToken();
   const tokenHash = hashAudienceToken(rawToken);
   const now = new Date();
@@ -506,11 +520,13 @@ export async function publishAudiencePublication(
 export async function rotateAudienceShare(
   publicationId: string,
   workspaceSlug: string,
-  expiresAt: Date | null,
+  expiresOn: string | null,
 ): Promise<string> {
-  if (!(await ownsPublication(publicationId, workspaceSlug))) {
+  const timezone = await ownedPublicationTimezone(publicationId, workspaceSlug);
+  if (timezone === null) {
     throw new TypeError("Publication not found");
   }
+  const expiresAt = expiresOn ? endOfCalendarDayInZone(expiresOn, timezone) : null;
   const rawToken = generateAudienceToken();
   const tokenHash = hashAudienceToken(rawToken);
   const now = new Date();
@@ -633,6 +649,46 @@ export async function updateAudiencePublicationItem(input: {
         ),
       );
   });
+}
+
+/**
+ * E06.06 — the couple's control over the main date on an already published
+ * artifact. Before this, `primaryDate` was fixed at creation and there was no
+ * way to take it off a live page short of unpublishing.
+ *
+ * The label and the date move together because the DTO only emits
+ * `primaryDate` when both are present, so a half-set pair would look like a
+ * change and do nothing. Clearing writes NULL to both columns, which is what
+ * makes the key genuinely absent from the published payload rather than
+ * blanked in the render. The private workspace keeps the wedding date; this
+ * governs the published copy only.
+ */
+export async function setAudiencePrimaryDate(input: {
+  publicationId: string;
+  workspaceSlug: string;
+  primaryDateLabel: string | null;
+  primaryDate: string | null;
+}): Promise<"set" | "concealed"> {
+  if (!(await ownsPublication(input.publicationId, input.workspaceSlug))) {
+    throw new TypeError("Publication not found");
+  }
+  const conceal = !input.primaryDate || !input.primaryDateLabel;
+  const now = new Date();
+  await db
+    .update(timelinePublications)
+    .set({
+      primaryDateLabel: conceal ? null : input.primaryDateLabel,
+      primaryDate: conceal ? null : input.primaryDate,
+      lastUpdatedAt: now,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(timelinePublications.id, input.publicationId),
+        eq(timelinePublications.workspaceSlug, input.workspaceSlug),
+      ),
+    );
+  return conceal ? "concealed" : "set";
 }
 
 export async function refreshAudienceDivergence(

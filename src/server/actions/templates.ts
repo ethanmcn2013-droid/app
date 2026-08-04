@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
+import { nextTaskSeq } from "@/server/db/task-seq";
 import { tasks, workspaceMembers, workspaces } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
@@ -113,11 +114,16 @@ export async function remixTemplateAction(
     await db.insert(tasks).values({
       id,
       workspaceId,
+      seq: nextTaskSeq(workspaceId),
       title: t.title,
       lane: t.lane,
       priority: t.priority,
       assignees: [],
       due: t.due,
+      // A remix mints a brand-new workspace, so there is never an anchor
+      // date at this point and `due_at` stays null. The milestone flag is
+      // structural and carries regardless.
+      isMilestone: t.milestone === true,
       tags: t.tags,
       position,
       updatedAt: now,

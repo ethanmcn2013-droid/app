@@ -34,6 +34,10 @@ export type SettingsWorkspace = {
   activeDomain: string | null;
   primaryUseCase: string | null;
   secondaryContext: string | null;
+  /** T·124: the project currency label (null = USD default) and the
+   *  operator budget in cents (null = unset). */
+  currency: string | null;
+  budgetCents: number | null;
   createdAt: string | null;
   ownerUserId: string | null;
   /** Phase 3 publishable workspaces. Null = private; ISO string =

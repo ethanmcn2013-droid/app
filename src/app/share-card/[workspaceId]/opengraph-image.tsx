@@ -4,6 +4,8 @@ import { db } from "@/server/db";
 import { tasks, workspaces } from "@/server/db/schema";
 import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 import { isDemoMode } from "@/lib/access-mode";
+import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { isTaskDone } from "@/lib/board-columns";
 import {
   DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_NAME,
@@ -48,8 +50,10 @@ export default async function ShareCardOG({
         name: DEMO_WORKSPACE_NAME,
       };
       const cutoff = Date.now() - WEEK_MS;
+      // Demo/review never touches the DB; null resolves to the default
+      // ["done"] doneKeys, identical to the literal check it replaces.
       closedCount = demoTasks().filter(
-        (task) => task.lane === "done" && task.updatedAt.getTime() >= cutoff,
+        (task) => isTaskDone(task, null) && task.updatedAt.getTime() >= cutoff,
       ).length;
     }
   } else {
@@ -63,16 +67,20 @@ export default async function ShareCardOG({
       .where(eq(workspaces.id, workspaceId));
 
     if (ws) {
-      const rows = await db
-        .select({
-          lane: tasks.lane,
-          updatedAt: tasks.updatedAt,
-        })
-        .from(tasks)
-        .where(eq(tasks.workspaceId, ws.id));
+      const [rows, columnConfig] = await Promise.all([
+        db
+          .select({
+            lane: tasks.lane,
+            boardColumnKey: tasks.boardColumnKey,
+            updatedAt: tasks.updatedAt,
+          })
+          .from(tasks)
+          .where(eq(tasks.workspaceId, ws.id)),
+        readWorkspaceColumnConfig(ws.id),
+      ]);
       const cutoff = Date.now() - WEEK_MS;
       closedCount = rows.filter(
-        (row) => row.lane === "done" && row.updatedAt.getTime() >= cutoff,
+        (row) => isTaskDone(row, columnConfig) && row.updatedAt.getTime() >= cutoff,
       ).length;
     }
   }

@@ -24,6 +24,7 @@ import {
   type UserId,
 } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
+import { useWorkspaceMembers } from "@/lib/domain-context";
 import { Avatar } from "@/components/showcase/avatar";
 import { MentionField, toMentionPeople, type MentionPerson } from "@/components/ui/mention-field";
 import { formatRelativeTime } from "@/lib/utils";
@@ -34,6 +35,7 @@ import {
 import type { ConversationItem } from "@/server/db/queries";
 import { DraftReplyButton } from "@/components/app/ai/draft-reply-button";
 import { ConversationSummary } from "@/components/app/ai/conversation-summary";
+import { beginTaskSync } from "@/lib/tasks/delight-events";
 
 /** Threshold: thread must have ≥ this many comments before the
  *  "Summarize this thread" affordance is offered. Below that the
@@ -62,17 +64,30 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
   const [, startTransition] = useTransition();
   const [pending, setPending] = useState(false);
   const me = useCurrentUser();
+  const members = useWorkspaceMembers();
 
-  // Mention pool: the task's assignees plus everyone who has spoken in the
-  // thread, resolved through the seed USERS map (real names, never raw ids).
-  // Names carry into the posted body as "@Name" — the server's existing
-  // mention scan turns those into notifications.
+  // Mention pool: everyone in the workspace, then the task's assignees, then
+  // everyone who has spoken in the thread. Members lead because that is who
+  // the writer can actually reach; assignees and past speakers are folded in
+  // so a person who has since left the workspace still resolves in an old
+  // thread. Before members were included the pool was assignees plus speakers
+  // only, so in a fresh workspace nobody could be mentioned until someone had
+  // already commented — a two-person wedding workspace could not @ its second
+  // person. Names carry into the posted body as "@Name" and the server's
+  // existing mention scan turns those into notifications.
   const people: MentionPerson[] = useMemo(() => {
     const commentAuthors = items
       .filter((it) => it.kind === "comment")
       .map((it) => it.comment.userId);
-    return toMentionPeople([...assigneeIds, ...commentAuthors], (id) => USERS[id]);
-  }, [assigneeIds, items]);
+    const memberNames = new Map(members.map((m) => [m.id, m.name]));
+    return toMentionPeople(
+      [...members.map((m) => m.id), ...assigneeIds, ...commentAuthors],
+      (id) => {
+        const name = memberNames.get(id);
+        return name ? { name } : USERS[id];
+      },
+    );
+  }, [assigneeIds, items, members]);
 
   const handleAdd = useCallback(
     (body: string) => {
@@ -95,6 +110,7 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
         { kind: "comment", comment: optimistic },
       ]);
       setPending(true);
+      const finishSync = beginTaskSync();
       startTransition(async () => {
         try {
           const fresh = await addCommentAction(taskId, trimmed);
@@ -116,6 +132,7 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
             );
             return next;
           });
+          finishSync();
         } catch (err) {
           console.warn("comments: add failed; rolling back", err);
           setItems((cur) =>
@@ -124,6 +141,7 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
                 !(it.kind === "comment" && it.comment.id === tempId),
             ),
           );
+          finishSync(err);
         } finally {
           setPending(false);
         }
@@ -134,6 +152,9 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
 
   const handleRemove = useCallback(
     (commentId: string) => {
+      const removed = items.find(
+        (item) => item.kind === "comment" && item.comment.id === commentId,
+      );
       // Optimistic delete; if it's a temp id we never sent it.
       setItems((cur) =>
         cur.filter(
@@ -142,15 +163,24 @@ export function ConversationFeed({ taskId, initialItems, assigneeIds = [] }: Pro
         ),
       );
       if (commentId.startsWith("temp-")) return;
+      const finishSync = beginTaskSync();
       startTransition(async () => {
         try {
           await removeCommentAction(commentId);
+          finishSync();
         } catch (err) {
           console.warn("comments: remove failed", err);
+          if (removed) {
+            setItems((current) => {
+              if (current.some((item) => item.kind === "comment" && item.comment.id === commentId)) return current;
+              return [...current, removed].sort((a, b) => keyOf(a).getTime() - keyOf(b).getTime());
+            });
+          }
+          finishSync(err);
         }
       });
     },
-    [],
+    [items],
   );
 
   const commentCount = items.filter((it) => it.kind === "comment").length;
@@ -226,9 +256,9 @@ function CommentRow({
   return (
     <motion.div
       layout="position"
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px)" }}
+      animate={{ opacity: 1, transform: "translateY(0)" }}
+      exit={{ opacity: 0 }}
       transition={
         reduce
           ? { duration: 0.12 }
@@ -282,6 +312,7 @@ function CommentRow({
 }
 
 function ActivityRow({ activity }: { activity: Activity }) {
+  const reduce = useReducedMotion();
   const u = USERS[activity.userId];
   // authorName resolved at query time; fall back to seeded USERS map.
   const displayName = activity.authorName ?? u.name;
@@ -289,9 +320,9 @@ function ActivityRow({ activity }: { activity: Activity }) {
   return (
     <motion.li
       layout="position"
-      initial={{ opacity: 0, y: 2 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(2px)" }}
+      animate={{ opacity: 1, transform: "translateY(0)" }}
+      transition={{ duration: reduce ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
       className="flex items-center gap-2 px-1 text-[11.5px] leading-[1.5] text-ink-quiet"
     >
       <span className="block h-px flex-shrink-0" style={{ width: 22 }} aria-hidden>
@@ -499,11 +530,12 @@ function Composer({
 }
 
 function KbdHint({ state }: { state: "empty" | "ready" | "pending" }) {
+  const reduce = useReducedMotion();
   if (state === "pending") {
     return (
       <motion.span
-        animate={{ rotate: 360 }}
-        transition={{ duration: 0.9, ease: "linear", repeat: Infinity }}
+        animate={reduce ? { opacity: 0.65 } : { rotate: 360 }}
+        transition={reduce ? { duration: 0 } : { duration: 0.9, ease: "linear", repeat: Infinity }}
         className="mt-0.5 inline-block h-[10px] w-[10px] rounded-full border-2 border-brand/30 border-t-brand"
         aria-label="Posting"
       />

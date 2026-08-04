@@ -12,10 +12,13 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
 import { useHydrated } from "@/lib/use-hydrated";
+import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
   buildTimelineArtifactModel,
   buildTimelineCountdown,
+  extraLabelIndices,
   formatTimelineDate,
+  metricValueScale,
   timelinePointStatus,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
@@ -23,6 +26,14 @@ import {
 import styles from "./timeline-artifact.module.css";
 
 type MetricMode = "progress" | "countdown";
+
+/**
+ * Outcome of the share affordance. "shared" means the platform share sheet
+ * took it from here (the sheet is its own feedback); "dismissed" means the
+ * viewer closed the sheet; "copied" means the URL is on the clipboard and
+ * the artifact owes the viewer a visible receipt.
+ */
+export type TimelineShareOutcome = "shared" | "copied" | "dismissed";
 
 type MetricFact = Readonly<{
   label: string;
@@ -40,6 +51,8 @@ type StageStyle = CSSProperties & {
 
 type PositionStyle = CSSProperties & {
   "--timeline-position": string;
+  "--timeline-position-stack"?: string;
+  "--timeline-point-delay"?: string;
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
@@ -61,15 +74,25 @@ export type TimelineArtifactProps = Readonly<{
   timeline: AudienceTimelineDto;
   compact?: boolean;
   embedded?: boolean;
+  /**
+   * The artifact's own product header (wordmark + shared-by row). On the
+   * standalone shared page and in exhibit frames (artifact studio, phone
+   * preview) it IS the page chrome and stays. Inside the owner's app shell
+   * the suite chrome already provides identity, so the owner view suppresses
+   * it rather than stacking two wordmarks.
+   */
+  showProductHeader?: boolean;
   className?: string;
-  onCopyLink?: () => void | Promise<void>;
-  copyLinkLabel?: string;
+  onShare?: () => Promise<TimelineShareOutcome>;
+  shareLabel?: string;
 }>;
 
 function artifactKicker(timeline: AudienceTimelineDto): string {
   if (timeline.audienceKind === "couple") return "A shared wedding timeline";
   if (timeline.audienceKind === "class") return "A shared class timeline";
-  return "A shared module timeline";
+  // "module" is the storage enum, not viewer vocabulary — a bakery's plan
+  // must never introduce itself with campus wording.
+  return "A shared project timeline";
 }
 
 function artifactPurpose(timeline: AudienceTimelineDto): string {
@@ -93,12 +116,20 @@ function progressFact(model: TimelineArtifactModel): MetricFact {
 function countdownFact(
   countdown: Exclude<ReturnType<typeof buildTimelineCountdown>, null | { kind: "past" }>,
   eventLabel: string,
+  model: TimelineArtifactModel,
 ): MetricFact {
+  // Both faces carry a receipt, so whichever one the artifact opens on states
+  // the plan's other fact too. Paper already prints both; the screen owed the
+  // same completeness — a couple leading with the countdown should not have to
+  // press to learn anything settled.
+  const receipt = `${model.completedCount} of ${model.totalCount} settled`;
+
   if (countdown.kind === "today") {
     return {
       label: `Until ${eventLabel.toLowerCase()}`,
       value: "Today",
       unit: "",
+      receipt,
       spoken: `${eventLabel} is today`,
       alternate: `${eventLabel} today`,
     };
@@ -108,6 +139,7 @@ function countdownFact(
     label: `Until ${eventLabel.toLowerCase()}`,
     value: String(countdown.days),
     unit: countdown.days === 1 ? "day" : "days",
+    receipt,
     spoken: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} remaining`,
     alternate: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`,
   };
@@ -136,12 +168,18 @@ function TimeLens({
   const reduceMotion = useArtifactReducedMotion();
   const countdown = buildTimelineCountdown(timeline.primaryDate?.date, timeline.today);
   const canCountDown = countdown?.kind === "future" || countdown?.kind === "today";
-  const [requestedMode, setRequestedMode] = useState<MetricMode>("progress");
+  // A couple's artifact leads with its heart: days until the day. Progress
+  // percent is the working view, one press away. Other kinds keep progress
+  // first — for a class or a project the completion story is the headline.
+  const defaultMode: MetricMode = timeline.audienceKind === "couple" && canCountDown
+    ? "countdown"
+    : "progress";
+  const [requestedMode, setRequestedMode] = useState<MetricMode>(defaultMode);
   const [announcement, setAnnouncement] = useState("");
   const mode: MetricMode = canCountDown ? requestedMode : "progress";
   const completion = progressFact(model);
   const remaining = canCountDown && timeline.primaryDate
-    ? countdownFact(countdown, timeline.primaryDate.label)
+    ? countdownFact(countdown, timeline.primaryDate.label, model)
     : null;
   const active = mode === "countdown" && remaining ? remaining : completion;
   const alternate = mode === "progress" ? remaining : completion;
@@ -149,6 +187,11 @@ function TimeLens({
   const dateSpoken = timeline.primaryDate
     ? `${timeline.primaryDate.label}, ${formatTimelineDate(timeline.primaryDate.date, "long")}`
     : null;
+  // Paper carries no toggle: both facts print as one static line instead of
+  // a click instruction ("Show 79 days left") that means nothing on a page.
+  const printFacts = [completion.alternate, remaining?.alternate]
+    .filter(Boolean)
+    .join(" · ");
 
   const face = (
     <>
@@ -218,11 +261,13 @@ function TimeLens({
           className={`${styles.timeLens} ${styles.timeLensStatic}`}
           data-timeline-metric
           data-metric-mode="progress"
+          data-metric-scale={metricValueScale(completion.value)}
           role="group"
           aria-label={`${completion.spoken}${dateSpoken ? `. ${dateSpoken}` : ""}`}
         >
           {face}
         </div>
+        <span className={styles.printFacts} aria-hidden="true">{printFacts}</span>
       </div>
     );
   }
@@ -240,6 +285,7 @@ function TimeLens({
         data-timeline-metric
         data-timeline-metric-toggle
         data-metric-mode={mode}
+        data-metric-scale={metricValueScale(active.value)}
         type="button"
         aria-label={controlLabel}
         onClick={() => {
@@ -249,6 +295,7 @@ function TimeLens({
       >
         {face}
       </button>
+      <span className={styles.printFacts} aria-hidden="true">{printFacts}</span>
       <span className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
         {announcement}
       </span>
@@ -258,11 +305,29 @@ function TimeLens({
 
 function ProductIdentity({
   timeline,
-  onCopyLink,
-  copyLinkLabel,
-}: Pick<TimelineArtifactProps, "timeline" | "onCopyLink" | "copyLinkLabel">) {
-  const [copyState, setCopyState] = useState<"idle" | "copying" | "copied" | "error">("idle");
+  onShare,
+  shareLabel,
+}: Pick<TimelineArtifactProps, "timeline" | "onShare" | "shareLabel">) {
+  const [shareState, setShareState] = useState<"idle" | "working" | "copied" | "error">("idle");
+  const revertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sharedBy = timeline.ownerDisplayLabel ?? "Shared timeline";
+
+  useEffect(() => () => {
+    if (revertTimer.current) clearTimeout(revertTimer.current);
+  }, []);
+
+  const settle = (state: "idle" | "copied" | "error") => {
+    setShareState(state);
+    if (revertTimer.current) clearTimeout(revertTimer.current);
+    if (state === "copied" || state === "error") {
+      // Receipts rest: the label returns to its verb once the moment passes,
+      // failure lingering a little longer than success.
+      revertTimer.current = setTimeout(
+        () => setShareState("idle"),
+        state === "copied" ? 2000 : 5000,
+      );
+    }
+  };
 
   return (
     <div className={styles.productHeader}>
@@ -271,26 +336,33 @@ function ProductIdentity({
       </span>
       <div className={styles.productMeta}>
         <span>{sharedBy}</span>
-        {onCopyLink ? (
+        {onShare ? (
           <button
             type="button"
-            disabled={copyState === "copying"}
+            data-share-state={shareState}
+            disabled={shareState === "working"}
             onClick={async () => {
-              setCopyState("copying");
+              setShareState("working");
               try {
-                await onCopyLink();
-                setCopyState("copied");
+                const outcome = await onShare();
+                settle(outcome === "copied" ? "copied" : "idle");
               } catch {
-                setCopyState("error");
+                settle("error");
               }
             }}
           >
-            {copyState === "copied" ? "Link copied" : copyLinkLabel ?? "Copy link"}
+            {shareState === "copied"
+              ? "Link copied"
+              : shareState === "error"
+                ? "Copy from the address bar"
+                : shareLabel ?? "Share this timeline"}
           </button>
         ) : null}
         <span className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
-          {copyState === "copied" ? "Timeline link copied." : null}
-          {copyState === "error" ? "The link could not be copied." : null}
+          {shareState === "copied" ? "Timeline link copied." : null}
+          {shareState === "error"
+            ? "The link could not be shared. Copy it from the address bar."
+            : null}
         </span>
       </div>
     </div>
@@ -307,22 +379,48 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
   );
 }
 
+/**
+ * The one line of prose under a milestone title. Rewritten 2026-08-03 (E06.04):
+ * two of the three sentences used "journey" as a noun, which the brand voice
+ * bans, and this is front-facing copy on a couple's wedding page rather than an
+ * internal string. Kept short and plain, and kept deliberately rather than
+ * removed, because it is the slot a real milestone story lands in once the
+ * published DTO can carry one (E06.02 and E06.03).
+ */
 function detailNote(point: TimelineArtifactPoint): string {
-  if (point.state === "complete") return "This milestone is part of the story so far.";
-  if (point.isNext) return "This is the next point on the shared journey.";
-  return "This milestone comes later on the shared journey.";
+  if (point.state === "complete") return "This one is already behind you.";
+  if (point.isNext) return "This one is next.";
+  return "This one comes later.";
+}
+
+function detailTiming(point: TimelineArtifactPoint, today: string): string | null {
+  if (!point.item.date || point.state === "complete") return null;
+  const countdown = buildTimelineCountdown(point.item.date, today);
+  if (!countdown) return null;
+  if (countdown.kind === "today") return "today";
+  if (countdown.kind === "future") {
+    return `in ${countdown.days} ${countdown.days === 1 ? "day" : "days"}`;
+  }
+  return `${countdown.days} ${countdown.days === 1 ? "day" : "days"} ago`;
 }
 
 function MilestoneDetail({
   point,
+  ordinal,
+  total,
+  today,
   detailId,
   titleId,
 }: {
   point: TimelineArtifactPoint;
+  ordinal: number;
+  total: number;
+  today: string;
   detailId: string;
   titleId: string;
 }) {
   const reduceMotion = useArtifactReducedMotion();
+  const relative = detailTiming(point, today);
 
   return (
     <section
@@ -351,13 +449,18 @@ function MilestoneDetail({
               <dt>Timing</dt>
               <dd>
                 {point.item.date ? (
-                  <time dateTime={point.item.date}>{formatTimelineDate(point.item.date, "long")}</time>
+                  <>
+                    <time dateTime={point.item.date}>
+                      {formatTimelineDate(point.item.date, "long")}
+                    </time>
+                    {relative ? ` · ${relative}` : null}
+                  </>
                 ) : "Timing not set"}
               </dd>
             </div>
             <div>
               <dt>Place in the plan</dt>
-              <dd>{timelinePointStatus(point)}</dd>
+              <dd>{`Milestone ${ordinal} of ${total}`}</dd>
             </div>
           </dl>
         </motion.div>
@@ -382,6 +485,10 @@ function Journey({
     model.points.findIndex((point) => point.item.publicId === model.defaultSelectedId),
   ));
   const [detailOpen, setDetailOpen] = useState(Boolean(model.defaultSelectedId));
+  // Hidden scrollbars owe the viewer an affordance: edge fades appear only
+  // while content is actually cut off on that side.
+  const [overflowStart, setOverflowStart] = useState(false);
+  const [overflowEnd, setOverflowEnd] = useState(false);
   const pointRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const selectedPoint = model.points.find((point) => point.item.publicId === selectedId)
@@ -414,6 +521,25 @@ function Journey({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model.defaultSelectedId, model.points]);
 
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const update = () => {
+      const max = viewport.scrollWidth - viewport.clientWidth;
+      const scrollable = max > 1;
+      setOverflowStart(scrollable && viewport.scrollLeft > 8);
+      setOverflowEnd(scrollable && viewport.scrollLeft < max - 8);
+    };
+    update();
+    viewport.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(viewport);
+    return () => {
+      viewport.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [model.points.length]);
+
   const focusPoint = (nextIndex: number) => {
     const bounded = Math.min(Math.max(nextIndex, 0), model.points.length - 1);
     setFocusIndex(bounded);
@@ -444,10 +570,69 @@ function Journey({
     "--timeline-point-count": Math.max(1, model.points.length),
     "--timeline-completion": `${model.percent}%`,
   };
+  // Collision-aware extra labels: beyond the mandatory titles (next, the
+  // completed point before it, the last point) any point whose same-side
+  // neighbours leave room earns its label on wide rails. Selection is
+  // excluded from the mandatory set here because it is transient — a
+  // selected label always shows and z-raises regardless.
+  const mandatoryLabels = useMemo(() => {
+    const firstUnfinished = model.points.findIndex((point) => point.state !== "complete");
+    return new Set<number>([
+      Math.max(0, firstUnfinished - 1),
+      model.points.length - 1,
+      ...model.points.flatMap((point, index) => (point.isNext ? [index] : [])),
+    ]);
+  }, [model.points]);
+  const extraLabels = useMemo(
+    () => extraLabelIndices(model.points.map((point) => point.position), mandatoryLabels),
+    [model.points, mandatoryLabels],
+  );
+  // The Today chip negotiates for space like every label does: when an
+  // above-side labelled point sits within its band, the chip yields to the
+  // rail's underside; on the stacked axis it nudges clear instead.
+  const todayCollides = (
+    positionOf: (point: TimelineArtifactPoint, index: number) => number | null,
+    today: number | null,
+    threshold: number,
+  ) => {
+    if (today === null) return false;
+    return model.points.some((point, index) => {
+      const position = positionOf(point, index);
+      return position !== null && Math.abs(position - today) < threshold;
+    });
+  };
+  const todaySide = todayCollides(
+    (point, index) =>
+      index % 2 === 0 && (mandatoryLabels.has(index) || extraLabels.has(index))
+        ? point.position
+        : null,
+    model.todayPosition,
+    7,
+  )
+    ? "below"
+    : "above";
+  const todayNudged = todayCollides(
+    (point) => point.stackPosition,
+    model.todayStackPosition,
+    4,
+  );
   const todayStyle: PositionStyle | undefined = model.todayPosition === null
     ? undefined
-    : { "--timeline-position": `${model.todayPosition}%` };
+    : {
+        "--timeline-position": `${model.todayPosition}%`,
+        "--timeline-position-stack": `${model.todayStackPosition ?? model.todayPosition}%`,
+      };
   const nextMilestone = model.points.find((point) => point.isNext) ?? null;
+  // The cap under the rail's end names the destination. When the final
+  // milestone already carries that name as its persistent label, a second
+  // "Wedding day" stacked in the same corner is noise, not orientation.
+  const finishCandidate = model.percent === 100
+    ? "Complete"
+    : timeline.primaryDate?.label ?? "Finish";
+  const lastPointTitle = model.points.at(-1)?.item.title.trim().toLowerCase();
+  const finishCapLabel = lastPointTitle === finishCandidate.trim().toLowerCase()
+    ? null
+    : finishCandidate;
   const todayLabel = model.todayPosition === null
     ? null
     : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
@@ -461,7 +646,11 @@ function Journey({
       <p className={styles.screenReaderOnly} id={instructionsId}>
         {instructions}
       </p>
-      <div className={styles.railFrame}>
+      <div
+        className={styles.railFrame}
+        data-overflow-start={overflowStart ? "true" : undefined}
+        data-overflow-end={overflowEnd ? "true" : undefined}
+      >
         <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
           <div className={styles.stage} style={stageStyle}>
             <div
@@ -474,35 +663,75 @@ function Journey({
               aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
             >
               <span className={styles.baseRail} aria-hidden="true" />
-              <motion.span
+              {/* The ink is drawn to the furthest completed dot — the fill
+                  and the dots are one statement, never two coordinate
+                  systems sharing a line. The count percentage lives in the
+                  metric and in this progressbar's spoken value only. */}
+              <span
                 className={styles.completedRail}
-                initial={reduceMotion ? false : { scaleX: 0 }}
-                animate={{ scaleX: model.percent / 100 }}
-                transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
+                style={{ transform: `scaleX(${(model.completedFrontier ?? 0) / 100})` }}
                 aria-hidden="true"
               />
-              <motion.span
+              <span
                 className={styles.completedRailVertical}
-                initial={reduceMotion ? false : { scaleY: 0 }}
-                animate={{ scaleY: model.percent / 100 }}
-                transition={{ duration: reduceMotion ? 0 : 0.4, ease: METRIC_EASE }}
+                style={{ transform: `scaleY(${(model.completedStackFrontier ?? 0) / 100})` }}
                 aria-hidden="true"
               />
             </div>
 
+            {/* The rail's cartography: month boundaries riding the same
+                distortion mapping as the points, so the calendar's rhythm —
+                why some gaps run long and others short — is visible truth.
+                Labels yield to the Today chip and the rail's edge caps;
+                decoration never outranks information. */}
+            {model.monthTicks.length ? (
+              <span className={styles.monthTicks} aria-hidden="true">
+                {(() => {
+                  // Greedy label thinning: a label that would sit within 4
+                  // rail-percent of the previous labelled tick is "tight" —
+                  // it keeps its label on wide rails and yields it below
+                  // 980px (and in print), where four percent stops being
+                  // enough paper for a month's name.
+                  let lastLabelled = Number.NEGATIVE_INFINITY;
+                  return model.monthTicks.map((tick) => {
+                    const nearToday = model.todayPosition !== null
+                      && Math.abs(tick.position - model.todayPosition) < 3;
+                    const nearEdge = tick.position < 4 || tick.position > 96;
+                    const quiet = nearToday || nearEdge;
+                    const tight = !quiet && tick.position - lastLabelled < 4;
+                    if (!quiet && !tight) lastLabelled = tick.position;
+                    const tickStyle: PositionStyle = {
+                      "--timeline-position": `${tick.position}%`,
+                      "--timeline-position-stack": `${tick.stackPosition}%`,
+                    };
+                    return (
+                      <span
+                        className={styles.monthTick}
+                        data-quiet={quiet ? "true" : undefined}
+                        data-tight={tight ? "true" : undefined}
+                        key={`${tick.label}-${tick.position}`}
+                        style={tickStyle}
+                      >
+                        <span>{tick.label}</span>
+                      </span>
+                    );
+                  });
+                })()}
+              </span>
+            ) : null}
+
             {todayLabel && todayStyle ? (
-              <motion.span
+              <span
                 className={styles.todayMarker}
                 data-today-marker
+                data-today-side={todaySide}
+                data-today-nudged={todayNudged ? "true" : undefined}
                 style={todayStyle}
                 role="img"
                 aria-label={todayLabel}
-                initial={reduceMotion ? false : { opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.22, delay: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
               >
                 <span aria-hidden="true">Today</span>
-              </motion.span>
+              </span>
             ) : null}
 
             {model.points.length ? (
@@ -514,7 +743,12 @@ function Journey({
                     || point.isNext
                     || index === Math.max(0, firstUnfinished - 1)
                     || index === model.points.length - 1;
-                  const pointStyle: PositionStyle = { "--timeline-position": `${point.position}%` };
+                  const extraLabel = !persistentLabel && extraLabels.has(index);
+                  const pointStyle: PositionStyle = {
+                    "--timeline-position": `${point.position}%`,
+                    "--timeline-position-stack": `${point.stackPosition}%`,
+                    "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
+                  };
                   const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
 
                   return (
@@ -522,7 +756,7 @@ function Journey({
                       className={styles.milestone}
                       data-state={point.state}
                       data-selected={selected ? "true" : undefined}
-                      data-labelled={persistentLabel ? "true" : "false"}
+                      data-labelled={persistentLabel ? "true" : extraLabel ? "extra" : "false"}
                       data-side={index % 2 === 0 ? "above" : "below"}
                       data-edge={index === 0 ? "start" : index === model.points.length - 1 ? "end" : undefined}
                       key={point.item.publicId}
@@ -546,17 +780,7 @@ function Journey({
                           setDetailOpen(true);
                         }}
                       >
-                        <motion.span
-                          className={styles.point}
-                          initial={reduceMotion ? false : { opacity: 0, scale: 0.76 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{
-                            duration: reduceMotion ? 0 : 0.14,
-                            delay: reduceMotion ? 0 : Math.min(0.08 + index * 0.012, 0.24),
-                            ease: METRIC_EASE,
-                          }}
-                          aria-hidden="true"
-                        />
+                        <span className={styles.point} aria-hidden="true" />
                         <MilestoneLabel point={point} />
                       </button>
                     </li>
@@ -571,12 +795,30 @@ function Journey({
             )}
 
             <span className={styles.startCap} aria-hidden="true">Start</span>
-            <span className={styles.finishCap} aria-hidden="true">
-              {model.percent === 100 ? "Complete" : timeline.primaryDate?.label ?? "Finish"}
-            </span>
+            {finishCapLabel ? (
+              <span className={styles.finishCap} aria-hidden="true">
+                {finishCapLabel}
+              </span>
+            ) : null}
           </div>
         </div>
       </div>
+
+      {/* Paper has no hover: the printed page carries every milestone as a
+          ruled index beneath the rail, so the keepsake keeps its content. */}
+      {model.points.length ? (
+        <ol className={styles.printIndex} aria-hidden="true">
+          {model.points.map((point) => (
+            <li key={point.item.publicId}>
+              <span>{timelinePointStatus(point)}</span>
+              <strong>{point.item.title}</strong>
+              <span>
+                {point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
 
       <p className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
         {detailOpen && selectedPoint
@@ -584,7 +826,16 @@ function Journey({
           : "Milestone detail closed."}
       </p>
       {detailOpen && selectedPoint ? (
-        <MilestoneDetail point={selectedPoint} detailId={detailId} titleId={detailTitleId} />
+        <MilestoneDetail
+          point={selectedPoint}
+          ordinal={model.points.findIndex(
+            (candidate) => candidate.item.publicId === selectedPoint.item.publicId,
+          ) + 1}
+          total={model.points.length}
+          today={timeline.today}
+          detailId={detailId}
+          titleId={detailTitleId}
+        />
       ) : null}
     </section>
   );
@@ -614,11 +865,11 @@ export function TimelineArtifact({
   timeline,
   compact = false,
   embedded = false,
+  showProductHeader = true,
   className,
-  onCopyLink,
-  copyLinkLabel,
+  onShare,
+  shareLabel,
 }: TimelineArtifactProps) {
-  const reduceMotion = useArtifactReducedMotion();
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
 
@@ -632,22 +883,19 @@ export function TimelineArtifact({
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
-        <ProductIdentity
-          timeline={timeline}
-          onCopyLink={onCopyLink}
-          copyLinkLabel={copyLinkLabel}
-        />
+        {showProductHeader ? (
+          <ProductIdentity
+            timeline={timeline}
+            onShare={onShare}
+            shareLabel={shareLabel}
+          />
+        ) : null}
         <div className={styles.titleRow}>
-          <motion.div
-            className={styles.headerCopy}
-            initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
-          >
+          <div className={styles.headerCopy}>
             <p className={styles.heroKicker}>{artifactKicker(timeline)}</p>
             <h1>{timeline.label}</h1>
             <p className={styles.purpose}>{artifactPurpose(timeline)}</p>
-          </motion.div>
+          </div>
           <TimeLens timeline={timeline} model={model} />
         </div>
       </header>
@@ -657,7 +905,17 @@ export function TimelineArtifact({
 
       <footer className={styles.footer}>
         <span>Updated {formatTimelineDate(timeline.lastUpdatedAt.slice(0, 10))}</span>
-        <span>A Signal Studio product</span>
+        {/* The loop's last step is a door, not a full stop: the artifact is
+            the product's own advertisement, and the attribution walks. The
+            /s tree already sends no-referrer, so the bearer URL stays put. */}
+        <a
+          className={styles.footerLink}
+          href={`${PRODUCT_MARKETING_URLS.timeline}?src=shared-timeline`}
+          target="_blank"
+          rel="noopener"
+        >
+          Made with Signal Timeline
+        </a>
       </footer>
     </article>
   );

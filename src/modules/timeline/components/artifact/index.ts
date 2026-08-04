@@ -1,4 +1,8 @@
-export { TimelineArtifact, type TimelineArtifactProps } from "./timeline-artifact";
+export {
+  TimelineArtifact,
+  type TimelineArtifactProps,
+  type TimelineShareOutcome,
+} from "./timeline-artifact";
 export {
   TimelinePhonePreview,
   type TimelinePhonePreviewProps,

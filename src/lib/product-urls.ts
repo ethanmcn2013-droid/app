@@ -58,7 +58,6 @@ export const TASKS_PUBLIC_ORIGIN =
 
 export const TIMELINE_PUBLIC_ORIGIN =
   process.env.NEXT_PUBLIC_TIMELINE_SITE_URL ??
-  process.env.NEXT_PUBLIC_TIMELINE_URL ??
   suiteProducts.timeline.publicOrigin;
 
 export const STUDIO_URL = STUDIO_ORIGIN;
@@ -67,6 +66,19 @@ export const IOS_APP_URL =
 export const CONTACT_EMAIL = "hello@signalstudio.ie";
 export const APP_DOMAIN = new URL(APP_ORIGIN).hostname;
 export const TASKS_PUBLIC_DOMAIN = new URL(TASKS_PUBLIC_ORIGIN).hostname;
+
+/**
+ * Home — the authenticated front door. Not a product: Notes, Tasks and
+ * Timeline are the products; Home is where the system says what matters
+ * now (Today's Signal), with the Full Briefing one level deeper. The
+ * legacy /app/signal routes permanently redirect into the briefing.
+ */
+export const HOME_APP_PATH = "/app/home";
+export const HOME_APP_URL = `${APP_ORIGIN}${HOME_APP_PATH}`;
+export const BRIEFING_APP_PATH = `${HOME_APP_PATH}/briefing`;
+
+/** The authenticated suite surfaces the shell can mark as current. */
+export type SuiteSurfaceId = "home" | ProductId;
 
 function ownsPath(pathname: string, productPath: string): boolean {
   return pathname === productPath || pathname.startsWith(`${productPath}/`);
@@ -83,6 +95,16 @@ export function productIdFromAppPath(pathname: string): ProductId {
     if (ownsPath(pathname, PRODUCT_APP_PATHS[productId])) return productId;
   }
   return "tasks";
+}
+
+/**
+ * Resolve the active suite surface (Home included) from a signed-in app
+ * pathname. Shell chrome (pills, mobile nav) should prefer this over
+ * productIdFromAppPath so Home and the briefing mark Home as current.
+ */
+export function suiteSurfaceFromAppPath(pathname: string): SuiteSurfaceId {
+  if (ownsPath(pathname, HOME_APP_PATH)) return "home";
+  return productIdFromAppPath(pathname);
 }
 
 export function taskUrl(path = ""): string {

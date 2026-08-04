@@ -80,7 +80,7 @@ test("demo briefing uses a fixed synthetic clock", async () => {
       );
 
       const ledger = ledgerFromLegacyBriefing(result.briefing, {
-        generatedAtLabel: "Wednesday, 08:42",
+        generatedAtLabel: "Thursday, 09:00",
         scopeLabel: result.authorizedScope.label,
         scopeKind: "workspace",
         allowedAppOrigin: "https://app.signalstudio.ie",

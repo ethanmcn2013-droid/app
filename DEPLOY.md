@@ -1,116 +1,95 @@
-# Tasks · deploy notes
+# Signal Studio app · deploy notes
 
-This file is the launch checklist. Read top-to-bottom; every section
-is required for a public-traffic deployment.
+Current as of the 2026-07-31 data-layer reset. The app deploys from this
+repo to the Vercel project serving `app.signalstudio.ie`. The canonical
+infrastructure map (every service, account, env var, and rotation step)
+lives in `studio/docs/INFRASTRUCTURE.md`; this file is the app-side
+summary.
 
-## 1. Vercel project link
+## 1. Environment variables
 
-```bash
-npm i -g vercel
-vercel link
-vercel git connect    # optional: auto-deploy on git push
-```
-
-Project settings → set `Framework Preset = Next.js`, `Build Command =
-next build`, `Install Command = npm install` (default).
-
-## 2. Required env vars
-
-Set these in Vercel → Settings → Environment Variables. Mark each
-for **Production + Preview**; the `NEXT_PUBLIC_*` ones also need to
-reach the build step.
+One convention everywhere: `<MODULE>_DATABASE_URL` + `<MODULE>_AUTH_TOKEN`.
+No vendor names in variables, no aliases.
 
 ```
-NEXT_PUBLIC_SITE_URL=https://tasks.app
-
-# Clerk
+# Required in production (boot fails without them — src/env.ts)
+TASKS_DATABASE_URL=libsql://tasks-prod-....turso.io
+TASKS_AUTH_TOKEN=...
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
 CLERK_SECRET_KEY=sk_live_...
+
+# Module databases (features degrade without them)
+NOTES_DATABASE_URL=libsql://notes-prod-....turso.io
+NOTES_AUTH_TOKEN=...
+TIMELINE_DATABASE_URL=libsql://timeline-prod-....turso.io
+TIMELINE_AUTH_TOKEN=...
+SIGNAL_DATABASE_URL=libsql://signal-prod-....turso.io
+SIGNAL_AUTH_TOKEN=...
+ENTITLEMENTS_DATABASE_URL=libsql://entitlements-prod-....turso.io
+ENTITLEMENTS_AUTH_TOKEN=...
+
+# Clerk webhook
 CLERK_WEBHOOK_SIGNING_SECRET=whsec_...
 
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
+# Stripe (five prices, one per tier — no aliases)
+STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_PRO_MONTHLY=price_...
-STRIPE_PRICE_TEAM_MONTHLY=price_...
+STRIPE_PRICE_WORKSPACE_MONTHLY=price_...
+STRIPE_PRICE_WORKSPACE_ANNUAL=price_...
+STRIPE_PRICE_STUDIO_MONTHLY=price_...
 STRIPE_PRICE_WEDDING_ONETIME=price_...
+STRIPE_PRICE_EVENT_ONETIME=price_...
 
 # Resend
 RESEND_API_KEY=re_...
-RESEND_FROM=Tasks <hello@tasks.app>
+RESEND_FROM=Signal Tasks <hello@signalstudio.ie>
 
-# Cron + Sentry
+# Cron + cross-app secrets
 CRON_SECRET=<random 32-byte hex>
-SENTRY_DSN=https://...@sentry.io/...
-NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
-SENTRY_ENVIRONMENT=production
+STUDIO_CRON_PING_URL=https://signalstudio.ie/api/internal/cron-ping
+STUDIO_CRON_PING_SECRET=<shared with studio's CRON_PING_SECRET>
+NOTES_TO_TASKS_SECRET=<random>
+PARTNER_STATS_SECRET=<shared with studio>
 
-# Database (Turso / libSQL)
-TASKS_DATABASE_URL=libsql://...
-TASKS_AUTH_TOKEN=...
-
-# PostHog (onboarding funnel + signup_completed)
-POSTHOG_API_KEY=phc_...
-# Optional — default https://eu.i.posthog.com
-NEXT_PUBLIC_POSTHOG_HOST=https://eu.i.posthog.com
+# Public URLs
+NEXT_PUBLIC_SITE_URL=https://app.signalstudio.ie
+NEXT_PUBLIC_STUDIO_URL=https://signalstudio.ie
 ```
 
-## 3. Webhook endpoints
+Optional, provision deliberately (see INFRASTRUCTURE.md before adding):
+`ANTHROPIC_API_KEY` (+ `TASKS_AI_*` tuning), `SENTRY_DSN` /
+`NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ENVIRONMENT`, `POSTHOG_API_KEY` /
+`NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN`, `BLOB_READ_WRITE_TOKEN` (required if task
+attachments should work in production — serverless disk is ephemeral),
+`RESEND_BCC_DEV`, `OUTBOX_DELIVERY_SECRET` / `SUITE_OUTBOX_CONSUMERS_JSON`,
+`NOTES_TO_TIMELINE_SECRET`, `NOTES_CAPTURE_INBOUND_SECRET`,
+`ADMIN_USER_IDS`, `SIGNAL_ALLOWLIST`, access-mode and feature flags.
 
-After deploy, register these URLs in each provider's dashboard:
+## 2. Webhook endpoints
 
-- **Clerk** — Dashboard → Webhooks → Add Endpoint:
-  `https://tasks.app/api/webhooks/clerk`
-  Subscribe to: `user.created`, `user.updated`, `user.deleted`.
-  Copy the signing secret into `CLERK_WEBHOOK_SIGNING_SECRET`.
-- **Stripe** — Dashboard → Developers → Webhooks → Add endpoint:
-  `https://tasks.app/api/webhooks/stripe`
-  Events: `checkout.session.completed`,
-  `customer.subscription.updated`,
+- **Clerk** — Dashboard → Webhooks:
+  `https://app.signalstudio.ie/api/webhooks/clerk`
+  Events: `user.created`, `user.updated`, `user.deleted`.
+  Signing secret → `CLERK_WEBHOOK_SIGNING_SECRET`.
+- **Stripe** — Dashboard → Developers → Webhooks:
+  `https://app.signalstudio.ie/api/webhooks/stripe`
+  Events: `checkout.session.completed`, `customer.subscription.updated`,
   `customer.subscription.deleted`.
-  Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+  Signing secret → `STRIPE_WEBHOOK_SECRET`.
 
-## 4. Stripe products
+## 3. Stripe products
 
-In Stripe → Products, create three products / four prices:
+Five prices, one env var each (section 1). Tier vocabulary:
+Workspace (monthly + annual), Studio (monthly), Wedding (one-time),
+Event (one-time). Prices are set in the Stripe dashboard; copy each
+Price ID into the matching env var. `docs/STRIPE_SETUP.md` holds the
+detailed runbook.
 
-| Product | Price | Billing | Maps to env var |
-|---|---|---|---|
-| Tasks Pro | $4.99 | monthly recurring | `STRIPE_PRICE_PRO_MONTHLY` |
-| Tasks Team | $9.95 | monthly recurring | `STRIPE_PRICE_TEAM_MONTHLY` |
-| Tasks Wedding | $79 | one-time | `STRIPE_PRICE_WEDDING_ONETIME` |
-
-Copy each Price ID (starts `price_`) into the matching env var.
-
-## 5. Resend domain
-
-Resend → Domains → Add Domain. Add the four DNS records (DKIM,
-SPF, DMARC, return-path) Resend prints.  Wait for verification.
-Set `RESEND_FROM=Tasks <hello@your-verified-domain.com>`.
-
-## 6. Cron
-
-The `vercel.json` already declares the daily digest cron at
-`0 9 * * *` against `/api/cron/digest?send=1`. Confirm it appears in
-Vercel → Settings → Cron Jobs after the first deploy.
-
-## 7. Custom domain
-
-Vercel → Domains → Add. Point your registrar's nameservers at
-Vercel (or add the `CNAME` they specify). Confirm
-`NEXT_PUBLIC_SITE_URL` matches the apex (`https://tasks.app`).
-
-## 8. Sentry
-
-Sentry → Create Project → Next.js. Copy the DSN into both
-`SENTRY_DSN` and `NEXT_PUBLIC_SENTRY_DSN`. Set
-`SENTRY_ENVIRONMENT=production`. Optionally set
-`SENTRY_AUTH_TOKEN` to enable source-map upload during deploy.
-
-## 8b. Database release gate
+## 4. Database release gate
 
 Never paste an individual `drizzle/*.sql` file into production and never run
-`drizzle-kit migrate` directly. The historical 0000-0013 chain contains
+`drizzle-kit migrate` directly. The historical 0000–0013 chain contains
 already-applied, non-idempotent SQL.
 
 Before application deploy, verify the source contract and target status:
@@ -134,54 +113,27 @@ pnpm db:migrate -- \
   --receipt=<execution-receipt.json>
 ```
 
-For the one-time legacy production registration, use the checked-in
-`drizzle/receipts/production-adoption-2026-07-15.json` with `pnpm db:adopt`.
-Adoption verifies the existing schema and records the baseline; it does not
-re-run historical SQL. A second run must report `no-op` before the database
-gate is considered complete. See `drizzle/MIGRATIONS.md` for the full contract.
+A fresh database (created from the 0014 baseline + forwards) takes the same
+`db:migrate` path with a fresh execution receipt for the new database
+identity. The module databases (notes / timeline / signal) are created from
+their tracked baselines in `drizzle-notes/`, `drizzle-timeline/`,
+`drizzle-signal/`. See `drizzle/MIGRATIONS.md` for the full contract.
 
-## 9. Smoke test (production, from a phone in incognito)
+## 5. Cron
 
-- [ ] `/` renders, demo plays
-- [ ] `/pricing`, `/about`, `/students` unfurl with correct OG cards
-  in iMessage/Slack
-- [ ] Sign up flow works → lands in `/welcome`
-- [ ] `/sign-up?use=wedding` → welcome pre-selects wedding segment
-- [ ] Segmented onboarding (welcome → use case → context → starter) completes
-- [ ] Pick a starter pack → board renders with seeded tasks + segment empty-state copy
-- [ ] Settings → change coordination type (update only + re-seed paths)
-- [ ] PostHog receives `signup_completed` and `onboarding_completed` (if key set)
-- [ ] Check off a task → DopamineCheck animation fires
-- [ ] Generate a magic link → another tab/incognito visits → renders
-  read-only
-- [ ] Pricing CTA → Stripe Checkout (use test card `4242 4242 4242
-  4242`) → success → entitlement granted → `/app/tasks` renders
-- [ ] Daily digest cron fires (manually trigger via `curl -H
-  "Authorization: Bearer $CRON_SECRET" $URL/api/cron/digest?send=1`)
-  → email lands in `RESEND_FROM`'s test inbox
+`vercel.json` declares the daily digest cron (`0 9 * * *` against
+`/api/cron/digest?send=1`). Confirm it appears in Vercel → Settings →
+Cron Jobs after the first deploy.
 
-## 10. Post-launch ad creative session
+## 6. Smoke test (production, from a phone in incognito)
 
-Once 1–9 pass on production, run a 60-min ScreenStudio session at
-4K against the live URL. Capture these moments for ad creative:
-
-1. View-morph (board → list → timeline) — your hero shot
-2. Done Dopamine burst on a checkbox click
-3. /about strikethrough animation through enterprise jargon
-4. Domain toggle pill slide on the landing
-5. Cmd+K palette opening
-6. Welcome → starter pack → seeded board
-7. NLP date parser preview pill sliding in
-8. Magic-link copy → guest renders → progressive auth modal
-9. Conversation feed live update with the @-mention badge
-
-Crop into 9:16 portrait for social. The hero shot crops cleanly to
-1:1 and 16:9.
-
-## Backlog (post-v1.0)
-
-- Source-map upload to Sentry on deploy
-- Webhook idempotency table (`processed_webhooks`)
-- Postgres adapter (currently SQLite-only)
-- Real-time presence (Liveblocks/Yjs)
-- AI-narrated weekly digest (currently rules-based daily only)
+- [ ] `/` renders
+- [ ] Sign-in works → `/app/tasks` board renders
+- [ ] Each module renders: `/app/notes`, `/app/timeline`, `/app/signal`
+- [ ] Check off a task → completion animation fires
+- [ ] Share link → another tab/incognito visits → renders read-only
+- [ ] Pricing CTA → Stripe Checkout (test card `4242 4242 4242 4242`) →
+  entitlement granted
+- [ ] Daily digest cron fires (`curl -H "Authorization: Bearer $CRON_SECRET"
+  $URL/api/cron/digest?send=1`) → email lands
+- [ ] Clerk + Stripe webhooks show recent deliveries in their dashboards

@@ -21,7 +21,7 @@ function FreeView() {
           Free
         </div>
         <p className="mt-2 max-w-[480px] text-[13.5px] leading-[1.6] text-ink-soft">
-          One workspace, all four products, three editing guests. The default
+          One workspace, all three products, three editing guests. The default
           we built around, most of what most people need.
         </p>
       </div>
@@ -73,14 +73,16 @@ function CompWeddingView({
           Wedding suite · with our compliments
         </div>
         <p className="mt-2 max-w-[520px] text-[14px] leading-[1.65] text-ink">
-          A year of Signal Studio, on{" "}
-          <strong className="font-semibold">{s.sponsorName}</strong>. Expires{" "}
-          {expiresAt ? longDate(expiresAt) : "in a year"}.
+          Signal Studio on{" "}
+          <strong className="font-semibold">{s.sponsorName}</strong>. Eighteen
+          months from the day you redeemed, or three months past your wedding,
+          whichever is later.
+          {expiresAt ? ` Access ends ${longDate(expiresAt)}.` : null}
         </p>
         <p className="mt-3 max-w-[520px] text-[12.5px] leading-[1.65] text-ink-soft">
-          When the year is up, the workspace stays. Tasks, notes, and the
-          timeline are yours, you&apos;ll just be moved to the Free tier, which
-          has everything most couples need after the wedding&apos;s done.
+          When access ends, the workspace stays. Tasks, notes and the timeline
+          are yours. You move to the Free plan, which has everything most
+          couples need once the wedding is done.
         </p>
       </div>
 

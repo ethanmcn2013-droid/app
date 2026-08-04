@@ -1232,7 +1232,7 @@ export function Notebook({
           </label>
           {planningPeriodsEnabled ? (
             <label className="workspace-selector">
-              <span>Workspace</span>
+              <span>Project</span>
               <select
                 value={selectedNotebookWorkspaceId}
                 onChange={(event) => {
@@ -1480,7 +1480,7 @@ export function Notebook({
                   <div
                     className="note-promote-tray"
                     role="group"
-                    aria-label="Promote note"
+                    aria-label="Send this note to Tasks"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
@@ -1538,13 +1538,13 @@ export function Notebook({
               <div className="open-note-head-controls">
                 {planningPeriodsEnabled ? (
                   <label className="open-note-workspace">
-                    <span className="sr-only">Workspace for this note</span>
+                    <span className="sr-only">Project for this note</span>
                     <select
                       value={openNote.workspaceId ?? ""}
                       onChange={(event) =>
                         moveNoteToWorkspace(openNote.id, event.target.value)
                       }
-                      aria-label="Workspace for this note"
+                      aria-label="Project for this note"
                     >
                       <option value="">Unfiled</option>
                       {tasksWorkspaces.map((workspace) => (
@@ -1648,7 +1648,7 @@ export function Notebook({
                   {timelineSending ? "Checking Timeline…" : "Send this preview to Timeline"}
                 </button>
                 {!openNote.workspaceId ? (
-                  <p className="timeline-promotion-receipt">Choose a workspace for this note first.</p>
+                  <p className="timeline-promotion-receipt">Choose a project for this note first.</p>
                 ) : null}
                 {timelineReceipt ? (
                   <p className="timeline-promotion-receipt" role="status">{timelineReceipt}</p>
@@ -1676,7 +1676,7 @@ export function Notebook({
                       <select
                         value={selectedTasksWorkspaceId}
                         onChange={(event) => setSelectedTasksWorkspaceId(event.target.value)}
-                        aria-label="Tasks destination workspace"
+                        aria-label="Tasks destination project"
                       >
                         {tasksWorkspaces.map((workspace) => (
                           <option key={workspace.id} value={workspace.id}>
@@ -1763,7 +1763,7 @@ export function Notebook({
                   </p>
                 ) : (
                   <p className="extract-drafted-meta">
-                    Saved. Ready to send to Signal Tasks.
+                    Saved. Ready to send to Tasks.
                   </p>
                 )}
                 <p className="extract-drafted-body">{openNote.extractBody}</p>
@@ -1774,7 +1774,7 @@ export function Notebook({
                       <select
                         value={selectedTasksWorkspaceId}
                         onChange={(event) => setSelectedTasksWorkspaceId(event.target.value)}
-                        aria-label="Tasks destination workspace"
+                        aria-label="Tasks destination project"
                         disabled={sendingExtractFor === openNote.id}
                       >
                         {tasksWorkspaces.map((workspace) => (

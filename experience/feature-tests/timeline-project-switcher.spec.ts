@@ -133,18 +133,32 @@ test.describe("Timeline project switcher", () => {
 
     await switcher.press(" ");
     // The Enter path above waits for the menu before sending keys; this path
-    // did not, so on a slow runner ArrowDown landed before the menu existed and
-    // the selection went nowhere. Wait for the same thing, and for the item the
-    // arrow key is about to move onto.
+    // did not, so on a slow runner the keystroke landed before the menu
+    // existed and the selection went nowhere.
     await expect(page.getByRole("menu")).toBeVisible();
-    await expect(
-      page.getByRole("menuitem", { name: /Nora & Cian/ }),
-    ).toBeVisible();
+    const target = page.getByRole("menuitem", { name: /Nora & Cian/ });
+    await expect(target).toBeVisible();
+    // Selection has to be driven by the keyboard: the menu owns focus through
+    // its own effect on activeIndex, so calling focus() on an option is
+    // overridden and Enter then activates whatever the menu still considers
+    // active. Assert the arrow key landed where we expect before committing,
+    // so a reordered menu fails here, naming the real cause, instead of
+    // surfacing later as a wrong-destination navigation.
     await page.keyboard.press("ArrowDown");
+    await expect(target).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(
       /\/app\/timeline\/nora-cian\?workspaceId=demo-ws&planningPeriodId=demo-planning-period$/,
     );
+    // This is the first cold render of /app/timeline/[projectSlug] in the run,
+    // and on a CI runner it can take longer than the 8s default. A captured
+    // trace of the failure showed the navigation had already committed (the
+    // document title read "nora-cian") while <main> was still empty, so the
+    // switcher was not stale, it was not mounted yet. Wait for the page to
+    // exist before asserting what it says, then allow a cold-render budget.
+    await expect(
+      page.getByRole("heading", { name: "No visible milestones yet." }),
+    ).toBeVisible({ timeout: 20_000 });
     await expect(
       page.getByRole("button", {
         name: "Current project: Nora & Cian. Switch project.",

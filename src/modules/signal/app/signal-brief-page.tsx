@@ -49,7 +49,7 @@ export async function SignalBriefPage({
   );
   const chrome = buildSignalPageChrome(context, result.navigation);
   const makeEvidenceHref = (id: string) =>
-    evidenceHref("/app/signal", params, id);
+    evidenceHref("/app/home/briefing", params, id);
   const ledger = buildProgressiveLedgerDTO(result.view, {
     generatedAtLabel: formatInstant(
       result.view.meta.calculatedAt,
@@ -59,7 +59,7 @@ export async function SignalBriefPage({
     evidenceHref: makeEvidenceHref,
   });
   const selectedEvidence = evidenceState(
-    "/app/signal",
+    "/app/home/briefing",
     params,
     result.evidence,
     chrome.ownerNames,

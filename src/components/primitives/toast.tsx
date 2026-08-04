@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { EASE_OUT_EXPO, MOTION_BASE } from "@/lib/motion";
 
 type ToastAction = {
@@ -125,15 +125,16 @@ export function ToastRoot({ children }: { children: ReactNode }) {
 
 function ToastCard({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
   const styles = TONE_STYLES[t.tone];
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, x: 24, scale: 0.96 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 24, scale: 0.96 }}
-      transition={{ duration: MOTION_BASE, ease: EASE_OUT_EXPO }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(8px)" }}
+      animate={{ opacity: 1, transform: "translateX(0)" }}
+      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(8px)" }}
+      transition={{ duration: reduceMotion ? 0.12 : Math.min(MOTION_BASE, 0.18), ease: EASE_OUT_EXPO }}
       className={
-        "pointer-events-auto rounded-xl border px-4 py-3 shadow-[0_24px_60px_-30px_rgba(20,21,26,0.32)] " +
+        "pointer-events-auto relative rounded-xl border px-4 py-3 shadow-[0_24px_60px_-30px_rgba(20,21,26,0.32)] " +
         styles.bg +
         " " +
         styles.ring

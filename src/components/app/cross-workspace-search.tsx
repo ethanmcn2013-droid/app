@@ -234,7 +234,7 @@ export function CrossWorkspaceSearch() {
                 type="text"
                 value={query}
                 onChange={(e) => handleQueryChange(e.target.value)}
-                placeholder="Search tasks across workspaces…"
+                placeholder="Search tasks across projects…"
                 autoComplete="off"
                 spellCheck={false}
                 className="block flex-1 bg-transparent text-[13px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"

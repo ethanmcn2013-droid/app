@@ -2,6 +2,7 @@
 
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
 import { db } from "@/server/db";
 import {
@@ -92,6 +93,81 @@ export async function updateWorkspaceAction(input: {
     // tasks-changed event and revalidates /app.
     await seedDomainAction(input.domain);
   }
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/** Maximum stored length of the project's supporting line. The brief renders
+ *  it on one line under the title; longer text is the task detail's job. */
+const PROJECT_DESCRIPTION_MAX = 200;
+
+/**
+ * Set (or clear) the active project's supporting line — the sentence under
+ * the title in the brief (T·114).
+ *
+ * Before this action the text lived in localStorage keyed by *display name*,
+ * so it was invisible to collaborators, lost on rename, and shared between
+ * two projects that happened to display the same name. Storing it on the
+ * workspace row makes it one value that every reader sees.
+ *
+ * An empty string clears the column back to NULL, which is what makes the
+ * brief show its placeholder again rather than an empty line.
+ */
+export async function setProjectDescriptionAction(
+  description: string,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  const trimmed = description.replace(/\s+/g, " ").trim();
+  if (trimmed.length > PROJECT_DESCRIPTION_MAX) {
+    throw new Error(
+      `Keep the description under ${PROJECT_DESCRIPTION_MAX} characters.`,
+    );
+  }
+  await db
+    .update(workspaces)
+    .set({ description: trimmed.length > 0 ? trimmed : null })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set the project's one currency label (T·124). A curated ISO code or
+ * null to return to the USD default the existing amounts were entered
+ * under. A label only — nothing is converted.
+ */
+export async function setProjectCurrencyAction(
+  currency: string | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (currency !== null && !isProjectCurrency(currency)) {
+    throw new Error("Choose one of the supported currencies.");
+  }
+  await db
+    .update(workspaces)
+    .set({ currency })
+    .where(eq(workspaces.id, ws));
+  revalidatePath("/app", "layout");
+  return { ok: true };
+}
+
+/**
+ * Set (or clear) the operator's budget for this project, in integer
+ * cents (T·124). Restated and summed against — never computed from.
+ */
+export async function setProjectBudgetAction(
+  budgetCents: number | null,
+): Promise<{ ok: true }> {
+  const ws = await getActiveWorkspace();
+  if (budgetCents !== null) {
+    if (!Number.isInteger(budgetCents) || budgetCents < 0 || budgetCents > 9_999_999_999) {
+      throw new Error("Budget must be a whole amount in range.");
+    }
+  }
+  await db
+    .update(workspaces)
+    .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
+    .where(eq(workspaces.id, ws));
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -714,6 +790,16 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
   if (role !== "owner") {
     throw new Error("Only the owner can delete this workspace.");
   }
+  // Read the slug BEFORE the row is gone. `/p/{slug}` is ISR with a 60s
+  // window, so without an explicit revalidation a deleted published workspace
+  // keeps serving its cached page — task titles, tags, and the guests' and
+  // suppliers' names in them — for up to a minute after the owner deleted it.
+  // publish and unpublish both revalidate; delete did not. E06.12, 2026-08-03.
+  const [published] = await db
+    .select({ slug: workspaces.slug, publishedAt: workspaces.publishedAt })
+    .from(workspaces)
+    .where(eq(workspaces.id, ws));
+
   // The physical legacy tasks/share tables did not consistently carry
   // workspace FKs. Delete public capabilities and task roots explicitly so a
   // Workspace deletion cannot leave a resolvable share or invisible orphan.
@@ -735,6 +821,11 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
   // Clear the cookie pointing at the now-dead workspace.
   const c = await cookies();
   c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
+  // Drop the public page immediately rather than at the end of the ISR window.
+  // Unconditional on publishedAt: a workspace published and unpublished
+  // earlier may still hold a cached entry, and revalidating a path that was
+  // never cached costs nothing.
+  if (published?.slug) revalidatePath(`/p/${published.slug}`);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "seed" });
   return { ok: true };

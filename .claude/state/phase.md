@@ -1,14 +1,20 @@
 # Current state — the Signal Studio application
 
-Last updated 2026-07-27.
+Last updated 2026-07-30.
 
 This repository is the unified Signal Studio application. It holds Notes, Tasks,
 Timeline, and Signal as four modules behind
 `app.signalstudio.ie/app/{notes,tasks,timeline,signal}`. The repository name is
 historical and does not mean this is the Tasks product alone.
 
-Latest dispatch: **T·105**, the Delight Layer merge. `CHANGELOG.md` is the
-authority for what shipped and when.
+Latest dispatch: **T·112**, the tap-target scale correction. `CHANGELOG.md` is
+the authority for what shipped and when.
+
+Live scale hazard: the vendored design tokens remap Tailwind's numeric spacing
+namespace, so `min-h-11` is 80px rather than 44px, and indices 7 through 12 are
+remapped while 13 and up are stock Tailwind. Tap targets are fixed and gated;
+the rest is open. Read `docs/SPACING_SCALE_COLLISION.md` before writing any
+numeric spacing or sizing utility.
 
 ## Where current truth lives
 

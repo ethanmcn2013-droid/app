@@ -22,13 +22,19 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { Priority, Task } from "@/lib/data";
+import type { Priority } from "@/lib/data";
 import { TASKS_VIEW_PATHS, type TasksViewId } from "@/lib/product-urls";
-import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useActiveWorkspace } from "@/lib/domain-context";
 
 export type RoomSortMode = "manual" | "date" | "title";
-export type RoomOwnerFilter = "all" | "assigned" | "unassigned";
+/** T·125 widening: beyond the has/hasn't tri-state, any other value is a
+ *  workspace member id — "this person's work, by name". */
+export type RoomOwnerFilter = "all" | "assigned" | "unassigned" | (string & {});
+/** T·125: filter by where work sits in time. "week" = due in the next
+ *  seven days including today; "unscheduled" = explicitly dateless. */
+export type RoomDueFilter = "all" | "overdue" | "today" | "week" | "unscheduled";
+/** T·125: filter to one board column ("all" or a column key). */
+export type RoomColumnFilter = "all" | (string & {});
 export type RoomDensity = "compact" | "comfortable";
 export type RoomView = TasksViewId;
 
@@ -41,12 +47,17 @@ export type SavedRoomView = Readonly<{
   owner: RoomOwnerFilter;
   sort: RoomSortMode;
   density: RoomDensity;
+  /** Absent on views saved before the T·125 widening — treated as "all". */
+  due?: RoomDueFilter;
+  column?: RoomColumnFilter;
 }>;
 
 type RoomToolsState = {
   query: string;
   priority: "all" | Priority;
   owner: RoomOwnerFilter;
+  due: RoomDueFilter;
+  column: RoomColumnFilter;
   sort: RoomSortMode;
   density: RoomDensity;
   savedViews: readonly SavedRoomView[];
@@ -56,6 +67,8 @@ type RoomToolsState = {
   setQuery: (v: string) => void;
   setPriority: (v: "all" | Priority) => void;
   setOwner: (v: RoomOwnerFilter) => void;
+  setDue: (v: RoomDueFilter) => void;
+  setColumn: (v: RoomColumnFilter) => void;
   setSort: (v: RoomSortMode) => void;
   setDensity: (v: RoomDensity) => void;
   clearFilters: () => void;
@@ -95,6 +108,8 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
   const [query, setQuery] = useState("");
   const [priority, setPriority] = useState<"all" | Priority>("all");
   const [owner, setOwner] = useState<RoomOwnerFilter>("all");
+  const [due, setDue] = useState<RoomDueFilter>("all");
+  const [column, setColumn] = useState<RoomColumnFilter>("all");
   const [sort, setSort] = useState<RoomSortMode>("manual");
   const [density, setDensity] = useState<RoomDensity>("compact");
   const [fieldsOpen, setFieldsOpen] = useState(false);
@@ -135,12 +150,14 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
         query,
         priority,
         owner,
+        due,
+        column,
         sort,
         density,
       };
       persist([...savedViews, entry]);
     },
-    [density, owner, persist, priority, query, savedViews, sort],
+    [column, density, due, owner, persist, priority, query, savedViews, sort],
   );
 
   const applySavedView = useCallback(
@@ -150,6 +167,8 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       setQuery(entry.query);
       setPriority(entry.priority);
       setOwner(entry.owner);
+      setDue(entry.due ?? "all");
+      setColumn(entry.column ?? "all");
       setSort(entry.sort);
       setDensity(entry.density);
       router.push(TASKS_VIEW_PATHS[entry.view]);
@@ -165,15 +184,23 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
   const clearFilters = useCallback(() => {
     setPriority("all");
     setOwner("all");
+    setDue("all");
+    setColumn("all");
   }, []);
 
-  const activeFilterCount = (priority === "all" ? 0 : 1) + (owner === "all" ? 0 : 1);
+  const activeFilterCount =
+    (priority === "all" ? 0 : 1) +
+    (owner === "all" ? 0 : 1) +
+    (due === "all" ? 0 : 1) +
+    (column === "all" ? 0 : 1);
 
   const value = useMemo(
     () => ({
       query,
       priority,
       owner,
+      due,
+      column,
       sort,
       density,
       savedViews,
@@ -182,6 +209,8 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       setQuery,
       setPriority,
       setOwner,
+      setDue,
+      setColumn,
       setSort,
       setDensity,
       clearFilters,
@@ -194,6 +223,8 @@ export function RoomToolsProvider({ children }: { children: ReactNode }) {
       query,
       priority,
       owner,
+      due,
+      column,
       sort,
       density,
       savedViews,
@@ -215,52 +246,6 @@ export function useRoomTools(): RoomToolsState {
   return v;
 }
 
-function matchesQuery(task: Task, query: string): boolean {
-  const q = query.trim().toLocaleLowerCase("en-GB");
-  if (!q) return true;
-  const haystack = [
-    task.title,
-    task.description ?? "",
-    task.lane,
-    task.priority,
-    ...(task.tags ?? []),
-    ...task.assignees,
-  ]
-    .join(" ")
-    .toLocaleLowerCase("en-GB");
-  return haystack.includes(q);
-}
-
-function sortRoomTasks(tasks: readonly Task[], sort: RoomSortMode): Task[] {
-  const list = [...tasks];
-  if (sort === "title") {
-    list.sort((a, b) => a.title.localeCompare(b.title, "en-GB"));
-  } else if (sort === "date") {
-    // Dated work first (soonest first), then explicitly unscheduled.
-    list.sort((a, b) => {
-      const ad = a.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      const bd = b.dueAt?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return ad - bd;
-    });
-  }
-  return list;
-}
-
-/**
- * The room's visible task list: the live store filtered and ordered by
- * the tools. Views render THIS, so Filter/Sort/Search apply everywhere.
- */
-export function useRoomVisibleTasks(): Task[] {
-  const state = useTasksState();
-  const { query, priority, owner, sort } = useRoomTools();
-  return useMemo(() => {
-    const filtered = state.tasks.filter((task) => {
-      if (!matchesQuery(task, query)) return false;
-      if (priority !== "all" && task.priority !== priority) return false;
-      if (owner === "assigned" && task.assignees.length === 0) return false;
-      if (owner === "unassigned" && task.assignees.length > 0) return false;
-      return true;
-    });
-    return sortRoomTasks(filtered, sort);
-  }, [owner, priority, query, sort, state.tasks]);
-}
+// The Task-level useRoomVisibleTasks hook that used to live here served
+// the pre-consolidation views; since T·125 the visible list is derived
+// on LabTask by useVisibleLabTasks in src/components/hybrid/view-tools.tsx.

@@ -21,17 +21,91 @@
 [data-timeline-module] .tl-skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    var(--bg-deep) 25%,
-    var(--bg-elev) 50%,
-    var(--bg-deep) 75%
+    var(--paper-deep) 25%,
+    var(--paper) 50%,
+    var(--paper-deep) 75%
   );
   background-size: 200% 100%;
-  animation: tl-skeleton-shimmer-anim 1.4s ease-in-out infinite;
+  /* Rides the canonical loading-system pulse (globals.css) so every
+     skeleton in the suite breathes at one tempo. */
+  animation: tl-skeleton-shimmer-anim var(--load-pulse-duration, 1.8s) ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
   [data-timeline-module] .tl-skeleton-shimmer {
     animation: none;
-    background: var(--bg-deep);
+    background: var(--paper-deep);
+  }
+}
+
+/* ── Structural motion (Wave 4, 2026-07-29) ────────────────────────────────
+   The ratified class only: entrances, folds, and state settles, matching
+   what the Tasks board shipped with T·106. Discretionary micro-interaction
+   sites stay still pending the reference review (docs/DELIGHT_CATALOG.md).
+   Timings ride the system motion tokens; reduced-motion is absolute. */
+
+@keyframes tl-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Panel / form / receipt entrances. */
+[data-timeline-module] .tl-rise-in {
+  animation: tl-rise-in var(--motion-base) var(--ease-out) backwards;
+}
+
+@keyframes tl-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+/* Popover menus (project switcher). */
+[data-timeline-module] .tl-menu-in {
+  transform-origin: top left;
+  animation: tl-menu-in var(--motion-fast) var(--ease-out) backwards;
+}
+
+@keyframes tl-settle {
+  from {
+    background-color: var(--accent-tint);
+  }
+}
+
+/* A reordered row settles at its destination instead of teleporting. */
+[data-timeline-module] .tl-settle {
+  animation: tl-settle var(--motion-slow) var(--ease-out);
+}
+
+/* Fold/collapse for <details> — CSS-only via interpolate-size; browsers
+   without support keep the instant toggle (progressive enhancement). */
+[data-timeline-module] details.tl-fold {
+  interpolate-size: allow-keywords;
+}
+
+[data-timeline-module] details.tl-fold::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    content-visibility var(--motion-base) allow-discrete,
+    block-size var(--motion-base) var(--ease-out);
+}
+
+[data-timeline-module] details.tl-fold[open]::details-content {
+  block-size: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-timeline-module] .tl-rise-in,
+  [data-timeline-module] .tl-menu-in,
+  [data-timeline-module] .tl-settle {
+    animation: none !important;
+  }
+
+  [data-timeline-module] details.tl-fold::details-content {
+    transition: none !important;
   }
 }

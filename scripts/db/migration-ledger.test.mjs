@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 21);
+  assert.equal(context.entries.length, 28);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -55,6 +55,13 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0018_notification_prefs_nudges",
     "0019_invites_and_workspace_events",
     "0020_user_preferences_theme_mode",
+    "0021_tasks_seq",
+    "0022_workspaces_description",
+    "0023_retire_launch_scaffolding",
+    "0024_retire_waiting_lane",
+    "0025_tasks_completed_at",
+    "0026_workspace_money",
+    "0027_share_link_token_hash",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -112,13 +119,20 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0018_notification_prefs_nudges",
     "0019_invites_and_workspace_events",
     "0020_user_preferences_theme_mode",
+    "0021_tasks_seq",
+    "0022_workspaces_description",
+    "0023_retire_launch_scaffolding",
+    "0024_retire_waiting_lane",
+    "0025_tasks_completed_at",
+    "0026_workspace_money",
+    "0027_share_link_token_hash",
   ]);
-  assert.equal(first.proofs.length, 42);
+  assert.equal(first.proofs.length, 79);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 30],
-    ["table", 26],
+    ["index", 32],
+    ["table", 23],
     ["trigger", 2],
   ]);
 

@@ -47,6 +47,29 @@ export interface SignalLedgerEmptyState {
 }
 
 /**
+ * The accounting: what Signal took in, what it surfaced, what it cleared.
+ *
+ * The product's whole claim is that it is a filter, so a numerator without a
+ * denominator is an assertion rather than a receipt. `read` is the number of
+ * source items examined in scope; `surfaced` is what crossed the attention
+ * rules; `cleared` is the remainder and is never negative.
+ */
+export interface SignalLedgerReadCounts {
+  /** Source items examined in scope. */
+  read: number;
+  /** Items that crossed a rule, before any display cap. Synthetic rows
+   *  (overload, crowded-week) are readings OF items already counted, so
+   *  they are never counted here as items in their own right. */
+  flagged: number;
+  /** Source items represented by the entries actually on screen. Counted in
+   *  items, not rows: two rows that merged still stand for two items. */
+  shown: number;
+  /** Items that crossed nothing. `read = flagged + cleared` exactly, so a
+   *  reader who subtracts on the page always lands on a true number. */
+  cleared: number;
+}
+
+/**
  * Versioned allowlist between Signal's authorized domain response and the
  * client renderer. It deliberately excludes source records, source ids,
  * workspace ids, Clerk ids, raw Notes, and preference state.
@@ -63,6 +86,8 @@ export interface SignalLedgerDTO {
   entries: SignalLedgerEntry[];
   emptyState: SignalLedgerEmptyState | null;
   closingLine: string | null;
+  /** Null when the source could not report how much it examined. */
+  readCounts: SignalLedgerReadCounts | null;
 }
 
 export interface SignalLedgerCandidate {
@@ -91,6 +116,18 @@ export interface BuildSignalLedgerInput {
   healthyEmptyState?: Omit<SignalLedgerEmptyState, "kind"> | null;
   closingLine?: string | null;
   /**
+   * Total source items examined in scope. Omit when the engine cannot
+   * report it; the accounting is then withheld rather than guessed.
+   */
+  readCount?: number | null;
+  /**
+   * How many items crossed a rule, counted before any display cap. Callers
+   * that cap their candidates before building (the legacy engine caps at
+   * three per bucket) MUST pass this, or work that was merely held back
+   * would be counted as cleared. Falls back to `candidates.length`.
+   */
+  triggeredCount?: number | null;
+  /**
    * The configured authenticated app origin. Absolute actions are accepted
    * only when they resolve to this exact origin, then serialized as relative.
    */
@@ -101,6 +138,12 @@ const PRODUCT_PATHS = [
   "/app/notes",
   "/app/tasks",
   "/app/timeline",
+  "/app/home",
+  // The Full Briefing is its own canonical surface root inside Home —
+  // safeAction() only serializes exact roots, so it must be listed.
+  "/app/home/briefing",
+  // Legacy briefing base: serialized actions minted before the Home
+  // consolidation may still carry it; the route permanently redirects.
   "/app/signal",
 ] as const;
 
@@ -110,20 +153,30 @@ const COVERAGE_COPY: Readonly<
     { headline: string; body: string; note: string }
   >
 > = {
+  // Each body states what IS true of the read, in that order: what is on
+  // the page, then what is still unknown. The earlier copy did the
+  // opposite. Every body was built around "Signal is not calling the rest
+  // clear" / "nothing here is being called current" / "Nothing is being
+  // called clear", which defends the implementation to the reader instead
+  // of telling them where they stand, and puts the word "clear" in front
+  // of them three times on a page whose point is that it is not. The
+  // unavailable body also sent them to a refresh that does not exist:
+  // there is no refresh control anywhere in Signal, and the settings page
+  // says the read happens when you open Signal.
   partial: {
     headline: "Signal has only part of the picture.",
-    body: "Available facts are shown, but missing sources are not being treated as healthy work.",
-    note: "Some connected context is unavailable. Conclusions use available facts only.",
+    body: "What is below came from the sources that answered. The rest is still unread, not clear.",
+    note: "One source did not answer. This read covers the rest.",
   },
   stale: {
-    headline: "Signal is waiting for a newer read.",
-    body: "The latest complete source calculation is older than expected, so no all-clear is being inferred.",
-    note: "This briefing is using an older calculation.",
+    headline: "This read is older than today.",
+    body: "The last full read of these sources ran earlier than it should have. What is below is that read, not this moment.",
+    note: "This is an older read, not today’s.",
   },
   unavailable: {
-    headline: "Signal cannot read the source work right now.",
-    body: "Nothing has been marked healthy while the connected sources are unavailable.",
-    note: "Source data is unavailable. Signal is not substituting an empty workspace.",
+    headline: "Signal cannot reach the work right now.",
+    body: "The sources are out of reach, so everything in scope is still unread. Signal will have a read once they answer.",
+    note: "The sources are out of reach. An empty page here would not be the truth.",
   },
 };
 
@@ -205,13 +258,53 @@ export function buildSignalLedger(
             body:
               boundedText(
                 input.healthyEmptyState?.body ??
-                  "No item in this scope crossed Signal's attention rules.",
+                  "No item in this scope crossed Signal’s attention rules.",
                 360,
               ),
           };
 
+  // The accounting must close in front of the reader: read = flagged +
+  // cleared, with `shown` a subset of `flagged`. An earlier shape published
+  // only read/surfaced/cleared, which left the work held back by the display
+  // cap unnamed, so a reader who subtracted found a hole on the one page
+  // whose whole claim is that its arithmetic can be checked.
+  const reportedFlagged = nonNegativeInteger(
+    typeof input.triggeredCount === "number" &&
+      Number.isFinite(input.triggeredCount)
+      ? input.triggeredCount
+      : input.candidates.length,
+  );
+  // Counted in items, not rows: merged rows still stand for every item that
+  // fed them, so the header can never say "1 shown" over a row reading
+  // "2 items".
+  const shown = entries.reduce(
+    (total, entry) => total + nonNegativeInteger(entry.receipt.evidenceCount),
+    0,
+  );
+  // The invariants this type publishes are enforced here, not trusted from the
+  // caller. Two real callers broke them: the progressive adapter caps its
+  // observations and passes no pre-cap total, and a synthetic row contributes
+  // to `shown` while being deliberately excluded from `flagged`. Either way
+  // the published `shown <= flagged` went false and the strip drew a partition
+  // that could not exist. Anything on screen demonstrably crossed a rule, so
+  // `shown` is the floor for `flagged`, and `cleared` follows from it.
+  const flagged = Math.max(reportedFlagged, shown);
+  const readCounts =
+    typeof input.readCount === "number" && Number.isFinite(input.readCount)
+      ? {
+          read: Math.max(nonNegativeInteger(input.readCount), flagged),
+          flagged,
+          shown,
+          cleared: Math.max(
+            0,
+            Math.max(nonNegativeInteger(input.readCount), flagged) - flagged,
+          ),
+        }
+      : null;
+
   return {
     version: SIGNAL_LEDGER_VERSION,
+    readCounts,
     heading: boundedText(
       input.heading || "A short read of what deserves attention.",
       180,

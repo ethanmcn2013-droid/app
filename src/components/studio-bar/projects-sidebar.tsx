@@ -18,6 +18,7 @@ import {
   useTransition,
   type CSSProperties,
 } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -33,7 +34,6 @@ import type {
   ProjectsTreeData,
   ProjectsTreeLeaf,
 } from "@/server/actions/projects-tree";
-import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { RailIcon, ShellGlyph, SidebarGlyph } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
@@ -49,102 +49,6 @@ function useDrawerViewport(): boolean {
     subscribe,
     () => window.matchMedia(DRAWER_QUERY).matches,
     () => false,
-  );
-}
-
-function SavedViewsRow() {
-  const { savedViews, applySavedView, deleteSavedView } = useRoomTools();
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDocClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
-      <button
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        className={styles.navRow}
-        onClick={() => setOpen((v) => !v)}
-        type="button"
-      >
-        <SidebarGlyph name="focus" size={16} />
-        <span>Saved views</span>
-        {savedViews.length > 0 ? (
-          <span className={styles.navCount}>{savedViews.length}</span>
-        ) : null}
-      </button>
-      {open ? (
-        <div
-          role="dialog"
-          aria-label="Saved views"
-          style={{
-            background: "var(--x-task-overlay)",
-            border: "1px solid var(--x-task-border)",
-            borderRadius: 8,
-            boxShadow: "var(--x-task-shadow)",
-            left: 8,
-            padding: 6,
-            position: "absolute",
-            top: "calc(100% + 4px)",
-            width: 220,
-            zIndex: 60,
-          }}
-        >
-          {savedViews.length === 0 ? (
-            <p
-              style={{
-                color: "var(--x-task-text-muted)",
-                fontSize: 10,
-                lineHeight: 1.5,
-                margin: 0,
-                padding: "6px 8px",
-              }}
-            >
-              Save a view from the view bar and it lands here.
-            </p>
-          ) : (
-            savedViews.map((v) => (
-              <div key={v.id} style={{ alignItems: "center", display: "flex", gap: 4 }}>
-                <button
-                  className={styles.navRow}
-                  onClick={() => {
-                    setOpen(false);
-                    applySavedView(v.id);
-                  }}
-                  type="button"
-                >
-                  <span className={styles.projectName}>{v.name}</span>
-                  <span className={styles.navCount}>{v.view}</span>
-                </button>
-                <button
-                  aria-label={`Delete saved view ${v.name}`}
-                  className={styles.sidebarCollapse}
-                  onClick={() => deleteSavedView(v.id)}
-                  type="button"
-                >
-                  ×
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -181,6 +85,7 @@ function AddProjectRow({ onCreated }: { onCreated?: () => void }) {
       try {
         const result = await createProjectAction(trimmed, null);
         await selectWorkspaceAction(result.id);
+        window.sessionStorage.setItem("signal-tasks.recent-project", result.id);
         setAdding(false);
         setDraft("");
         onCreated?.();
@@ -267,6 +172,7 @@ function ProjectRowMenu({
   onDone: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const reduceMotion = useReducedMotion();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [pending, startTransition] = useTransition();
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -342,8 +248,12 @@ function ProjectRowMenu({
           <circle cx="19" cy="12" r="1.7" />
         </svg>
       </button>
+      <AnimatePresence>
       {open ? (
-        <div
+        <motion.div
+          animate={{ opacity: 1, transform: "scale(1)" }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
           role="menu"
           aria-label={`${name} options`}
           onClick={(e) => e.stopPropagation()}
@@ -356,9 +266,11 @@ function ProjectRowMenu({
             position: "absolute",
             right: 0,
             top: "calc(100% + 4px)",
+            transformOrigin: "top right",
             width: 176,
             zIndex: 70,
           }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
         >
           {archived ? (
             <button
@@ -428,8 +340,9 @@ function ProjectRowMenu({
               Deletes every task in {name}. This can’t be undone.
             </p>
           ) : null}
-        </div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -444,10 +357,14 @@ function SidebarBody({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  const reduceMotion = useReducedMotion();
   const router = useRouter();
   const tasks = useTasksState();
   const inboxCount = openTaskCount(tasks);
   const [, startTransition] = useTransition();
+  const [switchPendingId, setSwitchPendingId] = useState<string | null>(null);
+  const [showSwitchPending, setShowSwitchPending] = useState(false);
+  const [recentProjectId, setRecentProjectId] = useState<string | null>(null);
   const activeGroup = tree.groups.find((g) =>
     g.workspaces.some((w) => w.id === activeWorkspaceId),
   );
@@ -456,12 +373,40 @@ function SidebarBody({
   );
   const [archivedOpen, setArchivedOpen] = useState(false);
 
+  useEffect(() => {
+    if (!switchPendingId) return;
+    const timer = window.setTimeout(() => setShowSwitchPending(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [switchPendingId]);
+
+  useEffect(() => {
+    const recent = window.sessionStorage.getItem("signal-tasks.recent-project");
+    if (!recent || !tree.groups.some((group) => group.workspaces.some((workspace) => workspace.id === recent))) return;
+    window.sessionStorage.removeItem("signal-tasks.recent-project");
+    let timer: number | undefined;
+    const frame = window.requestAnimationFrame(() => {
+      setRecentProjectId(recent);
+      timer = window.setTimeout(() => setRecentProjectId(null), 520);
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [tree]);
+
   function chooseWorkspace(id: string) {
     onNavigate?.();
     if (id === activeWorkspaceId) return;
     startTransition(async () => {
-      await selectWorkspaceAction(id);
-      router.refresh();
+      setShowSwitchPending(false);
+      setSwitchPendingId(id);
+      try {
+        await selectWorkspaceAction(id);
+        router.refresh();
+      } finally {
+        setShowSwitchPending(false);
+        setSwitchPendingId(null);
+      }
     });
   }
 
@@ -495,32 +440,9 @@ function SidebarBody({
           <SidebarGlyph name="agenda" size={16} />
           <span>My work</span>
         </Link>
-        <Link
-          aria-current={pathname === "/app/your-work" ? "page" : undefined}
-          className={styles.navRow}
-          href="/app/your-work"
-          onClick={onNavigate}
-        >
-          <SidebarGlyph name="people" size={16} />
-          <span>Assigned to me</span>
-        </Link>
-        <Link
-          aria-current={pathname === "/app/archived" ? "page" : undefined}
-          className={styles.navRow}
-          href="/app/archived"
-          onClick={onNavigate}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="3" y="4" width="18" height="4" rx="1" />
-            <path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8" />
-            <path d="M10 12h4" />
-          </svg>
-          <span>Archived</span>
-        </Link>
-        <SavedViewsRow />
       </nav>
       <nav aria-label="Projects" className={styles.projectsSection}>
-        <h2 className={styles.projectsHeading}>Projects</h2>
+        <h2 className="sr-only">Projects</h2>
         <ul className={styles.projectTree}>
           {tree.groups.map((group) => {
             if (group.periodId) {
@@ -548,11 +470,20 @@ function SidebarBody({
                       <span className={styles.projectDate}>{group.dateRange}</span>
                     ) : null}
                   </button>
-                  <ul className={styles.projectChildren} hidden={!open} id={domId}>
+                  <AnimatePresence initial={false}>
+                  {open ? <motion.ul
+                    animate={{ opacity: 1, transform: "translateY(0)" }}
+                    className={styles.projectChildren}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                    id={domId}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                    transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+                  >
                     {group.workspaces.map((w) => (
                       <li key={w.id}>
-                        <div className={styles.projectRowWrap}>
+                        <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                           <button
+                            aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
                             aria-current={w.id === activeWorkspaceId ? "page" : undefined}
                             className={styles.projectLeaf}
                             onClick={() => chooseWorkspace(w.id)}
@@ -572,15 +503,17 @@ function SidebarBody({
                         </div>
                       </li>
                     ))}
-                  </ul>
+                  </motion.ul> : null}
+                  </AnimatePresence>
                 </li>
               );
             }
             // Periodless workspaces: standalone parent-level rows.
             return group.workspaces.map((w) => (
               <li key={w.id}>
-                <div className={styles.projectRowWrap}>
+                <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                   <button
+                    aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
                     aria-current={w.id === activeWorkspaceId ? "page" : undefined}
                     className={styles.projectParent}
                     data-active={w.id === activeWorkspaceId || undefined}
@@ -621,7 +554,15 @@ function SidebarBody({
                   {tree.archived.length}
                 </span>
               </button>
-              <ul className={styles.projectChildren} hidden={!archivedOpen} id="projects-archived">
+              <AnimatePresence initial={false}>
+              {archivedOpen ? <motion.ul
+                animate={{ opacity: 1, transform: "translateY(0)" }}
+                className={styles.projectChildren}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                id="projects-archived"
+                initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
+                transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+              >
                 {tree.archived.map((w: ProjectsTreeLeaf) => (
                   <li key={w.id}>
                     <div className={styles.projectRowWrap}>
@@ -640,7 +581,8 @@ function SidebarBody({
                     </div>
                   </li>
                 ))}
-              </ul>
+              </motion.ul> : null}
+              </AnimatePresence>
             </li>
           ) : null}
         </ul>
@@ -660,10 +602,6 @@ function SidebarHeader({
 }) {
   return (
     <header className={styles.sidebarHeader}>
-      <div className={styles.sidebarIdentity}>
-        <span className={styles.sidebarEyebrow}>Signal Studio</span>
-        <strong className={styles.sidebarTitle}>Tasks</strong>
-      </div>
       <button
         aria-label={closeLabel}
         className={styles.sidebarCollapse}
@@ -685,6 +623,7 @@ export function ProjectsSidebar({
   activeWorkspaceId: string;
 }) {
   const drawerMode = useDrawerViewport();
+  const reduceMotion = useReducedMotion();
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const expandButtonRef = useRef<HTMLButtonElement>(null);
@@ -770,17 +709,30 @@ export function ProjectsSidebar({
           </button>
           <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
         </div>
+        <AnimatePresence>
         {drawerOpen ? (
           <>
-            <div aria-hidden="true" className={styles.drawerBackdrop} onClick={closeDrawer} />
-            <div
+            <motion.div
+              animate={{ opacity: 1 }}
+              aria-hidden="true"
+              className={styles.drawerBackdrop}
+              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              onClick={closeDrawer}
+              transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
+            />
+            <motion.div
+              animate={{ opacity: 1, transform: "translateX(0)" }}
               aria-label="Tasks projects"
               aria-modal="true"
               className={styles.projectsDrawer}
               data-projects-drawer="true"
+              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(-18px)" }}
+              initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(-18px)" }}
               onKeyDown={onDrawerKeyDown}
               ref={drawerRef}
               role="dialog"
+              transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.23, 1, 0.32, 1] }}
             >
               <SidebarHeader closeLabel="Close Projects" onClose={closeDrawer} tip="Close Projects" />
               <SidebarBody
@@ -788,52 +740,53 @@ export function ProjectsSidebar({
                 onNavigate={closeDrawer}
                 tree={tree}
               />
-            </div>
+            </motion.div>
           </>
         ) : null}
+        </AnimatePresence>
       </>
     );
   }
 
-  if (collapsed) {
-    return (
-      <div className={`${styles.sidebarStrip} hidden md:flex`}>
-        <button
-          aria-expanded={false}
-          aria-label="Expand Projects sidebar"
-          className={styles.stripButton}
-          data-tip="Expand Projects sidebar"
-          onClick={() => {
-            expandIntent.current = true;
-            setCollapsed(false);
-          }}
-          ref={expandButtonRef}
-          type="button"
-        >
-          <ShellGlyph name="panel" size={15} />
-        </button>
-        <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
-      </div>
-    );
-  }
-
   return (
-    <aside
-      aria-label="Tasks projects"
-      className={`${styles.projectsSidebar} hidden md:flex`}
-      data-projects-sidebar="true"
-      ref={sidebarRef}
-    >
-      <SidebarHeader
-        closeLabel="Collapse Projects sidebar"
-        onClose={() => {
-          collapseIntent.current = true;
-          setCollapsed(true);
-        }}
-        tip="Collapse Projects sidebar"
-      />
-      <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
-      <div aria-hidden="true" className={styles.sidebarFoot} />
-    </aside>
+    <div className={`${styles.projectsSidebarHost} hidden md:block`} data-collapsed={collapsed || undefined}>
+      {collapsed ? (
+        <div className={styles.sidebarStrip}>
+          <button
+            aria-expanded={false}
+            aria-label="Expand Projects sidebar"
+            className={styles.stripButton}
+            data-tip="Expand Projects sidebar"
+            onClick={() => {
+              expandIntent.current = true;
+              setCollapsed(false);
+            }}
+            ref={expandButtonRef}
+            type="button"
+          >
+            <ShellGlyph name="panel" size={15} />
+          </button>
+          <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
+        </div>
+      ) : (
+        <aside
+          aria-label="Tasks projects"
+          className={styles.projectsSidebar}
+          data-projects-sidebar="true"
+          ref={sidebarRef}
+        >
+          <SidebarHeader
+            closeLabel="Collapse Projects sidebar"
+            onClose={() => {
+              collapseIntent.current = true;
+              setCollapsed(true);
+            }}
+            tip="Collapse Projects sidebar"
+          />
+          <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
+          <div aria-hidden="true" className={styles.sidebarFoot} />
+        </aside>
+      )}
+    </div>
   );
 }

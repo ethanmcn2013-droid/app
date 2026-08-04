@@ -7,7 +7,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   buildTimelineProjectHref,
   type ProjectSwitcherOption,
@@ -26,12 +26,29 @@ export function ProjectSwitcher({
   context,
 }: ProjectSwitcherProps) {
   const router = useRouter();
+  const params = useParams<{ projectSlug?: string | string[] }>();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLAnchorElement | null>>([]);
+
+  // The URL is the source of truth for which project this is.
+  //
+  // `currentProject` arrives as a server prop, and `router.push` updates the
+  // address bar before the new RSC payload lands. Reading the label straight
+  // off the prop therefore left a window where the URL said one project and
+  // the switcher said another — the page and its own switcher disagreeing.
+  // Resolving from the route param closes that window: the label is correct
+  // the moment the navigation commits, and the prop stays the fallback for
+  // the first render and for any route that does not carry the param.
+  const routeSlug = Array.isArray(params?.projectSlug)
+    ? params?.projectSlug[0]
+    : params?.projectSlug;
+  const active =
+    projects.find((project) => project.slug === routeSlug) ?? currentProject;
+
   const currentIndex = Math.max(
     0,
-    projects.findIndex((project) => project.slug === currentProject.slug),
+    projects.findIndex((project) => project.slug === active.slug),
   );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(currentIndex);
@@ -55,7 +72,7 @@ export function ProjectSwitcher({
     return (
       <span className="inline-flex min-h-[44px] items-center">
         <span className="font-medium text-ink" aria-current="page">
-          {currentProject.name}
+          {active.name}
         </span>
       </span>
     );
@@ -123,12 +140,12 @@ export function ProjectSwitcher({
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Current project: ${currentProject.name}. Switch project.`}
+        aria-label={`Current project: ${active.name}. Switch project.`}
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleTriggerKeyDown}
-        className="inline-flex min-h-[44px] max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-white px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-white px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
-        <span className="truncate">{currentProject.name}</span>
+        <span className="truncate">{active.name}</span>
         <svg
           width="14"
           height="14"
@@ -150,10 +167,10 @@ export function ProjectSwitcher({
           role="menu"
           aria-label="Timeline projects"
           onKeyDown={handleMenuKeyDown}
-          className="absolute left-0 z-40 mt-2 max-h-[min(360px,60vh)] min-w-[min(320px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_18px_50px_-22px_rgba(20,21,26,0.45)]"
+          className="tl-menu-in absolute left-0 z-40 mt-2 max-h-[min(360px,60vh)] min-w-[min(320px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_18px_50px_-22px_rgba(20,21,26,0.45)]"
         >
           {options.map((option, index) => {
-            const isCurrent = option.slug === currentProject.slug;
+            const isCurrent = option.slug === active.slug;
             const href = buildTimelineProjectHref(option.slug, context);
             return (
               <Link
