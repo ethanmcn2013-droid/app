@@ -81,14 +81,14 @@ export function MyWeekApp() {
     );
   }
 
-  const greeting = greetingFor(now, me?.name);
+  const greeting = greetingFor(now, calendar.timeZone, me?.name);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto px-6 py-5 md:px-10 md:py-7">
       <div className="mx-auto max-w-3xl">
         <header className="mb-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-quiet">
-            {formatDateHeader(now)}
+            {formatDateHeader(now, calendar.locale, calendar.timeZone)}
           </p>
           <h2 className="mt-2 text-[22px] font-medium tracking-tight text-ink md:text-[26px]">
             {greeting}
@@ -306,8 +306,17 @@ function Row({
   );
 }
 
-function greetingFor(now: Date, name?: string): string {
-  const hour = now.getHours();
+function greetingFor(now: Date, timeZone: string, name?: string): string {
+  // The frame's zone, not the machine's: the server renders in UTC and a
+  // visitor renders in their own zone — getHours() would hydrate two
+  // different salutations from the same instant.
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "numeric",
+      hour12: false,
+      timeZone,
+    }).format(now),
+  );
   const first = name?.split(" ")[0];
   const opener =
     hour < 5
@@ -320,9 +329,13 @@ function greetingFor(now: Date, name?: string): string {
   return first ? `${opener}, ${first}.` : `${opener}.`;
 }
 
-function formatDateHeader(now: Date): string {
+function formatDateHeader(now: Date, locale: string, timeZone: string): string {
+  // Explicit locale + zone: `undefined` let the server's ICU default
+  // ("Thursday, July 16") fight the browser's ("Thursday 16 July") and
+  // hydration flagged the text node.
   return now
-    .toLocaleDateString(undefined, {
+    .toLocaleDateString(locale, {
+      timeZone,
       weekday: "long",
       day: "numeric",
       month: "long",
