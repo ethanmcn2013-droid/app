@@ -152,6 +152,17 @@ export type VoiceCaptureMessage =
   | { kind: "no-speech" }
   | { kind: "error" };
 
+/**
+ * Whether this browser can turn speech into text at all.
+ *
+ * Separated from `supported` so a surface can tell the difference between
+ * "not offered yet, still resolving on the client" and "this browser will
+ * never offer it". Before E05.04 the control simply vanished on Firefox with
+ * no explanation, which reads as a broken feature rather than a browser
+ * limit. `resolving` is the pre-mount state and shows nothing.
+ */
+export type VoiceEngineState = "resolving" | "ready" | "unavailable";
+
 interface UseVoiceCaptureArgs {
   // Append finalized words to the live draft. Receives the previous
   // draft so it can join cleanly without clobbering typed text.
@@ -163,6 +174,8 @@ interface UseVoiceCaptureArgs {
 
 interface UseVoiceCaptureResult {
   supported: boolean;
+  /** Tri-state form of `supported`, so an absent engine can be explained. */
+  engine: VoiceEngineState;
   listening: boolean;
   message: VoiceCaptureMessage | null;
   toggle: () => void;
@@ -180,7 +193,8 @@ export function useVoiceCapture({
 }: UseVoiceCaptureArgs): UseVoiceCaptureResult {
   // Resolved once on mount (client only) so first paint / SSR never
   // touches window, keeps the field painting before the mic resolves.
-  const [supported, setSupported] = useState(false);
+  const [engine, setEngine] = useState<VoiceEngineState>("resolving");
+  const supported = engine === "ready";
   const [listening, setListening] = useState(false);
   const [message, setMessage] = useState<VoiceCaptureMessage | null>(null);
 
@@ -193,7 +207,7 @@ export function useVoiceCapture({
   onStopRef.current = onStop;
 
   useEffect(() => {
-    setSupported(getSpeechRecognition() !== null);
+    setEngine(getSpeechRecognition() !== null ? "ready" : "unavailable");
   }, []);
 
   // Tear down any live recognition when the component unmounts.
@@ -287,5 +301,5 @@ export function useVoiceCapture({
 
   const clearMessage = useCallback(() => setMessage(null), []);
 
-  return { supported, listening, message, toggle, clearMessage };
+  return { supported, engine, listening, message, toggle, clearMessage };
 }

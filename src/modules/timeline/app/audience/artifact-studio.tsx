@@ -6,18 +6,8 @@ import {
   TimelinePhonePreview,
 } from "@/modules/timeline/components/artifact";
 import { publicationStateLabel } from "@/modules/timeline/lib/format";
+import { presentViewerCount } from "@/modules/timeline/lib/viewer-count";
 import styles from "./artifact-studio.module.css";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-function displayDate(value: Date | null): string {
-  return value ? DATE_FORMAT.format(value) : "No views yet";
-}
 
 export function TimelineArtifactStudio({
   publication,
@@ -29,6 +19,13 @@ export function TimelineArtifactStudio({
   managerHref: string;
 }) {
   const live = publication.state === "published" && publication.activeShareCount > 0;
+  // Never render publication.qualifiedViewCount or lastQualifiedViewAt
+  // directly. The presenter carries the floor and the month coarsening; a raw
+  // count beside a precise date names one guest and the day they read it.
+  const views = presentViewerCount({
+    count: publication.qualifiedViewCount,
+    lastViewedAt: publication.lastQualifiedViewAt,
+  });
 
   return (
     <div data-timeline-module className={styles.studio}>
@@ -58,12 +55,17 @@ export function TimelineArtifactStudio({
 
       <dl className={styles.stats} aria-label="Timeline publication details">
         <div className={styles.stat}>
-          <dt className={styles.statLabel}>Timeline views</dt>
-          <dd className={styles.statValue}>{publication.qualifiedViewCount.toLocaleString("en-GB")}</dd>
-        </div>
-        <div className={styles.stat}>
-          <dt className={styles.statLabel}>Last viewed</dt>
-          <dd className={styles.statValue}>{displayDate(publication.lastQualifiedViewAt)}</dd>
+          <dt className={styles.statLabel}>Views</dt>
+          {views.state === "shown" ? (
+            <dd className={styles.statValue}>
+              {views.countLabel}
+              {views.lastViewedLabel ? (
+                <p className={styles.statNote}>Last opened in {views.lastViewedLabel}.</p>
+              ) : null}
+            </dd>
+          ) : (
+            <dd className={styles.statNote}>{views.note}</dd>
+          )}
         </div>
         <div className={styles.stat}>
           <dt className={styles.statLabel}>Milestones shared</dt>

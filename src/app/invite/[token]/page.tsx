@@ -162,10 +162,16 @@ export default async function InviteAcceptPage({
                 <h1 className="mt-3 text-[26px] font-semibold leading-tight tracking-[-0.02em] text-ink">
                   {preview.inviterName} added you to {preview.workspaceName}.
                 </h1>
+                {/* E05.10: this page is the first thing a couple's spouse,
+                    planner or family member sees, and a sponsored wedding
+                    workspace reaches it too. It states what accepting grants
+                    and nothing about plans, prices or seat counts (D-020). It
+                    also says plainly that a member can edit everything,
+                    because today there is only one collaborator role. */}
                 <p className="mt-3 text-[14.5px] leading-[1.55] text-ink-soft">
-                  One workspace, every view, the daily digest. Three editing
-                  guests on Free, unlimited members on Team. No card, no
-                  trial.
+                  Accepting adds you to this workspace. You will see the same
+                  views, tasks and daily briefing the owner sees, and you can
+                  edit them.
                 </p>
                 <div className="mt-5 grid gap-2 rounded-xl border border-line-soft bg-white px-4 py-3 text-[12.5px]">
                   <div className="flex items-center justify-between">

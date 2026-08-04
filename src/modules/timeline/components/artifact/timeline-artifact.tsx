@@ -317,10 +317,18 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
   );
 }
 
+/**
+ * The one line of prose under a milestone title. Rewritten 2026-08-03 (E06.04):
+ * two of the three sentences used "journey" as a noun, which the brand voice
+ * bans, and this is front-facing copy on a couple's wedding page rather than an
+ * internal string. Kept short and plain, and kept deliberately rather than
+ * removed, because it is the slot a real milestone story lands in once the
+ * published DTO can carry one (E06.02 and E06.03).
+ */
 function detailNote(point: TimelineArtifactPoint): string {
-  if (point.state === "complete") return "This milestone is part of the story so far.";
-  if (point.isNext) return "This is the next point on the shared journey.";
-  return "This milestone comes later on the shared journey.";
+  if (point.state === "complete") return "This one is already behind you.";
+  if (point.isNext) return "This one is next.";
+  return "This one comes later.";
 }
 
 function MilestoneDetail({

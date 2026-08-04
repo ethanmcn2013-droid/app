@@ -120,6 +120,10 @@ export async function remixTemplateAction(
       priority: t.priority,
       assignees: [],
       due: t.due,
+      // A remix mints a brand-new workspace, so there is never an anchor
+      // date at this point and `due_at` stays null. The milestone flag is
+      // structural and carries regardless.
+      isMilestone: t.milestone === true,
       tags: t.tags,
       position,
       updatedAt: now,

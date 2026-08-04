@@ -41,6 +41,11 @@ type StudioTemplate = {
     priority: string;
     due?: string;
     tags?: string[];
+    /** Optional, canonical source may not carry them yet. Passed straight
+     *  through so a studio-side template can declare Timeline milestones and
+     *  wedding-relative due offsets without another change here. */
+    milestone?: boolean;
+    dueOffsetDays?: number;
   }>;
 };
 
