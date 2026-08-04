@@ -1,6 +1,6 @@
 import "@/modules/signal/components/signal/signal.css";
 
-export default function SignalLayout({
+export default function BriefingLayout({
   children,
 }: {
   children: React.ReactNode;

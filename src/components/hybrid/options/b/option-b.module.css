@@ -92,10 +92,8 @@
 .syncState[data-state="error"] { color: var(--danger); }
 .workspaceProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
 .progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: .01em; margin: 0; }
-.progressFacts b { color: var(--x-task-danger); font-weight: 650; }
-/* A count never separates from its label mid-wrap. */
-.progressFacts span,
-.progressFacts b { white-space: nowrap; }
+.progressFacts span { white-space: nowrap; }
+.progressFacts b { color: var(--x-task-danger); font-weight: 650; white-space: nowrap; }
 
 .workspaceMilestones {
   border-left: 1px solid var(--x-task-border);

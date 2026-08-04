@@ -22,6 +22,12 @@ export async function appendOutboxEvent(event: SuiteOutboxEvent): Promise<void> 
 }
 
 export async function listPendingOutbox(limit = 50) {
+  // isolation-ok: cross-tenant by design. This is the delivery worker
+  // draining the outbox, called only by the /api/cron/outbox job, never
+  // by a user request. Scoping it to one workspace would mean events
+  // from every other workspace were never delivered. The rows carry a
+  // nullable workspaceId as payload metadata; nothing here is returned
+  // to a tenant.
   return db.select().from(suiteOutbox)
     .where(isNull(suiteOutbox.deliveredAt))
     .orderBy(asc(suiteOutbox.occurredAt))

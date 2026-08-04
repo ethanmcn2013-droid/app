@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { focusTask } from "./quiet-command-model";
 import { useLabStore } from "../../store";
 import { columnDisplayName } from "@/lib/board-columns";
 import { useBoardColumns } from "../../columns-context";
@@ -56,7 +57,9 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
     }
     if (title !== task.title) store.updateTitle(task.id, title);
     store.clearEditing();
-    if (viaKeyboard) restoreFocus();
+    // F2 editing must hand focus back to the card it came from, or the
+    // advertised arrow-key model dead-ends after every rename.
+    focusTask(task.id);
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -67,7 +70,7 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
       setDraft(task.title);
       setError("");
       store.clearEditing();
-      restoreFocus();
+      focusTask(task.id);
       return;
     }
     if (event.key === "Enter") {

@@ -138,6 +138,12 @@ const PRODUCT_PATHS = [
   "/app/notes",
   "/app/tasks",
   "/app/timeline",
+  "/app/home",
+  // The Full Briefing is its own canonical surface root inside Home —
+  // safeAction() only serializes exact roots, so it must be listed.
+  "/app/home/briefing",
+  // Legacy briefing base: serialized actions minted before the Home
+  // consolidation may still carry it; the route permanently redirects.
   "/app/signal",
 ] as const;
 

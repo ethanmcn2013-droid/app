@@ -278,6 +278,16 @@
       "policy": "forward",
       "receipt": "drizzle/receipts/workspace-money-2026-07-31.json",
       "receiptSha256": "b1c29017c308d03b43ff921d9d1c1f2c959fcb6efc36cad66698cdc971e4189c"
+    },
+    {
+      "ordinal": 27,
+      "id": "0027_share_link_token_hash",
+      "file": "drizzle/0027_share_link_token_hash.sql",
+      "when": 1785494000000,
+      "sha256": "a4d68de27671b09197ed88ae1e7e8cd8a52e04deafd38ccbee1f03d456b97fde",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/share-link-token-hash-2026-08-03.json",
+      "receiptSha256": "a23495b8358c10182caff25e13146aed0a77cafd07eb8d825153aa5308264ad3"
     }
   ]
 }

@@ -88,7 +88,15 @@ export function reorderItem<T>(items: T[], from: number, to: number): T[] {
  * document when the lab wrapper is absent.
  */
 function focusScope(): ParentNode {
-  return document.querySelector("[data-option='a']") ?? document;
+  // Production mounts the views inside the active work surface; the brief's
+  // milestone rows (which also stamp data-task-id) live OUTSIDE it, so
+  // scoping here keeps arrow-key movement on the cards. The lab wrapper and
+  // the document remain as fallbacks.
+  return (
+    document.querySelector("[data-work-surface='true']") ??
+    document.querySelector("[data-option='a']") ??
+    document
+  );
 }
 
 function cssEscape(value: string): string {

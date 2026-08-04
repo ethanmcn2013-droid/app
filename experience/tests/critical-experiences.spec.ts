@@ -316,7 +316,13 @@ async function auditTimelineContract(
   }
 
   await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline");
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("22");
+  // A couple's artifact leads with its heart (T·126): the countdown is the
+  // opening face — one review clock, 16 July to 3 October is 79 days — and
+  // the working percent stays one press away. The spoken progressbar keeps
+  // the honest count regardless of the visible face.
+  const toggle = page.locator("[data-timeline-metric-toggle]");
+  await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
   await expect(page.getByRole("progressbar", { name: "Milestone completion" }))
     .toHaveAttribute("aria-valuenow", "22");
   await expect(page.locator("[data-today-marker]")).toHaveAttribute(
@@ -325,12 +331,9 @@ async function auditTimelineContract(
   );
   await expect(page.locator("[data-studio-rail], nav[aria-label='Products']")).toHaveCount(0);
 
-  const toggle = page.locator("[data-timeline-metric-toggle]");
   await toggle.click();
-  await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
-  // One review clock (T·107): 16 July to 3 October is 79 days. The old "73"
-  // enshrined the fixture clock that disagreed with the suite calendar frame.
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
+  await expect(toggle).toHaveAttribute("data-metric-mode", "progress");
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("22");
 
   const current = page.getByRole("button", { name: /Menu tasting at The Orchard/ });
   await current.focus();
@@ -396,8 +399,13 @@ for (const fixture of routeCases) {
     expect(response).not.toBeNull();
     expect(response?.status()).toBe(fixture.expectedStatus ?? 200);
     if (fixture.experienceId === "tasks.page.app") {
-      await page.waitForURL("**/app/tasks");
-      await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
+      // Signal → Home consolidation (D1/D6): /app is the front door and
+      // lands on Home. The fixture assertions repeat this; the explicit
+      // wait keeps the redirect settled before the audit begins.
+      await page.waitForURL("**/app/home");
+      await expect(
+        page.getByRole("heading", { name: "Good morning." }),
+      ).toBeVisible();
     }
     await enterDeterministicMotionMode(page);
     await page.waitForTimeout(300);

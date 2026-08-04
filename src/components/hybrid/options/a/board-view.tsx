@@ -667,9 +667,8 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   return (
     <div aria-label="Board lanes" className={styles.boardSurface}>
       <LayoutGroup id="tasks-board">
-      {/* Row track: the scrolling lanes and the pinned add-column rail sit
-          side by side, so the rail really is at the right edge — as a
-          column-flex sibling it rendered BELOW the lanes at bottom-left. */}
+      {/* Row pair: the horizontal lane track and, beside it, the pinned
+          add-column rail — the rail must never stack UNDER the track. */}
       <div className={styles.boardTrack}>
       <div className={styles.boardScroll}>
         {boardColumns.map((column, columnIndex) => {

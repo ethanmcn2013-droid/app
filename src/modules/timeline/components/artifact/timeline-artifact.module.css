@@ -169,6 +169,15 @@ button.timeLens:active {
   }
 }
 
+@keyframes timeline-target-ring {
+  from {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+  to {
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+
 .headerCopy {
   min-width: 0;
   animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
@@ -192,10 +201,10 @@ button.timeLens:active {
 
 .header h1 {
   max-width: 16ch;
-  font-size: clamp(3.4rem, 6.7vw, 7.7rem);
+  font-size: var(--x-artifact-display);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.065em;
-  line-height: 0.88;
+  letter-spacing: var(--x-artifact-display-tracking);
+  line-height: var(--x-artifact-display-leading);
   text-wrap: balance;
 }
 
@@ -295,14 +304,41 @@ button.timeLens {
   margin-block-start: var(--space-3);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.08em;
-  line-height: 0.7;
+  letter-spacing: var(--x-artifact-metric-tracking);
+  line-height: var(--x-artifact-metric-leading);
   white-space: nowrap;
 }
 
 .metricPrimary strong {
-  font-size: clamp(4.4rem, 8vw, 8rem);
+  font-size: var(--x-artifact-metric);
   font-weight: var(--weight-medium);
+}
+
+/* ── Metric fit-by-construction ─────────────────────────────────────────────
+   Tabular numerals make width deterministic, so each face declares its width
+   class (data-metric-scale) and every class is sized to clear the column —
+   including "Today", the one word face, on the one day it appears. */
+
+.timeLens[data-metric-scale="three"] .metricPrimary strong {
+  font-size: clamp(4rem, 7vw, 6.9rem);
+}
+
+.timeLens[data-metric-scale="four"] .metricPrimary strong {
+  font-size: clamp(3.4rem, 6vw, 5.4rem);
+}
+
+.timeLens[data-metric-scale="word"] .metricPrimary {
+  letter-spacing: -0.05em;
+  line-height: 0.8;
+}
+
+.timeLens[data-metric-scale="word"] .metricPrimary strong {
+  font-size: clamp(2.9rem, 5.6vw, 5.05rem);
+}
+
+/* Both facts, one static line — print only. */
+.printFacts {
+  display: none;
 }
 
 .metricPrimary small {
@@ -365,11 +401,43 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .journey {
-  margin-block-start: clamp(var(--space-8), 5vw, var(--space-10));
+  /* The rail hangs close enough to the header to read as one plate; the
+     whitespace between them is composed, not leftover. */
+  margin-block-start: clamp(var(--space-6), 3.5vw, var(--space-8));
 }
 
 .railFrame {
   position: relative;
+}
+
+/* Hidden scrollbars owe an affordance: paper fades appear on whichever edge
+   still hides content, and only then. The attributes are set from the real
+   scroll state, so a rail that fits shows nothing at all. */
+.railFrame::before,
+.railFrame::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  z-index: 8;
+  width: var(--space-8);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.railFrame::before {
+  inset-inline-start: 0;
+  background: linear-gradient(90deg, var(--paper), transparent);
+}
+
+.railFrame::after {
+  inset-inline-end: 0;
+  background: linear-gradient(90deg, transparent, var(--paper));
+}
+
+.railFrame[data-overflow-start="true"]::before,
+.railFrame[data-overflow-end="true"]::after {
+  opacity: 1;
 }
 
 .stageViewport {
@@ -379,6 +447,7 @@ button.timeLens:focus-visible .metricAlternate {
   overscroll-behavior-inline: contain;
   scrollbar-width: none;
   scroll-padding-inline: var(--space-7);
+  scroll-snap-type: inline proximity;
 }
 
 .stageViewport::-webkit-scrollbar {
@@ -424,6 +493,59 @@ button.timeLens:focus-visible .metricAlternate {
   animation: timeline-draw-y 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
 }
 
+/* ── Cartography ────────────────────────────────────────────────────────────
+   Month boundaries as hairline ticks with a quiet mono initial. They make
+   the calendar's rhythm legible — why one gap runs long and another short —
+   and they ride the identical distortion mapping as the points, so the
+   annotation can never disagree with the thing it annotates. */
+
+.monthTicks {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.monthTick {
+  position: absolute;
+  inset-block-start: 48%;
+  inset-inline-start: var(--timeline-position);
+  width: 1px;
+  height: 0.5rem;
+  background: var(--ink-ghost);
+  translate: -50% -50%;
+  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
+}
+
+.monthTick > span {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  color: var(--ink-ghost);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  translate: -50% 0;
+}
+
+/* Ticks near the Today chip or the rail's caps keep their mark but yield
+   their label — the working annotations outrank the atlas. */
+.monthTick[data-quiet="true"] > span {
+  visibility: hidden;
+}
+
+/* Tightly-spaced months keep their labels only where four rail-percent is
+   real paper: below 980px (print included) the tick stays, the text goes. */
+@container timeline-artifact (max-width: 980px) {
+  .monthTick[data-tight="true"] > span {
+    visibility: hidden;
+  }
+}
+
 .todayMarker {
   position: absolute;
   inset-block-start: 48%;
@@ -460,6 +582,13 @@ button.timeLens:focus-visible .metricAlternate {
   font-weight: var(--weight-medium);
   line-height: 1;
   translate: -50% 0;
+}
+
+/* When an above-side label claims Today's band, the chip yields to the
+   rail's underside instead of garbling the title. */
+.todayMarker[data-today-side="below"] > span {
+  inset-block-start: calc(50% + var(--space-4));
+  inset-block-end: auto;
 }
 
 .milestones {
@@ -508,6 +637,18 @@ button.timeLens:focus-visible .metricAlternate {
   animation-delay: var(--timeline-point-delay, 0s);
 }
 
+/* ── The mark system ────────────────────────────────────────────────────────
+   Four states, one grammar, no decoration:
+     upcoming  · a quiet hairline ring — still ahead
+     complete  · a solid ink bead sitting ON the ink fill — settled
+     current   · a full solid indigo mark, larger than the beads — the one
+                 earned indigo moment on the rail, at full strength
+     overdue   · the same solid mark drawn in ink — it IS the next
+                 milestone, running late; the status text says so
+   Shape parity between current and overdue is deliberate: lateness changes
+   the colour of the moment, never its importance. Size separates overdue
+   from the settled beads; the label and detail echo name it. */
+
 .milestone[data-state="complete"] .point {
   width: 0.64rem;
   height: 0.64rem;
@@ -515,37 +656,41 @@ button.timeLens:focus-visible .metricAlternate {
   background: var(--ink);
 }
 
-.milestone[data-state="current"] .point {
-  width: 0.88rem;
-  height: 0.88rem;
-  border: 2px solid var(--accent);
-  background: var(--paper);
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--accent);
-}
-
+.milestone[data-state="current"] .point,
 .milestone[data-state="overdue"] .point {
   width: 0.88rem;
   height: 0.88rem;
-  border: 2px solid var(--ink);
-  background: var(--paper);
-  box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink);
+  border: 0;
+  background: var(--accent);
 }
 
-.milestone[data-state="overdue"] .point::after {
-  content: "";
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  width: var(--space-2);
-  border-block-start: 1px solid var(--ink);
-  rotate: -45deg;
-  translate: -50% -50%;
+.milestone[data-state="overdue"] .point {
+  background: var(--ink);
 }
 
-.milestone[data-selected="true"]:not([data-state="current"]):not([data-state="overdue"]) .point,
+/* The rail's single spent motion: after the points settle, the next
+   milestone breathes one ring outward and rests. Never loops. */
+.milestone[data-state="current"] .point {
+  animation:
+    timeline-pop 140ms cubic-bezier(0.23, 1, 0.32, 1) backwards,
+    timeline-target-ring 700ms cubic-bezier(0.23, 1, 0.32, 1) 0.6s backwards;
+  animation-delay: var(--timeline-point-delay, 0s), 0.6s;
+}
+
+.milestone[data-selected="true"] .point,
 .milestoneButton:hover .point,
 .milestoneButton:focus-visible .point {
   box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink);
+}
+
+/* The current mark never wears the selection halo — a ring around the solid
+   indigo would hand the hollow back. It is already the one indigo object on
+   the rail; the label, the detail echo, and the button's own focus outline
+   carry selection. */
+.milestone[data-state="current"][data-selected="true"] .point,
+.milestone[data-state="current"] .milestoneButton:hover .point,
+.milestone[data-state="current"] .milestoneButton:focus-visible .point {
+  box-shadow: none;
 }
 
 .milestoneLabel {
@@ -668,7 +813,7 @@ button.timeLens:focus-visible .metricAlternate {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(11rem, 0.65fr);
   gap: clamp(var(--space-6), 5vw, var(--space-10));
-  padding-block: var(--space-6) var(--space-9);
+  padding-block: var(--space-6) var(--space-8);
 }
 
 .detailLead h3,
@@ -695,24 +840,32 @@ button.timeLens:focus-visible .metricAlternate {
 .detailStatus::before {
   content: "";
   flex-shrink: 0;
-  width: 0.55rem;
-  height: 0.55rem;
+  width: var(--echo-size, 0.55rem);
+  height: var(--echo-size, 0.55rem);
   border: 1px solid var(--ink-faint);
   border-radius: var(--radius-pill);
   background: var(--paper);
 }
 
+/* The echo carries the rail's proportions, not only its colour. Size is what
+   separates a settled bead from the mark that is next — an echo that flattened
+   every state to one diameter would name the state in words and contradict it
+   in form. These are the rail's own three diameters, unscaled. */
 .detail[data-detail-state="complete"] .detailStatus::before {
+  --echo-size: 0.64rem;
   border-color: var(--ink);
   background: var(--ink);
 }
 
-.detail[data-detail-state="current"] .detailStatus::before {
-  border: 2px solid var(--accent);
+.detail[data-detail-state="current"] .detailStatus::before,
+.detail[data-detail-state="overdue"] .detailStatus::before {
+  --echo-size: 0.88rem;
+  border: 0;
+  background: var(--accent);
 }
 
 .detail[data-detail-state="overdue"] .detailStatus::before {
-  border: 2px solid var(--ink);
+  background: var(--ink);
 }
 
 .detailLead h3 {
@@ -754,18 +907,57 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .decisions {
-  width: fit-content;
-  max-width: 100%;
-  margin-block: var(--space-3) var(--space-8);
+  /* Part of the page's rhythm, not an afterthought floating in the void:
+     the fold spans the measure and hangs from its own soft rule. */
+  width: 100%;
+  margin-block: 0 var(--space-7);
+  border-block-start: 1px solid var(--hairline-soft);
+  padding-block-start: var(--space-2);
   color: var(--ink-faint);
   font-size: var(--text-body-sm);
+  interpolate-size: allow-keywords;
 }
 
+/* A disclosure must look like one: the underline register every pressable
+   text control in the artifact wears, plus a drawn marker — inline-flex on
+   summary removes the UA triangle, so the affordance is ours to provide. */
 .decisions summary {
   min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
+  border-block-end: 1px solid var(--hairline);
+  color: var(--ink-soft);
   cursor: pointer;
+  transition: color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+}
+
+.decisions summary::after {
+  content: "+";
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  transition: rotate var(--motion-fast) var(--ease-out);
+}
+
+.decisions[open] summary::after {
+  rotate: 45deg;
+}
+
+.decisions summary:hover {
+  border-block-end-color: var(--ink);
+  color: var(--ink);
+}
+
+.decisions::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    content-visibility var(--motion-base) allow-discrete,
+    block-size var(--motion-base) var(--ease-out);
+}
+
+.decisions[open]::details-content {
+  block-size: auto;
 }
 
 .decisions > div {
@@ -803,6 +995,31 @@ button.timeLens:focus-visible .metricAlternate {
   font-size: var(--text-caption);
 }
 
+.footerLink {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  border-block-end: 1px solid var(--hairline);
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+}
+
+.footerLink:hover {
+  border-block-end-color: var(--ink);
+  color: var(--ink);
+}
+
+.footerLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* The print index exists for paper only (see below). */
+.printIndex {
+  display: none;
+}
+
 .artifact[data-compact="true"] {
   --x-timeline-gutter: var(--space-4);
   --x-timeline-pitch: 5.25rem;
@@ -837,7 +1054,7 @@ button.timeLens:focus-visible .metricAlternate {
 
 .artifact[data-compact="true"] .header h1 {
   max-width: 10ch;
-  font-size: clamp(3rem, 15vw, 4.7rem);
+  font-size: var(--x-artifact-display-compact);
   line-height: 0.9;
 }
 
@@ -882,6 +1099,18 @@ button.timeLens:focus-visible .metricAlternate {
   font-size: clamp(3.8rem, 18vw, 5.1rem);
 }
 
+.artifact[data-compact="true"] .timeLens[data-metric-scale="three"] .metricPrimary strong {
+  font-size: clamp(3.3rem, 15vw, 4.4rem);
+}
+
+.artifact[data-compact="true"] .timeLens[data-metric-scale="four"] .metricPrimary strong {
+  font-size: clamp(2.9rem, 13vw, 3.8rem);
+}
+
+.artifact[data-compact="true"] .timeLens[data-metric-scale="word"] .metricPrimary strong {
+  font-size: clamp(2.6rem, 12vw, 3.5rem);
+}
+
 .artifact[data-compact="true"] .metricReceipt {
   margin-block-start: var(--space-2);
 }
@@ -906,21 +1135,6 @@ button.timeLens:focus-visible .metricAlternate {
 
 .artifact[data-compact="true"] .journey {
   margin-block-start: var(--space-7);
-}
-
-.artifact[data-compact="true"] .railFrame::after {
-  content: "";
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  z-index: 8;
-  width: var(--space-8);
-  background: linear-gradient(90deg, transparent, var(--paper));
-  pointer-events: none;
-}
-
-.artifact[data-compact="true"] .stageViewport {
-  scroll-snap-type: inline proximity;
 }
 
 .artifact[data-compact="true"] .stage {
@@ -973,7 +1187,7 @@ button.timeLens:focus-visible .metricAlternate {
 
   .header h1 {
     max-width: 10ch;
-    font-size: clamp(3rem, 15vw, 4.7rem);
+    font-size: var(--x-artifact-display-compact);
     line-height: 0.9;
   }
 
@@ -1018,6 +1232,18 @@ button.timeLens:focus-visible .metricAlternate {
     font-size: clamp(3.8rem, 18vw, 5.1rem);
   }
 
+  .timeLens[data-metric-scale="three"] .metricPrimary strong {
+    font-size: clamp(3.3rem, 15vw, 4.4rem);
+  }
+
+  .timeLens[data-metric-scale="four"] .metricPrimary strong {
+    font-size: clamp(2.9rem, 13vw, 3.8rem);
+  }
+
+  .timeLens[data-metric-scale="word"] .metricPrimary strong {
+    font-size: clamp(2.6rem, 12vw, 3.5rem);
+  }
+
   .metricAlternateViewport {
     grid-area: alternate;
     justify-self: end;
@@ -1032,7 +1258,8 @@ button.timeLens:focus-visible .metricAlternate {
     margin: 0;
   }
 
-  .artifact[data-compact="true"] .railFrame::after {
+  .railFrame::before,
+  .railFrame::after {
     display: none;
   }
 
@@ -1076,12 +1303,33 @@ button.timeLens:focus-visible .metricAlternate {
     width: 2px;
   }
 
+  /* On the stacked axis the ticks become quiet dashes on the line; their
+     labels would fight the milestone rows for the same column, so the
+     rhythm stays and the atlas text waits for wider paper. */
+  .monthTick {
+    inset-block-start: var(--timeline-position-stack, var(--timeline-position));
+    inset-inline: 1.75rem auto;
+    width: 0.5rem;
+    height: 1px;
+  }
+
+  .monthTick > span {
+    display: none;
+  }
+
+  /* The stacked axis: identical order, long quiet gaps capped by the model.
+     Everything on the rail reads the stack position; Today rode the same
+     remap in the model, so "between those two milestones" stays true. */
   .todayMarker {
-    inset-block-start: clamp(var(--space-5), var(--timeline-position), calc(100% - var(--space-5)));
+    inset-block-start: clamp(var(--space-5), var(--timeline-position-stack, var(--timeline-position)), calc(100% - var(--space-5)));
     inset-inline: 1.75rem auto;
     width: 2rem;
     height: 1px;
     translate: -50% -50%;
+  }
+
+  .todayMarker[data-today-nudged="true"] > span {
+    translate: 0 -140%;
   }
 
   .todayMarker::before {
@@ -1090,6 +1338,7 @@ button.timeLens:focus-visible .metricAlternate {
   }
 
   .todayMarker > span {
+    inset-block-start: auto;
     inset-block-end: auto;
     inset-inline-start: calc(50% + var(--space-4));
     padding-inline: var(--space-1);
@@ -1102,7 +1351,7 @@ button.timeLens:focus-visible .metricAlternate {
   }
 
   .milestone {
-    inset-block-start: var(--timeline-position);
+    inset-block-start: var(--timeline-position-stack, var(--timeline-position));
     inset-inline-start: 1.75rem;
   }
 
@@ -1124,18 +1373,11 @@ button.timeLens:focus-visible .metricAlternate {
     pointer-events: auto;
   }
 
+  /* The stacked axis reads top-to-bottom on its own; the caps earned their
+     keep horizontally but collide with the first and last labels here. */
   .startCap,
   .finishCap {
-    inset-inline-start: calc(var(--x-timeline-hit) / 2 + var(--space-4));
-  }
-
-  .startCap {
-    inset-block-start: 0;
-  }
-
-  .finishCap {
-    inset-block-start: auto;
-    inset-block-end: 0;
+    display: none;
   }
 
   .detailInner {
@@ -1195,7 +1437,7 @@ button.timeLens:focus-visible .metricAlternate {
 
   .artifact[data-density="single"] .milestone,
   .artifact[data-density="sparse"] .milestone {
-    inset-block-start: clamp(3.5rem, var(--timeline-position), calc(100% - 3.5rem));
+    inset-block-start: clamp(3.5rem, var(--timeline-position-stack, var(--timeline-position)), calc(100% - 3.5rem));
   }
 }
 
@@ -1222,9 +1464,19 @@ button.timeLens:focus-visible .metricAlternate {
   .completedRail,
   .completedRailVertical,
   .metricMotion,
-  .todayMarker {
+  .todayMarker,
+  .monthTick,
+  .footerLink,
+  .decisions summary,
+  .decisions summary::after,
+  .railFrame::before,
+  .railFrame::after {
     animation: none !important;
     scroll-behavior: auto !important;
+    transition: none !important;
+  }
+
+  .decisions::details-content {
     transition: none !important;
   }
 
@@ -1240,10 +1492,26 @@ button.timeLens:focus-visible .metricAlternate {
     padding: 0;
   }
 
+  /* Paper carries no interaction: the toggle's alternate line is a click
+     instruction, the fades are scroll affordances, and the copy control is
+     a browser verb. None of them belong on the page. */
   .productMeta button,
   .skipLink,
-  .decisions {
+  .decisions,
+  .metricAlternateViewport,
+  .railFrame::before,
+  .railFrame::after {
     display: none !important;
+  }
+
+  /* Both facts, one static line, where the alternate used to sit. */
+  .printFacts {
+    display: block;
+    margin-block-start: var(--space-2);
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    text-align: end;
   }
 
   .stageViewport {
@@ -1252,5 +1520,36 @@ button.timeLens:focus-visible .metricAlternate {
 
   .stage {
     min-width: 100%;
+  }
+
+  /* Paper has no hover, so the page carries every milestone as a ruled
+     index beneath the rail — the keepsake keeps its content. */
+  .printIndex {
+    display: grid;
+    margin: var(--space-6) 0 0;
+    padding: 0;
+    list-style: none;
+    break-inside: avoid;
+  }
+
+  .printIndex li {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding-block: var(--space-2);
+    border-block-start: 1px solid var(--hairline-soft);
+  }
+
+  .printIndex li > span {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+  }
+
+  .printIndex li > strong {
+    color: var(--ink);
+    font-size: var(--text-body-sm);
+    font-weight: var(--weight-medium);
   }
 }

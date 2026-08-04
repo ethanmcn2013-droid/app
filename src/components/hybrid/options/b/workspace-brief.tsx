@@ -238,9 +238,8 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
           </span>
         </div>
         <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
-        {/* Each fact is an unbreakable unit — a count split from its label
-            ("1 overdue · 7 / no date") reads as a different number. Wraps
-            may only land on the separators. */}
+        {/* Each count wraps with its noun (nowrap spans): "… · 7 ⏎
+            unscheduled" severed the number from its unit at 1440. */}
         <p className={styles.progressFacts}>
           <span>{completed} of {store.tasks.length} done</span>
           {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
@@ -248,8 +247,11 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
         </p>
         {coverage ? (
           <p aria-label="Budget coverage" className={styles.progressFacts}>
-            {coverage.split(/(?<=[.,])\s+/).map((segment) => (
-              <span key={segment}>{segment} </span>
+            {coverage.split(". ").map((sentence, index, all) => (
+              <span key={sentence}>
+                {sentence}
+                {index < all.length - 1 ? ". " : ""}
+              </span>
             ))}
           </p>
         ) : null}

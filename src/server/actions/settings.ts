@@ -790,6 +790,16 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
   if (role !== "owner") {
     throw new Error("Only the owner can delete this workspace.");
   }
+  // Read the slug BEFORE the row is gone. `/p/{slug}` is ISR with a 60s
+  // window, so without an explicit revalidation a deleted published workspace
+  // keeps serving its cached page — task titles, tags, and the guests' and
+  // suppliers' names in them — for up to a minute after the owner deleted it.
+  // publish and unpublish both revalidate; delete did not. E06.12, 2026-08-03.
+  const [published] = await db
+    .select({ slug: workspaces.slug, publishedAt: workspaces.publishedAt })
+    .from(workspaces)
+    .where(eq(workspaces.id, ws));
+
   // The physical legacy tasks/share tables did not consistently carry
   // workspace FKs. Delete public capabilities and task roots explicitly so a
   // Workspace deletion cannot leave a resolvable share or invisible orphan.
@@ -811,6 +821,11 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
   // Clear the cookie pointing at the now-dead workspace.
   const c = await cookies();
   c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
+  // Drop the public page immediately rather than at the end of the ISR window.
+  // Unconditional on publishedAt: a workspace published and unpublished
+  // earlier may still hold a cached entry, and revalidating a path that was
+  // never cached costs nothing.
+  if (published?.slug) revalidatePath(`/p/${published.slug}`);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "seed" });
   return { ok: true };

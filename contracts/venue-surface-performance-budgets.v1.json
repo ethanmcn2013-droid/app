@@ -1,0 +1,89 @@
+{
+  "schema": "signal-performance-budgets-contract/1",
+  "version": 1,
+  "repo": "app",
+  "setOn": "2026-08-03",
+  "setBy": "E08.10",
+  "imageRoot": "public",
+  "note": "Budgets for the venue-sponsored surfaces that live in this repo: the couple workspace (/app/**), the public artifact (/p/[slug], /s, /share, /embed) and Timeline images. The venue portal budget lives in the studio repo's copy of this contract. Every ceiling is a measured value from a real production build on the date stated, and may only be lowered. Raising one is a founder decision, not an edit.",
+  "measured": {
+    "shared_runtime": {
+      "unit": "KB gzip",
+      "budget": 170,
+      "ceiling": 247,
+      "surfaces": ["couple_workspace", "public_artifact"],
+      "what": "Client JS that every App Router route loads before any route-specific code: build-manifest rootMainFiles plus polyfillFiles.",
+      "budgetBasis": "contracts/launch-budgets.v1.json (studio repo) public.firstPartyJsGzipKb = 170, carried over unchanged rather than reinvented.",
+      "ceilingBasis": "Measured 246.1 KB gzip on the 2026-08-03 production build of branch claude/wp07-engineering. Ceiling set at 247 to absorb gzip nondeterminism across zlib versions. THE TARGET IS CURRENTLY BREACHED BY 76 KB — see evidence/E08.10-performance-budgets.md. This is recorded, not hidden."
+    },
+    "total_client_js": {
+      "unit": "KB gzip",
+      "budget": 950,
+      "ceiling": 950,
+      "surfaces": ["couple_workspace", "public_artifact"],
+      "what": "Every client chunk emitted under .next/static/chunks, gzipped.",
+      "budgetBasis": "No prior target existed anywhere in either repository. Set equal to the measured baseline so the number can only ratchet down. Choosing a real target is a founder decision and is recorded as an open question on E08.10.",
+      "ceilingBasis": "Measured 944.1 KB gzip on the 2026-08-03 production build."
+    },
+    "largest_chunk": {
+      "unit": "KB gzip",
+      "budget": 63,
+      "ceiling": 63,
+      "surfaces": ["couple_workspace", "public_artifact"],
+      "what": "The single heaviest emitted client chunk. A large chunk is the thing that blocks a slow connection even when the total looks acceptable.",
+      "budgetBasis": "No prior target existed. Set equal to the measured baseline.",
+      "ceilingBasis": "Measured 62.5 KB gzip on the 2026-08-03 production build."
+    },
+    "repo_images": {
+      "unit": "KB",
+      "budget": 200,
+      "ceiling": 200,
+      "surfaces": ["timeline_images", "public_artifact"],
+      "what": "The heaviest raster image checked into the public directory, uncompressed on disk.",
+      "budgetBasis": "200 KB is the same no-regression rule used in the studio repo. It does NOT cover couple-uploaded Timeline images, which are stored in Vercel Blob and governed by src/lib/storage-config.ts — see the unmeasured list.",
+      "ceilingBasis": "Measured on 2026-08-03: this repository's public directory holds six files and NONE of them is a raster image, so this budget currently measures an empty set. The first PNG or JPG added here starts the ratchet at 200 KB.",
+      "emptyPopulation": {
+        "expected": true,
+        "reason": "app/public contains five SVGs and one directory and no raster image at all, verified 2026-08-03. Declared so the checker prints 'no data (declared)' rather than 'ok'. An earlier version of this contract described the same fact as 'no image exceeds 200 KB', which is true of an empty set and reads as a passing measurement. That is the failure this declaration exists to prevent."
+      }
+    }
+  },
+  "unmeasured": [
+    {
+      "id": "lcp_p75_ms",
+      "budget": 2500,
+      "reason": "No RUM provider is wired. Verified 2026-08-03: neither repository has @vercel/speed-insights, @vercel/analytics, a web-vitals dependency or a useReportWebVitals call, and no CI workflow runs Lighthouse. The instrument that would measure this is Vercel Speed Insights or a Lighthouse CI job; neither exists.",
+      "budgetSource": "contracts/launch-budgets.v1.json public.lcpP75Ms"
+    },
+    {
+      "id": "inp_p75_ms",
+      "budget": 200,
+      "reason": "Same as lcp_p75_ms. INP additionally requires real user interaction and cannot be produced by a synthetic run at all.",
+      "budgetSource": "contracts/launch-budgets.v1.json public.inpP75Ms"
+    },
+    {
+      "id": "cls_p75",
+      "budget": 0.1,
+      "reason": "Same as lcp_p75_ms.",
+      "budgetSource": "contracts/launch-budgets.v1.json public.clsP75"
+    },
+    {
+      "id": "server_p75_ms",
+      "budget": 800,
+      "reason": "Requires production traffic. There is none: no founding venue has been contacted.",
+      "budgetSource": "contracts/launch-budgets.v1.json authenticated.serverP75Ms"
+    },
+    {
+      "id": "per_route_first_load_js",
+      "budget": null,
+      "reason": "Next 16 with Turbopack no longer prints the Size and First Load JS columns in the build route table, and emits no app-build-manifest.json. Per-route client weight therefore cannot be derived from build output. shared_runtime is the measurable floor that every route pays.",
+      "budgetSource": null
+    },
+    {
+      "id": "uploaded_image_delivery",
+      "budget": null,
+      "reason": "Couple-uploaded Timeline images live in Vercel Blob, not the repository. src/lib/storage-config.ts sets a 10 MB per-file cap on the free tier and 250 MB on paid. There is no per-image delivery budget, no automatic resizing rule recorded, and no format policy. Setting one is a product decision and is recorded as an open question on E08.10.",
+      "budgetSource": null
+    }
+  ]
+}

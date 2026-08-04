@@ -153,6 +153,56 @@ export function PanelShell({
     return () => document.removeEventListener("keydown", onKey, true);
   }, [open, onClose]);
 
+  // Modal focus management. aria-modal alone tells screen readers the
+  // outside is inert; it does nothing for the keyboard. On open: remember
+  // the opener and move focus into the dialog (77 Tab presses used to
+  // stand between the opened card and the panel's first control). While
+  // open: Tab cycles inside the panel. On close: focus returns to the
+  // opener when it still exists.
+  const panelRef = useRef<HTMLElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const frame = requestAnimationFrame(() => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      const first = panel.querySelector<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      (first ?? panel).focus({ preventScroll: true });
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, [open]);
+
+  const trapTab = useCallback((e: React.KeyboardEvent) => {
+    if (e.key !== "Tab" || hasOpenLayer()) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const focusables = Array.from(
+      panel.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }, []);
+
   return (
     <AnimatePresence>
       {open ? (
@@ -179,6 +229,7 @@ export function PanelShell({
               reading as a second page banner (axe: landmark-unique). */}
           <motion.section
             key="panel"
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="task-panel-title"

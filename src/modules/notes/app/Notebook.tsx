@@ -1480,7 +1480,7 @@ export function Notebook({
                   <div
                     className="note-promote-tray"
                     role="group"
-                    aria-label="Promote note"
+                    aria-label="Send this note to Tasks"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
@@ -1763,7 +1763,7 @@ export function Notebook({
                   </p>
                 ) : (
                   <p className="extract-drafted-meta">
-                    Saved. Ready to send to Signal Tasks.
+                    Saved. Ready to send to Tasks.
                   </p>
                 )}
                 <p className="extract-drafted-body">{openNote.extractBody}</p>

@@ -87,10 +87,14 @@ function extractImportPaths(source) {
 const MODULES = ["notes", "timeline", "signal"];
 
 // Map: module name → the app route segment that is allowed to import it.
+// Signal → Home consolidation (D2): the signal module's route segment is
+// /app/home — Home consumes the briefing engine and the Full Briefing
+// mounts at /app/home/briefing. The legacy /app/signal segment holds
+// pure redirects that import nothing from the module.
 const MODULE_ROUTE_SEGMENT = {
   notes: "notes",
   timeline: "timeline",
-  signal: "signal",
+  signal: "home",
 };
 
 const srcDir = path.join(root, "src");
@@ -242,7 +246,10 @@ for (const mod of MODULES) {
 // EVERY page.tsx under a module's route segment must gate access — not just
 // the top-level page (Phase 5 Opus review MINOR-1: sub-routes like
 // /app/timeline/[projectSlug] and /app/timeline/audience are module entries too).
-const MODULE_SEGMENTS = ["notes", "timeline", "signal"];
+// "home" joined at the consolidation (D2); "signal" stays listed while its
+// legacy redirect pages exist — a redirect page still gates before it
+// forwards (AD-005 applies to every /app entry, redirects included).
+const MODULE_SEGMENTS = ["notes", "timeline", "signal", "home"];
 
 const modulePages = [];
 for (const segment of MODULE_SEGMENTS) {

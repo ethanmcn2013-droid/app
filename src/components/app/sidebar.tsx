@@ -16,9 +16,9 @@ import { RailIcon } from "@/components/studio-bar/rail-icons";
 import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
 import { useCurrentUser } from "@/lib/auth-context";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   TASKS_VIEW_PATHS,
-  type ProductId,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -33,13 +33,14 @@ const VIEWS = [
 ] as const;
 
 const MOBILE_PRODUCTS: ReadonlyArray<{
-  id: ProductId;
+  id: "home" | "notes" | "tasks" | "timeline";
   label: string;
+  path: string;
 }> = [
-  { id: "notes", label: "Notes" },
-  { id: "tasks", label: "Tasks" },
-  { id: "timeline", label: "Timeline" },
-  { id: "signal", label: "Signal" },
+  { id: "home", label: "Home", path: HOME_APP_PATH },
+  { id: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
+  { id: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
+  { id: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
 ];
 
 export function AppSidebar({
@@ -362,10 +363,7 @@ function MobileTabBar({ active }: { active: string }) {
                     : "text-ink-quiet hover:bg-bg-sunken/70 hover:text-ink focus-visible:bg-bg-sunken/70 focus-visible:text-ink",
                 ].join(" ")}
                 data-product={product.id}
-                href={withSuiteContext(
-                  PRODUCT_APP_PATHS[product.id],
-                  suiteContext,
-                )}
+                href={withSuiteContext(product.path, suiteContext)}
               >
                 <RailIcon name={product.id} size={17} />
                 <span className="max-w-full truncate">{product.label}</span>

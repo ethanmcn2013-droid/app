@@ -149,8 +149,12 @@ export function ViewToolButtons({
   onToggle: (next: Exclude<ViewToolPanel, null>) => void;
   view: LabView;
 }) {
-  const { activeFilterCount } = useRoomTools();
+  const { activeFilterCount, savedViews } = useRoomTools();
   const shareView = view as ShareView;
+  // Once anything is saved, the trigger's job is retrieval as much as
+  // storage — "Save view" promised only the first half, so a saved view
+  // looked like a no-op ("a saved view you cannot reopen is not saved").
+  const hasSavedViews = savedViews.length > 0;
   return (
     <>
       <button
@@ -183,11 +187,11 @@ export function ViewToolButtons({
       <button
         aria-expanded={panel === "save"}
         onClick={() => onToggle("save")}
-        title="Save this view"
+        title={hasSavedViews ? "Your saved views" : "Save this view"}
         type="button"
       >
         <Icon name="save" size={15} />
-        Save view
+        {hasSavedViews ? `Views · ${savedViews.length}` : "Save view"}
       </button>
       <span className={`hidden lg:inline-flex ${labButtonWrap}`}>
         <ShareButton view={shareView} />
@@ -410,6 +414,18 @@ export function ViewToolPanels({
               if (!name) return;
               saveCurrentView(name, view);
               setSaveName("");
+              // A save with no confirmation reads as a no-op. The toast
+              // names the saved thing and where it now lives; the trigger
+              // itself relabels to "Views · N".
+              window.dispatchEvent(
+                new CustomEvent("tasks:toast", {
+                  detail: {
+                    title: `"${name}" saved`,
+                    body: "Reopen it any time from Views in the toolbar.",
+                    tone: "success",
+                  },
+                }),
+              );
               onClose();
             }}
           >

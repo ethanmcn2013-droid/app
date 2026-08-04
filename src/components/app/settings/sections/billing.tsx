@@ -36,7 +36,7 @@ const TIER_META: TierMeta[] = [
     id: "free",
     label: "Free",
     price: "€0",
-    blurb: "One workspace. All four products. Three editing guests.",
+    blurb: "One workspace. All three products. Three editing guests.",
     features: [
       "One workspace",
       "Board, list, calendar, and timeline views",
@@ -49,12 +49,12 @@ const TIER_META: TierMeta[] = [
     id: "workspace",
     label: "Workspace",
     price: "€12 / mo",
-    blurb: "Unlimited workspaces. Unlimited guests. All four products.",
+    blurb: "Unlimited workspaces. Unlimited guests. All three products.",
     paidTier: "workspace",
     features: [
       "Unlimited workspaces",
       "Unlimited guests and collaborators",
-      "All four products, Tasks, Roadmap, Analytics, Notes",
+      "All three products — Notes, Tasks, Timeline — with the daily briefing in Home",
       "Recurring tasks, blockers, NLP dates",
     ],
     selfServe: true,
@@ -90,13 +90,27 @@ const TIER_META: TierMeta[] = [
   {
     id: "wedding",
     label: "Wedding",
-    price: "Via venue partner",
-    blurb: "One workspace. One wedding. Twelve months. Reads forever.",
+    // Every string on this card was wrong against a ratified decision, and this is
+    // the card the sponsored couple sees. Corrected 2026-08-03 (Wave 3):
+    //   "Via venue partner"   — "partner" is a banned programme term (R-042); the
+    //                           ratified name is the Founding 25 and the couple is
+    //                           never shown a price at all (D-001).
+    //   "Twelve months"       — the term is max(redemption + 548d, wedding + 90d)
+    //   "12 months of editing"  per D-022, never a flat twelve or eighteen months.
+    //   "Reads forever"       — permanence wording, banned (D-001 p16, R-008). It also
+    //                           promised Keepsake, which does not exist in this repo:
+    //                           `grep -rni keepsake src` returns nothing. Saying nothing
+    //                           about what follows the term is the only honest option
+    //                           until it is built (D-016).
+    //   "Up to 6 collaborators" — a seat count, and D-020 grants unlimited. It was also
+    //                           false: getMemberCapacity returns max: null for this tier.
+    price: "Included by your venue",
+    blurb:
+      "One workspace. One wedding. Eighteen months, or three months past the wedding, whichever is later.",
     features: [
       "Wedding-shaped starter pack from day one",
-      "Up to 6 collaborators, partner, planner, MOH",
-      "12 months of editing for the planner",
-      "Read-only links for in-laws",
+      "Invite your spouse, your planner and your family",
+      "Read-only links for anyone who just needs to see it",
     ],
     // Granted via comp-code (LAMBSHIL flow). Not self-serve.
   },

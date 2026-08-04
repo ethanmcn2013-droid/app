@@ -530,9 +530,11 @@ describe("progressive Signal ledger adapter", () => {
       },
     );
 
+    // Consolidation: the briefing's own base moved into Home; the
+    // fallback action names the surface, never the retired product.
     assert.deepEqual(ledger.entries[0]?.primaryAction, {
-      label: "Open Signal",
-      href: "/app/signal",
+      label: "Open the briefing",
+      href: "/app/home/briefing",
     });
   });
 });

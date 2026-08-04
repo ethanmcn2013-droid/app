@@ -16,10 +16,14 @@ export function signalScopeHintFromReferer(
 
   try {
     const url = new URL(referer);
-    if (
-      url.pathname !== "/app/signal" &&
-      !url.pathname.startsWith("/app/signal/")
-    ) {
+    // The briefing lives at /app/home/briefing; stale tabs may still
+    // referer the legacy /app/signal base, which permanently redirects.
+    const isBriefingReferer =
+      url.pathname === "/app/home/briefing" ||
+      url.pathname.startsWith("/app/home/briefing/") ||
+      url.pathname === "/app/signal" ||
+      url.pathname.startsWith("/app/signal/");
+    if (!isBriefingReferer) {
       return undefined;
     }
 

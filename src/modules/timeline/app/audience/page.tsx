@@ -112,6 +112,9 @@ export default async function AudienceTimelineManagerPage({
           }))}
         publications={projectPublications}
         defaultLabel={project?.name}
+        defaultAudienceKind={
+          workspace.templateId?.includes("wedding") ? "couple" : "class"
+        }
         projectName={project?.name}
         projectSlug={project?.slug}
       />

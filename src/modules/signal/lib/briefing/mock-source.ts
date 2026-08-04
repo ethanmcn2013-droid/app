@@ -35,39 +35,47 @@ function makeMockSignals(
     workspaceId,
   });
 
+  // One story, one set of facts. Every field below restates
+  // src/server/demo/tasks-demo.ts for the same task ids, as read at the
+  // pinned review instant. Signal's flagship promise is "from Tasks" —
+  // a fixture that invents a due date or an idle streak the board
+  // disproves one click away breaks the product's core claim.
   return [
     scoped({
       id: "demo-t-01",
       title: "Confirm marquee sides with the hire company",
+      // Undated and touched within the hour — present in the read,
+      // nothing to surface. The board says exactly the same.
       lane: "in-flight",
       priority: 0,
       dueAt: null,
-      idleDays: 18,
-      commentCount: 2,
+      idleDays: 0,
+      commentCount: 0,
       blockedBy: [],
       movedToShippedAt: null,
     }),
     scoped({
       id: REVIEW_MENU_MILESTONE.sourceId,
       title: REVIEW_MENU_MILESTONE.title,
-      // This is the shared review journey's current milestone. Keeping its
-      // stalled in-flight state here makes Signal surface the same grounded
-      // work object the user just visited in Tasks and Timeline.
+      // The shared review journey's current milestone: due 1 Aug and
+      // quiet since the start of July — tasks-demo says the same, to the
+      // day. The long-quiet thread is what Signal surfaces.
       lane: "in-flight",
       priority: 1,
       dueAt: Date.parse(`${REVIEW_MENU_MILESTONE.date}T09:00:00.000Z`),
-      idleDays: 11,
-      commentCount: 5,
+      idleDays: 15,
+      commentCount: 0,
       blockedBy: [],
       movedToShippedAt: null,
     }),
     scoped({
       id: "demo-t-07",
       title: "Approve the final seating plan",
-      lane: "in-flight",
+      // In review, no due date — the board says the same.
+      lane: "review",
       priority: 1,
-      dueAt: now - 2 * DAY,
-      idleDays: 6,
+      dueAt: null,
+      idleDays: 0,
       commentCount: 1,
       blockedBy: [],
       movedToShippedAt: null,
@@ -75,32 +83,36 @@ function makeMockSignals(
     scoped({
       id: "demo-t-05",
       title: "Build the Saturday run-sheet",
+      // Due on the pinned today, worked this morning.
       lane: "in-flight",
-      priority: 2,
-      dueAt: null,
-      idleDays: 9,
-      commentCount: 0,
+      priority: 1,
+      dueAt: Date.parse("2026-07-16T09:00:00.000Z"),
+      idleDays: 0,
+      commentCount: 2,
       blockedBy: [],
       movedToShippedAt: null,
     }),
     scoped({
       id: "demo-t-06",
       title: "Order tonic + the good olives",
+      // Due Tuesday 14 Jul: two days overdue at the pinned today —
+      // exactly what the board's card says.
       lane: "in-flight",
       priority: 2,
-      dueAt: now + 12 * DAY,
+      dueAt: Date.parse("2026-07-14T09:00:00.000Z"),
       idleDays: 2,
-      commentCount: 3,
+      commentCount: 0,
       blockedBy: [],
       movedToShippedAt: null,
     }),
     scoped({
       id: "demo-t-04",
       title: "Send midweek rate to the June 2027 walk-in couple",
+      // Undated: the Friday in the task description is a follow-up plan.
       lane: "next",
       priority: 2,
-      dueAt: now + 47 * DAY,
-      idleDays: 12,
+      dueAt: null,
+      idleDays: 0,
       commentCount: 0,
       blockedBy: [],
       movedToShippedAt: null,

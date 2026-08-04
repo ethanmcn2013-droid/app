@@ -6,7 +6,11 @@ import { UserButton, useUser, useClerk } from "@clerk/nextjs";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { useHydrated } from "@/lib/use-hydrated";
-import { PRODUCT_APP_PATHS, type ProductId } from "@/lib/product-urls";
+import {
+  HOME_APP_PATH,
+  PRODUCT_APP_PATHS,
+  type SuiteSurfaceId,
+} from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 
 /**
@@ -36,14 +40,16 @@ function clearPreviewCookie() {
 }
 
 /**
- * Cross-product links, IA_COHERENCE.md §1G + §4B canon.
+ * Cross-surface links, IA_COHERENCE.md §1G + §4B canon.
  *
- * Order: notes → tasks → timeline → signal (operator-directed 2026-05-18).
- * Labels: "Open [product]" where [product] is the lowercase wordmark name.
- * Retired capability labels and title-cased product links must not return.
- * The current product is excluded via the filter below.
+ * Order: home → notes → tasks → timeline (Signal → Home consolidation,
+ * D4: Signal left the product line; the briefing lives inside Home).
+ * Labels: "Open [surface]" where [surface] is the lowercase wordmark
+ * name. Retired capability labels and title-cased product links must
+ * not return. The current surface is excluded via the filter below.
  */
-const PRODUCTS: { slug: ProductId; label: string; path: string }[] = [
+const PRODUCTS: { slug: SuiteSurfaceId; label: string; path: string }[] = [
+  { slug: "home", label: "Open home", path: HOME_APP_PATH },
   { slug: "notes", label: "Open notes", path: PRODUCT_APP_PATHS.notes },
   { slug: "tasks", label: "Open tasks", path: PRODUCT_APP_PATHS.tasks },
   {
@@ -51,7 +57,6 @@ const PRODUCTS: { slug: ProductId; label: string; path: string }[] = [
     label: "Open timeline",
     path: PRODUCT_APP_PATHS.timeline,
   },
-  { slug: "signal", label: "Open signal", path: PRODUCT_APP_PATHS.signal },
 ];
 
 /**
@@ -155,7 +160,7 @@ function DemoUserButtonWithSuite({
   current,
   placement = "bar",
 }: {
-  current: ProductId;
+  current: SuiteSurfaceId;
   placement?: "bar" | "rail";
 }) {
   const suiteContext = useSuiteContext();
@@ -211,7 +216,7 @@ function ClerkUserButtonWithSuite({
   current,
   placement,
 }: {
-  current: ProductId;
+  current: SuiteSurfaceId;
   placement: "bar" | "rail";
 }) {
   const suiteContext = useSuiteContext();
@@ -297,7 +302,7 @@ export function UserButtonWithSuite({
   current,
   placement = "bar",
 }: {
-  current: ProductId;
+  current: SuiteSurfaceId;
   /** Where the avatar is mounted. "rail" flips the demo menu upward so it
    *  clears the viewport from the foot of the left product rail. The Clerk
    *  UserButton auto-positions its own popover, so it ignores this. */

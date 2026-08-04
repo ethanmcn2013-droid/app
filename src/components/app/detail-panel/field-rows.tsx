@@ -21,6 +21,12 @@ import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { useCurrentUser } from "@/lib/auth-context";
 import { useColumnConfig, useWorkspaceMembers } from "@/lib/domain-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { useWorkspaceAnchor, useWorkspaceMembers } from "@/lib/domain-context";
+import {
+  describeAnchorFromToday,
+  relateDueToAnchor,
+  toCalendarDate,
+} from "@/lib/tasks/anchor-due";
 import { sendNudgeAction } from "@/server/actions/nudge";
 import { FIELD_CHIP, FIELD_CHIP_ACTIVE } from "./chip";
 import { Popover } from "./popover";
@@ -323,6 +329,8 @@ export function AssigneesRow({ task }: { task: Task }) {
   // fixtures.ts — the views' assign menus carry the same rule).
   const members = useWorkspaceMembers();
   const assigned = task.assignees;
+  const nameFor = (id: string) =>
+    members.find((member) => member.id === id)?.name ?? USERS[id].name;
   // Show Nudge button only when there is at least one assignee that is not
   // the current user — hidden entirely when task has no other assignee.
   const hasOtherAssignee = assigned.some((a) => a !== me);
@@ -390,7 +398,13 @@ export function AssigneesRow({ task }: { task: Task }) {
           </button>
         )}
       >
-        {() => (
+        {() =>
+          members.length === 0 ? (
+            <p className="px-2 py-1.5 text-[12.5px] text-ink-quiet">
+              No one else is in this workspace yet. Invite someone from
+              Settings, then assign the task to them.
+            </p>
+          ) : (
           <ul className="text-[12.5px]">
             {members.map((member) => {
               const isAssigned = assigned.includes(member.id);
@@ -431,7 +445,8 @@ export function AssigneesRow({ task }: { task: Task }) {
               </li>
             ) : null}
           </ul>
-        )}
+          )
+        }
       </Popover>
       {hasOtherAssignee ? <NudgeButton taskId={task.id} /> : null}
     </div>
@@ -662,8 +677,18 @@ function sameRecurrence(
 export function DueRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const frame = useCalendarFrame();
+  const anchor = useWorkspaceAnchor();
   const current = task.dueAt ? new Date(task.dueAt) : null;
   const hasDate = Boolean(task.due || task.dueAt);
+  // A wedding workspace has one date every other date is judged by. A bare
+  // "14 May" does not say whether that is four months out or four days out;
+  // this does, in exact calendar days. Renders only when the workspace has an
+  // anchor date and the task has a structured due date, never from a guess.
+  const anchorRelation = relateDueToAnchor(
+    current ? toCalendarDate(current) : null,
+    anchor.date,
+    anchor.label,
+  );
   // `task.due` is a label denormalised at write time. Writers that bypass the
   // picker — the Notes hand-off, imports — store the raw ISO date, and a label
   // written last week ("Tomorrow") is wrong by the time it is read. The
@@ -675,6 +700,7 @@ export function DueRow({ task }: { task: Task }) {
     ? formatDueLabelOn(current, new Date(frame.nowIso))
     : task.due;
   return (
+    <div className="flex flex-col items-start gap-0.5">
     <Popover
       align="start"
       width={264}
@@ -712,6 +738,12 @@ export function DueRow({ task }: { task: Task }) {
       {(close) => (
         <DueCalendar
           value={current}
+          anchorDate={anchor.date}
+          anchorNote={describeAnchorFromToday(
+            frame.today,
+            anchor.date,
+            anchor.label,
+          )}
           onSelect={(date, label) => {
             updateTask(task.id, { due: label, dueAt: date });
             close();
@@ -729,5 +761,14 @@ export function DueRow({ task }: { task: Task }) {
         />
       )}
     </Popover>
+    {anchorRelation ? (
+      <span
+        className="text-[11px] text-ink-quiet"
+        data-due-anchor-relation={anchorRelation.state}
+      >
+        {anchorRelation.label}
+      </span>
+    ) : null}
+    </div>
   );
 }

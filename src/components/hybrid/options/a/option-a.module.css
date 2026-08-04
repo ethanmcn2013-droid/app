@@ -235,6 +235,10 @@
    on this surface is the brand ramp's 11px label size; nothing ships below it. */
 .boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 
+/* The lane track and the pinned add-column rail as one row: the rail sits
+   BESIDE the horizontal scroll, never stacked under it. */
+.boardTrack { display: flex; flex: 1; min-height: 0; }
+
 /* The board scrolls horizontally; each lane owns its vertical scroll (see
    .laneList). A ten-card lane can be read to the bottom without dragging
    its three-card neighbour out of view — the lanes are independent
@@ -304,17 +308,23 @@
   background: color-mix(in srgb, var(--lane-tone, transparent) 6%, var(--x-task-surface));
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
+  /* Two aligned rows, uniform across lanes: name + controls on the first,
+     the editable description wrapping to the second. The old single 42px
+     no-wrap row let the full-width description crush the column NAME to
+     ~2px — headers read as "● 3" with no name at all. */
   flex: 0 0 auto;
   flex-wrap: wrap;
-  gap: 0 6px;
+  align-content: center;
+  min-height: 58px;
+  gap: 2px 6px;
   justify-content: space-between;
-  padding: 0 6px 0 6px;
+  padding: 5px 6px;
   position: relative;
   z-index: 2;
 }
 .laneHeader::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
-.laneIdentity { align-items: center; display: flex; flex: 1 1 0; gap: 6px; min-height: 42px; min-width: 0; }
-.laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 650; letter-spacing: -.01em; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 6px; min-width: 0; }
+.laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 650; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The count carries the limit with it ("3/6"). The old surface showed the
    lane count and then "WIP 3/6" beside it — the same numerator twice, and
@@ -659,7 +669,10 @@
 .listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 580; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow[data-completed] .listTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
 .listTitleEdit { min-width: 120px; }
-.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+/* Absent tabular value: a quiet dash instead of a repeated word. */
+.absentValue { color: var(--x-task-text-muted); font-size: 11px; }
+
+.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
 .subtaskRows td { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); padding: 5px 12px 6px 62px; }
 .subtaskRows ul { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
 .subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 11px; gap: 6px; min-height: 25px; }
@@ -1202,12 +1215,15 @@
   box-shadow: 0 0 0 1px var(--x-task-focus);
 }
 
-/* Editable column subtext + the limit editor that borrows its slot. */
+/* Editable column subtext + the limit editor that borrows its slot.
+   flex-basis 100% wraps it onto the header's second row; the name row
+   above never competes with it for width. */
 .laneDescButton {
   background: transparent;
   border: 0;
   color: var(--x-task-text-muted);
   cursor: text;
+  flex: 1 1 100%;
   font-size: 11px;
   line-height: 1.35;
   overflow: hidden;
@@ -1219,6 +1235,7 @@
 }
 .laneDescButton:disabled { cursor: default; }
 .laneDescInput {
+  flex: 1 1 100%;
   background: var(--x-task-raised);
   border: 1px solid var(--x-task-focus);
   border-radius: 4px;
@@ -1381,6 +1398,10 @@
    the assignee name label are the only new layouts here. Row height
    (`.taskRow > th/td`) is a CSS minimum, not a cap, so a description
    line simply grows the row rather than needing its own height rule. */
+/* The title cell is a <th scope="row"> for table semantics; the UA's
+   default center/700 styling must never reach its content. */
+.taskRow th { font-weight: inherit; text-align: left; }
+
 .titleStack { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
 .listDescription { color: var(--x-task-text-muted); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .assigneeCell { align-items: center; display: flex; gap: 6px; min-width: 0; }

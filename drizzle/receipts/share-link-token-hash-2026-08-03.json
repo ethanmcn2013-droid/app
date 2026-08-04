@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "share-link-token-hash-2026-08-03",
+  "authorizedBy": "NOT YET AUTHORIZED FOR PRODUCTION. Reviewed and registered under VEF-2026 work package WP-07, task E08.06. No founder approval has been given for this migration and no tasks-migration-execution/1 receipt exists, so it must not be applied to any remote database. This review receipt authorizes local and CI application only.",
+  "reviewedBy": "Claude Code, VEF-2026 WP-07 session 2026-08-03 (E08.06, R-033)",
+  "authorizationSource": "Work-package brief for E08.06: 'Store a hash, not the token. Unique index on the hash. Constant-time comparison. The plaintext token exists only in the URL you hand out, never at rest. Migrating an existing plaintext column is a REAL migration with a real backfill and a real cutover story.' Scope is additive schema only; the data move is a separate, separately-authorized backfill script.",
+  "migrations": [
+    {
+      "id": "0027_share_link_token_hash",
+      "sha256": "a4d68de27671b09197ed88ae1e7e8cd8a52e04deafd38ccbee1f03d456b97fde",
+      "reviewedAt": "2026-08-03T00:00:00.000Z",
+      "risk": "low at apply time, and deliberately so. Two additive ADD COLUMNs plus one unique index over a column that is NULL on every existing row, which SQLite permits without collision. No existing row is modified, no column is dropped, no primary key or foreign key changes, and share_link_visits is untouched. Every existing share URL keeps working because token_scheme defaults to 'plaintext' and the dual-read resolver keeps the legacy branch. The residual risk is NOT in this migration: it is that plaintext secrets remain at rest until the separate backfill runs, and this migration does nothing on its own to remove them.",
+      "rollbackPlan": "DROP INDEX uq_share_links_token_hash; ALTER TABLE share_links DROP COLUMN token_scheme; ALTER TABLE share_links DROP COLUMN token_hash (SQLite 3.35+). Safe ONLY while every row still reads token_scheme = 'plaintext'. Once the backfill has moved any row to 'sha256', that row's secret exists nowhere and dropping token_hash destroys the only way to resolve it — the link becomes permanently dead and must be re-minted. Rolling back after a partial backfill is therefore a data-loss operation on the affected links, not a reversal. Check with: SELECT COUNT(*) FROM share_links WHERE token_scheme = 'sha256'; a non-zero result means do not roll back, roll forward.",
+      "postconditions": [
+        "token_hash column exists on share_links",
+        "token_scheme column exists on share_links",
+        "unique index uq_share_links_token_hash exists on share_links(token_hash)",
+        "every pre-existing share_links row reads token_scheme = 'plaintext'",
+        "no pre-existing share_links row has a non-null token_hash",
+        "share_link_visits row count is unchanged by this migration",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "token-hash-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('share_links') WHERE name = 'token_hash'",
+          "expected": 1
+        },
+        {
+          "id": "token-scheme-column-exists",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('share_links') WHERE name = 'token_scheme'",
+          "expected": 1
+        },
+        {
+          "id": "token-scheme-defaults-to-plaintext",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('share_links') WHERE name = 'token_scheme' AND \"notnull\" = 1 AND dflt_value = '''plaintext'''",
+          "expected": 1
+        },
+        {
+          "id": "token-hash-unique-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'index' AND name = 'uq_share_links_token_hash' AND tbl_name = 'share_links'",
+          "expected": 1
+        },
+        {
+          "id": "token-hash-index-is-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('share_links') WHERE name = 'uq_share_links_token_hash' AND \"unique\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "no-row-migrated-by-this-migration",
+          "sql": "SELECT COUNT(*) AS value FROM share_links WHERE token_scheme <> 'plaintext' OR token_hash IS NOT NULL",
+          "expected": 0
+        },
+        {
+          "id": "primary-key-still-token",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('share_links') WHERE name = 'token' AND pk = 1",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

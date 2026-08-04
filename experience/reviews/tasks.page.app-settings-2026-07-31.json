@@ -3,17 +3,17 @@
   "experienceId": "tasks.page.app-settings",
   "source": "tasks/src/app/app/settings/page.tsx",
   "materialityHash": "d9988ba395545970",
-  "reviewedAt": "2026-07-31",
-  "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
+  "reviewedAt": "2026-08-04",
+  "reviewer": "claude-fable-5 (T·126 cycle)",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-5883c3d281ebebf2ef71f2d7-aec8f7de3f0626d7.json",
-    "attestationSha256": "cd9e9c7966d4a60bf5f570c634de39feebcc942fd59892cfeec7875d76cb0f9d",
-    "runId": "tasks-playwright-5883c3d281ebebf2ef71f2d7",
-    "canonicalEvidenceSha256": "5883c3d281ebebf2ef71f2d7005a65fd28c7d4599f342704292aa764fc066d95",
-    "rawArtifactSha256": "aec8f7de3f0626d7326560a6f927609d8255a815deb64d2e5a8d309e2a10a3e0",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-8f5e9b1f0298cadf12e935f1-ea39fb9ecbf1f7c5.json",
+    "attestationSha256": "11863ddbc3ddda71444592d6a60a7c3dbdcdfdee56d21d0601fa172ab904c5f4",
+    "runId": "tasks-playwright-8f5e9b1f0298cadf12e935f1",
+    "canonicalEvidenceSha256": "8f5e9b1f0298cadf12e935f1d9031696b2b03dd36f02d262eaf5a5f8791a0e32",
+    "rawArtifactSha256": "ea39fb9ecbf1f7c54bc38446434715d2052a95919555b5fee0c0405e5f514cf5",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
-    "caseName": "populated demo workspace",
+    "caseName": "front door lands on Home",
     "projects": [
       "mobile",
       "tablet",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "No source change. The T-126 cycle advanced the fixture manifest (quick-create accessible-name assertion; share read-only proof retargeted to 'Add project'), which retires attestations pinned to the prior manifest.",
-  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); surface unchanged and passing."
+  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
+  "decision": "approve"
 }

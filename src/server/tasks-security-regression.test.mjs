@@ -189,8 +189,21 @@ test("public routes use the explicit allowlisted projection", () => {
   assert.match(publicTask, /lane:\s*task\.lane/);
   assert.match(publicTask, /priority:\s*task\.priority/);
   assert.doesNotMatch(publicTask, /\.assignees|\.description|\.cents|\.workspaceId|\.sourceNoteId/);
-  assert.match(queries, /const taskList = \(await getTasks\(ws\.id\)\)\.map\(toPublicTask\)/);
-  assert.match(queries, /tasks:\s*taskList\.map\(toPublicTask\)/);
+  // The projection call sites take toPublicTask through a lambda now: the
+  // share path passes the serving instant (for the derived overdue flag,
+  // never the timestamp) and the /p path passes none. The property this
+  // test guards is unchanged — every public payload flows through the
+  // toPublicTask allowlist.
+  assert.match(
+    queries,
+    /const taskList = \(await getTasks\(ws\.id\)\)\.map\(\(task\) => toPublicTask\(task\)\)/,
+  );
+  assert.match(
+    queries,
+    /const publicTasks = taskList\.map\(\(task\) => toPublicTask\(task, servedAt\)\)/,
+  );
+  assert.match(queries, /tasks:\s*publicTasks/);
+  assert.match(queries, /toPublicTask\(task, demoNow\)/);
   assertDemoGuardBefore(
     queries,
     "getPublishedWorkspaceBySlug",

@@ -73,7 +73,7 @@ export function SignalNotificationsPage() {
               transition-colors, which also animates outline-color and made
               the focus ring fade in. */}
           <Link
-            href="/app/signal"
+            href="/app/home/briefing"
             className="mt-2 inline-flex min-h-[44px] items-center text-[13px] font-medium transition-[color] hover:text-[color:var(--ink)]"
             style={{ color: "var(--ink)" }}
           >

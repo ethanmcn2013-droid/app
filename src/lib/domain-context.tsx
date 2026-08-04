@@ -43,6 +43,12 @@ type DomainCtx = {
    *  getWorkspaceMemberMeta() in the layout. The assign menu and avatar
    *  stacks hydrate from this — never from design-lab fixtures. */
   members: WorkspaceMemberMeta[];
+  /** The workspace's one anchor date (`workspaces.primary_date`) and the noun
+   *  it is known by (`primary_date_label`). In a wedding workspace this is the
+   *  wedding day. Null when the workspace has never had one set: consumers
+   *  render nothing rather than inventing a date. */
+  anchorDate: string | null;
+  anchorLabel: string | null;
   /** Segment-aware copy for empty states and chrome. */
   personalization: WorkspacePersonalization;
 };
@@ -60,6 +66,8 @@ export function DomainProvider({
   columnConfig,
   tagDefs,
   members,
+  anchorDate,
+  anchorLabel,
   /** @deprecated Pass columnConfig instead. Kept for callers that haven't
    *  migrated yet; merged into a synthetic ColumnConfig if columnConfig is absent. */
   columnNames,
@@ -80,6 +88,10 @@ export function DomainProvider({
   tagDefs?: TagDef[];
   /** Workspace members resolved by getWorkspaceMemberMeta() in the layout. */
   members?: WorkspaceMemberMeta[];
+  /** `workspaces.primary_date` — the wedding day in a wedding workspace. */
+  anchorDate?: string | null;
+  /** `workspaces.primary_date_label` — the noun the anchor is known by. */
+  anchorLabel?: string | null;
   /** Project currency + budget resolved from the workspaces row (T·124). */
   currency?: string | null;
   budgetCents?: number | null;
@@ -106,6 +118,8 @@ export function DomainProvider({
         columnConfig: resolvedConfig,
         tagDefs: tagDefs ?? [],
         members: members ?? [],
+        anchorDate: anchorDate ?? null,
+        anchorLabel: anchorLabel ?? null,
         currency: currency ?? null,
         budgetCents: budgetCents ?? null,
         personalization,
@@ -172,6 +186,20 @@ export function useProjectMoney(): { currency: string | null; budgetCents: numbe
 export function useWorkspaceMembers(): WorkspaceMemberMeta[] {
   const v = useContext(DomainContext);
   return v?.members ?? [];
+}
+
+/**
+ * The workspace's anchor date and the noun it is known by. In a wedding
+ * workspace that is the wedding day, and every due date can be read against
+ * it. Both null outside the app shell and in any workspace that has never
+ * had one set: callers render nothing rather than guess a date.
+ */
+export function useWorkspaceAnchor(): {
+  date: string | null;
+  label: string | null;
+} {
+  const v = useContext(DomainContext);
+  return { date: v?.anchorDate ?? null, label: v?.anchorLabel ?? null };
 }
 
 /** Segment-aware workspace copy, empty states, examples, titles. */

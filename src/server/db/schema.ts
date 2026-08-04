@@ -735,8 +735,34 @@ export const userPreferences = sqliteTable("user_preferences", {
  * a friendly label for the manage-links UI, and a redemption counter.
  */
 export const shareLinks = sqliteTable("share_links", {
-  /** URL-safe random token, also the primary key. */
+  /**
+   * Primary key, and the stable handle the manage-links UI and the visit
+   * log key off.
+   *
+   * E08.06 / R-033 changed what this column HOLDS, not its type or its role.
+   * Rows minted from migration 0027 onward store an opaque, non-secret public
+   * id (`sl_…`); the guest's secret lives only in the URL and only its sha256
+   * is stored, in `tokenHash`. Rows minted before 0027 still hold the raw
+   * secret here until the backfill runs — `tokenScheme` says which, per row.
+   * Never render this value as a share URL.
+   */
   token: text("token").primaryKey(),
+  /**
+   * sha256 (hex) of the guest's secret, under a unique index. Nullable only
+   * for the duration of the cutover: `plaintext`-scheme rows have not been
+   * backfilled yet. Once every row reads `sha256` this becomes the only way a
+   * link resolves.
+   */
+  tokenHash: text("token_hash"),
+  /**
+   * Which of the two shapes above this row uses. `plaintext` = pre-0027,
+   * `token` holds the secret and `tokenHash` is null. `sha256` = current.
+   * The resolver reads both; the backfill script moves rows one way only.
+   */
+  tokenScheme: text("token_scheme")
+    .$type<"plaintext" | "sha256">()
+    .notNull()
+    .default("plaintext"),
   /** Per-tenant boundary. Resolves which workspace the guest sees. */
   workspaceId: text("workspace_id"),
   /** Default view shown when the guest opens the link. */
@@ -768,6 +794,11 @@ export const shareLinks = sqliteTable("share_links", {
   // Mirror drizzle/0003_hot_indexes.sql, manage-links UI lists a
   // workspace's share links.
   index("idx_share_links_workspace_id").on(t.workspaceId),
+  // Mirror drizzle/0027_share_link_token_hash.sql. UNIQUE at the index
+  // level, not in arithmetic: two links can never resolve to one hash even
+  // under a concurrent mint. SQLite permits many NULLs in a unique index,
+  // which is what lets the not-yet-backfilled rows coexist during cutover.
+  uniqueIndex("uq_share_links_token_hash").on(t.tokenHash),
 ]);
 
 /**
