@@ -547,7 +547,7 @@ function CreateRow({ onCreate }: { onCreate: () => void }) {
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </span>
-      <span className="flex-1 text-[13px] text-ink">New task</span>
+      <span className="flex-1 text-[13px] text-ink">Add task</span>
       <kbd className="inline-flex h-[15px] select-none items-center rounded border border-line-soft bg-white px-1 font-mono text-[9.5px] text-ink-quiet">
         C
       </kbd>
@@ -615,7 +615,7 @@ function Empty({
         onClick={onCreate}
         className="mt-4 inline-flex items-center gap-2 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-colors hover:bg-ink-soft"
       >
-        New task
+        Add task
       </button>
       {matches.length > 0 ? (
         <div className="mx-auto mt-4 max-w-[300px] text-left">

@@ -259,6 +259,9 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
       {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
         <span>Milestones</span>
         <ol>
+          {/* Day-month, like every other date on screen — the old
+              `slice(5).replace("-", "/")` printed US-style "08/01", which
+              an en-IE reader parses as 8 January. */}
           {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? formatDate(task.schedule.on) : ""}</time><TaskOpenButton task={task} /></li>)}
         </ol>
         {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : null}

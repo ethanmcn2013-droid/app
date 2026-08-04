@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
@@ -31,6 +31,36 @@ export function PlanningRail({
   const calendar = useCalendarFrame();
   const menu = useTaskContextMenu();
   const [unscheduledOpen, setUnscheduledOpen] = useState(true);
+  const panelRef = useRef<HTMLElement | null>(null);
+  // Below 768px the expanded rail leaves the flow and covers the workspace
+  // (option-c.module.css). A thing that covers the workspace is a dialog:
+  // it takes focus, closes on Escape, and hands focus back. Above 768px it
+  // is an ordinary in-flow column and none of this applies.
+  const [asOverlay, setAsOverlay] = useState(false);
+  useEffect(() => {
+    if (collapsed) return;
+    const query = window.matchMedia("(max-width: 767px)");
+    const sync = () => setAsOverlay(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, [collapsed]);
+  useEffect(() => {
+    if (!asOverlay || collapsed) return;
+    const panel = panelRef.current;
+    const returnTo = document.activeElement as HTMLElement | null;
+    panel?.focus({ preventScroll: true });
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onToggle();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
+    };
+  }, [asOverlay, collapsed, onToggle]);
   const orderedIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
   const selectedDayTasks = tasks.filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, selectedDate));
@@ -71,6 +101,10 @@ export function PlanningRail({
       return;
     }
     if (event.key === " ") {
+      // Only when the row itself is focused — the same guard the views
+      // use. Without it, Space inside the row's date input toggled
+      // selection instead of typing.
+      if (event.target !== event.currentTarget) return;
       event.preventDefault();
       event.stopPropagation();
       store.toggleSelected(task.id, orderedIds, event.shiftKey);
@@ -93,18 +127,30 @@ export function PlanningRail({
         initial={{ opacity: 0 }}
         transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
       >
-        <button aria-expanded="false" className={styles.planningRailExpand} onClick={onToggle} type="button"><Icon name="arrow-left" size={14} /><span>Planning</span><strong>{unscheduled.length}</strong></button>
+        <button aria-expanded="false" aria-label={`Expand the planning rail. ${unscheduled.length} unscheduled task${unscheduled.length === 1 ? "" : "s"}.`} className={styles.planningRailExpand} onClick={onToggle} title={`${unscheduled.length} unscheduled`} type="button"><Icon name="arrow-left" size={14} /><span>Planning</span><strong>{unscheduled.length}</strong></button>
       </motion.aside>
     );
   }
 
   return (
+    <>
+    {asOverlay ? (
+      <div
+        aria-hidden
+        className={styles.planningScrim}
+        onClick={onToggle}
+      />
+    ) : null}
     <motion.aside
       animate={{ opacity: 1 }}
       aria-label="Planning rail"
+      aria-modal={asOverlay ? true : undefined}
       className={styles.planningRail}
       id="c-planning-rail"
       initial={{ opacity: 0 }}
+      ref={panelRef}
+      role={asOverlay ? "dialog" : undefined}
+      tabIndex={asOverlay ? -1 : undefined}
       transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
     >
       <header className={styles.planningRailHeader}>
@@ -119,13 +165,13 @@ export function PlanningRail({
             <span className={styles.periodStart}>{formatDate(period.startDate)}</span><span className={styles.periodEnd}>{formatDate(period.endDate)}</span><i aria-hidden="true" style={{ left: todayPosition }} /><b aria-hidden="true" style={{ left: todayPosition }} />
           </div>
           <p className={styles.periodPositionLabel}>{positionLabel}</p>
-          <div className={styles.periodStats}><span><strong>{completed}</strong> complete</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unplanned</span></div>
+          <div className={styles.periodStats}><span><strong>{completed}</strong> done</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unscheduled</span></div>
         </section>
       ) : (
         <section className={styles.currentPosition} data-empty="true">
           <header><span>Calendar position</span><strong>Not available</strong></header>
           <p>Add a start and end date to the project planning period to see time position. Tasks keep only dates you choose.</p>
-          <div className={styles.periodStats}><span><strong>{completed}</strong> complete</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unplanned</span></div>
+          <div className={styles.periodStats}><span><strong>{completed}</strong> done</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unscheduled</span></div>
         </section>
       )}
 
@@ -138,7 +184,7 @@ export function PlanningRail({
           {selectedDayTasks.length > 0 ? (
             <ul>{selectedDayTasks.slice(0, 6).map((task) => <li data-task-id={task.id} key={task.id}><TaskOpenButton task={task}>{task.title}</TaskOpenButton><ScheduleText compact task={task} /></li>)}</ul>
           ) : <p>No dated work on this day.</p>}
-          <button disabled={store.readOnly} onClick={() => store.addTask("queued", { kind: "due", dueOn: selectedDate })} type="button"><Icon name="add" size={13} />Add on {formatDate(selectedDate)}</button>
+          {store.readOnly ? null : <button onClick={() => store.addTask("todo", { kind: "due", dueOn: selectedDate })} type="button"><Icon name="add" size={13} />Add on {formatDate(selectedDate)}</button>}
         </section>
       ) : null}
 
@@ -178,7 +224,7 @@ export function PlanningRail({
                 ))}
               </ul>
             ) : <p className={styles.railEmpty}><Icon name="check" size={16} /><strong>Everything has a date</strong><span>No schedule has been inferred.</span></p>}
-            <button className={styles.addUnscheduled} disabled={store.readOnly} onClick={() => store.addTask("queued")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>
+            {store.readOnly ? null : <button className={styles.addUnscheduled} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>}
           </motion.div>
         ) : null}
         </AnimatePresence>
@@ -190,5 +236,6 @@ export function PlanningRail({
       </section>
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </motion.aside>
+    </>
   );
 }

@@ -244,7 +244,15 @@ export function TasksProvider({
           try {
             await moveTaskToColumnAction(id, columnKey);
             const fresh = await (await import("@/server/actions/tasks")).getTasksAction();
-            dispatch({ type: "hydrate", tasks: fresh });
+            // Only accept the server's copy when it actually carries the move.
+            // The unconditional hydrate meant any surface whose read does not
+            // reflect the write — a deterministic demo board, a replica that
+            // has not caught up — silently reverted the operator's drag a beat
+            // after it landed, and only for custom columns, because the system
+            // lanes reconcile through withServerSync and never re-read here.
+            const landed = fresh.find((task) => task.id === id);
+            const effective = landed ? landed.boardColumnKey || landed.lane : null;
+            if (effective === columnKey) dispatch({ type: "hydrate", tasks: fresh });
           } catch (err) {
 
             console.warn("tasks: moveTaskToColumn failed; reverting", err);

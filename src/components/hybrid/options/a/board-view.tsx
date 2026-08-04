@@ -585,7 +585,13 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     if (store.readOnly) return;
     const taskId = event.dataTransfer.getData("text/task-id") || (store.drag?.kind === "board" ? store.drag.taskId : "");
     if (!taskId) return;
-    store.moveStatus(taskId, status, index);
+    // The insertion marker points before the card at `index` in the lane
+    // AS RENDERED — with the dragged card still occupying its old slot.
+    // The reorder reducer inserts after removing the card, so a downward
+    // same-lane drop landed one slot below the line it drew.
+    const fromIndex = store.tasksByStatus(status).findIndex((task) => task.id === taskId);
+    const toIndex = fromIndex >= 0 && fromIndex < index ? index - 1 : index;
+    store.moveStatus(taskId, status, toIndex);
     store.setDrag(null);
     focusTask(taskId);
   };
@@ -779,7 +785,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                       onDismiss={() => setComposing(null)}
                     />
                   ) : (
-                    <button className={styles.laneAdd} disabled={store.readOnly} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
+                    store.readOnly ? null : <button className={styles.laneAdd} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
                   )}
                 </li>
               </ul>
@@ -905,7 +911,7 @@ function BoardCard({
         items={actions}
         target={
           <article
-            aria-label={`${task.title}, ${columns.find((c) => c.key === task.status)?.name ?? task.status}`}
+            aria-label={`${task.title}, ${columns.find((c) => c.key === task.status)?.name ?? task.status}${store.selectedIds.includes(task.id) ? ", selected" : ""}`}
             className={styles.boardCard}
             data-active={store.activeId === task.id || undefined}
             data-completed={task.completed || undefined}

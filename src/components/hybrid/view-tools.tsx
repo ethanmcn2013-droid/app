@@ -36,7 +36,7 @@ import {
   isTaskOverdue,
   scheduleEnd,
 } from "./dates";
-import type { CalendarDate, LabTask, LabView } from "./types";
+import { VIEW_LABELS, type CalendarDate, type LabTask, type LabView } from "./types";
 import styles from "@/components/app/room/option-b.module.css";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
@@ -295,7 +295,7 @@ export function ViewToolPanels({
           onClose={onClose}
           panel="filter"
           subtitle="Applies to every view"
-          title="Filter the room"
+          title="Filter this project"
         >
           <div className={styles.roomFilterFields}>
             <label>
@@ -371,7 +371,7 @@ export function ViewToolPanels({
           onClose={onClose}
           panel="sort"
           subtitle="Applies to every view"
-          title="Order the room"
+          title="Order this project"
         >
           <fieldset className={styles.roomSortOptions}>
             <legend className="sr-only">Sort tasks</legend>
@@ -489,12 +489,14 @@ export function ViewToolPanels({
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                     }}
-                    title={`Open the ${entry.view} view with these filters`}
+                    // The display name, never the route key: the raw key
+                    // says "timeline", the name of a different product.
+                    title={`Open the ${VIEW_LABELS[entry.view as LabView] ?? entry.view} view with these filters`}
                     type="button"
                   >
                     {entry.name}
-                    <span style={{ color: "var(--x-task-text-muted)", marginLeft: 6, fontSize: 9, textTransform: "capitalize" }}>
-                      {entry.view}
+                    <span style={{ color: "var(--x-task-text-muted)", marginLeft: 6, fontSize: 9 }}>
+                      {VIEW_LABELS[entry.view as LabView] ?? entry.view}
                     </span>
                   </button>
                   <button
