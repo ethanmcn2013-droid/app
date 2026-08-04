@@ -69,6 +69,11 @@ jobs:
         env:
           STUDIO_REPO_PATH: ${{ github.workspace }}/studio-parity
 
+      # The parity checkout exists only for the differential step above;
+      # removed so lint never sweeps a second repository's sources.
+      - name: Remove parity checkout
+        run: rm -rf studio-parity
+
       - name: Parser unit test (informational — date-sensitive)
         run: pnpm run test:parser
         continue-on-error: true
