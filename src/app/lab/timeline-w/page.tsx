@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0806",
+  themeColor: "#0b0806", /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
 };
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -142,34 +142,34 @@ const CSS = `
   position: relative;
   isolation: isolate;
   overflow-x: clip;
-  background: #0b0806;
-  color: #f6ecd9;
+  background: #0b0806; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  color: #f6ecd9; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   --lw-font-serif: ui-serif, Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
   --lw-font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, "Liberation Mono", monospace;
   font-family: var(--lw-font-serif);
 }
 
 #lw-root [data-lw-act="1"] {
-  --lw-bg: #0b0806;
-  --lw-ink: #f6ecd9;
-  --lw-ink-soft: #d9c9a8;
-  --lw-accent: #d6a859;
+  --lw-bg: #0b0806; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink: #f6ecd9; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink-soft: #d9c9a8; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-accent: #d6a859; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   --lw-glow-rgb: 214, 168, 89;
   --lw-hairline: rgba(246, 236, 217, 0.16);
 }
 #lw-root [data-lw-act="2"] {
-  --lw-bg: #171331;
-  --lw-ink: #f3ecf6;
-  --lw-ink-soft: #cdbfe0;
-  --lw-accent: #cf9bb0;
+  --lw-bg: #171331; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink: #f3ecf6; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink-soft: #cdbfe0; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-accent: #cf9bb0; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   --lw-glow-rgb: 207, 155, 176;
   --lw-hairline: rgba(243, 236, 246, 0.16);
 }
 #lw-root [data-lw-act="3"] {
-  --lw-bg: #f3e6cc;
-  --lw-ink: #2a1c10;
-  --lw-ink-soft: #4a3722;
-  --lw-accent: #8a5a34;
+  --lw-bg: #f3e6cc; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink: #2a1c10; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-ink-soft: #4a3722; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  --lw-accent: #8a5a34; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   --lw-glow-rgb: 255, 214, 140;
   --lw-hairline: rgba(42, 28, 16, 0.14);
 }
@@ -180,8 +180,8 @@ const CSS = `
   left: 1rem;
   top: -3.5rem;
   z-index: 100;
-  background: #0b0806;
-  color: #f6ecd9;
+  background: #0b0806; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+  color: #f6ecd9; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   padding: 0.75em 1.25em;
   border-radius: 0.5em;
   font-family: var(--lw-font-mono);
@@ -221,7 +221,7 @@ const CSS = `
 #lw-root .lw-progress-fill {
   width: 100%;
   height: 0%;
-  background: linear-gradient(to bottom, #d6a859, #cf9bb0, #8a5a34);
+  background: linear-gradient(to bottom, #d6a859, #cf9bb0, #8a5a34); /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   transition: height 120ms linear;
 }
 
@@ -399,7 +399,7 @@ const CSS = `
   opacity: 0.55;
 }
 #lw-root .lw-arc-sun {
-  fill: #e0a04a;
+  fill: #e0a04a; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   filter: drop-shadow(0 0 10px rgba(224, 160, 74, 0.7));
 }
 #lw-root .lw-climax .lw-when {
@@ -447,8 +447,8 @@ const CSS = `
 }
 
 /* ── Act handoffs — a short gradient bleed into the next chapter's tone ── */
-#lw-root .lw-handoff-2 { background: linear-gradient(to bottom, var(--lw-bg) 0%, var(--lw-bg) 88%, #171331 100%); }
-#lw-root .lw-handoff-3 { background: linear-gradient(to bottom, var(--lw-bg) 0%, var(--lw-bg) 88%, #f3e6cc 100%); }
+#lw-root .lw-handoff-2 { background: linear-gradient(to bottom, var(--lw-bg) 0%, var(--lw-bg) 88%, #171331 100%); } /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
+#lw-root .lw-handoff-3 { background: linear-gradient(to bottom, var(--lw-bg) 0%, var(--lw-bg) 88%, #f3e6cc 100%); } /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
 
 /* ── Footer ────────────────────────────────────────────────────────── */
 #lw-root .lw-footer {
@@ -475,7 +475,7 @@ const CSS = `
   font-family: var(--lw-font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.04em;
-  color: #f3ecd9;
+  color: #f3ecd9; /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
   background: rgba(10, 8, 6, 0.72);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 999px;
@@ -491,7 +491,7 @@ const CSS = `
 #lw-root[data-lw-motion="armed"] .lw-reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 900ms cubic-bezier(.2,.7,.2,1), transform 900ms cubic-bezier(.2,.7,.2,1);
+  transition: opacity 900ms cubic-bezier(.2,.7,.2,1), transform 900ms cubic-bezier(.2,.7,.2,1); /* ds-allow — lab exploration palette; three Shared Timeline directions under comparison, not shipped tokens. */
 }
 #lw-root[data-lw-motion="armed"] .lw-reveal.lw-visible {
   opacity: 1;
