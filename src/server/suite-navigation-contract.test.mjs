@@ -102,12 +102,18 @@ test("Tasks owns the same product-specific document title as its siblings", () =
   );
 });
 
-test("the product rail derives ownership and carries allowlisted context hints", () => {
-  assert.match(studioRail, /productIdFromAppPath\(pathname\)/);
+test("the rail derives ownership and carries allowlisted context hints", () => {
+  // Signal → Home consolidation (D4): the rail resolves the active
+  // surface (Home included) and walks typed destination paths. Signal
+  // must never return as a rail destination.
+  assert.match(studioRail, /activeRailKey\(pathname\)/);
+  assert.match(studioRail, /suiteSurfaceFromAppPath/);
+  assert.match(studioRail, /\{ key: "home", label: "Home", path: HOME_APP_PATH \}/);
+  assert.doesNotMatch(studioRail, /\{ key: "signal"/);
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
     studioRail,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.key\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(destination\.path, suiteContext\)/,
   );
   assert.match(
     studioRail,
@@ -165,7 +171,7 @@ test("suite context subscribes before its first storage read", () => {
 });
 
 test("the Studio Bar keeps module identity when Tasks chrome data is absent", () => {
-  assert.match(studioBar, /productIdFromAppPath\(pathname\)/);
+  assert.match(studioBar, /suiteSurfaceFromAppPath\(pathname\)/);
   assert.match(
     studioBar,
     /<IdentityCell edition=\{data\?\.edition \?\? null\} \/>/,
@@ -180,7 +186,7 @@ test("the Studio Bar keeps module identity when Tasks chrome data is absent", ()
 
 test("every non-Tasks command event has one shared suite owner", () => {
   assert.match(appLayout, /<SuiteCommandRoot \/>/);
-  assert.match(suiteCommandRoot, /productIdFromAppPath\(pathname\)/);
+  assert.match(suiteCommandRoot, /suiteSurfaceFromAppPath\(pathname\)/);
   assert.match(
     suiteCommandRoot,
     /const ownsCommand = activeProduct !== "tasks"/,
@@ -239,17 +245,20 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
   assert.doesNotMatch(studioChrome, /useDomain/);
 });
 
-test("mobile sibling modules expose four canonical contextual destinations", () => {
+test("mobile suite nav exposes Home-first canonical destinations", () => {
+  // Signal → Home consolidation (D4): Home, the three products, then
+  // Project. Signal must not return as a tab.
   assert.match(appLayout, /<MobileSuiteNav \/>/);
-  assert.match(mobileSuiteNav, /if \(activeProduct === "tasks"\) return null;/);
+  assert.match(mobileSuiteNav, /if \(activeKey === "tasks"\) return null;/);
   assert.deepEqual(
-    [...mobileSuiteNav.matchAll(/\{ id: "(notes|tasks|timeline|signal)", label:/g)]
+    [...mobileSuiteNav.matchAll(/\{ id: "(home|notes|tasks|timeline|project)", label:/g)]
       .map((match) => match[1]),
-    ["notes", "tasks", "timeline", "signal"],
+    ["home", "notes", "tasks", "timeline", "project"],
   );
+  assert.doesNotMatch(mobileSuiteNav, /\{ id: "signal"/);
   assert.match(
     mobileSuiteNav,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.id\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(destination\.path, suiteContext\)/,
   );
   assert.doesNotMatch(
     mobileSuiteNav,
@@ -259,17 +268,20 @@ test("mobile sibling modules expose four canonical contextual destinations", () 
 
 test("mobile Tasks has one persistent product spine and one keyboard-complete views menu", () => {
   assert.equal((tasksSidebar.match(/<nav/g) ?? []).length, 1);
+  // Consolidation (D4): the Tasks mobile spine leads with Home and
+  // carries the three products; Signal is retired from the spine.
   assert.deepEqual(
     [
       ...tasksSidebar.matchAll(
-        /\{ id: "(notes|tasks|timeline|signal)", label: "(?:Notes|Tasks|Timeline|Signal)" \}/g,
+        /\{ id: "(home|notes|tasks|timeline)", label: "(?:Home|Notes|Tasks|Timeline)", path:/g,
       ),
     ].map((match) => match[1]),
-    ["notes", "tasks", "timeline", "signal"],
+    ["home", "notes", "tasks", "timeline"],
   );
+  assert.doesNotMatch(tasksSidebar, /\{ id: "signal"/);
   assert.match(
     tasksSidebar,
-    /withSuiteContext\(\s*PRODUCT_APP_PATHS\[product\.id\],\s*suiteContext,\s*\)/,
+    /withSuiteContext\(product\.path, suiteContext\)/,
   );
   assert.match(tasksSidebar, /aria-haspopup="menu"/);
   assert.match(tasksSidebar, /role="menu"/);

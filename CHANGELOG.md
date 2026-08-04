@@ -4,7 +4,30 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-08-04 · T·128 · tightens · one story, one clock, and a board that answers the keyboard
+## 2026-08-04 · T·129 · ships · Home is the front door, and the signal lives there now
+
+**Signal leaves the product line, not the product.** Signal Studio now
+opens on Home: a calm page that answers one question — what matters
+now? Today's Signal sits at the top, at most three things the system
+can defend: the task that went past its date, the work due today, the
+thread that has sat still too long. Each one says why it surfaced,
+where it came from, and opens the real thing in one press. Below it, a
+restrained look at what's coming up and what's waiting for review.
+When nothing needs you, Home says so plainly, with the honest count of
+what it read — a quiet day is a result, not an empty screen.
+
+The full read is one press deeper. "Open full briefing" leads to the
+same briefing that used to live behind the Signal tab — the ledger, the
+evidence, the dismissals — now at home inside Home. Nothing was lost in
+the move: the same engine reads your workspace, the same arithmetic
+keeps the count honest, and every old Signal link, bookmark and email
+lands exactly where it should.
+
+The rail now reads Home · Notes · Tasks · Timeline · Project. Three
+products, each with one job — capture the thinking, move the work, make
+the plan visible — and a front door that tells you where to start.
+Signal was never really a place to work; it was the system's voice.
+Now it speaks first thing, where you arrive.
 
 **A full pass over the four products, holding every surface to the same
 standard: nothing on screen may claim what a click can't confirm.** The

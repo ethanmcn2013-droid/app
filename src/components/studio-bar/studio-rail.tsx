@@ -26,22 +26,39 @@ import Link from "next/link";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
+  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   STUDIO_URL,
-  productIdFromAppPath,
-  type ProductId,
+  suiteSurfaceFromAppPath,
 } from "@/lib/product-urls";
 import { withSuiteContext } from "@/lib/suite-context";
 import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
-/** Internal route for each product module within the unified app. */
-const CORE_PRODUCTS: Array<{ key: ProductId; label: string }> = [
-  { key: "notes", label: "Notes" },
-  { key: "tasks", label: "Tasks" },
-  { key: "timeline", label: "Timeline" },
-  { key: "signal", label: "Signal" },
+/**
+ * Rail destinations (Signal → Home consolidation, D4): Home first, then
+ * the three products, then Project — the workspace's organisational
+ * layer. Signal is no longer a rail destination; its briefing lives
+ * inside Home at /app/home/briefing.
+ */
+const RAIL_DESTINATIONS: Array<{
+  key: "home" | "notes" | "tasks" | "timeline" | "project";
+  label: string;
+  path: string;
+}> = [
+  { key: "home", label: "Home", path: HOME_APP_PATH },
+  { key: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
+  { key: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
+  { key: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
+  { key: "project", label: "Project", path: "/app/project" },
 ];
+
+function activeRailKey(pathname: string): string {
+  if (pathname === "/app/project" || pathname.startsWith("/app/project/")) {
+    return "project";
+  }
+  return suiteSurfaceFromAppPath(pathname);
+}
 
 function ProductTile({ icon, label }: { icon: RailIconName; label: string }) {
   return (
@@ -137,30 +154,28 @@ function RailHelpMenu() {
 export function StudioRail() {
   const pathname = usePathname() ?? "";
   const suiteContext = useSuiteContext();
-  const activeProduct = productIdFromAppPath(pathname);
+  const activeKey = activeRailKey(pathname);
+  const activeProduct = suiteSurfaceFromAppPath(pathname);
 
   return (
-    <aside aria-label="Signal Studio products" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
+    <aside aria-label="Signal Studio navigation" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
       {/* The Signal Studio home mark lives once, in the Studio Bar's
           top-left cell directly above this rail — no second dot here. */}
-      <nav aria-label="Products" className={styles.railProducts}>
-        {CORE_PRODUCTS.map((product) => {
-          const active = product.key === activeProduct;
-          const href = withSuiteContext(
-            PRODUCT_APP_PATHS[product.key],
-            suiteContext,
-          );
+      <nav aria-label="Home, products and project" className={styles.railProducts}>
+        {RAIL_DESTINATIONS.map((destination) => {
+          const active = destination.key === activeKey;
+          const href = withSuiteContext(destination.path, suiteContext);
           return (
             <Link
               aria-current={active ? "page" : undefined}
               className={styles.railProduct}
               data-active={active ? "true" : undefined}
-              data-product={product.key}
-              data-tip={active ? `${product.label} · current` : `Open ${product.label}`}
+              data-product={destination.key}
+              data-tip={active ? `${destination.label} · current` : `Open ${destination.label}`}
               href={href}
-              key={product.key}
+              key={destination.key}
             >
-              <ProductTile icon={product.key} label={product.label} />
+              <ProductTile icon={destination.key} label={destination.label} />
             </Link>
           );
         })}

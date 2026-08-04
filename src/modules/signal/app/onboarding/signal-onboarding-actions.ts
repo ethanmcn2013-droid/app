@@ -19,7 +19,7 @@ import { requireSignalUser, UnauthorizedError } from "../../server/signal-auth";
 export async function completeOnboarding(formData: FormData): Promise<void> {
   // Demo/Review: skip the DB write, redirect as if onboarded.
   if (isDemoMode()) {
-    redirect("/app/signal");
+    redirect("/app/home/briefing");
   }
 
   // Module auth helper (not raw Clerk): identical in production, and the
@@ -73,5 +73,5 @@ export async function completeOnboarding(formData: FormData): Promise<void> {
       },
     });
 
-  redirect("/app/signal");
+  redirect("/app/home/briefing");
 }

@@ -8,7 +8,7 @@ import {
   STUDIO_ORIGIN,
 } from "@/lib/product-urls";
 
-type ProductSlug = "tasks" | "roadmap" | "notes" | "analytics";
+type ProductSlug = "tasks" | "roadmap" | "notes";
 type ProductGesture = "caret" | "pulse" | "sweep" | "tick";
 
 interface SuiteProduct {
@@ -20,6 +20,11 @@ interface SuiteProduct {
   gesture: ProductGesture;
 }
 
+/**
+ * The three products (Signal → Home consolidation, D4). Signal left the
+ * product line; its briefing runs through Home inside the app, and the
+ * marketing story lives at /features/daily-briefing on the studio site.
+ */
 const PRODUCTS: SuiteProduct[] = [
   {
     slug: "notes",
@@ -44,14 +49,6 @@ const PRODUCTS: SuiteProduct[] = [
     marketingUrl: PRODUCT_MARKETING_URLS.timeline,
     appUrl: PRODUCT_APP_URLS.timeline,
     gesture: "sweep",
-  },
-  {
-    slug: "analytics",
-    word: "signal",
-    clarityLine: "Attention clarity",
-    marketingUrl: PRODUCT_MARKETING_URLS.signal,
-    appUrl: PRODUCT_APP_URLS.signal,
-    gesture: "tick",
   },
 ];
 
@@ -513,7 +510,7 @@ export function SuiteLauncher({
             <div>
               <div className="sl-kicker">Switch product</div>
               <div className="sl-title">Signal Studio</div>
-              <div className="sl-system-line">Four products, one system.</div>
+              <div className="sl-system-line">Notes. Tasks. Timeline. One clear system.</div>
             </div>
           </div>
           <ul className="sl-list">

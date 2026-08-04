@@ -399,8 +399,13 @@ for (const fixture of routeCases) {
     expect(response).not.toBeNull();
     expect(response?.status()).toBe(fixture.expectedStatus ?? 200);
     if (fixture.experienceId === "tasks.page.app") {
-      await page.waitForURL("**/app/tasks");
-      await expect(page.getByRole("heading", { name: "The Orchard, events" })).toBeVisible();
+      // Signal → Home consolidation (D1/D6): /app is the front door and
+      // lands on Home. The fixture assertions repeat this; the explicit
+      // wait keeps the redirect settled before the audit begins.
+      await page.waitForURL("**/app/home");
+      await expect(
+        page.getByRole("heading", { name: "Good morning." }),
+      ).toBeVisible();
     }
     await enterDeterministicMotionMode(page);
     await page.waitForTimeout(300);

@@ -23,7 +23,7 @@ import type {
  * Mix ratios are the suite's, not invented here: 72% red matches
  * --x-task-danger and --x-timeline-alarm, 52% amber matches
  * --x-task-waiting and --x-timeline-attention, 60% green matches
- * --x-task-success. A fourth product must not invent a fifth ratio.
+ * --x-task-success. A new surface must not invent a fifth ratio.
  *
  * The entrance is CSS on server-rendered markup, deliberately not a
  * motion/react variant. A hidden-then-revealed variant ships the whole

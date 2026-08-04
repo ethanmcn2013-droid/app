@@ -1,6 +1,6 @@
 # Signal Studio consolidated app
 
-This Next.js repository serves the one Signal Studio web app. Its four products are Notes, Tasks, Timeline, and Signal.
+This Next.js repository serves the one Signal Studio web app. Its three products are Notes, Tasks, and Timeline; Home is the authenticated front door, carrying the daily briefing (Today's Signal) and the Full Briefing.
 
 ## URL contract
 
