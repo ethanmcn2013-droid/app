@@ -210,10 +210,11 @@
   overflow-wrap: anywhere;
 }
 
+/* Settled milestones recede in tone only. A strikethrough reads as
+   retraction — "We said yes" crossed out is the wrong sentence in a
+   wedding plan. The lane header already says Complete. */
 .titleButton[data-settled="true"] {
   color: color-mix(in srgb, var(--ink) 62%, var(--paper));
-  text-decoration: line-through;
-  text-decoration-color: var(--ink-ghost);
 }
 
 .titleInput {

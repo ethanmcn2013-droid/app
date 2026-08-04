@@ -4,6 +4,82 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-02 · T·127 · finishes · the artifact for the days that matter, and the template that points at one
+
+**The shared Timeline artifact repairs the three places it broke its own
+promise, and the rail's marks become a system.** On the wedding day the
+countdown now renders "Today" whole — every metric face declares a
+width class and is sized to fit its column by construction, so no value
+can clip at any width. The completed ink is drawn to the furthest
+completed dot instead of the abstract count percentage; the fill and
+the beads are one statement, on screen, on phones and in print. And a
+pasted link finally unfurls as the product: a data-free Geist card
+(wordmark, rail motif, one solid indigo mark) with viewer vocabulary —
+"A shared wedding timeline.", never "couple" as an adjective — mirrored
+into the Twitter tags that previously dropped the couple's names.
+
+A couple's artifact now opens on the countdown; progress-% stays one
+press away. The milestone marks read as four states with one grammar —
+quiet hairline rings ahead, solid beads settled, one full solid indigo
+mark for the next milestone at full strength (operator call: no hollow
+ring; a single once-only ring of light on load), and the same solid
+mark in ink when it runs late; the diagonal overdue tick is gone. The phone's vertical rail caps long empty calendar stretches
+through the same honesty mapping Today already rode, the Today chip
+negotiates for space like every label does, and hidden horizontal
+overflow earns edge fades and snap. Print grows a second page instead
+of losing six milestone titles: a ruled index of every milestone, and a
+static "22% complete · 79 days left" line where the click instruction
+used to print. Sharing prefers the platform share sheet, failure is
+visible (not screen-reader-only), and the footer attribution finally
+walks — "Made with Signal Timeline", the growth loop's missing link.
+
+The rail earns its cartography. First-of-month ticks ride the same
+distortion mapping as the milestones — the calendar and the dots can
+never disagree — and sit under the line as quiet mono capitals, sized
+to whisper. Long spans thin themselves to quarters, January carries
+the year, and every label knows when to yield: near the Today chip, at
+the rail's edges, and wherever a neighbour sits too close to read.
+The phone's vertical rail keeps the tick rhythm and drops the text.
+Around it the composition tightens — the journey breathes against the
+frame's edge, planning decisions settle full-width on their own soft
+rule, and the milestone detail closes with room to land.
+
+Owner surfaces catch up on honesty: Revoke and Unpublish take two
+presses with a named consequence, "Link live" only shows while a link
+actually works, link expiry ends at the publication's own midnight
+(never bare UTC), completed milestones lose their strikethrough,
+switching projects keeps edit mode, and the anchor countdown reaches
+tablets. The artifact's own contract test — previously wired to no
+gate and failing — is repaired, extended to the new invariants, and
+runs in `test:timeline-owner`. Names with extended-Latin glyphs stop
+falling back mid-headline (`latin-ext` ships), the artifact display
+register is ratified once as `--x-artifact-*` tokens, and the module
+sheds its orphaned dashboard-era files.
+
+The template points at the day. The wedding workspace now declares the
+one date a couple always knows, and its eight planning milestones carry
+offsets counted back from it: the venue booking most of a year out,
+headcount and suppliers in the last six weeks, the walkthrough and the
+run of show in the final week. Hand the seeding path that date and every
+milestone lands on a real day, so a first artifact opens with a
+countdown and real calendar spacing instead of flat ordinal order.
+Stated plainly: nothing in this app asks the question yet. The
+workspace-creation route that seeds a timeline has no entry point in
+this repo, so what ships now is the template, the resolver and its
+tests; the form that asks travels with that flow. `pnpm sync:templates`
+also generates the Timeline slice it always claimed to, so seeds can no
+longer drift from the canonical templates in silence.
+
+Both metric faces now state both facts: the countdown carries "2 of 9
+settled", so a couple who never presses the toggle still sees how far
+the plan has come. The milestone detail's status echo takes the rail's
+three diameters, not only its colours. Four modules left unused since
+the port from the standalone repo are resolved rather than left in
+limbo: the Timeline empty state now reads its copy from the module that
+owns it, and three dead files are gone, including a shared-update page
+model the artifact itself replaced. The full review that drove this
+cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+
 ## 2026-08-01 · T·126 · holds · experience, then design, then utility
 
 **The product north star is written down where every session reads it.**
