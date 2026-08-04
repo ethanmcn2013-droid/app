@@ -116,7 +116,12 @@ const ALLOWED = Object.freeze({
   "src/modules/signal/server/analytics/snapshots.ts": 1,
   "src/modules/signal/server/briefing/signal-read-state.ts": 3,
   "src/modules/timeline/server/sync/tasks-milestone-source.ts": 2,
-  "src/modules/timeline/server/sync/tasks-workspace-context.ts": 1,
+  // 2 as of the Wave 4 integration merge. WP-14 added the membership-check log at
+  // :125 while wiring Timeline workspace provisioning (blocker 2). Both sites are
+  // console.error with a STATIC string - no interpolation, no ids, no couple
+  // content - so neither can carry planning data into an operational log, which is
+  // what this ratchet exists to prevent.
+  "src/modules/timeline/server/sync/tasks-workspace-context.ts": 2,
   "src/modules/timeline/server/sync/tasks-workspace-prefs.ts": 1,
 });
 
