@@ -17,6 +17,7 @@ import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-
 import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
 import { activeUnscheduledTasks } from "../../planning";
+import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT } from "@/components/app/tasks-nav-state";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -61,6 +62,11 @@ function subscribePlanningOpen(listener: () => void): () => void {
   };
 }
 
+/** Non-hook read for the cross-drawer truce listener. */
+function readPlanningOpenForTruce(): boolean {
+  return readPlanningOpen();
+}
+
 function usePlanningOpen() {
   const open = useSyncExternalStore(subscribePlanningOpen, readPlanningOpen, () => false);
   const toggle = useCallback(() => {
@@ -95,6 +101,20 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
   const [columns, setColumns] = useState<ListColumn[]>(() => INITIAL_LIST_COLUMNS.map((column) => ({ ...column })));
   const [planningOpen, togglePlanning] = usePlanningOpen();
   const planningCollapsed = !planningOpen;
+  // Drawer truce: anything (the local Tasks navigation, notably) can ask
+  // the planning drawer to close; and opening planning on a phone asks
+  // the navigation drawer to yield, so two modal panels never stack.
+  useEffect(() => {
+    const onClose = () => { if (readPlanningOpenForTruce()) togglePlanning(); };
+    window.addEventListener(CLOSE_PLANNING_EVENT, onClose);
+    return () => window.removeEventListener(CLOSE_PLANNING_EVENT, onClose);
+  }, [togglePlanning]);
+  const openPlanningExclusive = () => {
+    if (planningCollapsed && window.matchMedia("(max-width: 767px)").matches) {
+      window.dispatchEvent(new CustomEvent(CLOSE_NAV_DRAWER_EVENT));
+    }
+    togglePlanning();
+  };
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(
     () => calendar.today as CalendarDate,
   );
@@ -184,7 +204,7 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
                 aria-controls="c-planning-rail"
                 aria-expanded={!planningCollapsed}
                 className={briefStyles.planningTrigger}
-                onClick={togglePlanning}
+                onClick={openPlanningExclusive}
                 title={planningCollapsed ? "Open the planning drawer" : "Close the planning drawer"}
                 type="button"
               >

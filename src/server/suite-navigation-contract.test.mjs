@@ -108,15 +108,16 @@ test("the rail derives ownership and carries allowlisted context hints", () => {
   // must never return as a rail destination.
   assert.match(studioRail, /activeRailKey\(pathname\)/);
   assert.match(studioRail, /suiteSurfaceFromAppPath/);
-  assert.match(studioRail, /\{ key: "home", label: "Home", path: HOME_APP_PATH \}/);
   assert.doesNotMatch(studioRail, /\{ key: "signal"/);
-  // Project is not a rail destination (2026-08-05): the rail lists Home
-  // and the three products only; /app/project stays routable elsewhere.
+  // The rail is a PRODUCT switcher (board pass 4): no Home, no Project —
+  // Home is the first destination of the local Tasks navigation, and
+  // /app/home and /app/project both stay routable.
+  assert.doesNotMatch(studioRail, /\{ key: "home"/);
   assert.doesNotMatch(studioRail, /\{ key: "project"/);
   assert.deepEqual(
     [...studioRail.matchAll(/\{ key: "(home|notes|tasks|timeline|project)", label:/g)]
       .map((match) => match[1]),
-    ["home", "notes", "tasks", "timeline"],
+    ["notes", "tasks", "timeline"],
   );
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
@@ -140,13 +141,14 @@ test("the rail derives ownership and carries allowlisted context hints", () => {
   }
 });
 
-test("the selected Command frame keeps search with the work and consolidates rail utilities", () => {
-  assert.match(studioBar, /data-slot="command-field"/);
-  assert.ok(
-    studioBar.indexOf('data-slot="command-field"') <
-      studioBar.indexOf('data-slot="signal-pulse"'),
-    "the command field must stay left of the reserved Signal pulse slot",
-  );
+test("search is a compact command trigger beside Add task, not a resident field", () => {
+  // Board pass 4: the persistent command field retired. Search is a quiet
+  // trigger in the right action cluster, still platform-aware, and the
+  // reserved Signal pulse slot survives in the open middle.
+  assert.doesNotMatch(studioBar, /data-slot="command-field"/);
+  assert.match(studioBar, /data-slot="search-trigger"/);
+  assert.match(studioBar, /data-slot="signal-pulse"/);
+  assert.match(studioBar, /aria-keyshortcuts="Control\+K Meta\+K"/);
   assert.match(studioBar, /aria-keyshortcuts="c"/);
   assert.match(studioBar, /bg-\[var\(--x-studio-ink-strong\)\]/);
 

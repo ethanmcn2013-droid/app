@@ -43,7 +43,6 @@ import {
   type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { StudioBarSearch } from "./studio-bar-search";
 import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
@@ -169,36 +168,10 @@ export function StudioBar() {
 
       <IdentityCell edition={data?.edition ?? null} />
 
-      {/* Selected Signal Frame B: the command field begins where the working
-          canvas begins instead of hiding in the far-right action cluster. */}
+      {/* The open black field between the wordmark and the action cluster
+          is intentional: search became an intermittent command, not a
+          resident input (board pass 4). */}
       <div className="flex min-w-0 flex-1 items-center px-3 md:px-6">
-        <button
-          type="button"
-          aria-label={commandLabel}
-          data-slot="command-field"
-          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 w-full max-w-[480px] min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.99] focus-visible:border-[var(--x-studio-accent)] md:flex pointer-coarse:h-[44px]"
-        >
-          <svg
-            aria-hidden="true"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="flex-none text-[var(--x-studio-ink-quiet)]"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--x-studio-ink-soft)]">
-            {commandLabel}…
-          </span>
-          <kbd className="flex h-[18px] flex-none select-none items-center rounded border border-white/[0.12] px-1 font-mono text-[10px] tracking-[0.02em] text-[var(--x-studio-ink-soft)]">
-            {keyLabel}
-          </kbd>
-        </button>
 
         {/* The reserved Signal pulse ("3 need you") keeps its contractual
             slot at the far edge — deliberately empty, deliberately no bell. */}
@@ -210,9 +183,36 @@ export function StudioBar() {
       </div>
 
       <div className="flex flex-none items-center gap-2 pr-3">
-        {/* Search-Expand affordance below md, where the full field is hidden:
-            the icon morphs into an inline field that seeds the palette. */}
-        <StudioBarSearch label={commandLabel} />
+        {/* Search is a quiet ghost command trigger — the palette is the
+            search surface. Label and keycap yield to the icon at narrow
+            widths; the shortcut stays platform-aware. */}
+        <button
+          type="button"
+          aria-keyshortcuts="Control+K Meta+K"
+          aria-label={commandLabel}
+          title={`${commandLabel} (${keyLabel})`}
+          data-slot="search-trigger"
+          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
+          className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg px-2 text-[var(--x-studio-ink-soft)] outline-none transition-colors duration-150 hover:bg-white/[0.06] hover:text-[var(--x-studio-ink)] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] md:h-[34px] md:min-w-0 md:px-2.5 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+        >
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="flex-none"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span className="hidden text-[13px] font-medium lg:block">Search</span>
+          <kbd className="hidden h-[17px] flex-none select-none items-center rounded border border-white/[0.12] px-[5px] font-mono text-[10px] tracking-[0.02em] text-[var(--x-studio-ink-quiet)] lg:flex">
+            {keyLabel}
+          </kbd>
+        </button>
 
         {showCreate ? (
           <button

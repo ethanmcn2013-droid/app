@@ -274,8 +274,7 @@
 /* Tooltips: keyboard and pointer, no dependency. */
 .signalRail [data-tip]::after,
 .projectsSidebar [data-tip]::after,
-.projectsDrawer [data-tip]::after,
-.sidebarStrip [data-tip]::after {
+.projectsDrawer [data-tip]::after {
   background: var(--x-studio-chrome-raised);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
@@ -303,8 +302,7 @@
 .projectsSidebar [data-tip]:focus-visible::after,
 .projectsDrawer [data-tip]:hover::after,
 .projectsDrawer [data-tip]:focus-visible::after,
-.sidebarStrip [data-tip]:hover::after,
-.sidebarStrip [data-tip]:focus-visible::after {
+.projectsDrawer [data-tip]:focus-visible::after {
   opacity: 1;
 }
 
@@ -431,7 +429,16 @@
   margin-left: auto;
 }
 
-.projectsSection { margin-top: 18px; }
+.projectsSection { margin-top: 16px; }
+.projectsLabel {
+  color: var(--x-task-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  padding: 0 8px;
+  text-transform: none;
+}
 
 .projectsHeading {
   color: var(--x-task-text-muted);
@@ -615,54 +622,11 @@
 
 .projectsSidebar :focus-visible,
 .projectsDrawer :focus-visible,
-.sidebarStrip :focus-visible {
+.projectsDrawer :focus-visible {
   outline: 2px solid var(--x-task-focus);
   outline-offset: 2px;
 }
 
-/* ── Collapsed strip and narrow-width trigger ─────────────────────────── */
-
-/* No `display` here on purpose: module rules sit outside Tailwind's
-   cascade layers, so a display:flex in this block silently overrode the
-   `hidden md:flex` utilities at the call site — the tablet-only strip
-   leaked onto phones. Each call site declares its own display. */
-.sidebarStrip {
-  align-items: center;
-  background: var(--x-task-surface);
-  border-right: 1px solid var(--x-task-border);
-  flex: 0 0 44px;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-  padding-top: 8px;
-  width: 44px;
-}
-
-.stripButton {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
-  color: var(--x-task-text-secondary);
-  cursor: pointer;
-  display: flex;
-  flex: none;
-  height: 40px;
-  justify-content: center;
-  position: relative;
-  width: 40px;
-}
-
-.stripButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-
-.stripLabel {
-  color: var(--x-task-text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  writing-mode: vertical-rl;
-}
 
 /* ── Drawer (below ~1100px) ───────────────────────────────────────────── */
 
@@ -714,8 +678,7 @@
   .disclosure { transition: none; }
   .signalRail [data-tip]::after,
   .projectsSidebar [data-tip]::after,
-  .projectsDrawer [data-tip]::after,
-  .sidebarStrip [data-tip]::after { transition: none; }
+  .projectsDrawer [data-tip]::after { transition: none; }
 }
 
 /* ── Add project inline input (T·97) ──────────────────────────────────── */

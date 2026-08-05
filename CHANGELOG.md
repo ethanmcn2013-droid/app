@@ -67,6 +67,20 @@ ghost end-cap on white, the Schedule tab wears a schedule icon, and a
 new source contract pins all of it: one Done token, header-only colour,
 money-free Planning, the retired dot.
 
+The shell pass finished the architecture. The black rail is a product
+switcher now — Notes, Tasks, Timeline, More — with Home rehoused as the
+first destination of the local Tasks panel, which finally says what it
+is: "Tasks", then Home, Inbox, My work, and a sentence-case Projects
+section. Collapsing that panel returns every pixel to the board — the
+rotated PROJECTS strip is gone — and a compact trigger on the context
+band reopens it, as a docked panel where it fits and an accessible
+drawer where it does not. The resident search field left the top bar:
+search is a quiet trigger beside Add task that opens the palette, still
+Ctrl K here and ⌘K on a Mac. The parent crumb survives every width,
+progress reads once — "2 of 10 complete" — an empty status compresses to
+176px so Done never leaves the screen, and the two drawers observe a
+truce on phones. The suite-navigation contract now pins all of it.
+
 Edges, honestly: the collapsed lane rail keeps its vertical name (44px
 against 276px is the right trade, and it is real, labelled text); the
 sidebar's drawer-mode strip keeps its vertical label for the same reason;

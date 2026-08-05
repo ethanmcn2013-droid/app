@@ -9,6 +9,8 @@
 
 import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { requestOpenNav, useNavPanelHidden } from "@/components/app/tasks-nav-state";
+import { Icon } from "../../shared/icons";
 import { useDomain } from "@/lib/domain-context";
 import { promoteLocalBrief } from "@/lib/brief/promote-local-brief";
 import { renameBoardAction } from "@/server/actions/board";
@@ -151,7 +153,6 @@ export function WorkspaceBrief({
 
   const completed = store.tasks.filter((task) => task.completed).length;
   const overdue = store.tasks.filter((task) => isTaskOverdue(task, calendar.today)).length;
-  const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
   const filteredNote = tasks.length !== store.tasks.length
     ? `${tasks.length} of ${store.tasks.length} tasks in the current view`
     : null;
@@ -188,9 +189,22 @@ export function WorkspaceBrief({
   }, []);
 
   const periodName = calendar.planningPeriod?.name ?? null;
+  const navHidden = useNavPanelHidden();
 
   return (
     <header className={styles.workspaceBrief}>
+      {navHidden ? (
+        <button
+          aria-haspopup="dialog"
+          aria-label="Open Tasks navigation"
+          className={styles.navTrigger}
+          onClick={requestOpenNav}
+          title="Open Tasks navigation"
+          type="button"
+        >
+          <Icon name="panel" size={15} />
+        </button>
+      ) : null}
       <div className={styles.workspaceIdentity}>
         {/* The parent context reads first, quietly: the person knows where
             this project sits without the Projects panel open. The period
@@ -227,8 +241,7 @@ export function WorkspaceBrief({
           {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
         </span>
         <p className={styles.briefFacts} title={filteredNote ?? undefined}>
-          <strong>{progress}% complete</strong>
-          <span>{completed} of {store.tasks.length} done</span>
+          <strong>{completed} of {store.tasks.length} complete</strong>
           {overdue > 0 ? <b>{overdue} overdue</b> : null}
         </p>
       </section>

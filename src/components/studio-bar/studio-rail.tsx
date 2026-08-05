@@ -26,7 +26,6 @@ import Link from "next/link";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
-  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   STUDIO_URL,
   suiteSurfaceFromAppPath,
@@ -36,21 +35,18 @@ import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
 /**
- * Rail destinations (Signal → Home consolidation, D4): Home first, then
- * the three products. Signal's briefing lives inside Home at
- * /app/home/briefing. "Project" left the rail 2026-08-05 (board pass 2):
- * the active project already lives in the Projects panel and the board's
- * context band, and a global rail tile named for one project's overview
- * read as a fifth product. /app/project itself remains routable — the
- * project overview is reachable from project contexts, just not from the
- * global rail.
+ * Rail destinations: the three PRODUCTS, nothing else — the rail is a
+ * product switcher, not a place list (board pass 4, 2026-08-05).
+ * "Project" left in pass 2; Home follows now: it is a suite landing,
+ * reachable as the first destination of the local Tasks navigation and
+ * from each product's own surfaces, not a sibling product. /app/home and
+ * /app/project both remain routable.
  */
 export const RAIL_DESTINATIONS: Array<{
-  key: "home" | "notes" | "tasks" | "timeline";
+  key: "notes" | "tasks" | "timeline";
   label: string;
   path: string;
 }> = [
-  { key: "home", label: "Home", path: HOME_APP_PATH },
   { key: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
   { key: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
   { key: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
@@ -161,7 +157,7 @@ export function StudioRail() {
     <aside aria-label="Signal Studio navigation" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
       {/* The Signal Studio home mark lives once, in the Studio Bar's
           top-left cell directly above this rail — no second dot here. */}
-      <nav aria-label="Home, products and project" className={styles.railProducts}>
+      <nav aria-label="Products" className={styles.railProducts}>
         {RAIL_DESTINATIONS.map((destination) => {
           const active = destination.key === activeKey;
           const href = withSuiteContext(destination.path, suiteContext);

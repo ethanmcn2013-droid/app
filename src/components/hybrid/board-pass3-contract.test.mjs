@@ -35,10 +35,34 @@ test("one canonical Done green feeds header, dot, and completion control", () =>
 });
 
 test("column colour lives in the header band only, perceptually tuned", () => {
-  assert.match(boardCss, /\.laneHeader \{[^}]*var\(--lane-tint, 5\.5%\)/s);
-  assert.match(boardCss, /var\(--lane-border-tint, 16%\)/);
+  assert.match(boardCss, /\.laneHeader \{[^}]*var\(--lane-tint, 7%\)/s);
+  assert.match(boardCss, /var\(--lane-border-tint, 18%\)/);
   // The lane body itself stays paper — no full-column wash selector.
   assert.doesNotMatch(boardCss, /\.boardLane\[data-tinted\] \{[^}]*background/s);
+});
+
+test("the shell is a product switcher with a command trigger, not a place list", () => {
+  const studioRail = read("src/components/studio-bar/studio-rail.tsx");
+  const sidebar = read("src/components/studio-bar/projects-sidebar.tsx");
+  const shellCss = read("src/components/studio-bar/signal-shell.module.css");
+  // Home and Project are gone from the rail; the three products remain.
+  assert.doesNotMatch(studioRail, /\{ key: "(home|project)"/);
+  // Home leads the local Tasks navigation, above Inbox.
+  const homeAt = sidebar.indexOf('href="/app/home"');
+  const inboxAt = sidebar.indexOf('href="/app/inbox"');
+  assert.ok(homeAt > -1 && inboxAt > -1 && homeAt < inboxAt, "Home renders above Inbox");
+  // The panel header is a quiet local label; Projects is a section label.
+  assert.match(sidebar, /styles\.sidebarTitle\}>Tasks</);
+  assert.match(sidebar, /styles\.projectsLabel\}>Projects</);
+  // No rotated strip, no reserved collapsed width, no persistent field.
+  assert.doesNotMatch(sidebar, /stripLabel/);
+  assert.doesNotMatch(shellCss, /\.stripLabel \{[^}]*writing-mode/s);
+  assert.match(sidebar, /if \(!expanded\) return null;/);
+  assert.doesNotMatch(studioBar, /data-slot="command-field"/);
+  assert.match(studioBar, /data-slot="search-trigger"/);
+  // The band offers the reopen trigger and never drops the parent crumb.
+  assert.match(workspaceBrief, /Open Tasks navigation/);
+  assert.doesNotMatch(workspaceBrief, /% complete/);
 });
 
 test("the main header states the parent / project hierarchy", () => {

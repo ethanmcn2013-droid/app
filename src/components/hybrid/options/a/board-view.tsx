@@ -728,6 +728,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               className={styles.boardLane}
               data-done={status === "done" || undefined}
               data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
+              data-empty={laneTasks.length === 0 || undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
               style={laneAccentStyle(column.color) as React.CSSProperties | undefined}

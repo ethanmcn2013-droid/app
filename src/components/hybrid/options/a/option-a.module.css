@@ -282,7 +282,14 @@
    surfaces, which is how every board people already know behaves. */
 /* The lanes scroll; the add-column rail stays pinned beside them. */
 .boardTrack { display: flex; flex: 1; min-height: 0; min-width: 0; }
-.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline-end: 8px; scrollbar-width: thin; }
+
+/* An empty status asks for less: it compresses to a readable header plus
+   its add row, and takes its full width back the moment a drag is live
+   (it is still a drop target) or work lands in it. */
+.boardLane[data-empty] { flex: 0 1 176px; min-width: 176px; }
+.boardSurface[data-drag-active] .boardLane[data-empty],
+.boardLane[data-empty][data-drop-target] { flex: 1 0 276px; min-width: 276px; }
 
 /* ── column colour ─────────────────────────────────────────────────────
    Precision-white board (2026-08-05): the lane surface is paper, full
@@ -325,8 +332,8 @@
    and the bodies below stay pure white. */
 .laneHeader {
   align-items: center;
-  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised));
-  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 16%), var(--x-task-raised));
+  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised));
+  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised));
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -438,7 +445,7 @@
   to { opacity: 1; }
 }
 
-.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised)); }
+.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); }
 .laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) calc(var(--lane-tint, 5.5%) + 3%), var(--x-task-raised)); color: var(--x-task-text); }
 .boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
 .railName { font-size: 12px; font-weight: 620; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
@@ -645,7 +652,7 @@
    `transparent` into the canvas does not tint it — it takes 6% of its
    alpha away, and a 0.94-opaque sticky header let every row scrolling
    under it print through the group name. */
-.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 16%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
+.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
 .groupRow th::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */

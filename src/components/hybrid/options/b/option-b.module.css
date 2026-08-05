@@ -45,7 +45,24 @@
 .workspaceIdentity { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
 /* Parent context: quieter than the project, separated by a low-contrast
    slash — hierarchy in one reading order, no extra band. */
-.briefCrumb { align-items: baseline; color: var(--x-task-text-secondary); display: inline-flex; flex: 0 0 auto; font-size: 13.5px; font-weight: 500; gap: 9px; white-space: nowrap; }
+.briefCrumb { align-items: baseline; color: var(--x-task-text-secondary); display: inline-flex; flex: 0 1 auto; font-size: 13.5px; font-weight: 500; gap: 9px; min-width: 0; white-space: nowrap; }
+.briefCrumb > :first-child { overflow: hidden; text-overflow: ellipsis; }
+.navTrigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 30px;
+  justify-content: center;
+  margin-right: -4px;
+  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+  width: 30px;
+}
+.navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .briefCrumb i { color: var(--x-task-ghost, var(--ink-ghost)); font-style: normal; font-weight: 400; }
 .workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 650; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12.5px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -550,10 +567,14 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 }
 
 /* Narrow desktop: the sentence goes before the numbers do. */
+/* The crumb never disappears — it truncates. The description and the
+   count sentence yield first. */
 @media (max-width: 1160px) {
   .workspaceIdentity > p { display: none; }
-  .briefCrumb { display: none; }
-  .briefFacts span { display: none; }
+  .briefCrumb > :first-child { max-width: 128px; }
+}
+@media (max-width: 900px) {
+  .briefFacts { display: none; }
 }
 
 @media (max-width: 1060px) {
