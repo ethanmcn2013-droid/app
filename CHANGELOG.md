@@ -4,6 +4,42 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-05 · T·132 · ships · the board becomes a white field, and the frame gets out of the way
+
+**The work now starts a third of the way up the screen instead of a quarter
+of the way down, and nothing on the board is louder than a task.** The
+full-column pastel washes are gone — the field is paper, and a column's
+colour lives in its pip and its name. The old three-panel header dashboard
+(progress readout, milestones module, money line) collapses to one 54px
+context band: name, description, a progress bar with the plain-English
+count, red only when something is genuinely overdue, and the project-level
+acts — Share, Planning, print — at project level. Milestones and the money
+coverage line move into the Planning drawer, which replaces the rotated
+Planning rail entirely: closed means gone, and the trigger on the band
+carries the unscheduled count. The rotated Add-column rail becomes a plain
+end-cap tile after the last lane. The permanent keyboard-legend strip —
+which printed a ⌘ glyph at Windows users — becomes a reference dialog on
+"?" and a quiet toolbar button.
+
+The cards stop lying. A finished task can no longer read "2 days overdue":
+done work states "Was due 14 Jul" in neutral ink, and open milestones speak
+plainly — "Milestone due tomorrow", "Milestone overdue by 3 days" — instead
+of the ambiguous "Milestone · 3 days ago". Queued loses the red it had
+carried since the lane was labelled "Blocked"; red is reserved for genuinely
+late or blocked work, and the List view's group bands now read from the same
+column config as the board, so one colour means one thing in every view.
+Completion is a circle that fills green and draws its check in a single
+140ms beat, honouring reduced motion.
+
+Edges, honestly: the collapsed lane rail keeps its vertical name (44px
+against 276px is the right trade, and it is real, labelled text); the
+sidebar's drawer-mode strip keeps its vertical label for the same reason;
+print and share surfaces still render the four canonical lanes only, which
+predates this cycle. Every behaviour behind the paint — column management,
+saved views, filters, the keyboard model, optimistic sync — is untouched and
+verified: the full test gate, ds-check, the first-contact language gate and
+an axe pass across all four views are green.
+
 ## 2026-08-05 · T·131 · ships · the three pillars get their instruments
 
 **Each priority in the north star now has something that can actually be run

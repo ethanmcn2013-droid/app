@@ -323,11 +323,11 @@
 /* ── Projects sidebar ─────────────────────────────────────────────────── */
 
 .projectsSidebarHost {
-  flex: 0 0 248px;
+  flex: 0 0 236px;
   height: 100%;
   overflow: hidden;
   transition: flex-basis 220ms var(--spring-glide), width 220ms var(--spring-glide);
-  width: 248px;
+  width: 236px;
 }
 
 .projectsSidebarHost[data-collapsed] {
@@ -343,7 +343,7 @@
 }
 
 .projectsSidebar {
-  background: var(--x-task-surface);
+  background: var(--x-task-raised);
   border-right: 1px solid var(--x-task-border);
   display: flex;
   flex: 0 0 100%;
@@ -426,17 +426,18 @@
 
 .navRow svg { color: var(--x-task-text-muted); }
 .navRow:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.navRow[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 630; }
+/* Selected is a mark, not a slab: a 2px indigo inset plus a 5% breath of
+   tint — the row stays typography-first. */
+.navRow[aria-current="page"] { background: color-mix(in srgb, var(--x-task-accent) 5%, transparent); color: var(--x-task-text); font-weight: 630; }
+.navRow[aria-current="page"]::before { background: var(--x-task-accent); border-radius: 999px; content: ""; height: 16px; left: 0; position: absolute; top: 50%; transform: translateY(-50%); width: 2px; }
+.navRow[aria-current="page"] svg { color: var(--x-task-accent); }
 
 .navCount {
-  background: var(--x-task-hover);
-  border-radius: 9px;
   color: var(--x-task-text-muted);
   font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
+  font-size: 10.5px;
   font-variant-numeric: tabular-nums;
   margin-left: auto;
-  padding: 2px 6px;
 }
 
 .projectsSection { margin-top: 18px; }
@@ -539,11 +540,12 @@
 .projectChildren .projectLeaf { min-height: 34px; padding-left: 25px; }
 
 .projectLeaf[aria-current="page"] {
-  background: var(--x-task-selected);
+  background: color-mix(in srgb, var(--x-task-accent) 5%, transparent);
   color: var(--x-task-text);
   cursor: pointer;
   font-weight: 630;
 }
+.projectLeaf[aria-current="page"]::before { background: var(--x-task-accent); border-radius: 999px; content: ""; height: 16px; left: 0; position: absolute; top: 50%; transform: translateY(-50%); width: 2px; }
 
 .leafCount {
   color: var(--x-task-text-muted);

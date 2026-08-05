@@ -12,6 +12,7 @@ import {
   type TaskStatus,
 } from "../../types";
 import type { BoardColumn } from "@/lib/board-columns";
+import { COLUMN_COLORS } from "@/lib/board-colors";
 import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
@@ -24,7 +25,7 @@ import {
   TaskSelection,
   TaskSignals,
 } from "../../shared/task-ui";
-import { InlineTaskTitle, KeyboardLegend, SurfaceEmpty } from "./quiet-command-components";
+import { InlineTaskTitle, SurfaceEmpty } from "./quiet-command-components";
 import {
   INITIAL_LIST_COLUMNS,
   clamp,
@@ -344,6 +345,10 @@ export function ListView({
           {groups.map((taskGroup) => {
             const isCollapsed = collapsed.has(taskGroup.key);
             const complete = taskGroup.tasks.filter((task) => task.completed).length;
+            // Status groups carry the same configured colour the board's
+            // lane does — one source (the column config), one meaning.
+            const groupColumn = group === "status" ? boardColumns.find((c) => c.key === taskGroup.key) : undefined;
+            const groupAccent = groupColumn ? COLUMN_COLORS[groupColumn.color].var ?? undefined : undefined;
             return (
               <tbody data-group={taskGroup.key} key={taskGroup.key} role="rowgroup">
                 {/*
@@ -358,14 +363,15 @@ export function ListView({
                 */}
                 <tr
                   className={styles.groupRow}
-                  data-lane-tone={group === "status" && taskGroup.key !== "todo" ? taskGroup.key : undefined}
+                  data-tinted={groupAccent ? "" : undefined}
                   role="row"
+                  style={groupAccent ? ({ "--lane-accent": groupAccent } as React.CSSProperties) : undefined}
                 >
                   <th colSpan={visibleColumns.length} role="rowheader" scope="rowgroup">
                     <div className={styles.groupBand}>
                       <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
                         <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
-                        {group === "status" ? <span className={styles.statusPip} data-status={taskGroup.key} /> : null}
+                        {group === "status" ? <span className={styles.statusPip} data-accent={groupAccent ? "" : undefined} /> : null}
                         {taskGroup.label}
                       </button>
                       <span>{taskGroup.tasks.length} tasks</span>
@@ -440,7 +446,6 @@ export function ListView({
           {tasks.length === 0 ? <tbody role="rowgroup"><tr role="row"><td colSpan={visibleColumns.length} role="cell"><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
         </table>
       </div>
-      <KeyboardLegend>Up and down navigate rows. Enter opens. Space selects. F2 edits. Shift + F10 opens actions.</KeyboardLegend>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
     </div>
   );

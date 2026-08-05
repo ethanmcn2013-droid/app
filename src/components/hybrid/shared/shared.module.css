@@ -135,8 +135,18 @@
 .completionBox:checked { background: var(--x-task-success); border-color: var(--x-task-success); }
 .completionBox:checked:hover:not(:disabled) { background: var(--x-task-success-soft); }
 .completionBox:checked:hover:not(:disabled)::before { border-color: var(--x-task-success); }
-.completionBox:checked::before { border-color: var(--x-task-raised); }
+.completionBox:checked::before { animation: completion-check-in 160ms var(--ease-out); border-color: var(--x-task-raised); transform-origin: 45% 55%; }
 .completionBox:disabled { cursor: default; opacity: .55; }
+/* The routine local settle the motion contract allows on completion: the
+   check draws in one fast beat. State lands instantly (the fill is on
+   :checked with no delay); this is acknowledgement, not theatre. */
+@keyframes completion-check-in {
+  from { opacity: 0; transform: rotate(-45deg) scale(0.4); }
+  to { opacity: 1; transform: rotate(-45deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .completionBox:checked::before { animation: none; }
+}
 .priority { align-items: center; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; gap: 5px; white-space: nowrap; }
 .priorityDot { background: var(--x-task-text-muted); border-radius: 50%; height: 6px; width: 6px; }
 .priority[data-priority="urgent"] .priorityDot { background: var(--x-task-danger); }
@@ -149,9 +159,9 @@
 .schedule[data-overdue] { color: var(--x-task-danger); font-weight: 640; }
 .schedule[data-unscheduled] { color: var(--x-task-text-muted); }
 .avatarStack { align-items: center; display: inline-flex; min-width: 0; }
-.avatar { align-items: center; background: color-mix(in srgb, var(--avatar-color) 14%, var(--x-task-raised)); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text); display: inline-flex; font-size: 11px; font-weight: 750; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
+.avatar { align-items: center; background: color-mix(in srgb, var(--avatar-color, var(--x-task-text-muted)) 16%, var(--x-task-raised)); border: 2px solid var(--x-task-raised); border-radius: 50%; color: color-mix(in srgb, var(--avatar-color, var(--x-task-text-muted)) 55%, var(--x-task-text)); display: inline-flex; font-size: 10px; font-weight: 620; height: 22px; justify-content: center; letter-spacing: .01em; margin-left: -5px; width: 22px; }
 .avatar:first-child { margin-left: 0; }
-.avatarMore { align-items: center; background: var(--x-task-hover); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text-secondary); display: inline-flex; font-size: 11px; height: 24px; justify-content: center; margin-left: -5px; width: 24px; }
+.avatarMore { align-items: center; background: var(--x-task-hover); border: 2px solid var(--x-task-raised); border-radius: 50%; color: var(--x-task-text-secondary); display: inline-flex; font-size: 10px; height: 22px; justify-content: center; margin-left: -5px; width: 22px; }
 .unassigned { color: var(--x-task-text-muted); font-size: 11px; }
 .signals { align-items: center; color: var(--x-task-text-muted); display: inline-flex; gap: 8px; }
 .signals > span { align-items: center; display: inline-flex; font-size: 11px; gap: 3px; }

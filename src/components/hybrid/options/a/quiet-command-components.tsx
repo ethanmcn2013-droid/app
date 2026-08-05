@@ -253,6 +253,3 @@ export function SurfaceEmpty({ title, body, onAdd }: { title: string; body: stri
   );
 }
 
-export function KeyboardLegend({ children }: { children: React.ReactNode }) {
-  return <div className={styles.keyboardLegend}><Icon name="command" size={13} />{children}</div>;
-}

@@ -25,7 +25,7 @@ import {
   TaskOpenButton,
   TaskSelection,
 } from "../../shared/task-ui";
-import { DateCommand, KeyboardLegend, SurfaceEmpty } from "./quiet-command-components";
+import { DateCommand, SurfaceEmpty } from "./quiet-command-components";
 import { clamp, dateSpan, focusTask } from "./quiet-command-model";
 import styles from "./option-a.module.css";
 
@@ -381,7 +381,6 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       ) : <SurfaceEmpty body="Scheduled tasks will appear here as distinct ranges, due markers, and milestones." title="No scheduled work" />}
 
       <DateCommand label="Schedule dates" task={activeTask} />
-      <KeyboardLegend>Alt + Left or Right moves one day. Add Shift to resize a range. Drag uses the same shared schedule.</KeyboardLegend>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
     </div>
   );

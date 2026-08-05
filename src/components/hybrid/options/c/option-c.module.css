@@ -70,11 +70,12 @@
 .planningRailHeader span,
 .currentPosition header span,
 .selectedDayPanel header span,
-.nextMilestone > span {
+.railMilestones header span,
+.railCosts > span {
   color: var(--x-task-text-muted);
   font-size: 11px;
   font-weight: 620;
-  letter-spacing: .12em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
@@ -574,12 +575,11 @@ thead .listTitleCell { z-index: 14; }
    10px grey boxes. This register is the suite's editorial one — paper
    ground, mono eyebrows, one hairline per idea, numbers that read like
    type rather than telemetry. Structure and behaviour are untouched. */
-.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 264px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
-.planningRailCollapsed { align-items: center; flex-basis: 44px; overflow: hidden; padding: 10px 5px; }
-.planningRailExpand { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; flex-direction: column; font: inherit; gap: 10px; padding: 6px 0; }
-.planningRailExpand:hover { color: var(--x-task-text); }
-.planningRailExpand span { font-family: var(--font-geist-mono), monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; writing-mode: vertical-rl; }
-.planningRailExpand strong { align-items: center; background: var(--x-task-accent-soft); border-radius: var(--radius-pill); color: var(--x-task-accent); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; height: 20px; justify-content: center; min-width: 20px; padding: 0 5px; }
+/* The planning drawer: docked in-flow on desktop (an allowed layout-bounds
+   exception in the motion contract), an overlay dialog below 768px. Its
+   trigger lives on the project band — closed means gone, no collapsed
+   strip claims board width. */
+.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 324px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
 .unscheduledDisclosure { overflow: hidden; }
 .planningRailHeader { align-items: flex-start; display: flex; flex: none; justify-content: space-between; padding: 18px 16px 0; }
 .planningRailHeader > div { display: flex; flex-direction: column; min-width: 0; }
@@ -635,13 +635,26 @@ thead .listTitleCell { z-index: 14; }
 .railEmpty svg { color: var(--x-task-success); grid-row: 1 / 3; }
 .railEmpty strong { color: var(--x-task-text); font-size: 12px; font-weight: 600; }
 .railEmpty span { font-size: 11px; }
-.nextMilestone { border-top: 1px solid var(--hairline-soft); margin-top: auto; padding: 16px 16px 20px; }
-.nextMilestone > span { font-family: var(--font-geist-mono), monospace; }
-.nextMilestone > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; flex-direction: column; font: inherit; margin-top: 8px; padding: 0; text-align: left; }
-.nextMilestone > button:hover strong { color: var(--x-task-accent); }
-.nextMilestone > button strong { font-size: 13px; font-weight: 620; letter-spacing: -.01em; line-height: 1.35; transition: color var(--motion-fast) var(--ease-out); }
-.nextMilestone > button small { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 5px; }
-.nextMilestone > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+/* Milestones: the project's planning record, rehoused from the old
+   header module. Past milestones stay listed, muted. */
+.railMilestones { border-top: 1px solid var(--hairline-soft); padding: 16px 16px 18px; }
+.railMilestones header { align-items: baseline; display: flex; gap: 8px; }
+.railMilestones header span { font-family: var(--font-geist-mono), monospace; }
+.railMilestones header strong { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
+.railMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 8px 0 0; padding: 0; }
+.railMilestones li { align-items: center; display: grid; gap: 10px; grid-template-columns: 44px minmax(0, 1fr); min-height: 27px; min-width: 0; }
+.railMilestones li[data-past] { opacity: .55; }
+.railMilestones time { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
+.railMilestones li > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 550; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; transition: color var(--motion-fast) var(--ease-out); white-space: nowrap; }
+.railMilestones li > button:hover { color: var(--x-task-accent); }
+.railMilestones li > button[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
+.railMilestones > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+.railMilestones > small { color: var(--x-task-text-muted); display: block; font-size: 11px; line-height: 1.4; margin-top: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Costs: the T·124 coverage sentence, owner-side only. */
+.railCosts { border-top: 1px solid var(--hairline-soft); margin-top: auto; padding: 14px 16px 18px; }
+.railCosts > span { font-family: var(--font-geist-mono), monospace; }
+.railCosts > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 7px 0 0; }
 
 .shortcutBackdrop { align-items: flex-start; background: color-mix(in srgb, var(--x-task-text) 42%, transparent); display: flex; inset: 0; justify-content: center; padding-top: 10vh; position: fixed; z-index: 120; }
 .shortcutDialog { background: var(--x-task-overlay); border: 1px solid var(--x-task-border); border-radius: 9px; box-shadow: var(--x-task-shadow); overflow: hidden; width: min(650px, calc(100vw - 56px)); }
@@ -704,9 +717,11 @@ thead .listTitleCell { z-index: 14; }
     z-index: 69;
   }
 
-  /* Expanded, the rail overlays the workspace instead of sharing the row —
-     as an in-flow 236px column it crushed the board to ~110px on a phone. */
-  .planningRail:not(.planningRailCollapsed) {
+  /* Open, the drawer overlays the workspace instead of sharing the row —
+     as an in-flow 324px column it would crush the board to ~60px on a
+     phone. Closed it renders nothing, so the workspace always gets the
+     whole width. */
+  .planningRail {
     bottom: 0;
     box-shadow: -24px 0 48px -24px rgba(20, 21, 26, 0.35);
     max-width: calc(100vw - 56px);
@@ -717,54 +732,8 @@ thead .listTitleCell { z-index: 14; }
     z-index: 70;
   }
 
-  .planningRail:not(.planningRailCollapsed):focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: -2px; }
+  .planningRail:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: -2px; }
 
-  /* Collapsed, the rail floats instead of holding a column open. It is a
-     44px tab, but as an in-flow flex item it charged every view 48px of
-     a 390px phone — the list, the board and the calendar were all laid
-     out in 342px and clipped at the right edge for a control that is shut.
-     Expanded it already overlays (above); collapsed it now does too, so
-     the workspace gets the whole width in both states.
-
-     It sits in the bottom corner rather than centred on the edge: a
-     centred tab floats over the middle of the list, which is where the
-     rows people are actually reading are. The corner above the tab bar is
-     the one place on this screen that holds nothing. */
-  .planningRailCollapsed {
-    border: 1px solid var(--x-task-border);
-    border-radius: 999px;
-    /* Clears the fixed furniture already stacked in this corner: the tab
-       bar is 61px and the review-mode banner above it is another 36px,
-       plus a gap. Measured, not guessed — a pill that lands on the banner
-       is the reason this is not simply `bottom: 12px`. */
-    bottom: 121px;
-    box-shadow: 0 8px 24px -12px rgba(20, 21, 26, 0.4);
-    flex-direction: row;
-    height: auto;
-    left: auto;
-    overflow: visible;
-    padding: 0;
-    position: fixed;
-    right: 12px;
-    top: auto;
-    width: auto;
-    z-index: 40;
-  }
-
-  .planningRailCollapsed .planningRailExpand {
-    align-items: center;
-    background: var(--x-task-raised);
-    border-radius: 999px;
-    flex-direction: row;
-    gap: 7px;
-    padding: 0 13px 0 11px;
-  }
-
-  /* A vertical word is for a vertical tab. This one lies down. */
-  .planningRailCollapsed .planningRailExpand span { writing-mode: horizontal-tb; }
-  .planningRailCollapsed .planningRailExpand svg { transform: rotate(90deg); }
-
-  .planningRailExpand,
   .planningRailHeader button {
     min-height: 44px;
     min-width: 44px;

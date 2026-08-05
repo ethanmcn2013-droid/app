@@ -4,6 +4,7 @@ import {
   addDays,
   differenceInDays,
   formatSchedule,
+  formatScheduleForTask,
   formatScheduleRelative,
   isTaskDueToday,
   isTaskOverdue,
@@ -12,7 +13,7 @@ import {
   scheduleIncludes,
 } from "./dates";
 import { LAB_TASKS } from "./fixtures";
-import type { TaskSchedule } from "./types";
+import type { CalendarDate, TaskSchedule } from "./types";
 
 test("calendar arithmetic is deterministic and date-only", () => {
   assert.equal(addDays("2026-07-16", 1), "2026-07-17");
@@ -86,4 +87,30 @@ test("completed historical work is not labelled overdue", () => {
   };
   assert.equal(isTaskOverdue(task, "2026-07-16"), false);
   assert.equal(isTaskOverdue({ ...task, completed: false }, "2026-07-16"), true);
+});
+
+test("the card sentence never calls finished work overdue", () => {
+  const base = { ...LAB_TASKS[0], id: "test-card-sentence" };
+  const doneLate = { ...base, completed: true, schedule: { kind: "due", dueOn: "2026-07-14" } as const };
+  // The completed card states the fact in neutral grammar…
+  assert.equal(formatScheduleForTask(doneLate, "2026-07-16"), "Was due 14 Jul");
+  // …while the same schedule on an open task is an alarm.
+  assert.equal(formatScheduleForTask({ ...doneLate, completed: false }, "2026-07-16"), "Overdue by 2 days");
+  assert.equal(formatScheduleForTask({ ...doneLate, completed: false }, "2026-07-15"), "Overdue by 1 day");
+  // Long-overdue work names the date instead of a day count.
+  assert.equal(formatScheduleForTask({ ...doneLate, completed: false }, "2026-07-30"), "Overdue since 14 Jul");
+  // A completed milestone keeps its date as a record, not a status.
+  const milestone = { ...base, completed: true, schedule: { kind: "milestone", on: "2026-07-10" } as const };
+  assert.equal(formatScheduleForTask(milestone, "2026-07-16"), "Milestone · 10 Jul");
+});
+
+test("open milestones read in explicit grammar", () => {
+  const base = { ...LAB_TASKS[0], id: "test-milestone-grammar", completed: false };
+  const on = (day: CalendarDate) => ({ ...base, schedule: { kind: "milestone", on: day } as const });
+  assert.equal(formatScheduleForTask(on("2026-07-16"), "2026-07-16"), "Milestone due today");
+  assert.equal(formatScheduleForTask(on("2026-07-17"), "2026-07-16"), "Milestone due tomorrow");
+  assert.equal(formatScheduleForTask(on("2026-07-20"), "2026-07-16"), "Milestone due in 4 days");
+  assert.equal(formatScheduleForTask(on("2026-07-15"), "2026-07-16"), "Milestone overdue by 1 day");
+  assert.equal(formatScheduleForTask(on("2026-07-13"), "2026-07-16"), "Milestone overdue by 3 days");
+  assert.equal(formatScheduleForTask(on("2026-08-01"), "2026-07-16"), "Milestone due 1 Aug");
 });

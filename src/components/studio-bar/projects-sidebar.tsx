@@ -465,7 +465,7 @@ function SidebarBody({
                     <span aria-hidden="true" className={styles.disclosure} data-open={open || undefined}>
                       <ShellGlyph name="chevron" size={13} />
                     </span>
-                    <span className={styles.projectName}>{group.periodName}</span>
+                    <span className={styles.projectName} title={group.periodName ?? undefined}>{group.periodName}</span>
                     {group.dateRange ? (
                       <span className={styles.projectDate}>{group.dateRange}</span>
                     ) : null}
@@ -489,7 +489,7 @@ function SidebarBody({
                             onClick={() => chooseWorkspace(w.id)}
                             type="button"
                           >
-                            <span className={styles.projectName}>{w.name}</span>
+                            <span className={styles.projectName} title={w.name}>{w.name}</span>
                             <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                               {w.taskCount}
                             </span>
@@ -521,7 +521,7 @@ function SidebarBody({
                     type="button"
                   >
                     <span aria-hidden="true" className={styles.disclosureGhost} />
-                    <span className={styles.projectName}>{w.name}</span>
+                    <span className={styles.projectName} title={w.name}>{w.name}</span>
                     <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                       {w.taskCount}
                     </span>
@@ -567,7 +567,7 @@ function SidebarBody({
                   <li key={w.id}>
                     <div className={styles.projectRowWrap}>
                       <span className={styles.projectLeaf} data-archived="true">
-                        <span className={styles.projectName}>{w.name}</span>
+                        <span className={styles.projectName} title={w.name}>{w.name}</span>
                         <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                           {w.taskCount}
                         </span>

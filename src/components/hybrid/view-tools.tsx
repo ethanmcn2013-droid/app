@@ -22,11 +22,8 @@ import {
   type RoomSortMode,
 } from "@/components/app/room/room-tools-context";
 import { Icon } from "@/components/app/room/room-icons";
-import { ShareButton } from "@/components/app/share/share-button";
-import { PageActionsOverflow } from "@/components/app/page-header";
 import { useWorkspaceMembers } from "@/lib/domain-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import type { ShareView } from "@/server/actions/share";
 import { useBoardColumns } from "./columns-context";
 import { priorityToLab } from "./adapter";
 import {
@@ -40,19 +37,6 @@ import { VIEW_LABELS, type CalendarDate, type LabTask, type LabView } from "./ty
 import styles from "@/components/app/room/option-b.module.css";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
-
-// T·97 heritage: arbitrary-variant overrides that repaint the wrapped
-// production Share/overflow trigger buttons in the lab tool-button style.
-// Targets `> div > button` so only the trigger is restyled, never the
-// popover/menu buttons inside it.
-const labButtonWrap =
-  "[&>div>button]:!h-[34px] [&>div>button]:!min-h-[34px] [&>div>button]:!rounded-md " +
-  "[&>div>button]:!border-0 [&>div>button]:!bg-transparent " +
-  "[&>div>button]:!text-[var(--x-task-text-secondary)] " +
-  "[&>div>button]:!text-[12px] [&>div>button]:!font-normal " +
-  "[&>div>button]:!px-2.5 [&>div>button]:!gap-1.5 " +
-  "hover:[&>div>button]:!text-[var(--x-task-text)] " +
-  "hover:[&>div>button]:!bg-[var(--x-task-hover)]";
 
 export type ViewToolPanel = "filter" | "sort" | "save" | null;
 
@@ -143,14 +127,12 @@ export function useVisibleLabTasks(tasks: LabTask[]): LabTask[] {
 export function ViewToolButtons({
   panel,
   onToggle,
-  view,
 }: {
   panel: ViewToolPanel;
   onToggle: (next: Exclude<ViewToolPanel, null>) => void;
   view: LabView;
 }) {
   const { activeFilterCount, savedViews } = useRoomTools();
-  const shareView = view as ShareView;
   // Once anything is saved, the trigger's job is retrieval as much as
   // storage — "Save view" promised only the first half, so a saved view
   // looked like a no-op ("a saved view you cannot reopen is not saved").
@@ -159,12 +141,14 @@ export function ViewToolButtons({
     <>
       <button
         aria-expanded={panel === "filter"}
+        data-active={activeFilterCount > 0 || undefined}
         onClick={() => onToggle("filter")}
         title="Filter this view"
         type="button"
       >
         <Icon name="filter" size={15} />
         Filter
+        {activeFilterCount > 0 ? <em aria-label={`${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`}>{activeFilterCount}</em> : null}
       </button>
       <button
         aria-expanded={panel === "sort"}
@@ -175,15 +159,6 @@ export function ViewToolButtons({
         <Icon name="sort" size={15} />
         Sort
       </button>
-      {activeFilterCount > 0 ? (
-        <button
-          className={styles.activeFilterButton}
-          onClick={() => onToggle("filter")}
-          type="button"
-        >
-          {activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"}
-        </button>
-      ) : null}
       <button
         aria-expanded={panel === "save"}
         onClick={() => onToggle("save")}
@@ -193,16 +168,6 @@ export function ViewToolButtons({
         <Icon name="save" size={15} />
         {hasSavedViews ? `Views · ${savedViews.length}` : "Save view"}
       </button>
-      <span className={`hidden lg:inline-flex ${labButtonWrap}`}>
-        <ShareButton view={shareView} />
-      </span>
-      <span className={`inline-flex ${labButtonWrap}`}>
-        <PageActionsOverflow
-          printPath={`/print/${view}`}
-          shareView={shareView}
-          showShare
-        />
-      </span>
     </>
   );
 }

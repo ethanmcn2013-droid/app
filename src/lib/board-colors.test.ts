@@ -9,16 +9,17 @@ import {
 } from "@/lib/board-colors";
 
 test("standard columns get the required default semantic colours", () => {
-  // Board order is [todo, doing, review, done] = Blocked · In Progress ·
-  // Reviewing · Done, so red · blue · amber · green.
-  assert.equal(DEFAULT_SYSTEM_COLORS.todo, "rose"); // red
+  // The board labels `todo` as Queued — a backlog, not an alarm — so it
+  // ships uncoloured; red stays reserved for blocked/overdue meaning.
+  // The working lanes keep blue · amber · green.
+  assert.equal(DEFAULT_SYSTEM_COLORS.todo, "neutral");
   assert.equal(DEFAULT_SYSTEM_COLORS.doing, "sky"); // blue
   assert.equal(DEFAULT_SYSTEM_COLORS.review, "amber");
   assert.equal(DEFAULT_SYSTEM_COLORS.done, "emerald"); // green
 });
 
 test("boardColumnColor applies the system default when no colour is saved", () => {
-  assert.equal(boardColumnColor("todo", undefined, true), "rose");
+  assert.equal(boardColumnColor("todo", undefined, true), "neutral");
   assert.equal(boardColumnColor("done", undefined, true), "emerald");
 });
 

@@ -45,7 +45,7 @@ import {
   TaskOpenButton,
   TaskSignals,
 } from "../../shared/task-ui";
-import { InlineTaskTitle, KeyboardLegend } from "./quiet-command-components";
+import { InlineTaskTitle } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
@@ -665,10 +665,12 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   };
 
   return (
-    <div aria-label="Board lanes" className={styles.boardSurface}>
+    <div
+      aria-label="Board lanes"
+      className={styles.boardSurface}
+      data-drag-active={store.drag?.kind === "board" || undefined}
+    >
       <LayoutGroup id="tasks-board">
-      {/* Row pair: the horizontal lane track and, beside it, the pinned
-          add-column rail — the rail must never stack UNDER the track. */}
       <div className={styles.boardTrack}>
       <div className={styles.boardScroll}>
         {boardColumns.map((column, columnIndex) => {
@@ -716,6 +718,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               aria-labelledby={`a-lane-${status}`}
               className={styles.boardLane}
               data-done={status === "done" || undefined}
+              data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
               style={accent ? ({ "--lane-accent": accent } as React.CSSProperties) : undefined}
@@ -731,6 +734,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 onCollapse={() => toggleCollapsed(status)}
                 onOptimisticConfigChange={setOptimisticConfig}
                 onRequestAddAfter={() => setAddingAt(columnIndex + 1)}
+                onStartCompose={() => setComposing(status)}
                 overLimit={overLimit}
                 readOnly={store.readOnly}
               />
@@ -764,9 +768,8 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
-                    <Icon name="inbox" size={18} />
                     <span>Nothing here yet</span>
-                    <small>Drag a task across, or add one below.</small>
+                    <small>Drop a task here.</small>
                   </li>
                 ) : null}
                 {/*
@@ -801,13 +804,14 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             </section>
           );
         })}
-      </div>
       {/*
-        The pinned add-column affordance sits OUTSIDE the horizontal scroll
-        track, so it is reachable without scrolling past every lane. Appends
-        by default; the per-column "+" inserts after that column instead.
+        The add-column end-cap rides inside the scroll track after the last
+        lane, aligned with the column headers — a normal horizontal tile,
+        never rotated text. Long boards keep "Add column after" in every
+        column menu, so the affordance is never more than one menu away.
+        Hidden on coarse pointers (adding columns is a desktop act).
       */}
-      <div className={styles.addColumnRail}>
+      <div className={styles.addColumnCap}>
         {addingAt === "append" ? (
           <AddColumnForm
             columns={boardColumns}
@@ -818,19 +822,19 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
         ) : (
           <button
             aria-label="Add a column"
-            className={styles.addColumnRailButton}
+            className={styles.addColumnCapButton}
             disabled={store.readOnly}
             onClick={() => setAddingAt("append")}
             type="button"
           >
-            <Icon name="add" size={15} />
-            <span>Add column</span>
+            <Icon name="add" size={14} />
+            Add column
           </button>
         )}
       </div>
       </div>
+      </div>
       </LayoutGroup>
-      <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits title.</KeyboardLegend>
     </div>
   );
 }
@@ -1023,6 +1027,7 @@ function LaneHeader({
   currentConfig,
   onOptimisticConfigChange,
   onRequestAddAfter,
+  onStartCompose,
   onCollapse,
 }: {
   column: BoardColumn;
@@ -1036,6 +1041,7 @@ function LaneHeader({
   currentConfig: ColumnConfig | null;
   onOptimisticConfigChange: (config: ColumnConfig | null) => void;
   onRequestAddAfter: () => void;
+  onStartCompose: () => void;
   onCollapse: () => void;
 }) {
   const [, startTransition] = useTransition();
@@ -1200,17 +1206,6 @@ function LaneHeader({
   return (
     <header className={styles.laneHeader}>
       <div className={styles.laneIdentity}>
-        {/* The collapse caret and the menu trigger are ALWAYS visible —
-            hover-only controls do not exist on touch screens. */}
-        <button
-          aria-expanded
-          className={`${styles.laneIconButton} ${styles.laneCollapse}`}
-          onClick={onCollapse}
-          title={`Collapse ${column.name}`}
-          type="button"
-        >
-          <Icon name="chevron-right" size={14} />
-        </button>
         <span className={styles.statusPip} data-accent={laneAccentVar(column) ? "" : undefined} />
         {editing ? (
           <input
@@ -1296,6 +1291,7 @@ function LaneHeader({
                 ))}
               </div>
               <div className={styles.laneMenuDivider} />
+              <button onClick={() => { setMenuOpen(false); onCollapse(); }} role="menuitem" type="button">Collapse column</button>
               <button disabled={readOnly || columnIndex === 0} onClick={() => move(-1)} role="menuitem" type="button">Move left</button>
               <button disabled={readOnly || columnIndex === columns.length - 1} onClick={() => move(1)} role="menuitem" type="button">Move right</button>
               <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add column after</button>
@@ -1316,15 +1312,15 @@ function LaneHeader({
             </div>
           ) : null}
         </div>
-        {/* The header "+" adds a COLUMN after this one. Adding a task is the
-            add row at the foot of the lane — one affordance each, not two
-            for tasks and none for columns. */}
+        {/* The header "+" adds a TASK to this column — the reading every
+            board tool has taught. Adding a column lives in the menu above
+            and on the end-cap after the last lane. */}
         <button
-          aria-label={`Add a column after ${column.name}`}
+          aria-label={`Add a task to ${column.name}`}
           className={styles.laneIconButton}
           disabled={readOnly}
-          onClick={onRequestAddAfter}
-          title={`Add a column after ${column.name}`}
+          onClick={onStartCompose}
+          title={`Add a task to ${column.name}`}
           type="button"
         >
           <Icon name="add" size={14} />

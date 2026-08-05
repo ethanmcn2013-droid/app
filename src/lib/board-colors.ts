@@ -81,13 +81,16 @@ export const COLUMN_COLORS: Record<
 
 /**
  * Default semantic colour for each standard system lane. Applied only
- * when a column has no explicit saved colour (see boardColumnColor). The
- * board's canonical order is [todo, doing, review, done], which reads as
- * Blocked · In Progress · Reviewing · Done — so the defaults are
- * red · blue · amber · green.
+ * when a column has no explicit saved colour (see boardColumnColor).
+ *
+ * The board labels `todo` as **Queued** — a backlog, not an alarm — so it
+ * carries no colour by default (red stays reserved for genuinely blocked
+ * or overdue states). The rose default dated from when this lane was
+ * labelled "Blocked"; an owner who wants a coloured backlog is one
+ * column-menu click away, and any explicitly saved colour still wins.
  */
 export const DEFAULT_SYSTEM_COLORS: Record<LaneId, ColumnColorKey> = {
-  todo: "rose",
+  todo: "neutral",
   doing: "sky",
   review: "amber",
   done: "emerald",

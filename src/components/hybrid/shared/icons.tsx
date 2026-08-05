@@ -4,8 +4,9 @@ export type IconName =
   | "add" | "agenda" | "arrow-left" | "arrow-right" | "attachment" | "board"
   | "calendar" | "check" | "chevron-down" | "chevron-right" | "close" | "columns"
   | "comment" | "command" | "dependency" | "density" | "fields" | "filter"
-  | "focus" | "inbox" | "list" | "milestone" | "more" | "people" | "redo"
-  | "search" | "settings" | "sort" | "spark" | "timeline" | "trash" | "undo";
+  | "focus" | "inbox" | "list" | "milestone" | "more" | "panel" | "people"
+  | "redo" | "search" | "settings" | "sort" | "spark" | "timeline" | "trash"
+  | "undo";
 
 const paths: Record<IconName, React.ReactNode> = {
   add: <><path d="M12 5v14M5 12h14" /></>,
@@ -31,6 +32,7 @@ const paths: Record<IconName, React.ReactNode> = {
   list: <><path d="M8 6h13M8 12h13M8 18h13" /><path d="M3 6h.01M3 12h.01M3 18h.01" /></>,
   milestone: <><path d="m12 3 9 9-9 9-9-9z" /></>,
   more: <><rect x="4.75" y="4.75" width="5.75" height="5.75" rx="1.5" /><rect x="13.5" y="4.75" width="5.75" height="5.75" rx="1.5" /><rect x="4.75" y="13.5" width="5.75" height="5.75" rx="1.5" /><circle cx="16.375" cy="16.375" r="2" fill="currentColor" stroke="none" /></>,
+  panel: <><rect x="3.75" y="4.75" width="16.5" height="14.5" rx="2" /><path d="M14.5 4.75v14.5" /></>,
   people: <><circle cx="9" cy="8" r="4" /><path d="M2 21a7 7 0 0 1 14 0M16 4a4 4 0 0 1 0 8M18 14a6 6 0 0 1 4 6" /></>,
   redo: <><path d="m17 2 4 4-4 4" /><path d="M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4" /><path d="M21 13v2a3 3 0 0 1-3 3H3" /></>,
   search: <><circle cx="11" cy="11" r="6" /><path d="M15.86 15.86 19.9 19.9" /></>,

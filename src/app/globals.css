@@ -121,7 +121,11 @@
      .module.css). The lab build is the spec; production surfaces under
      /app render on THESE, not the general page scale. All values ride
      system tokens — no raw colour. */
-  --x-task-canvas: var(--paper-deep);
+  /* Precision-white field (2026-08-05 board redesign): the canvas and the
+     working surfaces are paper itself. Structure comes from hairlines and
+     spacing; the only grey steps left are interactive-control backgrounds
+     (--x-task-surface) and hovers. */
+  --x-task-canvas: var(--paper);
   --x-task-surface: var(--paper-soft);
   --x-task-raised: var(--paper);
   --x-task-selected: var(--accent-tint);

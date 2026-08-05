@@ -2,7 +2,7 @@
 
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { formatSchedule, formatScheduleRelative, isTaskDueToday, isTaskOverdue } from "../dates";
+import { formatSchedule, formatScheduleForTask, isTaskDueToday, isTaskOverdue } from "../dates";
 import { labelById, personById } from "../fixtures";
 import { useLabStore } from "../store";
 import { PRIORITY_LABELS, type LabTask } from "../types";
@@ -68,17 +68,21 @@ export function ScheduleText({ task, compact = false }: { task: LabTask; compact
   const dueToday = isTaskDueToday(task, calendar.today);
   // Compact is the card context, where a date the reader has to compare
   // against today is a date the reader has to do arithmetic on. The absolute
-  // date stays on the tooltip so nothing is lost.
+  // date stays on the tooltip so nothing is lost. The sentence is
+  // task-aware (formatScheduleForTask): a completed card never reads
+  // "overdue", however far past its date it finished.
   const label = compact
-    ? formatScheduleRelative(task.schedule, calendar.today)
-    : formatSchedule(task.schedule);
+    ? formatScheduleForTask(task, calendar.today)
+    : task.completed
+      ? formatScheduleForTask(task, calendar.today)
+      : formatSchedule(task.schedule);
   return (
     <span
       className={styles.schedule}
       data-due-today={dueToday || undefined}
       data-overdue={overdue || undefined}
       data-unscheduled={task.schedule.kind === "unscheduled" || undefined}
-      title={formatSchedule(task.schedule)}
+      title={task.completed ? label : formatSchedule(task.schedule)}
     >
       {task.schedule.kind === "milestone" ? <Icon name="milestone" size={compact ? 12 : 14} /> : null}
       {compact && task.schedule.kind === "unscheduled" ? "No date" : label}

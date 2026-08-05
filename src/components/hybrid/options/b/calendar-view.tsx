@@ -33,7 +33,6 @@ import type { CalendarDate, LabTask, TaskSchedule } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { AvatarStack, ScheduleText, TaskCompletion, TaskOpenButton, TaskSelection, TaskSignals } from "../../shared/task-ui";
-import { KeyboardLegend } from "../a/quiet-command-components";
 import { UnscheduledTray } from "./schedule-tray";
 import styles from "./option-b.module.css";
 
@@ -526,7 +525,6 @@ export function CalendarView({
       </div>
 
       <UnscheduledTray compact source="calendar" tasks={unscheduled} />
-      <KeyboardLegend>Arrows move between day controls. Alt + Left or Right moves a focused task. Add Shift to change a range end.</KeyboardLegend>
       <TaskContextMenu menu={contextMenu.menu} onClose={contextMenu.closeMenu} />
     </section>
   );

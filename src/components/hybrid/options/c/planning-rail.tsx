@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { useProjectMoney } from "@/lib/domain-context";
+import { budgetCoverageLine } from "@/lib/money";
 import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
 import { useLabStore } from "../../store";
 import type { CalendarDate, LabTask, LabView } from "../../types";
@@ -61,13 +63,29 @@ export function PlanningRail({
       if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
     };
   }, [asOverlay, collapsed, onToggle]);
+  const money = useProjectMoney();
   const orderedIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
   const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
   const selectedDayTasks = tasks.filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, selectedDate));
   const completed = tasks.filter((task) => task.completed).length;
+  // Every milestone, past ones included — the drawer is the project's
+  // planning record, not just its future (moved here from the old header
+  // module, 2026-08-05).
   const milestones = tasks
-    .filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= calendar.today)
+    .filter((task) => task.schedule.kind === "milestone")
     .sort((a, b) => (scheduleStart(a.schedule) ?? "").localeCompare(scheduleStart(b.schedule) ?? ""));
+  const upcomingMilestones = milestones.filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= calendar.today);
+  // Money, narrowly (T·124): restate and sum what the operator entered,
+  // always with coverage. Renders only in this owner-side drawer — never
+  // on share, print, embed or /p/{slug}.
+  const costedTasks = tasks.filter((task) => typeof task.cents === "number" && task.cents > 0);
+  const coverage = budgetCoverageLine({
+    summedCents: costedTasks.reduce((sum, task) => sum + (task.cents ?? 0), 0),
+    costedCount: costedTasks.length,
+    uncostedCount: tasks.length - costedTasks.length,
+    budgetCents: money.budgetCents,
+    currency: money.currency,
+  });
   const planningView = view === "timeline" || view === "calendar";
   const sourcePeriod = calendar.planningPeriod;
   const period = sourcePeriod?.startDate && sourcePeriod.endDate
@@ -118,19 +136,9 @@ export function PlanningRail({
     store.setDrag({ kind: "schedule", taskId: task.id, source: "timeline-tray", targetDate: null });
   };
 
-  if (collapsed) {
-    return (
-      <motion.aside
-        animate={{ opacity: 1 }}
-        aria-label="Collapsed planning rail"
-        className={`${styles.planningRail} ${styles.planningRailCollapsed}`}
-        initial={{ opacity: 0 }}
-        transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
-      >
-        <button aria-expanded="false" aria-label={`Expand the planning rail. ${unscheduled.length} unscheduled task${unscheduled.length === 1 ? "" : "s"}.`} className={styles.planningRailExpand} onClick={onToggle} title={`${unscheduled.length} unscheduled`} type="button"><Icon name="arrow-left" size={14} /><span>Planning</span><strong>{unscheduled.length}</strong></button>
-      </motion.aside>
-    );
-  }
+  // Closed means gone: the drawer's trigger lives on the project band, so
+  // no collapsed rail claims board width (the rotated strip is retired).
+  if (collapsed) return null;
 
   return (
     <>
@@ -143,7 +151,7 @@ export function PlanningRail({
     ) : null}
     <motion.aside
       animate={{ opacity: 1 }}
-      aria-label="Planning rail"
+      aria-label="Planning"
       aria-modal={asOverlay ? true : undefined}
       className={styles.planningRail}
       id="c-planning-rail"
@@ -154,8 +162,8 @@ export function PlanningRail({
       transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
     >
       <header className={styles.planningRailHeader}>
-        <div><span>Planning period</span><strong>{sourcePeriod?.name ?? "Dates not set"}</strong></div>
-        <button aria-expanded="true" aria-label="Collapse planning rail" onClick={onToggle} type="button"><Icon name="arrow-right" size={15} /></button>
+        <div><span>Planning</span><strong>{sourcePeriod?.name ?? "Dates not set"}</strong></div>
+        <button aria-label="Close planning" onClick={onToggle} type="button"><Icon name="close" size={15} /></button>
       </header>
 
       {period ? (
@@ -230,10 +238,34 @@ export function PlanningRail({
         </AnimatePresence>
       </section>
 
-      <section className={styles.nextMilestone}>
-        <span>Next milestone</span>
-        {milestones[0] && milestones[0].schedule.kind === "milestone" ? <TaskOpenButton task={milestones[0]}><strong>{milestones[0].title}</strong><small>{formatDateLong(milestones[0].schedule.on)}</small></TaskOpenButton> : <p>No upcoming milestone in this filter.</p>}
+      {/* The milestones record, rehoused from the old header module. Past
+          milestones stay listed — muted — because a plan you can no longer
+          see is a plan you cannot trust. */}
+      <section className={styles.railMilestones}>
+        <header><span>Milestones</span>{milestones.length > 0 ? <strong>{milestones.length}</strong> : null}</header>
+        {milestones.length > 0 ? (
+          <ol>
+            {milestones.map((task) => task.schedule.kind === "milestone" ? (
+              <li data-past={task.schedule.on < calendar.today || undefined} data-task-id={task.id} key={task.id}>
+                <time dateTime={task.schedule.on}>{formatDate(task.schedule.on)}</time>
+                <TaskOpenButton task={task} />
+              </li>
+            ) : null)}
+          </ol>
+        ) : (
+          <p>No milestones yet. Mark any task as a milestone from its card.</p>
+        )}
+        {upcomingMilestones[0] && upcomingMilestones[0].schedule.kind === "milestone" ? (
+          <small>Next: {upcomingMilestones[0].title} · {formatDateLong(upcomingMilestones[0].schedule.on)}</small>
+        ) : null}
       </section>
+
+      {coverage ? (
+        <section aria-label="Costs" className={styles.railCosts}>
+          <span>Costs</span>
+          <p>{coverage}</p>
+        </section>
+      ) : null}
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </motion.aside>
     </>
