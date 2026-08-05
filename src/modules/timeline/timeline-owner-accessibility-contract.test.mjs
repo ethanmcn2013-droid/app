@@ -38,7 +38,10 @@ test("automatic Tasks sync failure remains visible and retryable", () => {
 });
 
 test("one-time audience link copy has an announced manual recovery path", () => {
-  const source = read("app/audience/audience-manager.tsx");
+  // The share controls were extracted from audience-manager.tsx so the project
+  // Share panel and the manager cannot drift apart. The recovery path itself is
+  // unchanged; only its address is.
+  const source = read("app/audience/share-controls.tsx");
 
   assert.match(source, /try \{/);
   assert.match(source, /catch \{/);
@@ -71,7 +74,7 @@ test("Timeline loading boundaries announce progress without exposing skeletons",
 
 test("owner controls meet the 44px mobile target and error copy stays factual", () => {
   const projectPage = read("app/plan/[projectSlug]/page.tsx");
-  const audienceManager = read("app/audience/audience-manager.tsx");
+  const audienceManager = read("app/audience/share-controls.tsx");
   const errorBoundary = read("app/error.tsx");
 
   // Assert the literal 44px, not `min-h-11`. This repo remaps Tailwind's

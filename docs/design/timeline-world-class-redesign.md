@@ -101,16 +101,30 @@ The giant digit is `--x-artifact-metric: clamp(4.4rem, 8vw, 8rem)`
 
 ## 5. Measured baseline (current code, review mode, port 3520)
 
-Nine-milestone dated demo fixture:
+**Corrected.** I originally recorded the nine-milestone fixture as measuring
+1.00 at both 1440×900 and 390×844, and concluded the dated multi-milestone
+case was healthy. That was wrong, and wrong in a way that would have
+under-scoped the work.
 
-| Viewport | Doc height / viewport | Horizontal overflow | Clipped containers |
-|---|---|---|---|
-| 1440 × 900 | 1.00 | none | none |
-| 390 × 844 | 1.00 | none | none |
+I measured `/app/timeline` — the **owner** route, which passes `embedded`, so
+`min-height: 100dvh` is neutralised and the content sits inside the app
+shell's own scroll container. The public `/s/[token]` route is the only
+surface where the floor still applies, and there the same fixture measures
+**1.256** at 1440×900.
 
-The dated multi-milestone case is healthy. The defect is specific to sparse and
-undated content, which the demo fixture cannot express — a one-milestone,
-no-timing fixture is required before the sparse-state work can be verified.
+Real numbers, taken from the live public route and reproduced by a calibrated
+harness (nine-milestone fixture, before the Phase 4 work):
+
+| Viewport | Content height |
+|---|---|
+| 1920 × 1080 | 1131 |
+| 1600 × 900 | 1131 |
+| 1440 × 900 | 1130 |
+| 1280 × 800 | 1082 |
+| 390 × 844 | 1937 |
+
+Lesson, same shape as §6: measure the surface the defect is reported on, not
+the one that is convenient to open.
 
 Also confirmed in the rendered DOM: the milestone list renders **twice**, and
 the current milestone a **third** time in the detail panel (section 16's
