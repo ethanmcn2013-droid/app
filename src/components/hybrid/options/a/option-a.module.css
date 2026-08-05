@@ -10,7 +10,7 @@
 
 .optionA {
   --a-context-height: 82px;
-  --a-viewbar-height: 46px;
+  --a-viewbar-height: 42px;
   background: var(--x-task-canvas);
   /* The interior is the size container the planning drawer queries: on a
      wide canvas the drawer docks in flow, on a narrower one it overlays
@@ -45,17 +45,17 @@
 
 .contextCopy { min-width: 0; }
 .contextCopy nav { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; gap: 5px; margin-bottom: 6px; white-space: nowrap; }
-.contextCopy nav b { color: var(--x-task-text-secondary); font-weight: 620; }
+.contextCopy nav b { color: var(--x-task-text-secondary); font-weight: 600; }
 .contextCopy nav svg { margin: 0 2px; }
 .contextCopy > div { align-items: baseline; display: flex; gap: 10px; min-width: 0; }
-.contextCopy h1 { color: var(--x-task-text); font-size: 20px; font-weight: 680; letter-spacing: -.035em; margin: 0; white-space: nowrap; }
+.contextCopy h1 { color: var(--x-task-text); font-size: 20px; font-weight: 700; letter-spacing: -.035em; margin: 0; white-space: nowrap; }
 .contextCopy p { color: var(--x-task-text-secondary); font-size: 12px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .contextFacts { display: flex; gap: 18px; margin: 0; }
 .contextFacts > div { display: flex; flex-direction: column; gap: 3px; }
 .contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .contextFacts dd { align-items: center; color: var(--x-task-text); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; gap: 4px; margin: 0; white-space: nowrap; }
-.readOnlyFlag { background: var(--x-task-waiting-soft); border: 1px solid color-mix(in srgb, var(--x-task-waiting) 26%, var(--x-task-border)); border-radius: 5px; color: var(--x-task-waiting); font-size: 11px; font-weight: 650; padding: 5px 7px; }
+.readOnlyFlag { background: var(--x-task-waiting-soft); border: 1px solid color-mix(in srgb, var(--x-task-waiting) 26%, var(--x-task-border)); border-radius: 5px; color: var(--x-task-waiting); font-size: 11px; font-weight: 600; padding: 5px 7px; }
 
 .viewBar {
   align-items: center;
@@ -79,7 +79,7 @@
 .tabsScroll nav a {
   border-radius: 6px;
   color: var(--x-task-text-secondary);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   min-height: 28px;
   padding: 0 11px;
@@ -120,7 +120,7 @@
 .functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-task-accent); }
 /* One accent CTA per bar: creating work is the bar's primary act, so
    Add task alone wears the brand — everything beside it stays quiet. */
-.functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
+.functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-task-raised); font-weight: 600; }
 .functionalTools > button[data-primary]:hover { background: var(--x-task-focus); color: var(--x-task-raised); }
 .functionalTools > button:disabled { background: transparent; color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
 .functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 3px; text-transform: uppercase; }
@@ -129,7 +129,7 @@
   border-radius: 999px;
   color: var(--x-task-accent);
   font-family: var(--font-geist-mono), monospace;
-  font-size: 10.5px;
+  font-size: 11px;
   font-style: normal;
   line-height: 1;
   min-width: 17px;
@@ -206,7 +206,7 @@
 .shortcutsPanel dd { color: var(--x-task-text-secondary); }
 
 .savedViewBar { align-items: center; background: var(--x-task-success-soft); border-bottom: 1px solid color-mix(in srgb, var(--x-task-success) 20%, var(--x-task-border)); color: var(--x-task-success); display: flex; flex: 0 0 28px; font-size: 11px; gap: 6px; padding: 0 12px; }
-.savedViewBar button { background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; margin-left: 4px; padding: 4px; }
+.savedViewBar button { background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; margin-left: 4px; padding: 4px; }
 .savedViewBar button:last-child { align-items: center; display: flex; margin-left: auto; }
 .saveNotice { background: var(--x-task-text); border-radius: 5px; bottom: 12px; color: var(--x-task-raised); font-size: 11px; max-width: 300px; padding: 7px 9px; position: absolute; right: 12px; z-index: 44; }
 
@@ -233,12 +233,12 @@
 .taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
-.statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 620; }
+.statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; }
 .statusText[data-status="doing"] { color: var(--x-task-accent); }
 .statusText[data-status="review"] { color: var(--x-task-review); }
 .statusText[data-status="waiting"] { color: var(--x-task-waiting); }
 .statusText[data-status="done"] { color: var(--x-task-success); }
-.peekTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: block; font: inherit; font-size: 14px; font-weight: 680; letter-spacing: -.02em; margin: 9px 0 5px; padding: 0; text-align: left; }
+.peekTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: block; font: inherit; font-size: 15px; font-weight: 700; letter-spacing: -.02em; margin: 9px 0 5px; padding: 0; text-align: left; }
 .taskPeek > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 12px; line-height: 1.45; margin: 0 0 10px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .taskPeek > footer { align-items: center; display: flex; gap: 9px; }
 .peekOpen { background: var(--x-task-text); border: 0; border-radius: 4px; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; margin-left: auto; min-height: 28px; padding: 0 8px; }
@@ -270,7 +270,7 @@
    body size (15px): 10px lane names, 11px titles, 7px counters. At 1440px
    that read as a scale model of the board rather than the board. The floor
    on this surface is the brand ramp's 11px label size; nothing ships below it. */
-.boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; }
 
 /* The lane track and the pinned add-column rail as one row: the rail sits
    BESIDE the horizontal scroll, never stacked under it. */
@@ -282,14 +282,44 @@
    surfaces, which is how every board people already know behaves. */
 /* The lanes scroll; the add-column rail stays pinned beside them. */
 .boardTrack { display: flex; flex: 1; min-height: 0; min-width: 0; }
-.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline-end: 8px; scrollbar-width: thin; }
+/* Below 1440 the track still scrolls, so the right edge is authored: a
+   paper fade says "there is more", and scroll-snap lands whole statuses
+   instead of a card severed mid-word. */
+.boardScroll {
+  align-items: stretch;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-padding-inline-end: 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.boardLane { scroll-snap-align: start; }
+.boardTrackEdge {
+  background: linear-gradient(to left, var(--x-task-canvas), transparent);
+  bottom: 0;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity var(--motion-base) var(--ease-out);
+  width: 36px;
+  z-index: 3;
+}
+.boardSurface[data-overflowing] .boardTrackEdge { opacity: 1; }
 
 /* An empty status asks for less: it compresses to a readable header plus
    its add row, and takes its full width back the moment a drag is live
    (it is still a drop target) or work lands in it. */
 .boardLane[data-empty] { flex: 0 1 176px; min-width: 176px; }
 .boardSurface[data-drag-active] .boardLane[data-empty],
-.boardLane[data-empty][data-drop-target] { flex: 1 0 276px; min-width: 276px; }
+.boardLane[data-empty][data-drop-target] { flex: 1 0 224px; min-width: 224px; }
 
 /* ── column colour ─────────────────────────────────────────────────────
    Precision-white board (2026-08-05): the lane surface is paper, full
@@ -303,11 +333,12 @@
   background: var(--x-task-raised);
   border-right: 1px solid var(--hairline-soft);
   display: flex;
-  flex: 1 0 276px;
+  flex: 1 0 224px;
   flex-direction: column;
   height: 100%;
+  /* see .laneList — the rule fades where the work stops */
   min-height: 0;
-  min-width: 276px;
+  min-width: 224px;
   overflow: hidden;
   position: relative;
   transition: flex-basis var(--motion-base) var(--spring-glide), min-width var(--motion-base) var(--spring-glide), background var(--motion-fast) var(--ease-out);
@@ -316,6 +347,10 @@
 /* Fixed-width mode (View menu): lanes hold their base width and the
    track scrolls, instead of sharing the spare board width. */
 .boardSurface[data-fixed-columns] .boardLane { flex-grow: 0; }
+/* While a card is flying to its new status the destination must hold
+   still. Without this the lanes resize under a card that has already
+   arrived, and the movement people see is the board, not the work. */
+.boardSurface[data-flight] .boardLane { transition: none; }
 
 /* While a card drag is over this lane, the whole lane acknowledges it —
    a 3% accent wash that exists only for the duration of the gesture. */
@@ -338,10 +373,10 @@
   flex: 0 0 auto;
   flex-wrap: wrap;
   align-content: center;
-  min-height: 44px;
+  min-height: 38px;
   gap: 0 6px;
   justify-content: space-between;
-  padding: 4px 8px 4px 14px;
+  padding: 2px 8px 2px 14px;
   position: relative;
   z-index: 2;
 }
@@ -349,12 +384,12 @@
    so every hue — amber included — stays comfortably readable. */
 .boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
 .laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 8px; min-width: 0; }
-.laneHeader h2 { color: var(--x-task-text); font-size: 13px; font-weight: 620; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 500; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The count carries the limit with it ("3/6"). The old surface showed the
    lane count and then "WIP 3/6" beside it — the same numerator twice, and
    "WIP" is project-management register the brand refuses. */
-.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .wipCount[data-near] { color: var(--x-task-warning); }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
 
@@ -398,7 +433,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 10px 12px 14px;
+  padding: 6px 12px 14px;
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--x-task-text-muted) 30%, transparent) transparent;
@@ -448,7 +483,7 @@
 .laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); }
 .laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) calc(var(--lane-tint, 5.5%) + 3%), var(--x-task-raised)); color: var(--x-task-text); }
 .boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
-.railName { font-size: 12px; font-weight: 620; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
+.railName { font-size: 12px; font-weight: 600; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
 .railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
 
 .boardCard {
@@ -485,11 +520,12 @@
 /* A finished card recedes as a whole: its chips and people mute with it,
    so the strikethrough is not fighting full-strength colour below. */
 .boardCard[data-completed] .cardLabels,
-.boardCard[data-completed] .cardMeta { opacity: .78; }
+.boardCard[data-completed] .cardMeta { opacity: .85; }
 /* Head row: completion control on the title's first line. A card with
    only a title is one line tall; the ••• trigger floats over the corner
    on hover so it never costs a permanent row. */
 .cardHead { align-items: flex-start; display: flex; gap: 9px; min-width: 0; padding-right: 16px; }
+.cardBody { display: flex; flex: 1; flex-direction: column; min-width: 0; }
 .cardHead > input { margin-top: 2px; }
 
 /* ••• trigger floated over the card's top-right corner by ContextActions.
@@ -532,7 +568,7 @@
 /* Title sizes to its own lines. The old 30px floor aligned single- and
    two-line cards across lanes, but the lanes scroll independently now, so
    that alignment never held and the floor only bought dead space. */
-.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: 13.5px; font-weight: 570; letter-spacing: -.008em; line-height: 1.45; margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: 15px; font-weight: 600; letter-spacing: -.011em; line-height: 1.38; margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 /* Done stays readable: the check, the muted ink and the "Completed" fact
    carry the state — striking the title out erased work people are proud
    of. The Done column already says where the card lives. */
@@ -590,7 +626,7 @@
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   gap: 7px;
   min-height: 32px;
@@ -612,7 +648,7 @@
   color: var(--x-task-text);
   font: inherit;
   font-size: 13px;
-  font-weight: 580;
+  font-weight: 600;
   min-height: 40px;
   outline: none;
   padding: 0 12px;
@@ -629,7 +665,7 @@
 .taskTable th[data-column],
 .taskTable td[data-column] { min-width: var(--column-min-width); width: var(--column-width); }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
-.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 610; height: 34px; letter-spacing: .12em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
+.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; height: 34px; letter-spacing: .12em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
 .taskTable thead th[draggable="true"] { cursor: grab; }
 .taskTable th[data-column="title"] { background: var(--x-task-raised); left: 0; position: sticky; z-index: 7; }
 .taskTable thead th[data-column="title"] { background: var(--x-task-surface); z-index: 15; }
@@ -657,9 +693,9 @@
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */
 .groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px 0 11px; position: sticky; width: max-content; }
-.groupRow button { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 660; gap: 6px; padding: 0; }
+.groupRow button { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 600; gap: 6px; padding: 0; }
 .groupRow span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.groupRow button:last-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 540; }
+.groupRow button:last-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 500; }
 .groupRow button:last-child:hover { color: var(--x-task-text); }
 .groupRow button:last-child:disabled { cursor: not-allowed; opacity: .45; }
 .groupEmpty td { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; height: 42px; padding: 0 14px; }
@@ -690,13 +726,13 @@
 .titleCell { align-items: center; display: flex; gap: 6px; min-width: 0; }
 .expandButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; flex: 0 0 20px; height: 24px; justify-content: center; padding: 0; }
 .expandSpacer { flex: 0 0 20px; }
-.listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 580; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 600; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow[data-completed] .listTitle { color: var(--x-task-text-secondary); }
 .listTitleEdit { min-width: 120px; }
 /* Absent tabular value: a quiet dash instead of a repeated word. */
 .absentValue { color: var(--x-task-text-muted); font-size: 11px; }
 
-.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 10px; }
+.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .subtaskRows td { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); padding: 5px 12px 6px 62px; }
 .subtaskRows ul { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
 .subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 11px; gap: 6px; min-height: 25px; }
@@ -731,13 +767,13 @@
 /* Timeline */
 .timelineSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
 .timelineToolbar { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 40px; gap: 12px; padding: 0 10px; }
-.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 560; }
+.timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 500; }
 .rangeNavigation,
 .zoomControl { align-items: center; display: flex; gap: 2px; }
 .rangeNavigation button,
 .zoomControl button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
 .zoomControl { margin-left: auto; }
-.zoomControl button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 650; }
+.zoomControl button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 600; }
 
 .unscheduledTray { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); flex: 0 0 auto; padding: 7px 10px; }
 .unscheduledTray > header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -758,7 +794,7 @@
 .timelineRow { display: grid; grid-template-columns: 274px var(--timeline-width); }
 .timelineHeaderRow { position: sticky; top: 0; z-index: 10; }
 .timelinePaneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border-strong); display: flex; height: 38px; justify-content: space-between; left: 0; padding: 0 9px; position: sticky; z-index: 14; }
-.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
+.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
 .timelinePaneHeader span:last-child { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .timelineDateHeader { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); display: grid; height: 38px; }
 .timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 11px; justify-content: center; }
@@ -770,7 +806,7 @@
 .timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 6px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 7px; position: sticky; z-index: 6; }
 .timelineTaskPane:focus { background: var(--x-task-selected); }
 .timelineTaskCopy { display: flex; flex-direction: column; min-width: 0; }
-.timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 580; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .timelineGeometry { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); min-height: 39px; position: relative; }
 .timelineGrid { display: grid; inset: 0; pointer-events: none; position: absolute; }
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
@@ -780,7 +816,7 @@
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
-.timelineRangeButton > span { font-size: 11px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineRangeButton > span { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timelineRangeButton small { color: var(--x-task-accent); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-left: auto; white-space: nowrap; }
 .rangeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
@@ -821,20 +857,20 @@
 /* Calendar */
 .calendarSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
 .calendarToolbar { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 40px; gap: 12px; padding: 0 10px; }
-.calendarToolbar h2 { font-size: 13px; font-weight: 680; letter-spacing: -.02em; margin: 0; }
+.calendarToolbar h2 { font-size: 13px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
 .calendarNavigation,
 .calendarModes { align-items: center; display: flex; gap: 2px; }
 .calendarModes { margin-left: auto; }
 .calendarNavigation button,
 .calendarModes button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; height: 26px; justify-content: center; min-width: 27px; padding: 0 7px; }
-.calendarModes button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 650; }
+.calendarModes button[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); font-weight: 600; }
 .calendarWorkspace { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: auto; }
 .calendarMain { flex: 1 0 720px; min-height: 0; min-width: 720px; overflow: hidden; }
 .calendarTableScroll { height: 100%; overflow: auto; scrollbar-width: thin; }
 .calendarTable { background: var(--x-task-raised); border-collapse: separate; border-spacing: 0; min-width: 720px; table-layout: fixed; width: 100%; }
 .calendarTable caption { clip: rect(0 0 0 0); clip-path: inset(50%); height: 1px; overflow: hidden; position: absolute; width: 1px; }
 .calendarTable thead { position: sticky; top: 0; z-index: 8; }
-.calendarTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 560; height: 28px; text-align: left; padding: 0 6px; }
+.calendarTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 500; height: 28px; text-align: left; padding: 0 6px; }
 .calendarCell { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border); height: 106px; padding: 0; position: relative; vertical-align: top; }
 .calendarCell[data-outside] { background: var(--x-task-surface); color: var(--x-task-text-muted); }
 .calendarCell[data-selected] { box-shadow: inset 0 0 0 1px var(--x-task-accent); }
@@ -899,7 +935,7 @@
 .agendaMode { height: 100%; overflow-y: auto; padding: 8px 10px 18px; scrollbar-width: thin; }
 .agendaMode > section { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; grid-template-columns: 170px minmax(0, 1fr); margin-bottom: 6px; min-height: 48px; }
 .agendaMode > section > header { align-items: flex-start; border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; padding: 7px 9px; }
-.agendaMode > section > header time { font-size: 11px; font-weight: 640; }
+.agendaMode > section > header time { font-size: 11px; font-weight: 600; }
 .agendaMode > section > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 3px; margin-top: 5px; padding: 0; }
 .agendaMode > section > div { display: grid; gap: 3px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 6px; }
 
@@ -1247,9 +1283,11 @@
   overflow: hidden;
   padding: 0 2px 6px;
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   width: 100%;
+  /* wraps rather than clips: an unread description teaches nothing */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .laneDescButton:disabled { cursor: default; }
 .laneDescInput {
@@ -1283,7 +1321,7 @@
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   gap: 6px;
   min-height: 32px;
@@ -1548,4 +1586,48 @@
     overflow: hidden;
     white-space: normal;
   }
+}
+
+
+/* Completion receipt. A finished card can travel four statuses to the
+   right, sometimes off-screen entirely; a person who ticks the wrong box
+   needs the way back stated, not discovered. Seven seconds, then it goes.
+   Quiet, bottom-centre, never over the work it describes. */
+.completionReceipt {
+  align-items: center;
+  animation: receipt-in var(--motion-base) var(--ease-out) both;
+  background: var(--x-task-text);
+  border-radius: 10px;
+  bottom: 18px;
+  box-shadow: var(--shadow-float);
+  color: var(--paper);
+  display: flex;
+  font-size: 12px;
+  gap: 12px;
+  left: 50%;
+  padding: 9px 10px 9px 14px;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+.completionReceipt b { font-weight: 500; }
+.completionReceiptUndo {
+  background: color-mix(in srgb, var(--paper) 16%, transparent);
+  border: 0;
+  border-radius: 7px;
+  color: var(--paper);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 500;
+  min-height: 26px;
+  padding: 0 11px;
+  transition: background var(--motion-instant) var(--ease-out);
+}
+.completionReceiptUndo:hover { background: color-mix(in srgb, var(--paper) 26%, transparent); }
+@keyframes receipt-in {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .completionReceipt { animation: none; }
 }

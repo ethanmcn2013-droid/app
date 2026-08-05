@@ -8,7 +8,7 @@
  *
  * State stays in RoomToolsProvider (unchanged localStorage saved-view
  * contract), widened per the founder's call: filter by date, by owner
- * *by name*, and by board column. Filtering happens here on LabTask —
+ * *by name*, and by board status. Filtering happens here on LabTask —
  * the views render exactly what the tools admit, while the brief and
  * planning rail keep the whole project (receipts never shrink to a
  * filtered subset).
@@ -210,7 +210,7 @@ export function ActiveFilterChips() {
     const label = owner === "assigned"
       ? "Has an owner"
       : owner === "unassigned"
-        ? "Unassigned"
+        ? "No owner"
         : members.find((member) => member.id === owner)?.name ?? "Owner";
     chips.push({ key: "owner", label, clear: () => setOwner("all") });
   }
@@ -356,13 +356,13 @@ export function ViewToolPanels({
               </select>
             </label>
             <label>
-              <span>Column</span>
+              <span>Status</span>
               <select
-                aria-label="Filter by column"
+                aria-label="Filter by status"
                 onChange={(event) => setColumn(event.target.value)}
                 value={column}
               >
-                <option value="all">All columns</option>
+                <option value="all">All statuses</option>
                 {columns.map((c) => (
                   <option key={c.key} value={c.key}>
                     {c.name}
@@ -379,7 +379,7 @@ export function ViewToolPanels({
               >
                 <option value="all">Everyone</option>
                 <option value="assigned">Has an owner</option>
-                <option value="unassigned">Unassigned</option>
+                <option value="unassigned">No owner</option>
                 {members.map((member) => (
                   <option key={member.id} value={member.id}>
                     {member.name}
@@ -419,7 +419,7 @@ export function ViewToolPanels({
             <legend className="sr-only">Sort tasks</legend>
             {(
               [
-                ["manual", "Workspace order", "Keep the deliberate column and group order."],
+                ["manual", "Workspace order", "Keep the deliberate status and group order."],
                 ["date", "Schedule", "Dated work first, then explicitly unscheduled work."],
                 ["title", "Task title", "A to Z within each view composition."],
               ] as const
@@ -474,7 +474,7 @@ export function ViewToolPanels({
                 onChange={toggleFitColumns}
                 type="checkbox"
               />
-              <span>Fit columns to the board</span>
+              <span>Fit statuses to the board</span>
             </label>
             <label className={styles.roomToggleRow}>
               <input

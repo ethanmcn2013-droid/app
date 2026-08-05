@@ -79,7 +79,7 @@ export const COLUMN_COLORS: Record<
   rose: { label: "Red", var: "var(--x-col-rose)", tint: 4.5, border: 13, ink: 58 },
   sky: { label: "Blue", var: "var(--x-col-sky)", tint: 5, border: 15, ink: 62 },
   amber: { label: "Amber", var: "var(--x-col-amber)", tint: 3.5, border: 11, ink: 55 },
-  emerald: { label: "Green", var: "var(--x-col-emerald)", tint: 5.5, border: 16, ink: 85 },
+  emerald: { label: "Green", var: "var(--x-col-emerald)", tint: 5.5, border: 16, ink: 55 },
   violet: { label: "Purple", var: "var(--x-col-violet)", tint: 4.5, border: 13, ink: 62 },
   teal: { label: "Teal", var: "var(--x-col-teal)", tint: 4.5, border: 13, ink: 60 },
   pink: { label: "Pink", var: "var(--x-col-pink)", tint: 4.5, border: 13, ink: 58 },

@@ -52,6 +52,7 @@
     "check:suite-switcher": "node scripts/check-suite-switcher-contract.mjs",
     "check:loading": "node scripts/check-loading-contract.mjs",
     "check:tap-targets": "node scripts/check-tap-target-scale.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "test:smoke": "tsx e2e/marketing-golden-path.smoke.ts",
     "seed:wedding": "node --import tsx scripts/seed-wedding.ts",
     "signal:db:push:unsafe": "drizzle-kit push --force --config drizzle.signal.config.ts",

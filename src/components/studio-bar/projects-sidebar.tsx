@@ -425,7 +425,9 @@ function SidebarBody({
 
   return (
     <div className={styles.sidebarScroll}>
-      <nav aria-label="Tasks shortcuts" className={styles.sidebarNav}>
+      {/* "Shortcuts", not "Tasks": Home lives here for convenience but
+          isn't a Tasks feature, and the label shouldn't claim it is. */}
+      <nav aria-label="Shortcuts" className={styles.sidebarNav}>
         {/* Home leads: the suite landing left the black rail (pass 4),
             so local navigation is its front door. */}
         <Link
@@ -510,7 +512,7 @@ function SidebarBody({
                             type="button"
                           >
                             <span className={styles.projectName} title={w.name}>{w.name}</span>
-                            <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                            <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
                               {w.taskCount}
                             </span>
                           </button>
@@ -542,7 +544,7 @@ function SidebarBody({
                   >
                     <span aria-hidden="true" className={styles.disclosureGhost} />
                     <span className={styles.projectName} title={w.name}>{w.name}</span>
-                    <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                    <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
                       {w.taskCount}
                     </span>
                   </button>
@@ -588,7 +590,7 @@ function SidebarBody({
                     <div className={styles.projectRowWrap}>
                       <span className={styles.projectLeaf} data-archived="true">
                         <span className={styles.projectName} title={w.name}>{w.name}</span>
-                        <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
+                        <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
                           {w.taskCount}
                         </span>
                       </span>

@@ -9,7 +9,7 @@
  *   products → each product's canonical module route within this app,
  *              carrying allowlisted workspace context as navigation hints
  *   more     → the umbrella (all products)
- *   updates  → /app/inbox (the daily digest surface)
+ *   inbox    → /app/inbox (the daily digest surface)
  *   help     → a compact menu retaining support, workspace/team, and
  *              account-settings access
  *   account  → the profile avatar + full account menu, docked at the foot
@@ -177,11 +177,16 @@ export function StudioRail() {
         })}
       </nav>
       <span aria-hidden="true" className={styles.railDivider} />
+      {/* The only rail tile that leaves the app for the public site — new
+          tab, explicit rel, and an accessible name that says so. */}
       <a
+        aria-label="More Signal Studio products (opens in a new tab)"
         className={styles.railProduct}
         data-product="more"
-        data-tip="More products · Signal Studio"
+        data-tip="More products · Signal Studio ↗"
         href={STUDIO_URL}
+        rel="noopener noreferrer"
+        target="_blank"
       >
         <span aria-hidden="true" className={styles.railTile}>
           <RailIcon name="more" size={20} />
@@ -189,7 +194,7 @@ export function StudioRail() {
         <span className={styles.railLabel}>More</span>
       </a>
       <span className={styles.railSpacer} />
-      <Link aria-label="Updates" className={styles.railUtility} data-tip="Updates · daily digest" href="/app/inbox">
+      <Link aria-label="Inbox" className={styles.railUtility} data-tip="Inbox · daily digest" href="/app/inbox">
         <RailIcon name="updates" size={18} />
       </Link>
       <RailHelpMenu />
