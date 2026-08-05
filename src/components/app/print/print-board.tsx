@@ -66,7 +66,7 @@ function PrintCard({ task }: { task: Task }) {
             style={{ background: prio.color }}
             aria-hidden
           />
-          {task.priority.toUpperCase()}
+          {PRIORITY_LABEL[task.priority].label}
         </span>
         {task.due ? (
           <span className="print-card-due">{formatDue(task.due)}</span>

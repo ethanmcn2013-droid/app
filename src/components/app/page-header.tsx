@@ -16,10 +16,14 @@ import {
 } from "@/lib/exports";
 import type { ShareView } from "@/server/actions/share";
 
+// "Schedule", never "Timeline": inside Tasks the view is named Schedule —
+// "Timeline" without the Tasks namespace always means the Timeline product
+// one rail-stop below (SUITE_URL_AND_NAMING_CONTRACT). The route slug is
+// the one place the old name legitimately survives.
 const TABS = [
   { href: "/app/tasks", label: "Board" },
   { href: "/app/tasks/list", label: "List" },
-  { href: "/app/tasks/timeline", label: "Timeline" },
+  { href: "/app/tasks/timeline", label: "Schedule" },
   { href: "/app/tasks/calendar", label: "Calendar" },
 ];
 
@@ -58,13 +62,19 @@ export function AppPageHeader({ active: activeProp }: { active?: string }) {
   // the "signal studio. / tasks" context one row up, so lead › trail here
   // was a redundant second context line that made this read as a stacked
   // bar. Workspace identity now lives only in the title.
+  // "My work" — the same name the sidebar gives this destination. It was
+  // "My week" here, "My work" in the nav, and /app/my-tasks in the URL:
+  // three names for one page.
+  // Workspace pages show the owner's real board name (the brief and the
+  // Settings NAME field both edit it); the personalization pack title is
+  // only the fallback before a board is named.
   const title = isMyTasks
-    ? "My week"
+    ? "My work"
     : isInbox
       ? "Inbox"
       : isArchived
         ? "Archived"
-        : shortenTitle(pack.workspaceTitle);
+        : (pack.boardName ?? shortenTitle(pack.workspaceTitle));
   // Inbox + My Tasks aren't workspace views, hide Share + lane tabs.
   // My Tasks is a personal filtered view; sharing it is meaningless.
   // "New task" becomes the sole primary CTA on My Tasks (M2).

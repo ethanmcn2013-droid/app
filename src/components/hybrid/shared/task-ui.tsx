@@ -38,6 +38,7 @@ export function TaskOpenButton({ task, children, className, ...props }: {
     <button
       {...props}
       className={className}
+      data-completed={task.completed || undefined}
       data-task-id={task.id}
       onClick={(event) => {
         event.stopPropagation();
@@ -100,7 +101,7 @@ export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: b
     <input
       aria-label={`${task.completed ? "Reopen" : "Mark done"} ${task.title}`}
       checked={task.completed}
-      className={styles.selectionBox}
+      className={styles.completionBox}
       disabled={disabled || store.readOnly}
       onChange={() => { if (!store.readOnly) store.toggleComplete(task.id); }}
       onClick={(event) => event.stopPropagation()}

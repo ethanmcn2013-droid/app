@@ -23,13 +23,32 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelled = useRef(false);
+  // Where F2 came from. A keyboard commit must land back on the row/card
+  // it edited — the input used to unmount and drop focus to <body>,
+  // breaking the arrow-key loop mid-flight.
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     inputRef.current?.focus();
     inputRef.current?.select();
   }, []);
 
-  const commit = () => {
+  const restoreFocus = () => {
+    const origin = returnFocusRef.current;
+    window.requestAnimationFrame(() => {
+      const fallback = document.querySelector<HTMLElement>(
+        `[data-task-id="${CSS.escape(task.id)}"]`,
+      );
+      const target = origin?.isConnected ? origin : fallback;
+      target?.focus({ preventScroll: true });
+    });
+  };
+
+  // `viaKeyboard`: only Enter/Escape pull focus back. A commit caused by
+  // clicking elsewhere (blur) must not yank the pointer user's focus.
+  const commit = (viaKeyboard: boolean) => {
     if (cancelled.current) return;
     const title = draft.trim();
     if (!title) {
@@ -57,7 +76,7 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
-      commit();
+      commit(true);
     }
   };
 
@@ -68,7 +87,7 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
         aria-invalid={Boolean(error)}
         aria-label={`Edit title for ${task.title}`}
         data-task-id={task.id}
-        onBlur={commit}
+        onBlur={() => commit(false)}
         onChange={(event) => { setDraft(event.target.value); setError(""); }}
         onKeyDown={onKeyDown}
         ref={inputRef}
@@ -229,7 +248,7 @@ export function SurfaceEmpty({ title, body, onAdd }: { title: string; body: stri
       <Icon name="inbox" size={20} />
       <strong>{title}</strong>
       <span>{body}</span>
-      {onAdd ? <button disabled={store.readOnly} onClick={onAdd} type="button"><Icon name="add" size={14} />Add task</button> : null}
+      {onAdd && !store.readOnly ? <button onClick={onAdd} type="button"><Icon name="add" size={14} />Add task</button> : null}
     </div>
   );
 }
