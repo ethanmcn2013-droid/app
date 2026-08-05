@@ -1,5 +1,6 @@
 import "server-only";
 
+import { decideTimelineAdoption } from "@/modules/timeline/lib/adopt-timeline";
 import { deriveTimelineWorkspaceSlug } from "@/modules/timeline/lib/provision-slug";
 import {
   bindProjectToTasksWorkspace,
@@ -8,7 +9,9 @@ import {
   getProjectsForWorkspace,
   getWorkspace,
   getWorkspaceForSuiteIdForUser,
+  getWorkspacesForUser,
 } from "@/modules/timeline/server/db/timeline-queries";
+import { connectSuiteWorkspace } from "@/modules/timeline/server/audience-timeline";
 import { getPrimaryTasksWorkspaceForUser } from "@/modules/timeline/server/sync/tasks-workspace-context";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
 
@@ -119,6 +122,65 @@ export async function ensureTimelineWorkspaceForUser(
   await ensureBoundProject(finalSlug, tasksWorkspace.workspaceId);
 
   return created;
+}
+
+/**
+ * Bind the owner's existing Timeline to a Tasks workspace they are already
+ * proved to be a member of, and return it.
+ *
+ * ── WHY THIS EXISTS ────────────────────────────────────────────────────
+ * `createWorkspaceAction` (server/actions/workspaces.ts) creates a Timeline
+ * without a `suiteWorkspaceId`, because `createWorkspace` defaults it to null
+ * and only the provisioning path above passes one. Such a Timeline is
+ * reachable as "the owner's first workspace" and by nothing else, so the
+ * moment the product rail appended a `?workspaceId=` routing hint to the URL,
+ * `resolveTimelineContext` found no row and the owner met "That workspace is
+ * not available." — with their own Timeline sitting right there. Visiting
+ * Tasks was what broke Timeline.
+ *
+ * The repair is written to the row rather than re-derived per request, so the
+ * dead end closes permanently on the first visit after deploy. That makes this
+ * a write during a read, which is the same bargain
+ * `ensureTimelineWorkspaceForUser` already makes directly above, and it is
+ * idempotent: once linked, this function is never reached again.
+ *
+ * ── WHAT IT REFUSES TO GUESS ───────────────────────────────────────────
+ * The choice itself lives in `decideTimelineAdoption` (lib/adopt-timeline.ts),
+ * pure and tested there: only a single unambiguous unlinked Timeline is
+ * adopted, and anything else is opened without a write. Authorization is not
+ * this function's job — callers must have proved Tasks membership first.
+ */
+export async function adoptTimelineForSuiteWorkspace(
+  userId: string,
+  suiteWorkspaceId: string,
+): Promise<Workspace | null> {
+  const owned = await getWorkspacesForUser(userId);
+  const decision = decideTimelineAdoption(owned);
+  if (decision.kind === "provision") {
+    return ensureTimelineWorkspaceForUser(userId);
+  }
+
+  const chosen = owned.find((workspace) => workspace.slug === decision.slug);
+  if (!chosen) return null;
+  if (decision.kind === "open") return chosen;
+  const adoptable = chosen;
+
+  try {
+    const linked = await connectSuiteWorkspace(
+      adoptable.slug,
+      userId,
+      suiteWorkspaceId,
+    );
+    if (!linked) return adoptable;
+  } catch {
+    // uq_workspaces_suite_workspace_id: another Timeline already claims this
+    // suite id. Opening the owner's Timeline is still the right answer; the
+    // existing link simply stays where it is.
+    return adoptable;
+  }
+
+  await ensureBoundProject(adoptable.slug, suiteWorkspaceId);
+  return { ...adoptable, suiteWorkspaceId };
 }
 
 /** The one project a provisioned Timeline opens on. */
