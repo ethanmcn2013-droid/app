@@ -14,7 +14,7 @@ export function PanelHeader({
   onClose: () => void;
 }) {
   return (
-    <header className="px-6 pb-3 pt-5">
+    <div className="px-6 pb-3 pt-5">
       <div className="flex items-center justify-between gap-2 text-[11px] text-ink-quiet">
         <div className="flex items-center gap-1.5">
           <TaskIdChip id={task.id} seq={task.seq} />
@@ -42,7 +42,7 @@ export function PanelHeader({
         </button>
       </div>
       <TitleEditor key={task.id} task={task} />
-    </header>
+    </div>
   );
 }
 

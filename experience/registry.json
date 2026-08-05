@@ -162,7 +162,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "58fc9b218b76a1a5"
+      "materialityHash": "03d2eb5aa09d172f"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -206,11 +206,11 @@
       "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "e6572d73e8304e38",
+      "materialityHash": "742f6da52fc2ae6e",
       "materialityReview": {
-        "materialityHash": "e6572d73e8304e38",
+        "materialityHash": "742f6da52fc2ae6e",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-31.json"
       }
     },
     {
@@ -363,11 +363,11 @@
       "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "86ee3a76a13d8bc0",
+      "materialityHash": "cc5db7e841cafabc",
       "materialityReview": {
-        "materialityHash": "86ee3a76a13d8bc0",
+        "materialityHash": "cc5db7e841cafabc",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-31.json"
       }
     },
     {
@@ -512,11 +512,11 @@
       "lastReviewedAt": "2026-08-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "f20fd2dc1b67ab0e",
+      "materialityHash": "0d372879eb4d3aef",
       "materialityReview": {
-        "materialityHash": "f20fd2dc1b67ab0e",
+        "materialityHash": "0d372879eb4d3aef",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-31.json"
       }
     },
     {
@@ -572,7 +572,7 @@
       "materialityReview": {
         "materialityHash": "d94465a3f791a266",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-31.json"
       }
     },
     {
@@ -1335,7 +1335,7 @@
       "materialityReview": {
         "materialityHash": "b9f94c73108490b0",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-31.json"
       }
     },
     {
@@ -1438,7 +1438,7 @@
       "materialityReview": {
         "materialityHash": "d90764270932869e",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-31.json"
       }
     },
     {
@@ -1705,7 +1705,7 @@
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-31.json"
       }
     },
     {
@@ -1754,7 +1754,7 @@
       "materialityReview": {
         "materialityHash": "c2599ecd3d094b3d",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-31.json"
       }
     },
     {
@@ -1803,7 +1803,7 @@
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-31.json"
       }
     },
     {
@@ -1940,7 +1940,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bcef1d2f0a1926e6"
+      "materialityHash": "3dd9eb3d5e0e5d43"
     },
     {
       "id": "tasks.page.sign-up-by-sign-up",
@@ -1985,7 +1985,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ec6806da27043be0"
+      "materialityHash": "79381570db7105f5"
     },
     {
       "id": "tasks.page.status",
@@ -2299,7 +2299,7 @@
       "materialityReview": {
         "materialityHash": "11d00f9a07f33588",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.welcome-2026-07-31.json"
       }
     },
     {
@@ -2350,7 +2350,7 @@
       "materialityReview": {
         "materialityHash": "f532c7ecbb8ab980",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-31.json"
       }
     },
     {
@@ -2607,7 +2607,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "7d1439eb0d445ae9"
+      "materialityHash": "8c55772e01e8055b"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -2703,7 +2703,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d4ea072df8f66529"
+      "materialityHash": "b83273296bcf1589"
     },
     {
       "id": "tasks.surface.task-detail-panel",
@@ -2797,7 +2797,7 @@
       "materialityReview": {
         "materialityHash": "36c47fbab79ad4f1",
         "reviewedAt": "2026-08-04",
-        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-30.json"
+        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-31.json"
       }
     },
     {
@@ -2842,138 +2842,6 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ecae15d3b650a93f"
-    },
-    {
-      "id": "tasks.page.lab-task-detail",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/lab/task-detail",
-      "source": "tasks/src/app/lab/task-detail/page.tsx",
-      "parentJourney": "signed-in-work",
-      "archetype": "editor-or-canvas",
-      "primaryJob": "Review the task-detail design exploration.",
-      "primaryAction": "Compare panel, focus, and mobile shells.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-07-21",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "69f567c70748ff44"
-    },
-    {
-      "id": "tasks.page.lab-login",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/lab/login",
-      "source": "tasks/src/app/lab/login/page.tsx",
-      "parentJourney": "access-and-onboarding",
-      "archetype": "onboarding-and-authentication",
-      "primaryJob": "Review the sign-in surface exploration index.",
-      "primaryAction": "Compare the AuthStage login directions.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-04",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "4fed328a0cbc3a0e"
-    },
-    {
-      "id": "tasks.page.lab-login-by-slug",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/lab/login/[slug]",
-      "source": "tasks/src/app/lab/login/[slug]/page.tsx",
-      "parentJourney": "access-and-onboarding",
-      "archetype": "onboarding-and-authentication",
-      "primaryJob": "Review one sign-in surface direction.",
-      "primaryAction": "Walk a single AuthStage login direction.",
-      "roles": [
-        "owner",
-        "member"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "live",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-04",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "3a8eb6b2f52374fd"
     },
     {
       "id": "tasks.page.lab-welcome-a",
@@ -4272,6 +4140,94 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7b7ed391aa1b72ab"
+    },
+    {
+      "id": "tasks.page.lab-login",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/login",
+      "source": "tasks/src/app/lab/login/page.tsx",
+      "parentJourney": "access-and-onboarding",
+      "archetype": "onboarding-and-authentication",
+      "primaryJob": "Review the sign-in surface exploration index.",
+      "primaryAction": "Compare the AuthStage login directions.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "4fed328a0cbc3a0e"
+    },
+    {
+      "id": "tasks.page.lab-login-by-slug",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/login/[slug]",
+      "source": "tasks/src/app/lab/login/[slug]/page.tsx",
+      "parentJourney": "access-and-onboarding",
+      "archetype": "onboarding-and-authentication",
+      "primaryJob": "Review one sign-in surface direction.",
+      "primaryAction": "Walk a single AuthStage login direction.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "3a8eb6b2f52374fd"
     }
   ]
 }

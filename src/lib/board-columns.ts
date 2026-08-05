@@ -53,7 +53,10 @@ export const WAITING_COLUMN_KEY = "waiting";
 const DEFAULT_DESCRIPTIONS: Record<string, string> = {
   todo: "Agreed and ready to start.",
   doing: "In motion right now.",
-  review: "Being checked before it ships.",
+  // "goes out", not "ships" — the default copy serves venues, freelancers
+  // and students, and /about promises not to assume the reader works in
+  // tech. Owners can still write their own.
+  review: "Being checked before it goes out.",
   [WAITING_COLUMN_KEY]: "Held by a reply, a delivery, or a decision.",
   done: "Finished work stays visible.",
 };

@@ -1,10 +1,10 @@
 {
   "schemaVersion": "signal-materiality-review/2",
-  "experienceId": "tasks.page.app-settings",
-  "source": "tasks/src/app/app/settings/page.tsx",
-  "materialityHash": "d9988ba395545970",
+  "experienceId": "tasks.page.app-task-by-id",
+  "source": "tasks/src/app/app/task/[id]/page.tsx",
+  "materialityHash": "36c47fbab79ad4f1",
   "reviewedAt": "2026-08-04",
-  "reviewer": "claude-fable-5 (T·126 cycle)",
+  "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
   "playwrightEvidence": {
     "attestationPath": "experience/evidence-runs/tasks-playwright-fb4562a7736970e441208776-f11882e3f2958daa.json",
     "attestationSha256": "41a2a62ee20090f9fa68c0681778952142e81eae6d64b9ad866754ef69a4879f",
@@ -12,8 +12,8 @@
     "canonicalEvidenceSha256": "fb4562a7736970e441208776eb7d9164602db812d2b21b7d760f255214129fd2",
     "rawArtifactSha256": "f11882e3f2958daaf1295ce2a4fd54b556dca50391878290650bdc9d2df72b35",
     "artifactPath": "experience/output/critical-evidence.json",
-    "fixtureId": "tasks.page.app",
-    "caseName": "front door lands on Home",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
     "projects": [
       "mobile",
       "tablet",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
-  "decision": "approve"
+  "reviewedChange": "No source change. The T-126 cycle advanced the fixture manifest (quick-create accessible-name assertion; share read-only proof retargeted to 'Add project'), which retires attestations pinned to the prior manifest.",
+  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); surface unchanged and passing."
 }

@@ -57,7 +57,7 @@ export function QuickCreateDialog({
     onClose();
     if (droppedRecurrence) {
       toast("Task created", {
-        body: "Recurrence not supported yet, try \"every Tuesday\" or set it from the task panel.",
+        body: "That repeat phrasing isn't supported. Try \"every Tuesday\", or set Repeats from the task panel.",
         tone: "info",
         duration: 5200,
       });
@@ -69,11 +69,29 @@ export function QuickCreateDialog({
     onClose();
   }
 
+  // What the parser will do, spoken: the visual preview chips animate in
+  // and out of the tree, so a screen reader needs this permanently-mounted
+  // status line to hear the same facts.
+  const parsePreviewStatus = [
+    dateDetected ? `Due ${parsed.dueLabel}.` : null,
+    recurrenceDetected && parsed.recurrence
+      ? `Repeats ${formatRecurrenceLabel(parsed.recurrence)}.`
+      : null,
+    tagsDetected ? `Tags: ${(parsed.tags ?? []).join(", ")}.` : null,
+    recurrenceRefusal ? "That repeat phrasing isn't supported." : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <Dialog open={open} onClose={close} labelledBy="quick-create-input" motionMode="instant">
+    <Dialog open={open} onClose={close} ariaLabel="Add a task" motionMode="instant">
       <div className="px-5 pt-4.5 pb-4">
+        {/* A stable accessible name — the visible placeholder stays the
+            per-pack example, but the NAME must not be whatever the pack
+            example (or the typed value) happens to be. */}
         <input
           id="quick-create-input"
+          aria-label="Task name"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -92,6 +110,10 @@ export function QuickCreateDialog({
           spellCheck={false}
           className="w-full bg-transparent text-[17px] font-medium leading-snug tracking-[-0.01em] text-ink placeholder:text-ink-faint focus:outline-none"
         />
+
+        <span aria-live="polite" className="sr-only" role="status">
+          {parsePreviewStatus}
+        </span>
 
         {/* NLP preview, slides in when chrono detects a date phrase or
             the recurrence parser fires. Shows the cleaned title, due chip,
@@ -176,7 +198,7 @@ export function QuickCreateDialog({
               className="mt-2 overflow-hidden"
             >
               <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-[1.4] text-amber-700">
-                Recurrence not supported, try &ldquo;every Tuesday&rdquo; or remove the timing language to skip recurrence.
+                That repeat phrasing isn&rsquo;t supported &mdash; try &ldquo;every Tuesday&rdquo;, or drop the timing words and set Repeats in the task panel.
               </p>
             </motion.div>
           ) : null}

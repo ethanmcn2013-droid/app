@@ -629,11 +629,14 @@
 
 /* ── Collapsed strip and narrow-width trigger ─────────────────────────── */
 
+/* No `display` here on purpose: module rules sit outside Tailwind's
+   cascade layers, so a display:flex in this block silently overrode the
+   `hidden md:flex` utilities at the call site — the tablet-only strip
+   leaked onto phones. Each call site declares its own display. */
 .sidebarStrip {
   align-items: center;
   background: var(--x-task-surface);
   border-right: 1px solid var(--x-task-border);
-  display: flex;
   flex: 0 0 44px;
   flex-direction: column;
   gap: 12px;

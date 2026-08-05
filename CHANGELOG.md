@@ -63,6 +63,96 @@ columns scroll from the keyboard. Where a value is absent, the row says
 so to a screen reader instead of showing an unlabeled dash. Every one
 of these was measured in the running product before it was called done.
 
+## 2026-08-05 · T·130 · trims · a concluded exploration stops shipping
+
+**The client bundle is back under its ceiling, and it got there by
+deleting a design lab that had already done its job.** The
+`total_client_js` budget failed at 952.8 KB gzip against a 950 KB
+ceiling. The ceiling is a ratchet — raising one is a founder decision,
+not an edit — so this dispatch found the kilobytes instead.
+
+Where they were. `/lab/task-detail` was the Phase 3 Hybrid C
+exploration: three shells over one task-detail composition, its own
+board replica, its own resizable panel, its own five-task fixture set.
+It concluded. Its outcome shipped as `src/components/app/detail-panel`
+— the same panel, the same resizable splitter, the same conversation,
+subtask and resource sections, against real data. The lab kept
+shipping to production anyway, noindexed and unreachable from any
+link, at **19.1 KB gzip** across three chunks. Removing it takes the
+budget to 933.7 KB, green with 16 KB of headroom.
+
+What was deliberately left alone. `/lab/welcome-a`, `-b` and `-w` are
+the three venue-branded welcome directions, registered last cycle and
+still under evaluation. They cost about 4 KB together and they are a
+live decision, not a concluded one.
+
+Recorded for the next reader, because two hours went into learning it:
+this budget counts every `.js` file in the build's chunk directory, not
+what one visitor downloads. Three things follow. Deleting unreferenced
+source wins nothing — 27 unreferenced modules and 99.7 KB of source
+proved to be absent from the bundle already, because nothing imports
+them. Lazy-loading wins nothing either: the chunk still lands on disk.
+And `optimizePackageImports` made no difference at all — dropping
+`motion` from it moved the number by 0 KB. The only lever that moves
+this measure is shipping less reachable code.
+
+Also recorded: `motion` is the single largest line item in the bundle
+at roughly 185 KB gzip spread across 15 chunks, with visible
+duplication — two chunks of exactly 44.8 KB, three more of exactly
+11.0 KB. That is Turbopack's route-group chunking, not a fault in the
+source; all 65 call sites import `motion/react` and none reaches for
+`framer-motion` directly. It is the obvious next place to look if the
+ceiling is ever a problem again.
+
+## 2026-08-02 · T·128 · finishes · the phone list becomes a list
+
+**The list at phone width is a list again, the planning rail stops
+charging every view 48px to stay shut, and a sticky group band no
+longer lets the rows print through it.** T·127 stopped the phone list
+overflowing but left it half-built: the row was a grid, and a grid item
+is blockified, so six cells stacked into six ragged lines with stray
+separators hanging off them. This dispatch finishes that row and the
+three faults found underneath it.
+
+The row, plainly. It is a block box with inline-block cells now — not a
+grid and not a flex line, both of which blockify what they contain. The
+title takes its own line, the description clamps at two, and status,
+owner, dates, priority and estimate run as one meta line beneath. The
+column widths moved off inline `style` and onto custom properties,
+because an inline width is unbeatable by any stylesheet and the phone
+needs those widths back. And the table, its body and its rows leave
+table layout together: a `display: block` row left inside a
+table-row-group gets wrapped in an anonymous cell that shrink-wraps, so
+the row measured 237px inside a 390px body and the title wrapped early
+against nothing. Every element carries an explicit ARIA role now,
+because changing a table's display drops its semantics — verified
+identical on both widths: 17 rows, 6 row groups, 15 row headers, 51
+cells.
+
+Underneath it, three more. The collapsed planning rail was an in-flow
+48px column on a 390px phone, so the list, the board, the schedule and
+the calendar were each laid out in 342px and clipped for a control that
+was shut; expanded it already overlaid, and collapsed it now floats as
+a pill in the one corner that holds nothing, measured to clear the tab
+bar and the review banner rather than land on them. The sticky group
+band mixed 6% of `transparent` into the canvas, which does not tint a
+colour — it takes 6% of its alpha away, and every row scrolling under a
+0.94-opaque header printed through the group's name. And that band
+sticks to the top of the scroller at phone width instead of 34px down,
+where the column header it was clearing is hidden.
+
+Recorded for the next reader: the dev server in a sandboxed container
+serves an app that never hydrates, because Next blocks its own
+cross-origin dev resources and the HMR socket dies with them. Motion
+components sit at their initial `opacity: 0` and nothing responds to a
+click. Screenshots taken against it are of an un-hydrated page. The
+sanctioned harness builds and starts production for exactly this
+reason; visual review has to do the same.
+
+Gates: typecheck, lint (0 errors), 402/402 tests, ds-check clean,
+experience 128/128, axe 0 violations across four views × two widths,
+zero document overflow on all eight.
+
 ## 2026-08-02 · T·127 · finishes · the artifact for the days that matter, and the template that points at one
 
 **The shared Timeline artifact repairs the three places it broke its own
@@ -138,6 +228,118 @@ limbo: the Timeline empty state now reads its copy from the module that
 owns it, and three dead files are gone, including a shared-update page
 model the artifact itself replaced. The full review that drove this
 cycle: `docs/TIMELINE_DESIGN_REVIEW.md`.
+
+## 2026-08-02 · T·127 · corrects · the second panel reads the repairs back
+
+**A second eight-lens panel reviewed the repaired product and returned
+51 verified findings — twenty of them caused by the repair cycle
+itself.** That is the number worth publishing. The first panel found a
+year-old surface wanting; this one found the fixes wanting, which is
+what a review instrument is for.
+
+Its hardest verdict lands on the grace pass: **superficial**, in the
+typographic lens's word. Moving 335 declarations onto the ramp resolved
+to 83% of them landing on the ramp's 11px *label* step, so the board
+rendered four sizes across 85 text nodes and a calendar date sat at the
+same size as the tasks inside it. A monotone is not a ramp. Content
+steps back off the label floor here — calendar chips, agenda and
+day-list titles, tray chips, the milestone name, and the date numeral
+that has to outrank its own cell — and the tracking pass, which had
+reached only the four eyebrows visible in the screenshots, now covers
+all 43 uppercase rules at one value.
+
+**Five blockers, four of them ours.** The grab-offset drag measured the
+grabbed *element*, whose pill is as wide as its label rather than its
+day, so a due marker landed up to five days off; the drag now moves the
+schedule by the pointer's own travel, which is one-to-one by
+construction and has no geometry to get wrong. The completion circle's
+border was a hairline token at about 1.5:1, under what WCAG asks of a
+control's edge — there is now a control-boundary token at 4.8:1 — and
+its hover dimmed the tick on already-done work, previewing nothing;
+reopening gets its own honest signal. The phone planning rail, which
+this cycle made an overlay, was a modal with no dialog role, no scrim,
+no Escape and no focus handling; it has all four. The calendar's
+Previous/Next/Today were still inert because a snap-back guard meant to
+follow a far-away selection fired on every navigation — navigation
+moves the selection with the window now.
+
+Beyond ours: the list at phone width was a 1321px table behind a 660px
+sticky column, five of six columns physically unreachable, and below
+768px stops being a table at all; a column config read had no demo
+guard, so one of its three callers returned a server error from a link
+the view bar offers in one click, fixed at the boundary rather than the
+call site; a column move re-read the server unconditionally and reverted
+custom-column drops that had already landed; and the P-code retirement
+had stopped at the app edge, so print and the public share board still
+showed P1 to guests. The calendar's completion control was a 26px
+rounded square where every other surface uses the 16px circle.
+
+Deliberately still open, with their gating reasons: touch drag (the
+motion contract wants a real-device pass), roving tabindex, the detail
+panel's own type ramp, and leading, which the panel correctly names as
+the weakest link now that the sizes have tiers again.
+
+Later the same day, the grace pass. Every font size in the four view
+modules moves onto the brand ramp — 335 call sites, an 11px floor,
+nothing beneath it — and uppercase eyebrows take their full 0.12em.
+The room's Filter/Sort/Save panels, which had been running at 9px
+inside an 829-line file that was mostly a dead 7–9px copy of a board
+nobody mounted, are rebuilt as 67 lines on the ramp with the motion
+contract's anchored-layer entrance. The tools bar gains its one accent
+act: Add task alone wears indigo. On phones the brief keeps its name
+and progress and hands milestones and money to bigger screens, and
+the add-column rail yields to the lane menu.
+
+## 2026-07-31 · T·126 · repairs · the panel review's blockers close
+
+**Creating a task works from every entry point again, the detail panel
+speaks the same column model as the board, and the board's columns say
+their own names.** An adversarially-verified design review ran against
+the live product this morning — eight lenses, 88 findings raised, 82
+held. This dispatch ships its five blockers and the highest-severity
+fixes behind them.
+
+The blockers, plainly. Six create affordances — the calendar's "+" and
+"Create on this date", both planning-rail adds, the palette entry, the
+list's empty state — wrote a status key no workspace has ("queued", the
+lab's retired vocabulary), and the task was silently orphaned; the
+store now resolves any stale key to the top of the board, and the call
+sites speak real column keys. The detail panel declared aria-modal
+without ever taking focus — it now takes it, keeps Tab inside, and
+still returns it exactly; its status control iterated the retired
+four-lane constant and now renders the workspace's real columns,
+custom ones included; its assign menu offers real members instead of
+the design-lab cast. A reference to the undefined --spring-press
+invalidated the entire transition stack on cards, schedule bars and
+calendar chips; the sanctioned instant token replaces it. And the lane
+header wraps to two rows, so a column's name is never again crushed to
+a sliver by its own description.
+
+Around them, the seams. One wording for finishing (Mark done), one for
+creating (Add task), one name for /app/my-tasks (My work), one label —
+Schedule — everywhere "Timeline" leaked beside the Timeline product.
+One milestone colour on every surface (violet; no status token spends
+it). Completed work reads as done on the calendar. The schedule's due
+ticks follow the shared amber/red due grammar instead of painting
+everything alarm-red. The brief's milestone date reads "1 Aug", not
+US-style "08/01"; its stat lines stop wrapping mid-number; the demo
+venue prices in euro. List row descriptions drop the browser's
+bold-and-centred <th> defaults. Completion is a circle and selection
+is a square, everywhere — the two used to be pixel-identical twins.
+Priority loses the "P1 ·" prefix and the forked Medium/Normal scale.
+Settings shows the board's real name. On phones: the tablet strip
+stops leaking through the cascade, Schedule's first paint pans to
+today, the calendar's Previous/Next/Today actually drive the day
+list, the planning rail overlays instead of crushing the workspace to
+110px, and the keyboard legend no longer lectures a touchscreen about
+Alt keys. The per-completion glow burst retires; the first-ever
+completion keeps the one expressive signature the motion contract
+budgets.
+
+Deliberately not in this dispatch: touch drag (the motion contract
+gates it behind a real-device pass), roving tabindex, and the schedule
+bar's grab-offset drag. The review dossier holds the rest, ranked,
+with file-level evidence.
 
 ## 2026-08-01 · T·126 · holds · experience, then design, then utility
 
