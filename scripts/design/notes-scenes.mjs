@@ -172,7 +172,7 @@ const SCENES = [
         .getByRole("textbox", { name: "Write a note" })
         .fill("This one will not reach the server on the first try.");
       await page.keyboard.press("Control+Enter");
-      await page.getByText(/did not reach Notes/).waitFor();
+      await page.getByText(/That did not save/).first().waitFor();
     },
   },
   {
@@ -202,7 +202,7 @@ const SCENES = [
     url: "/app/notes",
     async act(page) {
       await page.getByRole("button", { name: /Private to you/ }).click();
-      await page.getByRole("dialog", { name: /keeps this private/ }).waitFor();
+      await page.getByRole("dialog", { name: /Only you can read your notes/ }).waitFor();
     },
   },
   {
@@ -246,10 +246,24 @@ async function run() {
   page.on("pageerror", (error) => consoleErrors.push(`pageerror: ${error}`));
 
   const failures = [];
+  let attempted = 0;
   for (const scene of SCENES) {
     if (ONLY && !ONLY.includes(scene.slug)) continue;
+    attempted += 1;
     try {
+      // Every scene starts from nothing. Drafts and queued captures live in
+      // session storage by design, so without this a scene inherits the
+      // previous one's unsaved words and no longer shows what it claims to.
       await page.goto(`${BASE}${scene.url}`, { waitUntil: "networkidle" });
+      await page.evaluate(() => {
+        try {
+          sessionStorage.clear();
+          sessionStorage.setItem("signal-tasks.devbanner_dismissed", "1");
+        } catch {
+          /* private mode */
+        }
+      });
+      await page.reload({ waitUntil: "networkidle" });
       await page.waitForTimeout(400);
       if (scene.act) await scene.act(page);
       await page.waitForTimeout(scene.settle ?? 220);
@@ -266,6 +280,23 @@ async function run() {
   await writeFile(
     path.join(OUT, "console.txt"),
     [...new Set(consoleErrors)].join("\n") || "no console errors\n",
+    "utf8",
+  );
+  // The run's own verdict, written beside its output. Without this the bundle
+  // recorded a clean console and said nothing about scenes that never reached
+  // the state they claim to show, which let a failed capture sit unremarked
+  // next to passing ones.
+  await writeFile(
+    path.join(OUT, "capture-report.txt"),
+    [
+      `output: ${OUT}`,
+      `scenes attempted: ${attempted}`,
+      `scene failures: ${failures.length}`,
+      ...failures.map((entry) => `  FAILED ${entry.slug}: ${entry.error}`),
+      `console errors: ${new Set(consoleErrors).size}`,
+      ...[...new Set(consoleErrors)].map((line) => `  ${line}`),
+      "",
+    ].join("\n"),
     "utf8",
   );
   process.stdout.write(

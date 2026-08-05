@@ -52,7 +52,12 @@ export type ComposerMode = "type" | "voice" | "photo";
 type Stage =
   | { kind: "idle" }
   | { kind: "recording" }
-  | { kind: "processing"; source: "voice" | "photo" }
+  | {
+      kind: "processing";
+      source: "voice" | "photo";
+      /** Held here so no exit from this stage can drop what was said. */
+      transcript: string;
+    }
   | {
       kind: "review";
       source: "voice" | "photo";
@@ -69,6 +74,83 @@ type PhotoState = {
 };
 
 const CHARACTER_REVEAL_AT = Math.floor(MAX_NOTE_BODY_CHARS * 0.8);
+
+const MAX_READ_EDGE = 2000;
+
+/**
+ * Decode, downscale and re-encode a chosen photo.
+ *
+ * Returns null when the file is not a decodable image, which is the only
+ * honest answer for something the reader could never have read.
+ */
+async function prepareForReading(file: File): Promise<PhotoState | null> {
+  const url = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = reject;
+      element.src = url;
+    });
+    const longest = Math.max(image.naturalWidth, image.naturalHeight);
+    const scale = longest > MAX_READ_EDGE ? MAX_READ_EDGE / longest : 1;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(image.naturalWidth * scale);
+    canvas.height = Math.round(image.naturalHeight * scale);
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.86);
+    return {
+      dataUrl,
+      base64: dataUrl.slice(dataUrl.indexOf(",") + 1),
+      mediaType: "image/jpeg",
+      name: file.name,
+      rotation: 0,
+    };
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+/**
+ * Re-encode a rotated photo so the bytes match the preview.
+ *
+ * Falls back to the original on any failure, because a picture read the
+ * wrong way up is still better than no picture at all.
+ */
+async function bakeRotation(photo: PhotoState): Promise<PhotoState> {
+  if (photo.rotation === 0) return photo;
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = reject;
+      element.src = photo.dataUrl;
+    });
+    const turned = photo.rotation === 90 || photo.rotation === 270;
+    const canvas = document.createElement("canvas");
+    canvas.width = turned ? image.naturalHeight : image.naturalWidth;
+    canvas.height = turned ? image.naturalWidth : image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) return photo;
+    context.translate(canvas.width / 2, canvas.height / 2);
+    context.rotate((photo.rotation * Math.PI) / 180);
+    context.drawImage(image, -image.naturalWidth / 2, -image.naturalHeight / 2);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    return {
+      ...photo,
+      dataUrl,
+      base64: dataUrl.slice(dataUrl.indexOf(",") + 1),
+      mediaType: "image/jpeg",
+      rotation: 0,
+    };
+  } catch {
+    return photo;
+  }
+}
 
 function formatElapsed(ms: number): string {
   const total = Math.floor(ms / 1000);
@@ -98,7 +180,10 @@ export function Composer({
   draft: string;
   setDraft: (value: string) => void;
   onSaveDraft: () => Promise<string | null>;
-  onSaveNotes: (bodies: string[], source: NoteCaptureSource) => Promise<boolean>;
+  onSaveNotes: (
+    bodies: string[],
+    source: NoteCaptureSource,
+  ) => Promise<{ ok: boolean; remaining: string[] }>;
   captureStatus: "idle" | "pending" | "failed" | "offline" | "saved";
   captureError: string | null;
   clearCaptureError: () => void;
@@ -161,14 +246,23 @@ export function Composer({
     const started = await speech.start();
     if (!started) {
       setMode("type");
+      // A refused microphone used to do nothing at all: the button was
+      // pressed, the state was set, and nobody was told why it did not open.
+      setStageError(
+        speech.error?.kind === "denied"
+          ? copy.voice.denied
+          : speech.error?.kind === "no-microphone"
+            ? "No microphone was found. Typing works everywhere."
+            : copy.voice.failed,
+      );
       return;
     }
     setStage({ kind: "recording" });
-  }, [speech]);
+  }, [copy.voice.denied, copy.voice.failed, speech]);
 
   const processTranscript = useCallback(
     async (transcript: string) => {
-      setStage({ kind: "processing", source: "voice" });
+      setStage({ kind: "processing", source: "voice", transcript });
       const result = await extractNotesFromSpeech({ transcript });
       if (result.status === "ok") {
         setStage({
@@ -215,37 +309,36 @@ export function Composer({
   const acceptFile = useCallback(async (file: File) => {
     setStageError(null);
     if (!file.type.startsWith("image/")) {
-      setStageError("That file is not a photo. Signal reads PNG, JPEG and WebP.");
+      setStageError("That file is not a photo. PNG, JPEG and WebP all work.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       setStageError("That photo is larger than 5 MB. A smaller one reads just as well.");
       return;
     }
-    const buffer = await file.arrayBuffer();
-    let binary = "";
-    const bytes = new Uint8Array(buffer);
-    for (let index = 0; index < bytes.length; index += 1) {
-      binary += String.fromCharCode(bytes[index] as number);
+    // Downscale before encoding. A phone photo is 3-5 MB of pixels that a
+    // reader does not need: text stays legible well under 2000px on the long
+    // edge, and the smaller payload is the difference between this working
+    // on a phone connection and timing out on one.
+    const prepared = await prepareForReading(file);
+    if (!prepared) {
+      setStageError("That photo could not be opened. Try another one.");
+      return;
     }
-    const base64 = btoa(binary);
-    setPhoto({
-      dataUrl: `data:${file.type};base64,${base64}`,
-      base64,
-      mediaType: file.type,
-      name: file.name,
-      rotation: 0,
-    });
+    setPhoto(prepared);
     setMode("photo");
   }, []);
 
   const processPhoto = useCallback(async () => {
     if (!photo) return;
-    setStage({ kind: "processing", source: "photo" });
+    setStage({ kind: "processing", source: "photo", transcript: "" });
     setStageError(null);
+    // Send what the person is looking at. Rotating only the preview meant a
+    // sideways page was corrected on screen and read sideways by the model.
+    const oriented = await bakeRotation(photo);
     const result = await extractNotesFromPhoto({
-      base64: photo.base64,
-      mediaType: photo.mediaType,
+      base64: oriented.base64,
+      mediaType: oriented.mediaType,
     });
     if (result.status === "ok") {
       setStage({
@@ -324,10 +417,20 @@ export function Composer({
     const bodies = stage.notes.map((note) => note.body.trim()).filter(Boolean);
     if (!bodies.length) return;
     setSavingExtracted(true);
-    const saved = await onSaveNotes(bodies, stage.source);
+    const result = await onSaveNotes(bodies, stage.source);
     setSavingExtracted(false);
-    // Only let go of the source once every note is somewhere durable.
-    if (saved) resetStage();
+    // Only let go of the source once every note is somewhere durable. What
+    // did not land stays on screen, and only that, so a retry cannot save a
+    // second copy of the ones that did.
+    if (result.ok) {
+      resetStage();
+      return;
+    }
+    setStage((current) =>
+      current.kind === "review"
+        ? { ...current, notes: result.remaining.map((body) => ({ body })) }
+        : current,
+    );
   }, [onSaveNotes, resetStage, stage]);
 
   const onFieldKeyDown = useCallback(
@@ -420,8 +523,8 @@ export function Composer({
             <div className={styles.recordRow}>
               <span className={styles.recordDot} aria-hidden="true" />
               <span className={styles.recordElapsed}>{formatElapsed(speech.elapsed)}</span>
-              <span className={styles.recordLabel}>
-                {speech.simulated ? "Rehearsing in review mode" : "Listening"}
+              <span className={styles.recordLabel} role="status">
+                {speech.simulated ? "Practice run, nothing is saved" : "Listening"}
               </span>
               <span className={styles.levels} aria-hidden="true">
                 {speech.levels.map((level, index) => (
@@ -516,8 +619,25 @@ export function Composer({
                 type="button"
                 className={styles.quietButton}
                 onClick={() => {
-                  // The transcript and the photo are both still held, so
-                  // stopping here costs nothing but the wait.
+                  // Give the words back before letting go of the stage. The
+                  // photo is state and survives; the transcript is not, and
+                  // dropping straight to idle used to throw a three-minute
+                  // dictation away with one click.
+                  if (stage.source === "voice") {
+                    const spoken = stage.transcript.trim();
+                    if (spoken) {
+                      setStage({
+                        kind: "review",
+                        source: "voice",
+                        notes: [{ body: spoken }],
+                        separated: false,
+                      });
+                      setStageError(
+                        "That took too long, so your words are here as they were spoken.",
+                      );
+                      return;
+                    }
+                  }
                   setStage({ kind: "idle" });
                 }}
               >

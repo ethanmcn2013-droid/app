@@ -7,6 +7,7 @@ import { allow } from "@/lib/ratelimit";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireUser } from "@/modules/notes/server/notes-auth";
 import {
+  chunkIntoNotes,
   EXTRACTION_FAILED,
   EXTRACTION_SCHEMA,
   EXTRACTION_UNAVAILABLE_PHOTO,
@@ -79,8 +80,12 @@ async function guard(): Promise<{ ok: true; userId: string } | { ok: false; mess
 export async function extractNotesFromSpeech(
   input: ExtractFromSpeechInput,
 ): Promise<NoteExtraction> {
+  // Tidied, but NOT capped to one note's length: the cap belongs to a note,
+  // not to what a person said. Capping here truncated a three-minute
+  // dictation to six hundred characters and called it a success.
   const transcript = tidyExtractedBody(
     input.transcript.slice(0, MAX_TRANSCRIPT_CHARS),
+    MAX_TRANSCRIPT_CHARS,
   );
   if (!transcript) {
     return { status: "failed", message: "Nothing was heard, so there is nothing to save." };
@@ -92,26 +97,21 @@ export async function extractNotesFromSpeech(
   if (!gate.ok) return { status: "failed", message: gate.message };
 
   if (!aiConfigured()) {
-    return {
-      status: "ok",
-      notes: [{ body: transcript }],
-      separated: false,
-    };
+    return { status: "ok", notes: chunkIntoNotes(transcript), separated: false };
   }
 
   try {
-    const notes = await runExtraction(VOICE_EXTRACTION_PROMPT, [
-      { type: "text", text: transcript },
-    ], transcript);
+    const notes = await runExtraction(
+      VOICE_EXTRACTION_PROMPT,
+      [{ type: "text", text: transcript }],
+      transcript,
+    );
     return { status: "ok", notes, separated: true };
   } catch {
-    // The transcript is still in the caller's hands, so this is recoverable,
-    // not a loss. Say what happened and keep the words.
-    return {
-      status: "ok",
-      notes: [{ body: transcript }],
-      separated: false,
-    };
+    // Every word survives. Where the words are longer than a note can hold
+    // they are split across several, because losing the tail is not an
+    // acceptable way to fail.
+    return { status: "ok", notes: chunkIntoNotes(transcript), separated: false };
   }
 }
 
@@ -129,7 +129,7 @@ export async function extractNotesFromPhoto(
   if (!ALLOWED_IMAGE_TYPES.includes(mediaType as AllowedImageType)) {
     return {
       status: "failed",
-      message: "That file is not an image Signal can read. Try a PNG, JPEG or WebP photo.",
+      message: "That is not an image this can read. Try a PNG, JPEG or WebP photo.",
     };
   }
   // base64 carries 3 bytes per 4 characters; check before decoding so an
@@ -170,7 +170,7 @@ export async function extractNotesFromPhoto(
     if (!notes.length) {
       return {
         status: "failed",
-        message: "Signal could not read any writing in that photo. Try a closer or brighter one.",
+        message: "No writing could be read in that photo. Try a closer or brighter one.",
       };
     }
     return { status: "ok", notes, separated: true };

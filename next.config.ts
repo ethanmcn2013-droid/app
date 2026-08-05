@@ -245,6 +245,14 @@ const nextConfig: NextConfig = {
     // the app + marketing; the full barrel ships ~6× what we actually call.
     // Roadmap's next.config carries the same shape (Phase 6.2).
     optimizePackageImports: ["@clerk/nextjs", "motion"],
+    serverActions: {
+      // Photo capture in Notes posts image bytes to a server action. The
+      // framework default is 1 MB, and base64 inflates by about 1.37x, so
+      // anything over roughly 730 KB was rejected by Next before the
+      // product's own 5 MB limit was ever consulted — with a generic error.
+      // 8 MB clears a 5 MB photo with room for the encoding.
+      bodySizeLimit: "8mb",
+    },
   },
   async headers() {
     return [

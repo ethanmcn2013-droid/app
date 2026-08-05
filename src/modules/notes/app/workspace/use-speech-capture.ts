@@ -242,7 +242,15 @@ export function useSpeechCapture({ simulated = false }: { simulated?: boolean } 
       else setError({ kind: "failed", message: "Speech stopped early." });
     };
     recognition.onend = () => {
-      endedRef.current?.();
+      if (endedRef.current) {
+        endedRef.current();
+        return;
+      }
+      // Chrome ends recognition on its own after a long silence or a service
+      // drop. Without this the meter kept animating, the microphone stayed
+      // open and the timer kept counting while nothing was being heard.
+      teardown();
+      setError((current) => current ?? { kind: "interrupted" });
     };
     recognitionRef.current = recognition;
     try {

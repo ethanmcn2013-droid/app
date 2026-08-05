@@ -10,8 +10,10 @@
  * Type ramp, four weights are not needed and three are used: 400 for
  * everything read, 500 for anything that names or labels, 600 for the two
  * headings that exist. Sizes are 12 / 13 / 14 / 15 / 16 / 17 / 20 and nothing
- * between them. Reading sizes carry --x-lead-read, interface sizes carry
- * --x-lead-ui, the same leading-by-job scale Tasks uses.
+ * between them, with one stated exception: keyboard caps are set at
+ * --text-label, the design system's own 11px mono step, because that is what
+ * a keycap is. Reading sizes carry --x-lead-read, interface sizes carry
+ * --x-lead-ui, and the two caps carry --x-lead-tight.
  *
  * Tokens are the vendored design system's own names. Notes adds no parallel
  * palette; the three --x-notes-* values below are measurements, not colours.
@@ -86,6 +88,10 @@
 /* ── Local header ─────────────────────────────────────────────────────── */
 
 .header {
+  /* The popover and the menu anchor to this. Without it they resolve against
+     whatever is positioned further up the tree and land on top of the black
+     product bar. */
+  position: relative;
   display: flex;
   min-block-size: 48px;
   align-items: center;
@@ -324,7 +330,7 @@
   position: relative;
   display: grid;
   border: 1px solid var(--hairline);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--paper);
   transition: border-color var(--motion-fast) var(--ease-out),
     box-shadow var(--motion-fast) var(--ease-out);
@@ -359,7 +365,7 @@
 }
 
 .composerField:focus {
-  outline: none;
+  outline: revert-layer;
 }
 
 .composerFooter {
@@ -427,7 +433,7 @@
 }
 
 .counter[data-near="true"] {
-  color: var(--status-flight);
+  color: var(--x-task-warning);
 }
 
 .counter[data-over="true"] {
@@ -467,10 +473,10 @@
   align-items: center;
   padding: 1px 5px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--x-task-raised) 22%, transparent);
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: var(--text-label);
+  line-height: var(--x-lead-tight);
 }
 
 .primaryButton:disabled .keycap {
@@ -564,7 +570,7 @@
   font-family: var(--font-mono);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: var(--x-lead-flush);
 }
 
 .levels {
@@ -633,7 +639,7 @@
   border: 2px solid var(--accent-soft);
   border-block-start-color: var(--accent);
   border-radius: var(--radius-pill);
-  animation: notesSpin 720ms linear infinite;
+  animation: notesSpin var(--motion-slow) linear infinite;
 }
 
 @keyframes notesSpin {
@@ -755,8 +761,9 @@
   overflow: hidden;
 }
 
-.extractField:focus {
-  outline: none;
+.extractField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .extractItem:focus-within {
@@ -818,8 +825,11 @@
   color: var(--ink-faint);
 }
 
-.searchInput:focus {
-  outline: none;
+/* The field itself takes the ring: the container border is 2.2:1 against
+   paper and is not a focus indicator. */
+.searchInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .search:focus-within {
@@ -833,8 +843,8 @@
   border-radius: var(--radius-sm);
   color: var(--ink-faint);
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: var(--text-label);
+  line-height: var(--x-lead-tight);
 }
 
 .toolbarRight {
@@ -1010,9 +1020,9 @@
 }
 
 .highlight {
-  border-radius: 2px;
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: inherit;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--ink);
 }
 
 .rowSeparator {
@@ -1067,6 +1077,7 @@
   gap: var(--space-5);
   inline-size: 100%;
   max-inline-size: var(--x-notes-measure);
+  margin-inline: auto;
 }
 
 .detailField {
@@ -1082,8 +1093,9 @@
   overflow: hidden;
 }
 
-.detailField:focus {
-  outline: none;
+.detailField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 .detailFooter {
@@ -1143,6 +1155,7 @@
 
 .emptyCentred {
   composes: empty;
+  block-size: 100%;
   align-content: center;
   justify-items: center;
   justify-self: center;
@@ -1217,7 +1230,7 @@
   display: grid;
   gap: var(--space-5);
   inline-size: 100%;
-  max-inline-size: 62ch;
+  max-inline-size: var(--x-notes-measure);
 }
 
 .reviewMeta {
@@ -1283,7 +1296,7 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: rgba(17, 17, 17, 0.28);
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
 }
 
 .dialog {
@@ -1428,9 +1441,11 @@ textarea.fieldControl {
 
 /* ── Toast ────────────────────────────────────────────────────────────── */
 
+/* Above the scrim. A six-second undo rendered underneath a modal is a
+   six-second undo nobody can take. */
 .toastDock {
   position: fixed;
-  z-index: 50;
+  z-index: 70;
   inset-block-end: calc(20px + env(safe-area-inset-bottom));
   inset-inline-end: 20px;
   display: grid;
@@ -1543,7 +1558,7 @@ textarea.fieldControl {
   /* The product rail docks at the foot of the viewport below this width, so
      the list has to end above it rather than under it. */
   .list {
-    padding-block-end: calc(72px + env(safe-area-inset-bottom));
+    padding-block-end: calc(88px + env(safe-area-inset-bottom));
   }
 
   .detailScroll {
@@ -1571,9 +1586,6 @@ textarea.fieldControl {
     padding-inline: 8px;
   }
 
-  .privacyText {
-    display: none;
-  }
 
   .composerField {
     min-block-size: 48px;

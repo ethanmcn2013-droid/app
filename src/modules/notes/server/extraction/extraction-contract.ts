@@ -25,7 +25,7 @@ export type NoteExtraction =
       status: "ok";
       notes: ExtractedNote[];
       /**
-       * False means Signal did not separate anything and these are the words
+       * False means nothing was separated and these are the words
        * as they arrived. The interface says so rather than implying work that
        * did not happen.
        */
@@ -62,7 +62,7 @@ export const EXTRACTION_SCHEMA = {
   },
 } as const;
 
-const SHARED_RULES = `You are the quiet part of Signal Notes that turns raw capture into notes a person can use.
+const SHARED_RULES = `You are the quiet part of Signal Studio Notes that turns raw capture into notes a person can use.
 
 What you are doing: someone captured a thought in a hurry. Give it back to them as notes they will recognise as their own.
 
@@ -130,7 +130,7 @@ export function sanitizeExtractedNotes(
  * list markers, a leading "Note:" label, wrapping quotes, and the trailing
  * offer of further help.
  */
-export function tidyExtractedBody(value: string): string {
+export function tidyExtractedBody(value: string, cap = MAX_EXTRACTED_NOTE_CHARS): string {
   let body = value.replace(/\r\n/g, "\n").trim();
   body = body.replace(/^(?:[-*•]|\d+[.)])\s+/, "");
   body = body.replace(/^(?:note|thought|item)\s*\d*\s*[:\-–]\s*/i, "");
@@ -141,18 +141,66 @@ export function tidyExtractedBody(value: string): string {
     body = body.slice(1, -1).trim();
   }
   body = body.replace(/\n{3,}/g, "\n\n");
-  if (body.length > MAX_EXTRACTED_NOTE_CHARS) {
-    body = `${body.slice(0, MAX_EXTRACTED_NOTE_CHARS - 1).trimEnd()}…`;
+  if (body.length > cap) {
+    body = `${body.slice(0, cap - 1).trimEnd()}…`;
   }
   return body.trim();
 }
 
+/**
+ * Split words that are too long for one note across several, on sentence
+ * boundaries where there are any.
+ *
+ * This exists because the alternative is silent truncation. A three-minute
+ * dictation is three thousand characters; a note holds six hundred. Cutting
+ * it at the ceiling and reporting success is the worst thing this module
+ * could do, so when nothing separated the words, they are still all returned.
+ */
+export function chunkIntoNotes(
+  source: string,
+  cap = MAX_EXTRACTED_NOTE_CHARS,
+): ExtractedNote[] {
+  const text = source.replace(/\r\n/g, "\n").trim();
+  if (!text) return [];
+  if (text.length <= cap) return [{ body: text }];
+
+  const pieces = text.split(/(?<=[.!?])\s+/);
+  const notes: ExtractedNote[] = [];
+  let current = "";
+  const flush = () => {
+    const body = current.trim();
+    if (body) notes.push({ body });
+    current = "";
+  };
+  for (const piece of pieces) {
+    if (piece.length > cap) {
+      // One unbroken run longer than a note. Break it on whitespace rather
+      // than mid-word, and never drop the tail.
+      flush();
+      let rest = piece;
+      while (rest.length > cap) {
+        const window = rest.slice(0, cap);
+        const breakAt = window.lastIndexOf(" ");
+        const take = breakAt > cap * 0.6 ? breakAt : cap;
+        notes.push({ body: rest.slice(0, take).trim() });
+        rest = rest.slice(take).trim();
+      }
+      current = rest;
+      continue;
+    }
+    if ((current ? current.length + 1 : 0) + piece.length > cap) flush();
+    current = current ? `${current} ${piece}` : piece;
+  }
+  flush();
+  return notes;
+}
+
 /** Shown when the key is absent. Says what is off, not how it is wired. */
 export const EXTRACTION_UNAVAILABLE_VOICE =
-  "Signal cannot separate spoken notes on this account yet, so your words are kept exactly as you said them.";
+  "Spoken notes are not separated on this account yet, so your words are kept exactly as you said them.";
 
 export const EXTRACTION_UNAVAILABLE_PHOTO =
   "Reading photos is not switched on for this account yet. Typing and voice both work.";
 
 export const EXTRACTION_FAILED =
-  "Signal could not turn this into notes. Nothing was lost, so you can try again or keep the words as they are.";
+  "That could not be turned into notes. Nothing was lost, so you can try again or keep the words as they are.";

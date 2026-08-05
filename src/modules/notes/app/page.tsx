@@ -49,13 +49,12 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   // Demo/Review mode skips the sign-in gate entirely, the notebook renders
   // from the in-memory seed (listNotes/listArchivedNotes short-circuit).
   const demoMode = isDemoMode();
-  // The workspace is the canonical notebook and now the only one. The
-  // legacy renderer was retired with the 2026-08-05 redesign: its rollback
-  // window had passed, and rolling back to it would have restored the exact
-  // screen this replaced. `NOTES_LEGACY_NOTEBOOK_ENABLED` still governs the
-  // legacy Notes-to-Tasks server actions, which are a separate seam.
-  const hybridNotebookEnabled =
-    process.env.NOTES_LEGACY_NOTEBOOK_ENABLED !== "1";
+  // The workspace is the canonical notebook and now the only one. The legacy
+  // renderer was retired with the 2026-08-05 redesign: its stated one-release
+  // rollback window had passed, and rolling back to it would have restored
+  // the exact screen the redesign replaced. `NOTES_LEGACY_NOTEBOOK_ENABLED`
+  // still governs the legacy Notes-to-Tasks server actions, which are a
+  // separate seam and stay refused by default.
   const params = await searchParams;
   const fixture = demoMode ? resolveDemoFixture(params.fixture) : "populated";
 

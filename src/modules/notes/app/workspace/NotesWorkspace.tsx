@@ -416,13 +416,54 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  });
+  }, [
+    effectiveSelectedId,
+    menuOpen,
+    narrow,
+    notebook,
+    privacyOpen,
+    selectNote,
+    view,
+  ]);
+
+  /**
+   * Keep focus somewhere on a phone.
+   *
+   * Below 900px the list and the detail swap by `display: none`, which
+   * removes whichever one held focus and drops the caret to <body>. A
+   * screen reader loses its place on every open and every close.
+   */
+  const lastNarrowNote = useRef<string | null>(null);
+  useEffect(() => {
+    if (!narrow) return;
+    const previous = lastNarrowNote.current;
+    lastNarrowNote.current = effectiveSelectedId;
+    if (previous === effectiveSelectedId) return;
+    const frame = window.setTimeout(() => {
+      if (effectiveSelectedId) {
+        document
+          .querySelector<HTMLElement>("[data-notes-back]")
+          ?.focus({ preventScroll: true });
+        return;
+      }
+      const row = previous
+        ? document.querySelector<HTMLElement>(`[data-note-id="${previous}"]`)
+        : null;
+      (row ?? listRef.current?.querySelector<HTMLElement>("[data-note-row]"))?.focus({
+        preventScroll: true,
+      });
+    }, 0);
+    return () => window.clearTimeout(frame);
+  }, [effectiveSelectedId, narrow]);
 
   // Warn before leaving with unsaved words, and only then.
   useEffect(() => {
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      // Captures still on their way to the server live only in this tab, so
+      // closing it loses them. They belong in this test as much as a draft.
       const dirty =
         Boolean(notebook.draft.trim()) ||
+        notebook.hasUnsavedWork ||
         (selectedNote && notebook.detailBody !== selectedNote.body);
       if (!dirty) return;
       event.preventDefault();
@@ -430,7 +471,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [notebook.detailBody, notebook.draft, selectedNote]);
+  }, [notebook.detailBody, notebook.draft, notebook.hasUnsavedWork, selectedNote]);
 
   useEffect(() => {
     if (!privacyOpen && !menuOpen) return;
@@ -447,22 +488,36 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   // ── Actions ─────────────────────────────────────────────────────────
 
   const saveExtractedNotes = useCallback(
-    async (bodies: string[], source: NoteCaptureSource) => {
-      let allSaved = true;
+    async (
+      bodies: string[],
+      source: NoteCaptureSource,
+    ): Promise<{ ok: boolean; remaining: string[] }> => {
+      const failed: string[] = [];
       let firstId: string | null = null;
       for (const body of bodies) {
         const result = await notebook.captureNote(body, source);
-        if (!result?.ok) allSaved = false;
+        if (!result?.ok) failed.push(body);
         else if (!firstId) firstId = result.id;
       }
-      if (allSaved) {
+      const saved = bodies.length - failed.length;
+      if (!failed.length) {
         notebook.showToast({
           tone: "info",
           message: bodies.length === 1 ? "Note saved." : `${bodies.length} notes saved.`,
         });
         if (firstId && !narrow) selectNote(firstId);
+        return { ok: true, remaining: [] };
       }
-      return allSaved;
+      // Hand back only what did not land. Retrying the whole set used to
+      // create a second copy of everything that had already succeeded.
+      notebook.showToast({
+        tone: "error",
+        message:
+          saved > 0
+            ? `${saved} saved, ${failed.length} still here. Try those again.`
+            : "None of those saved. Your words are still here.",
+      });
+      return { ok: false, remaining: failed };
     },
     [narrow, notebook, selectNote],
   );
@@ -566,36 +621,33 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
         </div>
 
         {privacyOpen ? (
-          <div className={styles.popover} role="dialog" aria-label="How Notes keeps this private">
-            <h2 className={styles.popoverTitle}>Private to you until you turn a note into a task</h2>
+          <div className={styles.popover} role="dialog" aria-labelledby="notes-privacy-title">
+            <h2 className={styles.popoverTitle} id="notes-privacy-title">
+              Only you can read your notes
+            </h2>
             <dl className={styles.popoverList}>
               <div>
-                <dt>Who can read your notes</dt>
+                <dt>Who can read them</dt>
                 <dd>
-                  Only you. Notes belong to your account, not to a workspace, so nobody you
-                  work with can open them.
+                  Only you. Notes belong to your account, not to a shared project, so
+                  nobody you work with can open them.
                 </dd>
               </div>
               <div>
                 <dt>What you type</dt>
                 <dd>
                   Stays on your device until you save it, then is stored on your account.
+                  Nothing you type is sent anywhere else.
                 </dd>
               </div>
               <div>
-                <dt>What you speak</dt>
+                <dt>What you speak, and photos you take</dt>
                 <dd>
-                  Your browser turns speech into text using its own speech service, so the
-                  words you say leave this device. Signal keeps no recording, because there
-                  is none to keep. The text is sent to Signal&rsquo;s AI provider to be
-                  separated into notes, and is not stored there.
-                </dd>
-              </div>
-              <div>
-                <dt>Photos you capture</dt>
-                <dd>
-                  Sent to Signal&rsquo;s AI provider to be read, then discarded. The photo
-                  itself is never stored; only the notes you save are.
+                  These two do leave your device. Your browser turns speech into text with
+                  its own speech service, and the text, or the photo, goes to the outside
+                  service Signal Studio uses to turn it into notes. No recording is kept,
+                  because none is made, and the photo is read and then discarded. If you
+                  would rather nothing left the device, type the note instead.
                 </dd>
               </div>
               <div>
@@ -991,7 +1043,12 @@ function NoteDetail({
     <>
       <div className={styles.detailHeader}>
         <div className={styles.detailMeta}>
-          <button type="button" className={`${styles.quietButton} ${styles.backButton}`} onClick={onBack}>
+          <button
+            type="button"
+            data-notes-back=""
+            className={`${styles.quietButton} ${styles.backButton}`}
+            onClick={onBack}
+          >
             <BackIcon />
             Notebook
           </button>
@@ -1244,13 +1301,11 @@ function ReviewView({
   return (
     <div className={styles.review}>
       <div className={styles.reviewProgress}>
-        <span>
-          {done} of {total} reviewed
-        </span>
+        <span>{queueLength === 1 ? "One note left" : `${queueLength} notes to review`}</span>
         <span className={styles.progressTrack} aria-hidden="true">
           <span className={styles.progressFill} style={{ inlineSize: `${percent}%` }} />
         </span>
-        <span>{queueLength === 1 ? "Last one" : `${queueLength} left`}</span>
+        {done > 0 ? <span>{done} decided just now</span> : null}
       </div>
       <div className={styles.reviewStage}>
         <article
@@ -1435,6 +1490,7 @@ function SentView({
               <div className={styles.detailMeta}>
                 <button
                   type="button"
+                  data-notes-back=""
                   className={`${styles.quietButton} ${styles.backButton}`}
                   onClick={() => onSelect(null)}
                 >
@@ -1549,7 +1605,7 @@ function TurnIntoTaskDialog({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && send?.status !== "sending" && !send?.locked) {
+      if (event.key === "Escape" && send?.status !== "sending") {
         event.preventDefault();
         onClose();
         return;
@@ -1585,7 +1641,7 @@ function TurnIntoTaskDialog({
 
   return (
     <div className={styles.scrim} onPointerDown={(event) => {
-      if (event.target === event.currentTarget && !sending && !send.locked) onClose();
+      if (event.target === event.currentTarget && !sending) onClose();
     }}>
       <div className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby={titleId} ref={dialogRef}>
         {sent ? (
@@ -1661,13 +1717,16 @@ function TurnIntoTaskDialog({
             ) : null}
 
             <div className={styles.dialogActions}>
+              {/* Always enabled. Locking the request must never lock the
+                  window: with Tasks down there was no way out of this dialog
+                  except reloading the page. */}
               <button
                 type="button"
                 className={styles.quietButton}
                 onClick={onClose}
-                disabled={sending || Boolean(send.locked)}
+                disabled={sending}
               >
-                Never mind
+                {send.locked ? "Close" : "Never mind"}
               </button>
               <button
                 type="button"

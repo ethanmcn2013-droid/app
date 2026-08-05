@@ -84,6 +84,15 @@ export type ConflictState = {
 
 export type SendState = {
   noteId: string;
+  /**
+   * The version of THIS note the send was started against.
+   *
+   * Held here rather than read from the open editor, because Review sends a
+   * note the notebook does not have open. Reading the editor's version sent
+   * one note's version with another note's id, and on the resulting conflict
+   * wrote the wrong body into the wrong note's recovery slot.
+   */
+  expectedUpdatedAt: number;
   /** Verbatim from the note body: the server checks it is still present there. */
   sourceSelection: string;
   /** The task wording, which the person edits. */
@@ -110,7 +119,7 @@ type RecoveredEdit = {
   queued: boolean;
 };
 
-type DeleteUndo = { note: NoteRead; timer: number };
+type DeleteUndo = { note: NoteRead; timer: number; finalized: { done: boolean } };
 
 declare global {
   interface Window {
@@ -385,7 +394,7 @@ export function useNotebook(options: NotebookOptions) {
         if (demoMode) {
           if (reviewMode === "save-error" && !failedCaptureOnce.current) {
             failedCaptureOnce.current = true;
-            throw new Error("That save did not reach Notes. Your exact words are still here.");
+            throw new Error("That did not save. Your exact words are still here.");
           }
           await Promise.resolve();
           setNotes((current) => upsertNote(current, pendingNote(capture)));
@@ -412,7 +421,7 @@ export function useNotebook(options: NotebookOptions) {
         setCaptureStatus("failed");
         const message = friendlyError(
           error,
-          "That note could not be saved. Your exact words are kept.",
+          "That did not save. Your exact words are still here.",
         );
         setCaptureError(
           persistenceReady
@@ -606,8 +615,12 @@ export function useNotebook(options: NotebookOptions) {
 
   // ── Editing one note ────────────────────────────────────────────────
 
+  /** Which note the editor holds, so a send from Review cannot claim its state. */
+  const openNoteIdRef = useRef<string | null>(null);
+
   const applyOpenNote = useCallback(
     (note: NoteRead | null) => {
+      openNoteIdRef.current = note?.id ?? null;
       if (!note) {
         setDetailBody("");
         setDetailBase(0);
@@ -649,6 +662,7 @@ export function useNotebook(options: NotebookOptions) {
         pending
           ? {
               noteId: note.id,
+              expectedUpdatedAt: pending.baseUpdatedAt,
               sourceSelection: pending.sourceSelection,
               taskTitle: pending.approvedBody,
               workspaceId: pending.workspaceId,
@@ -867,17 +881,33 @@ export function useNotebook(options: NotebookOptions) {
       if (readOnly) return;
       setNotes((current) => current.filter((candidate) => candidate.id !== note.id));
       writeRecoveredEdit(note.id, null);
+
+      // Shared with the toast, so Undo can tell "still in the grace window"
+      // from "already gone from the server". Deleting a second note used to
+      // finalise the first one early while its Undo was still on screen; the
+      // note came back on the list and stayed deleted in the database.
+      const finalized = { done: false };
+      const finalize = () => {
+        if (finalized.done) return;
+        finalized.done = true;
+        void finalizeDelete(note);
+      };
       const timer = window.setTimeout(() => {
         setDeleteUndo((current) => (current?.note.id === note.id ? null : current));
-        void finalizeDelete(note);
+        finalize();
       }, DELETE_UNDO_MS);
-      setDeleteUndo((current) => {
-        if (current) {
-          window.clearTimeout(current.timer);
-          void finalizeDelete(current.note);
+
+      setDeleteUndo((previous) => {
+        if (previous) {
+          window.clearTimeout(previous.timer);
+          if (!previous.finalized.done) {
+            previous.finalized.done = true;
+            void finalizeDelete(previous.note);
+          }
         }
-        return { note, timer };
+        return { note, timer, finalized };
       });
+
       showToast({
         tone: "info",
         message: "Note deleted.",
@@ -886,13 +916,26 @@ export function useNotebook(options: NotebookOptions) {
           run: () => {
             window.clearTimeout(timer);
             setDeleteUndo(null);
+            if (finalized.done) {
+              // The delete already reached the server. Bringing the row back
+              // on screen would be a lie, so write it again as a new note
+              // with the same words.
+              void captureNote(note.body, "typed").then((result) => {
+                announce(
+                  result?.ok
+                    ? "Note restored."
+                    : "That note could not be brought back.",
+                );
+              });
+              return;
+            }
             setNotes((current) => upsertNote(current, note));
             announce("Note restored.");
           },
         },
       });
     },
-    [announce, finalizeDelete, readOnly, showToast, writeRecoveredEdit],
+    [announce, captureNote, finalizeDelete, readOnly, showToast, writeRecoveredEdit],
   );
 
   // ── Review decisions ────────────────────────────────────────────────
@@ -941,6 +984,7 @@ export function useNotebook(options: NotebookOptions) {
         note.body.split(/\r?\n/).find((line) => line.trim().length > 0)?.trim() ?? note.body.trim();
       setSend({
         noteId: note.id,
+        expectedUpdatedAt: note.updatedAt,
         sourceSelection: firstLine,
         taskTitle: title.slice(0, MAX_APPROVED_EXTRACT_CHARS),
         workspaceId,
@@ -957,15 +1001,20 @@ export function useNotebook(options: NotebookOptions) {
     setSend((current) => (current ? { ...current, ...patch } : current));
   }, []);
 
+  /**
+   * Close the composer. A locked request is NOT discarded: it stays in
+   * `pendingSends`, so reopening the note offers the same exact retry. The
+   * window closing and the request being abandoned are different things.
+   */
   const cancelSend = useCallback(() => {
-    setSend((current) => (current?.locked ? current : null));
+    setSend(null);
   }, []);
 
   const submitSend = useCallback(
     async (note: NoteRead): Promise<boolean> => {
       if (!send || readOnly || conflict) return false;
       const workspaceId = send.locked?.workspaceId ?? send.workspaceId;
-      const expectedUpdatedAt = send.locked?.expectedUpdatedAt ?? detailBase;
+      const expectedUpdatedAt = send.locked?.expectedUpdatedAt ?? send.expectedUpdatedAt;
       if (!workspaceId) {
         updateSend({ status: "failed", error: copy.errors.noDestination });
         return false;
@@ -1017,13 +1066,22 @@ export function useNotebook(options: NotebookOptions) {
             expectedUpdatedAt,
           });
           if (result.status === "conflict") {
-            writeRecoveredEdit(note.id, {
-              body: detailBody,
-              expectedUpdatedAt: detailBase,
-              queued: false,
-            });
+            // Only the note actually open in the editor has a local body worth
+            // preserving. A conflict on a note sent from Review means the note
+            // moved underneath the send; say so and let the person retry.
             setNotes((current) => upsertNote(current, result.remote));
-            setConflict({ noteId: note.id, localBody: detailBody, remote: result.remote });
+            if (openNoteIdRef.current === note.id) {
+              writeRecoveredEdit(note.id, {
+                body: detailBody,
+                expectedUpdatedAt: detailBase,
+                queued: false,
+              });
+              setConflict({
+                noteId: note.id,
+                localBody: detailBody,
+                remote: result.remote,
+              });
+            }
             updateSend({ status: "failed", error: copy.errors.sourceChanged });
             return false;
           }
@@ -1141,7 +1199,16 @@ export function useNotebook(options: NotebookOptions) {
     [demoMode, readOnly, restoringId, showToast],
   );
 
+  /**
+   * True while any capture is still on its way to the server, or has failed.
+   * Those words live only in this tab, so closing it would lose them.
+   */
+  const hasUnsavedWork = Object.values(mutationStates).some(
+    (state) => state === "pending" || state === "offline" || state === "failed",
+  );
+
   return {
+    hasUnsavedWork,
     notes,
     archivedNotes,
     online,
