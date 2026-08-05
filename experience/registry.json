@@ -1940,7 +1940,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "3dd9eb3d5e0e5d43"
+      "materialityHash": "bcef1d2f0a1926e6"
     },
     {
       "id": "tasks.page.sign-up-by-sign-up",
@@ -1985,7 +1985,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "79381570db7105f5"
+      "materialityHash": "ec6806da27043be0"
     },
     {
       "id": "tasks.page.status",
