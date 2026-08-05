@@ -19,7 +19,10 @@ import {
   extraLabelIndices,
   formatTimelineDate,
   metricValueScale,
+  timelineAxisNote,
   timelinePointStatus,
+  timelinePresentation,
+  timelineRailCaps,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
 } from "./timeline-artifact-model";
@@ -469,6 +472,43 @@ function MilestoneDetail({
   );
 }
 
+/**
+ * One milestone with no usable timing. A rail would have to place its single
+ * dot somewhere, and every somewhere on a time axis is a claim about time —
+ * dead centre most of all. So this plan is stated as what it actually is: a
+ * place in a sequence, with the timing named honestly underneath.
+ */
+function SequenceState({
+  model,
+  idPrefix,
+}: {
+  model: TimelineArtifactModel;
+  idPrefix: string;
+}) {
+  const point = model.points[0];
+  const sectionId = `${idPrefix}-timeline`;
+
+  return (
+    <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
+      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>Project timeline</h2>
+      <div className={styles.sequenceCard} data-state={point.state} data-sequence-card>
+        <p className={styles.sequenceStep}>
+          {`Milestone 1 of ${model.points.length}`}
+        </p>
+        <p className={styles.sequenceStatus}>{timelinePointStatus(point)}</p>
+        <h3 className={styles.sequenceTitle}>{point.item.title}</h3>
+        <p className={styles.sequenceTiming}>
+          {point.item.date ? (
+            <time dateTime={point.item.date}>
+              {formatTimelineDate(point.item.date, "long")}
+            </time>
+          ) : "Timing not set"}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function Journey({
   timeline,
   model,
@@ -623,21 +663,17 @@ function Journey({
         "--timeline-position-stack": `${model.todayStackPosition ?? model.todayPosition}%`,
       };
   const nextMilestone = model.points.find((point) => point.isNext) ?? null;
-  // The cap under the rail's end names the destination. When the final
-  // milestone already carries that name as its persistent label, a second
-  // "Wedding day" stacked in the same corner is noise, not orientation.
-  const finishCandidate = model.percent === 100
-    ? "Complete"
-    : timeline.primaryDate?.label ?? "Finish";
-  const lastPointTitle = model.points.at(-1)?.item.title.trim().toLowerCase();
-  const finishCapLabel = lastPointTitle === finishCandidate.trim().toLowerCase()
-    ? null
-    : finishCandidate;
+  // The caps under the rail's ends come from the model, because what they may
+  // say depends on whether the rail is a calendar at all: real dates when it
+  // is, sequence words when it is not. "Start"/"Finish" on an ordered rail
+  // would re-assert the temporal reading the ordered mode exists to refuse.
+  const caps = timelineRailCaps(model);
+  const axisNote = timelineAxisNote(model);
   const todayLabel = model.todayPosition === null
     ? null
     : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
-  const instructions = model.todayPosition === null
-    ? "Milestones without dates are arranged in plan order. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail."
+  const instructions = model.axis.mode === "ordered"
+    ? "These milestones are shown in order, not spaced by date. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail."
     : "The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.";
 
   return (
@@ -794,15 +830,20 @@ function Journey({
               </p>
             )}
 
-            <span className={styles.startCap} aria-hidden="true">Start</span>
-            {finishCapLabel ? (
-              <span className={styles.finishCap} aria-hidden="true">
-                {finishCapLabel}
-              </span>
+            {caps.start ? (
+              <span className={styles.startCap} aria-hidden="true">{caps.start}</span>
+            ) : null}
+            {caps.finish ? (
+              <span className={styles.finishCap} aria-hidden="true">{caps.finish}</span>
             ) : null}
           </div>
         </div>
       </div>
+
+      {/* An ordered rail looks exactly like a time axis and is not one, so it
+          says so where the viewer is looking. A dated rail already declares
+          itself with month names and the Today dash and stays quiet. */}
+      {axisNote ? <p className={styles.axisNote}>{axisNote}</p> : null}
 
       {/* Paper has no hover: the printed page carries every milestone as a
           ruled index beneath the rail, so the keepsake keeps its content. */}
@@ -872,6 +913,7 @@ export function TimelineArtifact({
 }: TimelineArtifactProps) {
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
+  const presentation = timelinePresentation(model);
 
   return (
     <article
@@ -880,6 +922,7 @@ export function TimelineArtifact({
       data-compact={compact ? "true" : undefined}
       data-embedded={embedded ? "true" : undefined}
       data-density={model.density}
+      data-axis={model.axis.mode}
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
@@ -900,7 +943,11 @@ export function TimelineArtifact({
         </div>
       </header>
 
-      <Journey timeline={timeline} model={model} idPrefix={reactId} />
+      {presentation === "sequence-card" ? (
+        <SequenceState model={model} idPrefix={reactId} />
+      ) : (
+        <Journey timeline={timeline} model={model} idPrefix={reactId} />
+      )}
       <PlanningDecisions timeline={timeline} model={model} />
 
       <footer className={styles.footer}>

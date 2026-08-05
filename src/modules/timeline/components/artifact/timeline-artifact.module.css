@@ -804,6 +804,93 @@ button.timeLens:focus-visible .metricAlternate {
   font-size: var(--text-body-sm);
 }
 
+/* An ordered rail looks exactly like a time axis and is not one. The note
+   sits under the rail in the caps' own quiet register, so it reads as the
+   axis explaining itself rather than as a warning about the content. */
+.axisNote {
+  margin: var(--space-3) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+
+/* One milestone, no usable timing: no rail, so no dot that has to be
+   somewhere. The card claims the width it needs and no vertical minimum,
+   which is also why this state cannot overflow a viewport the way the
+   rail's stacked minimums do. */
+.sequenceCard {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 44ch;
+  margin-block-start: var(--space-5);
+  border-block-start: 1px solid var(--ink);
+  padding-block-start: var(--space-5);
+}
+
+.sequenceStep,
+.sequenceStatus {
+  margin: 0;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The state carries the rail's own bead, so the compact state and the rail
+   are visibly the same system seen at two sizes. */
+.sequenceStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-soft);
+}
+
+.sequenceStatus::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.64rem;
+  height: 0.64rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+}
+
+.sequenceCard[data-state="complete"] .sequenceStatus::before {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.sequenceCard[data-state="current"] .sequenceStatus::before,
+.sequenceCard[data-state="overdue"] .sequenceStatus::before {
+  width: 0.88rem;
+  height: 0.88rem;
+  border: 0;
+  background: var(--accent);
+}
+
+.sequenceCard[data-state="overdue"] .sequenceStatus::before {
+  background: var(--ink);
+}
+
+.sequenceTitle {
+  max-width: 24ch;
+  margin: var(--space-1) 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.sequenceTiming {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+}
+
 .detail {
   min-height: 10rem;
   border-block-start: 1px solid var(--ink);

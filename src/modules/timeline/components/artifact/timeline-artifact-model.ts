@@ -19,6 +19,37 @@ export type TimelineArtifactDensity =
   | "sparse"
   | "standard";
 
+export type TimelineOrderedReason =
+  /** Nothing is plotted, so there is neither a sequence nor a calendar. */
+  | "no-milestones"
+  /** At least one plotted milestone has no date. Mixed data is ordered. */
+  | "missing-timing"
+  /** Every plotted milestone is dated, but they all land on one day. */
+  | "no-range";
+
+/**
+ * How the rail's spacing is allowed to be read.
+ *
+ * `dated` — every plotted milestone carries a real date and the plan covers
+ * more than one day, so distance along the rail is calendar distance and the
+ * caps can state real dates.
+ *
+ * `ordered` — distance means sequence only. Nothing on this axis may be
+ * derived from a date, because at least one milestone has none.
+ */
+export type TimelineAxis =
+  | Readonly<{ mode: "dated"; startDate: string; endDate: string }>
+  | Readonly<{ mode: "ordered"; reason: TimelineOrderedReason }>;
+
+/** What the artifact draws. The view switches on this; nothing else decides. */
+export type TimelineArtifactPresentation =
+  | "empty"
+  | "sequence-card"
+  | "sequence-rail"
+  | "calendar-rail";
+
+export type TimelineRailCaps = Readonly<{ start: string | null; finish: string | null }>;
+
 export type TimelineArtifactPoint = Readonly<{
   item: AudienceTimelineItemDto;
   position: number;
@@ -45,6 +76,12 @@ export type TimelineMonthTick = Readonly<{
 
 export type TimelineArtifactModel = Readonly<{
   density: TimelineArtifactDensity;
+  /**
+   * Whether rail distance is allowed to mean calendar distance. Every other
+   * temporal field on this model (`todayPosition`, `monthTicks`) is empty
+   * unless this is `dated`.
+   */
+  axis: TimelineAxis;
   points: readonly TimelineArtifactPoint[];
   cancelled: readonly AudienceTimelineItemDto[];
   completedCount: number;
@@ -112,31 +149,6 @@ function flattenTimeline(dto: AudienceTimelineDto): AudienceTimelineItemDto[] {
     .map(({ item }) => item);
 }
 
-function interpolateUndatedPositions(positions: Array<number | null>): number[] {
-  const resolved = [...positions];
-  let index = 0;
-
-  while (index < resolved.length) {
-    if (resolved[index] !== null) {
-      index += 1;
-      continue;
-    }
-
-    const start = index;
-    while (index < resolved.length && resolved[index] === null) index += 1;
-    const end = index;
-    const lower = start > 0 ? (resolved[start - 1] ?? 0) : 0;
-    const upper = end < resolved.length ? (resolved[end] ?? 100) : 100;
-    const count = end - start;
-
-    for (let offset = 0; offset < count; offset += 1) {
-      resolved[start + offset] = lower + ((upper - lower) * (offset + 1)) / (count + 1);
-    }
-  }
-
-  return resolved.map((position) => clampPercent(position ?? 0));
-}
-
 function collisionSafePositions(rawPositions: readonly number[]): number[] {
   if (rawPositions.length === 0) return [];
   if (rawPositions.length === 1) return [50];
@@ -161,9 +173,19 @@ function collisionSafePositions(rawPositions: readonly number[]): number[] {
   return resolved.map(clampPercent);
 }
 
-function ordinalPositions(count: number): number[] {
+/**
+ * Positions that mean sequence, never time. Evenly spaced, because order is
+ * the only fact being drawn.
+ *
+ * A lone milestone sits at the start of its own sequence rather than at the
+ * centre of the rail. Dead centre of a time axis is a claim — "roughly
+ * halfway through the plan" — that undated content cannot support, and it was
+ * the halfway-placement defect. The view renders a single ordered milestone
+ * as a compact sequence state rather than as a rail at all.
+ */
+function sequencePositions(count: number): number[] {
   if (count === 0) return [];
-  if (count === 1) return [50];
+  if (count === 1) return [0];
   return Array.from({ length: count }, (_, index) => (index / (count - 1)) * 100);
 }
 
@@ -240,60 +262,112 @@ function monthBoundaries(axisStart: number, axisEnd: number): Array<{ day: numbe
   return boundaries;
 }
 
-function calendarPositions(
+function isoDay(day: number): string {
+  return new Date(day).toISOString().slice(0, 10);
+}
+
+/**
+ * Decide whether this publication can honestly be drawn on a time axis.
+ *
+ * Pure, and taken from the DTO alone so the decision can be tested without
+ * rendering anything.
+ *
+ * There are no project start or finish date columns in this schema, so the
+ * domain is derived from the plan's own facts: the earliest dated milestone
+ * to the latest, extended to `primaryDate` when that falls later.
+ *
+ * Dated mode needs both of these to hold:
+ *
+ * 1. **Every plotted milestone carries real timing.** Cancelled milestones are
+ *    not plotted, so their dates neither qualify nor disqualify the axis;
+ *    hidden ones are filtered upstream before the model sees them. Mixed data
+ *    — some dated, some not — is ordered, because the only way to place the
+ *    undated ones on a calendar is to invent a date for them.
+ * 2. **At least two distinct dates, so the range is real.** A plan whose
+ *    milestones all land on one day has no span to be proportional to.
+ *
+ * `today` cannot create a range: a one-day plan is not a span just because
+ * the viewer opened it a week earlier. Once a real range exists, the returned
+ * domain is widened to include today so the Today marker lands at a true
+ * calendar position rather than being clamped onto the nearest milestone —
+ * the caps then state the rail's actual ends, which is what they claim.
+ */
+export function resolveTimelineAxis(dto: AudienceTimelineDto): TimelineAxis {
+  const plotted = dto.sections
+    .flatMap((section) => section.items)
+    .filter((item) => item.state !== "cancelled");
+  if (plotted.length === 0) return { mode: "ordered", reason: "no-milestones" };
+
+  const milestoneDays: number[] = [];
+  for (const item of plotted) {
+    const day = calendarDay(item.date);
+    if (day === null) return { mode: "ordered", reason: "missing-timing" };
+    milestoneDays.push(day);
+  }
+
+  const primaryDay = calendarDay(dto.primaryDate?.date);
+  const planStart = Math.min(...milestoneDays);
+  const planEnd = Math.max(...milestoneDays, ...(primaryDay === null ? [] : [primaryDay]));
+  if (planEnd <= planStart) return { mode: "ordered", reason: "no-range" };
+
+  const todayDay = calendarDay(dto.today);
+  return {
+    mode: "dated",
+    startDate: isoDay(todayDay === null ? planStart : Math.min(planStart, todayDay)),
+    endDate: isoDay(todayDay === null ? planEnd : Math.max(planEnd, todayDay)),
+  };
+}
+
+/**
+ * Rail positions for the plotted milestones, plus everything else that rides
+ * the same axis. Ordered mode returns sequence positions and no calendar
+ * furniture at all: no Today marker, no month ticks. There is no path here
+ * that derives a position for an undated milestone.
+ */
+function railPositions(
   items: readonly AudienceTimelineItemDto[],
   today: string,
-  primaryDate: string | undefined,
+  axis: TimelineAxis,
 ): {
   pointPositions: number[];
   todayPosition: number | null;
   monthTicks: Array<{ position: number; label: string }>;
 } {
-  const todayDay = calendarDay(today);
-  const primaryDay = calendarDay(primaryDate);
-  const itemDays = items.map((item) => calendarDay(item.date));
-  const datedItemDays = itemDays.filter((day): day is number => day !== null);
-  if (datedItemDays.length === 0) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
+  const sequenceOnly = {
+    pointPositions: sequencePositions(items.length),
+    todayPosition: null,
+    monthTicks: [],
+  };
+  if (axis.mode !== "dated") return sequenceOnly;
+
+  const axisStart = calendarDay(axis.startDate);
+  const axisEnd = calendarDay(axis.endDate);
+  if (axisStart === null || axisEnd === null || axisEnd <= axisStart) return sequenceOnly;
+
+  // Dated mode guarantees every plotted milestone is dated. The loop keeps
+  // that a structural fact rather than a comment: one missing date and the
+  // whole axis falls back to sequence instead of fabricating a position.
+  const itemDays: number[] = [];
+  for (const item of items) {
+    const day = calendarDay(item.date);
+    if (day === null) return sequenceOnly;
+    itemDays.push(day);
   }
 
-  const axisDays = [
-    ...datedItemDays,
-    ...(todayDay === null ? [] : [todayDay]),
-    ...(primaryDay === null ? [] : [primaryDay]),
-  ];
-  const distinctAxisDays = new Set(axisDays);
-
-  if (distinctAxisDays.size < 2) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
-  }
-
-  const axisStart = Math.min(...axisDays);
-  const axisEnd = Math.max(...axisDays);
-  if (axisEnd <= axisStart) {
-    return { pointPositions: ordinalPositions(items.length), todayPosition: null, monthTicks: [] };
-  }
-
-  const rawPointPositions = interpolateUndatedPositions(
-    itemDays.map((day) => day === null
-      ? null
-      : ((day - axisStart) / (axisEnd - axisStart)) * 100),
-  );
+  const rawPosition = (day: number): number => ((day - axisStart) / (axisEnd - axisStart)) * 100;
+  const rawPointPositions = itemDays.map(rawPosition);
   const safePointPositions = collisionSafePositions(rawPointPositions);
   const edge = Math.min(6, Math.max(3, 36 / rawPointPositions.length));
-  const datedAnchors = itemDays.flatMap((day, index) =>
-    day === null
-      ? []
-      : [{
-          raw: ((day - axisStart) / (axisEnd - axisStart)) * 100,
-          adjusted: safePointPositions[index],
-        }],
-  );
+  const datedAnchors = rawPointPositions.map((raw, index) => ({
+    raw,
+    adjusted: safePointPositions[index],
+  }));
   const mapDay = (day: number): number => mapThroughPointDistortion(
-    ((day - axisStart) / (axisEnd - axisStart)) * 100,
+    rawPosition(day),
     datedAnchors,
     edge,
   );
+  const todayDay = calendarDay(today);
   const todayPosition = todayDay === null ? null : mapDay(todayDay);
   const monthTicks = monthBoundaries(axisStart, axisEnd).map(({ day, label }) => ({
     position: mapDay(day),
@@ -351,7 +425,8 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
   const totalCount = activeItems.length;
   const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
   const next = nextMilestone(activeItems);
-  const schedule = calendarPositions(activeItems, dto.today, dto.primaryDate?.date);
+  const axis = resolveTimelineAxis(dto);
+  const schedule = railPositions(activeItems, dto.today, axis);
   const todayDay = calendarDay(dto.today);
 
   const stackPositions = capStackGaps(schedule.pointPositions);
@@ -402,6 +477,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
 
   return {
     density: artifactDensity(totalCount),
+    axis,
     points,
     cancelled,
     completedCount,
@@ -416,6 +492,64 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     nextMilestoneId: next?.publicId ?? null,
     defaultSelectedId: defaultPoint?.item.publicId ?? null,
   };
+}
+
+/**
+ * What the artifact draws for this plan.
+ *
+ * `sequence-card` is the answer to the halfway-placement defect's worst case:
+ * one milestone, no usable timing. A single dot on a long rail has to sit
+ * somewhere, and wherever it sits is a claim about time. So that plan does not
+ * get a rail — it gets a compact state that says where the milestone sits in
+ * the sequence and nothing more.
+ */
+export function timelinePresentation(
+  model: TimelineArtifactModel,
+): TimelineArtifactPresentation {
+  if (model.points.length === 0) return "empty";
+  if (model.axis.mode === "dated") return "calendar-rail";
+  return model.points.length === 1 ? "sequence-card" : "sequence-rail";
+}
+
+/**
+ * The two labels under the rail's ends.
+ *
+ * Dated: real dates, because the ends are real days. The finish cap yields
+ * when the last milestone already states that date in its own label — the
+ * same "don't stack the same fact in one corner" rule the cap has always had.
+ *
+ * Ordered: sequence words only. "Start" and "Finish" are the vocabulary of a
+ * time axis and must not appear where distance means order, or the caps
+ * reintroduce exactly the claim the ordered mode exists to refuse.
+ */
+export function timelineRailCaps(model: TimelineArtifactModel): TimelineRailCaps {
+  const presentation = timelinePresentation(model);
+  if (presentation === "empty" || presentation === "sequence-card") {
+    return { start: null, finish: null };
+  }
+  if (model.axis.mode !== "dated") {
+    return { start: "Milestone 1", finish: `Milestone ${model.points.length}` };
+  }
+  return {
+    start: formatTimelineDate(model.axis.startDate),
+    finish: model.points.at(-1)?.item.date === model.axis.endDate
+      ? null
+      : formatTimelineDate(model.axis.endDate),
+  };
+}
+
+/**
+ * The one visible line that tells a viewer what the spacing means, shown only
+ * where it could otherwise be misread. A dated rail declares itself already —
+ * it carries month names and a Today marker. An ordered rail looks exactly
+ * like a time axis and is not one, so it says so in plain words.
+ */
+export function timelineAxisNote(model: TimelineArtifactModel): string | null {
+  if (timelinePresentation(model) !== "sequence-rail") return null;
+  const dated = model.points.filter((point) => Boolean(point.item.date)).length;
+  return dated === 0
+    ? "These milestones are in order, not spaced by date. No dates are set yet."
+    : "These milestones are in order, not spaced by date. Some do not have a date yet.";
 }
 
 /**

@@ -12,6 +12,10 @@ import {
   capStackGaps,
   extraLabelIndices,
   metricValueScale,
+  resolveTimelineAxis,
+  timelineAxisNote,
+  timelinePresentation,
+  timelineRailCaps,
 } from "./timeline-artifact-model";
 
 function item(
@@ -83,6 +87,302 @@ test("artifact density adapts only below the four-milestone standard threshold",
     item("third", "next"),
     item("fourth", "later"),
   ])).density, "standard");
+});
+
+// ── The axis mode · dated or ordered, decided by the data ─────────────
+//
+// The defect these pin: `calendarPositions()` fabricated a rail position for
+// milestones with no timing — dead centre for a lone one, the arithmetic
+// midpoint between dated neighbours otherwise — and then printed "Timing not
+// set" underneath the same dot. The model invented the position and left the
+// caption to disclose that the position was meaningless.
+
+test("undated milestones never render proportionally on a temporal axis", () => {
+  // Same milestones, same order, wildly different dates on the dated ones. If
+  // any date still reached an undated milestone's position, these two would
+  // disagree. They must be identical: with timing incomplete, position is a
+  // function of order alone.
+  const near = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered"),
+    item("menu", "now", "2026-01-03"),
+    item("guests", "later"),
+    item("wedding", "later", "2026-01-04"),
+  ]));
+  const far = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered"),
+    item("menu", "now", "2026-08-01"),
+    item("guests", "later"),
+    item("wedding", "later", "2029-10-03"),
+  ]));
+
+  assert.deepEqual(
+    near.points.map((point) => point.position),
+    far.points.map((point) => point.position),
+  );
+  assert.deepEqual(near.points.map((point) => point.position), [0, 25, 50, 75, 100]);
+
+  // The two shapes the defect took, named so they cannot come back quietly.
+  const positionOf = (id: string) =>
+    far.points.find((point) => point.item.publicId === id)!.position;
+  // Was 39.88 — the midpoint between 2 January and 1 August, for a milestone
+  // that has no date at all.
+  assert.notEqual(positionOf("venue"), 39.88372093023256);
+  // Was 94 — an undated milestone pushed past the wedding by rail-edge
+  // defaulting, so the artifact claimed guests were settled after the day.
+  assert.ok(positionOf("guests") > positionOf("wedding"));
+  assert.equal(positionOf("guests"), 100);
+});
+
+test("ordered mode is used when timing is incomplete", () => {
+  const axisOf = (dto: AudienceTimelineDto) => resolveTimelineAxis(dto);
+
+  assert.deepEqual(axisOf(timeline([])), { mode: "ordered", reason: "no-milestones" });
+
+  assert.deepEqual(
+    axisOf(timeline([item("one", "now"), item("two", "later")])),
+    { mode: "ordered", reason: "missing-timing" },
+  );
+
+  // One milestone short of complete timing is enough. Mixed data is ordered.
+  assert.deepEqual(
+    axisOf(timeline([
+      item("yes", "covered", "2026-01-02"),
+      item("venue", "covered", "2026-04-18"),
+      item("guests", "later"),
+    ])),
+    { mode: "ordered", reason: "missing-timing" },
+  );
+
+  // Every milestone dated, but all on one day: there is no span to be
+  // proportional to, so the rail cannot claim one.
+  assert.deepEqual(
+    axisOf({
+      ...timeline([item("one", "now", "2026-10-03"), item("two", "later", "2026-10-03")]),
+      primaryDate: undefined,
+    }),
+    { mode: "ordered", reason: "no-range" },
+  );
+  assert.deepEqual(
+    axisOf(timeline([item("one", "now", "2026-10-03"), item("two", "later", "2026-10-03")])),
+    { mode: "ordered", reason: "no-range" },
+  );
+
+  // A cancelled milestone is not plotted, so its date cannot qualify an axis
+  // that none of the plotted milestones can stand on.
+  assert.deepEqual(
+    axisOf(timeline([
+      item("live", "now"),
+      item("dropped", "cancelled", "2026-01-02"),
+      item("also-dropped", "cancelled", "2026-10-03"),
+    ])),
+    { mode: "ordered", reason: "missing-timing" },
+  );
+});
+
+test("dated mode only when sufficient timing exists", () => {
+  // Every plotted milestone dated, two distinct days: a real range.
+  assert.deepEqual(
+    resolveTimelineAxis({
+      ...timeline([
+        item("start", "covered", "2026-07-01"),
+        item("finish", "later", "2026-07-21"),
+      ]),
+      today: "2026-07-11",
+      primaryDate: undefined,
+    }),
+    { mode: "dated", startDate: "2026-07-01", endDate: "2026-07-21" },
+  );
+
+  // primaryDate extends the domain when it falls later than every milestone.
+  assert.deepEqual(
+    resolveTimelineAxis({
+      ...timeline([item("only", "now", "2026-07-22")]),
+      today: "2026-07-22",
+      primaryDate: { label: "Wedding day", date: "2026-10-03" },
+    }),
+    { mode: "dated", startDate: "2026-07-22", endDate: "2026-10-03" },
+  );
+
+  // Cancelled milestones are excluded from plotting, so an undated one cannot
+  // disqualify an axis every plotted milestone can stand on.
+  assert.deepEqual(
+    resolveTimelineAxis({
+      ...timeline([
+        item("start", "covered", "2026-07-01"),
+        item("finish", "later", "2026-07-21"),
+        item("dropped", "cancelled"),
+      ]),
+      today: "2026-07-11",
+      primaryDate: undefined,
+    }),
+    { mode: "dated", startDate: "2026-07-01", endDate: "2026-07-21" },
+  );
+
+  // Today cannot CREATE a range — a one-day plan is not a span because the
+  // viewer opened it a fortnight early…
+  assert.equal(
+    resolveTimelineAxis({
+      ...timeline([item("one", "now", "2026-08-01"), item("two", "later", "2026-08-01")]),
+      today: "2026-07-22",
+      primaryDate: undefined,
+    }).mode,
+    "ordered",
+  );
+  // …but once a real range exists the domain widens to hold today, so the
+  // Today marker lands at a true position instead of on the nearest dot.
+  assert.deepEqual(
+    resolveTimelineAxis({
+      ...timeline([item("one", "now", "2026-08-01"), item("two", "later", "2026-08-15")]),
+      today: "2026-07-22",
+      primaryDate: undefined,
+    }),
+    { mode: "dated", startDate: "2026-07-22", endDate: "2026-08-15" },
+  );
+});
+
+test("removing timing from one milestone falls back to ordered immediately", () => {
+  const dated = [
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("wedding", "later", "2026-10-03"),
+  ];
+  const before = buildTimelineArtifactModel(timeline(dated));
+  assert.equal(before.axis.mode, "dated");
+  assert.ok(before.todayPosition !== null);
+  assert.ok(before.monthTicks.length > 0);
+
+  // The owner clears the venue date. The DTO omits the key entirely for an
+  // undated milestone — it is never null — which is exactly the shape the
+  // item helper builds when no date is passed.
+  const edited = dated.map((candidate) =>
+    candidate.publicId === "venue" ? item("venue", "covered") : candidate,
+  );
+  assert.ok(!("date" in edited[1]));
+
+  const after = buildTimelineArtifactModel(timeline(edited));
+  assert.deepEqual(after.axis, { mode: "ordered", reason: "missing-timing" });
+  assert.equal(after.todayPosition, null);
+  assert.equal(after.todayStackPosition, null);
+  assert.deepEqual(after.monthTicks, []);
+  assert.deepEqual(after.points.map((point) => point.position), [0, 50, 100]);
+  // The two dated milestones keep their dates as facts; what they lose is any
+  // claim that the rail's spacing was measured from them.
+  assert.notDeepEqual(
+    before.points.map((point) => point.position),
+    after.points.map((point) => point.position),
+  );
+});
+
+test("Start and Finish show real dates in dated mode", () => {
+  // The last milestone is the wedding day itself, and its own label already
+  // states that date, so the finish cap yields rather than stacking it twice.
+  const toTheDay = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+  assert.equal(toTheDay.axis.mode, "dated");
+  assert.deepEqual(timelineRailCaps(toTheDay), { start: "2 Jan 2026", finish: null });
+
+  // When the plan runs out before the day it is counting to, both ends are
+  // named, and both are dates that exist rather than the words Start/Finish.
+  const shortOfTheDay = buildTimelineArtifactModel(timeline([
+    item("start", "covered", "2026-07-01"),
+    item("mid", "now", "2026-08-01"),
+  ]));
+  assert.deepEqual(timelineRailCaps(shortOfTheDay), {
+    start: "1 Jul 2026",
+    finish: "3 Oct 2026",
+  });
+  assert.equal(timelineAxisNote(shortOfTheDay), null);
+});
+
+test("Start and Finish are not used misleadingly in ordered mode", () => {
+  const ordered = buildTimelineArtifactModel(timeline([
+    item("first", "covered"),
+    item("second", "now"),
+    item("third", "later"),
+  ]));
+  const caps = timelineRailCaps(ordered);
+
+  assert.equal(ordered.axis.mode, "ordered");
+  assert.deepEqual(caps, { start: "Milestone 1", finish: "Milestone 3" });
+  for (const cap of [caps.start, caps.finish]) {
+    assert.doesNotMatch(cap!, /start|finish/i);
+    // No date, and no borrowed date label: "Wedding day" at the end of a rail
+    // that is not a calendar says the last dot is the wedding day.
+    assert.doesNotMatch(cap!, /\d{4}/);
+    assert.doesNotMatch(cap!, /wedding/i);
+  }
+
+  // The rail says in words what its spacing does and does not mean.
+  assert.equal(
+    timelineAxisNote(ordered),
+    "These milestones are in order, not spaced by date. No dates are set yet.",
+  );
+});
+
+test("a single undated milestone is never positioned at 50 on a time axis", () => {
+  for (const dto of [
+    timeline([item("only", "now")]),
+    { ...timeline([item("only", "now")]), primaryDate: undefined },
+  ]) {
+    const model = buildTimelineArtifactModel(dto);
+
+    assert.deepEqual(model.axis, { mode: "ordered", reason: "missing-timing" });
+    assert.notEqual(model.points[0].position, 50);
+    assert.notEqual(model.points[0].stackPosition, 50);
+    assert.equal(model.points[0].position, 0);
+    assert.equal(model.todayPosition, null);
+    assert.deepEqual(model.monthTicks, []);
+
+    // A lone dot on a long rail has to sit somewhere and every somewhere is a
+    // claim, so this plan is not given a rail at all.
+    assert.equal(timelinePresentation(model), "sequence-card");
+    assert.deepEqual(timelineRailCaps(model), { start: null, finish: null });
+    assert.equal(timelineAxisNote(model), null);
+
+    // The container-query density hooks are untouched by the mode decision.
+    assert.equal(model.density, "single");
+  }
+
+  // A single milestone that DOES have timing, inside a plan with a real range,
+  // keeps the calendar rail — the fallback is about missing timing, not count.
+  const dated = buildTimelineArtifactModel({
+    ...timeline([item("only", "now", "2026-07-22")]),
+    primaryDate: { label: "Wedding day", date: "2026-10-03" },
+  });
+  assert.equal(timelinePresentation(dated), "calendar-rail");
+});
+
+test("mixed dated and undated data renders ordered, not partially dated", () => {
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered"),
+    item("menu", "now", "2026-08-01"),
+    item("guests", "later"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+
+  assert.deepEqual(model.axis, { mode: "ordered", reason: "missing-timing" });
+  assert.equal(timelinePresentation(model), "sequence-rail");
+  // Nothing calendar-derived survives: no Today dash on either axis, no month
+  // cartography, and no cap that reads as a date.
+  assert.equal(model.todayPosition, null);
+  assert.equal(model.todayStackPosition, null);
+  assert.deepEqual(model.monthTicks, []);
+  assert.deepEqual(timelineRailCaps(model), { start: "Milestone 1", finish: "Milestone 5" });
+  // Even spacing, so no gap can be read as a longer wait than its neighbour.
+  assert.deepEqual(model.points.map((point) => point.position), [0, 25, 50, 75, 100]);
+  assert.equal(
+    timelineAxisNote(model),
+    "These milestones are in order, not spaced by date. Some do not have a date yet.",
+  );
+  // The dates that DO exist stay on their milestones as facts; what they lose
+  // is any say in where the dots are drawn.
+  assert.equal(model.points.find((point) => point.item.publicId === "menu")?.item.date, "2026-08-01");
 });
 
 test("undated milestones use an ordinal axis and never invent a Today marker", () => {
