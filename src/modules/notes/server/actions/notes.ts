@@ -67,6 +67,7 @@ function makeDemoNote(overrides: Partial<NoteRead> = {}): NoteRead {
     extractBody: null,
     promotedTaskId: null,
     archivedAt: null,
+    reviewedAt: null,
     source: null,
     workspaceId: null,
     ...overrides,
@@ -82,6 +83,7 @@ export type NoteRead = Pick<
   | "extractBody"
   | "promotedTaskId"
   | "archivedAt"
+  | "reviewedAt"
   | "source"
   | "workspaceId"
 >;
@@ -219,6 +221,7 @@ export async function createNote(
     extractBody: null,
     promotedTaskId: null,
     archivedAt: null,
+    reviewedAt: null,
     source: null,
     workspaceId,
   };
@@ -250,6 +253,7 @@ export async function listNotes(): Promise<NoteRead[]> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     })
@@ -314,10 +318,11 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
     extract_body: string | null;
     promoted_task_id: string | null;
     archived_at: number | null;
+    reviewed_at: number | null;
     source: string | null;
     workspace_id: string | null;
   }>(sql`
-    SELECT n.id, n.body, n.created_at, n.updated_at, n.extract_body, n.promoted_task_id, n.archived_at, n.source, n.workspace_id
+    SELECT n.id, n.body, n.created_at, n.updated_at, n.extract_body, n.promoted_task_id, n.archived_at, n.reviewed_at, n.source, n.workspace_id
     FROM notes_fts fts
     JOIN notes n ON n.rowid = fts.rowid
     WHERE fts.user_id = ${userId}
@@ -335,6 +340,7 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
     extractBody: r.extract_body,
     promotedTaskId: r.promoted_task_id,
     archivedAt: r.archived_at,
+    reviewedAt: r.reviewed_at,
     source: r.source,
     workspaceId: r.workspace_id,
   }));
@@ -430,6 +436,7 @@ export async function setNoteWorkspace(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -488,6 +495,7 @@ export async function setNoteExtract(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -532,6 +540,7 @@ export async function clearNoteExtract(id: string): Promise<NoteRead> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -678,6 +687,7 @@ export async function sendExtractToTasks(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -757,6 +767,7 @@ export async function promoteNoteToTasks(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     })
@@ -856,6 +867,7 @@ export async function promoteNoteToTasks(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -900,6 +912,7 @@ export async function listArchivedNotes(): Promise<NoteRead[]> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     })
@@ -955,6 +968,7 @@ export async function unPromoteNote(noteId: string): Promise<NoteRead> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -976,6 +990,45 @@ export type CreateNoteIdempotentInput = {
   id: string;
   body: string;
   workspaceId: string | null;
+  /**
+   * How this note was captured. Absent means the composer, which is what
+   * every note written before capture provenance existed was.
+   */
+  source?: NoteCaptureSource | null;
+};
+
+/**
+ * The capture routes Notes records. Deliberately a closed union here even
+ * though the column has no CHECK: the server is the only writer, so the
+ * union is the constraint, and nothing else can drift a value in.
+ *
+ * "calendar" is not in this union because Notes never creates a calendar
+ * note through capture; the calendar worker owns that value.
+ */
+export type NoteCaptureSource = "typed" | "voice" | "photo" | "email";
+
+const CAPTURE_SOURCES: readonly NoteCaptureSource[] = [
+  "typed",
+  "voice",
+  "photo",
+  "email",
+];
+
+function normalizeCaptureSource(
+  value: NoteCaptureSource | null | undefined,
+): NoteCaptureSource | null {
+  if (!value) return null;
+  if (!CAPTURE_SOURCES.includes(value)) {
+    throw new TypeError("Unknown capture source");
+  }
+  // Typed is the default reading of an absent value, so storing it would add
+  // a row's worth of nothing. Keep NULL as the one representation.
+  return value === "typed" ? null : value;
+}
+
+export type SetNoteReviewedInput = {
+  id: string;
+  reviewed: boolean;
 };
 
 export type UpdateNoteWithVersionInput = {
@@ -1038,6 +1091,7 @@ const hybridNoteSelection = {
   extractBody: notes.extractBody,
   promotedTaskId: notes.promotedTaskId,
   archivedAt: notes.archivedAt,
+  reviewedAt: notes.reviewedAt,
   source: notes.source,
   workspaceId: notes.workspaceId,
 };
@@ -1223,6 +1277,7 @@ export async function createNoteIdempotent(
   const id = validateStableNoteId(input.id);
   const body = validateNoteBody(input.body);
   const requestedWorkspaceId = normalizeOptionalWorkspaceId(input.workspaceId);
+  const source = normalizeCaptureSource(input.source);
   const userId = await requireUser();
   // Capture is the load-bearing private action. A stale membership or a
   // temporarily unavailable sister product must never hold the writing
@@ -1242,6 +1297,7 @@ export async function createNoteIdempotent(
       createdAt: now,
       updatedAt: now,
       workspaceId,
+      source,
     })
     .onConflictDoNothing()
     .returning(hybridNoteSelection);
@@ -1419,6 +1475,34 @@ export async function deleteNoteWithVersion(
     if (!remote) throw new Error("Note not found");
     return { status: "conflict" as const, remote };
   });
+}
+
+/**
+ * Record that the owner has decided about this note in Review.
+ *
+ * Owner-scoped and deliberately not version-checked. This writes one
+ * boolean-shaped fact about the person's own attention, not about the note's
+ * content, so a concurrent edit elsewhere must not make the decision fail or
+ * silently roll a body back. `updatedAt` is left alone for the same reason:
+ * bumping it would invalidate an open editor's version and cost someone their
+ * in-flight text to record that they had glanced at it.
+ *
+ * Reversible on purpose. Undo after "Keep in Notes" calls this with
+ * `reviewed: false`, which returns the note to the queue exactly where it was.
+ */
+export async function setNoteReviewed(
+  input: SetNoteReviewedInput,
+): Promise<NoteRead> {
+  refuseDemoMutation();
+  const noteId = validateStableNoteId(input.id);
+  const userId = await requireUser();
+  const [row] = await db
+    .update(notes)
+    .set({ reviewedAt: input.reviewed ? Date.now() : null })
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
+    .returning(hybridNoteSelection);
+  if (!row) throw new Error("Note not found");
+  return row;
 }
 
 /**

@@ -4,6 +4,50 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-05 · N·25 · ships · Notes learns to listen, look and decide
+
+**Notes was one screen doing four jobs, and it now has three views that each
+do one.** Capture, the notebook, the note being read, and the Sent-to-Tasks
+history all shared a single page permanently, with the history holding the
+entire right half at every width — including when it was empty, where "Sent
+to Tasks" was the largest type on the screen. Notebook, Review and Sent are
+now separate, route-backed, and carry truthful counts. The grey canvas and
+the large rounded card floating on it are gone: Notes fills the white
+workspace edge to edge, and structure comes from hairlines and space.
+
+**A thought can now arrive by voice or by photograph, and it arrives as
+notes.** Speaking a note records it, shows the words as they are heard, and
+then hands back one or more concise notes to edit before anything is saved
+— never a raw transcript. Photographing a notebook page, a whiteboard or
+something printed does the same. Signal keeps no recording, because there is
+none to keep: the browser turns speech into text, and the photograph is read
+and discarded. Where the reader is not switched on for an account, the
+product says so and keeps the words rather than inventing any.
+
+**Review is the new middle of the product.** One note at a time, with three
+ways out — keep it, turn it into a task, or let it go — plus a way to decide
+later. Every gesture has a button a thumb can hit, and every decision can be
+undone. Turning a note into a task is now the primary action rather than a
+selection-and-approval ritual, and it opens the task it created.
+
+**The words changed everywhere.** `PRIVATE NOTEBOOK`, `CAPTURE`, `FIND IN
+NOTES`, `HISTORY`, `0 / 10,000`, `Press / to find`, `7 active`, `3d ago` and
+the standing email-capture upsell inside the composer are all gone. The
+privacy promise is stated once, accurately: private to you until you turn a
+note into a task, with the detail — what leaves the device, what is stored,
+what a photograph does — in an information surface rather than a paragraph
+sitting in the capture field.
+
+**Honest edges.** Review state needed a column that did not exist, so
+`notes.reviewed_at` was added; the notes database needs
+`drizzle-notes/0001_notes_reviewed_at.sql` applied before this ships. The
+legacy notebook renderer was retired rather than carried: its stated
+one-release rollback window had passed, and a rollback to it would have
+restored the exact screen this replaces. That retirement is also what paid
+for the new capture routes — the whole redesign lands 9.5 KB gzip under the
+bundle ceiling it would otherwise have breached, and the ceiling has been
+ratcheted down to match.
+
 ## 2026-08-05 · T·132 · ships · the board answers its own review
 
 **Nine independent reviewers graded the shipped board against the standard

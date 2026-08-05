@@ -74,8 +74,26 @@ export const notes = sqliteTable(
      * Refusal anchor (PRODUCT.md §8): a note with source="calendar" is
      * a *scaffold* only, title + attendees. No auto-detected action
      * items, no summaries, no meeting body. The line stays clean.
+     *
+     * Capture provenance joined this column 2026-08-05 (Notes world-class
+     * redesign). Values now read: NULL or "typed" = written in the
+     * composer, "voice" = spoken and turned into text, "photo" = read
+     * from a picture, "email" = arrived by capture address, "calendar" =
+     * the pre-event scaffold above. NULL is preserved as typed so no
+     * existing row needs a backfill.
      */
     source: text("source"),
+    /**
+     * When the owner last made a deliberate decision about this note in
+     * Review: kept it, or sent it on. NULL = it has never been through
+     * Review, which is what puts it in the queue.
+     *
+     * Additive and nullable on purpose. Every note written before this
+     * column existed reads as "not yet reviewed", which is true, and the
+     * queue simply starts full rather than starting wrong. Deleting is
+     * also a decision, but it removes the row, so it needs no marker.
+     */
+    reviewedAt: integer("reviewed_at", { mode: "number" }),
   },
   (table) => ({
     userCreated: index("notes_user_created_idx").on(
@@ -85,6 +103,13 @@ export const notes = sqliteTable(
     userWorkspaceCreated: index("notes_user_workspace_created_idx").on(
       table.userId,
       table.workspaceId,
+      table.createdAt,
+    ),
+    // Drives the Review queue count in the local header, which is read on
+    // every Notes render. Without it the count is a full user scan.
+    userReviewed: index("notes_user_reviewed_idx").on(
+      table.userId,
+      table.reviewedAt,
       table.createdAt,
     ),
   })

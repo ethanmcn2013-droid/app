@@ -44,6 +44,14 @@ export const TASKS_VIEW_PATHS: Readonly<Record<TasksViewId, string>> =
     calendar: `${PRODUCT_APP_PATHS.tasks}/calendar`,
   });
 
+/**
+ * One task, opened on its own. The approved focus experience that both the
+ * Tasks drawer and Notes hand off to, so neither invents a path of its own.
+ */
+export function taskFocusPath(taskId: string): string {
+  return `/app/task/${encodeURIComponent(taskId)}`;
+}
+
 export const PRODUCT_APP_URLS: Readonly<Record<ProductId, string>> =
   Object.freeze({
     notes: `${APP_ORIGIN}${PRODUCT_APP_PATHS.notes}`,

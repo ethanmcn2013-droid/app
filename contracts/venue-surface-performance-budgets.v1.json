@@ -19,7 +19,7 @@
     "total_client_js": {
       "unit": "KB gzip",
       "budget": 936,
-      "ceiling": 936,
+      "ceiling": 927,
       "surfaces": ["couple_workspace", "public_artifact"],
       "what": "Every client chunk emitted under .next/static/chunks, gzipped.",
       "budgetBasis": "No prior target existed anywhere in either repository. Set equal to the measured baseline so the number can only ratchet down. Choosing a real target is a founder decision and is recorded as an open question on E08.10.",

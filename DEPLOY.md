@@ -119,6 +119,27 @@ identity. The module databases (notes / timeline / signal) are created from
 their tracked baselines in `drizzle-notes/`, `drizzle-timeline/`,
 `drizzle-signal/`. See `drizzle/MIGRATIONS.md` for the full contract.
 
+### Pending module migration: notes 0001
+
+`drizzle-notes/0001_notes_reviewed_at.sql` adds one nullable column and one
+index to `notes`, for the Review queue (N·25, 2026-08-05):
+
+```sql
+ALTER TABLE `notes` ADD `reviewed_at` integer;
+CREATE INDEX `notes_user_reviewed_idx` ON `notes` (`user_id`,`reviewed_at`,`created_at`);
+```
+
+It is additive and backward compatible: every existing row reads as "not yet
+reviewed", which is true, and the previous release keeps working against the
+new schema. It must be applied to the notes database before this release
+serves traffic, or every read of `notes` fails on the missing column.
+
+There is no receipt-backed runner for the module databases yet — `pnpm
+db:migrate` covers the Tasks database only. Until one exists, apply this by
+hand against `NOTES_DATABASE_URL` with `turso db shell`, take a backup
+first, and record the applied hash beside the release. Building that runner
+for the module databases is open work, not something this release solved.
+
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against

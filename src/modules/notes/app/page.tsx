@@ -19,10 +19,14 @@ import {
   fetchTasksWorkspaceCatalog,
   selectAuthorizedWorkspaceHint,
 } from "@/modules/notes/server/tasks-personalization";
-import { Notebook } from "@/modules/notes/app/Notebook";
-import { CaptureEmailRow } from "@/modules/notes/app/CaptureEmailRow";
-import { EarlyCaptureBootstrap } from "@/modules/notes/app/hybrid/EarlyCaptureBootstrap";
-import { HybridNotebook } from "@/modules/notes/app/hybrid/HybridNotebook";
+import type { CaptureState } from "@/modules/notes/app/CaptureEmailRow";
+import { EarlyCaptureBootstrap } from "@/modules/notes/app/workspace/EarlyCaptureBootstrap";
+import { NotesWorkspace } from "@/modules/notes/app/workspace/NotesWorkspace";
+import {
+  photoCaptureAvailable,
+  speechSeparationAvailable,
+} from "@/modules/notes/server/actions/extraction";
+import { viewFromParam } from "@/modules/notes/lib/notes-view-model";
 import AppLoading from "@/modules/notes/app/loading";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +49,11 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   // Demo/Review mode skips the sign-in gate entirely, the notebook renders
   // from the in-memory seed (listNotes/listArchivedNotes short-circuit).
   const demoMode = isDemoMode();
-  // Hybrid is the founder-approved canonical notebook. The legacy renderer
-  // remains an explicit, server-only rollback path for one release window;
-  // an absent environment variable must never silently restore the old UI.
+  // The workspace is the canonical notebook and now the only one. The
+  // legacy renderer was retired with the 2026-08-05 redesign: its rollback
+  // window had passed, and rolling back to it would have restored the exact
+  // screen this replaced. `NOTES_LEGACY_NOTEBOOK_ENABLED` still governs the
+  // legacy Notes-to-Tasks server actions, which are a separate seam.
   const hybridNotebookEnabled =
     process.env.NOTES_LEGACY_NOTEBOOK_ENABLED !== "1";
   const params = await searchParams;
@@ -114,9 +120,7 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
       listArchivedNotes(),
       getCaptureEmail(),
       fetchTasksWorkspaceCatalog(userId as string),
-      hybridNotebookEnabled
-        ? listPendingApprovedTaskSendsForHybrid()
-        : Promise.resolve([]),
+      listPendingApprovedTaskSendsForHybrid(),
       fetchNotesWorkspaceDomain(userId as string),
     ]);
   }
@@ -131,7 +135,7 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
   //   - tier=free: free-tier user → show upgrade nudge.
   //   - null: workspace+ user, inbound NOT wired yet → hide entirely
   //     (don't show a fake-looking address that drops mail).
-  let captureState: React.ComponentProps<typeof CaptureEmailRow>["state"] | null;
+  let captureState: CaptureState | null;
   if (captureEmail.ok) {
     captureState = { tier: "entitled", address: captureEmail.address };
   } else if (captureEmail.reason === "free-tier-not-enabled") {
@@ -157,30 +161,42 @@ export default async function NotebookPage({ searchParams }: NotebookPageProps) 
       ? `review-${fixture}`
       : createHash("sha256").update(`signal-notes:${userId}`).digest("hex").slice(0, 24),
   };
+  // Which of the three views, and which note, the URL is asking for. Both
+  // are navigation state and neither is authorisation: an unknown view falls
+  // back to the notebook, and an unknown note id simply selects nothing.
+  const requestedView = viewFromParam(
+    typeof params.view === "string" ? params.view : null,
+  );
+  const requestedNoteId = typeof params.note === "string" ? params.note : null;
+  const [photoAvailable, speechSeparates] = await Promise.all([
+    photoCaptureAvailable(),
+    speechSeparationAvailable(),
+  ]);
+
   return (
     <>
-      {hybridNotebookEnabled ? (
-        <>
-          <EarlyCaptureBootstrap />
-          <HybridNotebook
-            {...notebookProps}
+      <EarlyCaptureBootstrap />
+      <NotesWorkspace
+            initialNotes={notebookProps.initialNotes}
+            initialArchivedNotes={notebookProps.initialArchivedNotes}
+            initialWorkspaceId={notebookProps.initialWorkspaceId}
+            referenceTime={notebookProps.referenceTime}
+            recoveryScope={notebookProps.recoveryScope}
+            tasksWorkspaces={notebookProps.tasksWorkspaces}
             captureEmailState={captureState}
             initialPendingApprovedTaskSends={pendingApprovedTaskSends}
             activeDomain={activeDomain}
             demoMode={demoMode}
-          />
-        </>
-      ) : (
-        <Notebook {...notebookProps} />
-      )}
+            photoAvailable={photoAvailable}
+            speechSeparates={speechSeparates}
+        initialView={requestedView}
+        initialNoteId={requestedNoteId}
+      />
       {demoMode && fixture === "partial-failure" ? (
         <aside className="capture-email" role="status" data-review-fixture="partial-failure">
           Connected details are temporarily unavailable. Your notebook is
           ready, and you can keep writing.
         </aside>
-      ) : null}
-      {!hybridNotebookEnabled && captureState ? (
-        <CaptureEmailRow state={captureState} />
       ) : null}
     </>
   );
