@@ -31,7 +31,11 @@ export function syncRevalidationPaths(projectSlug: string): string[] {
 }
 
 /**
- * The exact set of paths publishWorkspaceAction revalidates in the unified app.
+ * The exact set of paths a workspace publish/unpublish revalidates in the
+ * unified app. (System B, the workspace-wide `projects.publishedAt` publish
+ * path this mirrors, was deleted as dead code with zero callers; this
+ * contract is kept for the D6 two-gate invariant it documents and remains
+ * covered by tasks-milestone-source.test.ts.)
  *
  * Unified-app rewrite: the public /{workspaceSlug} path is intentionally
  * EXCLUDED here because the unified app cannot revalidate the public Timeline
