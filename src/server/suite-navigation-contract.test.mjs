@@ -35,7 +35,7 @@ const tasksCalendar = read(
 // lab chrome. The task a person actually opens is the production detail
 // panel, so the accessible-name contract is asserted where it now lives.
 const taskDetailPanel = read(
-  "src/components/app/detail-panel/panel-shell.tsx",
+  "src/components/app/detail-panel/focus-window.tsx",
 );
 const taskSharedStyles = read(
   "src/components/hybrid/shared/shared.module.css",
