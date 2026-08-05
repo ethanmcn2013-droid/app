@@ -25,8 +25,11 @@ test("no config: guests see the shipped five columns, operator names included", 
     columns.map((column) => column.name),
     ["Queued", "In progress", "Review", "Waiting", "Done"],
   );
-  // System defaults carry a tint; the default Waiting column is neutral.
-  assert.ok(columns[0].accent);
+  // Working states carry a tint; the resting states — Queued (T·132: a
+  // backlog is not an alarm) and Waiting — are neutral by default, and a
+  // null accent is a first-class value guests must render.
+  assert.ok(columns[1].accent);
+  assert.equal(columns[0].accent, null);
   assert.equal(columns[3].accent, null);
   // Only the Done column reads as finished (T·122 default doneKeys).
   assert.deepEqual(
