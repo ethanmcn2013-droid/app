@@ -171,17 +171,17 @@ function RepeatForm({
   return (
     <div className="flex flex-col gap-2.5 px-1.5 py-1.5">
       <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Make copies
         </span>
-        <p className="text-[11.5px] leading-[1.45] text-ink-soft">
+        <p className="text-[12px] leading-[var(--x-lead-read)] text-ink-soft">
           A few copies of this task, spaced a set number of days apart. Useful
           for countdowns and reminders. The original stays where it is.
         </p>
       </div>
       <div className="flex items-end gap-2">
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
             Count
           </span>
           <input
@@ -197,11 +197,11 @@ function RepeatForm({
               setCount(Number.isFinite(next) ? next : MIN_COUNT);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full rounded-md border border-line-soft bg-white px-2 py-1.5 text-[12.5px] tabular-nums text-ink focus:border-brand focus:outline-none"
+            className="w-full rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] tabular-nums text-ink focus:border-brand focus:outline-none"
           />
         </label>
         <label className="flex flex-1 flex-col gap-1">
-          <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
             Days apart
           </span>
           <input
@@ -216,17 +216,17 @@ function RepeatForm({
               setDayStep(Number.isFinite(next) ? next : MIN_DAY_STEP);
             }}
             onKeyDown={handleKeyDown}
-            className="w-full rounded-md border border-line-soft bg-white px-2 py-1.5 text-[12.5px] tabular-nums text-ink focus:border-brand focus:outline-none"
+            className="w-full rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] tabular-nums text-ink focus:border-brand focus:outline-none"
           />
         </label>
       </div>
-      <p className="text-[11px] leading-[1.45] text-ink-quiet">{helperLine}</p>
+      <p className="text-[11px] leading-[var(--x-lead-read)] text-ink-quiet">{helperLine}</p>
       <div className="mt-0.5 flex items-center justify-end gap-1.5">
         <button
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="rounded-md px-2 py-1 text-[11.5px] text-ink-soft transition-colors hover:bg-bg-sunken disabled:opacity-50"
+          className="rounded-md px-2 py-1 text-[12px] text-ink-soft transition-colors hover:bg-bg-sunken disabled:opacity-50"
         >
           Cancel
         </button>
@@ -234,7 +234,7 @@ function RepeatForm({
           type="button"
           onClick={submit}
           disabled={isPending}
-          className="rounded-md bg-ink px-2.5 py-1 text-[11.5px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
+          className="rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-ink/90 disabled:opacity-60"
         >
           {isPending ? "Creating…" : "Create copies"}
         </button>

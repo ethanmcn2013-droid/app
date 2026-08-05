@@ -114,7 +114,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
         disabled={disabled || isStreaming}
         aria-label="Draft a reply"
         title="Draft a reply"
-        className="group inline-flex h-[22px] items-center gap-1 rounded-full border border-line-soft bg-white px-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40"
+        className="group inline-flex h-[22px] items-center gap-1 rounded-full border border-line-soft bg-white px-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40"
         style={{
           transitionTimingFunction: "var(--ease-out-expo)",
         }}
@@ -152,7 +152,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                     "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
                 }}
               />
-              <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
                 Draft a reply
               </span>
             </div>
@@ -168,17 +168,17 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 }
               }}
               placeholder="Acknowledge and ship by Friday"
-              className="block w-full rounded-md border border-line-soft bg-bg-sunken/40 px-2.5 py-1.5 text-[12.5px] text-ink placeholder:text-ink-faint focus:border-brand/50 focus:bg-white focus:outline-none"
+              className="block w-full rounded-md border border-line-soft bg-bg-sunken/40 px-2.5 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand/50 focus:bg-white focus:outline-none"
             />
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-[10.5px] leading-[1.4] text-ink-faint">
+              <p className="text-[11px] leading-[1.4] text-ink-faint">
                 Optional. Empty = pick the natural reply.
               </p>
               <button
                 type="button"
                 onClick={submit}
                 disabled={isStreaming}
-                className="inline-flex h-[22px] items-center gap-1 rounded-full bg-ink px-2.5 text-[10.5px] font-medium uppercase tracking-[0.08em] text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
+                className="inline-flex h-[22px] items-center gap-1 rounded-full bg-ink px-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
               >
                 {isStreaming ? "Drafting…" : "Draft"}
               </button>

@@ -164,7 +164,7 @@ export function DueCalendar({
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span className="text-[12.5px] font-semibold tracking-tight text-ink">
+        <span className="text-[13px] font-semibold text-ink">
           {MONTHS[month]} {year}
         </span>
         <button
@@ -182,7 +182,7 @@ export function DueCalendar({
       {/* Weekday header */}
       <div className="grid grid-cols-7 text-center">
         {DOW.map((d, i) => (
-          <span key={i} className="py-1 text-[9.5px] font-semibold uppercase tracking-wide text-ink-faint">
+          <span key={i} className="py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint leading-[var(--x-lead-tight)]">
             {d}
           </span>
         ))}
@@ -226,7 +226,7 @@ export function DueCalendar({
           <button
             type="button"
             onClick={onClear}
-            className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink"
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />

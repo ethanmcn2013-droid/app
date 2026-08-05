@@ -68,3 +68,8 @@ prefs.db*
 
 # database backups taken by scripts/db/backup.mjs — never committed
 .db-backups/
+
+# scratch capture/probe scripts written beside the repo while measuring a
+# surface. They belong in the session scratchpad; three of them reached a
+# commit before this rule existed.
+*.tmp.mjs

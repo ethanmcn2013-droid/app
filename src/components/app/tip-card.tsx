@@ -173,7 +173,7 @@ export function TipCard({
       role="note"
       className="flex items-start gap-3 rounded-lg border border-line-soft bg-bg-elevated px-4 py-3"
     >
-      <p className="flex-1 text-[12.5px] leading-[1.5] text-ink-quiet">
+      <p className="flex-1 text-[13px] leading-[var(--x-lead-read)] text-ink-quiet">
         {tip.body}
       </p>
       <button

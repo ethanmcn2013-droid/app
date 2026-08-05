@@ -78,11 +78,11 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                       "linear-gradient(135deg, var(--brand) 0%, #4338ca 100%)",
                   }}
                 />
-                <span className="text-[12.5px] font-medium text-ink-soft group-hover:text-ink">
+                <span className="text-[13px] font-medium text-ink-soft group-hover:text-ink">
                   Summarize this thread
                 </span>
               </span>
-              <span className="text-[10.5px] uppercase tracking-[0.12em] text-ink-faint group-hover:text-brand">
+              <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint group-hover:text-brand">
                 2-3 sentences
               </span>
             </button>
@@ -115,7 +115,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                     repeat: isStreaming ? Infinity : 0,
                   }}
                 />
-                <span className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
                   Thread summary
                 </span>
               </span>
@@ -125,13 +125,13 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                   setHasRun(false);
                   setSummary("");
                 }}
-                className="text-[10.5px] uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-quiet"
+                className="text-[11px] uppercase tracking-[0.08em] text-ink-faint transition-colors hover:text-ink-quiet"
                 aria-label="Hide summary"
               >
                 Hide
               </button>
             </div>
-            <p className="text-[12.5px] leading-[1.55] text-ink-soft">
+            <p className="text-[13px] leading-[1.55] text-ink-soft">
               {summary || (
                 <span className="text-ink-faint">Reading the thread…</span>
               )}

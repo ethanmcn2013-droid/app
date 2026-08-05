@@ -5,7 +5,7 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 
 const TEXT_CLASSES =
-  "block w-full bg-transparent px-0 text-[13.5px] leading-[1.6] text-ink-soft transition-colors focus:outline-none";
+  "block w-full bg-transparent px-0 text-[13.5px] leading-[var(--x-lead-read)] text-ink-soft transition-colors focus:outline-none";
 
 export function DescriptionEditor({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();

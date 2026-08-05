@@ -258,19 +258,19 @@ export function ResourcesSection({ task }: { task: Task }) {
     >
       {/* Section header */}
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <span className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Resources
         </span>
         <div className="flex items-baseline gap-3">
           {total > 0 ? (
-            <span className="text-[10.5px] tabular-nums text-ink-quiet">
+            <span className="text-[11px] tabular-nums text-ink-quiet">
               {total} {total === 1 ? "item" : "items"}
             </span>
           ) : null}
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center gap-1 rounded-md text-[11.5px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
+            className="inline-flex items-center gap-1 rounded-md text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
             aria-label="Attach a file"
           >
             <PaperclipGlyph />
@@ -352,7 +352,7 @@ export function ResourcesSection({ task }: { task: Task }) {
             type="button"
             onClick={handleAddLink}
             disabled={linkPending}
-            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[11.5px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
+            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
           >
             {linkPending ? "Adding…" : "Add"}
           </button>
@@ -457,11 +457,11 @@ function RealResourceRow({
           : { download: row.title })}
         className="min-w-0 flex-1"
       >
-        <div className="truncate text-[12.5px] font-medium leading-tight text-ink">
+        <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink">
           {row.title}
         </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] tabular-nums text-ink-quiet">
-          <span className="rounded px-1 py-px text-[9.5px] font-medium uppercase tracking-wide text-ink-faint ring-1 ring-line">
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-quiet">
+          <span className="rounded px-1 py-px text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint ring-1 ring-line leading-[var(--x-lead-tight)]">
             {providerLabel(row.provider)}
           </span>
           {row.sizeBytes != null ? (
@@ -500,14 +500,14 @@ function RealResourceRow({
       >
         {(close) => (
           <div className="flex flex-col gap-1.5 p-1.5">
-            <p className="px-1.5 pt-1 text-[12px] leading-snug text-ink-soft">
+            <p className="px-1.5 pt-1 text-[12px] leading-[var(--x-lead-ui)] text-ink-soft">
               Remove this resource?
             </p>
             <div className="flex items-center justify-end gap-1.5">
               <button
                 type="button"
                 onClick={close}
-                className="rounded-md px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+                className="rounded-md px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
               >
                 Cancel
               </button>
@@ -517,7 +517,7 @@ function RealResourceRow({
                   close();
                   onRemove();
                 }}
-                className="rounded-md bg-ink px-2 py-1 text-[11.5px] font-medium text-white transition-opacity hover:opacity-85"
+                className="rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity hover:opacity-85"
               >
                 Remove
               </button>
@@ -542,10 +542,10 @@ function PendingRow({ row }: { row: PendingUploadRow }) {
     >
       <FileGlyph mimeType={row.mimeType} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[12.5px] font-medium leading-tight text-ink-soft">
+        <div className="truncate text-[13px] font-medium leading-[var(--x-lead-tight)] text-ink-soft">
           {row.title}
         </div>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[10.5px] tabular-nums text-ink-faint">
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] tabular-nums text-ink-faint">
           <span>{formatBytes(row.sizeBytes)}</span>
           <span aria-hidden>·</span>
           <span>uploading…</span>

@@ -62,7 +62,7 @@ export function ContactEditor({ task }: { task: Task }) {
           className={
             hasContact
               ? "group inline-flex w-fit max-w-full items-baseline gap-2 rounded-md border border-transparent px-1.5 py-1 text-left transition-colors hover:border-line-soft"
-              : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
+              : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
           }
         >
           {hasContact ? (
@@ -100,23 +100,23 @@ function ContactSummary({ name, email }: { name: string; email: string }) {
   if (name && email) {
     return (
       <span className="inline-flex min-w-0 items-baseline gap-2">
-        <span className="truncate text-[12.5px] font-medium text-ink">
+        <span className="truncate text-[13px] font-medium text-ink">
           {name}
         </span>
-        <span className="truncate text-[11.5px] text-ink-quiet">·</span>
-        <span className="truncate text-[11.5px] text-ink-quiet">{email}</span>
+        <span className="truncate text-[12px] text-ink-quiet">·</span>
+        <span className="truncate text-[12px] text-ink-quiet">{email}</span>
       </span>
     );
   }
   if (name) {
     return (
-      <span className="truncate text-[12.5px] font-medium text-ink">
+      <span className="truncate text-[13px] font-medium text-ink">
         {name}
       </span>
     );
   }
   return (
-    <span className="truncate text-[12.5px] text-ink-soft">{email}</span>
+    <span className="truncate text-[13px] text-ink-soft">{email}</span>
   );
 }
 
@@ -174,7 +174,7 @@ function ContactForm({
   return (
     <div className="flex flex-col gap-2 px-1.5 py-1.5">
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Name
         </span>
         <input
@@ -184,11 +184,11 @@ function ContactForm({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Sarah at Floral House"
-          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[12.5px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
+          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Email
         </span>
         <input
@@ -197,7 +197,7 @@ function ContactForm({
           onChange={(e) => setEmail(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="sarah@floralhouse.com"
-          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[12.5px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
+          className="rounded-md border border-line-soft bg-white px-2 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
         />
       </label>
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -205,7 +205,7 @@ function ContactForm({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-md px-2 py-1 text-[11.5px] text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+            className="rounded-md px-2 py-1 text-[12px] text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
           >
             Remove
           </button>
@@ -216,14 +216,14 @@ function ContactForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md px-2 py-1 text-[11.5px] text-ink-soft transition-colors hover:bg-bg-sunken"
+            className="rounded-md px-2 py-1 text-[12px] text-ink-soft transition-colors hover:bg-bg-sunken"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onSave({ name, email })}
-            className="rounded-md bg-ink px-2.5 py-1 text-[11.5px] font-medium text-white transition-colors hover:bg-ink/90"
+            className="rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-ink/90"
           >
             Save
           </button>

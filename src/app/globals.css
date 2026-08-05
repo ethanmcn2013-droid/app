@@ -182,6 +182,34 @@
   --x-artifact-metric-tracking: -0.08em;
   --x-artifact-metric-leading: 0.7;
 
+  /* ── Reading leading (--x- extension prefix). The display end of the
+     ramp has had designed leading since the artifact register above:
+     0.88 for display, 0.7 for metrics, with a mobile correction. The
+     reading end never did. Across the Tasks module 431 rules set a font
+     size and 42 set a line height, and those 42 used nine different
+     values; the detail panel rendered 30 of its 32 text nodes at a flat
+     inherited 1.5, so an uppercase label that can never wrap paid the
+     same leading as a paragraph.
+
+     Four values, each with a job. Leading is a function of what the text
+     has to DO, not of how big it is:
+
+       flush  a single line whose box already sets its height — chips,
+              pills, buttons, table cells. Any leading above 1 fights
+              the box.
+       tight  text that should not breathe: headings, and the uppercase
+              eyebrows at the 11px floor. Both are short, both rarely
+              wrap, and both read as one object rather than as lines.
+       ui     interface text that occupies one or two lines — field
+              values, menu items, row titles. Tight enough to group,
+              loose enough to survive a wrap.
+       read   prose meant to be read as a paragraph: descriptions,
+              briefs, comments, empty-state body. */
+  --x-lead-flush: 1;
+  --x-lead-tight: 1.2;
+  --x-lead-ui: 1.35;
+  --x-lead-read: 1.55;
+
   /* ── Per-column board colours (T·96) — the pickable hues for kanban
      lanes. Each rides an existing system token so nothing new enters
      the palette; the board mixes them down to a whisper. "neutral" has

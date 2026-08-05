@@ -68,11 +68,11 @@ export function CentsEditor({ task }: { task: Task }) {
           className={
             hasAmount
               ? "group inline-flex w-fit max-w-full items-baseline gap-2 rounded-md border border-transparent px-1.5 py-1 text-left transition-colors hover:border-line-soft"
-              : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[11.5px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
+              : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
           }
         >
           {hasAmount ? (
-            <span className="truncate text-[12.5px] font-medium tabular-nums text-ink">
+            <span className="truncate text-[13px] font-medium tabular-nums text-ink">
               {formatCurrency(cents)}
             </span>
           ) : (
@@ -161,13 +161,13 @@ function CentsForm({
   return (
     <div className="flex flex-col gap-2 px-1.5 py-1.5">
       <label className="flex flex-col gap-1">
-        <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Amount
         </span>
         <div className="relative">
           <span
             aria-hidden
-            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12.5px] text-ink-quiet"
+            className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[13px] text-ink-quiet"
           >
             $
           </span>
@@ -179,7 +179,7 @@ function CentsForm({
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="1,200.00"
-            className="w-full rounded-md border border-line-soft bg-white py-1.5 pl-5 pr-2 text-[12.5px] tabular-nums text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
+            className="w-full rounded-md border border-line-soft bg-white py-1.5 pl-5 pr-2 text-[13px] tabular-nums text-ink placeholder:text-ink-faint focus:border-brand focus:outline-none"
           />
         </div>
       </label>
@@ -188,7 +188,7 @@ function CentsForm({
           <button
             type="button"
             onClick={onClear}
-            className="rounded-md px-2 py-1 text-[11.5px] text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+            className="rounded-md px-2 py-1 text-[12px] text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
           >
             Remove
           </button>
@@ -199,14 +199,14 @@ function CentsForm({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md px-2 py-1 text-[11.5px] text-ink-soft transition-colors hover:bg-bg-sunken"
+            className="rounded-md px-2 py-1 text-[12px] text-ink-soft transition-colors hover:bg-bg-sunken"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onSave(value)}
-            className="rounded-md bg-ink px-2.5 py-1 text-[11.5px] font-medium text-white transition-colors hover:bg-ink/90"
+            className="rounded-md bg-ink px-2.5 py-1 text-[12px] font-medium text-white transition-colors hover:bg-ink/90"
           >
             Save
           </button>

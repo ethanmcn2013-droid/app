@@ -63,8 +63,8 @@ export function TaskDetailPanel() {
 function EmptyState() {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 px-8 text-center">
-      <div className="text-[14.5px] font-medium text-ink">Task not found</div>
-      <div className="max-w-[28ch] text-[12.5px] text-ink-soft">
+      <div className="text-[14px] font-medium text-ink">Task not found</div>
+      <div className="max-w-[28ch] text-[13px] text-ink-soft">
         It may have been deleted or this link is stale. Closing in a moment.
       </div>
     </div>

@@ -42,7 +42,7 @@ function MetaField({
 }) {
   return (
     <div className={["flex flex-col gap-0.5", colSpan2 ? "col-span-2" : ""].join(" ").trim()}>
-      <dt className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+      <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
         {label}
       </dt>
       <dd className="m-0">{children}</dd>
@@ -81,8 +81,8 @@ export function MetadataRail({
   ].filter((field): field is { key: "contact" | "amount"; label: string } => field !== null);
 
   const wrapClass = compact
-    ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[12.5px]"
-    : "flex flex-col gap-4 text-[12.5px]";
+    ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]"
+    : "flex flex-col gap-4 text-[13px]";
 
   return (
     <dl className={wrapClass}>
@@ -118,7 +118,7 @@ export function MetadataRail({
             {task.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10.5px] font-medium uppercase tracking-wider text-ink-soft"
+                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft leading-[var(--x-lead-tight)]"
               >
                 {tag}
               </span>
@@ -207,7 +207,7 @@ export function MetadataRail({
                 key={field.key}
                 type="button"
                 onClick={() => setRevealed((current) => ({ ...current, [field.key]: true }))}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
               >
                 <span aria-hidden>+</span>
                 {field.label}
