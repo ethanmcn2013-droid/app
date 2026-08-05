@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
-import { PanelShell } from "./panel-shell";
+import { TaskFocusWindow } from "./focus-window";
 import { TaskDetail } from "@/components/app/task-detail/task-detail";
 
 export function TaskDetailPanel() {
@@ -44,7 +44,7 @@ export function TaskDetailPanel() {
   }
 
   return (
-    <PanelShell open={!!taskId} onClose={closeTask}>
+    <TaskFocusWindow open={!!taskId} onClose={closeTask}>
       {task ? (
         <TaskDetail
           task={task}
@@ -56,7 +56,7 @@ export function TaskDetailPanel() {
       ) : taskId ? (
         <EmptyState />
       ) : null}
-    </PanelShell>
+    </TaskFocusWindow>
   );
 }
 
