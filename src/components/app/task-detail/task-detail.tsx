@@ -352,6 +352,14 @@ function TaskDetailHeader({
           the header two competing focal points. */}
       <div className="mt-2.5">
         <TitleTextarea task={task} />
+        {shell === "panel" ? (
+          /* The primary property strip: what a person checks first, on
+             one line under the title, instead of four labelled blocks
+             they have to read past to reach the work. */
+          <div className="mt-3">
+            <MetadataRail task={task} variant="strip" />
+          </div>
+        ) : null}
       </div>
 
       {/* Primary action row. The panel's one primary action carries the
@@ -466,32 +474,38 @@ export function TaskDetail({
         onNavigate={onNavigate}
       />
 
-      {isFocus ? (
-        // Focus shell: centred column + right rail at lg+
-        <div className="thin-scroll flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[860px] px-6 pb-12 pt-6 lg:grid lg:grid-cols-[1fr_280px] lg:gap-8 lg:px-8">
-            <PrimaryContent task={task} conversation={conversation} />
-            <aside className="order-first mb-8 lg:order-none lg:mb-0 lg:border-l lg:border-line-soft lg:pl-6">
-              <MetadataRail task={task} />
-            </aside>
-          </div>
-        </div>
-      ) : (
-        // Panel shell: single-column scroll, compact metadata at top
-        <div className="thin-scroll flex-1 overflow-y-auto">
-          <div className="border-b border-line-soft px-6 py-4">
-            <MetadataRail task={task} compact />
-          </div>
+      {/*
+        One workspace, two framings. The task used to get a two-column
+        layout on the full page and a single stacked column in the panel,
+        because the panel was a 520px drawer where a rail could not fit.
+        The panel is a 1120px centred window now, so both framings run the
+        same architecture: the work people actually do — description,
+        subtasks, conversation, attachments — reads down the main column,
+        and the properties that merely describe the task sit in a rail
+        beside it instead of forming a wall of labels above it. Below lg
+        the rail folds back on top, which is the right order on a phone.
+      */}
+      <div className="thin-scroll flex-1 overflow-y-auto">
+        <div
+          className={
+            isFocus
+              ? "mx-auto w-full max-w-[860px] px-6 pb-12 pt-6 lg:grid lg:grid-cols-[1fr_280px] lg:gap-8 lg:px-8"
+              : "mx-auto w-full px-6 pb-10 pt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 lg:px-8"
+          }
+        >
           <PrimaryContent task={task} conversation={conversation} />
-          {/* Tip card mounts after the content: a hint is the least
-              important thing on the panel and must never sit between the
-              fields and the description. TipCard self-gates on the "Tips
-              while you work" preference plus the session/weekly caps. */}
-          <div className="px-6 pb-5">
-            <TipCard context="task-panel" />
-          </div>
+          <aside className="order-first mb-8 lg:order-none lg:mb-0 lg:border-l lg:border-line-soft lg:pl-7">
+            <MetadataRail task={task} variant={isFocus ? "full" : "rest"} />
+          </aside>
+          {isFocus ? null : (
+            /* A hint is the least important thing here and must never sit
+               between the properties and the work. It closes the rail. */
+            <div className="mt-8 lg:col-start-2 lg:mt-6">
+              <TipCard context="task-panel" />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

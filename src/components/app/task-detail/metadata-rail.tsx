@@ -35,11 +35,25 @@ function MetaField({
   label,
   children,
   colSpan2 = false,
+  bare = false,
 }: {
   label: string;
   children: React.ReactNode;
   colSpan2?: boolean;
+  bare?: boolean;
 }) {
+  if (bare) {
+    // The strip carries no labels: a status chip, a face, a date and a
+    // priority read themselves, and stacking uppercase eyebrows above
+    // them is the wall this redesign exists to remove. The name survives
+    // for screen readers, which cannot see that a chip is a status.
+    return (
+      <div className="flex items-center">
+        <dt className="sr-only">{label}</dt>
+        <dd className="m-0">{children}</dd>
+      </div>
+    );
+  }
   return (
     <div className={["flex flex-col gap-0.5", colSpan2 ? "col-span-2" : ""].join(" ").trim()}>
       <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
@@ -55,10 +69,20 @@ function MetaField({
 export function MetadataRail({
   task,
   compact = false,
+  variant = "full",
 }: {
   task: Task;
   compact?: boolean;
+  /**
+   * "strip" renders only the four properties a person checks first —
+   * status, owner, due date, priority — labelless and in a row under the
+   * title. "rest" renders everything else. "full" is both, which is what
+   * the full-page workspace still uses.
+   */
+  variant?: "full" | "strip" | "rest";
 }) {
+  const showPrimary = variant !== "rest";
+  const showRest = variant !== "strip";
   const { boardName } = useDomain();
   const suiteContext = useSuiteContext();
   const projectLabel = boardName ?? "Project";
@@ -80,33 +104,38 @@ export function MetadataRail({
     showAmount ? null : { key: "amount" as const, label: "Amount" },
   ].filter((field): field is { key: "contact" | "amount"; label: string } => field !== null);
 
-  const wrapClass = compact
-    ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]"
-    : "flex flex-col gap-4 text-[13px]";
+  const wrapClass = variant === "strip"
+    ? "flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]"
+    : compact
+      ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]"
+      : "flex flex-col gap-4 text-[13px]";
+  const bare = variant === "strip";
 
   return (
     <dl className={wrapClass}>
-      {/* Status leads: it is the one property the board is organised by. */}
-      <MetaField label="Status">
-        <StatusPillRow task={task} />
-      </MetaField>
-
-      {/* Assignees */}
-      <MetaField label="Assignees">
-        <AssigneesRow task={task} />
-      </MetaField>
-
-      {/* Due date */}
-      <MetaField label="Due date">
-        <DueRow task={task} />
-      </MetaField>
-
-      {/* Priority */}
-      <MetaField label="Priority">
-        <PriorityRow task={task} />
-      </MetaField>
+      {showPrimary ? (
+        <>
+          {/* The four a person checks first. In the strip they read as a
+              row of values under the title; in the full page they keep
+              their labels in the rail. */}
+          <MetaField bare={bare} label="Status">
+            <StatusPillRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Assignees">
+            <AssigneesRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Due date">
+            <DueRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Priority">
+            <PriorityRow task={task} />
+          </MetaField>
+        </>
+      ) : null}
 
       {/* Repeats (recurrence rule) */}
+      {showRest ? (
+        <>
       <MetaField label="Repeats">
         <RecurrenceRow task={task} />
       </MetaField>
@@ -215,6 +244,8 @@ export function MetadataRail({
             ))}
           </div>
         </MetaField>
+      ) : null}
+        </>
       ) : null}
     </dl>
   );
