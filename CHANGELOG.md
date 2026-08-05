@@ -4,7 +4,7 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-08-04 · T·130 · ships · the three pillars get their instruments
+## 2026-08-05 · T·131 · ships · the three pillars get their instruments
 
 **Each priority in the north star now has something that can actually be run
 against it, and the one that could not be run says so out loud.** T·126 wrote
@@ -29,10 +29,13 @@ string props, template literals and strings inside expressions — the last two
 mattered, because the shipped blocker badge says "Blocked by" through a
 ternary that a simpler scan walks straight past. It understands refusal:
 "Nothing here says sprint or stakeholder" is the brand voice working and is
-not reported. Fifteen occurrences are baselined, ten of them correct — a
-strikethrough list naming what the product refuses — and five recorded as
+not reported. Fourteen occurrences are baselined, ten of them correct — a
+strikethrough list naming what the product refuses — and four recorded as
 debt awaiting a ruling on the plainer word. Debt may only shrink, and the
-baseline fails in both directions so it cannot drift back up. The human half
+baseline fails in both directions so it cannot drift back up — which it
+proved within the day: the lab task-detail copy left with its component when
+T·130 retired that exploration, and the gate failed on the disappearance
+until the list was updated to match. The human half
 is an eight-step walk with someone who has never used a tool like this: no
 help, fail closed, forty-five minutes. It stands beside the 9.5 gate rather
 than inside it, because the receipt schema pins dimensions at exactly 13 and

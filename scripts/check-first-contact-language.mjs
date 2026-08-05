@@ -107,11 +107,15 @@ const BASELINE = new Set([
   //   "Blocked by" / "Was blocked by" — the code concept stays `blocker`;
   //   only the label is in question, and "Waiting on" would match the
   //   Waiting column the board already ships.
+  //
+  // Shrank once already: the lab task-detail copy left with the component
+  // when T·130 retired that exploration (#94). The ratchet caught it — a
+  // baselined entry that vanishes fails just as loudly as a new one, so the
+  // list cannot quietly drift back up.
   "src/components/marketing/features.tsx :: triage",
   "src/components/marketing/for-freelancers.tsx :: triage",
   "src/components/marketing/for-students.tsx :: triage",
   "src/components/app/blockers/blocker-badge.tsx :: blocked by",
-  "src/components/lab/task-detail/task-detail.tsx :: blocked by",
 ]);
 
 /** Remove block and line comments without eating the `//` inside a URL. */

@@ -115,6 +115,14 @@ on every change with no cadence to remember.
 ## Results
 
 No walk has been run yet. The instrument was built 2026-08-01, the same cycle
-the north star was set; the automated half is green at a 15-occurrence
-baseline, of which 10 are correct refusals and 5 are recorded debt awaiting an
-operator ruling on the plainer word. Findings land below, newest first.
+the north star was set; the automated half is green at a 14-occurrence
+baseline, of which 10 are correct refusals and 4 are recorded debt awaiting an
+operator ruling on the plainer word.
+
+The baseline opened at 15 and has already shrunk once: the lab task-detail
+copy left with its component when a concluded exploration was retired. The
+ratchet caught the disappearance and failed until the list was updated, which
+is the half of the design that keeps a baseline honest — debt that vanishes
+has to be recorded as gone, not silently forgotten.
+
+Findings land below, newest first.
