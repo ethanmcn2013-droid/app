@@ -7,8 +7,10 @@
  *   panel  — resizable side panel (board visible beside it)
  *   focus  — full-page route /app/task/[id] (centred max-w 860px)
  *
- * Visual grammar is verbatim from lab/task-detail/task-detail.tsx (Hybrid C).
- * Real data replaces lab fixtures; production subcomponents replace lab stubs.
+ * Visual grammar came verbatim from the Phase 3 Hybrid C lab at
+ * /lab/task-detail, which this composition superseded and which was
+ * removed once it shipped. Real data replaced the lab fixtures;
+ * production subcomponents replaced the lab stubs.
  */
 
 import {
