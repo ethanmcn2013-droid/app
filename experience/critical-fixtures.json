@@ -1085,7 +1085,7 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Edit milestones",
+              "name": "Milestones",
               "proves": [
                 "populated"
               ]
@@ -1093,7 +1093,15 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Preview and share",
+              "name": "Preview",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Share",
               "proves": [
                 "populated"
               ]

@@ -51,6 +51,7 @@ const MANIFEST = [
   "app/tasks/timeline",
   "app/timeline",
   "app/timeline/[projectSlug]",
+  "app/timeline/[projectSlug]/preview",
   "app/timeline/audience",
   "app/timeline/audience/[publicationId]",
   "app/your-work",
