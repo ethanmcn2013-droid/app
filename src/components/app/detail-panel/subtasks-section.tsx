@@ -192,10 +192,10 @@ export function SubtasksSection({ task }: { task: Task }) {
   return (
     <div className="border-t border-line-soft px-6 py-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <span className="text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Subtasks
         </span>
-        <span className="text-[10.5px] tabular-nums text-ink-quiet">
+        <span className="text-[11px] tabular-nums text-ink-quiet">
           {done} of {total} done
         </span>
       </div>
@@ -255,8 +255,8 @@ function SubtaskRow({
         disabled={!openable}
         className={
           isDone
-            ? "min-w-0 flex-1 truncate text-left text-[12.5px] leading-snug text-ink-quiet line-through opacity-60 transition-opacity hover:opacity-80 disabled:cursor-default"
-            : "min-w-0 flex-1 truncate text-left text-[12.5px] leading-snug text-ink-soft transition-colors hover:text-ink disabled:cursor-default"
+            ? "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet line-through opacity-60 transition-opacity hover:opacity-80 disabled:cursor-default"
+            : "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-soft transition-colors hover:text-ink disabled:cursor-default"
         }
       >
         {subtask.title}
@@ -344,8 +344,8 @@ function SubtaskComposer({
         spellCheck={false}
         className={
           showsHint
-            ? "min-w-0 flex-1 cursor-text bg-transparent text-[12.5px] leading-snug text-ink-quiet placeholder:text-ink-quiet focus:outline-none"
-            : "min-w-0 flex-1 bg-transparent text-[12.5px] leading-snug text-ink placeholder:text-ink-faint focus:outline-none"
+            ? "min-w-0 flex-1 cursor-text bg-transparent text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet placeholder:text-ink-quiet focus:outline-none"
+            : "min-w-0 flex-1 bg-transparent text-[13px] leading-[var(--x-lead-ui)] text-ink placeholder:text-ink-faint focus:outline-none"
         }
         aria-label="Add subtask"
       />

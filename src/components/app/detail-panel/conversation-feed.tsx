@@ -269,9 +269,9 @@ function CommentRow({
       <Avatar user={comment.userId} size={22} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
-          <span className="text-[12.5px] font-medium text-ink">{displayName}</span>
+          <span className="text-[13px] font-medium text-ink">{displayName}</span>
           {isSeedUser(comment.userId) ? (
-            <span className="rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
+            <span className="rounded bg-bg-sunken px-1 py-0 text-[11px] text-ink-faint">
               sample
             </span>
           ) : null}
@@ -282,7 +282,7 @@ function CommentRow({
             {formatRelativeTime(comment.createdAt)}
           </span>
         </div>
-        <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[1.55] text-ink-soft">
+        <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-[var(--x-lead-read)] text-ink-soft">
           {comment.body}
         </p>
       </div>
@@ -323,7 +323,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
       initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(2px)" }}
       animate={{ opacity: 1, transform: "translateY(0)" }}
       transition={{ duration: reduce ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
-      className="flex items-center gap-2 px-1 text-[11.5px] leading-[1.5] text-ink-quiet"
+      className="flex items-center gap-2 px-1 text-[12px] leading-[var(--x-lead-read)] text-ink-quiet"
     >
       <span className="block h-px flex-shrink-0" style={{ width: 22 }} aria-hidden>
         <Avatar user={activity.userId} size={14} />
@@ -331,7 +331,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium text-ink-soft">{displayName}</span>
         {isSeedUser(activity.userId) ? (
-          <span className="ml-1 rounded bg-bg-sunken px-1 py-0 text-[10px] text-ink-faint">
+          <span className="ml-1 rounded bg-bg-sunken px-1 py-0 text-[11px] text-ink-faint">
             sample
           </span>
         ) : null}{" "}
@@ -513,7 +513,7 @@ function Composer({
         rows={1}
         placeholder="Reply or comment, @ to mention"
         disabled={disabled || isPending}
-        className="block min-h-[22px] w-full resize-none bg-transparent text-[13px] leading-[1.55] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
+        className="block min-h-[22px] w-full resize-none bg-transparent text-[13px] leading-[var(--x-lead-read)] text-ink placeholder:text-ink-faint focus:outline-none disabled:opacity-50"
       />
       <div className="flex items-center gap-1.5">
         <DraftReplyButton
@@ -544,7 +544,7 @@ function KbdHint({ state }: { state: "empty" | "ready" | "pending" }) {
   return (
     <kbd
       className={
-        "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[10px] tabular-nums transition-opacity " +
+        "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[11px] tabular-nums transition-opacity " +
         (state === "ready"
           ? "text-ink-quiet opacity-100"
           : "text-ink-faint opacity-50")

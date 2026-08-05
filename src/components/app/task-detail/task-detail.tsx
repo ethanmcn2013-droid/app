@@ -159,7 +159,7 @@ function TitleTextarea({ task }: { task: Task }) {
           e.currentTarget.blur();
         }
       }}
-      className="block w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[1.18] tracking-[-0.025em] text-ink outline-none placeholder:text-ink-quiet"
+      className="block w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[var(--x-lead-tight)] tracking-[-0.02em] text-ink outline-none placeholder:text-ink-quiet"
       placeholder="Untitled task"
       aria-label="Task title"
     />
@@ -203,13 +203,13 @@ function ConversationSkeleton() {
 function ConversationTimeout({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-line-soft bg-bg-sunken/40 px-3 py-2.5">
-      <span className="text-[12.5px] text-ink-soft">
+      <span className="text-[13px] text-ink-soft">
         The conversation took too long to load.
       </span>
       <button
         type="button"
         onClick={onRetry}
-        className="inline-flex items-center rounded-full border border-line-soft bg-white px-2.5 py-1 text-[11.5px] font-medium text-ink-soft transition-colors hover:border-ink-ghost hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex items-center rounded-full border border-line-soft bg-white px-2.5 py-1 text-[12px] font-medium text-ink-soft transition-colors hover:border-ink-ghost hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Try again
       </button>
@@ -361,7 +361,7 @@ function TaskDetailHeader({
         <button
           type="button"
           onClick={() => dispatchers.toggleComplete(task.id)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[11.5px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           {!isTaskDone(task, columnConfig) ? (
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
@@ -384,7 +384,7 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
     <div className="min-w-0">
       {/* Description */}
       <section aria-label="Description" className="border-b border-line-soft px-6 py-5">
-        <div className="mb-3 text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Description
         </div>
         <DescriptionEditor key={task.id} task={task} />
@@ -398,7 +398,7 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
 
       {/* Conversation */}
       <section aria-label="Conversation" className="px-6 py-5">
-        <div className="mb-3 text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+        <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Conversation
         </div>
         {loading ? (

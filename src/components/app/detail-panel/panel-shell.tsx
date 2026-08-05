@@ -215,7 +215,12 @@ export function PanelShell({
                 ? { duration: 0.12 }
                 : { transform: { duration: 0.32, ease: [0.23, 1, 0.32, 1] } }
             }
-            className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-auto"
+            // The panel's base leading. Everything inside inherited 1.5
+            // from the document before this — 30 of the panel's 32 text
+            // nodes measured at it — so an uppercase label that can never
+            // wrap breathed like a paragraph. `ui` is the floor; prose
+            // opts up to `read`, headings and eyebrows down to `tight`.
+            className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated leading-[var(--x-lead-ui)] md:w-auto"
             style={{
               // min(100vw, Npx): below md the resizable width (≥420px)
               // exceeds most viewports, so the panel stays full-screen;

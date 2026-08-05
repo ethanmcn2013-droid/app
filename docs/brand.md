@@ -28,6 +28,21 @@ Sizes: 11/12/13/13.5/14/15/20/24/40 px in the design tokens. We don't ship a 16p
 
 Tracking: `-0.02em` on display, `-0.01em` on h2/h3, normal on body, `0.12em` on uppercase eyebrows.
 
+Leading: four values, in `globals.css` as `--x-lead-*`. Leading is a
+function of what the text has to do, not of how big it is.
+
+| Token | Value | For |
+|---|---|---|
+| `--x-lead-flush` | 1 | a single line whose box already sets its height — chips, pills, buttons, table cells |
+| `--x-lead-tight` | 1.2 | headings, and the uppercase eyebrows at the 11px floor |
+| `--x-lead-ui` | 1.35 | interface text over one or two lines — field values, menu items, row titles |
+| `--x-lead-read` | 1.55 | prose read as a paragraph — descriptions, briefs, comments, empty-state body |
+
+The display end of the ramp keeps its own leading in the artifact
+register (`--x-artifact-display-leading`, `.h-display`/`.h-title`/
+`.h-section`, with a mobile correction). These four are the reading end,
+which until T·131 was one inherited 1.5 applied to everything.
+
 ## Color
 
 All tokens live in `src/app/globals.css :root`.

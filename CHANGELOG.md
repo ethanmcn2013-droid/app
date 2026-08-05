@@ -112,6 +112,52 @@ columns scroll from the keyboard. Where a value is absent, the row says
 so to a screen reader instead of showing an unlabeled dash. Every one
 of these was measured in the running product before it was called done.
 
+## 2026-08-05 · T·131 · sets · leading becomes a decision, and the panel joins the ramp
+
+**The task detail panel now speaks the same type as the rest of Tasks,
+and leading is designed rather than inherited.** These were the second
+panel's last two craft findings, and the reviewer called the leading one
+the weakest link left in the module. Both were measured before they were
+touched, and measured again after.
+
+Leading first, because it was the larger fault. The display end of the
+ramp has had designed leading since the artifact register — 0.88 for
+display, 0.7 for metrics, with a mobile correction. The reading end never
+did. Across the Tasks module **431 rules set a font size and 42 set a
+line height**, and those 42 used nine different values. Inside the detail
+panel, **30 of its 32 rendered text nodes sat at a flat inherited 1.5**,
+so an uppercase label that can never wrap breathed like a paragraph.
+Four tokens replace it, each with a job — `flush` for a line whose box
+already sets its height, `tight` for headings and eyebrows, `ui` for
+field values and row titles, `read` for prose. They are written into
+`docs/brand.md` beside the sizes and tracking, which had been documented
+without them.
+
+Then the ramp. The panel rendered **23 of its 32 text nodes off** the
+11/12/13/13.5/14/15/20/24/40 ramp, with 10.5px the single most common
+size in the product's most detailed surface, and text as small as 9px.
+It now renders **30 of 32 on the ramp**; the two that remain are avatar
+initials, which are sized to their circle and are a graphic mark rather
+than ramp text. Seventy-one declarations moved. The panel title drops
+22px → 20px so it speaks at the same level as the workspace title beside
+it rather than shouting over it. Uppercase eyebrows leave `0.14em` and
+Tailwind's `tracking-wider` for the contract's `0.12em`.
+
+Worth recording: the panel's type lives in **two** folders, not one —
+`detail-panel/` holds the shell and the editors, `task-detail/` holds the
+composition shared with the full-page `/app/task/[id]` route. Fixing only
+the first left the field labels still rendering at 10.5px, which is how
+the second was found. The sweep also reached the tip card and the AI
+draft chip, both composed into the panel from elsewhere.
+
+Nothing behavioural moved: dialog role, `aria-modal`, the focus trap,
+focus return and the resize splitter are untouched, and the surface
+re-attested 144/144.
+
+Gates: typecheck, lint 0 errors, 465/465 tests, ds-check clean,
+experience:validate clean at 90 experiences, fixtures 39/39,
+experience 144/144 attested, perf:budgets ok, zero overflow at 390px.
+
 ## 2026-08-05 · T·130 · trims · a concluded exploration stops shipping
 
 **The client bundle is back under its ceiling, and it got there by

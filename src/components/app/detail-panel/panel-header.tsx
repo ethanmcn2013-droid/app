@@ -81,7 +81,7 @@ export function EditedStamp({ updatedAt }: { updatedAt: Date }) {
     <>
       <span className="text-ink-faint">·</span>
       <span
-        className="select-none text-[10.5px] tabular-nums text-ink-quiet"
+        className="select-none text-[11px] tabular-nums text-ink-quiet"
         title={updatedAt.toLocaleString("en-US")}
       >
         edited {formatRelativeTime(updatedAt)}
@@ -104,7 +104,7 @@ export function FromNotesChip() {
     <>
       <span className="text-ink-faint">·</span>
       <span
-        className="select-none rounded px-1 py-0.5 text-[10.5px] tracking-tight text-ink-quiet"
+        className="select-none rounded px-1 py-0.5 text-[11px] tracking-tight text-ink-quiet"
         title="Created from a Signal Notes extract"
       >
         <span aria-hidden="true">↩</span> From Notes
@@ -132,7 +132,7 @@ export function TaskIdChip({ id, seq }: { id: string; seq?: number | null }) {
           setTimeout(() => setCopied(false), 1100);
         }
       }}
-      className="select-none rounded px-1 py-0.5 font-mono tabular-nums text-[10.5px] tracking-tight text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+      className="select-none rounded px-1 py-0.5 font-mono tabular-nums text-[11px] tracking-tight text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
       aria-label={`Copy task id ${display}`}
     >
       {copied ? "copied" : display}
@@ -179,7 +179,7 @@ function TitleEditor({ task }: { task: Task }) {
           (e.currentTarget as HTMLInputElement).blur();
         }
       }}
-      className="mt-3 w-full bg-transparent text-[22px] font-semibold leading-[1.16] tracking-[-0.025em] text-ink outline-none placeholder:text-ink-quiet"
+      className="mt-3 w-full bg-transparent text-[20px] font-semibold leading-[var(--x-lead-tight)] tracking-[-0.02em] text-ink outline-none placeholder:text-ink-quiet"
       placeholder="Untitled task"
     />
   );

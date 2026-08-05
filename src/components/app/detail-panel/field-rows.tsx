@@ -75,7 +75,7 @@ function usePanelColumns(): BoardColumn[] {
 
 export function FieldRows({ task }: { task: Task }) {
   return (
-    <div className="grid grid-cols-[88px_1fr] gap-x-4 gap-y-3 px-6 pb-5 text-[12.5px]">
+    <div className="grid grid-cols-[88px_1fr] gap-x-4 gap-y-3 px-6 pb-5 text-[13px]">
       <Label>Status</Label>
       <StatusRow task={task} />
 
@@ -98,7 +98,7 @@ export function FieldRows({ task }: { task: Task }) {
             {task.tags.map((t) => (
               <span
                 key={t}
-                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[10.5px] font-medium uppercase tracking-wider text-ink-soft"
+                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft leading-[var(--x-lead-tight)]"
               >
                 {t}
               </span>
@@ -112,7 +112,7 @@ export function FieldRows({ task }: { task: Task }) {
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pt-1 text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-quiet">
+    <div className="pt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
       {children}
     </div>
   );
@@ -136,7 +136,7 @@ export function StatusRow({ task }: { task: Task }) {
             key={column.key}
             type="button"
             onClick={() => moveTaskToColumn(task.id, column.key)}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-medium transition-[background-color,border-color,color] duration-[var(--motion-fast)]"
+            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] font-medium transition-[background-color,border-color,color] duration-[var(--motion-fast)]"
             style={{
               color: active ? visual.ink : "var(--ink-soft)",
               background: active ? visual.bg : "transparent",
@@ -190,7 +190,7 @@ export function StatusPillRow({ task }: { task: Task }) {
       )}
     >
       {(close) => (
-        <ul className="text-[12.5px]" role="listbox" aria-label="Task status">
+        <ul className="text-[13px]" role="listbox" aria-label="Task status">
           {columns.map((column) => {
             const visual = columnVisual(column);
             const active = currentKey === column.key;
@@ -241,7 +241,7 @@ export function PriorityRow({ task }: { task: Task }) {
       )}
     >
       {(close) => (
-        <ul className="text-[12.5px]">
+        <ul className="text-[13px]">
           {PRIORITIES.map((p, idx) => {
             const meta = PRIORITY_LABEL[p];
             const active = task.priority === p;
@@ -265,7 +265,7 @@ export function PriorityRow({ task }: { task: Task }) {
                     />
                     {meta.label}
                   </span>
-                  <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[9.5px] text-ink-quiet">
+                  <kbd className="rounded border border-line-soft bg-bg-sunken px-1 py-0.5 text-[11px] text-ink-quiet">
                     {idx + 1}
                   </kbd>
                 </button>
@@ -399,12 +399,12 @@ export function AssigneesRow({ task }: { task: Task }) {
       >
         {() =>
           members.length === 0 ? (
-            <p className="px-2 py-1.5 text-[12.5px] text-ink-quiet">
+            <p className="px-2 py-1.5 text-[13px] text-ink-quiet">
               No one else is in this workspace yet. Invite someone from
               Settings, then assign the task to them.
             </p>
           ) : (
-          <ul className="text-[12.5px]">
+          <ul className="text-[13px]">
             {members.map((member) => {
               const isAssigned = assigned.includes(member.id);
               return (
@@ -610,7 +610,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
       )}
     >
       {(close) => (
-        <ul className="text-[12.5px]">
+        <ul className="text-[13px]">
           {RECURRENCE_OPTIONS.map((opt) => {
             const active = sameRecurrence(current, opt.value);
             return (
@@ -646,7 +646,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
               </li>
             );
           })}
-          <li className="mt-1 border-t border-line-soft px-2 pb-1 pt-2 text-[10.5px] leading-[1.4] text-ink-faint">
+          <li className="mt-1 border-t border-line-soft px-2 pb-1 pt-2 text-[11px] leading-[var(--x-lead-ui)] text-ink-faint">
             When you complete a recurring task, it bounces back to To
             do with the next due date.
           </li>
