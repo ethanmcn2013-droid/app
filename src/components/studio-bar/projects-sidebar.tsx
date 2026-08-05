@@ -35,6 +35,12 @@ import type {
   ProjectsTreeLeaf,
 } from "@/server/actions/projects-tree";
 import { RailIcon, ShellGlyph, SidebarGlyph } from "./rail-icons";
+import {
+  CLOSE_NAV_DRAWER_EVENT,
+  closeNavDrawer,
+  collapseNavPanel,
+  useTasksNav,
+} from "@/components/app/tasks-nav-state";
 import styles from "./signal-shell.module.css";
 
 const DRAWER_QUERY = "(max-width: 1099px)";
@@ -357,6 +363,9 @@ function SidebarBody({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname() ?? "";
+  // A project reads as "where you are" only on the Tasks views
+  // themselves - on Home, Inbox or My work, exactly one row lights up.
+  const onTasksSurface = pathname === "/app/tasks" || pathname.startsWith("/app/tasks/");
   const reduceMotion = useReducedMotion();
   const router = useRouter();
   const tasks = useTasksState();
@@ -417,6 +426,17 @@ function SidebarBody({
   return (
     <div className={styles.sidebarScroll}>
       <nav aria-label="Tasks shortcuts" className={styles.sidebarNav}>
+        {/* Home leads: the suite landing left the black rail (pass 4),
+            so local navigation is its front door. */}
+        <Link
+          aria-current={pathname === "/app/home" || pathname.startsWith("/app/home/") ? "page" : undefined}
+          className={styles.navRow}
+          href="/app/home"
+          onClick={onNavigate}
+        >
+          <RailIcon name="home" size={16} />
+          <span>Home</span>
+        </Link>
         <Link
           aria-current={pathname === "/app/inbox" ? "page" : undefined}
           className={styles.navRow}
@@ -442,7 +462,7 @@ function SidebarBody({
         </Link>
       </nav>
       <nav aria-label="Projects" className={styles.projectsSection}>
-        <h2 className="sr-only">Projects</h2>
+        <h2 className={styles.projectsLabel}>Projects</h2>
         <ul className={styles.projectTree}>
           {tree.groups.map((group) => {
             if (group.periodId) {
@@ -465,9 +485,9 @@ function SidebarBody({
                     <span aria-hidden="true" className={styles.disclosure} data-open={open || undefined}>
                       <ShellGlyph name="chevron" size={13} />
                     </span>
-                    <span className={styles.projectName}>{group.periodName}</span>
+                    <span className={styles.projectName} title={group.periodName ?? undefined}>{group.periodName}</span>
                     {group.dateRange ? (
-                      <span className={styles.projectDate}>{group.dateRange}</span>
+                      <span className={styles.projectDate} title={`${group.periodName} · planning period · ${group.dateRange}`}>{group.dateRange}</span>
                     ) : null}
                   </button>
                   <AnimatePresence initial={false}>
@@ -484,12 +504,12 @@ function SidebarBody({
                         <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                           <button
                             aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
-                            aria-current={w.id === activeWorkspaceId ? "page" : undefined}
+                            aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
                             className={styles.projectLeaf}
                             onClick={() => chooseWorkspace(w.id)}
                             type="button"
                           >
-                            <span className={styles.projectName}>{w.name}</span>
+                            <span className={styles.projectName} title={w.name}>{w.name}</span>
                             <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                               {w.taskCount}
                             </span>
@@ -514,14 +534,14 @@ function SidebarBody({
                 <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
                   <button
                     aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
-                    aria-current={w.id === activeWorkspaceId ? "page" : undefined}
+                    aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
                     className={styles.projectParent}
                     data-active={w.id === activeWorkspaceId || undefined}
                     onClick={() => chooseWorkspace(w.id)}
                     type="button"
                   >
                     <span aria-hidden="true" className={styles.disclosureGhost} />
-                    <span className={styles.projectName}>{w.name}</span>
+                    <span className={styles.projectName} title={w.name}>{w.name}</span>
                     <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                       {w.taskCount}
                     </span>
@@ -567,7 +587,7 @@ function SidebarBody({
                   <li key={w.id}>
                     <div className={styles.projectRowWrap}>
                       <span className={styles.projectLeaf} data-archived="true">
-                        <span className={styles.projectName}>{w.name}</span>
+                        <span className={styles.projectName} title={w.name}>{w.name}</span>
                         <span aria-label={`${w.taskCount} tasks`} className={styles.leafCount}>
                           {w.taskCount}
                         </span>
@@ -602,6 +622,9 @@ function SidebarHeader({
 }) {
   return (
     <header className={styles.sidebarHeader}>
+      {/* A quiet local-navigation label — the brand lockup lives in the
+          black bar; this is just "where inside Tasks". */}
+      <span className={styles.sidebarTitle}>Tasks</span>
       <button
         aria-label={closeLabel}
         className={styles.sidebarCollapse}
@@ -624,37 +647,37 @@ export function ProjectsSidebar({
 }) {
   const drawerMode = useDrawerViewport();
   const reduceMotion = useReducedMotion();
-  const [collapsed, setCollapsed] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const expandButtonRef = useRef<HTMLButtonElement>(null);
+  // Visibility lives in the shared nav store: the band trigger and this
+  // panel read one truth, and a collapsed panel renders NOTHING - no
+  // strip, no reserved width.
+  const { expanded, drawerOpen } = useTasksNav();
   const sidebarRef = useRef<HTMLElement>(null);
-  const collapseIntent = useRef(false);
-  const expandIntent = useRef(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const drawerTriggerRef = useRef<HTMLButtonElement>(null);
 
   const [wasDrawerMode, setWasDrawerMode] = useState(drawerMode);
   if (wasDrawerMode !== drawerMode) {
     setWasDrawerMode(drawerMode);
-    setDrawerOpen(false);
+    closeNavDrawer();
   }
 
-  useEffect(() => {
-    if (collapsed && collapseIntent.current) {
-      collapseIntent.current = false;
-      expandButtonRef.current?.focus();
-    }
-    if (!collapsed && expandIntent.current) {
-      expandIntent.current = false;
-      sidebarRef.current
-        ?.querySelector<HTMLElement>('[aria-label="Collapse Projects sidebar"]')
+  const focusBandTrigger = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>('[aria-label="Open Tasks navigation"]')
         ?.focus();
-    }
-  }, [collapsed]);
+    });
+  }, []);
 
   const closeDrawer = useCallback(() => {
-    setDrawerOpen(false);
-    drawerTriggerRef.current?.focus();
+    closeNavDrawer();
+    focusBandTrigger();
+  }, [focusBandTrigger]);
+
+  // The planning drawer (or anything else) can ask this one to yield.
+  useEffect(() => {
+    const onClose = () => closeNavDrawer();
+    window.addEventListener(CLOSE_NAV_DRAWER_EVENT, onClose);
+    return () => window.removeEventListener(CLOSE_NAV_DRAWER_EVENT, onClose);
   }, []);
 
   useEffect(() => {
@@ -694,21 +717,6 @@ export function ProjectsSidebar({
   if (drawerMode) {
     return (
       <>
-        <div className={`${styles.sidebarStrip} hidden md:flex`}>
-          <button
-            aria-expanded={drawerOpen}
-            aria-haspopup="dialog"
-            aria-label="Open Projects"
-            className={styles.stripButton}
-            data-tip="Open Projects"
-            onClick={() => setDrawerOpen(true)}
-            ref={drawerTriggerRef}
-            type="button"
-          >
-            <ShellGlyph name="panel" size={15} />
-          </button>
-          <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
-        </div>
         <AnimatePresence>
         {drawerOpen ? (
           <>
@@ -723,7 +731,7 @@ export function ProjectsSidebar({
             />
             <motion.div
               animate={{ opacity: 1, transform: "translateX(0)" }}
-              aria-label="Tasks projects"
+              aria-label="Tasks navigation"
               aria-modal="true"
               className={styles.projectsDrawer}
               data-projects-drawer="true"
@@ -734,7 +742,7 @@ export function ProjectsSidebar({
               role="dialog"
               transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.23, 1, 0.32, 1] }}
             >
-              <SidebarHeader closeLabel="Close Projects" onClose={closeDrawer} tip="Close Projects" />
+              <SidebarHeader closeLabel="Close Tasks navigation" onClose={closeDrawer} tip="Close Tasks navigation" />
               <SidebarBody
                 activeWorkspaceId={activeWorkspaceId}
                 onNavigate={closeDrawer}
@@ -748,45 +756,29 @@ export function ProjectsSidebar({
     );
   }
 
+  // Collapsed means gone: the board takes every pixel back and the
+  // band trigger is the way home.
+  if (!expanded) return null;
+
   return (
-    <div className={`${styles.projectsSidebarHost} hidden md:block`} data-collapsed={collapsed || undefined}>
-      {collapsed ? (
-        <div className={`${styles.sidebarStrip} flex`}>
-          <button
-            aria-expanded={false}
-            aria-label="Expand Projects sidebar"
-            className={styles.stripButton}
-            data-tip="Expand Projects sidebar"
-            onClick={() => {
-              expandIntent.current = true;
-              setCollapsed(false);
-            }}
-            ref={expandButtonRef}
-            type="button"
-          >
-            <ShellGlyph name="panel" size={15} />
-          </button>
-          <span aria-hidden="true" className={styles.stripLabel}>Projects</span>
-        </div>
-      ) : (
-        <aside
-          aria-label="Tasks projects"
-          className={styles.projectsSidebar}
-          data-projects-sidebar="true"
-          ref={sidebarRef}
-        >
-          <SidebarHeader
-            closeLabel="Collapse Projects sidebar"
-            onClose={() => {
-              collapseIntent.current = true;
-              setCollapsed(true);
-            }}
-            tip="Collapse Projects sidebar"
-          />
-          <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
-          <div aria-hidden="true" className={styles.sidebarFoot} />
-        </aside>
-      )}
+    <div className={`${styles.projectsSidebarHost} hidden md:block`}>
+      <aside
+        aria-label="Tasks navigation"
+        className={styles.projectsSidebar}
+        data-projects-sidebar="true"
+        ref={sidebarRef}
+      >
+        <SidebarHeader
+          closeLabel="Collapse Tasks navigation"
+          onClose={() => {
+            collapseNavPanel();
+            focusBandTrigger();
+          }}
+          tip="Collapse Tasks navigation"
+        />
+        <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
+        <div aria-hidden="true" className={styles.sidebarFoot} />
+      </aside>
     </div>
   );
 }

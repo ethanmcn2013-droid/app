@@ -20,6 +20,24 @@ export type TagDef = {
 };
 
 /** Normalised identity key for a tag name (case- and whitespace-insensitive). */
+/**
+ * The label a person reads for a tag.
+ *
+ * Tags are stored the way they were typed, which in practice is often a
+ * slug ("mara-finn", "venue_prep"). A slug is an internal spelling, not
+ * a display name — chips render this humanised form (separators become
+ * spaces, words take initial capitals) while every lookup, filter and
+ * write keeps using the stored name. Pure presentation; never persisted.
+ */
+export function tagDisplayName(name: string): string {
+  const spaced = name.replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!spaced) return name;
+  return spaced
+    .split(" ")
+    .map((word) => (word ? word.charAt(0).toLocaleUpperCase("en-GB") + word.slice(1) : word))
+    .join(" ");
+}
+
 export function tagKey(name: string): string {
   return name.trim().toLowerCase();
 }

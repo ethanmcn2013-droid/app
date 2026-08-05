@@ -10,6 +10,7 @@ import { ActionsDropdown, ContextActions, type ActionItem } from "@/components/p
 import {
   COLUMN_COLORS,
   COLUMN_PICKER_ORDER,
+  laneAccentStyle,
   type ColumnColorKey,
 } from "@/lib/board-colors";
 import {
@@ -45,8 +46,10 @@ import {
   TaskOpenButton,
   TaskSignals,
 } from "../../shared/task-ui";
-import { InlineTaskTitle, KeyboardLegend } from "./quiet-command-components";
+import { InlineTaskTitle } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
+import { useFitColumns, useShowStatusDescriptions } from "../../view-prefs";
+import { uniformAssignees } from "../../planning";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
 import { addDays } from "../../dates";
@@ -537,9 +540,14 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const calendar = useCalendarFrame();
   const reduceMotion = useReducedMotion();
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
+  const [showDescriptions] = useShowStatusDescriptions();
+  const [fitColumns] = useFitColumns();
   const [composing, setComposing] = useState<string | null>(null);
   const [keyboardMove, setKeyboardMove] = useState(false);
   const orderedIds = tasks.map((task) => task.id);
+  // One avatar on every card differentiates nothing — when the whole
+  // visible board shares an identical assignee set, cards drop it.
+  const hideAvatars = uniformAssignees(tasks);
 
   // ── Columns: server config + optimistic overlay ─────────────────────────
   // The server value arrives through DomainProvider; column management
@@ -665,10 +673,13 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   };
 
   return (
-    <div aria-label="Board lanes" className={styles.boardSurface}>
+    <div
+      aria-label="Board lanes"
+      className={styles.boardSurface}
+      data-drag-active={store.drag?.kind === "board" || undefined}
+      data-fixed-columns={fitColumns ? undefined : ""}
+    >
       <LayoutGroup id="tasks-board">
-      {/* Row pair: the horizontal lane track and, beside it, the pinned
-          add-column rail — the rail must never stack UNDER the track. */}
       <div className={styles.boardTrack}>
       <div className={styles.boardScroll}>
         {boardColumns.map((column, columnIndex) => {
@@ -693,7 +704,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 data-done={status === "done" || undefined}
                 data-tinted={accent ? "" : undefined}
                 key={status}
-                style={accent ? ({ "--lane-accent": accent } as React.CSSProperties) : undefined}
+                style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
               >
                 <button
                   aria-expanded={false}
@@ -716,9 +727,11 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               aria-labelledby={`a-lane-${status}`}
               className={styles.boardLane}
               data-done={status === "done" || undefined}
+              data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
+              data-empty={laneTasks.length === 0 || undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
-              style={accent ? ({ "--lane-accent": accent } as React.CSSProperties) : undefined}
+              style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
             >
               <LaneHeader
                 column={column}
@@ -731,8 +744,10 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 onCollapse={() => toggleCollapsed(status)}
                 onOptimisticConfigChange={setOptimisticConfig}
                 onRequestAddAfter={() => setAddingAt(columnIndex + 1)}
+                onStartCompose={() => setComposing(status)}
                 overLimit={overLimit}
                 readOnly={store.readOnly}
+                showDescription={showDescriptions}
               />
               <ul
                 aria-label={`${label} tasks`}
@@ -749,6 +764,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                     calendarToday={calendar.today as CalendarDate}
                     columns={boardColumns}
                     dropTask={dropTask}
+                    hideAvatars={hideAvatars}
                     index={index}
                     key={task.id}
                     keyCard={keyCard}
@@ -764,9 +780,8 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
-                    <Icon name="inbox" size={18} />
-                    <span>Nothing here yet</span>
-                    <small>Drag a task across, or add one below.</small>
+                    <span>No tasks yet</span>
+                    <small>Drop a task here.</small>
                   </li>
                 ) : null}
                 {/*
@@ -801,13 +816,14 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             </section>
           );
         })}
-      </div>
       {/*
-        The pinned add-column affordance sits OUTSIDE the horizontal scroll
-        track, so it is reachable without scrolling past every lane. Appends
-        by default; the per-column "+" inserts after that column instead.
+        The add-column end-cap rides inside the scroll track after the last
+        lane, aligned with the column headers — a normal horizontal tile,
+        never rotated text. Long boards keep "Add column after" in every
+        column menu, so the affordance is never more than one menu away.
+        Hidden on coarse pointers (adding columns is a desktop act).
       */}
-      <div className={styles.addColumnRail}>
+      <div className={styles.addColumnCap}>
         {addingAt === "append" ? (
           <AddColumnForm
             columns={boardColumns}
@@ -817,20 +833,20 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           />
         ) : (
           <button
-            aria-label="Add a column"
-            className={styles.addColumnRailButton}
+            aria-label="Add a status"
+            className={styles.addColumnCapButton}
             disabled={store.readOnly}
             onClick={() => setAddingAt("append")}
             type="button"
           >
-            <Icon name="add" size={15} />
-            <span>Add column</span>
+            <Icon name="add" size={14} />
+            Add status
           </button>
         )}
       </div>
       </div>
+      </div>
       </LayoutGroup>
-      <KeyboardLegend>Arrow keys navigate. Alt + arrows move or reorder. F2 edits title.</KeyboardLegend>
     </div>
   );
 }
@@ -847,6 +863,7 @@ function BoardCard({
   calendarToday,
   reduceMotion,
   keyboardMove,
+  hideAvatars,
   keyCard,
   onCardClick,
   dropTask,
@@ -860,6 +877,7 @@ function BoardCard({
   calendarToday: CalendarDate;
   reduceMotion: boolean;
   keyboardMove: boolean;
+  hideAvatars: boolean;
   keyCard: (event: KeyboardEvent<HTMLElement>, task: LabTask, laneTasks: LabTask[], laneIndex: number) => void;
   onCardClick: (event: MouseEvent<HTMLElement>, task: LabTask) => void;
   dropTask: (event: DragEvent, status: TaskStatus, index: number) => void;
@@ -874,22 +892,24 @@ function BoardCard({
     () => setConfirmingDelete(true),
     () => setNudgeOpen(true),
   );
-  const hasPriority = task.priority === "urgent" || task.priority === "high";
+  // Elevated priority is meta, not chrome — and finished work has no
+  // priority to signal, so Done cards drop it.
+  const hasPriority = (task.priority === "urgent" || task.priority === "high") && !task.completed;
   // LabelList drops ids it cannot resolve, so counting raw ids reserved a
   // 24px band under every card title and rendered nothing into it. That
   // empty band was the board's "unfinished card" look.
   const hasLabels = task.labelIds.some((id) => labelById(id));
-  const hasSchedule = task.schedule.kind !== "unscheduled";
+  const hasSchedule = task.schedule.kind !== "unscheduled" || (task.completed && Boolean(task.completedAt));
   const hasSignals = task.subtasks.length > 0 ||
     task.comments.length > 0 ||
     task.attachments.length > 0 ||
     task.blockedByIds.length > 0 ||
     task.blockerIds.length > 0;
   // AvatarStack drops assignee ids it cannot resolve to a person, so
-  // counting raw ids rendered a footer — and its border — above nothing at
-  // all whenever an id was stale.
-  const shownAssignees = task.assigneeIds.filter((id) => personById(id));
-  const hasFooter = shownAssignees.length > 0 || Boolean(task.estimate);
+  // counting raw ids rendered a footer above nothing at all whenever an
+  // id was stale.
+  const shownAssignees = hideAvatars ? [] : task.assigneeIds.filter((id) => personById(id));
+  const hasMeta = hasPriority || hasSchedule || hasSignals || shownAssignees.length > 0 || Boolean(task.estimate);
 
   return (
     <motion.li
@@ -943,54 +963,41 @@ function BoardCard({
             onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
             tabIndex={0}
           >
-            <div className={styles.cardTopline}>
+            {/* Head row: the completion control sits on the title's first
+                line — a card with only a title is exactly one line tall.
+                The ••• trigger floats over the top-right corner on
+                hover/focus so it costs no permanent row. */}
+            <div className={styles.cardHead}>
               <TaskCompletion disabled={store.readOnly} task={task} />
-              {hasPriority ? <PriorityMark task={task} /> : null}
-              <span className={styles.cardSpacer} />
-              {/*
-                Milestone toggle. Quiet like the ••• trigger until the card
-                is hovered — except when the task IS a milestone, where the
-                filled diamond stays on as the card's badge of it.
-              */}
-              <button
-                aria-label={task.schedule.kind === "milestone" ? `Remove milestone from ${task.title}` : `Make ${task.title} a milestone`}
-                aria-pressed={task.schedule.kind === "milestone"}
-                className={styles.cardMilestone}
-                data-active={task.schedule.kind === "milestone" || undefined}
-                disabled={store.readOnly}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!store.readOnly) store.scheduleTask(task.id, toggledMilestoneSchedule(task, calendarToday));
-                }}
-                title={task.schedule.kind === "milestone" ? "Remove milestone" : "Make milestone"}
-                type="button"
-              >
-                <Icon name="milestone" size={13} />
-              </button>
-              <ActionsDropdown
-                items={actions}
-                trigger={<Icon name="more" size={15} />}
-                triggerLabel={`Actions for ${task.title}`}
-                triggerClassName={styles.cardMenuTrigger}
-              />
+              {store.editing?.taskId === task.id && store.editing.field === "title" ? (
+                <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
+              ) : (
+                <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
+              )}
             </div>
-            {store.editing?.taskId === task.id && store.editing.field === "title" ? (
-              <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
-            ) : (
-              <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
-            )}
+            <ActionsDropdown
+              items={actions}
+              trigger={<Icon name="more" size={15} />}
+              triggerLabel={`Actions for ${task.title}`}
+              triggerClassName={styles.cardMenuTrigger}
+            />
             {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
-            {hasSchedule || hasSignals ? (
-              <div className={styles.cardSchedule}>
-                {hasSchedule ? <ScheduleText compact task={task} /> : <span />}
-                {hasSignals ? <TaskSignals task={task} /> : null}
+            {/* One meta row, one rhythm: priority word and date sentence
+                read left; the quiet facts — signals, estimate, people —
+                sit right. Priority is meta ("High" in the state's ink,
+                dot alongside so colour is never alone), never chrome. */}
+            {hasMeta ? (
+              <div className={styles.cardMeta}>
+                <span className={styles.cardMetaLeft}>
+                  {hasPriority ? <PriorityMark task={task} withLabel /> : null}
+                  {hasSchedule ? <ScheduleText compact task={task} /> : null}
+                </span>
+                <span className={styles.cardMetaRight}>
+                  {hasSignals ? <TaskSignals task={task} /> : null}
+                  {task.estimate ? <span className={styles.cardEstimate}>{task.estimate}</span> : null}
+                  {shownAssignees.length > 0 ? <AvatarStack showUnassigned={false} task={task} /> : null}
+                </span>
               </div>
-            ) : null}
-            {hasFooter ? (
-              <footer>
-                <AvatarStack showUnassigned={false} task={task} />
-                {task.estimate ? <span>{task.estimate}</span> : null}
-              </footer>
             ) : null}
           </article>
         }
@@ -1023,7 +1030,9 @@ function LaneHeader({
   currentConfig,
   onOptimisticConfigChange,
   onRequestAddAfter,
+  onStartCompose,
   onCollapse,
+  showDescription,
 }: {
   column: BoardColumn;
   columns: readonly BoardColumn[];
@@ -1036,7 +1045,9 @@ function LaneHeader({
   currentConfig: ColumnConfig | null;
   onOptimisticConfigChange: (config: ColumnConfig | null) => void;
   onRequestAddAfter: () => void;
+  onStartCompose: () => void;
   onCollapse: () => void;
+  showDescription: boolean;
 }) {
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -1200,21 +1211,10 @@ function LaneHeader({
   return (
     <header className={styles.laneHeader}>
       <div className={styles.laneIdentity}>
-        {/* The collapse caret and the menu trigger are ALWAYS visible —
-            hover-only controls do not exist on touch screens. */}
-        <button
-          aria-expanded
-          className={`${styles.laneIconButton} ${styles.laneCollapse}`}
-          onClick={onCollapse}
-          title={`Collapse ${column.name}`}
-          type="button"
-        >
-          <Icon name="chevron-right" size={14} />
-        </button>
         <span className={styles.statusPip} data-accent={laneAccentVar(column) ? "" : undefined} />
         {editing ? (
           <input
-            aria-label="Column name"
+            aria-label="Status name"
             autoFocus
             className={styles.laneNameInput}
             maxLength={MAX_NAME_LEN}
@@ -1235,7 +1235,7 @@ function LaneHeader({
               className={styles.laneRenameButton}
               disabled={readOnly}
               onClick={() => { setDraft(column.name); setEditing(true); }}
-              title="Rename column"
+              title="Rename status"
               type="button"
             >
               {column.name}
@@ -1251,7 +1251,7 @@ function LaneHeader({
           <button
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            aria-label={`${column.name} column options`}
+            aria-label={`${column.name} status options`}
             className={styles.laneIconButton}
             onClick={() => setMenuOpen((value) => !value)}
             type="button"
@@ -1279,7 +1279,7 @@ function LaneHeader({
                 {column.isDone ? "Counts as done ✓" : "Counts as done"}
               </button>
               <div className={styles.laneMenuLabel}>Colour</div>
-              <div aria-label="Column colour" className={styles.laneColorRow} role="group">
+              <div aria-label="Status colour" className={styles.laneColorRow} role="group">
                 {COLUMN_PICKER_ORDER.map((key) => (
                   <button
                     aria-label={COLUMN_COLORS[key].label}
@@ -1296,9 +1296,10 @@ function LaneHeader({
                 ))}
               </div>
               <div className={styles.laneMenuDivider} />
+              <button onClick={() => { setMenuOpen(false); onCollapse(); }} role="menuitem" type="button">Collapse column</button>
               <button disabled={readOnly || columnIndex === 0} onClick={() => move(-1)} role="menuitem" type="button">Move left</button>
               <button disabled={readOnly || columnIndex === columns.length - 1} onClick={() => move(1)} role="menuitem" type="button">Move right</button>
-              <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add column after</button>
+              <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add status after</button>
               {!column.isSystem ? (
                 <>
                   <div className={styles.laneMenuDivider} />
@@ -1309,22 +1310,22 @@ function LaneHeader({
                     role="menuitem"
                     type="button"
                   >
-                    Delete column
+                    Delete status
                   </button>
                 </>
               ) : null}
             </div>
           ) : null}
         </div>
-        {/* The header "+" adds a COLUMN after this one. Adding a task is the
-            add row at the foot of the lane — one affordance each, not two
-            for tasks and none for columns. */}
+        {/* The header "+" adds a TASK to this column — the reading every
+            board tool has taught. Adding a column lives in the menu above
+            and on the end-cap after the last lane. */}
         <button
-          aria-label={`Add a column after ${column.name}`}
+          aria-label={`Add a task to ${column.name}`}
           className={styles.laneIconButton}
           disabled={readOnly}
-          onClick={onRequestAddAfter}
-          title={`Add a column after ${column.name}`}
+          onClick={onStartCompose}
+          title={`Add a task to ${column.name}`}
           type="button"
         >
           <Icon name="add" size={14} />
@@ -1363,8 +1364,8 @@ function LaneHeader({
           placeholder="Soft limit, empty for none"
           value={limitDraft}
         />
-      ) : column.description ? (
-        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit column description" type="button">
+      ) : column.description && showDescription ? (
+        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit status description" type="button">
           {column.description}
         </button>
       ) : null}
@@ -1414,7 +1415,7 @@ function AddColumnForm({
 
   function commit() {
     const trimmed = name.trim();
-    if (!trimmed) { setError("Enter a column name."); return; }
+    if (!trimmed) { setError("Enter a status name."); return; }
     const desc = description.trim();
     const insertAt = fixedPosition ?? position;
     const append = insertAt >= columns.length;
@@ -1448,7 +1449,7 @@ function AddColumnForm({
 
   return (
     <form
-      aria-label="New column"
+      aria-label="New status"
       className={styles.addColumnForm}
       onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); onClose(); } }}
       onSubmit={(event) => { event.preventDefault(); commit(); }}
@@ -1457,7 +1458,7 @@ function AddColumnForm({
         <span>Name</span>
         <input
           aria-invalid={error ? true : undefined}
-          aria-label="New column name"
+          aria-label="New status name"
           autoFocus
           maxLength={MAX_NAME_LEN}
           onChange={(event) => { setName(event.target.value); if (error) setError(null); }}
@@ -1469,7 +1470,7 @@ function AddColumnForm({
       <label className={styles.addColumnField}>
         <span>Description <em>(optional)</em></span>
         <input
-          aria-label="New column description"
+          aria-label="New status description"
           maxLength={MAX_DESCRIPTION_LEN}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="What belongs here"
@@ -1478,7 +1479,7 @@ function AddColumnForm({
       </label>
       <div className={styles.addColumnField}>
         <span>Colour</span>
-        <div aria-label="New column colour" className={styles.laneColorRow} role="group">
+        <div aria-label="New status colour" className={styles.laneColorRow} role="group">
           {COLUMN_PICKER_ORDER.map((key) => (
             <button
               aria-label={COLUMN_COLORS[key].label}
@@ -1497,7 +1498,7 @@ function AddColumnForm({
       {fixedPosition === undefined ? (
         <label className={styles.addColumnField}>
           <span>Position</span>
-          <select aria-label="New column position" onChange={(event) => setPosition(Number(event.target.value))} value={position}>
+          <select aria-label="New status position" onChange={(event) => setPosition(Number(event.target.value))} value={position}>
             {columns.map((c, i) => (
               <option key={c.key} value={i}>Before “{c.name}”</option>
             ))}
@@ -1507,7 +1508,7 @@ function AddColumnForm({
       ) : null}
       <div className={styles.addColumnActions}>
         <button className={styles.addColumnCancel} onClick={onClose} type="button">Cancel</button>
-        <button className={styles.addColumnCreate} type="submit">Add column</button>
+        <button className={styles.addColumnCreate} type="submit">Add status</button>
       </div>
     </form>
   );
@@ -1559,7 +1560,7 @@ function DeleteColumnDialog({
         {taskCount > 0 ? (
           <>
             <p>
-              This column has {taskCount} task{taskCount === 1 ? "" : "s"}. Choose where
+              This status has {taskCount} task{taskCount === 1 ? "" : "s"}. Choose where
               they should go — they will be moved, never deleted.
             </p>
             <label>
@@ -1572,7 +1573,7 @@ function DeleteColumnDialog({
             </label>
           </>
         ) : (
-          <p>This column is empty. Deleting it can’t be undone.</p>
+          <p>This status is empty. Deleting it can’t be undone.</p>
         )}
         <div className={styles.boardDialogActions}>
           <button onClick={onCancel} type="button">Cancel</button>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import { personById } from "../../fixtures";
 import {
@@ -12,6 +11,7 @@ import {
   type TaskStatus,
 } from "../../types";
 import type { BoardColumn } from "@/lib/board-columns";
+import { COLUMN_COLORS, laneAccentStyle } from "@/lib/board-colors";
 import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
@@ -24,9 +24,8 @@ import {
   TaskSelection,
   TaskSignals,
 } from "../../shared/task-ui";
-import { InlineTaskTitle, KeyboardLegend, SurfaceEmpty } from "./quiet-command-components";
+import { InlineTaskTitle, SurfaceEmpty } from "./quiet-command-components";
 import {
-  INITIAL_LIST_COLUMNS,
   clamp,
   focusTask,
   reorderItem,
@@ -53,79 +52,6 @@ type ListGroup = {
 
 function updateColumn(columns: ListColumn[], id: ListColumnId, fields: Partial<ListColumn>): ListColumn[] {
   return columns.map((column) => column.id === id ? { ...column, ...fields } : column);
-}
-
-function moveColumn(columns: ListColumn[], id: ListColumnId, direction: -1 | 1): ListColumn[] {
-  const from = columns.findIndex((column) => column.id === id);
-  if (from < 1) return columns;
-  const to = clamp(from + direction, 1, columns.length - 1);
-  return reorderItem(columns, from, to);
-}
-
-export function ListFieldsPanel({
-  columns,
-  setColumns,
-  onClose,
-}: {
-  columns: ListColumn[];
-  setColumns: (columns: ListColumn[]) => void;
-  onClose: () => void;
-}) {
-  const store = useLabStore();
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.section
-      animate={{ opacity: 1, transform: "scale(1)" }}
-      aria-label="List fields"
-      aria-modal="false"
-      className={styles.fieldsPanel}
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
-      role="dialog"
-      transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.23, 1, 0.32, 1] }}
-    >
-      <header>
-        <div><strong>List fields</strong><span>Session-only column layout</span></div>
-        <button aria-label="Close fields" onClick={onClose} type="button"><Icon name="close" size={15} /></button>
-      </header>
-      <ol>
-        {columns.map((column, index) => (
-          <li key={column.id}>
-            <label className={styles.fieldVisibility}>
-              <input
-                checked={column.visible}
-                disabled={store.readOnly || column.id === "title"}
-                onChange={(event) => setColumns(updateColumn(columns, column.id, { visible: event.target.checked }))}
-                type="checkbox"
-              />
-              <span>{column.label}</span>
-            </label>
-            <label className={styles.fieldWidth}>
-              <span className={styles.srOnly}>{column.label} width</span>
-              <input
-                aria-label={`${column.label} column width`}
-                disabled={store.readOnly}
-                max="460"
-                min={column.minWidth}
-                onChange={(event) => setColumns(updateColumn(columns, column.id, { width: Number(event.target.value) }))}
-                step="8"
-                type="range"
-                value={column.width}
-              />
-              <output>{column.width}px</output>
-            </label>
-            <div aria-label={`Move ${column.label} column`} className={styles.fieldOrder} role="group">
-              <button aria-label={`Move ${column.label} left`} disabled={store.readOnly || index <= 1} onClick={() => setColumns(moveColumn(columns, column.id, -1))} type="button"><Icon name="arrow-left" size={13} /></button>
-              <button aria-label={`Move ${column.label} right`} disabled={store.readOnly || column.id === "title" || index === columns.length - 1} onClick={() => setColumns(moveColumn(columns, column.id, 1))} type="button"><Icon name="arrow-right" size={13} /></button>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <footer>
-        <button disabled={store.readOnly} onClick={() => setColumns(INITIAL_LIST_COLUMNS.map((column) => ({ ...column })))} type="button">Reset fields</button>
-        <span>Drag headers or use these controls.</span>
-      </footer>
-    </motion.section>
-  );
 }
 
 function groupsFor(tasks: LabTask[], group: QuietGroup, boardColumns: readonly BoardColumn[]): ListGroup[] {
@@ -344,6 +270,10 @@ export function ListView({
           {groups.map((taskGroup) => {
             const isCollapsed = collapsed.has(taskGroup.key);
             const complete = taskGroup.tasks.filter((task) => task.completed).length;
+            // Status groups carry the same configured colour the board's
+            // lane does — one source (the column config), one meaning.
+            const groupColumn = group === "status" ? boardColumns.find((c) => c.key === taskGroup.key) : undefined;
+            const groupAccent = groupColumn ? COLUMN_COLORS[groupColumn.color].var ?? undefined : undefined;
             return (
               <tbody data-group={taskGroup.key} key={taskGroup.key} role="rowgroup">
                 {/*
@@ -358,14 +288,15 @@ export function ListView({
                 */}
                 <tr
                   className={styles.groupRow}
-                  data-lane-tone={group === "status" && taskGroup.key !== "todo" ? taskGroup.key : undefined}
+                  data-tinted={groupAccent ? "" : undefined}
                   role="row"
+                  style={groupColumn ? (laneAccentStyle(groupColumn.color) as React.CSSProperties | undefined) : undefined}
                 >
                   <th colSpan={visibleColumns.length} role="rowheader" scope="rowgroup">
                     <div className={styles.groupBand}>
                       <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
                         <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
-                        {group === "status" ? <span className={styles.statusPip} data-status={taskGroup.key} /> : null}
+                        {group === "status" ? <span className={styles.statusPip} data-accent={groupAccent ? "" : undefined} /> : null}
                         {taskGroup.label}
                       </button>
                       <span>{taskGroup.tasks.length} tasks</span>
@@ -440,7 +371,6 @@ export function ListView({
           {tasks.length === 0 ? <tbody role="rowgroup"><tr role="row"><td colSpan={visibleColumns.length} role="cell"><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
         </table>
       </div>
-      <KeyboardLegend>Up and down navigate rows. Enter opens. Space selects. F2 edits. Shift + F10 opens actions.</KeyboardLegend>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
     </div>
   );

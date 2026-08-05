@@ -31,8 +31,11 @@ const taskMetadataRail = read(
 const tasksCalendar = read(
   "src/components/hybrid/options/b/calendar-view.tsx",
 );
-const taskInspector = read(
-  "src/components/hybrid/shared/task-inspector.tsx",
+// T·132: the design lab's own inspector was deleted with the rest of the
+// lab chrome. The task a person actually opens is the production detail
+// panel, so the accessible-name contract is asserted where it now lives.
+const taskDetailPanel = read(
+  "src/components/app/detail-panel/panel-shell.tsx",
 );
 const taskSharedStyles = read(
   "src/components/hybrid/shared/shared.module.css",
@@ -108,8 +111,17 @@ test("the rail derives ownership and carries allowlisted context hints", () => {
   // must never return as a rail destination.
   assert.match(studioRail, /activeRailKey\(pathname\)/);
   assert.match(studioRail, /suiteSurfaceFromAppPath/);
-  assert.match(studioRail, /\{ key: "home", label: "Home", path: HOME_APP_PATH \}/);
   assert.doesNotMatch(studioRail, /\{ key: "signal"/);
+  // The rail is a PRODUCT switcher (board pass 4): no Home, no Project —
+  // Home is the first destination of the local Tasks navigation, and
+  // /app/home and /app/project both stay routable.
+  assert.doesNotMatch(studioRail, /\{ key: "home"/);
+  assert.doesNotMatch(studioRail, /\{ key: "project"/);
+  assert.deepEqual(
+    [...studioRail.matchAll(/\{ key: "(home|notes|tasks|timeline|project)", label:/g)]
+      .map((match) => match[1]),
+    ["notes", "tasks", "timeline"],
+  );
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
     studioRail,
@@ -132,13 +144,14 @@ test("the rail derives ownership and carries allowlisted context hints", () => {
   }
 });
 
-test("the selected Command frame keeps search with the work and consolidates rail utilities", () => {
-  assert.match(studioBar, /data-slot="command-field"/);
-  assert.ok(
-    studioBar.indexOf('data-slot="command-field"') <
-      studioBar.indexOf('data-slot="signal-pulse"'),
-    "the command field must stay left of the reserved Signal pulse slot",
-  );
+test("search is a compact command trigger beside Add task, not a resident field", () => {
+  // Board pass 4: the persistent command field retired. Search is a quiet
+  // trigger in the right action cluster, still platform-aware, and the
+  // reserved Signal pulse slot survives in the open middle.
+  assert.doesNotMatch(studioBar, /data-slot="command-field"/);
+  assert.match(studioBar, /data-slot="search-trigger"/);
+  assert.match(studioBar, /data-slot="signal-pulse"/);
+  assert.match(studioBar, /aria-keyshortcuts="Control\+K Meta\+K"/);
   assert.match(studioBar, /aria-keyshortcuts="c"/);
   assert.match(studioBar, /bg-\[var\(--x-studio-ink-strong\)\]/);
 
@@ -246,16 +259,19 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
 });
 
 test("mobile suite nav exposes Home-first canonical destinations", () => {
-  // Signal → Home consolidation (D4): Home, the three products, then
-  // Project. Signal must not return as a tab.
+  // Signal → Home consolidation (D4): Home, then the three products.
+  // Signal must not return as a tab, and Project left the shell
+  // navigation with the 2026-08-05 board pass — the project overview is
+  // reached from project contexts, never as a fifth product.
   assert.match(appLayout, /<MobileSuiteNav \/>/);
   assert.match(mobileSuiteNav, /if \(activeKey === "tasks"\) return null;/);
   assert.deepEqual(
     [...mobileSuiteNav.matchAll(/\{ id: "(home|notes|tasks|timeline|project)", label:/g)]
       .map((match) => match[1]),
-    ["home", "notes", "tasks", "timeline", "project"],
+    ["home", "notes", "tasks", "timeline"],
   );
   assert.doesNotMatch(mobileSuiteNav, /\{ id: "signal"/);
+  assert.doesNotMatch(mobileSuiteNav, /\{ id: "project"/);
   assert.match(
     mobileSuiteNav,
     /withSuiteContext\(destination\.path, suiteContext\)/,
@@ -355,11 +371,9 @@ test("Calendar overflow and the task inspector keep accessible focus and names",
   assert.match(tasksCalendar, /aria-labelledby=\{labelledBy\}/);
   assert.match(tasksCalendar, /querySelector<HTMLElement>\("ul button, header button"\)/);
   assert.match(tasksCalendar, /overflowTriggerRef\.current\?\.focus/);
-  assert.match(
-    taskInspector,
-    /<h2 id=\{titleId\}>\{task\?\.title \?\? "Task unavailable"\}<\/h2>/,
-  );
-  assert.match(taskInspector, /aria-labelledby=\{titleId\}/);
+  assert.match(taskDetailPanel, /role="dialog"/);
+  assert.match(taskDetailPanel, /aria-modal="true"/);
+  assert.match(taskDetailPanel, /aria-labelledby="task-panel-title"/);
 });
 
 test("Tasks mobile CSS contains dense canvases and preserves 44px primary targets", () => {

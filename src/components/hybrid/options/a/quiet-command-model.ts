@@ -1,4 +1,4 @@
-import { addDays, compareDates, scheduleEnd, scheduleStart, startOfMonthGrid } from "../../dates";
+import { scheduleEnd, scheduleStart } from "../../dates";
 import type { CalendarDate, LabTask, TaskPriority, TaskStatus } from "../../types";
 
 export type QuietSort = "manual" | "due" | "priority" | "title";
@@ -133,22 +133,10 @@ export function shiftMonth(value: CalendarDate, amount: number): CalendarDate {
   return date.toISOString().slice(0, 10) as CalendarDate;
 }
 
-export function monthGrid(value: CalendarDate): CalendarDate[] {
-  const start = startOfMonthGrid(value);
-  return Array.from({ length: 42 }, (_, index) => addDays(start, index));
-}
-
 export function dateSpan(task: LabTask): { start: CalendarDate; end: CalendarDate } | null {
   const start = scheduleStart(task.schedule);
   const end = scheduleEnd(task.schedule);
   return start && end ? { start, end } : null;
-}
-
-export function rangeSegment(task: LabTask, date: CalendarDate): "single" | "start" | "middle" | "end" {
-  if (task.schedule.kind !== "range" || task.schedule.startOn === task.schedule.dueOn) return "single";
-  if (compareDates(date, task.schedule.startOn) === 0) return "start";
-  if (compareDates(date, task.schedule.dueOn) === 0) return "end";
-  return "middle";
 }
 
 export function clamp(value: number, min: number, max: number): number {

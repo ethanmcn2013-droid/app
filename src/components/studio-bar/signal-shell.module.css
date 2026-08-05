@@ -274,8 +274,7 @@
 /* Tooltips: keyboard and pointer, no dependency. */
 .signalRail [data-tip]::after,
 .projectsSidebar [data-tip]::after,
-.projectsDrawer [data-tip]::after,
-.sidebarStrip [data-tip]::after {
+.projectsDrawer [data-tip]::after {
   background: var(--x-studio-chrome-raised);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
@@ -303,8 +302,7 @@
 .projectsSidebar [data-tip]:focus-visible::after,
 .projectsDrawer [data-tip]:hover::after,
 .projectsDrawer [data-tip]:focus-visible::after,
-.sidebarStrip [data-tip]:hover::after,
-.sidebarStrip [data-tip]:focus-visible::after {
+.projectsDrawer [data-tip]:focus-visible::after {
   opacity: 1;
 }
 
@@ -323,11 +321,11 @@
 /* ── Projects sidebar ─────────────────────────────────────────────────── */
 
 .projectsSidebarHost {
-  flex: 0 0 248px;
+  flex: 0 0 236px;
   height: 100%;
   overflow: hidden;
   transition: flex-basis 220ms var(--spring-glide), width 220ms var(--spring-glide);
-  width: 248px;
+  width: 236px;
 }
 
 .projectsSidebarHost[data-collapsed] {
@@ -343,7 +341,7 @@
 }
 
 .projectsSidebar {
-  background: var(--x-task-surface);
+  background: var(--x-task-raised);
   border-right: 1px solid var(--x-task-border);
   display: flex;
   flex: 0 0 100%;
@@ -354,29 +352,20 @@
 }
 
 .sidebarHeader {
-  align-items: flex-start;
+  align-items: center;
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
   flex: none;
   justify-content: space-between;
-  padding: 13px 10px 11px 16px;
-}
-
-.sidebarIdentity { display: flex; flex-direction: column; min-width: 0; }
-
-.sidebarEyebrow {
-  color: var(--x-task-text-muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-height: 44px;
+  padding: 0 10px 0 16px;
 }
 
 .sidebarTitle {
   color: var(--x-task-text);
-  font-size: 15px;
-  font-weight: 680;
-  letter-spacing: -0.02em;
-  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .sidebarCollapse {
@@ -426,20 +415,30 @@
 
 .navRow svg { color: var(--x-task-text-muted); }
 .navRow:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.navRow[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 630; }
+/* Selected is a mark, not a slab: a 2px indigo inset plus a 5% breath of
+   tint — the row stays typography-first. */
+.navRow[aria-current="page"] { background: color-mix(in srgb, var(--x-task-accent) 5%, transparent); color: var(--x-task-text); font-weight: 630; }
+.navRow[aria-current="page"]::before { background: var(--x-task-accent); border-radius: 999px; content: ""; height: 16px; left: 0; position: absolute; top: 50%; transform: translateY(-50%); width: 2px; }
+.navRow[aria-current="page"] svg { color: var(--x-task-accent); }
 
 .navCount {
-  background: var(--x-task-hover);
-  border-radius: 9px;
   color: var(--x-task-text-muted);
   font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
+  font-size: 10.5px;
   font-variant-numeric: tabular-nums;
   margin-left: auto;
-  padding: 2px 6px;
 }
 
-.projectsSection { margin-top: 18px; }
+.projectsSection { margin-top: 16px; }
+.projectsLabel {
+  color: var(--x-task-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  padding: 0 8px;
+  text-transform: none;
+}
 
 .projectsHeading {
   color: var(--x-task-text-muted);
@@ -539,11 +538,12 @@
 .projectChildren .projectLeaf { min-height: 34px; padding-left: 25px; }
 
 .projectLeaf[aria-current="page"] {
-  background: var(--x-task-selected);
+  background: color-mix(in srgb, var(--x-task-accent) 5%, transparent);
   color: var(--x-task-text);
   cursor: pointer;
   font-weight: 630;
 }
+.projectLeaf[aria-current="page"]::before { background: var(--x-task-accent); border-radius: 999px; content: ""; height: 16px; left: 0; position: absolute; top: 50%; transform: translateY(-50%); width: 2px; }
 
 .leafCount {
   color: var(--x-task-text-muted);
@@ -622,54 +622,11 @@
 
 .projectsSidebar :focus-visible,
 .projectsDrawer :focus-visible,
-.sidebarStrip :focus-visible {
+.projectsDrawer :focus-visible {
   outline: 2px solid var(--x-task-focus);
   outline-offset: 2px;
 }
 
-/* ── Collapsed strip and narrow-width trigger ─────────────────────────── */
-
-/* No `display` here on purpose: module rules sit outside Tailwind's
-   cascade layers, so a display:flex in this block silently overrode the
-   `hidden md:flex` utilities at the call site — the tablet-only strip
-   leaked onto phones. Each call site declares its own display. */
-.sidebarStrip {
-  align-items: center;
-  background: var(--x-task-surface);
-  border-right: 1px solid var(--x-task-border);
-  flex: 0 0 44px;
-  flex-direction: column;
-  gap: 12px;
-  height: 100%;
-  padding-top: 8px;
-  width: 44px;
-}
-
-.stripButton {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: 7px;
-  color: var(--x-task-text-secondary);
-  cursor: pointer;
-  display: flex;
-  flex: none;
-  height: 40px;
-  justify-content: center;
-  position: relative;
-  width: 40px;
-}
-
-.stripButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-
-.stripLabel {
-  color: var(--x-task-text-muted);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  writing-mode: vertical-rl;
-}
 
 /* ── Drawer (below ~1100px) ───────────────────────────────────────────── */
 
@@ -721,8 +678,7 @@
   .disclosure { transition: none; }
   .signalRail [data-tip]::after,
   .projectsSidebar [data-tip]::after,
-  .projectsDrawer [data-tip]::after,
-  .sidebarStrip [data-tip]::after { transition: none; }
+  .projectsDrawer [data-tip]::after { transition: none; }
 }
 
 /* ── Add project inline input (T·97) ──────────────────────────────────── */

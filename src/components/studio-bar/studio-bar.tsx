@@ -43,7 +43,6 @@ import {
   type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
-import { StudioBarSearch } from "./studio-bar-search";
 import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
@@ -54,26 +53,10 @@ import {
    --x-studio-* tokens in globals.css: chrome surface, raised popover,
    soft/quiet/bright ink steps, and the indigo accent off the ramp. */
 
-function markCell() {
-  // The dot walks to Home — the authenticated front door — so the mark
-  // and the rail's Home tile agree (consolidation D4: the dot must not
-  // be the only Home affordance, and it must not disagree with it).
-  return (
-    <a
-      href={HOME_APP_PATH}
-      title="Home"
-      className="flex h-full w-[60px] flex-none items-center justify-center outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
-    >
-      <span
-        aria-hidden="true"
-        className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px]"
-      >
-        <span className="h-2.5 w-2.5 rounded-full bg-[var(--x-studio-accent)]" />
-      </span>
-      <span className="sr-only">Signal Studio Home</span>
-    </a>
-  );
-}
+/* The standalone dot cell retired 2026-08-05 (board pass 3): the brand
+   dot now lives INSIDE the wordmark — `tasks.` — one authored object.
+   Home keeps its rail tile (consolidation D4's real affordance), so the
+   duplicate mark carried no unique function. */
 
 /**
  * Module identity for the 248px cell: the wordmark follows the ACTIVE module
@@ -111,7 +94,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 px-3 md:w-[248px] md:px-4">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 pl-5 pr-3 md:w-[248px] md:pl-[21px] md:pr-4">
       <a
         href={identity.home}
         aria-label={identity.label}
@@ -119,6 +102,12 @@ function IdentityCell({ edition }: { edition: string | null }) {
         style={{ letterSpacing: "-0.045em" }}
       >
         {identity.word}
+        {/* The wordmark ends in the brand's indigo full stop — one
+            authored object, matching the marketing wordmarks. The link's
+            aria-label above supplies the accessible name, so the glyph
+            carries no ARIA of its own; the mobile-visibility contract
+            also forbids concealment utilities anywhere in this cell. */}
+        <span className="text-[var(--x-studio-accent)]">.</span>
       </a>
       {edition ? (
         <span
@@ -176,40 +165,13 @@ export function StudioBar() {
       role="banner"
       className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
     >
-      {markCell()}
 
       <IdentityCell edition={data?.edition ?? null} />
 
-      {/* Selected Signal Frame B: the command field begins where the working
-          canvas begins instead of hiding in the far-right action cluster. */}
+      {/* The open black field between the wordmark and the action cluster
+          is intentional: search became an intermittent command, not a
+          resident input (board pass 4). */}
       <div className="flex min-w-0 flex-1 items-center px-3 md:px-6">
-        <button
-          type="button"
-          aria-label={commandLabel}
-          data-slot="command-field"
-          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
-          className="hidden h-8 w-full max-w-[480px] min-w-0 items-center gap-2.5 rounded-lg border border-white/[0.09] bg-white/[0.04] px-3 text-left outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white/[0.14] hover:bg-white/[0.07] active:scale-[0.99] focus-visible:border-[var(--x-studio-accent)] md:flex pointer-coarse:h-[44px]"
-        >
-          <svg
-            aria-hidden="true"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            className="flex-none text-[var(--x-studio-ink-quiet)]"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span className="min-w-0 flex-1 truncate text-[13px] text-[var(--x-studio-ink-soft)]">
-            {commandLabel}…
-          </span>
-          <kbd className="flex h-[18px] flex-none select-none items-center rounded border border-white/[0.12] px-1 font-mono text-[10px] tracking-[0.02em] text-[var(--x-studio-ink-soft)]">
-            {keyLabel}
-          </kbd>
-        </button>
 
         {/* The reserved Signal pulse ("3 need you") keeps its contractual
             slot at the far edge — deliberately empty, deliberately no bell. */}
@@ -221,9 +183,36 @@ export function StudioBar() {
       </div>
 
       <div className="flex flex-none items-center gap-2 pr-3">
-        {/* Search-Expand affordance below md, where the full field is hidden:
-            the icon morphs into an inline field that seeds the palette. */}
-        <StudioBarSearch label={commandLabel} />
+        {/* Search is a quiet ghost command trigger — the palette is the
+            search surface. Label and keycap yield to the icon at narrow
+            widths; the shortcut stays platform-aware. */}
+        <button
+          type="button"
+          aria-keyshortcuts="Control+K Meta+K"
+          aria-label={commandLabel}
+          title={`${commandLabel} (${keyLabel})`}
+          data-slot="search-trigger"
+          onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_PALETTE_EVENT))}
+          className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg px-2 text-[var(--x-studio-ink-soft)] outline-none transition-colors duration-150 hover:bg-white/[0.06] hover:text-[var(--x-studio-ink)] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] md:h-[34px] md:min-w-0 md:px-2.5 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+        >
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="flex-none"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span className="hidden text-[13px] font-medium lg:block">Search</span>
+          <kbd className="hidden h-[17px] flex-none select-none items-center rounded border border-white/[0.12] px-[5px] font-mono text-[10px] tracking-[0.02em] text-[var(--x-studio-ink-quiet)] lg:flex">
+            {keyLabel}
+          </kbd>
+        </button>
 
         {showCreate ? (
           <button
@@ -231,7 +220,7 @@ export function StudioBar() {
             aria-keyshortcuts="c"
             title="Add task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-md border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] md:h-8 md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] disabled:opacity-60 md:h-[34px] md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
           >
             <svg
               aria-hidden="true"
@@ -247,7 +236,7 @@ export function StudioBar() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span className="hidden sm:block">Add task</span>
-            <kbd className="hidden h-[18px] items-center rounded border border-black/15 px-1 font-mono text-[10px] font-medium text-zinc-600 lg:flex">
+            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-zinc-600 lg:flex">
               C
             </kbd>
           </button>

@@ -75,10 +75,11 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
           periodName: "Wedding season",
           // Derived from the one pinned review frame, never a literal —
           // the sidebar must state the same season end every other demo
-          // surface derives from.
-          dateRange: compactDate(
-            PINNED_REVIEW_CALENDAR_FRAME.planningPeriod?.endDate ?? "",
-          ),
+          // surface derives from. "Ends" because a bare date beside a
+          // period name reads as anything from a count to a deadline.
+          dateRange: PINNED_REVIEW_CALENDAR_FRAME.planningPeriod?.endDate
+            ? `Ends ${compactDate(PINNED_REVIEW_CALENDAR_FRAME.planningPeriod.endDate)}`
+            : null,
           workspaces: [
             { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
           ],
@@ -157,7 +158,7 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
       p.startDate && p.endDate
         ? formatDateRange(p.startDate, p.endDate)
         : p.startDate
-          ? compactDate(p.startDate)
+          ? `From ${compactDate(p.startDate)}`
           : null;
     result.push({ periodId: key, periodName: p.name, dateRange, workspaces: leaves });
   }

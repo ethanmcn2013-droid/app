@@ -25,30 +25,49 @@
   overflow: hidden;
 }
 
-/* Brief band (2026-07-28). Was 168px tall to carry a title, a progress
-   readout and a milestones panel that was usually empty. The board is the
-   content on this screen, so the band was cut to the height its own
-   information needs and the ~60px went back to the lanes. */
+/* Context band (2026-08-05 redesign). One row: identity, progress facts,
+   project-level actions. The old 2–3 panel dashboard (progress readout +
+   milestones + money line) is gone — milestones and money live in the
+   Planning drawer now — so the band answers "where am I, how is it going"
+   in ~54px and the lanes own the rest of the viewport. */
 .workspaceBrief {
   align-items: center;
-  background: var(--x-task-surface);
+  background: var(--x-task-raised);
   border-bottom: 1px solid var(--x-task-border);
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
-  gap: 20px;
-  grid-template-columns: minmax(300px, 1fr) 232px;
-  min-height: 0;
-  padding: 12px 20px 13px;
+  gap: 18px;
+  min-height: 54px;
+  min-width: 0;
+  padding: 9px 14px 9px 20px;
 }
 
-/* Three columns only when a milestone actually exists to fill the third.
-   The data columns may grow before they truncate — the identity column
-   used to hoard all slack while the milestone title ellipsized at 1440px. */
-.workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(240px, 1fr) minmax(210px, 264px) minmax(216px, 320px); }
-
-.workspaceIdentity { min-width: 0; }
-.workspaceIdentity h1 { font-size: 24px; font-weight: 700; letter-spacing: -.04em; line-height: 1.1; margin: 0 0 4px; text-wrap: balance; }
-.workspaceIdentity > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 0; max-width: 72ch; text-wrap: pretty; }
+.workspaceIdentity { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
+/* Parent context: quieter than the project, separated by a low-contrast
+   slash — hierarchy in one reading order, no extra band. */
+.briefCrumb { align-items: baseline; color: var(--x-task-text-secondary); display: inline-flex; flex: 0 1 auto; font-size: 13.5px; font-weight: 500; gap: 9px; min-width: 0; white-space: nowrap; }
+.briefCrumb > :first-child { overflow: hidden; text-overflow: ellipsis; }
+.navTrigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 30px;
+  justify-content: center;
+  margin-right: -4px;
+  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+  width: 30px;
+}
+.navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+/* The separator is a real glyph, so it carries a real ratio: ghost measured
+   1.48:1 against paper. Muted keeps it subordinate to both names at AA. */
+.briefCrumb i { color: var(--x-task-text-muted); font-style: normal; font-weight: 400; }
+.workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 650; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12.5px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*
   Inline-editable heading + supporting line (T·114). A heading that grows a
   full inset box on hover reads as a text input in costume, so editability is
@@ -63,55 +82,70 @@
   element stays genuinely empty — the placeholder is never selectable, never
   copied, and never committed as if the user had typed it.
 */
-.editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; }
+.editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; transition: color var(--motion-instant) var(--ease-out); }
+p.editable[data-empty]:hover::before,
+p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .editable[data-empty]:focus::before { opacity: .55; }
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: 7px 14px; margin-top: 13px; }
 .workspaceMeta span { position: relative; }
 .workspaceMeta span + span::before { background: var(--x-task-border-strong); content: ""; height: 10px; left: -7px; position: absolute; top: 1px; width: 1px; }
 
-.workspaceProgress {
-  border-left: 1px solid var(--x-task-border);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: center;
-  padding-left: 20px;
-}
-.progressHead { align-items: baseline; display: flex; gap: 8px; }
-.progressHead strong { font-family: var(--font-geist-mono), monospace; font-size: 20px; font-weight: 560; letter-spacing: -.04em; line-height: 1; }
-.progressHead span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
-.progressHead .syncState {
-  margin-left: auto;
+/* Progress: one quiet cluster. The bar carries the proportion, the
+   sentence carries the numbers, red appears only for genuinely overdue
+   work. The sync whisper fades in beside it while a change saves. */
+.briefProgress { align-items: center; display: flex; flex: 0 0 auto; gap: 12px; }
+.syncState {
+  color: var(--x-task-text-muted);
+  font-size: 11px;
   opacity: 0;
   transition: color var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+  white-space: nowrap;
 }
 .syncState[data-state="pending"],
 .syncState[data-state="saved"],
 .syncState[data-state="error"] { opacity: 1; }
-.syncState[data-state="saved"] { color: var(--success); }
-.syncState[data-state="error"] { color: var(--danger); }
-.workspaceProgress progress { accent-color: var(--x-task-accent); height: 4px; width: 100%; }
-.progressFacts { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; letter-spacing: .01em; margin: 0; }
-.progressFacts span { white-space: nowrap; }
-.progressFacts b { color: var(--x-task-danger); font-weight: 650; white-space: nowrap; }
+.syncState[data-state="saved"] { color: var(--x-task-success); }
+.syncState[data-state="error"] { color: var(--x-task-danger); }
+.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: 12.5px; gap: 12px; margin: 0; }
+.briefFacts strong { color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 620; white-space: nowrap; }
+.briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.briefFacts b { color: var(--x-task-danger); font-variant-numeric: tabular-nums; font-weight: 640; white-space: nowrap; }
 
-.workspaceMilestones {
-  border-left: 1px solid var(--x-task-border);
+/* Project-level actions: Share, Planning, overflow — one ghost register. */
+.briefActions { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; }
+.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 6px; width: 1px; }
+.planningTrigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-  padding-left: 18px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  gap: 6px;
+  height: 30px;
+  padding: 0 9px;
+  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+  white-space: nowrap;
 }
-.workspaceMilestones > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
-.workspaceMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 7px 0 0; padding: 0; }
-.workspaceMilestones li { align-items: center; border-bottom: 1px solid var(--x-task-border); display: grid; gap: 8px; grid-template-columns: 47px 1fr; min-height: 25px; min-width: 0; }
-.workspaceMilestones li:last-child { border-bottom: 0; }
-.workspaceMilestones time { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.workspaceMilestones button,
-.workspaceMilestones li strong { background: transparent; border: 0; color: var(--x-task-text); font: inherit; font-size: 12px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
-.workspaceMilestones button { cursor: pointer; }
-.workspaceMilestones small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.35; margin-top: 5px; }
+.planningTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-task-accent); }
+.planningTrigger strong {
+  background: var(--x-task-hover);
+  border-radius: 999px;
+  color: var(--x-task-text-secondary);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1;
+  min-width: 18px;
+  padding: 3px 5px;
+  text-align: center;
+}
+.planningTrigger[aria-expanded="true"] strong { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); color: var(--x-task-accent); }
 
 .roomViewBar {
   align-items: center;
@@ -530,17 +564,22 @@
 :where(.optionB) select:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 2px; }
 
 @media (max-width: 1180px) {
-  .workspaceBrief,
-  .workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(300px, 1fr) 200px; }
-  .workspaceMilestones { display: none; }
   .roomViewBar > div { margin-left: 0; }
   .roomViewBar > div:last-of-type { margin-left: auto; }
 }
 
+/* Narrow desktop: the sentence goes before the numbers do. */
+/* The crumb never disappears — it truncates. The description and the
+   count sentence yield first. */
+@media (max-width: 1160px) {
+  .workspaceIdentity > p { display: none; }
+  .briefCrumb > :first-child { max-width: 128px; }
+}
+@media (max-width: 900px) {
+  .briefFacts { display: none; }
+}
+
 @media (max-width: 1060px) {
-  .workspaceBrief { padding-block: 9px; }
-  .workspaceIdentity h1 { font-size: 20px; margin-top: 5px; }
-  .workspaceIdentity > p { max-width: 560px; }
   .workspaceMeta { margin-top: 6px; }
   .timelineStory { display: block; padding: 8px 16px 0; }
   .timelineStory > div { align-items: baseline; display: flex; gap: 8px; min-width: 0; }
@@ -555,8 +594,6 @@
   .selectedAgendaList > li { padding: 8px; }
 }
 
-[data-density="compact"] .workspaceBrief { padding-block: 11px; }
-[data-density="compact"] .workspaceIdentity h1 { font-size: 20px; margin-top: 5px; }
 [data-density="compact"] .workspaceMeta { margin-top: 8px; }
 [data-density="compact"] .boardGrid { gap: 10px; padding: 12px 14px 20px; }
 [data-density="compact"] .boardTaskList { gap: 6px; padding: 7px; }
@@ -570,8 +607,6 @@
 [data-density="compact"] .timelineDue { top: 6px; }
 
 @media (max-width: 1060px) {
-  [data-density="compact"] .workspaceBrief { padding-block: 9px; }
-  [data-density="compact"] .workspaceIdentity h1 { font-size: 20px; margin-top: 5px; }
   [data-density="compact"] .workspaceMeta { margin-top: 6px; }
 }
 
@@ -600,50 +635,18 @@
  * but contains the seven-column grid in its own horizontal scroller.
  */
 @media (max-width: 767px) {
-  .workspaceBrief,
-  .workspaceBrief[data-milestones="on"] {
-    gap: 10px;
-    grid-template-columns: minmax(0, 1fr);
-    min-height: 0;
-    padding: 12px;
+  .workspaceBrief {
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    padding: 10px 12px;
   }
 
-  [data-density] .workspaceBrief {
-    min-height: 0;
-    padding-block: 12px;
-  }
+  .workspaceIdentity { flex: 1 1 100%; }
+  .workspaceIdentity h1 { font-size: 16px; max-width: none; }
 
-  .workspaceIdentity h1,
-  [data-density] .workspaceIdentity h1 {
-    font-size: 20px;
-    margin-top: 8px;
-  }
-
-  .workspaceIdentity > p {
-    display: -webkit-box;
-    font-size: 11px;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .workspaceProgress {
-    align-items: center;
-    border-left: 0;
-    border-top: 1px solid var(--x-task-border);
-    display: grid;
-    gap: 8px 12px;
-    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
-    padding: 10px 0 0;
-  }
-
-  .workspaceProgress progress {
-    margin: 0;
-  }
-
-  .progressFacts {
-    grid-column: 1 / -1;
-  }
+  .briefProgress { gap: 10px; }
+  .briefFacts span { display: none; }
+  .briefActions { margin-left: auto; }
 
   .calendarView {
     overflow-x: hidden;

@@ -85,21 +85,10 @@
    *   since cycle 2. Lane backgrounds stay desaturated so the
    *   priority dots and status colors do the talking, not the
    *   surfaces themselves) ──────────────────────────────────── */
-  --lane-todo:      #f6f4fb;
-  --lane-todo-ink:  #6d4ea3;
-  --lane-todo-dot:  #c9b4f0;
-
-  --lane-doing:     #fbf6ee;
+  /* Only the doing ink survives (showcase demo surface); the rest of the
+     pre-cycle-2 lane palette — the old forest Done green included — was
+     dead and is consolidated away (2026-08-05 board pass 2). */
   --lane-doing-ink: #b05814;
-  --lane-doing-dot: #f3b878;
-
-  --lane-review:     #eff6fc;
-  --lane-review-ink: #1d6fa3;
-  --lane-review-dot: #91c8ec;
-
-  --lane-done:      #eef7f1;
-  --lane-done-ink:  #1f7a45;
-  --lane-done-dot:  #8fd5a8;
 
   /* ── Studio Bar chrome (T·94) — the charcoal L-frame. The greys are
      the canonical rail icon-system values (60px rail · 34×34 r10 tiles);
@@ -121,7 +110,11 @@
      .module.css). The lab build is the spec; production surfaces under
      /app render on THESE, not the general page scale. All values ride
      system tokens — no raw colour. */
-  --x-task-canvas: var(--paper-deep);
+  /* Precision-white field (2026-08-05 board redesign): the canvas and the
+     working surfaces are paper itself. Structure comes from hairlines and
+     spacing; the only grey steps left are interactive-control backgrounds
+     (--x-task-surface) and hovers. */
+  --x-task-canvas: var(--paper);
   --x-task-surface: var(--paper-soft);
   --x-task-raised: var(--paper);
   --x-task-selected: var(--accent-tint);
@@ -139,8 +132,18 @@
   --x-task-accent: var(--accent);
   --x-task-accent-soft: var(--accent-tint);
   --x-task-focus: var(--accent-hover);
-  --x-task-success: color-mix(in srgb, var(--status-done) 60%, var(--ink));
-  --x-task-success-soft: var(--status-done-bg);
+  /* ── Done, canonically (2026-08-05 board pass 2) ─────────────────────
+     ONE green for everything that means finished: the Done column's dot
+     and tint, the completion circle, its drawn check, and every Done
+     accent. #1b873f holds 4.58:1 against paper (AA for normal text) and
+     for white on its fill. Derivations only — never a second literal. */
+  --x-status-done: #1b873f;
+  --x-status-done-hover: #166f34;
+  --x-status-done-pressed: #125c2b;
+  --x-status-done-tint: color-mix(in srgb, var(--x-status-done) 5%, var(--paper));
+  --x-status-done-border: color-mix(in srgb, var(--x-status-done) 14%, var(--paper));
+  --x-task-success: var(--x-status-done);
+  --x-task-success-soft: color-mix(in srgb, var(--x-status-done) 10%, var(--paper));
   --x-task-waiting: color-mix(in srgb, var(--status-flight) 52%, var(--ink));
   --x-task-waiting-soft: var(--status-flight-bg);
   --x-task-warning: color-mix(in srgb, var(--status-flight) 60%, var(--ink));
@@ -217,7 +220,7 @@
   --x-col-indigo:  var(--accent);
   --x-col-rose:    var(--status-blocked);
   --x-col-amber:   var(--status-flight);
-  --x-col-emerald: var(--status-done);
+  --x-col-emerald: var(--x-status-done);
   --x-col-sky:     var(--status-review);
   --x-col-violet:  var(--user-alex);
   --x-col-teal:    var(--user-david);

@@ -3,13 +3,24 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
+import { useDomain } from "@/lib/domain-context";
+import { ActionsDropdown, type ActionItem } from "@/components/primitives/context-actions";
+import { addDays, differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
+import { activeUnscheduledTasks, endOfWeek } from "../../planning";
 import { useLabStore } from "../../store";
 import type { CalendarDate, LabTask, LabView } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
-import { ScheduleText, TaskOpenButton, TaskSelection } from "../../shared/task-ui";
+import { ScheduleText, TaskOpenButton } from "../../shared/task-ui";
 import styles from "./option-c.module.css";
+
+/** Pull the part of the workspace title before " · " for display. */
+function shortenWorkspaceTitle(value: string): string {
+  const index = value.indexOf(" · ");
+  return index > 0 ? value.slice(0, index) : value;
+}
+
+type UndoRecord = { ids: string[]; label: string };
 
 export function PlanningRail({
   collapsed,
@@ -29,13 +40,27 @@ export function PlanningRail({
   const store = useLabStore();
   const reduceMotion = useReducedMotion();
   const calendar = useCalendarFrame();
+  const domain = useDomain();
   const menu = useTaskContextMenu();
-  const [unscheduledOpen, setUnscheduledOpen] = useState(true);
   const panelRef = useRef<HTMLElement | null>(null);
-  // Below 768px the expanded rail leaves the flow and covers the workspace
-  // (option-c.module.css). A thing that covers the workspace is a dialog:
-  // it takes focus, closes on Escape, and hands focus back. Above 768px it
-  // is an ordinary in-flow column and none of this applies.
+  const [tab, setTab] = useState<"unscheduled" | "milestones">("unscheduled");
+  // Selection for bulk scheduling is drawer-local: it must not open the
+  // board's own bulk toolbar or collide with card selection semantics.
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
+  const [pickingId, setPickingId] = useState<string | null>(null);
+  const [undo, setUndo] = useState<UndoRecord | null>(null);
+  // The undo receipt fades on its own; keying the timer to the record
+  // means a newer schedule simply restarts the window.
+  useEffect(() => {
+    if (!undo) return;
+    const timer = window.setTimeout(() => setUndo(null), 7000);
+    return () => window.clearTimeout(timer);
+  }, [undo]);
+
+  // Below 768px the drawer covers the workspace. A thing that covers the
+  // workspace is a dialog: it takes focus, closes on Escape, and hands
+  // focus back. At wider widths it is a docked (or edge-overlaid) panel
+  // and none of this applies.
   const [asOverlay, setAsOverlay] = useState(false);
   useEffect(() => {
     if (collapsed) return;
@@ -61,13 +86,21 @@ export function PlanningRail({
       if (returnTo?.isConnected) returnTo.focus({ preventScroll: true });
     };
   }, [asOverlay, collapsed, onToggle]);
-  const orderedIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
-  const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
+
+  const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
+  const unscheduled = activeUnscheduledTasks(tasks);
   const selectedDayTasks = tasks.filter((task) => task.schedule.kind !== "unscheduled" && scheduleIncludes(task.schedule, selectedDate));
-  const completed = tasks.filter((task) => task.completed).length;
-  const milestones = tasks
-    .filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= calendar.today)
-    .sort((a, b) => (scheduleStart(a.schedule) ?? "").localeCompare(scheduleStart(b.schedule) ?? ""));
+  // Milestones, upcoming first, then the past ones as a muted record.
+  const milestones = useMemo(() => {
+    const dated = tasks.filter((task) => task.schedule.kind === "milestone");
+    const upcoming = dated
+      .filter((task) => task.schedule.kind === "milestone" && task.schedule.on >= calendar.today)
+      .sort((a, b) => (scheduleStart(a.schedule) ?? "").localeCompare(scheduleStart(b.schedule) ?? ""));
+    const past = dated
+      .filter((task) => task.schedule.kind === "milestone" && task.schedule.on < calendar.today)
+      .sort((a, b) => (scheduleStart(b.schedule) ?? "").localeCompare(scheduleStart(a.schedule) ?? ""));
+    return { upcoming, past, all: [...upcoming, ...past] };
+  }, [calendar.today, tasks]);
   const planningView = view === "timeline" || view === "calendar";
   const sourcePeriod = calendar.planningPeriod;
   const period = sourcePeriod?.startDate && sourcePeriod.endDate
@@ -86,28 +119,78 @@ export function PlanningRail({
   const todayPosition = period
     ? `${Math.max(0, Math.min(100, todayOffset / periodSpan * 100))}%`
     : "0%";
-  const positionLabel = period
+  const positionLine = period
     ? calendar.today < period.startDate
-      ? `Starts in ${Math.abs(todayOffset)} days`
+      ? `Starts in ${Math.abs(todayOffset)} day${Math.abs(todayOffset) === 1 ? "" : "s"}`
       : calendar.today > period.endDate
-        ? `Ended ${differenceInDays(period.endDate, calendar.today)} days ago`
-        : `Day ${todayOffset + 1} of ${periodSpan + 1}`
+        ? `Ended ${differenceInDays(period.endDate, calendar.today)} day${differenceInDays(period.endDate, calendar.today) === 1 ? "" : "s"} ago`
+        : `Day ${todayOffset + 1} of ${periodSpan + 1} · ${periodSpan - todayOffset} day${periodSpan - todayOffset === 1 ? "" : "s"} left`
     : null;
+
+  const rememberUndo = (ids: string[], label: string) => {
+    setUndo({ ids, label });
+  };
+
+  const scheduleOne = (task: LabTask, date: CalendarDate, label: string) => {
+    store.scheduleOn(task.id, date);
+    rememberUndo([task.id], `Scheduled “${task.title.length > 32 ? `${task.title.slice(0, 32)}…` : task.title}” for ${label}`);
+    setSelectedIds((current) => {
+      if (!current.has(task.id)) return current;
+      const next = new Set(current);
+      next.delete(task.id);
+      return next;
+    });
+  };
+
+  const scheduleSelected = (date: CalendarDate, label: string) => {
+    const ids = unscheduled.filter((task) => selectedIds.has(task.id)).map((task) => task.id);
+    if (ids.length === 0) return;
+    ids.forEach((id) => store.scheduleOn(id, date));
+    rememberUndo(ids, `Scheduled ${ids.length} task${ids.length === 1 ? "" : "s"} for ${label}`);
+    setSelectedIds(new Set());
+  };
+
+  const undoScheduling = () => {
+    if (!undo) return;
+    undo.ids.forEach((id) => store.unscheduleTask(id));
+    setUndo(null);
+  };
+
+  /** The quick presets every Schedule menu offers. */
+  const presetItems = (apply: (date: CalendarDate, label: string) => void, onPick: () => void): ActionItem[] => {
+    const today = calendar.today as CalendarDate;
+    const items: Array<{ id: string; date: CalendarDate; label: string }> = [
+      { id: "today", date: today, label: "today" },
+      { id: "tomorrow", date: addDays(today, 1), label: "tomorrow" },
+    ];
+    const weekEnd = endOfWeek(today);
+    if (weekEnd !== today && weekEnd !== addDays(today, 1)) {
+      items.push({ id: "this-week", date: weekEnd, label: "this week" });
+    }
+    items.push({ id: "next-week", date: addDays(today, 7), label: "next week" });
+    return [
+      ...items.map(({ id, date, label }) => ({
+        id,
+        label: `${label.charAt(0).toUpperCase()}${label.slice(1)} · ${formatDate(date)}`,
+        group: "workflow" as ActionItem["group"],
+        onSelect: () => apply(date, label),
+      })),
+      {
+        id: "pick",
+        label: "Pick a date…",
+        group: "organisation" as ActionItem["group"],
+        onSelect: onPick,
+      },
+    ];
+  };
+
+  const selectedCount = unscheduled.filter((task) => selectedIds.has(task.id)).length;
+  const allSelected = unscheduled.length > 0 && selectedCount === unscheduled.length;
 
   const unscheduledKeyDown = (event: KeyboardEvent<HTMLElement>, task: LabTask) => {
     if (event.shiftKey && event.key === "F10") {
       event.preventDefault();
       menu.openMenuAt(task.id, event.currentTarget);
-      return;
-    }
-    if (event.key === " ") {
-      // Only when the row itself is focused — the same guard the views
-      // use. Without it, Space inside the row's date input toggled
-      // selection instead of typing.
-      if (event.target !== event.currentTarget) return;
-      event.preventDefault();
-      event.stopPropagation();
-      store.toggleSelected(task.id, orderedIds, event.shiftKey);
     }
   };
 
@@ -118,19 +201,9 @@ export function PlanningRail({
     store.setDrag({ kind: "schedule", taskId: task.id, source: "timeline-tray", targetDate: null });
   };
 
-  if (collapsed) {
-    return (
-      <motion.aside
-        animate={{ opacity: 1 }}
-        aria-label="Collapsed planning rail"
-        className={`${styles.planningRail} ${styles.planningRailCollapsed}`}
-        initial={{ opacity: 0 }}
-        transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
-      >
-        <button aria-expanded="false" aria-label={`Expand the planning rail. ${unscheduled.length} unscheduled task${unscheduled.length === 1 ? "" : "s"}.`} className={styles.planningRailExpand} onClick={onToggle} title={`${unscheduled.length} unscheduled`} type="button"><Icon name="arrow-left" size={14} /><span>Planning</span><strong>{unscheduled.length}</strong></button>
-      </motion.aside>
-    );
-  }
+  // Closed means gone: the drawer's trigger lives on the project band, so
+  // no collapsed rail claims board width.
+  if (collapsed) return null;
 
   return (
     <>
@@ -142,36 +215,42 @@ export function PlanningRail({
       />
     ) : null}
     <motion.aside
-      animate={{ opacity: 1 }}
-      aria-label="Planning rail"
+      animate={{ opacity: 1, transform: "translateX(0px)" }}
+      aria-label="Planning"
       aria-modal={asOverlay ? true : undefined}
       className={styles.planningRail}
       id="c-planning-rail"
-      initial={{ opacity: 0 }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateX(16px)" }}
       ref={panelRef}
       role={asOverlay ? "dialog" : undefined}
       tabIndex={asOverlay ? -1 : undefined}
-      transition={{ duration: reduceMotion ? 0.1 : 0.16 }}
+      transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: [0.23, 1, 0.32, 1] }}
     >
+      {/* Scope, stated: this drawer plans the active project. The planning
+          period it sits inside is the supporting line, dates included. */}
       <header className={styles.planningRailHeader}>
-        <div><span>Planning period</span><strong>{sourcePeriod?.name ?? "Dates not set"}</strong></div>
-        <button aria-expanded="true" aria-label="Collapse planning rail" onClick={onToggle} type="button"><Icon name="arrow-right" size={15} /></button>
+        <div>
+          <span>Planning</span>
+          <strong>{workspaceName}</strong>
+          <small>
+            {period
+              ? `${sourcePeriod?.name ?? "Planning period"} · ${formatDate(period.startDate)} – ${formatDate(period.endDate)}`
+              : sourcePeriod?.name ?? "No planning period dates"}
+          </small>
+        </div>
+        <button aria-label="Close planning" onClick={onToggle} type="button"><Icon name="close" size={15} /></button>
       </header>
 
       {period ? (
         <section className={styles.currentPosition}>
-          <header><span>Current position</span><strong>{formatDate(calendar.today, { weekday: "short", day: "numeric", month: "short" })}</strong></header>
-          <div aria-label={positionLabel ?? undefined} className={styles.periodTrack}>
+          <div aria-label={positionLine ?? undefined} className={styles.periodTrack}>
             <span className={styles.periodStart}>{formatDate(period.startDate)}</span><span className={styles.periodEnd}>{formatDate(period.endDate)}</span><i aria-hidden="true" style={{ left: todayPosition }} /><b aria-hidden="true" style={{ left: todayPosition }} />
           </div>
-          <p className={styles.periodPositionLabel}>{positionLabel}</p>
-          <div className={styles.periodStats}><span><strong>{completed}</strong> done</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unscheduled</span></div>
+          <p className={styles.periodPositionLabel}>{positionLine}</p>
         </section>
       ) : (
         <section className={styles.currentPosition} data-empty="true">
-          <header><span>Calendar position</span><strong>Not available</strong></header>
-          <p>Add a start and end date to the project planning period to see time position. Tasks keep only dates you choose.</p>
-          <div className={styles.periodStats}><span><strong>{completed}</strong> done</span><span><strong>{tasks.length - completed}</strong> open</span><span><strong>{unscheduled.length}</strong> unscheduled</span></div>
+          <p>Add a start and end date to the planning period to see where today falls. Tasks keep only dates you choose.</p>
         </section>
       )}
 
@@ -188,21 +267,67 @@ export function PlanningRail({
         </section>
       ) : null}
 
-      <section className={styles.unscheduledSection}>
-        <header>
-          <button aria-expanded={unscheduledOpen} onClick={() => setUnscheduledOpen((value) => !value)} type="button"><Icon name={unscheduledOpen ? "chevron-down" : "chevron-right"} size={14} /><span>Unscheduled work</span><strong>{unscheduled.length}</strong></button>
-          {planningView ? <small>Drag to the canvas or choose a date</small> : <small>Plan without leaving this view</small>}
-        </header>
-        <AnimatePresence initial={false}>
-        {unscheduledOpen ? (
+      {/* The drawer's two jobs, side by side — neither buried under the
+          other. Counts come from the same selectors as the band badge. */}
+      <div aria-label="Planning sections" className={styles.railTabs} role="tablist">
+        <button
+          aria-controls="planning-tab-unscheduled"
+          aria-selected={tab === "unscheduled"}
+          id="planning-tab-button-unscheduled"
+          onClick={() => setTab("unscheduled")}
+          role="tab"
+          type="button"
+        >
+          Unscheduled{unscheduled.length > 0 ? <em>{unscheduled.length}</em> : null}
+        </button>
+        <button
+          aria-controls="planning-tab-milestones"
+          aria-selected={tab === "milestones"}
+          id="planning-tab-button-milestones"
+          onClick={() => setTab("milestones")}
+          role="tab"
+          type="button"
+        >
+          Milestones{milestones.all.length > 0 ? <em>{milestones.all.length}</em> : null}
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {undo ? (
           <motion.div
-            animate={{ opacity: 1, transform: "translateY(0)" }}
-            className={styles.unscheduledDisclosure}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
-            transition={{ duration: reduceMotion ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+            animate={{ opacity: 1 }}
+            className={styles.railUndo}
+            exit={{ opacity: 0 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+            role="status"
+            transition={{ duration: 0.14 }}
           >
-            {unscheduled.length > 0 ? (
+            <span>{undo.label}</span>
+            <button onClick={undoScheduling} type="button">Undo</button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {tab === "unscheduled" ? (
+        <section
+          aria-labelledby="planning-tab-button-unscheduled"
+          className={styles.unscheduledSection}
+          id="planning-tab-unscheduled"
+          role="tabpanel"
+        >
+          {unscheduled.length > 0 ? (
+            <>
+              <header>
+                <small>Give each task a day, or drag it onto the Schedule or Calendar view.</small>
+                {unscheduled.length > 1 && !store.readOnly ? (
+                  <button
+                    onClick={() => setSelectedIds(allSelected ? new Set() : new Set(unscheduled.map((task) => task.id)))}
+                    type="button"
+                  >
+                    {allSelected ? "Clear selection" : "Select all"}
+                  </button>
+                ) : null}
+              </header>
               <ul className={styles.unscheduledList}>
                 {unscheduled.map((task) => (
                   <li
@@ -215,25 +340,106 @@ export function PlanningRail({
                     onDragStart={(event) => beginUnscheduledDrag(event, task)}
                     onKeyDown={(event) => unscheduledKeyDown(event, task)}
                   >
-                    <div>
-                      <TaskSelection orderedIds={orderedIds} task={task} />
+                    <div className={styles.unscheduledMain}>
+                      {store.readOnly ? null : (
+                        <input
+                          aria-label={`Select ${task.title} for scheduling`}
+                          checked={selectedIds.has(task.id)}
+                          className={styles.railSelect}
+                          onChange={() => setSelectedIds((current) => {
+                            const next = new Set(current);
+                            if (next.has(task.id)) next.delete(task.id);
+                            else next.add(task.id);
+                            return next;
+                          })}
+                          type="checkbox"
+                        />
+                      )}
                       <TaskOpenButton data-unscheduled-task-id={task.id} task={task}>{task.title}</TaskOpenButton>
+                      {store.readOnly ? null : (
+                        <ActionsDropdown
+                          items={presetItems(
+                            (date, label) => scheduleOne(task, date, label),
+                            () => setPickingId((current) => (current === task.id ? null : task.id)),
+                          )}
+                          trigger={<>Schedule<Icon name="chevron-down" size={12} /></>}
+                          triggerClassName={styles.railScheduleTrigger}
+                          triggerLabel={`Schedule ${task.title}`}
+                        />
+                      )}
                     </div>
-                    <label><span>Schedule</span><input aria-label={`Schedule ${task.title}`} disabled={store.readOnly} onChange={(event) => { if (event.target.value) store.scheduleOn(task.id, event.target.value as CalendarDate); }} type="date" /></label>
+                    {pickingId === task.id ? (
+                      <label className={styles.railDatePick}>
+                        <span>Date</span>
+                        <input
+                          aria-label={`Date for ${task.title}`}
+                          autoFocus
+                          disabled={store.readOnly}
+                          onChange={(event) => {
+                            if (!event.target.value) return;
+                            setPickingId(null);
+                            scheduleOne(task, event.target.value as CalendarDate, formatDate(event.target.value as CalendarDate));
+                          }}
+                          onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); setPickingId(null); } }}
+                          type="date"
+                        />
+                      </label>
+                    ) : null}
                   </li>
                 ))}
               </ul>
-            ) : <p className={styles.railEmpty}><Icon name="check" size={16} /><strong>Everything has a date</strong><span>No schedule has been inferred.</span></p>}
-            {store.readOnly ? null : <button className={styles.addUnscheduled} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>}
-          </motion.div>
-        ) : null}
-        </AnimatePresence>
-      </section>
+              {store.readOnly ? null : <button className={styles.addUnscheduled} onClick={() => store.addTask("todo")} type="button"><Icon name="add" size={13} />Add unscheduled task</button>}
+            </>
+          ) : (
+            <p className={styles.railEmpty}><Icon name="check" size={16} /><strong>Everything has a date</strong><span>New tasks without one will appear here.</span></p>
+          )}
+        </section>
+      ) : (
+        <section
+          aria-labelledby="planning-tab-button-milestones"
+          className={styles.railMilestones}
+          id="planning-tab-milestones"
+          role="tabpanel"
+        >
+          {milestones.all.length > 0 ? (
+            <ol>
+              {milestones.all.map((task) => task.schedule.kind === "milestone" ? (
+                <li data-past={task.schedule.on < calendar.today || undefined} data-task-id={task.id} key={task.id}>
+                  <time dateTime={task.schedule.on}>{formatDate(task.schedule.on)}</time>
+                  <TaskOpenButton task={task} />
+                </li>
+              ) : null)}
+            </ol>
+          ) : (
+            <p>No milestones yet. Mark any task as a milestone from its card menu.</p>
+          )}
+          {milestones.upcoming[0] && milestones.upcoming[0].schedule.kind === "milestone" ? (
+            <small title={`${milestones.upcoming[0].title} · ${formatDateLong(milestones.upcoming[0].schedule.on)}`}>
+              Next: {formatDateLong(milestones.upcoming[0].schedule.on)}
+            </small>
+          ) : null}
+        </section>
+      )}
 
-      <section className={styles.nextMilestone}>
-        <span>Next milestone</span>
-        {milestones[0] && milestones[0].schedule.kind === "milestone" ? <TaskOpenButton task={milestones[0]}><strong>{milestones[0].title}</strong><small>{formatDateLong(milestones[0].schedule.on)}</small></TaskOpenButton> : <p>No upcoming milestone in this filter.</p>}
-      </section>
+      {selectedCount > 0 && tab === "unscheduled" ? (
+        <div className={styles.railBulkBar}>
+          <strong>{selectedCount} selected</strong>
+          <ActionsDropdown
+            items={presetItems(
+              (date, label) => scheduleSelected(date, label),
+              () => {
+                const first = unscheduled.find((task) => selectedIds.has(task.id));
+                if (first) setPickingId(first.id);
+              },
+            )}
+            trigger={<>Schedule<Icon name="chevron-down" size={12} /></>}
+            triggerClassName={styles.railBulkSchedule}
+            triggerLabel={`Schedule ${selectedCount} selected tasks`}
+          />
+          <button onClick={() => setSelectedIds(new Set())} type="button">Clear</button>
+        </div>
+      ) : null}
+
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </motion.aside>
     </>

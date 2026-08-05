@@ -4,6 +4,112 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-05 · T·132 · ships · the board becomes a white field, and the frame gets out of the way
+
+**The work now starts a third of the way up the screen instead of a quarter
+of the way down, and nothing on the board is louder than a task.** The
+full-column pastel washes are gone — the field is paper, and a column's
+colour lives in its pip and its name. The old three-panel header dashboard
+(progress readout, milestones module, money line) collapses to one 54px
+context band: name, description, a progress bar with the plain-English
+count, red only when something is genuinely overdue, and the project-level
+acts — Share, Planning, print — at project level. Milestones and the money
+coverage line move into the Planning drawer, which replaces the rotated
+Planning rail entirely: closed means gone, and the trigger on the band
+carries the unscheduled count. The rotated Add-column rail becomes a plain
+end-cap tile after the last lane. The permanent keyboard-legend strip —
+which printed a ⌘ glyph at Windows users — becomes a reference dialog on
+"?" and a quiet toolbar button.
+
+The cards stop lying. A finished task can no longer read "2 days overdue":
+done work states "Was due 14 Jul" in neutral ink, and open milestones speak
+plainly — "Milestone due tomorrow", "Milestone overdue by 3 days" — instead
+of the ambiguous "Milestone · 3 days ago". Queued loses the red it had
+carried since the lane was labelled "Blocked"; red is reserved for genuinely
+late or blocked work, and the List view's group bands now read from the same
+column config as the board, so one colour means one thing in every view.
+Completion is a circle that fills green and draws its check in a single
+140ms beat, honouring reduced motion.
+
+The same cycle's second pass finished the argument. "Project" left the
+shell navigation entirely — rail and mobile tabs both, with the contract
+test pinning the four destinations — and the wordmark became one object,
+`tasks.`, with the brand's indigo full stop. Scope stopped being implied:
+the band reads `Wedding season / The Orchard, events`, the Planning drawer
+names the project it plans with the period dates beside it, and the
+sidebar's bare `10 Oct` became `Ends 10 Oct`. Done got one canonical
+green — `#1b873f`, bright enough to read as finished, dark enough to hold
+AA — shared by the column header, the dot, the completion circle and its
+drawn check, while the dead forest-green palette from cycle 2 was deleted
+outright. Column headers took a 4.5% wash of their own colour so the five
+states scan as bands over pure-white bodies. And Planning became a
+workflow: one selector decides what "needs a date" (finished work never
+does), each row schedules from a menu — today, tomorrow, this week, next
+week, a picker — selection gets a bulk bar, every act leaves a
+seven-second undo, and milestones sit in their own tab instead of under
+the list. The drawer docks beside the board on a wide canvas and floats
+under the band as a shadowed inspector on a narrower one.
+
+The finishing pass made the remaining claims true on screen. The last
+duplicate brand mark is gone — the wordmark's indigo full stop IS the dot
+now — and the header reads `Wedding season / The Orchard, events` with
+`+ Add description` as a real action and progress as one sentence:
+`20% complete · 2 of 10 done · 1 overdue`. Status tints are perceptually
+tuned per hue (amber calmed, green and the neutral slates lifted) so five
+bands read as one system. Cards collapsed to their content: the title
+shares its line with the completion circle, priority is a word in the
+meta row that finished work drops, and when every card would wear the
+identical avatar the board hides the badge because it differentiates
+nothing. Planning at a wide canvas is a true split view — 420px docked,
+the board resizing beside it — and the Costs line left the drawer
+entirely (per-task costing stays in the task panel). Add status is a
+ghost end-cap on white, the Schedule tab wears a schedule icon, and a
+new source contract pins all of it: one Done token, header-only colour,
+money-free Planning, the retired dot.
+
+The shell pass finished the architecture. The black rail is a product
+switcher now — Notes, Tasks, Timeline, More — with Home rehoused as the
+first destination of the local Tasks panel, which finally says what it
+is: "Tasks", then Home, Inbox, My work, and a sentence-case Projects
+section. Collapsing that panel returns every pixel to the board — the
+rotated PROJECTS strip is gone — and a compact trigger on the context
+band reopens it, as a docked panel where it fits and an accessible
+drawer where it does not. The resident search field left the top bar:
+search is a quiet trigger beside Add task that opens the palette, still
+Ctrl K here and ⌘K on a Mac. The parent crumb survives every width,
+progress reads once — "2 of 10 complete" — an empty status compresses to
+176px so Done never leaves the screen, and the two drawers observe a
+truce on phones. The suite-navigation contract now pins all of it.
+
+Edges, honestly: the collapsed lane rail keeps its vertical name (44px
+against 276px is the right trade, and it is real, labelled text); the
+sidebar's drawer-mode strip keeps its vertical label for the same reason;
+print and share surfaces still render the four canonical lanes only, which
+predates this cycle; and the demo seed's finished tasks carry no
+completion dates, so the `Completed 16 Jul` receipts show only on real
+completions. Every behaviour behind the paint — column management, saved
+views, filters, the keyboard model, optimistic sync — is untouched and
+verified: the full test gate, ds-check, the first-contact language gate,
+the production build and axe passes with the drawer closed and open are
+green.
+
+**The board also leaves the client lighter than it found it.** The four
+passes added 2.7 KB of client JS, which put the bundle over its ratchet;
+rather than raise a ceiling, the cycle deleted what nobody reads. The
+frozen 48-task design-lab dataset moved out of `fixtures.ts` — the module
+the running board imports for its people and label registries — into
+`fixtures-dataset.ts`, which only tests import; the lab's own chrome (its
+ribbon, dataset and state selectors, fake suite rail, account chip, its
+private task inspector and command palette) was deleted along with the
+route it belonged to. Total client JS now measures **932.5 KB gzip**,
+2.7 KB below the pre-redesign baseline and 3.5 KB under the ceiling.
+Three text pairs that a review pass measured below the 4.5:1 AA floor —
+completed-card metadata at 4.37:1, the Add task shortcut hint at 4.40:1
+and the breadcrumb separator at 1.48:1 — were repaired at the same time;
+axe had marked all three "incomplete" rather than failing them, so
+automation alone would never have surfaced them. One test that had never
+been wired into `pnpm test` (`fixtures.test.ts`) is now in the gate.
+
 ## 2026-08-05 · T·131 · ships · the three pillars get their instruments
 
 **Each priority in the north star now has something that can actually be run

@@ -12,6 +12,10 @@
   --a-context-height: 82px;
   --a-viewbar-height: 46px;
   background: var(--x-task-canvas);
+  /* The interior is the size container the planning drawer queries: on a
+     wide canvas the drawer docks in flow, on a narrower one it overlays
+     the right edge instead of crushing the lanes. */
+  container-type: inline-size;
   display: flex;
   height: 100%;
   min-height: 0;
@@ -63,39 +67,75 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 10px 0 12px;
+  padding: 0 10px 0 14px;
   scrollbar-width: thin;
 }
 
-.tabsScroll { flex: 0 0 auto; }
-.functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 4px; margin-left: auto; }
+/* The four views read as ONE control: a quiet capsule track whose active
+   segment is a raised paper chip. The tabs themselves are real links
+   (lab-chrome.tsx) — this skins them without touching their contract. */
+.tabsScroll { background: var(--x-task-hover); border-radius: 8px; flex: 0 0 auto; padding: 2px; }
+.tabsScroll nav { gap: 1px; }
+.tabsScroll nav a {
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  font-size: 12.5px;
+  font-weight: 500;
+  min-height: 28px;
+  padding: 0 11px;
+}
+.tabsScroll nav a:hover { background: color-mix(in srgb, var(--x-task-raised) 55%, transparent); color: var(--x-task-text); }
+.tabsScroll nav a[aria-current="page"] {
+  background: var(--x-task-raised);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent), 0 0 0 1px var(--x-task-border);
+  color: var(--x-task-text);
+  font-weight: 600;
+}
+.tabsScroll nav a[aria-current="page"] svg { color: var(--x-task-accent); }
+
+/* The working controls are ghosts: no boxes at rest, presence on touch. */
+.functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
 .functionalTools > button,
 .densityControl {
   align-items: center;
-  background: var(--x-task-raised);
-  border: 1px solid var(--x-task-border);
-  border-radius: 5px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
   color: var(--x-task-text-secondary);
   cursor: pointer;
   display: flex;
   font: inherit;
   font-size: 12px;
-  gap: 5px;
+  font-weight: 500;
+  gap: 6px;
   height: 30px;
-  padding: 0 7px;
+  padding: 0 9px;
+  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }
 
 .functionalTools > button:hover,
-.densityControl:hover { border-color: var(--x-task-border-strong); color: var(--x-task-text); }
+.densityControl:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .functionalTools > button[data-active],
-.functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); color: var(--x-task-text); }
+.functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-task-accent); }
 /* One accent CTA per bar: creating work is the bar's primary act, so
    Add task alone wears the brand — everything beside it stays quiet. */
-.functionalTools > button[data-primary] { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
-.functionalTools > button[data-primary]:hover { background: var(--x-task-focus); border-color: var(--x-task-focus); color: var(--x-task-raised); }
-.functionalTools > button:disabled { background: var(--x-task-surface); color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
+.functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-task-raised); font-weight: 620; }
+.functionalTools > button[data-primary]:hover { background: var(--x-task-focus); color: var(--x-task-raised); }
+.functionalTools > button:disabled { background: transparent; color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
 .functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 3px; text-transform: uppercase; }
+.functionalTools > button > em {
+  background: color-mix(in srgb, var(--x-task-accent) 14%, transparent);
+  border-radius: 999px;
+  color: var(--x-task-accent);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 10.5px;
+  font-style: normal;
+  line-height: 1;
+  min-width: 17px;
+  padding: 3px 5px;
+  text-align: center;
+}
 .functionalTools > button[data-saved] { color: var(--x-task-success); }
 .densityControl select { appearance: none; background: transparent; border: 0; color: inherit; cursor: pointer; font: inherit; outline: 0; }
 
@@ -176,13 +216,11 @@
 .statusPip[data-status="review"] { background: var(--x-task-review); }
 .statusPip[data-status="waiting"] { background: var(--x-task-waiting); }
 .statusPip[data-status="done"] { background: var(--x-task-success); }
-/* Inside a toned lane the pip is the tone at full strength — the one place
-   on the board the colour is undiluted. The ink-mixed .statusPip values
-   above stay for every other surface that reuses this class. Scoping to
-   `.boardLane[data-lane-tone]` (0,2,1) outranks `:not([data-status])`
-   (0,2,0), so an untoned backlog lane keeps its outlined pip. */
-.boardLane[data-lane-tone] .statusPip,
-.boardLane[data-lane-tone] .laneRail .statusPip { background: var(--lane-tone); border: 0; }
+/* Inside a toned lane or group the pip is the configured colour at full
+   strength (`.statusPip[data-accent]` below, driven by `--lane-accent`) —
+   the one place on the board the colour is undiluted. The ink-mixed
+   [data-status] values above stay for the other surfaces reusing this
+   class (peek, palette, calendar). */
 
 /* Shared option primitives */
 .inlineEdit { display: flex; flex: 1; flex-direction: column; min-width: 0; position: relative; }
@@ -226,7 +264,6 @@
 .surfaceEmpty span { font-size: 11px; }
 .surfaceEmpty button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; margin-top: 5px; min-height: 29px; padding: 0 8px; }
 .surfaceEmpty button:disabled { opacity: .5; }
-.keyboardLegend { align-items: center; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex: 0 0 30px; font-size: 11px; gap: 6px; min-width: max-content; padding: 0 12px; }
 
 /* ══ Board ═══════════════════════════════════════════════════════════════
    Board scale (2026-07-28). The lane was set 3–5px under the suite's app
@@ -245,95 +282,91 @@
    surfaces, which is how every board people already know behaves. */
 /* The lanes scroll; the add-column rail stays pinned beside them. */
 .boardTrack { display: flex; flex: 1; min-height: 0; min-width: 0; }
-.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.boardScroll { align-items: stretch; display: flex; flex: 1; min-height: 0; min-width: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline-end: 8px; scrollbar-width: thin; }
+
+/* An empty status asks for less: it compresses to a readable header plus
+   its add row, and takes its full width back the moment a drag is live
+   (it is still a drop target) or work lands in it. */
+.boardLane[data-empty] { flex: 0 1 176px; min-width: 176px; }
+.boardSurface[data-drag-active] .boardLane[data-empty],
+.boardLane[data-empty][data-drop-target] { flex: 1 0 276px; min-width: 276px; }
 
 /* ── column colour ─────────────────────────────────────────────────────
-   Ported from the Tasks hero (studio · marketing/heroes/tasks/showcase/
-   board-hero.module.css), which is the operator-approved treatment:
-   blocked red, in progress blue, reviewing amber, done green, and the
-   backlog lane stays uncoloured. Tones resolve to the design system's
-   status ramp, never raw hex, so the board cannot drift from the suite.
-   The tone is declared on the lane and spent in exactly four places: a 2px
-   rule along the top of the header, a 6% wash behind the header, a
-   gradient that releases by 220px, and the status pip. Tinting a whole
-   column flat would fight the cards, which are the thing to read. */
-.boardLane[data-lane-tone="doing"]  { --lane-tone: var(--accent); }
-.boardLane[data-lane-tone="review"]  { --lane-tone: var(--status-flight); }
-.boardLane[data-lane-tone="waiting"] { --lane-tone: var(--status-blocked); }
-.boardLane[data-lane-tone="done"]    { --lane-tone: var(--status-done); }
-/* `queued` is deliberately absent: a backlog lane carries no tone. */
-
-/* Lanes are paper, not grey. The canvas step behind the columns was greying
-   out the whole board and muting the tone wash sitting on top of it (the
-   hero made the same call, 2026-07-27). Structure comes from the dividing
-   rules, the coloured headers and the cards' own borders. */
+   Precision-white board (2026-08-05): the lane surface is paper, full
+   stop. A column's configured colour is spent in exactly three places —
+   the status pip, a 2px rule along the top of its header, and the
+   near/over-limit count states. The old 5% full-column wash fought the
+   cards, which are the thing to read. Tones still resolve to system
+   tokens via the configured `--lane-accent`, never raw hex. */
 .boardLane {
   align-self: stretch;
   background: var(--x-task-raised);
-  border-right: 1px solid var(--x-task-border);
+  border-right: 1px solid var(--hairline-soft);
   display: flex;
-  flex: 1 0 272px;
+  flex: 1 0 276px;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  min-width: 272px;
+  min-width: 276px;
   overflow: hidden;
   position: relative;
-  transition: flex-basis var(--motion-base) var(--spring-glide), min-width var(--motion-base) var(--spring-glide);
-}
-/* Done keeps a whisper of recession, from paper rather than from grey. */
-.boardLane[data-done] { background: color-mix(in srgb, var(--x-task-raised) 94%, var(--x-task-surface)); }
-
-/* The column wash. Starts at 5% under the header and is gone by 220px, so
-   the column has a colour identity where the eye lands first and the cards
-   further down sit on near-paper. Explicit z-index because this is the
-   lane's last child: without it the wash would paint over the cards. */
-.boardLane::after {
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--lane-tone, transparent) 5%, transparent), transparent);
-  content: "";
-  height: 220px;
-  inset: 0 0 auto 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 0;
+  transition: flex-basis var(--motion-base) var(--spring-glide), min-width var(--motion-base) var(--spring-glide), background var(--motion-fast) var(--ease-out);
 }
 
-/* Two rows by design: name + actions on the first, the editable
-   description on its own full-width second row. The description was
-   authored as subtext ("Editable column subtext", below) — in a single
-   nowrap row its width:100% crushed the h2 name to a sliver, which put
-   helper text above the column's identity. */
+/* Fixed-width mode (View menu): lanes hold their base width and the
+   track scrolls, instead of sharing the spare board width. */
+.boardSurface[data-fixed-columns] .boardLane { flex-grow: 0; }
+
+/* While a card drag is over this lane, the whole lane acknowledges it —
+   a 3% accent wash that exists only for the duration of the gesture. */
+.boardLane[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 3%, var(--x-task-raised)); }
+
+/* One row by default: pip · name · count · quiet actions. An authored
+   description wraps onto its own second line (flex-wrap + flex-basis on
+   the description button).
+
+   The header is the ONE place a column wears its colour as a surface: a
+   4.5% wash over paper and a 14% lower rule, both derived from the
+   configured accent. Neutral columns (Queued, Waiting, custom-neutral)
+   take the same recipe from cool ink, so every header reads as a band
+   and the bodies below stay pure white. */
 .laneHeader {
   align-items: center;
-  background: color-mix(in srgb, var(--lane-tone, transparent) 6%, var(--x-task-surface));
-  border-bottom: 1px solid var(--x-task-border);
+  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised));
+  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised));
   display: flex;
-  /* Two aligned rows, uniform across lanes: name + controls on the first,
-     the editable description wrapping to the second. The old single 42px
-     no-wrap row let the full-width description crush the column NAME to
-     ~2px — headers read as "● 3" with no name at all. */
   flex: 0 0 auto;
   flex-wrap: wrap;
   align-content: center;
-  min-height: 58px;
-  gap: 2px 6px;
+  min-height: 44px;
+  gap: 0 6px;
   justify-content: space-between;
-  padding: 5px 6px;
+  padding: 4px 8px 4px 14px;
   position: relative;
   z-index: 2;
 }
-.laneHeader::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
-.laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 6px; min-width: 0; }
-.laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 650; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A tinted column's name is status ink: the accent mixed toward text ink
+   so every hue — amber included — stays comfortably readable. */
+.boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
+.laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 8px; min-width: 0; }
+.laneHeader h2 { color: var(--x-task-text); font-size: 13px; font-weight: 620; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The count carries the limit with it ("3/6"). The old surface showed the
    lane count and then "WIP 3/6" beside it — the same numerator twice, and
    "WIP" is project-management register the brand refuses. */
-.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .wipCount[data-near] { color: var(--x-task-warning); }
 .wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
 
-.laneActions { align-items: center; display: flex; flex: 0 0 auto; gap: 1px; min-height: 42px; }
+.laneActions { align-items: center; display: flex; flex: 0 0 auto; gap: 1px; min-height: 40px; }
+/* Column actions are quiet until the column is in play: they surface on
+   hover or any keyboard focus inside the header, and are always present
+   on coarse pointers (the media block near the end of this file). The
+   count never hides — it is information, not an action. */
+.laneActions .laneIconButton { opacity: 0; }
+.laneHeader:hover .laneActions .laneIconButton,
+.laneHeader:focus-within .laneActions .laneIconButton,
+.laneActions .laneIconButton[aria-expanded="true"] { opacity: 1; }
 .laneIconButton {
   align-items: center;
   background: transparent;
@@ -352,14 +385,6 @@
 .laneIconButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneIconButton:disabled { cursor: not-allowed; opacity: .4; }
 .laneIconButton:disabled:hover { background: transparent; color: var(--x-task-text-muted); }
-/* One chevron glyph, two directions: pointing left in an open header (the
-   fold is to the left) and right on a closed rail (the lane opens rightward).
-   No transition — the open and closed states are different elements, so
-   there is nothing for the browser to interpolate between. The fold itself
-   is deliberately instant: the lane swaps its whole interior for the rail,
-   and animating the width around a hard content swap reads as a glitch
-   rather than as motion. */
-.laneCollapse svg { transform: rotate(180deg); }
 
 /* The lane's own scroll region. `overscroll-behavior: contain` stops a
    lane that has hit its end from chaining the scroll to the page. */
@@ -367,13 +392,13 @@
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
   list-style: none;
   margin: 0;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 9px 9px 12px;
+  padding: 10px 12px 14px;
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--x-task-text-muted) 30%, transparent) transparent;
@@ -388,15 +413,16 @@
 .laneList:hover::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--x-task-text-muted) 44%, transparent); background-clip: content-box; }
 
 /* ── collapsed lane ────────────────────────────────────────────────────
-   A folded lane keeps its identity: the 2px tone rule, the pip and the
+   A folded lane keeps its identity: the pip, the 2px accent tick and the
    count all survive the fold, so a collapsed column still reads by hue and
-   still tells you how much work is inside it. */
-.boardLane[data-collapsed] { flex: 0 0 46px; min-width: 46px; }
-.boardLane[data-collapsed]::after { display: none; }
+   still tells you how much work is inside it. The vertical name is real,
+   labelled text on a real button — folded columns are an exceptional
+   state, and the rotation keeps them 44px instead of 276px. */
+.boardLane[data-collapsed] { flex: 0 0 44px; min-width: 44px; }
 .laneRail {
   align-items: center;
   animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
-  background: color-mix(in srgb, var(--lane-tone, transparent) 5%, var(--x-task-surface));
+  background: transparent;
   border: 0;
   color: var(--x-task-text-secondary);
   cursor: pointer;
@@ -404,11 +430,11 @@
   flex: 1 1 auto;
   flex-direction: column;
   font: inherit;
-  gap: 11px;
+  gap: 10px;
   height: 100%;
   min-height: 0;
   overflow: hidden;
-  padding: 9px 0 13px;
+  padding: 12px 0 14px;
   position: relative;
   transition: background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 100%;
@@ -419,9 +445,10 @@
   to { opacity: 1; }
 }
 
-.laneRail::before { background: var(--lane-tone, transparent); content: ""; height: 2px; inset: 0 0 auto 0; position: absolute; }
-.laneRail:hover { background: color-mix(in srgb, var(--lane-tone, transparent) 10%, var(--x-task-hover)); color: var(--x-task-text); }
-.railName { font-size: 12px; font-weight: 650; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
+.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); }
+.laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) calc(var(--lane-tint, 5.5%) + 3%), var(--x-task-raised)); color: var(--x-task-text); }
+.boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
+.railName { font-size: 12px; font-weight: 620; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
 .railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
 
 .boardCard {
@@ -430,44 +457,50 @@
      grey behind it, so the hairline carries a step more weight at rest.
      Colour/background transitions double as the completion settle: marking
      a card done fades it to muted rather than snapping. */
-  border: 1px solid color-mix(in srgb, var(--x-task-border-strong) 45%, var(--x-task-border));
-  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--x-task-border-strong) 52%, var(--x-task-border));
+  border-radius: 10px;
   cursor: default;
   padding: 10px 12px 11px;
   position: relative;
   transform-origin: center;
   transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
 }
-.boardCard:hover { border-color: var(--x-task-border-strong); box-shadow: var(--shadow-1); }
+/* Hover is a border step, nothing spatial — the motion contract forbids
+   hover lift, and a calm surface should not twitch under the pointer. */
+.boardCard:hover { border-color: var(--x-task-control-border); }
 .boardCard[data-selected] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); }
-.boardCard[data-active] { border-color: var(--x-task-border-strong); }
+.boardCard[data-active] { border-color: var(--x-task-control-border); }
 .boardCard[data-inspected] {
   border-color: color-mix(in srgb, var(--x-task-accent) 44%, var(--x-task-border-strong));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent), var(--shadow-1);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent);
 }
 .boardCard[data-dragging] {
   box-shadow: var(--shadow-float);
-  opacity: .72;
-  transform: scale(1.01);
+  opacity: .85;
+  transform: scale(1.015);
 }
 .boardCard[data-recently-placed] { animation: task-placement-receipt 280ms var(--ease-out) both; }
 .boardCard[data-recently-updated] { animation: task-update-receipt var(--motion-base) var(--ease-out) both; }
 .boardCard[data-completed] { color: var(--x-task-text-muted); }
-.boardLane[data-done] .boardCard { background: color-mix(in srgb, var(--x-task-raised) 72%, var(--x-task-canvas)); }
-/* Negative right margin only: the checkbox keeps the title's left edge, and
-   the ••• button's own padding is pulled back to the card's right edge. */
-.cardTopline { align-items: center; display: flex; gap: 2px; height: 22px; margin: -2px -5px 0 0; }
-.cardSpacer { flex: 1; }
-.cardTopline > button { height: 24px; width: 24px; }
+/* A finished card recedes as a whole: its chips and people mute with it,
+   so the strikethrough is not fighting full-strength colour below. */
+.boardCard[data-completed] .cardLabels,
+.boardCard[data-completed] .cardMeta { opacity: .78; }
+/* Head row: completion control on the title's first line. A card with
+   only a title is one line tall; the ••• trigger floats over the corner
+   on hover so it never costs a permanent row. */
+.cardHead { align-items: flex-start; display: flex; gap: 9px; min-width: 0; padding-right: 16px; }
+.cardHead > input { margin-top: 2px; }
 
-/* ••• trigger button rendered by ContextActions inside the card topline.
+/* ••• trigger floated over the card's top-right corner by ContextActions.
    Quiet at rest, present on hover or keyboard focus — the same actions are
-   always reachable by right-click, so nothing is hidden behind the fade. */
+   always reachable by right-click, so nothing is hidden behind the fade.
+   It paints on paper so it stays legible over a wrapped title line. */
 .cardMenuTrigger {
   align-items: center;
-  background: transparent;
+  background: var(--x-task-raised);
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--x-task-text-muted);
   cursor: pointer;
   display: inline-flex;
@@ -475,40 +508,18 @@
   justify-content: center;
   opacity: 0;
   padding: 0;
+  position: absolute;
+  right: 5px;
+  top: 5px;
   transition: opacity var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 24px;
+  z-index: 2;
 }
 .boardCard:hover .cardMenuTrigger,
 .boardCard:focus-within .cardMenuTrigger,
 .cardMenuTrigger:focus-visible,
 .cardMenuTrigger[data-state="open"] { opacity: 1; }
 
-/* Milestone toggle: same quiet-until-hover register as the ••• trigger,
-   except an active milestone keeps its filled diamond on show — it is the
-   card's badge, not just an action. */
-.cardMilestone {
-  align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  color: var(--x-task-text-muted);
-  cursor: pointer;
-  display: inline-flex;
-  height: 24px;
-  justify-content: center;
-  opacity: 0;
-  padding: 0;
-  transition: opacity var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
-  width: 24px;
-}
-.boardCard:hover .cardMilestone,
-.boardCard:focus-within .cardMilestone,
-.cardMilestone:focus-visible,
-.cardMilestone[data-active] { opacity: 1; }
-.cardMilestone:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.cardMilestone[data-active] { color: var(--x-task-milestone); }
-.cardMilestone[data-active] svg { fill: currentColor; }
-.cardMilestone:disabled { cursor: not-allowed; }
 .cardMenuTrigger:hover,
 .cardMenuTrigger:focus-visible,
 .cardMenuTrigger[data-state="open"] {
@@ -521,13 +532,19 @@
 /* Title sizes to its own lines. The old 30px floor aligned single- and
    two-line cards across lanes, but the lanes scroll independently now, so
    that alignment never held and the floor only bought dead space. */
-.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; font: inherit; font-size: 13px; font-weight: 580; letter-spacing: -.005em; line-height: 1.4; margin: 4px 0 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; width: 100%; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.boardCard[data-completed] .boardTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
+.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: 13.5px; font-weight: 570; letter-spacing: -.008em; line-height: 1.45; margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+/* Done stays readable: the check, the muted ink and the "Completed" fact
+   carry the state — striking the title out erased work people are proud
+   of. The Done column already says where the card lives. */
+.boardCard[data-completed] .boardTitle { color: var(--x-task-text-secondary); }
 .boardTitle { transition: color var(--motion-base) var(--ease-out); }
-.boardTitleEdit { margin: 4px 0 0; }
+.boardTitleEdit { flex: 1; margin: 0; }
 .cardLabels { margin-top: 8px; overflow: hidden; }
-.cardSchedule { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
-.boardCard > footer { align-items: center; border-top: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; justify-content: space-between; margin-top: 9px; padding-top: 9px; }
+/* One meta row, one rhythm: date sentence left, quiet facts right. */
+.cardMeta { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
+.cardMetaLeft { align-items: center; display: inline-flex; flex: 1 1 auto; gap: 9px; min-width: 0; }
+.cardMetaRight { align-items: center; display: inline-flex; flex: 0 0 auto; gap: 8px; }
+.cardEstimate { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .boardInsertion { animation: board-insertion-in 140ms var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
 .boardInsertion::before { background: var(--x-task-raised); border: 2px solid var(--x-task-accent); border-radius: 50%; content: ""; height: 7px; left: -3px; position: absolute; top: -3px; width: 7px; }
 @keyframes board-insertion-in {
@@ -544,9 +561,20 @@
   45% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 9%, transparent); }
   100% { box-shadow: none; }
 }
-.emptyLane { align-items: center; border: 1px dashed var(--x-task-border-strong); border-radius: 8px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; justify-content: center; min-height: 104px; padding: 18px; text-align: center; }
-.emptyLane span { color: var(--x-task-text-secondary); font-size: 12px; font-weight: 620; }
-.emptyLane small { font-size: 11px; }
+/* An ordinary empty lane is one quiet line — the add row directly below
+   it is the affordance. While a card drag is live the same element turns
+   into an explicit drop slot, because that is the moment the space means
+   something. */
+.emptyLane { align-items: flex-start; border: 1px dashed transparent; border-radius: 10px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 3px; justify-content: center; min-height: 40px; padding: 9px 12px; text-align: left; transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), min-height var(--motion-fast) var(--ease-out); }
+.emptyLane span { font-size: 12px; }
+.emptyLane small { display: none; font-size: 11px; }
+.boardLane[data-drop-target] .emptyLane,
+.boardSurface[data-drag-active] .emptyLane {
+  border-color: color-mix(in srgb, var(--x-task-accent) 45%, transparent);
+  min-height: 72px;
+}
+.boardLane[data-drop-target] .emptyLane { background: color-mix(in srgb, var(--x-task-accent) 4%, transparent); color: var(--x-task-accent); }
+.boardSurface[data-drag-active] .emptyLane small { display: block; }
 
 /* The add affordance sits directly under the last card, inside the scroll
    region, so a new card appears where the click was. It used to be pinned
@@ -557,20 +585,21 @@
   align-items: center;
   background: transparent;
   border: 1px dashed transparent;
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--x-task-text-muted);
   cursor: pointer;
   display: flex;
   font: inherit;
-  font-size: 12px;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 12px;
   text-align: left;
   transition: background var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 100%;
 }
-.laneAdd:hover { background: var(--x-task-hover); border-color: var(--x-task-border-strong); color: var(--x-task-text); }
+.laneAdd:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneAdd:disabled { cursor: not-allowed; opacity: .45; }
 .laneAdd:disabled:hover { background: transparent; border-color: transparent; color: var(--x-task-text-muted); }
 
@@ -579,7 +608,7 @@
 .laneComposer {
   background: var(--x-task-raised);
   border: 1px solid color-mix(in srgb, var(--x-task-accent) 42%, var(--x-task-border));
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--x-task-text);
   font: inherit;
   font-size: 13px;
@@ -611,15 +640,10 @@
 .columnResizer:hover::after,
 .columnResizer:focus-visible::after { background: var(--x-task-accent); }
 .columnResizer:disabled { cursor: not-allowed; }
-/* Group bands carry the same colour system as the board columns, in the
-   shape a horizontal band allows: the tone lands on a 2px rule along the
-   leading edge, a 6% wash behind the band, and the status pip. Same three
-   signals, same tones, so a lane means one colour wherever you meet it. */
-.groupRow[data-lane-tone="doing"]  { --lane-tone: var(--accent); }
-.groupRow[data-lane-tone="review"]  { --lane-tone: var(--status-flight); }
-.groupRow[data-lane-tone="waiting"] { --lane-tone: var(--status-blocked); }
-.groupRow[data-lane-tone="done"]    { --lane-tone: var(--status-done); }
-.groupRow[data-lane-tone] .statusPip { background: var(--lane-tone); border: 0; }
+/* Group bands carry the same configured colour the board lane does —
+   `--lane-accent` arrives inline from the resolved column config, so a
+   lane means one colour wherever you meet it, custom columns included.
+   The band spends it on a 2px leading rule, a 6% wash, and the pip. */
 
 /* The cell spans every column and must STAY a table cell: display:flex here
    voids colSpan and shrank the band to the title column, leaving a hole
@@ -628,8 +652,8 @@
    `transparent` into the canvas does not tint it — it takes 6% of its
    alpha away, and a 0.94-opaque sticky header let every row scrolling
    under it print through the group name. */
-.groupRow th { background: color-mix(in srgb, var(--lane-tone, var(--x-task-canvas)) 6%, var(--x-task-canvas)); border-bottom: 1px solid var(--x-task-border); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
-.groupRow th::before { background: var(--lane-tone, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
+.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
+.groupRow th::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */
 .groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px 0 11px; position: sticky; width: max-content; }
@@ -667,7 +691,7 @@
 .expandButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; flex: 0 0 20px; height: 24px; justify-content: center; padding: 0; }
 .expandSpacer { flex: 0 0 20px; }
 .listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 580; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
-.taskRow[data-completed] .listTitle { color: var(--x-task-text-muted); text-decoration: line-through; }
+.taskRow[data-completed] .listTitle { color: var(--x-task-text-secondary); }
 .listTitleEdit { min-width: 120px; }
 /* Absent tabular value: a quiet dash instead of a repeated word. */
 .absentValue { color: var(--x-task-text-muted); font-size: 11px; }
@@ -829,7 +853,7 @@
 .calendarTask[data-segment="start"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-radius: 3px 0 0 3px; }
 .calendarTask[data-segment="middle"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-left: 0; border-radius: 0; border-right: 0; }
 .calendarTask[data-segment="end"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-radius: 0 3px 3px 0; }
-.calendarTask[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
+.calendarTask[data-completed] { color: var(--x-task-text-muted); }
 .calendarStatus { background: var(--x-task-text-muted); border-radius: 50%; flex: 0 0 auto; height: 5px; width: 5px; }
 .calendarStatus[data-status="doing"] { background: var(--x-task-accent); }
 .calendarStatus[data-status="review"] { background: var(--x-task-review); }
@@ -888,10 +912,10 @@
 .taskRow:focus-visible,
 .timelineTaskPane:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: -2px; }
 
-:global([data-density="comfortable"]) .boardLane { flex-basis: 312px; min-width: 312px; }
-:global([data-density="comfortable"]) .boardLane[data-collapsed] { flex-basis: 46px; min-width: 46px; }
-:global([data-density="comfortable"]) .boardCard { padding: 12px 14px 13px; }
-:global([data-density="comfortable"]) .laneList { gap: 10px; padding: 11px 11px 14px; }
+:global([data-density="comfortable"]) .boardLane { flex-basis: 316px; min-width: 316px; }
+:global([data-density="comfortable"]) .boardLane[data-collapsed] { flex-basis: 44px; min-width: 44px; }
+:global([data-density="comfortable"]) .boardCard { padding: 13px 15px 14px; }
+:global([data-density="comfortable"]) .laneList { gap: 10px; padding: 12px 14px 16px; }
 :global([data-density="comfortable"]) .taskRow > th,
 :global([data-density="comfortable"]) .taskRow > td { height: 42px; }
 :global([data-density="comfortable"]) .timelineRow,
@@ -909,8 +933,8 @@
   .contextFacts > div:nth-child(2) { display: none; }
   .functionalTools > button { padding-left: 6px; padding-right: 6px; }
   .workspaceSearch { width: 126px; }
-  .boardLane { flex-basis: 258px; min-width: 258px; }
-  .boardLane[data-collapsed] { flex-basis: 46px; min-width: 46px; }
+  .boardLane { flex-basis: 260px; min-width: 260px; }
+  .boardLane[data-collapsed] { flex-basis: 44px; min-width: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -923,8 +947,7 @@
   .laneList,
   .laneAdd,
   .laneIconButton,
-  .cardMenuTrigger,
-  .cardMilestone { transition: none; }
+  .cardMenuTrigger { transition: none; }
   .boardLane { transition: none; }
   .laneRail,
   .laneHeader,
@@ -1067,10 +1090,8 @@
 }
 
 @media (pointer: coarse) {
-  /* A bar of Alt/F2/arrow-key instructions on a device with no keyboard
-     is 30px of noise partially covered by toasts. */
-  .keyboardLegend { display: none; }
-
+  /* No hover on touch: the column's add/menu controls stay present. */
+  .laneActions .laneIconButton { opacity: 1; }
 
   .timelineToolbar {
     flex-basis: auto;
@@ -1093,21 +1114,18 @@
   /* No hover on touch: the card menu and milestone toggle are always
      present rather than revealed, and right-click has no equivalent to
      fall back to. */
-  .cardMenuTrigger,
-  .cardMilestone {
+  .cardMenuTrigger {
     opacity: 1;
   }
 }
 
 /* ── T·121 · config-driven columns ──────────────────────────────────────────
    A column's visual identity is its configured colour: the lane carries
-   `--lane-accent` inline and `data-tinted`; the pip, the wash and the
-   picker swatch all derive from that one var. Neutral columns carry
-   neither attribute and stay untinted. */
+   `--lane-accent` inline and `data-tinted`; the pip, the header tick and
+   the picker swatch all derive from that one var. Neutral columns carry
+   neither attribute. The 5% full-column wash was retired in the 2026-08-05
+   precision-white pass — colour is an accent here, never a surface. */
 
-.boardLane[data-tinted] {
-  background: color-mix(in srgb, var(--lane-accent) 5%, var(--x-task-surface));
-}
 .boardLane .statusPip[data-accent],
 .groupRow .statusPip[data-accent] {
   background: var(--lane-accent);
@@ -1247,34 +1265,37 @@
   width: calc(100% - 4px);
 }
 
-/* Pinned add-column affordance, outside the horizontal scroll track. */
-.addColumnRail {
-  align-self: stretch;
-  display: flex;
-  flex-shrink: 0;
-  padding: 4px 4px 4px 0;
+/* Add-status end-cap: a compact ghost action after the last lane, inside
+   the scroll track, aligned with the column headers — white ground, no
+   rotated text, no reserved pseudo-lane. It expands in place into the
+   status composer; every column menu keeps "Add status after". */
+.addColumnCap {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  padding: 7px 16px 0 10px;
 }
-.addColumnRailButton {
+.addColumnCapButton {
   align-items: center;
   background: transparent;
-  border: 1px dashed var(--x-task-border-strong);
-  border-radius: 10px;
+  border: 0;
+  border-radius: 8px;
   color: var(--x-task-text-muted);
   cursor: pointer;
   display: flex;
-  flex-direction: column;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
   gap: 6px;
-  justify-content: flex-start;
-  padding: 14px 8px;
-  width: 44px;
-  writing-mode: vertical-rl;
+  min-height: 32px;
+  padding: 0 10px;
+  transition: color var(--motion-instant) var(--ease-out), background var(--motion-instant) var(--ease-out);
+  white-space: nowrap;
 }
-.addColumnRailButton:hover:not(:disabled) {
-  border-color: var(--x-task-focus);
+.addColumnCapButton:hover:not(:disabled) {
+  background: var(--x-task-hover);
   color: var(--x-task-text);
 }
-.addColumnRailButton:disabled { cursor: not-allowed; opacity: 0.5; }
-.addColumnRailButton span { font-size: 12px; letter-spacing: 0.02em; }
+.addColumnCapButton:disabled { cursor: not-allowed; opacity: 0.5; }
 
 /* Add-column form: shares its grammar with the lane surface. */
 .addColumnForm {
@@ -1412,10 +1433,10 @@
    it targets loses on source order. Anything here is deliberately last
    in the file. */
 @media (pointer: coarse) {
-  /* Adding columns is a desktop act; on a phone the pinned rail only
+  /* Adding columns is a desktop act; on a phone the end-cap only
      overlapped the next lane's peek. The lane menu keeps 'Add column
      after'. */
-  .addColumnRail { display: none; }
+  .addColumnCap { display: none; }
 }
 
 /* ── Phone list: also deliberately last in the file ───────────────────

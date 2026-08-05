@@ -1,14 +1,17 @@
 "use client";
 
-// The workspace brief header from the approved Option-B design lab, extracted
-// into its own module so the hybrid interior can use it without pulling in the
-// full Option-B shell (product rail, projects sidebar) that production replaces
-// with its own chrome. Renders the real workspace name from DomainProvider.
+// The project context band. One row: identity (editable name + supporting
+// line), the progress facts, and the project-level actions the interior
+// mounts into it (Share, Planning, overflow). The 2026-08-05 redesign cut
+// the old two/three-panel dashboard — milestones and the money coverage
+// line now live in the Planning drawer, so the band answers "where am I,
+// how is it going" in ~54px and the lanes get the rest of the screen.
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { useDomain, useProjectMoney } from "@/lib/domain-context";
-import { budgetCoverageLine } from "@/lib/money";
+import { requestOpenNav, useNavPanelHidden } from "@/components/app/tasks-nav-state";
+import { Icon } from "../../shared/icons";
+import { useDomain } from "@/lib/domain-context";
 import { promoteLocalBrief } from "@/lib/brief/promote-local-brief";
 import { renameBoardAction } from "@/server/actions/board";
 import { setProjectDescriptionAction } from "@/server/actions/settings";
@@ -16,10 +19,9 @@ import {
   TASKS_SYNC_EVENT,
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
-import { formatDate, isTaskOverdue } from "../../dates";
+import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
-import { TaskOpenButton } from "../../shared/task-ui";
 import styles from "./option-b.module.css";
 
 /** Pull the part of the workspace title before " · " for the H1. */
@@ -123,11 +125,16 @@ function EditableText({
   );
 }
 
-export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTask[]; showMilestones?: boolean }) {
+export function WorkspaceBrief({
+  tasks,
+  actions,
+}: {
+  tasks: LabTask[];
+  actions?: ReactNode;
+}) {
   const store = useLabStore();
   const calendar = useCalendarFrame();
   const domain = useDomain();
-  const money = useProjectMoney();
   const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
 
   // T·114: rescue any pre-migration brief text still sitting in this browser's
@@ -146,24 +153,9 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
 
   const completed = store.tasks.filter((task) => task.completed).length;
   const overdue = store.tasks.filter((task) => isTaskOverdue(task, calendar.today)).length;
-  const unscheduled = store.tasks.filter((task) => task.schedule.kind === "unscheduled").length;
-  const milestones = store.tasks.filter((task) => task.schedule.kind === "milestone").sort((a, b) => {
-    const aDate = a.schedule.kind === "milestone" ? a.schedule.on : "";
-    const bDate = b.schedule.kind === "milestone" ? b.schedule.on : "";
-    return aDate.localeCompare(bDate);
-  }).slice(0, 3);
-  const progress = store.tasks.length === 0 ? 0 : Math.round((completed / store.tasks.length) * 100);
-  // Money, narrowly (T·124): restate and sum what the operator entered,
-  // always with coverage. Renders only here — never on share, print,
-  // embed or /p/{slug}.
-  const costedTasks = store.tasks.filter((task) => typeof task.cents === "number" && task.cents > 0);
-  const coverage = budgetCoverageLine({
-    summedCents: costedTasks.reduce((sum, task) => sum + (task.cents ?? 0), 0),
-    costedCount: costedTasks.length,
-    uncostedCount: store.tasks.length - costedTasks.length,
-    budgetCents: money.budgetCents,
-    currency: money.currency,
-  });
+  const filteredNote = tasks.length !== store.tasks.length
+    ? `${tasks.length} of ${store.tasks.length} tasks in the current view`
+    : null;
   const [syncState, setSyncState] = useState<"idle" | "pending" | "saved" | "error">("idle");
 
   useEffect(() => {
@@ -195,20 +187,34 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
       if (settleTimer !== undefined) window.clearTimeout(settleTimer);
     };
   }, []);
-  // The milestones panel renders only when there is a milestone to show. An
-  // empty one used to draw a bordered column and a two-column "No date / No
-  // milestones yet" row, which read as a broken record rather than an
-  // absence, and cost the board ~120px to say nothing.
-  const renderMilestones = showMilestones && milestones.length > 0;
+
+  const periodName = calendar.planningPeriod?.name ?? null;
+  const navHidden = useNavPanelHidden();
+
   return (
-    <header className={styles.workspaceBrief} data-milestones={renderMilestones ? "on" : undefined}>
-      {/*
-        T·114: the crumb above the title read "Workspace ›" — a hardcoded
-        literal that was neither a link nor a real hierarchy, and that used a
-        noun D-011 retired ("Projects = Tasks workspaces"). Nothing replaces
-        it; the title is the top of the page.
-      */}
+    <header className={styles.workspaceBrief}>
+      {navHidden ? (
+        <button
+          aria-haspopup="dialog"
+          aria-label="Open Tasks navigation"
+          className={styles.navTrigger}
+          onClick={requestOpenNav}
+          title="Open Tasks navigation"
+          type="button"
+        >
+          <Icon name="panel" size={15} />
+        </button>
+      ) : null}
       <div className={styles.workspaceIdentity}>
+        {/* The parent context reads first, quietly: the person knows where
+            this project sits without the Projects panel open. The period
+            is a grouping, not a destination, so it is text, not a link. */}
+        {periodName ? (
+          <span className={styles.briefCrumb}>
+            {periodName}
+            <i aria-hidden="true">/</i>
+          </span>
+        ) : null}
         <EditableText
           ariaLabel="Project name"
           onCommit={renameBoardAction}
@@ -219,53 +225,32 @@ export function WorkspaceBrief({ tasks, showMilestones = true }: { tasks: LabTas
         <EditableText
           ariaLabel="Project description"
           onCommit={setProjectDescriptionAction}
-          placeholder="Say what this project is for."
+          placeholder="+ Add description"
           tag="p"
           value={domain.boardDescription}
         />
       </div>
       {/*
-        Progress reads as one number, one bar and one line. The old panel
-        spent three table rows on Complete / Overdue / No date — a dashboard
-        where a sentence does the same work in a quarter of the height.
+        Progress is one sentence, not an instrument panel: the strong
+        number carries the proportion, the count carries the detail, and
+        red exists only when work is genuinely overdue. The 4px bar this
+        replaces was decoration at reading distance.
       */}
-      <section aria-label="Project progress" className={styles.workspaceProgress}>
-        <div className={styles.progressHead}>
-          <strong>{progress}%</strong>
-          <span>Progress</span>
-          <span aria-live="polite" className={styles.syncState} data-state={syncState} role="status">
-            {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
-          </span>
-        </div>
-        <progress aria-label={`${completed} of ${store.tasks.length} tasks complete`} max={Math.max(1, store.tasks.length)} value={completed} />
-        {/* Each count wraps with its noun (nowrap spans): "… · 7 ⏎
-            unscheduled" severed the number from its unit at 1440. */}
-        <p className={styles.progressFacts}>
-          <span>{completed} of {store.tasks.length} done</span>
-          {overdue > 0 ? <> · <b>{overdue} overdue</b></> : null}
-          {unscheduled > 0 ? <> · <span>{unscheduled} unscheduled</span></> : null}
+      <section aria-label="Project progress" className={styles.briefProgress}>
+        <span aria-live="polite" className={styles.syncState} data-state={syncState} role="status">
+          {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
+        </span>
+        <p className={styles.briefFacts} title={filteredNote ?? undefined}>
+          <strong>{completed} of {store.tasks.length} complete</strong>
+          {overdue > 0 ? <b>{overdue} overdue</b> : null}
         </p>
-        {coverage ? (
-          <p aria-label="Budget coverage" className={styles.progressFacts}>
-            {coverage.split(". ").map((sentence, index, all) => (
-              <span key={sentence}>
-                {sentence}
-                {index < all.length - 1 ? ". " : ""}
-              </span>
-            ))}
-          </p>
-        ) : null}
       </section>
-      {renderMilestones ? <section aria-label="Milestones" className={styles.workspaceMilestones}>
-        <span>Milestones</span>
-        <ol>
-          {/* Day-month, like every other date on screen — the old
-              `slice(5).replace("-", "/")` printed US-style "08/01", which
-              an en-IE reader parses as 8 January. */}
-          {milestones.map((task) => <li data-task-id={task.id} key={task.id}><time dateTime={task.schedule.kind === "milestone" ? task.schedule.on : undefined}>{task.schedule.kind === "milestone" ? formatDate(task.schedule.on) : ""}</time><TaskOpenButton task={task} /></li>)}
-        </ol>
-        {tasks.length !== store.tasks.length ? <small>{tasks.length} of {store.tasks.length} tasks in the current view</small> : null}
-      </section> : null}
+      {actions ? (
+        <div className={styles.briefActions}>
+          <span aria-hidden="true" className={styles.briefDivider} />
+          {actions}
+        </div>
+      ) : null}
     </header>
   );
 }

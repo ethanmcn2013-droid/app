@@ -26,7 +26,6 @@ import Link from "next/link";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
 import {
-  HOME_APP_PATH,
   PRODUCT_APP_PATHS,
   STUDIO_URL,
   suiteSurfaceFromAppPath,
@@ -36,27 +35,24 @@ import { RailIcon, type RailIconName } from "./rail-icons";
 import styles from "./signal-shell.module.css";
 
 /**
- * Rail destinations (Signal → Home consolidation, D4): Home first, then
- * the three products, then Project — the workspace's organisational
- * layer. Signal is no longer a rail destination; its briefing lives
- * inside Home at /app/home/briefing.
+ * Rail destinations: the three PRODUCTS, nothing else — the rail is a
+ * product switcher, not a place list (board pass 4, 2026-08-05).
+ * "Project" left in pass 2; Home follows now: it is a suite landing,
+ * reachable as the first destination of the local Tasks navigation and
+ * from each product's own surfaces, not a sibling product. /app/home and
+ * /app/project both remain routable.
  */
-const RAIL_DESTINATIONS: Array<{
-  key: "home" | "notes" | "tasks" | "timeline" | "project";
+export const RAIL_DESTINATIONS: Array<{
+  key: "notes" | "tasks" | "timeline";
   label: string;
   path: string;
 }> = [
-  { key: "home", label: "Home", path: HOME_APP_PATH },
   { key: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
   { key: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
   { key: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
-  { key: "project", label: "Project", path: "/app/project" },
 ];
 
 function activeRailKey(pathname: string): string {
-  if (pathname === "/app/project" || pathname.startsWith("/app/project/")) {
-    return "project";
-  }
   return suiteSurfaceFromAppPath(pathname);
 }
 
@@ -161,7 +157,7 @@ export function StudioRail() {
     <aside aria-label="Signal Studio navigation" className={`${styles.signalRail} hidden md:flex`} data-signal-product-rail="true">
       {/* The Signal Studio home mark lives once, in the Studio Bar's
           top-left cell directly above this rail — no second dot here. */}
-      <nav aria-label="Home, products and project" className={styles.railProducts}>
+      <nav aria-label="Products" className={styles.railProducts}>
         {RAIL_DESTINATIONS.map((destination) => {
           const active = destination.key === activeKey;
           const href = withSuiteContext(destination.path, suiteContext);

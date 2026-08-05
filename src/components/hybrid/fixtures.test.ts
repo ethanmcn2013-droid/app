@@ -5,15 +5,14 @@ import { scheduleIncludes } from "./dates";
 import {
   FIXTURE_MANIFEST_ID,
   FIXTURE_SHA256,
-  LAB_TASKS,
   labelById,
   listPeople,
   personById,
   resetRuntimeRegistriesForTests,
   setRuntimeLabels,
   setRuntimePeople,
-  tasksForDataset,
 } from "./fixtures";
+import { LAB_TASKS, tasksForDataset } from "./fixtures-dataset";
 
 test("fixture manifest is stable, unique, and within the Phase 1 scale", () => {
   assert.equal(FIXTURE_MANIFEST_ID, "tasks-2026-07-16-v1-48");
@@ -89,9 +88,12 @@ test("runtime registries are authoritative once set; fixtures never leak past th
     // neutral chip under its own name, never a fixture tone.
     setRuntimeLabels([{ id: "Venue", name: "Venue", tone: "success" }]);
     assert.equal(labelById("Venue")?.tone, "success");
-    assert.deepEqual(labelById("launch"), { id: "launch", name: "launch", tone: "neutral" });
+    // T·132: an unknown live tag reads as its humanised display name — a
+    // stored slug ("mara-finn") is shown to people as "Mara Finn", while the
+    // id stays the lookup key.
+    assert.deepEqual(labelById("launch"), { id: "launch", name: "Launch", tone: "neutral" });
     setRuntimeLabels([]);
-    assert.deepEqual(labelById("platform"), { id: "platform", name: "platform", tone: "neutral" });
+    assert.deepEqual(labelById("platform"), { id: "platform", name: "Platform", tone: "neutral" });
   } finally {
     resetRuntimeRegistriesForTests();
   }

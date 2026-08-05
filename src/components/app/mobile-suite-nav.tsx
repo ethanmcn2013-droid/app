@@ -13,12 +13,14 @@ import { withSuiteContext } from "@/lib/suite-context";
 
 /**
  * Mobile destinations (Signal → Home consolidation, D4): Home first,
- * the three products, then Project. Signal is no longer a tab; the
- * briefing lives inside Home. "More" stays the account cluster in the
- * top bar — a sixth 44px tab does not fit a 375px viewport.
+ * then the three products. Signal is no longer a tab; the briefing lives
+ * inside Home. "Project" left the shell navigation 2026-08-05 with the
+ * desktop rail — the active project is reached through the Projects
+ * panel and board context, and /app/project stays routable. "More"
+ * stays the account cluster in the top bar.
  */
 const DESTINATIONS: readonly Readonly<{
-  id: "home" | "notes" | "tasks" | "timeline" | "project";
+  id: "home" | "notes" | "tasks" | "timeline";
   label: string;
   path: string;
 }>[] = Object.freeze([
@@ -26,13 +28,9 @@ const DESTINATIONS: readonly Readonly<{
   { id: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
   { id: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
   { id: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
-  { id: "project", label: "Project", path: "/app/project" },
 ]);
 
 function activeMobileKey(pathname: string): string {
-  if (pathname === "/app/project" || pathname.startsWith("/app/project/")) {
-    return "project";
-  }
   return suiteSurfaceFromAppPath(pathname);
 }
 

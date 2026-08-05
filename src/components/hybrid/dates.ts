@@ -187,6 +187,50 @@ export function isTaskOverdue(task: LabTask, today: CalendarDate): boolean {
   return end !== null && compareDates(end, today) < 0;
 }
 
+/**
+ * The card's schedule sentence, aware of the whole task.
+ *
+ * `formatScheduleRelative` reads only the schedule, so a completed card
+ * kept claiming "2 days overdue" — done work is never overdue. Completed
+ * tasks state facts in neutral grammar ("Was due 14 Jul"); open
+ * milestones get explicit grammar ("Milestone due tomorrow", "Milestone
+ * overdue by 3 days") instead of the ambiguous "Milestone · 3 days ago".
+ */
+export function formatScheduleForTask(task: LabTask, today: CalendarDate): string {
+  const schedule = task.schedule;
+  if (task.completed) {
+    // Done work states facts. With a completion date we say when — and,
+    // when it genuinely finished after its due date, how late — never
+    // "overdue", which is a claim about now.
+    const completedDay = task.completedAt ? (task.completedAt.slice(0, 10) as CalendarDate) : null;
+    if (schedule.kind === "milestone") return `Milestone · ${formatDate(schedule.on)}`;
+    const end = scheduleEnd(schedule);
+    if (completedDay) {
+      const late = end ? differenceInDays(end, completedDay) : 0;
+      if (late === 1) return "Completed 1 day late";
+      if (late > 1) return `Completed ${late} days late`;
+      return `Completed ${formatDate(completedDay)}`;
+    }
+    return end ? `Was due ${formatDate(end)}` : "Done";
+  }
+  if (schedule.kind === "milestone") {
+    const days = differenceInDays(today, schedule.on);
+    if (days === 0) return "Milestone due today";
+    if (days === 1) return "Milestone due tomorrow";
+    if (days > 1 && days <= 7) return `Milestone due in ${days} days`;
+    if (days === -1) return "Milestone overdue by 1 day";
+    if (days < -1) return `Milestone overdue by ${Math.abs(days)} days`;
+    return `Milestone due ${formatDate(schedule.on)}`;
+  }
+  if (schedule.kind === "due") {
+    const days = differenceInDays(today, schedule.dueOn);
+    if (days === -1) return "Overdue by 1 day";
+    if (days < -1 && days >= -7) return `Overdue by ${Math.abs(days)} days`;
+    if (days < -7) return `Overdue since ${formatDate(schedule.dueOn)}`;
+  }
+  return formatScheduleRelative(schedule, today);
+}
+
 export function monthTitle(value: CalendarDate): string {
   return formatDate(value, { month: "long", year: "numeric" });
 }

@@ -63,31 +63,53 @@ export function isColumnColorKey(value: unknown): value is ColumnColorKey {
  * Each colour maps to a CSS var reference (defined in globals.css as
  * --x-col-*). `label` is the picker's accessible name; the swatch and the
  * board tint are both derived from the same var via color-mix in CSS.
+ *
+ * `tint` / `border` / `ink` are perceptual corrections, in percent: one
+ * raw alpha across hues made amber shout and green whisper. Each hue gets
+ * its own header-wash and rule strength, and its own share of accent in
+ * the title ink so every name clears WCAG AA on the tinted band (amber
+ * needs far more text-ink than green does). Neutral columns take the
+ * CSS fallbacks (cool ink at 5.5% / 16%).
  */
 export const COLUMN_COLORS: Record<
   ColumnColorKey,
-  { label: string; var: string | null }
+  { label: string; var: string | null; tint: number; border: number; ink: number }
 > = {
-  neutral: { label: "Neutral", var: null },
-  rose: { label: "Red", var: "var(--x-col-rose)" },
-  sky: { label: "Blue", var: "var(--x-col-sky)" },
-  amber: { label: "Amber", var: "var(--x-col-amber)" },
-  emerald: { label: "Green", var: "var(--x-col-emerald)" },
-  violet: { label: "Purple", var: "var(--x-col-violet)" },
-  teal: { label: "Teal", var: "var(--x-col-teal)" },
-  pink: { label: "Pink", var: "var(--x-col-pink)" },
-  indigo: { label: "Indigo", var: "var(--x-col-indigo)" },
+  neutral: { label: "Neutral", var: null, tint: 5.5, border: 16, ink: 0 },
+  rose: { label: "Red", var: "var(--x-col-rose)", tint: 4.5, border: 13, ink: 58 },
+  sky: { label: "Blue", var: "var(--x-col-sky)", tint: 5, border: 15, ink: 62 },
+  amber: { label: "Amber", var: "var(--x-col-amber)", tint: 3.5, border: 11, ink: 55 },
+  emerald: { label: "Green", var: "var(--x-col-emerald)", tint: 5.5, border: 16, ink: 85 },
+  violet: { label: "Purple", var: "var(--x-col-violet)", tint: 4.5, border: 13, ink: 62 },
+  teal: { label: "Teal", var: "var(--x-col-teal)", tint: 4.5, border: 13, ink: 60 },
+  pink: { label: "Pink", var: "var(--x-col-pink)", tint: 4.5, border: 13, ink: 58 },
+  indigo: { label: "Indigo", var: "var(--x-col-indigo)", tint: 4.5, border: 13, ink: 62 },
 };
+
+/** Inline CSS custom properties a tinted lane/band sets from its colour. */
+export function laneAccentStyle(color: ColumnColorKey): Record<string, string> | undefined {
+  const entry = COLUMN_COLORS[color];
+  if (!entry.var) return undefined;
+  return {
+    "--lane-accent": entry.var,
+    "--lane-tint": `${entry.tint}%`,
+    "--lane-border-tint": `${entry.border}%`,
+    "--lane-ink-mix": `${entry.ink}%`,
+  };
+}
 
 /**
  * Default semantic colour for each standard system lane. Applied only
- * when a column has no explicit saved colour (see boardColumnColor). The
- * board's canonical order is [todo, doing, review, done], which reads as
- * Blocked · In Progress · Reviewing · Done — so the defaults are
- * red · blue · amber · green.
+ * when a column has no explicit saved colour (see boardColumnColor).
+ *
+ * The board labels `todo` as **Queued** — a backlog, not an alarm — so it
+ * carries no colour by default (red stays reserved for genuinely blocked
+ * or overdue states). The rose default dated from when this lane was
+ * labelled "Blocked"; an owner who wants a coloured backlog is one
+ * column-menu click away, and any explicitly saved colour still wins.
  */
 export const DEFAULT_SYSTEM_COLORS: Record<LaneId, ColumnColorKey> = {
-  todo: "rose",
+  todo: "neutral",
   doing: "sky",
   review: "amber",
   done: "emerald",
