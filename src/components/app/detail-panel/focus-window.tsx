@@ -62,10 +62,7 @@ export function TaskFocusWindow({
     const frame = requestAnimationFrame(() => {
       const node = windowRef.current;
       if (!node) return;
-      const first = node.querySelector<HTMLElement>(
-        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      );
-      (first ?? node).focus({ preventScroll: true });
+      node.focus({ preventScroll: true });
     });
     return () => {
       cancelAnimationFrame(frame);
@@ -152,7 +149,7 @@ export function TaskFocusWindow({
               // Full-screen on a phone, where a floating window would be a
               // postage stamp; a centred 1120px window from md up, capped
               // so it never touches an edge.
-              className="pointer-events-auto flex h-dvh w-full flex-col overflow-hidden border-line-soft bg-bg-elevated leading-[var(--x-lead-ui)] md:h-[min(84dvh,calc(100dvh_-_64px))] md:w-[1120px] md:max-w-[calc(100vw_-_96px)] md:rounded-[20px] md:border"
+              className="pointer-events-auto flex h-dvh w-full flex-col overflow-hidden border-line-soft bg-bg-elevated leading-[var(--x-lead-ui)] md:h-auto md:max-h-[min(84dvh,calc(100dvh_-_64px))] md:w-[1120px] md:max-w-[calc(100vw_-_96px)] md:rounded-[20px] md:border"
               style={{
                 boxShadow: "0 32px 80px -24px rgba(20,21,26,0.30), 0 8px 24px -12px rgba(20,21,26,0.14)",
               }}

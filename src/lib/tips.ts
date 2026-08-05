@@ -32,7 +32,7 @@ export const TIPS: Tip[] = [
     version: 1,
     context: "task-panel",
     // Verified: panel-shell.tsx drag handle on left edge
-    body: "Drag the left edge of the panel to resize it.",
+    body: "Press e to open a task full-screen, and j or k to move between tasks.",
   },
   {
     id: "board-context-menu",
