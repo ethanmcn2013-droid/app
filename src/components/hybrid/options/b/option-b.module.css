@@ -63,7 +63,9 @@
   width: 30px;
 }
 .navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.briefCrumb i { color: var(--x-task-ghost, var(--ink-ghost)); font-style: normal; font-weight: 400; }
+/* The separator is a real glyph, so it carries a real ratio: ghost measured
+   1.48:1 against paper. Muted keeps it subordinate to both names at AA. */
+.briefCrumb i { color: var(--x-task-text-muted); font-style: normal; font-weight: 400; }
 .workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 650; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12.5px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*

@@ -116,13 +116,6 @@ export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: "Low",
 };
 
-export const OPTION_LABELS: Record<LabOption, string> = {
-  a: "Quiet Command",
-  b: "Editorial Project Room",
-  c: "Signal Spatial",
-  hybrid: "Recommended hybrid",
-};
-
 export const VIEW_LABELS: Record<LabView, string> = {
   board: "Board",
   list: "List",
@@ -130,17 +123,3 @@ export const VIEW_LABELS: Record<LabView, string> = {
   calendar: "Calendar",
 };
 
-export const DATASET_LABELS: Record<LabDataset, string> = {
-  sparse: "Sparse",
-  normal: "Normal",
-  dense: "Dense",
-  edge: "Edge cases",
-};
-
-export const MODE_LABELS: Record<LabMode, string> = {
-  default: "Default",
-  empty: "Empty",
-  loading: "Loading",
-  error: "Error",
-  readonly: "Read-only",
-};

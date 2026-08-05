@@ -61,7 +61,7 @@ function Experience({ route, onRouteChange }: { route: LabRouteState; onRouteCha
   return (
     <div className={styles.root} data-density={route.density} data-task-count={store.tasks.length}>
       <div className={styles.stage}>
-        <OptionHybrid hideSuiteRail onRouteChange={onRouteChange} route={route} />
+        <OptionHybrid onRouteChange={onRouteChange} route={route} />
       </div>
       <BulkToolbar />
       <div aria-live="polite" className={styles.srOnly}>{store.announcement}</div>

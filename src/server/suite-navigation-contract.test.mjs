@@ -31,8 +31,11 @@ const taskMetadataRail = read(
 const tasksCalendar = read(
   "src/components/hybrid/options/b/calendar-view.tsx",
 );
-const taskInspector = read(
-  "src/components/hybrid/shared/task-inspector.tsx",
+// T·132: the design lab's own inspector was deleted with the rest of the
+// lab chrome. The task a person actually opens is the production detail
+// panel, so the accessible-name contract is asserted where it now lives.
+const taskDetailPanel = read(
+  "src/components/app/detail-panel/panel-shell.tsx",
 );
 const taskSharedStyles = read(
   "src/components/hybrid/shared/shared.module.css",
@@ -368,11 +371,9 @@ test("Calendar overflow and the task inspector keep accessible focus and names",
   assert.match(tasksCalendar, /aria-labelledby=\{labelledBy\}/);
   assert.match(tasksCalendar, /querySelector<HTMLElement>\("ul button, header button"\)/);
   assert.match(tasksCalendar, /overflowTriggerRef\.current\?\.focus/);
-  assert.match(
-    taskInspector,
-    /<h2 id=\{titleId\}>\{task\?\.title \?\? "Task unavailable"\}<\/h2>/,
-  );
-  assert.match(taskInspector, /aria-labelledby=\{titleId\}/);
+  assert.match(taskDetailPanel, /role="dialog"/);
+  assert.match(taskDetailPanel, /aria-modal="true"/);
+  assert.match(taskDetailPanel, /aria-labelledby="task-panel-title"/);
 });
 
 test("Tasks mobile CSS contains dense canvases and preserves 44px primary targets", () => {

@@ -235,8 +235,3 @@ export function fieldsPatch(
   return Object.keys(patch).length > 0 ? patch : null;
 }
 
-export function estimateToHours(estimate: string | undefined): number | undefined {
-  if (!estimate) return undefined;
-  const match = estimate.match(/([\d.]+)/);
-  return match ? Number(match[1]) : undefined;
-}

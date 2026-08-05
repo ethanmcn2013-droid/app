@@ -152,13 +152,3 @@ export function LabelList({ task, limit = 2 }: { task: LabTask; limit?: number }
   );
 }
 
-export function IconButton({ label, icon, ...props }: {
-  label: string;
-  icon: Parameters<typeof Icon>[0]["name"];
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button aria-label={label} className={styles.iconButton} title={label} type="button" {...props}>
-      <Icon name={icon} size={16} />
-    </button>
-  );
-}

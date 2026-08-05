@@ -4,17 +4,8 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import { focusTask } from "./quiet-command-model";
 import { useLabStore } from "../../store";
-import { columnDisplayName } from "@/lib/board-columns";
-import { useBoardColumns } from "../../columns-context";
 import { type CalendarDate, type LabTask } from "../../types";
 import { Icon } from "../../shared/icons";
-import {
-  AvatarStack,
-  PriorityMark,
-  ScheduleText,
-  TaskOpenButton,
-  TaskSignals,
-} from "../../shared/task-ui";
 import styles from "./option-a.module.css";
 
 export function InlineTaskTitle({ task, className = "" }: { task: LabTask; className?: string }) {
@@ -95,35 +86,6 @@ export function InlineTaskTitle({ task, className = "" }: { task: LabTask; class
       />
       {error ? <small id={`${task.id}-title-error`} role="alert">{error}</small> : null}
     </span>
-  );
-}
-
-export function TaskPeek() {
-  const store = useLabStore();
-  const columns = useBoardColumns();
-  const task = store.previewId ? store.taskById(store.previewId) : undefined;
-  if (!task || store.inspectedId === task.id) return null;
-  return (
-    <aside aria-label={`Task preview: ${task.title}`} className={styles.taskPeek}>
-      <header>
-        <span>Quick peek</span>
-        <button aria-label="Close task preview" onClick={() => store.setPreview(null)} type="button">
-          <Icon name="close" size={14} />
-        </button>
-      </header>
-      <div className={styles.peekMeta}>
-        <span className={styles.statusText} data-status={task.status}>{columnDisplayName(columns, task.status)}</span>
-        <PriorityMark task={task} withLabel />
-        <ScheduleText task={task} />
-      </div>
-      <TaskOpenButton className={styles.peekTitle} task={task}>{task.title}</TaskOpenButton>
-      <p>{task.description}</p>
-      <footer>
-        <AvatarStack task={task} limit={4} />
-        <TaskSignals task={task} />
-        <TaskOpenButton className={styles.peekOpen} task={task}>Open inspector</TaskOpenButton>
-      </footer>
-    </aside>
   );
 }
 

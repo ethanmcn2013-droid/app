@@ -485,7 +485,7 @@
 /* A finished card recedes as a whole: its chips and people mute with it,
    so the strikethrough is not fighting full-strength colour below. */
 .boardCard[data-completed] .cardLabels,
-.boardCard[data-completed] .cardMeta { opacity: .72; }
+.boardCard[data-completed] .cardMeta { opacity: .78; }
 /* Head row: completion control on the title's first line. A card with
    only a title is one line tall; the ••• trigger floats over the corner
    on hover so it never costs a permanent row. */

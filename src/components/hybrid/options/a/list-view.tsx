@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import { personById } from "../../fixtures";
 import {
@@ -27,7 +26,6 @@ import {
 } from "../../shared/task-ui";
 import { InlineTaskTitle, SurfaceEmpty } from "./quiet-command-components";
 import {
-  INITIAL_LIST_COLUMNS,
   clamp,
   focusTask,
   reorderItem,
@@ -54,79 +52,6 @@ type ListGroup = {
 
 function updateColumn(columns: ListColumn[], id: ListColumnId, fields: Partial<ListColumn>): ListColumn[] {
   return columns.map((column) => column.id === id ? { ...column, ...fields } : column);
-}
-
-function moveColumn(columns: ListColumn[], id: ListColumnId, direction: -1 | 1): ListColumn[] {
-  const from = columns.findIndex((column) => column.id === id);
-  if (from < 1) return columns;
-  const to = clamp(from + direction, 1, columns.length - 1);
-  return reorderItem(columns, from, to);
-}
-
-export function ListFieldsPanel({
-  columns,
-  setColumns,
-  onClose,
-}: {
-  columns: ListColumn[];
-  setColumns: (columns: ListColumn[]) => void;
-  onClose: () => void;
-}) {
-  const store = useLabStore();
-  const reduceMotion = useReducedMotion();
-  return (
-    <motion.section
-      animate={{ opacity: 1, transform: "scale(1)" }}
-      aria-label="List fields"
-      aria-modal="false"
-      className={styles.fieldsPanel}
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
-      role="dialog"
-      transition={{ duration: reduceMotion ? 0.12 : 0.16, ease: [0.23, 1, 0.32, 1] }}
-    >
-      <header>
-        <div><strong>List fields</strong><span>Session-only column layout</span></div>
-        <button aria-label="Close fields" onClick={onClose} type="button"><Icon name="close" size={15} /></button>
-      </header>
-      <ol>
-        {columns.map((column, index) => (
-          <li key={column.id}>
-            <label className={styles.fieldVisibility}>
-              <input
-                checked={column.visible}
-                disabled={store.readOnly || column.id === "title"}
-                onChange={(event) => setColumns(updateColumn(columns, column.id, { visible: event.target.checked }))}
-                type="checkbox"
-              />
-              <span>{column.label}</span>
-            </label>
-            <label className={styles.fieldWidth}>
-              <span className={styles.srOnly}>{column.label} width</span>
-              <input
-                aria-label={`${column.label} column width`}
-                disabled={store.readOnly}
-                max="460"
-                min={column.minWidth}
-                onChange={(event) => setColumns(updateColumn(columns, column.id, { width: Number(event.target.value) }))}
-                step="8"
-                type="range"
-                value={column.width}
-              />
-              <output>{column.width}px</output>
-            </label>
-            <div aria-label={`Move ${column.label} column`} className={styles.fieldOrder} role="group">
-              <button aria-label={`Move ${column.label} left`} disabled={store.readOnly || index <= 1} onClick={() => setColumns(moveColumn(columns, column.id, -1))} type="button"><Icon name="arrow-left" size={13} /></button>
-              <button aria-label={`Move ${column.label} right`} disabled={store.readOnly || column.id === "title" || index === columns.length - 1} onClick={() => setColumns(moveColumn(columns, column.id, 1))} type="button"><Icon name="arrow-right" size={13} /></button>
-            </div>
-          </li>
-        ))}
-      </ol>
-      <footer>
-        <button disabled={store.readOnly} onClick={() => setColumns(INITIAL_LIST_COLUMNS.map((column) => ({ ...column })))} type="button">Reset fields</button>
-        <span>Drag headers or use these controls.</span>
-      </footer>
-    </motion.section>
-  );
 }
 
 function groupsFor(tasks: LabTask[], group: QuietGroup, boardColumns: readonly BoardColumn[]): ListGroup[] {

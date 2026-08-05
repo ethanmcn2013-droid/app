@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { activeUnscheduledTasks, endOfWeek, uniformAssignees, weekdayIndex } from "./planning";
-import { LAB_TASKS } from "./fixtures";
+import { LAB_TASKS } from "./fixtures-dataset";
 import type { LabTask } from "./types";
 
 function make(overrides: Partial<LabTask>): LabTask {

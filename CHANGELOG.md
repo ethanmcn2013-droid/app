@@ -93,6 +93,23 @@ verified: the full test gate, ds-check, the first-contact language gate,
 the production build and axe passes with the drawer closed and open are
 green.
 
+**The board also leaves the client lighter than it found it.** The four
+passes added 2.7 KB of client JS, which put the bundle over its ratchet;
+rather than raise a ceiling, the cycle deleted what nobody reads. The
+frozen 48-task design-lab dataset moved out of `fixtures.ts` — the module
+the running board imports for its people and label registries — into
+`fixtures-dataset.ts`, which only tests import; the lab's own chrome (its
+ribbon, dataset and state selectors, fake suite rail, account chip, its
+private task inspector and command palette) was deleted along with the
+route it belonged to. Total client JS now measures **932.5 KB gzip**,
+2.7 KB below the pre-redesign baseline and 3.5 KB under the ceiling.
+Three text pairs that a review pass measured below the 4.5:1 AA floor —
+completed-card metadata at 4.37:1, the Add task shortcut hint at 4.40:1
+and the breadcrumb separator at 1.48:1 — were repaired at the same time;
+axe had marked all three "incomplete" rather than failing them, so
+automation alone would never have surfaced them. One test that had never
+been wired into `pnpm test` (`fixtures.test.ts`) is now in the gate.
+
 ## 2026-08-05 · T·131 · ships · the three pillars get their instruments
 
 **Each priority in the north star now has something that can actually be run

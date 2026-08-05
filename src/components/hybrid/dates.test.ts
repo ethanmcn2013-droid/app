@@ -12,7 +12,7 @@ import {
   resizeScheduleEnd,
   scheduleIncludes,
 } from "./dates";
-import { LAB_TASKS } from "./fixtures";
+import { LAB_TASKS } from "./fixtures-dataset";
 import type { CalendarDate, TaskSchedule } from "./types";
 
 test("calendar arithmetic is deterministic and date-only", () => {

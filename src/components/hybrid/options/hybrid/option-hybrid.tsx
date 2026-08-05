@@ -5,7 +5,7 @@ import { WorkspaceBoardColumnsProvider } from "../../columns-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
-import { SuiteRail, ViewTabs } from "../../shared/lab-chrome";
+import { ViewTabs } from "../../shared/lab-chrome";
 import { Icon } from "../../shared/icons";
 import { PlanningRail } from "../c/planning-rail";
 import { WorkspaceBrief } from "../b/workspace-brief";
@@ -95,7 +95,7 @@ const bandButtonWrap =
   "hover:[&>div>button]:!text-[var(--x-task-text)] " +
   "hover:[&>div>button]:!bg-[var(--x-task-hover)]";
 
-export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptionProps & { hideSuiteRail?: boolean }) {
+export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
   const store = useLabStore();
   const calendar = useCalendarFrame();
   const [columns, setColumns] = useState<ListColumn[]>(() => INITIAL_LIST_COLUMNS.map((column) => ({ ...column })));
@@ -189,7 +189,6 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
   return (
     <WorkspaceBoardColumnsProvider>
     <div className={styles.optionA} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
-      {hideSuiteRail ? null : <SuiteRail />}
       <section className={styles.workspaceShell}>
         {/* Project-level actions live on the project band, not the view
             toolbar: sharing and printing concern the project, and the

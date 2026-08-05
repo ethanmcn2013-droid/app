@@ -236,7 +236,7 @@ export function StudioBar() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span className="hidden sm:block">Add task</span>
-            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-zinc-500 lg:flex">
+            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-zinc-600 lg:flex">
               C
             </kbd>
           </button>
