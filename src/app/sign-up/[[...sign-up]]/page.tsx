@@ -1,15 +1,22 @@
+import type { Metadata } from "next";
 import { SignUp } from "@clerk/nextjs";
-import { Wordmark } from "@/components/brand/wordmark";
-import { lookupSponsorByCode } from "@/server/db/venue-welcome";
+import { AuthStage } from "@/components/auth/auth-stage";
+import { signalAuthPageAppearance } from "@/components/auth/clerk-appearance";
 import { DemoAuthCard } from "@/components/auth/demo-auth-card";
+import { lookupSponsorByCode } from "@/server/db/venue-welcome";
 import { isDemoMode } from "@/lib/access-mode";
+import { authRouteRobots } from "@/lib/launch";
 import {
   buildWelcomeUrl,
   getSegment,
   segmentFromParam,
 } from "@/lib/onboarding/segments";
 
-export const metadata = { title: "Sign up · Signal Studio" };
+/** Same posture as /sign-in: live, unlinked, noindexed until launch. */
+export const metadata: Metadata = {
+  title: "Sign up · Signal Studio",
+  robots: authRouteRobots(),
+};
 
 const REDEEM_PATH = /^\/redeem\/([A-Za-z0-9-]+)\/?$/;
 
@@ -20,6 +27,7 @@ export default async function SignUpPage({
 }) {
   const sp = await searchParams;
   const demoMode = isDemoMode();
+
   let sponsor: { name: string; code: string } | null = null;
   if (!demoMode && sp.redirect_url) {
     const match = REDEEM_PATH.exec(sp.redirect_url);
@@ -32,24 +40,32 @@ export default async function SignUpPage({
 
   const preselected = segmentFromParam(sp.use);
   const welcomeUrl = buildWelcomeUrl(preselected);
-  const segmentLabel = preselected
-    ? getSegment(preselected).label
-    : null;
+  const segmentLabel = preselected ? getSegment(preselected).label : null;
+
+  if (demoMode) {
+    return (
+      <AuthStage headline="No account is needed here.">
+        <DemoAuthCard mode="sign-up" bare />
+      </AuthStage>
+    );
+  }
+
+  // A sponsored signup keeps its own headline: the person arrived because
+  // somebody is paying for their access, and that is the first thing they
+  // should read. The ratified term (R-015) lives in the panel below; the
+  // headline never states a duration.
+  const headline = sponsor
+    ? `${sponsor.name} is covering this.`
+    : "Create your Signal Studio account.";
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
-      <div className="px-6 pt-6">
-        <Wordmark size="md" />
-      </div>
-      <main className="flex flex-1 flex-col items-center justify-center px-6 pb-16">
-        {demoMode ? (
-          <DemoAuthCard mode="sign-up" />
-        ) : sponsor ? (
-          <div className="mb-7 flex w-full max-w-[420px] flex-col items-center text-center">
+      <AuthStage headline={headline}>
+        {sponsor ? (
+          <div className="mb-5 flex w-full flex-col items-center text-center">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-quiet">
               {sponsor.name}
             </div>
-            <p className="mt-2 text-[14.5px] leading-[1.5] text-ink-soft">
+            <p className="mt-2 text-[13.5px] leading-[1.55] text-ink-soft">
               Almost there. {sponsor.name} is covering it. Eighteen months, or
               three months past your wedding, whichever is later.
             </p>
@@ -61,20 +77,16 @@ export default async function SignUpPage({
             </div>
           </div>
         ) : segmentLabel ? (
-          <div className="mb-6 flex w-full max-w-[420px] flex-col items-center text-center">
-            <p className="text-[14px] leading-[1.5] text-ink-soft">
-              Setting up for{" "}
-              <span className="font-medium text-ink">{segmentLabel}</span>
-            </p>
-          </div>
+          <p className="mb-5 text-[13.5px] leading-[1.55] text-ink-soft">
+            Setting up for{" "}
+            <span className="font-medium text-ink">{segmentLabel}</span>.
+          </p>
         ) : null}
-        {demoMode ? null : (
-          <SignUp
-            fallbackRedirectUrl={welcomeUrl}
-            forceRedirectUrl={welcomeUrl}
-          />
-        )}
-      </main>
-    </div>
+        <SignUp
+          appearance={signalAuthPageAppearance}
+          fallbackRedirectUrl={welcomeUrl}
+          forceRedirectUrl={welcomeUrl}
+        />
+      </AuthStage>
   );
 }

@@ -54,6 +54,15 @@ function walk(dir) {
     const st = statSync(full);
     if (st.isDirectory()) {
       if (entry === "node_modules" || entry === ".next") continue;
+      // src/components/lab/** is the design record, not marketing chrome:
+      // noindexed, unlinked from every public surface, and reachable only by
+      // typing the route. A mockup OF a sign-in screen has to be able to
+      // contain the word sign-in. Narrow and deliberate, per the note at the
+      // top of this file about relaxing the gate on purpose.
+      if (entry === "lab") continue;
+      // src/components/auth/** IS the auth surface this gate protects the
+      // marketing site from linking to. It is allowed to reference itself.
+      if (entry === "auth") continue;
       out.push(...walk(full));
     } else if (entry.endsWith(".tsx")) {
       out.push(full);

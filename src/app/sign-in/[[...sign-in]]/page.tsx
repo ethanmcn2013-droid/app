@@ -1,19 +1,35 @@
+import type { Metadata } from "next";
 import { SignIn } from "@clerk/nextjs";
-import { Wordmark } from "@/components/brand/wordmark";
+import { AuthStage } from "@/components/auth/auth-stage";
+import { signalAuthPageAppearance } from "@/components/auth/clerk-appearance";
 import { DemoAuthCard } from "@/components/auth/demo-auth-card";
 import { isDemoMode } from "@/lib/access-mode";
+import { authRouteRobots } from "@/lib/launch";
 
-export const metadata = { title: "Sign in · Signal Studio" };
+/**
+ * The route stays live and working before launch. It is unlinked and
+ * noindexed, not switched off: the allowlist (the founder, pilot accounts)
+ * signs in here while the public sees the waitlist, and requireAppAccess()
+ * bounces anyone else off /app. Taking the route down would lock the
+ * operator out of their own product. See src/lib/launch.ts.
+ */
+export const metadata: Metadata = {
+  title: "Sign in · Signal Studio",
+  robots: authRouteRobots(),
+};
 
 export default function SignInPage() {
+  if (isDemoMode()) {
+    return (
+      <AuthStage headline="You’re already signed in here.">
+        <DemoAuthCard mode="sign-in" bare />
+      </AuthStage>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
-      <div className="px-6 pt-6">
-        <Wordmark size="md" />
-      </div>
-      <main className="flex flex-1 items-center justify-center px-6 pb-16">
-        {isDemoMode() ? <DemoAuthCard mode="sign-in" /> : <SignIn />}
-      </main>
-    </div>
+    <AuthStage headline="Sign in to Signal Studio.">
+      <SignIn appearance={signalAuthPageAppearance} />
+    </AuthStage>
   );
 }

@@ -1,0 +1,419 @@
+/* AuthStage, the shipped sign-in surface (direction E, "Spine v2").
+   Semantic tokens only; one stylesheet serves light and dark.
+
+   Stage geometry, all derived from three local values:
+     --x-stage-pad  the stage margin: --container centred, floor space-7.
+     --x-qr-half    half the rendered QR card width.
+     --x-notes-x /  the spine's first and last stations. signal is pinned
+     --x-signal-x   over the QR card's centre; notes mirrors it.
+   The travel animation and the lit trace share those endpoints, so the dot,
+   the trace, and the QR line up by construction rather than by tuning. */
+
+.page {
+  --x-stage-pad: max(var(--space-7), calc((100% - var(--container)) / 2));
+  --x-qr-half: 92px;
+  /* Brand gesture, not a UI transition; sits outside the four motion tokens. */
+  --x-spine-travel: 1400ms;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--paper-soft);
+  font-family: var(--font-sans);
+  color: var(--ink);
+}
+
+/* ── Top bar. No border: one horizontal line on this page, and it is the
+      one that means something. ─────────────────────────────────────────── */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--x-stage-pad);
+  height: var(--nav-h);
+}
+
+.wordmarkLink {
+  text-decoration: none;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 1.0625rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  user-select: none;
+}
+
+.wordmarkDot {
+  color: var(--accent);
+  margin-left: 0.02em;
+}
+
+.switch {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.switch a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hairline);
+  text-underline-offset: 3px;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.switch a:hover {
+  color: var(--accent);
+  text-decoration-color: var(--accent);
+}
+
+/* ── Canvas ────────────────────────────────────────────────────────────── */
+
+/* Asymmetric padding lifts the card to the optical centre. The spine
+   compensates below so it still crosses the card's exact middle. */
+.canvas {
+  --x-notes-x: calc(var(--x-stage-pad) + var(--x-qr-half));
+  --x-signal-x: calc(100% - var(--x-stage-pad) - var(--x-qr-half));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-7) var(--space-11);
+  overflow: hidden;
+}
+
+/* ── The spine ─────────────────────────────────────────────────────────── */
+
+/* Flex centring with 24px top / 80px bottom padding puts the card centre
+   (80 - 24) / 2 = 28px above the canvas midline. */
+.spine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% - 28px);
+  height: 0;
+  pointer-events: none;
+}
+
+.spineRule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--hairline);
+}
+
+/* The segment the dot has travelled stays lit: the suite visibly connects
+   as the page arrives. Same duration, easing, and endpoints as the dot. */
+.spineTrace {
+  position: absolute;
+  left: var(--x-notes-x);
+  top: 0;
+  height: 1px;
+  background: var(--accent-glow);
+  animation: trace-grow var(--x-spine-travel) var(--ease-in-out) both;
+}
+
+@keyframes trace-grow {
+  from {
+    width: 0;
+  }
+  to {
+    width: calc(var(--x-signal-x) - var(--x-notes-x));
+  }
+}
+
+.station {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+}
+
+.stationTick {
+  width: 2px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 1px;
+  background: var(--ink-ghost);
+}
+
+.stationName {
+  margin-top: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-faint);
+}
+
+/* Where the dot rests, the label holds its own. */
+.station[data-resting] .stationName {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.spineDot {
+  position: absolute;
+  top: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4px 0 0 -4.5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  animation:
+    spine-travel var(--x-spine-travel) var(--ease-in-out) both,
+    spine-breath 3.6s var(--ease-in-out) var(--x-spine-travel) infinite;
+}
+
+@keyframes spine-travel {
+  from {
+    left: var(--x-notes-x);
+  }
+  to {
+    left: var(--x-signal-x);
+  }
+}
+
+@keyframes spine-breath {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.82);
+  }
+}
+
+/* ── The card ──────────────────────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  width: min(432px, 100%);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7);
+  box-shadow: var(--shadow-modal);
+  animation: card-arrive var(--motion-slow) var(--ease-out) both;
+}
+
+@keyframes card-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* One line at desktop; balance handles the wrap on a phone. The suite is
+   named by the spine, so the card never lists the four products in words. */
+.headline {
+  margin: 0 0 var(--space-6);
+  font-size: clamp(1.5rem, 1.35rem + 0.55vw, 1.75rem);
+  line-height: 1.15;
+  letter-spacing: var(--tracking-title);
+  font-weight: var(--weight-semibold);
+  text-wrap: balance;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── The QR ────────────────────────────────────────────────────────────── */
+
+.qrCard {
+  --qr-surface: var(--paper);
+  position: absolute;
+  right: var(--x-stage-pad);
+  bottom: var(--space-6);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  color: var(--ink);
+  text-decoration: none;
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    border-color var(--motion-base) var(--ease-out);
+}
+
+.qrCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--ink-ghost);
+  box-shadow: var(--shadow-float);
+}
+
+.qrCard:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.qrLabel {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+.qrFrame {
+  display: block;
+  line-height: 0;
+  color: var(--ink);
+}
+
+/* Sans, not the mono label style: mono caps at 0.08em tracking runs wider
+   than the QR it sits under and the card loses its shape. */
+.qrCaption {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.qrState {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: qr-breath 3.6s var(--ease-in-out) infinite;
+}
+
+@keyframes qr-breath {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────── */
+
+.footer {
+  position: absolute;
+  left: var(--x-stage-pad);
+  bottom: var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.footerLink {
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color var(--motion-fast) var(--ease-out);
+}
+
+.footerLink:hover {
+  color: var(--ink);
+}
+
+/* ── Dark elevation ────────────────────────────────────────────────────── */
+
+/* The dark mapping makes --paper the DEEPEST surface, so a paper card on a
+   paper-soft field renders sunken: darker than its surroundings. Elevation
+   must read the same way in both themes, so in dark the field takes paper
+   and the raised surfaces take paper-soft. This references tokens per
+   theme; it redefines none of them. */
+:global([data-theme="dark"]) .page {
+  background: var(--paper);
+}
+
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .qrCard {
+  background: var(--paper-soft);
+}
+
+:global([data-theme="dark"]) .qrCard {
+  --qr-surface: var(--paper-soft);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+/* Below the width where the stations clear the card, the spine comes out
+   whole. A cropped spine says nothing. */
+@media (max-width: 1119px) {
+  .spine {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .canvas {
+    flex-direction: column;
+    /* stretch, not center: with align-items center the card sizes to its
+       own content, its width percentage resolves against a container the
+       card is itself sizing, and the canvas outgrows the viewport. */
+    align-items: stretch;
+    gap: var(--space-7);
+    padding: var(--space-7) var(--space-5) var(--space-8);
+    overflow: visible;
+  }
+  .card {
+    width: 100%;
+    max-width: 432px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-5);
+  }
+  .qrCard,
+  .footer {
+    position: static;
+    align-self: center;
+  }
+  .footer {
+    justify-content: center;
+  }
+  .bar {
+    padding: 0 var(--space-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation: none;
+    opacity: 1;
+  }
+  /* No travel, no breath, no growth. The connected state simply is. */
+  .spineDot {
+    animation: none;
+    left: var(--x-signal-x);
+  }
+  .spineTrace {
+    animation: none;
+    width: calc(var(--x-signal-x) - var(--x-notes-x));
+  }
+  .qrState {
+    animation: none;
+  }
+  .qrCard:hover {
+    transform: none;
+  }
+}
