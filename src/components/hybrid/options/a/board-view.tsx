@@ -776,7 +776,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   useEffect(() => {
     const surface = surfaceRef.current;
     if (!surface) return;
-    const nodes = Array.from(surface.querySelectorAll<HTMLElement>("[data-task-id]"));
+    const nodes = Array.from(surface.querySelectorAll<HTMLElement>("article[data-task-id]"));
     // Above this many cards the measurement itself costs more than the
     // transit is worth, so the board simply cuts.
     const animate = !reduceMotion && nodes.length <= 60;
