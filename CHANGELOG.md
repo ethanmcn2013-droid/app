@@ -4,6 +4,52 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-05 · T·132 · ships · the board answers its own review
+
+**Nine independent reviewers graded the shipped board against the standard
+of a studio that had iterated on it for months. None of them passed it.**
+The scores ran 7.2 to 8.4 against a 9.5 gate, and five seats independently
+found the same failure: the board did not fit the screen most people use.
+At 1440 the track needed 1,705px, so the fifth status was amputated and
+its cards were severed mid-word with nothing on screen saying so. Statuses
+now measure 224px and five of them land inside a 1440 canvas with room to
+spare; below that the overflow is authored — a paper fade at the right
+edge and scroll-snap that lands whole statuses instead of half a card.
+
+**Finishing a task is now witnessed and reversible.** Completing work used
+to teleport the card up to 992px into a status that was often off-screen,
+after which the lanes resized underneath it for 220ms — the only movement
+a person saw was the board, not their work. The card is now measured
+before the state change and animated to where it lands, with the lane
+widths frozen for the flight. When it arrives, a receipt says **Moved to
+Done** and offers **Undo**, and the spoken announcement carries the same
+fact with the new count rather than the single word "Completed".
+
+**The card has one left edge.** The title used to sit 25px right of its
+own metadata, so every card was an L-shaped block and the eye zigzagged
+down a column ten times a screen. The checkbox moved out of the text
+column and the title, chips and meta row now share one rule. The type
+scale that carried them — 23 font weights and 12 sizes on a single screen,
+with the task title set *lighter* than the status label framing it — is
+one ramp: four weights, no half-steps, and the title at 15px/600 above a
+status label at 12px/500. A tag is outlined now and a person is filled, so
+"Mara Finn" can no longer be mistaken for an owner.
+
+**Smaller truths.** Five empty statuses said "No tasks yet" five times;
+they now say what an empty status of that kind actually means. The status
+description no longer clips the one sentence that teaches a novice what
+"Waiting" is. The season line — how far through the year this project is —
+left the Planning drawer for the header, and stays on phones along with
+the progress sentence that used to be dropped there. The overdue count is
+a control that goes to the work it counts. One destination stopped
+carrying two names, the object stopped being called both "status" and
+"column", and the tab that leaves for the marketing site says so.
+
+Gates: typecheck · eslint 0 errors · full `pnpm test` · ds:check ·
+first-contact:language · production build · perf:budgets. "Milestone"
+stays on the board — the brand book bans the word, the founder overruled
+it, and that is recorded rather than quietly reconciled.
+
 ## 2026-08-05 · T·132 · ships · the board becomes a white field, and the frame gets out of the way
 
 **The work now starts a third of the way up the screen instead of a quarter

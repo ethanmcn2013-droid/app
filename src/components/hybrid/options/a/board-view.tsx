@@ -52,7 +52,7 @@ import { useFitColumns, useShowStatusDescriptions } from "../../view-prefs";
 import { uniformAssignees } from "../../planning";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
-import { addDays } from "../../dates";
+import { addDays, isTaskOverdue } from "../../dates";
 
 // The board's "today" comes from the server calendar frame, never the
 // browser clock (see lib/calendar-frame.ts). Reading the wall clock here made
@@ -672,16 +672,123 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     store.toggleSelected(task.id, orderedIds, event.shiftKey);
   };
 
+  /**
+   * The board's core verb is a card changing status, and it used to
+   * teleport: the card re-parented up to 992px in a single frame while the
+   * lanes resized underneath it for 220ms afterwards, so the only movement
+   * a person saw was the destination sliding around a card that had
+   * already arrived. This is a FLIP pass over the rendered cards — measure
+   * where each one was, let React place it, then animate it from the old
+   * rect to the new one. Lane widths are frozen for the flight so the card
+   * lands on a stationary target instead of a moving one.
+   */
+  const cardRects = useRef(new Map<string, DOMRect>());
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const surface = surfaceRef.current;
+    if (!surface) return;
+    const nodes = Array.from(surface.querySelectorAll<HTMLElement>("[data-task-id]"));
+    // Above this many cards the measurement itself costs more than the
+    // transit is worth, so the board simply cuts.
+    const animate = !reduceMotion && nodes.length <= 60;
+    let moved = false;
+    const next = new Map<string, DOMRect>();
+    for (const node of nodes) {
+      const id = node.dataset.taskId;
+      if (!id) continue;
+      const rect = node.getBoundingClientRect();
+      next.set(id, rect);
+      if (!animate) continue;
+      const prev = cardRects.current.get(id);
+      if (!prev) continue;
+      const dx = prev.left - rect.left;
+      const dy = prev.top - rect.top;
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) continue;
+      moved = true;
+      node.style.transition = "none";
+      node.style.transform = `translate(${dx}px, ${dy}px)`;
+      requestAnimationFrame(() => {
+        node.style.transition = "transform var(--motion-base) var(--ease-in-out)";
+        node.style.transform = "";
+        window.setTimeout(() => { node.style.transition = ""; }, 260);
+      });
+    }
+    cardRects.current = next;
+    if (moved) {
+      surface.setAttribute("data-flight", "");
+      window.setTimeout(() => surface.removeAttribute("data-flight"), 260);
+    }
+  });
+
+  /**
+   * A completed card leaves the lane it was in, sometimes leaving the
+   * screen entirely. The receipt is the way back: it names where the work
+   * went and offers the undo the board previously only had on a keyboard
+   * shortcut. Effect-keyed to the completion itself, so re-renders do not
+   * restart the clock.
+   */
+  const [receipt, setReceipt] = useState<{ id: string; title: string; fromStatus: string } | null>(null);
+  const priorStatuses = useRef<Map<string, string> | null>(null);
+  useEffect(() => {
+    const now = new Map(store.tasks.map((task) => [task.id, task.completed ? "__done__" : task.status]));
+    const before = priorStatuses.current;
+    priorStatuses.current = now;
+    if (!before) return;
+    const justFinished = store.tasks.find(
+      (task) => task.completed && before.has(task.id) && before.get(task.id) !== "__done__",
+    );
+    if (justFinished) {
+      setReceipt({
+        id: justFinished.id,
+        title: justFinished.title,
+        fromStatus: before.get(justFinished.id) ?? justFinished.status,
+      });
+    }
+  }, [store.tasks]);
+  useEffect(() => {
+    if (!receipt) return;
+    const timer = window.setTimeout(() => setReceipt(null), 7000);
+    return () => window.clearTimeout(timer);
+  }, [receipt]);
+
+  /* The track authors its own right edge: the fade only appears when there
+     is genuinely more board to the right, so residual overflow reads as a
+     designed edge rather than a card severed mid-word. */
+  const [overflowing, setOverflowing] = useState(false);
+  const [trackWidth, setTrackWidth] = useState(0);
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const measure = () => {
+      setOverflowing(scroller.scrollWidth - scroller.clientWidth > 4);
+      setTrackWidth(scroller.clientWidth);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, [boardColumns.length, store.tasks.length]);
+
+  /* The add-status end-cap is a convenience — every status menu carries
+     "Add status after" — so it yields its width to the statuses themselves
+     when the canvas is tight. The rule is a pure function of width and
+     column count, never of whether the board currently overflows, so it
+     cannot oscillate. */
+  const capFits = trackWidth === 0 || trackWidth >= boardColumns.length * 224 + 140;
+
   return (
     <div
       aria-label="Board lanes"
       className={styles.boardSurface}
       data-drag-active={store.drag?.kind === "board" || undefined}
       data-fixed-columns={fitColumns ? undefined : ""}
+      data-overflowing={overflowing || undefined}
+      ref={surfaceRef}
     >
       <LayoutGroup id="tasks-board">
       <div className={styles.boardTrack}>
-      <div className={styles.boardScroll}>
+      <div className={styles.boardScroll} ref={scrollRef}>
         {boardColumns.map((column, columnIndex) => {
           const status = column.key;
           const laneTasks = tasksInLane(status);
@@ -780,7 +887,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
-                    <span>No tasks yet</span>
+                    <span>{emptyLaneLine(status, label)}</span>
                     <small>Drop a task here.</small>
                   </li>
                 ) : null}
@@ -823,6 +930,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
         column menu, so the affordance is never more than one menu away.
         Hidden on coarse pointers (adding columns is a desktop act).
       */}
+      {capFits ? (
       <div className={styles.addColumnCap}>
         {addingAt === "append" ? (
           <AddColumnForm
@@ -844,7 +952,28 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           </button>
         )}
       </div>
+      ) : null}
+      <span aria-hidden="true" className={styles.boardTrackEdge} />
       </div>
+      {receipt ? (
+        <div className={styles.completionReceipt} role="status">
+          <b>Moved to Done</b>
+          <button
+            className={styles.completionReceiptUndo}
+            onClick={() => {
+              // moveStatus is the workflow dispatcher: it carries the
+              // status change AND the completion together. Sending both as
+              // a field patch made the live store move the task back and
+              // then toggle completion on again, so undo did nothing.
+              store.moveStatus(receipt.id, receipt.fromStatus);
+              setReceipt(null);
+            }}
+            type="button"
+          >
+            Undo
+          </button>
+        </div>
+      ) : null}
       </div>
       </LayoutGroup>
     </div>
@@ -852,6 +981,23 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Five empty statuses are five different facts, and one shrug for all of
+ * them ("No tasks yet") threw away the only chance the board has to say
+ * something true. Nothing is invented: each line states what an empty
+ * status of that kind actually means for the project.
+ */
+function emptyLaneLine(status: string, label: string): string {
+  switch (status) {
+    case "todo": return "Nothing queued";
+    case "doing": return "Nothing in motion";
+    case "review": return "Nothing waiting on a check";
+    case "waiting": return "Nothing held up";
+    case "done": return "Nothing finished yet";
+    default: return `Nothing in ${label.toLowerCase()}`;
+  }
+}
 
 function BoardCard({
   task,
@@ -937,6 +1083,7 @@ function BoardCard({
             data-completed={task.completed || undefined}
             data-dragging={store.drag?.kind === "board" && store.drag.taskId === task.id || undefined}
             data-inspected={store.inspectedId === task.id || undefined}
+            data-overdue={isTaskOverdue(task, calendarToday) ? "true" : undefined}
             data-recently-placed={store.recentlyPlacedId === task.id || undefined}
             data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
             data-selected={store.selectedIds.includes(task.id) || undefined}
@@ -957,7 +1104,11 @@ function BoardCard({
               store.setDrag({ kind: "board", taskId: task.id, fromStatus: task.status, overStatus: task.status, overIndex: index });
             }}
             onDrop={(event) => { event.stopPropagation(); dropTask(event, status, index); }}
-            onFocus={() => { store.setActive(task.id); store.setPreview(task.id); }}
+            onFocus={(event) => {
+              store.setActive(task.id);
+              store.setPreview(task.id);
+              event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
+            }}
             onKeyDown={(event) => keyCard(event, task, laneTasks, index)}
             onMouseEnter={() => store.setPreview(task.id)}
             onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
@@ -969,36 +1120,38 @@ function BoardCard({
                 hover/focus so it costs no permanent row. */}
             <div className={styles.cardHead}>
               <TaskCompletion disabled={store.readOnly} task={task} />
-              {store.editing?.taskId === task.id && store.editing.field === "title" ? (
-                <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
-              ) : (
-                <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
-              )}
-            </div>
+              <div className={styles.cardBody}>
+                {store.editing?.taskId === task.id && store.editing.field === "title" ? (
+                  <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
+                ) : (
+                  <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
+                )}
             <ActionsDropdown
               items={actions}
               trigger={<Icon name="more" size={15} />}
-              triggerLabel={`Actions for ${task.title}`}
+              triggerLabel="Task actions"
               triggerClassName={styles.cardMenuTrigger}
             />
-            {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
+                {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
             {/* One meta row, one rhythm: priority word and date sentence
                 read left; the quiet facts — signals, estimate, people —
                 sit right. Priority is meta ("High" in the state's ink,
                 dot alongside so colour is never alone), never chrome. */}
-            {hasMeta ? (
-              <div className={styles.cardMeta}>
-                <span className={styles.cardMetaLeft}>
-                  {hasPriority ? <PriorityMark task={task} withLabel /> : null}
-                  {hasSchedule ? <ScheduleText compact task={task} /> : null}
-                </span>
-                <span className={styles.cardMetaRight}>
-                  {hasSignals ? <TaskSignals task={task} /> : null}
-                  {task.estimate ? <span className={styles.cardEstimate}>{task.estimate}</span> : null}
-                  {shownAssignees.length > 0 ? <AvatarStack showUnassigned={false} task={task} /> : null}
-                </span>
+                {hasMeta ? (
+                  <div className={styles.cardMeta}>
+                    <span className={styles.cardMetaLeft}>
+                      {hasPriority ? <PriorityMark task={task} withLabel /> : null}
+                      {hasSchedule ? <ScheduleText compact task={task} /> : null}
+                    </span>
+                    <span className={styles.cardMetaRight}>
+                      {hasSignals ? <TaskSignals task={task} /> : null}
+                      {task.estimate ? <span className={styles.cardEstimate}>{task.estimate}</span> : null}
+                      {shownAssignees.length > 0 ? <AvatarStack showUnassigned={false} task={task} /> : null}
+                    </span>
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            </div>
           </article>
         }
       />
@@ -1270,10 +1423,10 @@ function LaneHeader({
               {/* Done-ness is configurable per column (T·122): progress,
                   briefs and exports all count what lands here. */}
               <button
-                aria-pressed={column.isDone}
+                aria-checked={column.isDone}
                 disabled={readOnly || (column.isDone && columns.filter((c) => c.isDone).length === 1)}
                 onClick={toggleDone}
-                role="menuitem"
+                role="menuitemcheckbox"
                 type="button"
               >
                 {column.isDone ? "Counts as done ✓" : "Counts as done"}

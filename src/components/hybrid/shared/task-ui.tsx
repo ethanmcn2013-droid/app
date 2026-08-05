@@ -18,7 +18,7 @@ export function TaskSelection({ task, orderedIds, ...props }: {
   return (
     <input
       {...props}
-      aria-label={`${checked ? "Deselect" : "Select"} ${task.title}`}
+      aria-label={checked ? "Deselect this task" : "Select this task"}
       checked={checked}
       className={styles.selectionBox}
       disabled={store.readOnly && props.disabled}
@@ -103,7 +103,7 @@ export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: b
   const store = useLabStore();
   return (
     <input
-      aria-label={`${task.completed ? "Reopen" : "Mark done"} ${task.title}`}
+      aria-label={task.completed ? "Reopen this task" : "Mark this task done"}
       checked={task.completed}
       className={styles.completionBox}
       disabled={disabled || store.readOnly}
@@ -119,7 +119,7 @@ export function AvatarStack({ task, limit = 3, showUnassigned = true }: { task: 
   if (people.length === 0) return showUnassigned ? <span className={styles.unassigned}>Unassigned</span> : null;
   const visible = people.slice(0, limit);
   return (
-    <span className={styles.avatarStack} aria-label={`Assigned to ${people.map((person) => person?.name).join(", ")}`}>
+    <span className={styles.avatarStack} aria-label={`Owner: ${people.map((person) => person?.name).filter(Boolean).join(", ")}`}>
       {visible.map((person) => person ? (
         <span className={styles.avatar} key={person.id} style={{ "--avatar-color": person.color } as React.CSSProperties} title={person.name}>
           {person.initials}

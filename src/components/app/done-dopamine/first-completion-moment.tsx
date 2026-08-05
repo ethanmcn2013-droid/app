@@ -179,13 +179,20 @@ const CSS = `
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fcm2-root { animation: fcm2-root-reduced 2200ms linear both; }
+  /* globals.css forces every element's animation-duration to ~0 with
+     !important under this same media query, so a keyframe-driven opacity
+     here would collapse to its own last keyframe the instant it starts —
+     for .fcm2-root that keyframe was opacity: 0, which hid the pill for
+     its entire mounted life (never fought the !important, just landed on
+     the wrong frame). Carry the visible state as a plain static property
+     instead of an animation target: the pill appears immediately, holds
+     for the JS timer's full duration, and disappears only when the
+     component unmounts. Matches the already-correct pattern just below
+     for .fcm2-mark/.fcm2-line. */
+  .fcm2-root { animation: none; opacity: 1; }
   .fcm2-mark, .fcm2-line { animation: none; opacity: 1; }
   .fcm2-ring { display: none; }
   .fcm2-check { stroke-dashoffset: 0; animation: none; }
-  @keyframes fcm2-root-reduced {
-    0% { opacity: 0; } 6% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; }
-  }
 }
 @media (prefers-reduced-transparency: reduce) {
   .fcm2-cluster { background: var(--paper); backdrop-filter: none; }

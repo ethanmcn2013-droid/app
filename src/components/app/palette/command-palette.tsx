@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { LANES, LANE_ORDER, USERS, type Task } from "@/lib/data";
 import { useAddTask } from "@/components/app/add-task/add-task-context";
 import { useTasksState } from "@/lib/tasks/tasks-context";
@@ -219,6 +219,17 @@ function useTaskFacets(tasks: Task[]): ScopeFacet[] {
 // Palette UI
 // ────────────────────────────────────────────────────────────────────
 
+// Anchored-layer entrance per docs/design/TASKS_DELIGHT_MOTION_CONTRACT.md:
+// scale from 0.98 plus opacity, 140ms in (--motion-fast), faster out
+// (--motion-instant), --ease-out (cubic-bezier(0.23,1,0.32,1)); opacity-only
+// when reduced. Values are hardcoded (not imported from src/lib/motion.ts)
+// because that file's EASE_OUT constant has drifted from the CSS token of
+// the same name — these mirror src/ds/tokens.css directly, the same way
+// the sibling Dialog and Popover primitives already do.
+const PALETTE_EASE_OUT = [0.23, 1, 0.32, 1] as const; // --ease-out
+const PALETTE_MOTION_FAST = 0.14; // --motion-fast (140ms)
+const PALETTE_MOTION_INSTANT = 0.08; // --motion-instant (80ms)
+
 function Palette({
   open,
   onClose,
@@ -244,6 +255,7 @@ function Palette({
   const dialogRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listboxId = useId();
+  const reduceMotion = useReducedMotion();
   const state = useTasksState();
   const { openTask } = useTaskPanel();
   // "…or create": the palette is the Studio Bar's universal field (T·94),
@@ -404,10 +416,18 @@ function Palette({
       {open ? (
         <motion.div
           data-tasks-command-palette-layer
-          initial={false}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 1 }}
-          transition={{ duration: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{
+            opacity: 1,
+            transition: {
+              duration: reduceMotion ? PALETTE_MOTION_INSTANT : PALETTE_MOTION_FAST,
+              ease: PALETTE_EASE_OUT,
+            },
+          }}
+          exit={{
+            opacity: 0,
+            transition: { duration: PALETTE_MOTION_INSTANT, ease: PALETTE_EASE_OUT },
+          }}
           className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/15 px-4 pt-[14vh] backdrop-blur-[2px]"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
@@ -418,10 +438,20 @@ function Palette({
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
-            initial={false}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0 }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              transition: {
+                duration: reduceMotion ? PALETTE_MOTION_INSTANT : PALETTE_MOTION_FAST,
+                ease: PALETTE_EASE_OUT,
+              },
+            }}
+            exit={{
+              opacity: 0,
+              scale: reduceMotion ? 1 : 0.98,
+              transition: { duration: PALETTE_MOTION_INSTANT, ease: PALETTE_EASE_OUT },
+            }}
             onKeyDown={(event) => {
               if (event.key === "Escape") {
                 event.preventDefault();

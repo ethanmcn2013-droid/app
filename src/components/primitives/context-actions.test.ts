@@ -192,8 +192,12 @@ test("board-view: buildTaskActions registry includes all required brand-voice la
 // ── 12. Board-view uses ContextActions wrapping the card article ──────────────
 
 test("board-view: wraps each task card in ContextActions (both trigger and target props present)", () => {
+  // T·132 pass 5: the label is a constant now, not a template. Interpolating
+  // the task title made a screen reader speak it four times per card, so the
+  // trigger says what it does and the card's own label names the task. The
+  // contract is that a label is passed at all, in either form.
   assert.ok(
-    boardSource.includes("triggerLabel={"),
+    /triggerLabel=[{"]/.test(boardSource),
     "board-view must pass triggerLabel prop to ContextActions",
   );
   assert.ok(

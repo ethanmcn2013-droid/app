@@ -20,6 +20,20 @@ function shortenWorkspaceTitle(value: string): string {
   return index > 0 ? value.slice(0, index) : value;
 }
 
+/** Below this container width (not viewport width — the Tasks navigation
+ *  sidebar's own docked/drawer state changes how much room this component
+ *  actually has, so the two are not the same number) there is nowhere left
+ *  to dock the drawer without crushing the board, so it overlays instead.
+ *  Mirrors the `@container` threshold in option-c.module.css; keep the two
+ *  numbers equal or the panel can end up floating over the board without
+ *  behaving like the modal it visually is. */
+const OVERLAY_MAX_WIDTH = 1100;
+
+/** Elements a Tab press can land on inside the drawer. Nothing here uses a
+ *  positive tabindex, so DOM order already matches tab order. */
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 type UndoRecord = { ids: string[]; label: string };
 
 export function PlanningRail({
@@ -57,18 +71,24 @@ export function PlanningRail({
     return () => window.clearTimeout(timer);
   }, [undo]);
 
-  // Below 768px the drawer covers the workspace. A thing that covers the
-  // workspace is a dialog: it takes focus, closes on Escape, and hands
-  // focus back. At wider widths it is a docked (or edge-overlaid) panel
-  // and none of this applies.
+  // Whenever the drawer covers the workspace instead of sitting beside it,
+  // it is a dialog: it takes focus, traps Tab inside itself, closes on
+  // Escape, and hands focus back. Docked, none of this applies — nothing
+  // sits under it to obscure. Measured on the actual container (this
+  // component's DOM parent, the same box option-c.module.css's @container
+  // rule queries) rather than the viewport, because the Tasks navigation
+  // sidebar's own collapse/expand state changes how much width that
+  // container has at a given viewport size.
   const [asOverlay, setAsOverlay] = useState(false);
   useEffect(() => {
     if (collapsed) return;
-    const query = window.matchMedia("(max-width: 767px)");
-    const sync = () => setAsOverlay(query.matches);
+    const container = panelRef.current?.parentElement;
+    if (!container) return;
+    const sync = () => setAsOverlay(container.getBoundingClientRect().width <= OVERLAY_MAX_WIDTH);
     sync();
-    query.addEventListener("change", sync);
-    return () => query.removeEventListener("change", sync);
+    const observer = new ResizeObserver(sync);
+    observer.observe(container);
+    return () => observer.disconnect();
   }, [collapsed]);
   useEffect(() => {
     if (!asOverlay || collapsed) return;
@@ -76,9 +96,27 @@ export function PlanningRail({
     const returnTo = document.activeElement as HTMLElement | null;
     panel?.focus({ preventScroll: true });
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      onToggle();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onToggle();
+        return;
+      }
+      // The only two Tab presses a modal dialog ever intercepts: the ones
+      // that would walk focus off either end of it and onto whatever it is
+      // covering (SC 2.4.11). Everything else — including a Schedule
+      // menu's own portaled focus handling — is left alone.
+      if (event.key !== "Tab" || !panel) return;
+      const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus({ preventScroll: true });
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -342,18 +380,25 @@ export function PlanningRail({
                   >
                     <div className={styles.unscheduledMain}>
                       {store.readOnly ? null : (
-                        <input
-                          aria-label={`Select ${task.title} for scheduling`}
-                          checked={selectedIds.has(task.id)}
-                          className={styles.railSelect}
-                          onChange={() => setSelectedIds((current) => {
-                            const next = new Set(current);
-                            if (next.has(task.id)) next.delete(task.id);
-                            else next.add(task.id);
-                            return next;
-                          })}
-                          type="checkbox"
-                        />
+                        // A wrapping <label> is the only reliable way to grow a
+                        // native checkbox's hit area: ::after on the input itself
+                        // computes fine but never expands what actually receives
+                        // clicks on a real appearance:auto control, and clicking
+                        // anywhere in a checkbox's label natively toggles it.
+                        <label className={styles.railSelectWrap}>
+                          <input
+                            aria-label={`Select ${task.title} for scheduling`}
+                            checked={selectedIds.has(task.id)}
+                            className={styles.railSelect}
+                            onChange={() => setSelectedIds((current) => {
+                              const next = new Set(current);
+                              if (next.has(task.id)) next.delete(task.id);
+                              else next.add(task.id);
+                              return next;
+                            })}
+                            type="checkbox"
+                          />
+                        </label>
                       )}
                       <TaskOpenButton data-unscheduled-task-id={task.id} task={task}>{task.title}</TaskOpenButton>
                       {store.readOnly ? null : (

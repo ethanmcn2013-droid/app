@@ -189,6 +189,22 @@ export function WorkspaceBrief({
   }, []);
 
   const periodName = calendar.planningPeriod?.name ?? null;
+  /* How far through the season this project is — the one line that is
+     about this venue's year rather than about task management. It was
+     only readable with the Planning drawer open. */
+  const periodProgress = (() => {
+    const period = calendar.planningPeriod;
+    if (!period?.startDate || !period.endDate) return null;
+    const day = (value: string) => Math.floor(Date.parse(`${value}T00:00:00Z`) / 86400000);
+    const start = day(period.startDate);
+    const end = day(period.endDate);
+    const today = day(calendar.today);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+    const total = end - start + 1;
+    const elapsed = Math.min(Math.max(today - start + 1, 1), total);
+    const left = Math.max(end - today, 0);
+    return `Day ${elapsed} of ${total} · ${left} ${left === 1 ? "day" : "days"} left`;
+  })();
   const navHidden = useNavPanelHidden();
 
   return (
@@ -242,7 +258,21 @@ export function WorkspaceBrief({
         </span>
         <p className={styles.briefFacts} title={filteredNote ?? undefined}>
           <strong>{completed} of {store.tasks.length} complete</strong>
-          {overdue > 0 ? <b>{overdue} overdue</b> : null}
+          {overdue > 0 ? (
+            <button
+              className={styles.briefOverdue}
+              onClick={() => {
+                const first = document.querySelector<HTMLElement>("[data-overdue='true']");
+                first?.scrollIntoView({ block: "center", inline: "center" });
+                first?.focus({ preventScroll: true });
+              }}
+              title="Go to the first overdue task"
+              type="button"
+            >
+              {overdue} overdue
+            </button>
+          ) : null}
+          {periodProgress ? <span className={styles.briefPeriod}>{periodProgress}</span> : null}
         </p>
       </section>
       {actions ? (

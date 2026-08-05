@@ -426,15 +426,23 @@ export function LabStoreProvider({
       const task = state.tasks.find((item) => item.id === id);
       if (!task) return;
       if (!task.completed) maybeFireFirstCompletion();
+      // The card can travel four statuses to the right, so the spoken
+      // receipt states where it went and where that leaves the project —
+      // "Completed" alone left people hunting for work they had just done.
+      const finishing = !task.completed;
+      const completedAfter = state.tasks.filter((item) =>
+        item.id === id ? finishing : item.completed).length;
       dispatch({
         type: "UPDATE_TASK",
         id,
         fields: {
-          completed: !task.completed,
-          status: !task.completed ? "done" : "doing",
-          completedAt: !task.completed ? calendar.nowIso : undefined,
+          completed: finishing,
+          status: finishing ? "done" : "doing",
+          completedAt: finishing ? calendar.nowIso : undefined,
         },
-        label: !task.completed ? "Completed" : "Reopened",
+        label: finishing
+          ? `moved to Done, ${completedAfter} of ${state.tasks.length} complete`
+          : `reopened, ${completedAfter} of ${state.tasks.length} complete`,
       });
     },
     addTask: (status, schedule, title) => dispatch({ type: "ADD_TASK", status, schedule, title }),
