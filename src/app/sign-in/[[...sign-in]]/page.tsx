@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default function SignInPage() {
   if (isDemoMode()) {
     return (
-      <AuthStage headline="You are already signed in here.">
+      <AuthStage headline="You’re already signed in here.">
         <DemoAuthCard mode="sign-in" bare />
       </AuthStage>
     );
