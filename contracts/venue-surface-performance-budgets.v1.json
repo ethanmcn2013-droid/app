@@ -18,12 +18,12 @@
     },
     "total_client_js": {
       "unit": "KB gzip",
-      "budget": 950,
-      "ceiling": 950,
+      "budget": 936,
+      "ceiling": 936,
       "surfaces": ["couple_workspace", "public_artifact"],
       "what": "Every client chunk emitted under .next/static/chunks, gzipped.",
       "budgetBasis": "No prior target existed anywhere in either repository. Set equal to the measured baseline so the number can only ratchet down. Choosing a real target is a founder decision and is recorded as an open question on E08.10.",
-      "ceilingBasis": "Measured 944.1 KB gzip on the 2026-08-03 production build."
+      "ceilingBasis": "Measured 933.7 KB gzip on the 2026-08-05 production build of main, after /lab/task-detail was removed (T·130). Ceiling set at 936 to absorb gzip nondeterminism across zlib versions, the same slack the shared_runtime ceiling carries. Ratcheted DOWN from 950, which had been measured on 2026-08-03 at 944.1 KB and was breached at 952.8 KB once #82, #83, #89, #91 and #92 landed."
     },
     "largest_chunk": {
       "unit": "KB gzip",
