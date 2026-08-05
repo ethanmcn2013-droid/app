@@ -45,10 +45,6 @@
 }
 
 .workspaceIdentity { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
-/* Parent context: quieter than the project, separated by a low-contrast
-   slash — hierarchy in one reading order, no extra band. */
-.briefCrumb { align-items: baseline; color: var(--x-task-text-secondary); display: inline-flex; flex: 0 1 auto; font-size: 13px; font-weight: 500; gap: 9px; min-width: 0; white-space: nowrap; }
-.briefCrumb > :first-child { overflow: hidden; text-overflow: ellipsis; }
 .navTrigger {
   align-items: center;
   background: transparent;
@@ -65,9 +61,6 @@
   width: 30px;
 }
 .navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-/* The separator is a real glyph, so it carries a real ratio: ghost measured
-   1.48:1 against paper. Muted keeps it subordinate to both names at AA. */
-.briefCrumb i { color: var(--x-task-text-muted); font-style: normal; font-weight: 400; }
 .workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*
@@ -588,12 +581,9 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
   .roomViewBar > div:last-of-type { margin-left: auto; }
 }
 
-/* Narrow desktop: the sentence goes before the numbers do. */
-/* The crumb never disappears — it truncates. The description and the
-   count sentence yield first. */
+/* Narrow desktop: the description yields first when width gets tight. */
 @media (max-width: 1160px) {
   .workspaceIdentity > p { display: none; }
-  .briefCrumb > :first-child { max-width: 128px; }
 }
 @media (max-width: 900px) {
   /* The phone keeps the sentence and drops only the season detail. How

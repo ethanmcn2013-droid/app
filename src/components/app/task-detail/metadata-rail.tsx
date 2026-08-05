@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * MetadataRail — compact or full metadata display for the task detail.
+ * MetadataRail — the task's properties, in the framing its shell asks for.
  *
- * compact = 2-col grid (used in panel shell, inline at top)
  * full    = flex-col (used in focus shell right rail)
  *
  * Rows reuse the exported row components from field-rows.tsx so all
@@ -12,6 +11,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { tagDisplayName } from "@/lib/tags";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import type { Task } from "@/lib/data";
 import { useDomain } from "@/lib/domain-context";
@@ -68,11 +68,9 @@ function MetaField({
 
 export function MetadataRail({
   task,
-  compact = false,
   variant = "full",
 }: {
   task: Task;
-  compact?: boolean;
   /**
    * "strip" renders only the four properties a person checks first —
    * status, owner, due date, priority — labelless and in a row under the
@@ -106,9 +104,7 @@ export function MetadataRail({
 
   const wrapClass = variant === "strip"
     ? "flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]"
-    : compact
-      ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]"
-      : "flex flex-col gap-4 text-[13px]";
+    : "flex flex-col gap-4 text-[13px]";
   const bare = variant === "strip";
 
   return (
@@ -142,14 +138,14 @@ export function MetadataRail({
 
       {/* Tags — only when present */}
       {task.tags && task.tags.length > 0 ? (
-        <MetaField label="Tags" colSpan2={compact}>
+        <MetaField label="Tags">
           <div className="flex flex-wrap gap-1">
             {task.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft leading-[var(--x-lead-tight)]"
+                className="rounded-md border border-line-soft px-2 py-0.5 text-[11px] text-ink-soft leading-[var(--x-lead-tight)]"
               >
-                {tag}
+                {tagDisplayName(tag)}
               </span>
             ))}
           </div>
@@ -164,13 +160,13 @@ export function MetadataRail({
         then they live behind the single Add-field row below.
       */}
       {showContact ? (
-        <MetaField label="Contact" colSpan2={compact}>
+        <MetaField label="Contact">
           <ContactEditor key={task.id} task={task} />
         </MetaField>
       ) : null}
 
       {showAmount ? (
-        <MetaField label="Amount" colSpan2={compact}>
+        <MetaField label="Amount">
           <CentsEditor key={task.id} task={task} />
         </MetaField>
       ) : null}
@@ -200,7 +196,7 @@ export function MetadataRail({
 
       {/* Milestone cross-link — only when flagged */}
       {task.isMilestone ? (
-        <MetaField label="Milestone" colSpan2={compact}>
+        <MetaField label="Milestone">
           <Link
             href={timelineHref}
             className="inline-flex items-center gap-1 text-[12px] text-ink-quiet transition-colors hover:text-ink-soft"
@@ -229,7 +225,7 @@ export function MetadataRail({
       */}
 
       {hiddenFields.length > 0 ? (
-        <MetaField label="Add field" colSpan2={compact}>
+        <MetaField label="Add field">
           <div className="flex flex-wrap gap-1">
             {hiddenFields.map((field) => (
               <button

@@ -378,7 +378,6 @@ function TaskDetailHeader({
           ) : null}
           {primaryLabel}
         </button>
-        <span className="text-[11px] text-ink-faint">e — focus mode · j/k — navigate</span>
       </div>
     </div>
   );

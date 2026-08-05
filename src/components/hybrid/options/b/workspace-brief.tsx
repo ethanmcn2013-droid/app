@@ -188,7 +188,6 @@ export function WorkspaceBrief({
     };
   }, []);
 
-  const periodName = calendar.planningPeriod?.name ?? null;
   /* How far through the season this project is — the one line that is
      about this venue's year rather than about task management. It was
      only readable with the Planning drawer open. */
@@ -222,15 +221,6 @@ export function WorkspaceBrief({
         </button>
       ) : null}
       <div className={styles.workspaceIdentity}>
-        {/* The parent context reads first, quietly: the person knows where
-            this project sits without the Projects panel open. The period
-            is a grouping, not a destination, so it is text, not a link. */}
-        {periodName ? (
-          <span className={styles.briefCrumb}>
-            {periodName}
-            <i aria-hidden="true">/</i>
-          </span>
-        ) : null}
         <EditableText
           ariaLabel="Project name"
           onCommit={renameBoardAction}
