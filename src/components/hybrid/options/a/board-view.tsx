@@ -60,6 +60,16 @@ import { addDays, isTaskOverdue } from "../../dates";
 // which is only invisible in production because the frame tracks real time.
 
 /**
+ * Plain-English description of where a column landed — shared by the
+ * header drag and the keyboard "Move left"/"Move right" actions in
+ * LaneHeader below, so the live region says the same thing regardless of
+ * how the move happened.
+ */
+function describeColumnMove(name: string, position: number, total: number): string {
+  return `${name} moved to position ${position} of ${total}`;
+}
+
+/**
  * The schedule a milestone toggle produces.
  *
  * A milestone is a dated thing, so toggling it on keeps the task's own date
@@ -564,6 +574,16 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   // Where the add-column form is open: a 0-based insert position in the
   // full order, or "append", or null when closed.
   const [addingAt, setAddingAt] = useState<number | "append" | null>(null);
+  // A column drag lives entirely in this local state, never in store.drag
+  // (that field is the card grammar). The two gestures share no state, so
+  // a card mid-flight and a column mid-flight can never be mistaken for
+  // one another — checking one is always false while the other is live.
+  const [columnDrag, setColumnDrag] = useState<{ key: string; overIndex: number } | null>(null);
+  // Its own live region below, rather than store.announcement: reaching the
+  // store's reducer to add a column-move case is outside this view's
+  // surface, so column moves get a same-pattern region scoped to the board.
+  const [columnAnnouncement, setColumnAnnouncement] = useState("");
+  const [, startColumnReorder] = useTransition();
 
   const tasksInLane = (key: string) => tasks
     .filter((task) => task.status === key)
@@ -602,6 +622,74 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     store.moveStatus(taskId, status, toIndex);
     store.setDrag(null);
     focusTask(taskId);
+  };
+
+  /**
+   * Commit a column to a new position the same way a rename or colour
+   * change persists: paint the optimistic order at once, then
+   * reorderColumnsAction, rolling back to the pre-move config if the
+   * server rejects it. The header drag and the keyboard "Move left"/"Move
+   * right" actions in LaneHeader both call this, so a mouse move and a
+   * menu move leave the board in exactly the same state.
+   *
+   * `toRenderedIndex` names the column currently rendered at that position
+   * — WITH the dragged column still in its old slot, the same convention
+   * dropTask above uses for cards. Splicing after removal shifts the tail
+   * left by one, so a rightward move needs dropTask's own -1 correction.
+   */
+  const reorderColumn = (key: string, toRenderedIndex: number) => {
+    if (store.readOnly) return;
+    const order = boardColumns.map((column) => column.key);
+    const fromIndex = order.indexOf(key);
+    if (fromIndex === -1) return;
+    const toIndex = fromIndex < toRenderedIndex ? toRenderedIndex - 1 : toRenderedIndex;
+    if (toIndex === fromIndex) return;
+    const moving = boardColumns[fromIndex];
+    order.splice(fromIndex, 1);
+    order.splice(toIndex, 0, key);
+    const previous = optimisticConfig;
+    const next = optimisticConfig ?? defaultColumnConfig();
+    setOptimisticConfig({ ...next, order });
+    setColumnAnnouncement(describeColumnMove(moving.name, toIndex + 1, order.length));
+    startColumnReorder(async () => {
+      try {
+        await reorderColumnsAction(order);
+      } catch {
+        setOptimisticConfig(previous);
+      }
+    });
+  };
+
+  /**
+   * A column drag hovering lane `index`: which half of it decides whether
+   * the dragged column would land before or after it. Registered as the
+   * *Capture* handlers below so this runs before a card's own drag
+   * handlers underneath it — a column drag never touches store.drag, so
+   * without capture, a drop landing on a card would stop there (the
+   * card's own onDrop stops propagation for its own reasons) and never
+   * reach the lane at all.
+   */
+  const columnDragOver = (event: DragEvent, index: number) => {
+    if (store.readOnly || !columnDrag) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = event.currentTarget.getBoundingClientRect();
+    const before = event.clientX < rect.left + rect.width / 2;
+    const overIndex = before ? index : index + 1;
+    setColumnDrag((prev) => (prev && prev.overIndex !== overIndex ? { ...prev, overIndex } : prev));
+  };
+
+  const columnDrop = (event: DragEvent, index: number) => {
+    if (store.readOnly || !columnDrag) return;
+    event.preventDefault();
+    event.stopPropagation();
+    // Recomputed from the lane the drop actually landed on, the same way
+    // columnDragOver reads it — trusting the last hover's overIndex here
+    // would desync from a fast release the pointer's final move outran.
+    const rect = event.currentTarget.getBoundingClientRect();
+    const before = event.clientX < rect.left + rect.width / 2;
+    reorderColumn(columnDrag.key, before ? index : index + 1);
+    setColumnDrag(null);
   };
 
   const keyCard = (
@@ -777,6 +865,15 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
      cannot oscillate. */
   const capFits = trackWidth === 0 || trackWidth >= boardColumns.length * 224 + 140;
 
+  // Where the dragged column would land, suppressing the marker over its
+  // own old slot or the slot right after it — a "move" there would not
+  // actually move anything, and a marker that lies about that is worse
+  // than no marker.
+  const draggedColumnIndex = columnDrag ? boardColumns.findIndex((column) => column.key === columnDrag.key) : -1;
+  const columnDropIndex = columnDrag && columnDrag.overIndex !== draggedColumnIndex && columnDrag.overIndex !== draggedColumnIndex + 1
+    ? columnDrag.overIndex
+    : null;
+
   return (
     <div
       aria-label="Board lanes"
@@ -786,6 +883,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
       data-overflowing={overflowing || undefined}
       ref={surfaceRef}
     >
+      <div aria-live="polite" className={styles.srOnly}>{columnAnnouncement}</div>
       <LayoutGroup id="tasks-board">
       <div className={styles.boardTrack}>
       <div className={styles.boardScroll} ref={scrollRef}>
@@ -808,11 +906,18 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 aria-labelledby={`a-lane-${status}`}
                 className={styles.boardLane}
                 data-collapsed=""
+                data-dragging={columnDrag?.key === status || undefined}
                 data-done={status === "done" || undefined}
                 data-tinted={accent ? "" : undefined}
                 key={status}
+                onDragOverCapture={(event) => columnDragOver(event, columnIndex)}
+                onDropCapture={(event) => columnDrop(event, columnIndex)}
                 style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
               >
+                {/* A folded column has no header to grab, but it is still a
+                    valid landing spot — the marker and the drop handlers
+                    above work identically to the expanded shape. */}
+                {columnDropIndex === columnIndex ? <div aria-hidden="true" className={styles.columnInsertion} /> : null}
                 <button
                   aria-expanded={false}
                   className={styles.laneRail}
@@ -825,6 +930,9 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   <span className={styles.railName} id={`a-lane-${status}`}>{label}</span>
                   <span aria-label={countLabel} className={styles.railCount}>{laneTasks.length}</span>
                 </button>
+                {columnDropIndex === boardColumns.length && columnIndex === boardColumns.length - 1 ? (
+                  <div aria-hidden="true" className={styles.columnInsertion} data-edge="end" />
+                ) : null}
               </section>
             );
           }
@@ -833,13 +941,17 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             <section
               aria-labelledby={`a-lane-${status}`}
               className={styles.boardLane}
+              data-dragging={columnDrag?.key === status || undefined}
               data-done={status === "done" || undefined}
               data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
               data-empty={laneTasks.length === 0 || undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
+              onDragOverCapture={(event) => columnDragOver(event, columnIndex)}
+              onDropCapture={(event) => columnDrop(event, columnIndex)}
               style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
             >
+              {columnDropIndex === columnIndex ? <div aria-hidden="true" className={styles.columnInsertion} /> : null}
               <LaneHeader
                 column={column}
                 columnIndex={columnIndex}
@@ -848,7 +960,10 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 countLabel={countLabel}
                 currentConfig={optimisticConfig}
                 nearLimit={nearLimit}
+                onAnnounce={setColumnAnnouncement}
                 onCollapse={() => toggleCollapsed(status)}
+                onColumnDragEnd={() => setColumnDrag(null)}
+                onColumnDragStart={() => setColumnDrag({ key: column.key, overIndex: columnIndex })}
                 onOptimisticConfigChange={setOptimisticConfig}
                 onRequestAddAfter={() => setAddingAt(columnIndex + 1)}
                 onStartCompose={() => setComposing(status)}
@@ -919,6 +1034,9 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   onClose={() => setAddingAt(null)}
                   onOptimisticConfigChange={setOptimisticConfig}
                 />
+              ) : null}
+              {columnDropIndex === boardColumns.length && columnIndex === boardColumns.length - 1 ? (
+                <div aria-hidden="true" className={styles.columnInsertion} data-edge="end" />
               ) : null}
             </section>
           );
@@ -1181,6 +1299,9 @@ function LaneHeader({
   overLimit,
   readOnly,
   currentConfig,
+  onAnnounce,
+  onColumnDragEnd,
+  onColumnDragStart,
   onOptimisticConfigChange,
   onRequestAddAfter,
   onStartCompose,
@@ -1196,6 +1317,10 @@ function LaneHeader({
   overLimit: boolean;
   readOnly: boolean;
   currentConfig: ColumnConfig | null;
+  /** Live-region text for a column move — drag or keyboard, same words. */
+  onAnnounce: (message: string) => void;
+  onColumnDragEnd: () => void;
+  onColumnDragStart: () => void;
   onOptimisticConfigChange: (config: ColumnConfig | null) => void;
   onRequestAddAfter: () => void;
   onStartCompose: () => void;
@@ -1214,6 +1339,15 @@ function LaneHeader({
   const menuRef = useRef<HTMLDivElement | null>(null);
   const otherColumns = columns.filter((c) => c.key !== column.key);
   const [deleteDest, setDeleteDest] = useState(otherColumns[0]?.key ?? "");
+  // Named so the keyboard move's accessible name can say where the column
+  // actually lands ("before Queued"), not just which way it goes.
+  const leftNeighbor = columnIndex > 0 ? columns[columnIndex - 1] : undefined;
+  const rightNeighbor = columnIndex < columns.length - 1 ? columns[columnIndex + 1] : undefined;
+  // The drag handle switches off while a field in the header is open. A
+  // draggable ancestor around live text-selection is a known browser trap
+  // — dragging to select text in the rename/description/limit input can
+  // get swallowed as a column drag instead of a selection.
+  const headerDraggable = !readOnly && !editing && !descEditing && !limitEditing;
 
   // Close the menu on outside click / Escape.
   useEffect(() => {
@@ -1300,6 +1434,7 @@ function LaneHeader({
     order.splice(target, 0, moved);
     const next = base();
     onOptimisticConfigChange({ ...next, order });
+    onAnnounce(describeColumnMove(column.name, target + 1, columns.length));
     startTransition(async () => {
       try {
         await reorderColumnsAction(order);
@@ -1362,7 +1497,16 @@ function LaneHeader({
   }
 
   return (
-    <header className={styles.laneHeader}>
+    <header
+      className={styles.laneHeader}
+      draggable={headerDraggable}
+      onDragEnd={onColumnDragEnd}
+      onDragStart={(event) => {
+        if (!headerDraggable) return;
+        event.dataTransfer.effectAllowed = "move";
+        onColumnDragStart();
+      }}
+    >
       <div className={styles.laneIdentity}>
         <span className={styles.statusPip} data-accent={laneAccentVar(column) ? "" : undefined} />
         {editing ? (
@@ -1450,8 +1594,24 @@ function LaneHeader({
               </div>
               <div className={styles.laneMenuDivider} />
               <button onClick={() => { setMenuOpen(false); onCollapse(); }} role="menuitem" type="button">Collapse column</button>
-              <button disabled={readOnly || columnIndex === 0} onClick={() => move(-1)} role="menuitem" type="button">Move left</button>
-              <button disabled={readOnly || columnIndex === columns.length - 1} onClick={() => move(1)} role="menuitem" type="button">Move right</button>
+              <button
+                aria-label={leftNeighbor ? `Move left: ${column.name} before ${leftNeighbor.name}` : "Move left"}
+                disabled={readOnly || !leftNeighbor}
+                onClick={() => move(-1)}
+                role="menuitem"
+                type="button"
+              >
+                Move left
+              </button>
+              <button
+                aria-label={rightNeighbor ? `Move right: ${column.name} after ${rightNeighbor.name}` : "Move right"}
+                disabled={readOnly || !rightNeighbor}
+                onClick={() => move(1)}
+                role="menuitem"
+                type="button"
+              >
+                Move right
+              </button>
               <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add status after</button>
               {!column.isSystem ? (
                 <>
