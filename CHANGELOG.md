@@ -109,6 +109,47 @@ columns scroll from the keyboard. Where a value is absent, the row says
 so to a screen reader instead of showing an unlabeled dash. Every one
 of these was measured in the running product before it was called done.
 
+## 2026-08-05 · T·130 · trims · a concluded exploration stops shipping
+
+**The client bundle is back under its ceiling, and it got there by
+deleting a design lab that had already done its job.** The
+`total_client_js` budget failed at 952.8 KB gzip against a 950 KB
+ceiling. The ceiling is a ratchet — raising one is a founder decision,
+not an edit — so this dispatch found the kilobytes instead.
+
+Where they were. `/lab/task-detail` was the Phase 3 Hybrid C
+exploration: three shells over one task-detail composition, its own
+board replica, its own resizable panel, its own five-task fixture set.
+It concluded. Its outcome shipped as `src/components/app/detail-panel`
+— the same panel, the same resizable splitter, the same conversation,
+subtask and resource sections, against real data. The lab kept
+shipping to production anyway, noindexed and unreachable from any
+link, at **19.1 KB gzip** across three chunks. Removing it takes the
+budget to 933.7 KB, green with 16 KB of headroom.
+
+What was deliberately left alone. `/lab/welcome-a`, `-b` and `-w` are
+the three venue-branded welcome directions, registered last cycle and
+still under evaluation. They cost about 4 KB together and they are a
+live decision, not a concluded one.
+
+Recorded for the next reader, because two hours went into learning it:
+this budget counts every `.js` file in the build's chunk directory, not
+what one visitor downloads. Three things follow. Deleting unreferenced
+source wins nothing — 27 unreferenced modules and 99.7 KB of source
+proved to be absent from the bundle already, because nothing imports
+them. Lazy-loading wins nothing either: the chunk still lands on disk.
+And `optimizePackageImports` made no difference at all — dropping
+`motion` from it moved the number by 0 KB. The only lever that moves
+this measure is shipping less reachable code.
+
+Also recorded: `motion` is the single largest line item in the bundle
+at roughly 185 KB gzip spread across 15 chunks, with visible
+duplication — two chunks of exactly 44.8 KB, three more of exactly
+11.0 KB. That is Turbopack's route-group chunking, not a fault in the
+source; all 65 call sites import `motion/react` and none reaches for
+`framer-motion` directly. It is the obvious next place to look if the
+ceiling is ever a problem again.
+
 ## 2026-08-02 · T·128 · finishes · the phone list becomes a list
 
 **The list at phone width is a list again, the planning rail stops
