@@ -13,6 +13,7 @@
 import type { Priority, Task } from "@/lib/data";
 import type { CalendarFrame } from "@/lib/calendar-frame";
 import { effectiveColumnKey, isTaskDone } from "@/lib/board-columns";
+import { tagDisplayName } from "@/lib/tags";
 import type { ColumnConfig } from "@/lib/board-config";
 import { addDays, asCalendarDate, differenceInDays } from "./dates";
 import type {
@@ -159,7 +160,9 @@ const COLOR_TO_TONE: Record<string, LabelTone> = {
 };
 
 export function tagToLabel(name: string, color?: string): LabLabel {
-  return { id: name, name, tone: color ? COLOR_TO_TONE[color] ?? "neutral" : "neutral" };
+  // The id stays the stored tag name — filters and writes key on it. Only
+  // the displayed name is humanised ("mara-finn" → "Mara Finn").
+  return { id: name, name: tagDisplayName(name), tone: color ? COLOR_TO_TONE[color] ?? "neutral" : "neutral" };
 }
 
 // ---- Task mapping -----------------------------------------------------------

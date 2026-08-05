@@ -11,6 +11,7 @@ import type {
   TaskSchedule,
   TaskStatus,
 } from "./types";
+import { tagDisplayName } from "@/lib/tags";
 
 export const FIXTURE_MANIFEST_ID = "tasks-2026-07-16-v1-48";
 export const FIXTURE_SHA256 = "ff72c1e8f0fba3791f5474afc444ae2d2eeb52473d6fdbee4f6fa0d4005fc0be";
@@ -320,8 +321,9 @@ export function listPeople(): LabPerson[] {
 
 export function labelById(id: string): LabLabel | undefined {
   if (runtimeLabelsActive) {
-    // Unknown live tag → neutral chip with its own name; never a fixture tone.
-    return runtimeLabels.get(id) ?? { id, name: id, tone: "neutral" };
+    // Unknown live tag → neutral chip. The stored id is often a slug
+    // ("mara-finn"); people read the humanised form, lookups keep the id.
+    return runtimeLabels.get(id) ?? { id, name: tagDisplayName(id), tone: "neutral" };
   }
   return LAB_LABELS.find((label) => label.id === id);
 }

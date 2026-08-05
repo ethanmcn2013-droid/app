@@ -34,11 +34,12 @@ import {
   scheduleEnd,
 } from "./dates";
 import { VIEW_LABELS, type CalendarDate, type LabTask, type LabView } from "./types";
+import { useShowStatusDescriptions } from "./view-prefs";
 import styles from "@/components/app/room/option-b.module.css";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
 
-export type ViewToolPanel = "filter" | "sort" | "save" | null;
+export type ViewToolPanel = "filter" | "sort" | "view" | null;
 
 function matchesQuery(task: LabTask, query: string): boolean {
   const q = query.trim().toLocaleLowerCase("en-GB");
@@ -132,11 +133,11 @@ export function ViewToolButtons({
   onToggle: (next: Exclude<ViewToolPanel, null>) => void;
   view: LabView;
 }) {
-  const { activeFilterCount, savedViews } = useRoomTools();
-  // Once anything is saved, the trigger's job is retrieval as much as
-  // storage — "Save view" promised only the first half, so a saved view
-  // looked like a no-op ("a saved view you cannot reopen is not saved").
-  const hasSavedViews = savedViews.length > 0;
+  const { activeFilterCount, sort } = useRoomTools();
+  // When the board is not in its deliberate manual order, the button says
+  // what IS ordering it — a sorted board that just says "Sort" hides the
+  // one fact needed to understand the card order.
+  const sortLabel = sort === "date" ? "Sort · Schedule" : sort === "title" ? "Sort · Title" : "Sort";
   return (
     <>
       <button
@@ -152,23 +153,93 @@ export function ViewToolButtons({
       </button>
       <button
         aria-expanded={panel === "sort"}
+        data-active={sort !== "manual" || undefined}
         onClick={() => onToggle("sort")}
         title="Sort this view"
         type="button"
       >
         <Icon name="sort" size={15} />
-        Sort
+        {sortLabel}
       </button>
       <button
-        aria-expanded={panel === "save"}
-        onClick={() => onToggle("save")}
-        title={hasSavedViews ? "Your saved views" : "Save this view"}
+        aria-expanded={panel === "view"}
+        onClick={() => onToggle("view")}
+        title="Layout, cards, and saved views"
         type="button"
       >
-        <Icon name="save" size={15} />
-        {hasSavedViews ? `Views · ${savedViews.length}` : "Save view"}
+        <Icon name="fields" size={15} />
+        View
       </button>
     </>
+  );
+}
+
+/**
+ * Active filters as removable chips, shown only while something is
+ * actually filtered — the calm default toolbar stays a toolbar. Each chip
+ * removes exactly its own condition; "Clear all" appears once two or more
+ * are active.
+ */
+export function ActiveFilterChips() {
+  const {
+    query,
+    setQuery,
+    priority,
+    setPriority,
+    owner,
+    setOwner,
+    due,
+    setDue,
+    column,
+    setColumn,
+    clearFilters,
+    activeFilterCount,
+  } = useRoomTools();
+  const members = useWorkspaceMembers();
+  const columns = useBoardColumns();
+  if (activeFilterCount === 0) return null;
+
+  const chips: Array<{ key: string; label: string; clear: () => void }> = [];
+  if (query.trim()) chips.push({ key: "query", label: `“${query.trim()}”`, clear: () => setQuery("") });
+  if (priority !== "all") chips.push({ key: "priority", label: PRIORITY_LABEL[priority].label, clear: () => setPriority("all") });
+  if (column !== "all") {
+    const name = columns.find((c) => c.key === column)?.name ?? column;
+    chips.push({ key: "column", label: name, clear: () => setColumn("all") });
+  }
+  if (owner !== "all") {
+    const label = owner === "assigned"
+      ? "Has an owner"
+      : owner === "unassigned"
+        ? "Unassigned"
+        : members.find((member) => member.id === owner)?.name ?? "Owner";
+    chips.push({ key: "owner", label, clear: () => setOwner("all") });
+  }
+  if (due !== "all") {
+    const label = DUE_OPTIONS.find(([value]) => value === due)?.[1] ?? "Date";
+    chips.push({ key: "due", label, clear: () => setDue("all") });
+  }
+  if (chips.length === 0) return null;
+
+  return (
+    <div aria-label="Active filters" className={styles.activeChipsRow} role="group">
+      {chips.map((chip) => (
+        <button
+          aria-label={`Remove filter: ${chip.label}`}
+          className={styles.activeChip}
+          key={chip.key}
+          onClick={chip.clear}
+          type="button"
+        >
+          {chip.label}
+          <Icon name="close" size={11} />
+        </button>
+      ))}
+      {chips.length > 1 ? (
+        <button className={styles.activeChipsClear} onClick={clearFilters} type="button">
+          Clear all
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -225,10 +296,12 @@ export function ViewToolPanels({
   panel,
   onClose,
   view,
+  onShowShortcuts,
 }: {
   panel: ViewToolPanel;
   onClose: () => void;
   view: LabView;
+  onShowShortcuts?: () => void;
 }) {
   const {
     priority,
@@ -236,6 +309,8 @@ export function ViewToolPanels({
     due,
     column,
     sort,
+    density,
+    setDensity,
     setPriority,
     setOwner,
     setDue,
@@ -250,6 +325,7 @@ export function ViewToolPanels({
   const members = useWorkspaceMembers();
   const columns = useBoardColumns();
   const [saveName, setSaveName] = useState("");
+  const [showDescriptions, toggleDescriptions] = useShowStatusDescriptions();
 
   if (!panel) return null;
 
@@ -364,13 +440,45 @@ export function ViewToolPanels({
         </ToolPanelShell>
       ) : null}
 
-      {panel === "save" ? (
+      {panel === "view" ? (
         <ToolPanelShell
           onClose={onClose}
-          panel="save"
-          subtitle="Current view, filters, sort, and density"
-          title="Save this view"
+          panel="view"
+          subtitle="Layout, cards, and saved views"
+          title="View"
         >
+          <div className={styles.roomFilterFields}>
+            <fieldset>
+              <legend>Density</legend>
+              {(
+                [
+                  ["comfortable", "Comfortable"],
+                  ["compact", "Compact"],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={value}>
+                  <input
+                    checked={density === value}
+                    name="view-density"
+                    onChange={() => setDensity(value)}
+                    type="radio"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+            <label className={styles.roomToggleRow}>
+              <input
+                checked={showDescriptions}
+                onChange={toggleDescriptions}
+                type="checkbox"
+              />
+              <span>Show status descriptions</span>
+            </label>
+          </div>
+          <div className={styles.viewPanelSection}>
+            <span className={styles.viewPanelHeading}>Saved views</span>
+          </div>
           <form
             className={styles.roomFilterFields}
             onSubmit={(event) => {
@@ -386,7 +494,7 @@ export function ViewToolPanels({
                 new CustomEvent("tasks:toast", {
                   detail: {
                     title: `"${name}" saved`,
-                    body: "Reopen it any time from Views in the toolbar.",
+                    body: "Reopen it any time from the View menu.",
                     tone: "success",
                   },
                 }),
@@ -485,6 +593,19 @@ export function ViewToolPanels({
                 </li>
               ))}
             </ul>
+          ) : null}
+          {onShowShortcuts ? (
+            <button
+              className={styles.viewPanelShortcuts}
+              onClick={() => {
+                onClose();
+                onShowShortcuts();
+              }}
+              type="button"
+            >
+              <span>Keyboard shortcuts</span>
+              <kbd>?</kbd>
+            </button>
           ) : null}
         </ToolPanelShell>
       ) : null}

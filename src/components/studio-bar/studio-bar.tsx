@@ -119,6 +119,10 @@ function IdentityCell({ edition }: { edition: string | null }) {
         style={{ letterSpacing: "-0.045em" }}
       >
         {identity.word}
+        {/* The wordmark ends in the brand's indigo full stop — one
+            authored object, matching the marketing wordmarks. Decorative
+            to AT: the aria-label above already names the module. */}
+        <span aria-hidden="true" className="text-[var(--x-studio-accent)]">.</span>
       </a>
       {edition ? (
         <span

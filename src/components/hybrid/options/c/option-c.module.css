@@ -67,16 +67,20 @@
 .accountContext span,
 .navPlanningPeriod > span,
 .navWorkspace > span,
-.planningRailHeader span,
-.currentPosition header span,
-.selectedDayPanel header span,
-.railMilestones header span,
-.railCosts > span {
+.selectedDayPanel header span {
   color: var(--x-task-text-muted);
   font-size: 11px;
   font-weight: 620;
   letter-spacing: .08em;
   text-transform: uppercase;
+}
+
+/* Drawer labels read in sentence case — Signal Studio, not an ops console. */
+.planningRailHeader span,
+.railCosts > span {
+  color: var(--x-task-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .accountContext strong { font-size: 11px; margin-top: 4px; }
@@ -579,19 +583,40 @@ thead .listTitleCell { z-index: 14; }
    exception in the motion contract), an overlay dialog below 768px. Its
    trigger lives on the project band — closed means gone, no collapsed
    strip claims board width. */
-.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 324px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
+.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 380px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
+
+/* Container-aware placement (the interior root is the container): with a
+   wide canvas the drawer docks in flow and the board resizes beside it;
+   when pushing would crush the lanes it overlays the right edge as a
+   deliberate inspector layer with its own shadow. Below 768px the media
+   block later in this file makes it a true modal drawer. */
+@container (max-width: 1559px) {
+  .planningRail {
+    border-top: 1px solid var(--x-task-border);
+    bottom: 0;
+    box-shadow: -28px 0 56px -30px color-mix(in srgb, var(--ink) 34%, transparent);
+    position: absolute;
+    right: 0;
+    /* The inspector starts under the context band, so Share and the
+       Planning trigger itself stay reachable while it is open. */
+    top: 55px;
+    width: 380px;
+    z-index: 40;
+  }
+}
 .unscheduledDisclosure { overflow: hidden; }
 .planningRailHeader { align-items: flex-start; display: flex; flex: none; justify-content: space-between; padding: 18px 16px 0; }
 .planningRailHeader > div { display: flex; flex-direction: column; min-width: 0; }
 .planningRailHeader span { font-family: var(--font-geist-mono), monospace; }
-.planningRailHeader strong { font-size: 15px; font-weight: 650; letter-spacing: -.02em; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.planningRailHeader strong { font-size: 15px; font-weight: 650; letter-spacing: -.02em; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.planningRailHeader small { color: var(--x-task-text-muted); font-size: 11.5px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .planningRailHeader button { align-items: center; background: transparent; border: 0; border-radius: var(--radius-sm); color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 28px; justify-content: center; width: 28px; }
 .planningRailHeader button:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.currentPosition { padding: 18px 16px 20px; }
+.currentPosition { flex: none; padding: 16px 16px 2px; }
 .currentPosition header { align-items: baseline; display: flex; justify-content: space-between; }
 .currentPosition header span { font-family: var(--font-geist-mono), monospace; }
 .currentPosition header strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
-.periodTrack { height: 30px; margin-top: 22px; position: relative; }
+.periodTrack { height: 30px; margin-top: 6px; position: relative; }
 .periodTrack::before { background: var(--hairline); content: ""; height: 2px; left: 0; position: absolute; right: 0; top: 0; }
 .periodTrack > span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10px; font-variant-numeric: tabular-nums; position: absolute; top: 10px; }
 .periodStart { left: 0; }
@@ -619,41 +644,95 @@ thead .listTitleCell { z-index: 14; }
 .addUnscheduled:hover { color: var(--x-task-text); }
 .selectedDayPanel > button:disabled,
 .addUnscheduled:disabled { cursor: not-allowed; opacity: .4; }
-.unscheduledSection { border-top: 1px solid var(--hairline-soft); padding: 16px 16px 18px; }
-.unscheduledSection > header > button { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; font: inherit; font-size: 13px; font-weight: 620; gap: 6px; letter-spacing: -.01em; padding: 0; width: 100%; }
-.unscheduledSection > header > button strong { align-items: center; background: var(--x-task-accent-soft); border-radius: var(--radius-pill); color: var(--x-task-accent); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; height: 19px; justify-content: center; margin-left: auto; min-width: 19px; padding: 0 5px; }
-.unscheduledSection > header small { color: var(--x-task-text-muted); display: block; font-size: 11px; margin: 5px 0 0 20px; }
-.unscheduledList { display: flex; flex-direction: column; gap: 0; list-style: none; margin: 10px 0 0; padding: 0; }
-.unscheduledList > li { border-bottom: 1px solid var(--hairline-soft); cursor: grab; padding: 10px 0; }
+/* Tabs: the drawer's two jobs side by side, neither buried. */
+.railTabs { background: var(--x-task-hover); border-radius: 8px; display: flex; flex: none; gap: 1px; margin: 14px 16px 0; padding: 2px; }
+.railTabs button { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 12px; font-weight: 500; gap: 6px; justify-content: center; min-height: 28px; padding: 0 8px; }
+.railTabs button:hover { color: var(--x-task-text); }
+.railTabs button[aria-selected="true"] { background: var(--x-task-raised); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent), 0 0 0 1px var(--x-task-border); color: var(--x-task-text); font-weight: 600; }
+.railTabs em { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 10.5px; font-style: normal; font-variant-numeric: tabular-nums; }
+.railTabs button[aria-selected="true"] em { color: var(--x-task-accent); }
+
+/* Undo strip: the receipt for a scheduling act, with the way back. */
+.railUndo { align-items: center; background: var(--x-task-selected); border-radius: 8px; color: var(--x-task-text-secondary); display: flex; flex: none; font-size: 11.5px; gap: 10px; justify-content: space-between; line-height: 1.35; margin: 10px 16px 0; padding: 7px 10px; }
+.railUndo button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: none; font: inherit; font-size: 11.5px; font-weight: 600; padding: 2px; }
+.railUndo button:hover { text-decoration: underline; }
+
+.unscheduledSection { display: flex; flex-direction: column; min-height: 0; padding: 12px 16px 16px; }
+.unscheduledSection > header { align-items: baseline; display: flex; flex: none; gap: 10px; justify-content: space-between; }
+.unscheduledSection > header small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; }
+.unscheduledSection > header > button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: none; font: inherit; font-size: 11.5px; font-weight: 500; padding: 0; }
+.unscheduledSection > header > button:hover { text-decoration: underline; }
+.unscheduledList { display: flex; flex-direction: column; gap: 0; list-style: none; margin: 8px 0 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0; scrollbar-width: thin; }
+.unscheduledList > li { border-bottom: 1px solid var(--hairline-soft); padding: 8px 0; }
 .unscheduledList > li:last-child { border-bottom: 0; }
-.unscheduledList > li > div { align-items: flex-start; display: grid; gap: 7px; grid-template-columns: 14px minmax(0, 1fr); }
-.unscheduledList > li > div input { height: 14px; margin-top: 2px; width: 14px; }
-.unscheduledList > li > div button { display: -webkit-box; font-size: 12px; font-weight: 570; line-height: 1.4; overflow: hidden; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.unscheduledList label { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; justify-content: space-between; margin-top: 7px; padding-left: 21px; }
-.unscheduledList label input { background: var(--paper); border: 1px solid var(--x-task-border); border-radius: var(--radius-sm); color: var(--x-task-text-secondary); font: inherit; font-size: 11px; height: 26px; max-width: 116px; padding: 0 5px; }
+.unscheduledMain { align-items: center; display: flex; gap: 9px; min-width: 0; }
+.railSelect { accent-color: var(--x-task-accent); cursor: pointer; flex: 0 0 auto; height: 15px; margin: 0; width: 15px; }
+.unscheduledMain > button[data-task-id] { color: var(--x-task-text); display: -webkit-box; flex: 1; font-size: 12.5px; font-weight: 550; line-height: 1.4; min-width: 0; overflow: hidden; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+/* The Schedule action: a quiet menu, not a blank form field. */
+.railScheduleTrigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 7px;
+  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+}
+.railScheduleTrigger:hover,
+.railScheduleTrigger[data-state="open"] { background: var(--x-task-hover); color: var(--x-task-text); }
+.railDatePick { align-items: center; display: flex; gap: 8px; justify-content: flex-end; margin-top: 7px; padding-left: 24px; }
+.railDatePick span { color: var(--x-task-text-muted); font-size: 11px; }
+.railDatePick input { background: var(--paper); border: 1px solid var(--x-task-border); border-radius: var(--radius-sm); color: var(--x-task-text-secondary); font: inherit; font-size: 11px; height: 26px; max-width: 132px; padding: 0 5px; }
+
+/* Bulk bar: sticks to the drawer foot while a selection is open. */
+.railBulkBar { align-items: center; background: var(--x-task-raised); border-top: 1px solid var(--x-task-border); bottom: 0; display: flex; flex: none; gap: 8px; margin-top: auto; padding: 10px 16px; position: sticky; z-index: 5; }
+.railBulkBar strong { font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.railBulkBar > button:last-child { background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; font: inherit; font-size: 11.5px; margin-left: auto; padding: 4px; }
+.railBulkBar > button:last-child:hover { color: var(--x-task-text); }
+.railBulkSchedule {
+  align-items: center;
+  background: var(--x-task-accent);
+  border: 0;
+  border-radius: 6px;
+  color: var(--paper);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 10px;
+}
+.railBulkSchedule:hover,
+.railBulkSchedule[data-state="open"] { background: var(--x-task-focus); }
 .railEmpty { align-items: center; color: var(--x-task-text-muted); display: grid; gap: 2px 8px; grid-template-columns: 18px 1fr; margin: 14px 0; }
 .railEmpty svg { color: var(--x-task-success); grid-row: 1 / 3; }
 .railEmpty strong { color: var(--x-task-text); font-size: 12px; font-weight: 600; }
 .railEmpty span { font-size: 11px; }
 /* Milestones: the project's planning record, rehoused from the old
    header module. Past milestones stay listed, muted. */
-.railMilestones { border-top: 1px solid var(--hairline-soft); padding: 16px 16px 18px; }
-.railMilestones header { align-items: baseline; display: flex; gap: 8px; }
-.railMilestones header span { font-family: var(--font-geist-mono), monospace; }
-.railMilestones header strong { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
-.railMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 8px 0 0; padding: 0; }
+.railMilestones { display: flex; flex-direction: column; min-height: 0; padding: 12px 16px 16px; }
+.railMilestones ol { display: flex; flex-direction: column; list-style: none; margin: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0; scrollbar-width: thin; }
 .railMilestones li { align-items: center; display: grid; gap: 10px; grid-template-columns: 44px minmax(0, 1fr); min-height: 27px; min-width: 0; }
 .railMilestones li[data-past] { opacity: .55; }
 .railMilestones time { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; }
 .railMilestones li > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 550; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; transition: color var(--motion-fast) var(--ease-out); white-space: nowrap; }
 .railMilestones li > button:hover { color: var(--x-task-accent); }
-.railMilestones li > button[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
-.railMilestones > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+.railMilestones li > button[data-completed] { color: var(--x-task-text-muted); }
+.railMilestones > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 4px 0 0; }
 .railMilestones > small { color: var(--x-task-text-muted); display: block; font-size: 11px; line-height: 1.4; margin-top: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Costs: the T·124 coverage sentence, owner-side only. */
 .railCosts { border-top: 1px solid var(--hairline-soft); margin-top: auto; padding: 14px 16px 18px; }
-.railCosts > span { font-family: var(--font-geist-mono), monospace; }
 .railCosts > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 7px 0 0; }
 
 .shortcutBackdrop { align-items: flex-start; background: color-mix(in srgb, var(--x-task-text) 42%, transparent); display: flex; inset: 0; justify-content: center; padding-top: 10vh; position: fixed; z-index: 120; }

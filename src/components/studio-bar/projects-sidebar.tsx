@@ -467,7 +467,7 @@ function SidebarBody({
                     </span>
                     <span className={styles.projectName} title={group.periodName ?? undefined}>{group.periodName}</span>
                     {group.dateRange ? (
-                      <span className={styles.projectDate}>{group.dateRange}</span>
+                      <span className={styles.projectDate} title={`Planning period · ${group.dateRange}`}>{group.dateRange}</span>
                     ) : null}
                   </button>
                   <AnimatePresence initial={false}>
@@ -602,6 +602,9 @@ function SidebarHeader({
 }) {
   return (
     <header className={styles.sidebarHeader}>
+      {/* The panel says what it is — a lone icon read as an unlabeled
+          mystery row. Same height, one word. */}
+      <span className={styles.sidebarTitle}>Projects</span>
       <button
         aria-label={closeLabel}
         className={styles.sidebarCollapse}

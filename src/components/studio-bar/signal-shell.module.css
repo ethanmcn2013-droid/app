@@ -354,29 +354,20 @@
 }
 
 .sidebarHeader {
-  align-items: flex-start;
+  align-items: center;
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
   flex: none;
   justify-content: space-between;
-  padding: 13px 10px 11px 16px;
-}
-
-.sidebarIdentity { display: flex; flex-direction: column; min-width: 0; }
-
-.sidebarEyebrow {
-  color: var(--x-task-text-muted);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  min-height: 44px;
+  padding: 0 10px 0 16px;
 }
 
 .sidebarTitle {
   color: var(--x-task-text);
-  font-size: 15px;
-  font-weight: 680;
-  letter-spacing: -0.02em;
-  margin-top: 3px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .sidebarCollapse {

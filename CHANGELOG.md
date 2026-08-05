@@ -31,14 +31,36 @@ column config as the board, so one colour means one thing in every view.
 Completion is a circle that fills green and draws its check in a single
 140ms beat, honouring reduced motion.
 
+The same cycle's second pass finished the argument. "Project" left the
+shell navigation entirely — rail and mobile tabs both, with the contract
+test pinning the four destinations — and the wordmark became one object,
+`tasks.`, with the brand's indigo full stop. Scope stopped being implied:
+the band reads `Wedding season / The Orchard, events`, the Planning drawer
+names the project it plans with the period dates beside it, and the
+sidebar's bare `10 Oct` became `Ends 10 Oct`. Done got one canonical
+green — `#1b873f`, bright enough to read as finished, dark enough to hold
+AA — shared by the column header, the dot, the completion circle and its
+drawn check, while the dead forest-green palette from cycle 2 was deleted
+outright. Column headers took a 4.5% wash of their own colour so the five
+states scan as bands over pure-white bodies. And Planning became a
+workflow: one selector decides what "needs a date" (finished work never
+does), each row schedules from a menu — today, tomorrow, this week, next
+week, a picker — selection gets a bulk bar, every act leaves a
+seven-second undo, and milestones sit in their own tab instead of under
+the list. The drawer docks beside the board on a wide canvas and floats
+under the band as a shadowed inspector on a narrower one.
+
 Edges, honestly: the collapsed lane rail keeps its vertical name (44px
 against 276px is the right trade, and it is real, labelled text); the
 sidebar's drawer-mode strip keeps its vertical label for the same reason;
 print and share surfaces still render the four canonical lanes only, which
-predates this cycle. Every behaviour behind the paint — column management,
-saved views, filters, the keyboard model, optimistic sync — is untouched and
-verified: the full test gate, ds-check, the first-contact language gate and
-an axe pass across all four views are green.
+predates this cycle; and the demo seed's finished tasks carry no
+completion dates, so the `Completed 16 Jul` receipts show only on real
+completions. Every behaviour behind the paint — column management, saved
+views, filters, the keyboard model, optimistic sync — is untouched and
+verified: the full test gate, ds-check, the first-contact language gate,
+the production build and axe passes with the drawer closed and open are
+green.
 
 ## 2026-08-05 · T·131 · ships · the three pillars get their instruments
 

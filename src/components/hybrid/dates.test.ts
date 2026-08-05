@@ -90,9 +90,9 @@ test("completed historical work is not labelled overdue", () => {
 });
 
 test("the card sentence never calls finished work overdue", () => {
-  const base = { ...LAB_TASKS[0], id: "test-card-sentence" };
+  const base = { ...LAB_TASKS[0], id: "test-card-sentence", completedAt: undefined };
   const doneLate = { ...base, completed: true, schedule: { kind: "due", dueOn: "2026-07-14" } as const };
-  // The completed card states the fact in neutral grammar…
+  // Without a completion date the card states the fact in neutral grammar…
   assert.equal(formatScheduleForTask(doneLate, "2026-07-16"), "Was due 14 Jul");
   // …while the same schedule on an open task is an alarm.
   assert.equal(formatScheduleForTask({ ...doneLate, completed: false }, "2026-07-16"), "Overdue by 2 days");
@@ -102,6 +102,39 @@ test("the card sentence never calls finished work overdue", () => {
   // A completed milestone keeps its date as a record, not a status.
   const milestone = { ...base, completed: true, schedule: { kind: "milestone", on: "2026-07-10" } as const };
   assert.equal(formatScheduleForTask(milestone, "2026-07-16"), "Milestone · 10 Jul");
+});
+
+test("a completion date makes the card sentence a receipt", () => {
+  const base = { ...LAB_TASKS[0], id: "test-completed-receipt", completed: true };
+  const due = { kind: "due", dueOn: "2026-07-14" } as const;
+  // On time and early both name the day it finished.
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: due, completedAt: "2026-07-14T15:00:00+01:00" }, "2026-07-20"),
+    "Completed 14 Jul",
+  );
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: due, completedAt: "2026-07-12T09:00:00+01:00" }, "2026-07-20"),
+    "Completed 12 Jul",
+  );
+  // Late says how late, in plain words.
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: due, completedAt: "2026-07-15T09:00:00+01:00" }, "2026-07-20"),
+    "Completed 1 day late",
+  );
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: due, completedAt: "2026-07-16T09:00:00+01:00" }, "2026-07-20"),
+    "Completed 2 days late",
+  );
+  // Finished work that never had a date still gets its receipt.
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: { kind: "unscheduled" } as const, completedAt: "2026-07-16T09:00:00+01:00" }, "2026-07-20"),
+    "Completed 16 Jul",
+  );
+  // And with no completion date at all, the quiet fallback holds.
+  assert.equal(
+    formatScheduleForTask({ ...base, schedule: { kind: "unscheduled" } as const, completedAt: undefined }, "2026-07-20"),
+    "Done",
+  );
 });
 
 test("open milestones read in explicit grammar", () => {

@@ -110,6 +110,14 @@ test("the rail derives ownership and carries allowlisted context hints", () => {
   assert.match(studioRail, /suiteSurfaceFromAppPath/);
   assert.match(studioRail, /\{ key: "home", label: "Home", path: HOME_APP_PATH \}/);
   assert.doesNotMatch(studioRail, /\{ key: "signal"/);
+  // Project is not a rail destination (2026-08-05): the rail lists Home
+  // and the three products only; /app/project stays routable elsewhere.
+  assert.doesNotMatch(studioRail, /\{ key: "project"/);
+  assert.deepEqual(
+    [...studioRail.matchAll(/\{ key: "(home|notes|tasks|timeline|project)", label:/g)]
+      .map((match) => match[1]),
+    ["home", "notes", "tasks", "timeline"],
+  );
   assert.match(studioRail, /useSuiteContext\(\)/);
   assert.match(
     studioRail,
@@ -246,16 +254,19 @@ test("Tasks chrome publishes the authorised workspace name, not a domain example
 });
 
 test("mobile suite nav exposes Home-first canonical destinations", () => {
-  // Signal → Home consolidation (D4): Home, the three products, then
-  // Project. Signal must not return as a tab.
+  // Signal → Home consolidation (D4): Home, then the three products.
+  // Signal must not return as a tab, and Project left the shell
+  // navigation with the 2026-08-05 board pass — the project overview is
+  // reached from project contexts, never as a fifth product.
   assert.match(appLayout, /<MobileSuiteNav \/>/);
   assert.match(mobileSuiteNav, /if \(activeKey === "tasks"\) return null;/);
   assert.deepEqual(
     [...mobileSuiteNav.matchAll(/\{ id: "(home|notes|tasks|timeline|project)", label:/g)]
       .map((match) => match[1]),
-    ["home", "notes", "tasks", "timeline", "project"],
+    ["home", "notes", "tasks", "timeline"],
   );
   assert.doesNotMatch(mobileSuiteNav, /\{ id: "signal"/);
+  assert.doesNotMatch(mobileSuiteNav, /\{ id: "project"/);
   assert.match(
     mobileSuiteNav,
     /withSuiteContext\(destination\.path, suiteContext\)/,

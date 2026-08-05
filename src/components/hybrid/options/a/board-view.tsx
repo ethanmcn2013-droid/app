@@ -47,6 +47,7 @@ import {
 } from "../../shared/task-ui";
 import { InlineTaskTitle } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
+import { useShowStatusDescriptions } from "../../view-prefs";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
 import { addDays } from "../../dates";
@@ -537,6 +538,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const calendar = useCalendarFrame();
   const reduceMotion = useReducedMotion();
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
+  const [showDescriptions] = useShowStatusDescriptions();
   const [composing, setComposing] = useState<string | null>(null);
   const [keyboardMove, setKeyboardMove] = useState(false);
   const orderedIds = tasks.map((task) => task.id);
@@ -737,6 +739,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 onStartCompose={() => setComposing(status)}
                 overLimit={overLimit}
                 readOnly={store.readOnly}
+                showDescription={showDescriptions}
               />
               <ul
                 aria-label={`${label} tasks`}
@@ -768,7 +771,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === laneTasks.length ? <li aria-hidden="true"><div className={styles.boardInsertion} /></li> : null}
                 {laneTasks.length === 0 ? (
                   <li className={styles.emptyLane}>
-                    <span>Nothing here yet</span>
+                    <span>No tasks yet</span>
                     <small>Drop a task here.</small>
                   </li>
                 ) : null}
@@ -821,14 +824,14 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           />
         ) : (
           <button
-            aria-label="Add a column"
+            aria-label="Add a status"
             className={styles.addColumnCapButton}
             disabled={store.readOnly}
             onClick={() => setAddingAt("append")}
             type="button"
           >
             <Icon name="add" size={14} />
-            Add column
+            Add status
           </button>
         )}
       </div>
@@ -883,17 +886,17 @@ function BoardCard({
   // 24px band under every card title and rendered nothing into it. That
   // empty band was the board's "unfinished card" look.
   const hasLabels = task.labelIds.some((id) => labelById(id));
-  const hasSchedule = task.schedule.kind !== "unscheduled";
+  const hasSchedule = task.schedule.kind !== "unscheduled" || (task.completed && Boolean(task.completedAt));
   const hasSignals = task.subtasks.length > 0 ||
     task.comments.length > 0 ||
     task.attachments.length > 0 ||
     task.blockedByIds.length > 0 ||
     task.blockerIds.length > 0;
   // AvatarStack drops assignee ids it cannot resolve to a person, so
-  // counting raw ids rendered a footer — and its border — above nothing at
-  // all whenever an id was stale.
+  // counting raw ids rendered a footer above nothing at all whenever an
+  // id was stale.
   const shownAssignees = task.assigneeIds.filter((id) => personById(id));
-  const hasFooter = shownAssignees.length > 0 || Boolean(task.estimate);
+  const hasMeta = hasSchedule || hasSignals || shownAssignees.length > 0 || Boolean(task.estimate);
 
   return (
     <motion.li
@@ -949,28 +952,12 @@ function BoardCard({
           >
             <div className={styles.cardTopline}>
               <TaskCompletion disabled={store.readOnly} task={task} />
-              {hasPriority ? <PriorityMark task={task} /> : null}
+              {/* Elevated priority is words, not a cryptic dot: "High" or
+                  "Urgent" in the state's ink. Normal and low stay silent —
+                  the menu still sets them. Milestone state lives in the
+                  meta row's diamond sentence; the toggle is in the menu. */}
+              {hasPriority ? <PriorityMark task={task} withLabel /> : null}
               <span className={styles.cardSpacer} />
-              {/*
-                Milestone toggle. Quiet like the ••• trigger until the card
-                is hovered — except when the task IS a milestone, where the
-                filled diamond stays on as the card's badge of it.
-              */}
-              <button
-                aria-label={task.schedule.kind === "milestone" ? `Remove milestone from ${task.title}` : `Make ${task.title} a milestone`}
-                aria-pressed={task.schedule.kind === "milestone"}
-                className={styles.cardMilestone}
-                data-active={task.schedule.kind === "milestone" || undefined}
-                disabled={store.readOnly}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (!store.readOnly) store.scheduleTask(task.id, toggledMilestoneSchedule(task, calendarToday));
-                }}
-                title={task.schedule.kind === "milestone" ? "Remove milestone" : "Make milestone"}
-                type="button"
-              >
-                <Icon name="milestone" size={13} />
-              </button>
               <ActionsDropdown
                 items={actions}
                 trigger={<Icon name="more" size={15} />}
@@ -984,17 +971,17 @@ function BoardCard({
               <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
             )}
             {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
-            {hasSchedule || hasSignals ? (
-              <div className={styles.cardSchedule}>
+            {/* One meta row, one rhythm: the date sentence reads left, the
+                quiet facts — signals, estimate, people — sit right. */}
+            {hasMeta ? (
+              <div className={styles.cardMeta}>
                 {hasSchedule ? <ScheduleText compact task={task} /> : <span />}
-                {hasSignals ? <TaskSignals task={task} /> : null}
+                <span className={styles.cardMetaRight}>
+                  {hasSignals ? <TaskSignals task={task} /> : null}
+                  {task.estimate ? <span className={styles.cardEstimate}>{task.estimate}</span> : null}
+                  <AvatarStack showUnassigned={false} task={task} />
+                </span>
               </div>
-            ) : null}
-            {hasFooter ? (
-              <footer>
-                <AvatarStack showUnassigned={false} task={task} />
-                {task.estimate ? <span>{task.estimate}</span> : null}
-              </footer>
             ) : null}
           </article>
         }
@@ -1029,6 +1016,7 @@ function LaneHeader({
   onRequestAddAfter,
   onStartCompose,
   onCollapse,
+  showDescription,
 }: {
   column: BoardColumn;
   columns: readonly BoardColumn[];
@@ -1043,6 +1031,7 @@ function LaneHeader({
   onRequestAddAfter: () => void;
   onStartCompose: () => void;
   onCollapse: () => void;
+  showDescription: boolean;
 }) {
   const [, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
@@ -1209,7 +1198,7 @@ function LaneHeader({
         <span className={styles.statusPip} data-accent={laneAccentVar(column) ? "" : undefined} />
         {editing ? (
           <input
-            aria-label="Column name"
+            aria-label="Status name"
             autoFocus
             className={styles.laneNameInput}
             maxLength={MAX_NAME_LEN}
@@ -1230,7 +1219,7 @@ function LaneHeader({
               className={styles.laneRenameButton}
               disabled={readOnly}
               onClick={() => { setDraft(column.name); setEditing(true); }}
-              title="Rename column"
+              title="Rename status"
               type="button"
             >
               {column.name}
@@ -1246,7 +1235,7 @@ function LaneHeader({
           <button
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            aria-label={`${column.name} column options`}
+            aria-label={`${column.name} status options`}
             className={styles.laneIconButton}
             onClick={() => setMenuOpen((value) => !value)}
             type="button"
@@ -1274,7 +1263,7 @@ function LaneHeader({
                 {column.isDone ? "Counts as done ✓" : "Counts as done"}
               </button>
               <div className={styles.laneMenuLabel}>Colour</div>
-              <div aria-label="Column colour" className={styles.laneColorRow} role="group">
+              <div aria-label="Status colour" className={styles.laneColorRow} role="group">
                 {COLUMN_PICKER_ORDER.map((key) => (
                   <button
                     aria-label={COLUMN_COLORS[key].label}
@@ -1294,7 +1283,7 @@ function LaneHeader({
               <button onClick={() => { setMenuOpen(false); onCollapse(); }} role="menuitem" type="button">Collapse column</button>
               <button disabled={readOnly || columnIndex === 0} onClick={() => move(-1)} role="menuitem" type="button">Move left</button>
               <button disabled={readOnly || columnIndex === columns.length - 1} onClick={() => move(1)} role="menuitem" type="button">Move right</button>
-              <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add column after</button>
+              <button disabled={readOnly} onClick={() => { setMenuOpen(false); onRequestAddAfter(); }} role="menuitem" type="button">Add status after</button>
               {!column.isSystem ? (
                 <>
                   <div className={styles.laneMenuDivider} />
@@ -1305,7 +1294,7 @@ function LaneHeader({
                     role="menuitem"
                     type="button"
                   >
-                    Delete column
+                    Delete status
                   </button>
                 </>
               ) : null}
@@ -1359,8 +1348,8 @@ function LaneHeader({
           placeholder="Soft limit, empty for none"
           value={limitDraft}
         />
-      ) : column.description ? (
-        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit column description" type="button">
+      ) : column.description && showDescription ? (
+        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit status description" type="button">
           {column.description}
         </button>
       ) : null}
@@ -1410,7 +1399,7 @@ function AddColumnForm({
 
   function commit() {
     const trimmed = name.trim();
-    if (!trimmed) { setError("Enter a column name."); return; }
+    if (!trimmed) { setError("Enter a status name."); return; }
     const desc = description.trim();
     const insertAt = fixedPosition ?? position;
     const append = insertAt >= columns.length;
@@ -1444,7 +1433,7 @@ function AddColumnForm({
 
   return (
     <form
-      aria-label="New column"
+      aria-label="New status"
       className={styles.addColumnForm}
       onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); onClose(); } }}
       onSubmit={(event) => { event.preventDefault(); commit(); }}
@@ -1453,7 +1442,7 @@ function AddColumnForm({
         <span>Name</span>
         <input
           aria-invalid={error ? true : undefined}
-          aria-label="New column name"
+          aria-label="New status name"
           autoFocus
           maxLength={MAX_NAME_LEN}
           onChange={(event) => { setName(event.target.value); if (error) setError(null); }}
@@ -1465,7 +1454,7 @@ function AddColumnForm({
       <label className={styles.addColumnField}>
         <span>Description <em>(optional)</em></span>
         <input
-          aria-label="New column description"
+          aria-label="New status description"
           maxLength={MAX_DESCRIPTION_LEN}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="What belongs here"
@@ -1474,7 +1463,7 @@ function AddColumnForm({
       </label>
       <div className={styles.addColumnField}>
         <span>Colour</span>
-        <div aria-label="New column colour" className={styles.laneColorRow} role="group">
+        <div aria-label="New status colour" className={styles.laneColorRow} role="group">
           {COLUMN_PICKER_ORDER.map((key) => (
             <button
               aria-label={COLUMN_COLORS[key].label}
@@ -1493,7 +1482,7 @@ function AddColumnForm({
       {fixedPosition === undefined ? (
         <label className={styles.addColumnField}>
           <span>Position</span>
-          <select aria-label="New column position" onChange={(event) => setPosition(Number(event.target.value))} value={position}>
+          <select aria-label="New status position" onChange={(event) => setPosition(Number(event.target.value))} value={position}>
             {columns.map((c, i) => (
               <option key={c.key} value={i}>Before “{c.name}”</option>
             ))}
@@ -1503,7 +1492,7 @@ function AddColumnForm({
       ) : null}
       <div className={styles.addColumnActions}>
         <button className={styles.addColumnCancel} onClick={onClose} type="button">Cancel</button>
-        <button className={styles.addColumnCreate} type="submit">Add column</button>
+        <button className={styles.addColumnCreate} type="submit">Add status</button>
       </div>
     </form>
   );
@@ -1555,7 +1544,7 @@ function DeleteColumnDialog({
         {taskCount > 0 ? (
           <>
             <p>
-              This column has {taskCount} task{taskCount === 1 ? "" : "s"}. Choose where
+              This status has {taskCount} task{taskCount === 1 ? "" : "s"}. Choose where
               they should go — they will be moved, never deleted.
             </p>
             <label>
@@ -1568,7 +1557,7 @@ function DeleteColumnDialog({
             </label>
           </>
         ) : (
-          <p>This column is empty. Deleting it can’t be undone.</p>
+          <p>This status is empty. Deleting it can’t be undone.</p>
         )}
         <div className={styles.boardDialogActions}>
           <button onClick={onCancel} type="button">Cancel</button>

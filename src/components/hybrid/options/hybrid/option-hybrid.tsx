@@ -14,8 +14,9 @@ import { BoardView } from "../a/board-view";
 import { ListView } from "../a/list-view";
 import { TimelineView } from "../a/timeline-view";
 import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-command-model";
-import { ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
+import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
+import { activeUnscheduledTasks } from "../../planning";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -126,8 +127,11 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
   const personalization = usePersonalization();
   const { clearFilters, activeFilterCount } = useRoomTools();
 
+  // The one definition of "needs a date" (planning.ts): the badge, the
+  // drawer list and the tab count all read it, so they cannot disagree —
+  // and finished work never counts as a planning obligation.
   const unscheduledCount = useMemo(
-    () => wholeProject.filter((task) => task.schedule.kind === "unscheduled").length,
+    () => activeUnscheduledTasks(wholeProject).length,
     [wholeProject],
   );
   const shareView = route.view as ShareView;
@@ -203,19 +207,16 @@ export function OptionHybrid({ route, onRouteChange, hideSuiteRail }: TasksOptio
           <div className={styles.tabsScroll}><ViewTabs onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
           <div aria-label="View controls" className={styles.functionalTools} role="toolbar">
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
-            <button
-              aria-haspopup="dialog"
-              aria-label="Keyboard shortcuts"
-              onClick={() => setShortcutsOpen(true)}
-              title="Keyboard shortcuts (?)"
-              type="button"
-            >
-              <Icon name="command" size={14} />
-            </button>
           </div>
         </div>
         <ShortcutsDialog onClose={() => setShortcutsOpen(false)} open={shortcutsOpen} view={route.view} />
-        <ViewToolPanels onClose={() => setToolPanel(null)} panel={toolPanel} view={route.view} />
+        <ViewToolPanels
+          onClose={() => setToolPanel(null)}
+          onShowShortcuts={() => setShortcutsOpen(true)}
+          panel={toolPanel}
+          view={route.view}
+        />
+        <ActiveFilterChips />
         {filteredToNothing ? (
           <div className={styles.filterEmptyNotice} role="status">
             <span>Nothing matches the filters.</span>

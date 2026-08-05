@@ -2,6 +2,61 @@
 
 2026-08-05 · branch `tasks/board-world-class` · owner: Claude Code (product lane)
 
+## Pass 2 (same day) — scope truth, Planning workflow, card anatomy
+
+The second refinement pass, on top of the foundation below. The decisions:
+
+1. **"Project" left the shell navigation** — desktop rail and mobile suite
+   nav both. `/app/project` stays routable from project contexts; the
+   suite-navigation contract test now pins the four-destination shape.
+2. **Scope is explicit everywhere.** The band reads
+   `Wedding season / The Orchard, events` (parent quiet, project
+   dominant); the Planning drawer names the project it plans with the
+   period and dates as its supporting line; the sidebar's bare date
+   became `Ends 10 Oct` with a planning-period tooltip.
+3. **One Done green.** `--x-status-done: #1b873f` with derived
+   tint/border/hover/pressed; `--x-task-success` and `--x-col-emerald`
+   resolve to it, so the Done header, dot, completion circle and check
+   are perceptually one colour. The dead pre-cycle-2 lane palette (the
+   old forest green included) was deleted — the ds-check hex ratchet
+   shrank rather than grew.
+4. **Header-band tints.** Each column header carries a 4.5% wash and a
+   14% lower rule derived from its configured accent (cool ink for
+   neutral columns); bodies stay pure white; the tinted name is the
+   accent mixed toward text ink for contrast.
+5. **Planning is a workflow now.** One canonical selector
+   (`planning.ts · activeUnscheduledTasks`) feeds the badge, the tab
+   count and the list — completed work is never a scheduling obligation.
+   Rows are actionable (`Schedule ▾` → Today / Tomorrow / This week /
+   Next week / Pick a date), bulk selection gets a sticky bar, every
+   scheduling act leaves a 7-second undo receipt, milestones live in a
+   sibling tab (upcoming first), and the summary reads
+   `Day 11 of 97 · 86 days left`. Container queries dock the drawer in
+   flow on a wide canvas and float it under the band as a shadowed
+   inspector on a medium one; below 768px it stays the modal drawer.
+6. **Cards.** Priority is a word ("High", "Urgent") in state ink, never
+   an unexplained dot; the duplicate top-right milestone diamond is gone
+   (the meta sentence and the menu carry it); completed titles are
+   muted, readable, never struck through; with a completion date the
+   card reads `Completed 16 Jul` or `Completed 2 days late`
+   (unit-tested); tag slugs render humanised (`mara-finn` → `Mara Finn`)
+   while ids stay stored; one meta row — date sentence left, quiet facts
+   right.
+7. **Toolbar.** `Save view` and the command glyph are gone. `View` holds
+   density, the status-description toggle, saved views (same
+   localStorage semantics) and the keyboard-shortcuts entry; Sort states
+   its method when active (`Sort · Schedule`); active filters render as
+   removable chips under the bar.
+8. **Add status.** The end-cap is a compact ghost action ("Add status"),
+   the menu items say status, and no pseudo-lane reserves width.
+9. **Projects panel** is titled ("Projects" + collapse in one 44px row).
+
+Data note: the wedding seed's two done tasks carry no `completedAt`, so
+the demo board shows no completion receipts; real completions stamp the
+date and the copy is unit-tested. The seed is a governed artifact
+(byte-identical determinism) touched by in-flight demo work elsewhere —
+deliberately not edited here.
+
 The board works — column CRUD, WIP limits, saved views, keyboard model,
 optimistic sync and the inline composer all shipped between T·96 and T·131.
 What it does not yet do is look authored. This pass keeps every behaviour

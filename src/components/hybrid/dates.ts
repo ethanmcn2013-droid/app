@@ -199,9 +199,18 @@ export function isTaskOverdue(task: LabTask, today: CalendarDate): boolean {
 export function formatScheduleForTask(task: LabTask, today: CalendarDate): string {
   const schedule = task.schedule;
   if (task.completed) {
-    if (schedule.kind === "unscheduled") return "Done";
+    // Done work states facts. With a completion date we say when — and,
+    // when it genuinely finished after its due date, how late — never
+    // "overdue", which is a claim about now.
+    const completedDay = task.completedAt ? (task.completedAt.slice(0, 10) as CalendarDate) : null;
     if (schedule.kind === "milestone") return `Milestone · ${formatDate(schedule.on)}`;
     const end = scheduleEnd(schedule);
+    if (completedDay) {
+      const late = end ? differenceInDays(end, completedDay) : 0;
+      if (late === 1) return "Completed 1 day late";
+      if (late > 1) return `Completed ${late} days late`;
+      return `Completed ${formatDate(completedDay)}`;
+    }
     return end ? `Was due ${formatDate(end)}` : "Done";
   }
   if (schedule.kind === "milestone") {

@@ -37,12 +37,16 @@ import styles from "./signal-shell.module.css";
 
 /**
  * Rail destinations (Signal → Home consolidation, D4): Home first, then
- * the three products, then Project — the workspace's organisational
- * layer. Signal is no longer a rail destination; its briefing lives
- * inside Home at /app/home/briefing.
+ * the three products. Signal's briefing lives inside Home at
+ * /app/home/briefing. "Project" left the rail 2026-08-05 (board pass 2):
+ * the active project already lives in the Projects panel and the board's
+ * context band, and a global rail tile named for one project's overview
+ * read as a fifth product. /app/project itself remains routable — the
+ * project overview is reachable from project contexts, just not from the
+ * global rail.
  */
-const RAIL_DESTINATIONS: Array<{
-  key: "home" | "notes" | "tasks" | "timeline" | "project";
+export const RAIL_DESTINATIONS: Array<{
+  key: "home" | "notes" | "tasks" | "timeline";
   label: string;
   path: string;
 }> = [
@@ -50,13 +54,9 @@ const RAIL_DESTINATIONS: Array<{
   { key: "notes", label: "Notes", path: PRODUCT_APP_PATHS.notes },
   { key: "tasks", label: "Tasks", path: PRODUCT_APP_PATHS.tasks },
   { key: "timeline", label: "Timeline", path: PRODUCT_APP_PATHS.timeline },
-  { key: "project", label: "Project", path: "/app/project" },
 ];
 
 function activeRailKey(pathname: string): string {
-  if (pathname === "/app/project" || pathname.startsWith("/app/project/")) {
-    return "project";
-  }
   return suiteSurfaceFromAppPath(pathname);
 }
 

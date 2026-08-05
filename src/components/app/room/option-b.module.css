@@ -51,6 +51,56 @@
 .roomResetFilters { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 12px; justify-self: start; padding: 0; }
 .roomResetFilters:hover { text-decoration: underline; }
 
+/* One quiet toggle row in the View panel — a row, in sentence case,
+   overriding the field-column grammar the filter fields use. */
+.roomFilterFields > .roomToggleRow { flex-direction: row; }
+.roomToggleRow { align-items: center; cursor: pointer; display: flex; font-size: 12px; gap: 8px; }
+.roomToggleRow input { accent-color: var(--x-task-accent); flex: 0 0 auto; }
+.roomFilterFields > .roomToggleRow > span { color: var(--x-task-text-secondary); font-size: 12px; font-weight: 500; letter-spacing: normal; text-transform: none; }
+
+/* View-panel section break + heading, sentence case. */
+.viewPanelSection { border-top: 1px solid var(--x-task-border); margin-top: 12px; padding-top: 10px; }
+.viewPanelHeading { color: var(--x-task-text-muted); display: block; font-size: 11px; font-weight: 600; margin-bottom: 8px; }
+.viewPanelShortcuts {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--x-task-border);
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 12px;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 0 0;
+  width: 100%;
+}
+.viewPanelShortcuts:hover { color: var(--x-task-text); }
+.viewPanelShortcuts kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 4px; font: inherit; font-size: 11px; padding: 1px 6px; }
+
+/* Active filters as removable chips, under the view bar. */
+.activeChipsRow { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex-wrap: wrap; gap: 6px; padding: 7px 14px; }
+.activeChip {
+  align-items: center;
+  background: var(--x-task-accent-soft);
+  border: 0;
+  border-radius: 999px;
+  color: var(--x-task-accent);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 8px 0 10px;
+  transition: background var(--motion-instant) var(--ease-out);
+}
+.activeChip:hover { background: color-mix(in srgb, var(--x-task-accent) 16%, var(--paper)); }
+.activeChipsClear { background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; font: inherit; font-size: 11.5px; padding: 0 4px; }
+.activeChipsClear:hover { color: var(--x-task-text); text-decoration: underline; }
+
 .roomSortOptions { border: 0; display: grid; gap: 4px; margin: 0; padding: 0; }
 .roomSortOptions label { align-items: center; border-radius: 6px; cursor: pointer; display: grid; gap: 10px; grid-template-columns: 16px 1fr; padding: 8px; }
 .roomSortOptions label:hover { background: var(--x-task-hover); }
