@@ -19,6 +19,10 @@
     "hex": 97,
     "ease": 2
   },
+  "src/app/lab/timeline-w/page.tsx": {
+    "hex": 24,
+    "ease": 0
+  },
   "src/app/lab/welcome-b/page.tsx": {
     "hex": 3,
     "ease": 0

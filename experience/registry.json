@@ -4140,6 +4140,138 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "7b7ed391aa1b72ab"
+    },
+    {
+      "id": "tasks.page.lab-timeline-a",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/timeline-a",
+      "source": "tasks/src/app/lab/timeline-a/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "editor-or-canvas",
+      "primaryJob": "Review the Shared Timeline exploration, direction A.",
+      "primaryAction": "Compare direction A against the other two timeline directions.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ee4abfe9819eb193"
+    },
+    {
+      "id": "tasks.page.lab-timeline-b",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/timeline-b",
+      "source": "tasks/src/app/lab/timeline-b/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "editor-or-canvas",
+      "primaryJob": "Review the Shared Timeline exploration, direction B.",
+      "primaryAction": "Compare direction B against the other two timeline directions.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9488dbeca745ca74"
+    },
+    {
+      "id": "tasks.page.lab-timeline-w",
+      "product": "tasks",
+      "surfaceType": "page",
+      "route": "/lab/timeline-w",
+      "source": "tasks/src/app/lab/timeline-w/page.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "editor-or-canvas",
+      "primaryJob": "Review the Shared Timeline exploration, the working direction.",
+      "primaryAction": "Compare the working direction against directions A and B.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "default",
+        "long-content",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "supporting",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "live",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "none",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-04",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "6c134d66c44d9156"
     }
   ]
 }
