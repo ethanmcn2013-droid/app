@@ -116,12 +116,27 @@ Also confirmed in the rendered DOM: the milestone list renders **twice**, and
 the current milestone a **third** time in the detail panel (section 16's
 duplication defect), and `settled` reaches the screen.
 
-## 6. Fixture drift
+## 6. Fixture drift — retracted, this was my error
 
-The Timeline module's demo data still says "The Orchard" while the suite
-fixture (`lib/review-suite-fixture.ts`) says "Glenmara House" per decision
-D-012. Two fixtures disagree about the same story. Section 29's fixture work
-should reconcile them rather than add a third.
+I originally recorded that the Timeline demo data and the suite fixture
+disagreed about the venue name. That was wrong, and the correction matters
+because acting on it would have broken passing tests.
+
+On this branch both `lib/review-suite-fixture.ts` and the Timeline demo data
+say **"The Orchard, events"**, and the file is pristine at `15b08a3`. The
+"Glenmara House" reading came from the `app/` checkout, which is 41 commits
+behind main — a branch difference, not drift between two fixtures.
+`docs/WORLD_CLASS_PRODUCT_PASS.md` (2026-08-03) settles it: *"Canonical story
+on this base: The Orchard, events… (the phase-1 tree's 'Glenmara House' was
+the stale name)."*
+
+`owner-artifact.test.ts:170` and the Playwright switcher spec both pin "The
+Orchard, events" and a count of exactly three authorised weddings. **Leave the
+venue name alone**; there is nothing to reconcile.
+
+Lesson for the rest of this work: verify a claim against *this* worktree before
+recording it. Three checkouts of the same repo sit side by side here at
+different commits.
 
 ## 7. Data model — what it will and will not support
 

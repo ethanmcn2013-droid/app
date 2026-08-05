@@ -167,6 +167,133 @@ export const weddingDemoProjects: Project[] = [
     // Wedding demo workspace is always published.
     publishedAt: createdAt,
   },
+  /**
+   * Sparse/timing-state fixtures (world-class Timeline redesign).
+   *
+   * One project per milestone-count/timing state the artifact can render,
+   * so every state is reachable in demo/review mode without a QA-only
+   * route. These live in the wedding-planning workspace, deliberately NOT
+   * the-orchard review-suite workspace: demoProjects there is a pinned,
+   * cross-surface contract (exactly three authorised weddings), asserted
+   * by owner-artifact.test.ts's "three authorised weddings" test AND by
+   * the live project switcher in
+   * experience/feature-tests/timeline-project-switcher.spec.ts
+   * (`options.toHaveCount(3)`). Adding to it would corrupt both.
+   *
+   * Dates are hand-picked against the one pinned review clock —
+   * REVIEW_SUITE_FIXTURE.reviewToday, equal to
+   * PINNED_REVIEW_CALENDAR_FRAME.today (src/lib/calendar-frame.ts) —
+   * "2026-07-16", never Date.now(), so "overdue" and "next" stay stable
+   * regardless of when this renders. 2026-09-12 is deliberately never used
+   * (retired wedding date, see calendar-frame.ts).
+   *
+   * KNOWN GAP: as of this pass, this workspace is not yet reachable from
+   * the live owner route. getCurrentWorkspace()/resolveTimelineContext()
+   * in server/auth.ts hard-resolve demo/review mode to demoWorkspace only
+   * — see this cycle's report for the precise, minimal change that would
+   * close it. The fixture shape below is ready for that route to land.
+   */
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "empty-plan",
+    name: "Two Sisters Coffee Cart",
+    oneLiner: "A brand new plan, ready for its first milestone.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 1,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "one-undated",
+    name: "St. Brigid's Sixth Class Musical",
+    oneLiner: "One thing to plan so far, with no date picked yet.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 2,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "one-dated",
+    name: "Riverside Wines",
+    oneLiner: "One clear date on the calendar so far.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 3,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "two-dated",
+    name: "Aoibhinn's Final-Year Portfolio",
+    oneLiner: "Two dates set, with more milestones still to add.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 4,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "five-mixed",
+    name: "Hazel & Rye Bakery Reopening",
+    oneLiner:
+      "What is done, what is next, and what is still ahead before reopening day.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 5,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "five-untimed",
+    name: "Year 9 Geography Field Trip",
+    oneLiner: "Five things to plan, none scheduled yet.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 6,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "partial-timing",
+    name: "Conor's Leaving Cert Art Project",
+    oneLiner: "Some dates are set. Some pieces are still undecided.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 7,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "overdue-plan",
+    name: "Fiona & Declan's Wedding",
+    oneLiner: "One thing is overdue and needs attention before the day.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 8,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "twenty-plan",
+    name: "Milltown Coffee Roastery, Year One",
+    oneLiner: "Twenty-two milestones across the roastery's first year.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 9,
+    publishedAt: createdAt,
+  },
+  {
+    workspaceSlug: "wedding-planning",
+    sourceTasksWorkspaceId: null,
+    slug: "long-text",
+    name: "The Ballyneety and District Community Hall Renovation, Roof Repair and Accessibility Upgrade Committee",
+    oneLiner: "A long project name and a long milestone, kept for wrap testing.",
+    accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
+    sortOrder: 10,
+    publishedAt: createdAt,
+  },
 ];
 
 export const weddingDemoTasks: Task[] = [
@@ -237,6 +364,546 @@ export const weddingDemoTasks: Task[] = [
     kind: "refusal",
     targetDate: null,
     sortOrder: 6,
+  }),
+
+  // empty-plan has zero milestones by design — no tasks reference it.
+
+  // one-undated: exactly one milestone, no timing at all (the headline bug case).
+  makeDemoTask({
+    id: "fixture-one-undated-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "one-undated",
+    title: "Pick the school musical",
+    description:
+      "The teachers are deciding between two scripts before rehearsals can be scheduled.",
+    status: "in-flight",
+    targetDate: null,
+    sortOrder: 1,
+  }),
+
+  // one-dated: exactly one milestone with a real date.
+  makeDemoTask({
+    id: "fixture-one-dated-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "one-dated",
+    title: "Tasting counter opens to the public",
+    description: "The new tasting counter at the shop front opens for walk-ins.",
+    status: "next",
+    targetDate: "2026-08-14",
+    sortOrder: 1,
+  }),
+
+  // two-dated: two dated milestones.
+  makeDemoTask({
+    id: "fixture-two-dated-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "two-dated",
+    title: "Submit the portfolio draft for review",
+    description:
+      "A full draft goes to the year tutor for feedback before the final push.",
+    status: "next",
+    targetDate: "2026-08-10",
+    sortOrder: 1,
+  }),
+  makeDemoTask({
+    id: "fixture-two-dated-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "two-dated",
+    title: "Submit the final portfolio",
+    description: "The finished portfolio is due at the college office.",
+    status: "next",
+    targetDate: "2026-09-04",
+    sortOrder: 2,
+  }),
+
+  // five-mixed: five milestones, some complete, one current, some upcoming, all dated.
+  makeDemoTask({
+    id: "fixture-five-mixed-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-mixed",
+    title: "Lease renewed for the corner unit",
+    description: "The landlord signed off on another three years.",
+    status: "shipped",
+    targetDate: "2026-05-20",
+    sortOrder: 1,
+    completedAt: new Date("2026-05-20T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-five-mixed-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-mixed",
+    title: "Kitchen equipment installed",
+    description: "The new oven and proving cabinet are in and plumbed.",
+    status: "shipped",
+    targetDate: "2026-06-18",
+    sortOrder: 2,
+    completedAt: new Date("2026-06-18T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-five-mixed-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-mixed",
+    title: "Health inspection",
+    description:
+      "The environmental health officer checks the new kitchen before it can open.",
+    status: "in-flight",
+    targetDate: "2026-07-22",
+    sortOrder: 3,
+  }),
+  makeDemoTask({
+    id: "fixture-five-mixed-4",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-mixed",
+    title: "Staff hired and trained",
+    description: "Two bakers and a counter lead start the week before reopening.",
+    status: "next",
+    targetDate: "2026-08-05",
+    sortOrder: 4,
+  }),
+  makeDemoTask({
+    id: "fixture-five-mixed-5",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-mixed",
+    title: "Reopening day",
+    description: "Doors open to the public for the first time since the refit.",
+    status: "next",
+    targetDate: "2026-08-20",
+    sortOrder: 5,
+  }),
+
+  // five-untimed: five milestones, none dated — the ordered-plan case.
+  makeDemoTask({
+    id: "fixture-five-untimed-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-untimed",
+    title: "Choose the destination",
+    description:
+      "Two sites are shortlisted; the geography department is deciding between them.",
+    status: "in-flight",
+    targetDate: null,
+    sortOrder: 1,
+  }),
+  makeDemoTask({
+    id: "fixture-five-untimed-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-untimed",
+    title: "Book the coach",
+    description: "Waiting on the destination before a coach company can be booked.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 2,
+  }),
+  makeDemoTask({
+    id: "fixture-five-untimed-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-untimed",
+    title: "Confirm the risk assessment",
+    description:
+      "The school office needs the finished risk assessment before it can approve the trip.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 3,
+  }),
+  makeDemoTask({
+    id: "fixture-five-untimed-4",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-untimed",
+    title: "Collect the permission forms",
+    description: "Every pupil needs a signed form back before the trip is confirmed.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 4,
+  }),
+  makeDemoTask({
+    id: "fixture-five-untimed-5",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "five-untimed",
+    title: "Pack the first-aid kits",
+    description: "One kit per group, checked and restocked before the trip.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 5,
+  }),
+
+  // partial-timing: five milestones, only some dated — must stay an ordered plan.
+  makeDemoTask({
+    id: "fixture-partial-timing-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "partial-timing",
+    title: "Choose the project theme",
+    description:
+      'Settled on "home" as the theme after three rounds of sketches.',
+    status: "shipped",
+    targetDate: "2026-06-02",
+    sortOrder: 1,
+    completedAt: new Date("2026-06-02T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-partial-timing-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "partial-timing",
+    title: "Submit the final pieces for marking",
+    description: "The finished work is due at the state examiner.",
+    status: "next",
+    targetDate: "2026-09-18",
+    sortOrder: 2,
+  }),
+  makeDemoTask({
+    id: "fixture-partial-timing-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "partial-timing",
+    title: "Finish the sketchbook",
+    description: "Still filling in studies for two of the final pieces.",
+    status: "in-flight",
+    targetDate: null,
+    sortOrder: 3,
+  }),
+  makeDemoTask({
+    id: "fixture-partial-timing-4",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "partial-timing",
+    title: "Pick the mounting boards",
+    description: "Waiting to see the finished pieces before choosing board colours.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 4,
+  }),
+  makeDemoTask({
+    id: "fixture-partial-timing-5",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "partial-timing",
+    title: "Photograph the finished pieces",
+    description:
+      "A clean set of photos goes in the portfolio alongside the originals.",
+    status: "next",
+    targetDate: null,
+    sortOrder: 5,
+  }),
+
+  // overdue-plan: one milestone is dated in the past and not complete.
+  makeDemoTask({
+    id: "fixture-overdue-plan-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "overdue-plan",
+    title: "Book the ceremony venue",
+    description: "The registry office confirmed the room for the afternoon.",
+    status: "shipped",
+    targetDate: "2026-04-10",
+    sortOrder: 1,
+    completedAt: new Date("2026-04-10T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-overdue-plan-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "overdue-plan",
+    title: "Confirm the caterer",
+    description: "Signed with the caterer for a sit-down meal for eighty.",
+    status: "shipped",
+    targetDate: "2026-06-01",
+    sortOrder: 2,
+    completedAt: new Date("2026-06-01T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-overdue-plan-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "overdue-plan",
+    title: "Send the save-the-dates",
+    description: "Still sitting with the printer. This was due out before today.",
+    status: "in-flight",
+    targetDate: "2026-07-03",
+    sortOrder: 3,
+  }),
+  makeDemoTask({
+    id: "fixture-overdue-plan-4",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "overdue-plan",
+    title: "Choose the flowers",
+    description:
+      "A florist visit is booked to settle the bouquet and table arrangements.",
+    status: "next",
+    targetDate: "2026-08-16",
+    sortOrder: 4,
+  }),
+  makeDemoTask({
+    id: "fixture-overdue-plan-5",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "overdue-plan",
+    title: "Confirm final numbers with the venue",
+    description: "The venue needs a firm headcount to finish the table plan.",
+    status: "next",
+    targetDate: "2026-09-20",
+    sortOrder: 5,
+  }),
+
+  // twenty-plan: twenty-two dated milestones, for collision and performance testing.
+  makeDemoTask({
+    id: "fixture-twenty-plan-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Lease signed for the roastery unit",
+    description: "The small unit off the Milltown Road is confirmed for five years.",
+    status: "shipped",
+    targetDate: "2026-02-03",
+    sortOrder: 1,
+    completedAt: new Date("2026-02-03T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Roaster ordered",
+    description: "A twelve-kilo drum roaster, on order from a supplier in Cork.",
+    status: "shipped",
+    targetDate: "2026-02-20",
+    sortOrder: 2,
+    completedAt: new Date("2026-02-20T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Unit fit-out begins",
+    description: "Electrics, extraction, and plumbing work starts on site.",
+    status: "shipped",
+    targetDate: "2026-03-10",
+    sortOrder: 3,
+    completedAt: new Date("2026-03-10T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-4",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Roaster delivered",
+    description: "Craned in through the side door on a Sunday morning.",
+    status: "shipped",
+    targetDate: "2026-04-14",
+    sortOrder: 4,
+    completedAt: new Date("2026-04-14T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-5",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First test roast",
+    description: "A small batch of house-blend beans, roasted to check the machine.",
+    status: "shipped",
+    targetDate: "2026-04-28",
+    sortOrder: 5,
+    completedAt: new Date("2026-04-28T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-6",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Food safety inspection passed",
+    description: "The council's food safety officer signed off on the unit.",
+    status: "shipped",
+    targetDate: "2026-05-12",
+    sortOrder: 6,
+    completedAt: new Date("2026-05-12T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-7",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Website goes live",
+    description: "A simple site with the blend list and the opening-day date.",
+    status: "shipped",
+    targetDate: "2026-05-15",
+    sortOrder: 7,
+    completedAt: new Date("2026-05-15T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-8",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First wholesale account signed",
+    description: "A cafe on the Ennis Road takes the house blend on tap.",
+    status: "shipped",
+    targetDate: "2026-05-18",
+    sortOrder: 8,
+    completedAt: new Date("2026-05-18T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-9",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Staff hired",
+    description: "A roaster's assistant and a Saturday counter hand join the team.",
+    status: "shipped",
+    targetDate: "2026-06-02",
+    sortOrder: 9,
+    completedAt: new Date("2026-06-02T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-10",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Opening day",
+    description: "Doors open to the public for the first time.",
+    status: "shipped",
+    targetDate: "2026-06-20",
+    sortOrder: 10,
+    completedAt: new Date("2026-06-20T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-11",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First subscription boxes shipped",
+    description:
+      "The first round of monthly bag subscriptions goes out this week.",
+    status: "in-flight",
+    targetDate: "2026-07-25",
+    sortOrder: 11,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-12",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Second wholesale account signed",
+    description: "A second cafe, this one in the city centre, places its first order.",
+    status: "next",
+    targetDate: "2026-08-01",
+    sortOrder: 12,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-13",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Farmers' market stall begins",
+    description: "A Saturday stall at the market, selling bags and cups by the roast.",
+    status: "next",
+    targetDate: "2026-08-02",
+    sortOrder: 13,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-14",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Autumn blend launches",
+    description: "A darker seasonal blend, timed for the turn in the weather.",
+    status: "next",
+    targetDate: "2026-08-22",
+    sortOrder: 14,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-15",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First roasting workshop hosted",
+    description: "Eight seats, a Saturday morning, home roasting basics.",
+    status: "next",
+    targetDate: "2026-09-05",
+    sortOrder: 15,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-16",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Second staff member hired",
+    description:
+      "Trade is steady enough now to bring on a second full-time roaster.",
+    status: "next",
+    targetDate: "2026-09-19",
+    sortOrder: 16,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-17",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Christmas blend launches",
+    description: "Gift bags and the Christmas blend go on the shelf.",
+    status: "next",
+    targetDate: "2026-11-14",
+    sortOrder: 17,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-18",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Christmas trading week begins",
+    description: "The busiest week of the year so far, extra hours on the counter.",
+    status: "next",
+    targetDate: "2026-12-18",
+    sortOrder: 18,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-19",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First year's books closed",
+    description: "The accountant closes out the roastery's first trading year.",
+    status: "next",
+    targetDate: "2027-01-10",
+    sortOrder: 19,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-20",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Second roaster ordered",
+    description: "Demand has outgrown the first machine.",
+    status: "next",
+    targetDate: "2027-02-08",
+    sortOrder: 20,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-21",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "First anniversary event",
+    description: "An open afternoon for regulars, wholesale partners, and neighbours.",
+    status: "next",
+    targetDate: "2027-02-20",
+    sortOrder: 21,
+  }),
+  makeDemoTask({
+    id: "fixture-twenty-plan-22",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "twenty-plan",
+    title: "Second unit lease signed",
+    description:
+      "A second, larger unit is confirmed for roasting once the first outgrows its space.",
+    status: "next",
+    targetDate: "2027-03-15",
+    sortOrder: 22,
+  }),
+
+  // long-text: a very long project title and a very long milestone title.
+  makeDemoTask({
+    id: "fixture-long-text-1",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "long-text",
+    title: "Apply for the renovation grant",
+    description:
+      "The council's community fund covers up to half the cost of the works.",
+    status: "shipped",
+    targetDate: "2026-03-01",
+    sortOrder: 1,
+    completedAt: new Date("2026-03-01T09:00:00Z"),
+  }),
+  makeDemoTask({
+    id: "fixture-long-text-2",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "long-text",
+    title:
+      "Confirm the wheelchair-accessible ramp specification and drainage plan with the county council's access officer before the autumn planning meeting",
+    description: "The longest-running open item on the committee's plan.",
+    status: "in-flight",
+    targetDate: "2026-08-05",
+    sortOrder: 2,
+  }),
+  makeDemoTask({
+    id: "fixture-long-text-3",
+    workspaceSlug: "wedding-planning",
+    projectSlug: "long-text",
+    title: "Reopen the hall to the community",
+    description:
+      "The hall committee hosts an open evening once the works are signed off.",
+    status: "next",
+    targetDate: "2026-10-24",
+    sortOrder: 3,
   }),
 ];
 
