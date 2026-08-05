@@ -2,6 +2,33 @@
 
 2026-08-05 · branch `tasks/board-world-class` · owner: Claude Code (product lane)
 
+## Pass 3 (same day) — the finishing pass
+
+1. **One brand object.** The standalone bar dot retired; `tasks.` (and
+   every sibling wordmark) carries the indigo full stop. The identity
+   cell re-aligned to the rail edge.
+2. **Hierarchy on the closed board**: `Wedding season / The Orchard,
+   events` in the band; `+ Add description` as a visible action;
+   progress as one sentence (`20% complete · 2 of 10 done · 1 overdue`)
+   — the 4px decorative bar removed.
+3. **Perceptual tint tuning**: per-hue wash/rule/ink strengths ride the
+   colour table (`COLUMN_COLORS.tint/border/ink` → inline vars), so
+   amber calms down, green and the neutral slates step up, and custom
+   colours stay safe automatically.
+4. **Cards are content-driven**: title inline with the completion
+   circle (a one-line task is one line tall), the ••• trigger floats on
+   hover, priority is a meta-row word hidden on Done, and avatars
+   auto-hide when uniform across the visible board
+   (`uniformAssignees`). Fit/Fixed column widths join the View menu.
+5. **Planning**: 420px, container threshold 1620 — a real split view at
+   2048; Costs removed from the drawer (per-task costing remains in the
+   task detail panel; the coverage summary awaits a product home).
+6. **Add status**: content-sized ghost end-cap; Schedule tab gets a
+   schedule glyph; empty states left-align to the card grid.
+7. **Pinned by contract** (`board-pass3-contract.test.mjs`): the Done
+   token chain, header-only colour, money-free Planning, the absent
+   dot, the compact end-cap, priority-off-when-done.
+
 ## Pass 2 (same day) — scope truth, Planning workflow, card anatomy
 
 The second refinement pass, on top of the foundation below. The decisions:

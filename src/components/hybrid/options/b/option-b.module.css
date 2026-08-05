@@ -43,6 +43,10 @@
 }
 
 .workspaceIdentity { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
+/* Parent context: quieter than the project, separated by a low-contrast
+   slash — hierarchy in one reading order, no extra band. */
+.briefCrumb { align-items: baseline; color: var(--x-task-text-secondary); display: inline-flex; flex: 0 0 auto; font-size: 13.5px; font-weight: 500; gap: 9px; white-space: nowrap; }
+.briefCrumb i { color: var(--x-task-ghost, var(--ink-ghost)); font-style: normal; font-weight: 400; }
 .workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 650; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12.5px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*
@@ -59,7 +63,9 @@
   element stays genuinely empty — the placeholder is never selectable, never
   copied, and never committed as if the user had typed it.
 */
-.editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; }
+.editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; transition: color var(--motion-instant) var(--ease-out); }
+p.editable[data-empty]:hover::before,
+p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .editable[data-empty]:focus::before { opacity: .55; }
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: 7px 14px; margin-top: 13px; }
 .workspaceMeta span { position: relative; }
@@ -81,12 +87,8 @@
 .syncState[data-state="error"] { opacity: 1; }
 .syncState[data-state="saved"] { color: var(--x-task-success); }
 .syncState[data-state="error"] { color: var(--x-task-danger); }
-.briefProgressBar { align-items: center; display: flex; }
-.briefProgressBar progress { appearance: none; border: 0; display: block; height: 4px; overflow: hidden; width: 76px; }
-.briefProgressBar progress::-webkit-progress-bar { background: var(--x-task-hover); border-radius: 999px; }
-.briefProgressBar progress::-webkit-progress-value { background: var(--x-task-accent); border-radius: 999px; }
-.briefProgressBar progress::-moz-progress-bar { background: var(--x-task-accent); border-radius: 999px; }
-.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: 12px; gap: 10px; margin: 0; }
+.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: 12.5px; gap: 12px; margin: 0; }
+.briefFacts strong { color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 620; white-space: nowrap; }
 .briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .briefFacts b { color: var(--x-task-danger); font-variant-numeric: tabular-nums; font-weight: 640; white-space: nowrap; }
 
@@ -550,6 +552,7 @@
 /* Narrow desktop: the sentence goes before the numbers do. */
 @media (max-width: 1160px) {
   .workspaceIdentity > p { display: none; }
+  .briefCrumb { display: none; }
   .briefFacts span { display: none; }
 }
 

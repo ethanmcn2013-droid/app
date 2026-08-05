@@ -34,7 +34,7 @@ import {
   scheduleEnd,
 } from "./dates";
 import { VIEW_LABELS, type CalendarDate, type LabTask, type LabView } from "./types";
-import { useShowStatusDescriptions } from "./view-prefs";
+import { useFitColumns, useShowStatusDescriptions } from "./view-prefs";
 import styles from "@/components/app/room/option-b.module.css";
 
 const PRIORITIES: Priority[] = ["p0", "p1", "p2", "p3"];
@@ -326,6 +326,7 @@ export function ViewToolPanels({
   const columns = useBoardColumns();
   const [saveName, setSaveName] = useState("");
   const [showDescriptions, toggleDescriptions] = useShowStatusDescriptions();
+  const [fitColumns, toggleFitColumns] = useFitColumns();
 
   if (!panel) return null;
 
@@ -467,6 +468,14 @@ export function ViewToolPanels({
                 </label>
               ))}
             </fieldset>
+            <label className={styles.roomToggleRow}>
+              <input
+                checked={fitColumns}
+                onChange={toggleFitColumns}
+                type="checkbox"
+              />
+              <span>Fit columns to the board</span>
+            </label>
             <label className={styles.roomToggleRow}>
               <input
                 checked={showDescriptions}

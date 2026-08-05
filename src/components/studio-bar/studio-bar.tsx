@@ -54,26 +54,10 @@ import {
    --x-studio-* tokens in globals.css: chrome surface, raised popover,
    soft/quiet/bright ink steps, and the indigo accent off the ramp. */
 
-function markCell() {
-  // The dot walks to Home — the authenticated front door — so the mark
-  // and the rail's Home tile agree (consolidation D4: the dot must not
-  // be the only Home affordance, and it must not disagree with it).
-  return (
-    <a
-      href={HOME_APP_PATH}
-      title="Home"
-      className="flex h-full w-[60px] flex-none items-center justify-center outline-none transition-colors hover:bg-white/[0.05] focus-visible:bg-white/[0.05]"
-    >
-      <span
-        aria-hidden="true"
-        className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px]"
-      >
-        <span className="h-2.5 w-2.5 rounded-full bg-[var(--x-studio-accent)]" />
-      </span>
-      <span className="sr-only">Signal Studio Home</span>
-    </a>
-  );
-}
+/* The standalone dot cell retired 2026-08-05 (board pass 3): the brand
+   dot now lives INSIDE the wordmark — `tasks.` — one authored object.
+   Home keeps its rail tile (consolidation D4's real affordance), so the
+   duplicate mark carried no unique function. */
 
 /**
  * Module identity for the 248px cell: the wordmark follows the ACTIVE module
@@ -111,7 +95,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 px-3 md:w-[248px] md:px-4">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 pl-5 pr-3 md:w-[248px] md:pl-[21px] md:pr-4">
       <a
         href={identity.home}
         aria-label={identity.label}
@@ -120,9 +104,11 @@ function IdentityCell({ edition }: { edition: string | null }) {
       >
         {identity.word}
         {/* The wordmark ends in the brand's indigo full stop — one
-            authored object, matching the marketing wordmarks. Decorative
-            to AT: the aria-label above already names the module. */}
-        <span aria-hidden="true" className="text-[var(--x-studio-accent)]">.</span>
+            authored object, matching the marketing wordmarks. The link's
+            aria-label above supplies the accessible name, so the glyph
+            carries no ARIA of its own; the mobile-visibility contract
+            also forbids concealment utilities anywhere in this cell. */}
+        <span className="text-[var(--x-studio-accent)]">.</span>
       </a>
       {edition ? (
         <span
@@ -180,7 +166,6 @@ export function StudioBar() {
       role="banner"
       className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
     >
-      {markCell()}
 
       <IdentityCell edition={data?.edition ?? null} />
 
@@ -235,7 +220,7 @@ export function StudioBar() {
             aria-keyshortcuts="c"
             title="Add task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-md border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] md:h-8 md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] disabled:opacity-60 md:h-[34px] md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
           >
             <svg
               aria-hidden="true"
@@ -251,7 +236,7 @@ export function StudioBar() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span className="hidden sm:block">Add task</span>
-            <kbd className="hidden h-[18px] items-center rounded border border-black/15 px-1 font-mono text-[10px] font-medium text-zinc-600 lg:flex">
+            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-zinc-500 lg:flex">
               C
             </kbd>
           </button>

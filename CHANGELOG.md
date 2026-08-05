@@ -50,6 +50,23 @@ seven-second undo, and milestones sit in their own tab instead of under
 the list. The drawer docks beside the board on a wide canvas and floats
 under the band as a shadowed inspector on a narrower one.
 
+The finishing pass made the remaining claims true on screen. The last
+duplicate brand mark is gone — the wordmark's indigo full stop IS the dot
+now — and the header reads `Wedding season / The Orchard, events` with
+`+ Add description` as a real action and progress as one sentence:
+`20% complete · 2 of 10 done · 1 overdue`. Status tints are perceptually
+tuned per hue (amber calmed, green and the neutral slates lifted) so five
+bands read as one system. Cards collapsed to their content: the title
+shares its line with the completion circle, priority is a word in the
+meta row that finished work drops, and when every card would wear the
+identical avatar the board hides the badge because it differentiates
+nothing. Planning at a wide canvas is a true split view — 420px docked,
+the board resizing beside it — and the Costs line left the drawer
+entirely (per-task costing stays in the task panel). Add status is a
+ghost end-cap on white, the Schedule tab wears a schedule icon, and a
+new source contract pins all of it: one Done token, header-only colour,
+money-free Planning, the retired dot.
+
 Edges, honestly: the collapsed lane rail keeps its vertical name (44px
 against 276px is the right trade, and it is real, labelled text); the
 sidebar's drawer-mode strip keeps its vertical label for the same reason;

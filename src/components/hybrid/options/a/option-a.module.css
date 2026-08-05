@@ -306,6 +306,10 @@
   transition: flex-basis var(--motion-base) var(--spring-glide), min-width var(--motion-base) var(--spring-glide), background var(--motion-fast) var(--ease-out);
 }
 
+/* Fixed-width mode (View menu): lanes hold their base width and the
+   track scrolls, instead of sharing the spare board width. */
+.boardSurface[data-fixed-columns] .boardLane { flex-grow: 0; }
+
 /* While a card drag is over this lane, the whole lane acknowledges it —
    a 3% accent wash that exists only for the duration of the gesture. */
 .boardLane[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 3%, var(--x-task-raised)); }
@@ -321,8 +325,8 @@
    and the bodies below stay pure white. */
 .laneHeader {
   align-items: center;
-  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) 4.5%, var(--x-task-raised));
-  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) 14%, var(--x-task-raised));
+  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised));
+  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 16%), var(--x-task-raised));
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -336,7 +340,7 @@
 }
 /* A tinted column's name is status ink: the accent mixed toward text ink
    so every hue — amber included — stays comfortably readable. */
-.boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) 58%, var(--x-task-text)); }
+.boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
 .laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 8px; min-width: 0; }
 .laneHeader h2 { color: var(--x-task-text); font-size: 13px; font-weight: 620; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -434,9 +438,9 @@
   to { opacity: 1; }
 }
 
-.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) 4.5%, var(--x-task-raised)); }
-.laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) 8%, var(--x-task-raised)); color: var(--x-task-text); }
-.boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) 58%, var(--x-task-text)); }
+.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised)); }
+.laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) calc(var(--lane-tint, 5.5%) + 3%), var(--x-task-raised)); color: var(--x-task-text); }
+.boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
 .railName { font-size: 12px; font-weight: 620; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
 .railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
 
@@ -449,7 +453,7 @@
   border: 1px solid color-mix(in srgb, var(--x-task-border-strong) 52%, var(--x-task-border));
   border-radius: 10px;
   cursor: default;
-  padding: 11px 13px 12px;
+  padding: 10px 12px 11px;
   position: relative;
   transform-origin: center;
   transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
@@ -475,20 +479,21 @@
    so the strikethrough is not fighting full-strength colour below. */
 .boardCard[data-completed] .cardLabels,
 .boardCard[data-completed] .cardMeta { opacity: .72; }
-/* Negative right margin only: the checkbox keeps the title's left edge, and
-   the ••• button's own padding is pulled back to the card's right edge. */
-.cardTopline { align-items: center; display: flex; gap: 2px; height: 22px; margin: -2px -6px 0 0; }
-.cardSpacer { flex: 1; }
-.cardTopline > button { height: 24px; width: 24px; }
+/* Head row: completion control on the title's first line. A card with
+   only a title is one line tall; the ••• trigger floats over the corner
+   on hover so it never costs a permanent row. */
+.cardHead { align-items: flex-start; display: flex; gap: 9px; min-width: 0; padding-right: 16px; }
+.cardHead > input { margin-top: 2px; }
 
-/* ••• trigger button rendered by ContextActions inside the card topline.
+/* ••• trigger floated over the card's top-right corner by ContextActions.
    Quiet at rest, present on hover or keyboard focus — the same actions are
-   always reachable by right-click, so nothing is hidden behind the fade. */
+   always reachable by right-click, so nothing is hidden behind the fade.
+   It paints on paper so it stays legible over a wrapped title line. */
 .cardMenuTrigger {
   align-items: center;
-  background: transparent;
+  background: var(--x-task-raised);
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--x-task-text-muted);
   cursor: pointer;
   display: inline-flex;
@@ -496,8 +501,12 @@
   justify-content: center;
   opacity: 0;
   padding: 0;
+  position: absolute;
+  right: 5px;
+  top: 5px;
   transition: opacity var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
   width: 24px;
+  z-index: 2;
 }
 .boardCard:hover .cardMenuTrigger,
 .boardCard:focus-within .cardMenuTrigger,
@@ -516,16 +525,17 @@
 /* Title sizes to its own lines. The old 30px floor aligned single- and
    two-line cards across lanes, but the lanes scroll independently now, so
    that alignment never held and the floor only bought dead space. */
-.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; font: inherit; font-size: 13.5px; font-weight: 570; letter-spacing: -.008em; line-height: 1.45; margin: 5px 0 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; width: 100%; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: 13.5px; font-weight: 570; letter-spacing: -.008em; line-height: 1.45; margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 /* Done stays readable: the check, the muted ink and the "Completed" fact
    carry the state — striking the title out erased work people are proud
    of. The Done column already says where the card lives. */
 .boardCard[data-completed] .boardTitle { color: var(--x-task-text-secondary); }
 .boardTitle { transition: color var(--motion-base) var(--ease-out); }
-.boardTitleEdit { margin: 5px 0 0; }
-.cardLabels { margin-top: 9px; overflow: hidden; }
+.boardTitleEdit { flex: 1; margin: 0; }
+.cardLabels { margin-top: 8px; overflow: hidden; }
 /* One meta row, one rhythm: date sentence left, quiet facts right. */
-.cardMeta { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 10px; min-width: 0; }
+.cardMeta { align-items: center; display: flex; gap: 8px; justify-content: space-between; margin-top: 9px; min-width: 0; }
+.cardMetaLeft { align-items: center; display: inline-flex; flex: 1 1 auto; gap: 9px; min-width: 0; }
 .cardMetaRight { align-items: center; display: inline-flex; flex: 0 0 auto; gap: 8px; }
 .cardEstimate { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .boardInsertion { animation: board-insertion-in 140ms var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
@@ -548,7 +558,7 @@
    it is the affordance. While a card drag is live the same element turns
    into an explicit drop slot, because that is the moment the space means
    something. */
-.emptyLane { align-items: center; border: 1px dashed transparent; border-radius: 10px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 3px; justify-content: center; min-height: 44px; padding: 10px; text-align: center; transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), min-height var(--motion-fast) var(--ease-out); }
+.emptyLane { align-items: flex-start; border: 1px dashed transparent; border-radius: 10px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 3px; justify-content: center; min-height: 40px; padding: 9px 12px; text-align: left; transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), min-height var(--motion-fast) var(--ease-out); }
 .emptyLane span { font-size: 12px; }
 .emptyLane small { display: none; font-size: 11px; }
 .boardLane[data-drop-target] .emptyLane,
@@ -635,7 +645,7 @@
    `transparent` into the canvas does not tint it — it takes 6% of its
    alpha away, and a 0.94-opaque sticky header let every row scrolling
    under it print through the group name. */
-.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--x-task-surface)) 6%, var(--x-task-surface)); border-bottom: 1px solid var(--x-task-border); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
+.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 5.5%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 16%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
 .groupRow th::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */

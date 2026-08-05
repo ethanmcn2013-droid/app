@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { activeUnscheduledTasks, endOfWeek, weekdayIndex } from "./planning";
+import { activeUnscheduledTasks, endOfWeek, uniformAssignees, weekdayIndex } from "./planning";
 import { LAB_TASKS } from "./fixtures";
 import type { LabTask } from "./types";
 
@@ -31,6 +31,19 @@ test("completing a task removes it from the selector's result", () => {
   assert.equal(activeUnscheduledTasks([{ ...task, completed: true }]).length, 0);
   // …and reopening brings it back.
   assert.equal(activeUnscheduledTasks([{ ...task, completed: false }]).length, 1);
+});
+
+test("avatars hide only when they differentiate nothing", () => {
+  const orla = make({ completed: false, schedule: { kind: "unscheduled" }, assigneeIds: ["orla"] });
+  const finn = { ...orla, id: "finn-task", assigneeIds: ["finn"] };
+  const nobody = { ...orla, id: "bare-task", assigneeIds: [] };
+  // Every card identical → the badge is noise, hide it.
+  assert.equal(uniformAssignees([orla, { ...orla, id: "second" }]), true);
+  // Mixed owners → the avatar means something, keep it.
+  assert.equal(uniformAssignees([orla, finn]), false);
+  // Unassigned boards and single cards keep whatever they have.
+  assert.equal(uniformAssignees([nobody, { ...nobody, id: "n2" }]), false);
+  assert.equal(uniformAssignees([orla]), false);
 });
 
 test("week arithmetic is Monday-start and deterministic", () => {

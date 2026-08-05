@@ -52,3 +52,48 @@ export function useShowStatusDescriptions(): readonly [boolean, () => void] {
   }, []);
   return [shown, toggle] as const;
 }
+
+const FIT_KEY = "signal-tasks.board.fit-columns";
+
+let fitCache: { raw: string | null; value: boolean } = { raw: null, value: true };
+
+function readFitColumns(): boolean {
+  let raw: string | null = null;
+  try {
+    raw = window.localStorage.getItem(FIT_KEY);
+  } catch {
+    /* private mode — columns simply keep filling the board */
+  }
+  if (raw !== fitCache.raw) fitCache = { raw, value: raw !== "fixed" };
+  return fitCache.value;
+}
+
+const fitListeners = new Set<() => void>();
+
+function subscribeFitColumns(listener: () => void): () => void {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === null || event.key === FIT_KEY) listener();
+  };
+  fitListeners.add(listener);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    fitListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+/** Fit columns (default): lanes share the spare board width. Fixed keeps
+ *  every lane at its base width and lets the track scroll instead. */
+export function useFitColumns(): readonly [boolean, () => void] {
+  const fit = useSyncExternalStore(subscribeFitColumns, readFitColumns, () => true);
+  const toggle = useCallback(() => {
+    const next = !readFitColumns();
+    try {
+      window.localStorage.setItem(FIT_KEY, next ? "fit" : "fixed");
+    } catch {
+      fitCache = { raw: fitCache.raw, value: next };
+    }
+    fitListeners.forEach((notify) => notify());
+  }, []);
+  return [fit, toggle] as const;
+}

@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
-import { useDomain, useProjectMoney } from "@/lib/domain-context";
-import { budgetCoverageLine } from "@/lib/money";
+import { useDomain } from "@/lib/domain-context";
 import { ActionsDropdown, type ActionItem } from "@/components/primitives/context-actions";
 import { addDays, differenceInDays, formatDate, formatDateLong, scheduleIncludes, scheduleStart } from "../../dates";
 import { activeUnscheduledTasks, endOfWeek } from "../../planning";
@@ -43,7 +42,6 @@ export function PlanningRail({
   const calendar = useCalendarFrame();
   const domain = useDomain();
   const menu = useTaskContextMenu();
-  const money = useProjectMoney();
   const panelRef = useRef<HTMLElement | null>(null);
   const [tab, setTab] = useState<"unscheduled" | "milestones">("unscheduled");
   // Selection for bulk scheduling is drawer-local: it must not open the
@@ -128,18 +126,6 @@ export function PlanningRail({
         ? `Ended ${differenceInDays(period.endDate, calendar.today)} day${differenceInDays(period.endDate, calendar.today) === 1 ? "" : "s"} ago`
         : `Day ${todayOffset + 1} of ${periodSpan + 1} · ${periodSpan - todayOffset} day${periodSpan - todayOffset === 1 ? "" : "s"} left`
     : null;
-
-  // Money, narrowly (T·124): restate and sum what the operator entered,
-  // always with coverage. Renders only in this owner-side drawer — never
-  // on share, print, embed or /p/{slug}.
-  const costedTasks = tasks.filter((task) => typeof task.cents === "number" && task.cents > 0);
-  const coverage = budgetCoverageLine({
-    summedCents: costedTasks.reduce((sum, task) => sum + (task.cents ?? 0), 0),
-    costedCount: costedTasks.length,
-    uncostedCount: tasks.length - costedTasks.length,
-    budgetCents: money.budgetCents,
-    currency: money.currency,
-  });
 
   const rememberUndo = (ids: string[], label: string) => {
     setUndo({ ids, label });
@@ -454,12 +440,6 @@ export function PlanningRail({
         </div>
       ) : null}
 
-      {coverage ? (
-        <section aria-label="Costs" className={styles.railCosts}>
-          <span>Costs</span>
-          <p>{coverage}</p>
-        </section>
-      ) : null}
       <TaskContextMenu menu={menu.menu} onClose={menu.closeMenu} />
     </motion.aside>
     </>

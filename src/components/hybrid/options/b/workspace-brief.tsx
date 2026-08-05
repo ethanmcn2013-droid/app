@@ -187,9 +187,20 @@ export function WorkspaceBrief({
     };
   }, []);
 
+  const periodName = calendar.planningPeriod?.name ?? null;
+
   return (
     <header className={styles.workspaceBrief}>
       <div className={styles.workspaceIdentity}>
+        {/* The parent context reads first, quietly: the person knows where
+            this project sits without the Projects panel open. The period
+            is a grouping, not a destination, so it is text, not a link. */}
+        {periodName ? (
+          <span className={styles.briefCrumb}>
+            {periodName}
+            <i aria-hidden="true">/</i>
+          </span>
+        ) : null}
         <EditableText
           ariaLabel="Project name"
           onCommit={renameBoardAction}
@@ -200,29 +211,23 @@ export function WorkspaceBrief({
         <EditableText
           ariaLabel="Project description"
           onCommit={setProjectDescriptionAction}
-          placeholder="Add a short description"
+          placeholder="+ Add description"
           tag="p"
           value={domain.boardDescription}
         />
       </div>
       {/*
-        Progress reads as one quiet cluster: the bar shows the proportion,
-        the sentence carries the numbers, and red appears only when work is
-        genuinely overdue. The percentage lives on the bar's tooltip and
-        accessible name rather than shouting from the band.
+        Progress is one sentence, not an instrument panel: the strong
+        number carries the proportion, the count carries the detail, and
+        red exists only when work is genuinely overdue. The 4px bar this
+        replaces was decoration at reading distance.
       */}
       <section aria-label="Project progress" className={styles.briefProgress}>
         <span aria-live="polite" className={styles.syncState} data-state={syncState} role="status">
           {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
         </span>
-        <div className={styles.briefProgressBar} title={filteredNote ?? `${progress}% complete`}>
-          <progress
-            aria-label={`${completed} of ${store.tasks.length} tasks complete`}
-            max={Math.max(1, store.tasks.length)}
-            value={completed}
-          />
-        </div>
-        <p className={styles.briefFacts}>
+        <p className={styles.briefFacts} title={filteredNote ?? undefined}>
+          <strong>{progress}% complete</strong>
           <span>{completed} of {store.tasks.length} done</span>
           {overdue > 0 ? <b>{overdue} overdue</b> : null}
         </p>

@@ -76,8 +76,7 @@
 }
 
 /* Drawer labels read in sentence case — Signal Studio, not an ops console. */
-.planningRailHeader span,
-.railCosts > span {
+.planningRailHeader span {
   color: var(--x-task-text-muted);
   font-size: 11.5px;
   font-weight: 600;
@@ -583,14 +582,14 @@ thead .listTitleCell { z-index: 14; }
    exception in the motion contract), an overlay dialog below 768px. Its
    trigger lives on the project band — closed means gone, no collapsed
    strip claims board width. */
-.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 380px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
+.planningRail { background: var(--paper); border-left: 1px solid var(--x-task-border); display: flex; flex: 0 0 420px; flex-direction: column; min-width: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; position: relative; transition: flex-basis 220ms var(--spring-glide); z-index: 12; }
 
 /* Container-aware placement (the interior root is the container): with a
    wide canvas the drawer docks in flow and the board resizes beside it;
    when pushing would crush the lanes it overlays the right edge as a
    deliberate inspector layer with its own shadow. Below 768px the media
    block later in this file makes it a true modal drawer. */
-@container (max-width: 1559px) {
+@container (max-width: 1619px) {
   .planningRail {
     border-top: 1px solid var(--x-task-border);
     bottom: 0;
@@ -600,7 +599,7 @@ thead .listTitleCell { z-index: 14; }
     /* The inspector starts under the context band, so Share and the
        Planning trigger itself stay reachable while it is open. */
     top: 55px;
-    width: 380px;
+    width: 420px;
     z-index: 40;
   }
 }
@@ -731,9 +730,6 @@ thead .listTitleCell { z-index: 14; }
 .railMilestones > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 4px 0 0; }
 .railMilestones > small { color: var(--x-task-text-muted); display: block; font-size: 11px; line-height: 1.4; margin-top: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Costs: the T·124 coverage sentence, owner-side only. */
-.railCosts { border-top: 1px solid var(--hairline-soft); margin-top: auto; padding: 14px 16px 18px; }
-.railCosts > p { color: var(--x-task-text-secondary); font-size: 12px; line-height: 1.5; margin: 7px 0 0; }
 
 .shortcutBackdrop { align-items: flex-start; background: color-mix(in srgb, var(--x-task-text) 42%, transparent); display: flex; inset: 0; justify-content: center; padding-top: 10vh; position: fixed; z-index: 120; }
 .shortcutDialog { background: var(--x-task-overlay); border: 1px solid var(--x-task-border); border-radius: 9px; box-shadow: var(--x-task-shadow); overflow: hidden; width: min(650px, calc(100vw - 56px)); }

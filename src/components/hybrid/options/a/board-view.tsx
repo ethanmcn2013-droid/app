@@ -10,6 +10,7 @@ import { ActionsDropdown, ContextActions, type ActionItem } from "@/components/p
 import {
   COLUMN_COLORS,
   COLUMN_PICKER_ORDER,
+  laneAccentStyle,
   type ColumnColorKey,
 } from "@/lib/board-colors";
 import {
@@ -47,7 +48,8 @@ import {
 } from "../../shared/task-ui";
 import { InlineTaskTitle } from "./quiet-command-components";
 import { focusTask } from "./quiet-command-model";
-import { useShowStatusDescriptions } from "../../view-prefs";
+import { useFitColumns, useShowStatusDescriptions } from "../../view-prefs";
+import { uniformAssignees } from "../../planning";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
 import { addDays } from "../../dates";
@@ -539,9 +541,13 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const reduceMotion = useReducedMotion();
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
   const [showDescriptions] = useShowStatusDescriptions();
+  const [fitColumns] = useFitColumns();
   const [composing, setComposing] = useState<string | null>(null);
   const [keyboardMove, setKeyboardMove] = useState(false);
   const orderedIds = tasks.map((task) => task.id);
+  // One avatar on every card differentiates nothing — when the whole
+  // visible board shares an identical assignee set, cards drop it.
+  const hideAvatars = uniformAssignees(tasks);
 
   // ── Columns: server config + optimistic overlay ─────────────────────────
   // The server value arrives through DomainProvider; column management
@@ -671,6 +677,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
       aria-label="Board lanes"
       className={styles.boardSurface}
       data-drag-active={store.drag?.kind === "board" || undefined}
+      data-fixed-columns={fitColumns ? undefined : ""}
     >
       <LayoutGroup id="tasks-board">
       <div className={styles.boardTrack}>
@@ -697,7 +704,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 data-done={status === "done" || undefined}
                 data-tinted={accent ? "" : undefined}
                 key={status}
-                style={accent ? ({ "--lane-accent": accent } as React.CSSProperties) : undefined}
+                style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
               >
                 <button
                   aria-expanded={false}
@@ -723,7 +730,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
-              style={accent ? ({ "--lane-accent": accent } as React.CSSProperties) : undefined}
+              style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
             >
               <LaneHeader
                 column={column}
@@ -756,6 +763,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                     calendarToday={calendar.today as CalendarDate}
                     columns={boardColumns}
                     dropTask={dropTask}
+                    hideAvatars={hideAvatars}
                     index={index}
                     key={task.id}
                     keyCard={keyCard}
@@ -854,6 +862,7 @@ function BoardCard({
   calendarToday,
   reduceMotion,
   keyboardMove,
+  hideAvatars,
   keyCard,
   onCardClick,
   dropTask,
@@ -867,6 +876,7 @@ function BoardCard({
   calendarToday: CalendarDate;
   reduceMotion: boolean;
   keyboardMove: boolean;
+  hideAvatars: boolean;
   keyCard: (event: KeyboardEvent<HTMLElement>, task: LabTask, laneTasks: LabTask[], laneIndex: number) => void;
   onCardClick: (event: MouseEvent<HTMLElement>, task: LabTask) => void;
   dropTask: (event: DragEvent, status: TaskStatus, index: number) => void;
@@ -881,7 +891,9 @@ function BoardCard({
     () => setConfirmingDelete(true),
     () => setNudgeOpen(true),
   );
-  const hasPriority = task.priority === "urgent" || task.priority === "high";
+  // Elevated priority is meta, not chrome — and finished work has no
+  // priority to signal, so Done cards drop it.
+  const hasPriority = (task.priority === "urgent" || task.priority === "high") && !task.completed;
   // LabelList drops ids it cannot resolve, so counting raw ids reserved a
   // 24px band under every card title and rendered nothing into it. That
   // empty band was the board's "unfinished card" look.
@@ -895,8 +907,8 @@ function BoardCard({
   // AvatarStack drops assignee ids it cannot resolve to a person, so
   // counting raw ids rendered a footer above nothing at all whenever an
   // id was stale.
-  const shownAssignees = task.assigneeIds.filter((id) => personById(id));
-  const hasMeta = hasSchedule || hasSignals || shownAssignees.length > 0 || Boolean(task.estimate);
+  const shownAssignees = hideAvatars ? [] : task.assigneeIds.filter((id) => personById(id));
+  const hasMeta = hasPriority || hasSchedule || hasSignals || shownAssignees.length > 0 || Boolean(task.estimate);
 
   return (
     <motion.li
@@ -950,36 +962,39 @@ function BoardCard({
             onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
             tabIndex={0}
           >
-            <div className={styles.cardTopline}>
+            {/* Head row: the completion control sits on the title's first
+                line — a card with only a title is exactly one line tall.
+                The ••• trigger floats over the top-right corner on
+                hover/focus so it costs no permanent row. */}
+            <div className={styles.cardHead}>
               <TaskCompletion disabled={store.readOnly} task={task} />
-              {/* Elevated priority is words, not a cryptic dot: "High" or
-                  "Urgent" in the state's ink. Normal and low stay silent —
-                  the menu still sets them. Milestone state lives in the
-                  meta row's diamond sentence; the toggle is in the menu. */}
-              {hasPriority ? <PriorityMark task={task} withLabel /> : null}
-              <span className={styles.cardSpacer} />
-              <ActionsDropdown
-                items={actions}
-                trigger={<Icon name="more" size={15} />}
-                triggerLabel={`Actions for ${task.title}`}
-                triggerClassName={styles.cardMenuTrigger}
-              />
+              {store.editing?.taskId === task.id && store.editing.field === "title" ? (
+                <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
+              ) : (
+                <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
+              )}
             </div>
-            {store.editing?.taskId === task.id && store.editing.field === "title" ? (
-              <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
-            ) : (
-              <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
-            )}
+            <ActionsDropdown
+              items={actions}
+              trigger={<Icon name="more" size={15} />}
+              triggerLabel={`Actions for ${task.title}`}
+              triggerClassName={styles.cardMenuTrigger}
+            />
             {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
-            {/* One meta row, one rhythm: the date sentence reads left, the
-                quiet facts — signals, estimate, people — sit right. */}
+            {/* One meta row, one rhythm: priority word and date sentence
+                read left; the quiet facts — signals, estimate, people —
+                sit right. Priority is meta ("High" in the state's ink,
+                dot alongside so colour is never alone), never chrome. */}
             {hasMeta ? (
               <div className={styles.cardMeta}>
-                {hasSchedule ? <ScheduleText compact task={task} /> : <span />}
+                <span className={styles.cardMetaLeft}>
+                  {hasPriority ? <PriorityMark task={task} withLabel /> : null}
+                  {hasSchedule ? <ScheduleText compact task={task} /> : null}
+                </span>
                 <span className={styles.cardMetaRight}>
                   {hasSignals ? <TaskSignals task={task} /> : null}
                   {task.estimate ? <span className={styles.cardEstimate}>{task.estimate}</span> : null}
-                  <AvatarStack showUnassigned={false} task={task} />
+                  {shownAssignees.length > 0 ? <AvatarStack showUnassigned={false} task={task} /> : null}
                 </span>
               </div>
             ) : null}

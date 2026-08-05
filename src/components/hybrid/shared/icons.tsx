@@ -39,7 +39,7 @@ const paths: Record<IconName, React.ReactNode> = {
   settings: <><path d="M4 8.25h6.325" /><path d="M17.175 8.25H20" /><circle cx="13.75" cy="8.25" r="2" /><path d="M4 15.75h2.575" /><path d="M13.425 15.75H20" /><circle cx="10" cy="15.75" r="2" /></>,
   sort: <><path d="M12 4.75V8M9.9 6 12 8.1 14.1 6" /><path d="M12 19.25V16M9.9 18 12 15.9 14.1 18" /><path d="M6.5 11h11" /><path d="M6.5 13h11" /></>,
   spark: <><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z" /></>,
-  timeline: <><path d="M4 6h16M4 12h16M4 18h16" /><path d="M8 3v6M14 9v6M18 15v6" /></>,
+  timeline: <><path d="M4.75 6.5h7.5" /><path d="M9.25 12h10" /><path d="M6.5 17.5h8.5" /><path d="M4.75 3.5v17" opacity=".45" /></>,
   trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6" /></>,
   undo: <><path d="m9 7-5 5 5 5" /><path d="M20 17a8 8 0 0 0-8-8H4" /></>,
 };

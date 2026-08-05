@@ -12,7 +12,7 @@ import {
   type TaskStatus,
 } from "../../types";
 import type { BoardColumn } from "@/lib/board-columns";
-import { COLUMN_COLORS } from "@/lib/board-colors";
+import { COLUMN_COLORS, laneAccentStyle } from "@/lib/board-colors";
 import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
@@ -365,7 +365,7 @@ export function ListView({
                   className={styles.groupRow}
                   data-tinted={groupAccent ? "" : undefined}
                   role="row"
-                  style={groupAccent ? ({ "--lane-accent": groupAccent } as React.CSSProperties) : undefined}
+                  style={groupColumn ? (laneAccentStyle(groupColumn.color) as React.CSSProperties | undefined) : undefined}
                 >
                   <th colSpan={visibleColumns.length} role="rowheader" scope="rowgroup">
                     <div className={styles.groupBand}>

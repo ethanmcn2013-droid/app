@@ -26,3 +26,17 @@ export function weekdayIndex(date: CalendarDate): number {
 export function endOfWeek(today: CalendarDate): CalendarDate {
   return addDays(today, 6 - weekdayIndex(today));
 }
+
+/**
+ * When every card on the board would wear the identical avatar set, the
+ * avatar differentiates nothing — it is noise, and the board hides it.
+ * Returns true only for 2+ tasks that all share the same non-empty
+ * assignee set; a mixed or empty board keeps avatars meaningful.
+ */
+export function uniformAssignees(tasks: readonly LabTask[]): boolean {
+  if (tasks.length < 2) return false;
+  const signature = (task: LabTask) => [...task.assigneeIds].sort().join("|");
+  const first = signature(tasks[0]);
+  if (first === "") return false;
+  return tasks.every((task) => signature(task) === first);
+}
