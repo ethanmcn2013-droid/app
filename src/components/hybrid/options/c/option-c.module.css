@@ -862,15 +862,3 @@ thead .listTitleCell { z-index: 14; }
 }
 
 
-/* Target size, not ink size. The drawer's row checkboxes render at 15px
-   and sat 0px from the adjacent title button, so neither SC 2.5.8 nor its
-   spacing exception was met. The control keeps its size; the pointer gets
-   a 24x24 area, exactly as .completionBox does on the board. */
-.planningRail input[type="checkbox"] {
-  position: relative;
-}
-.planningRail input[type="checkbox"]::after {
-  content: "";
-  inset: -5px;
-  position: absolute;
-}
