@@ -249,7 +249,7 @@ function TaskDetailHeader({
   const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
 
   return (
-    <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-5 pb-3 pt-4">
+    <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-6 pb-3 pt-4 lg:px-8">
       {/* Top row: breadcrumb + controls */}
       <div className="flex items-center justify-between gap-2">
         {/* Breadcrumb */}
@@ -390,7 +390,7 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
   return (
     <div className="min-w-0">
       {/* Description */}
-      <section aria-label="Description" className="border-b border-line-soft px-6 py-5">
+      <section aria-label="Description" className="border-b border-line-soft py-5">
         <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Description
         </div>
@@ -404,7 +404,7 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
       <ResourcesSection key={`resources-${task.id}`} task={task} />
 
       {/* Conversation */}
-      <section aria-label="Conversation" className="px-6 py-5">
+      <section aria-label="Conversation" className="py-5">
         <div className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
           Conversation
         </div>
@@ -493,7 +493,7 @@ export function TaskDetail({
           }
         >
           <PrimaryContent task={task} conversation={conversation} />
-          <aside className="order-first mb-8 lg:order-none lg:mb-0 lg:border-l lg:border-line-soft lg:pl-7">
+          <aside className="order-first mb-8 lg:order-none lg:mb-0 lg:border-l lg:border-line-soft lg:pl-7 lg:pt-5">
             <MetadataRail task={task} variant={isFocus ? "full" : "rest"} />
           </aside>
           {isFocus ? null : (
