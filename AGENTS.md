@@ -27,8 +27,9 @@ Three priorities govern everything front-facing, in this order:
    (`experience/QUALITY_COUNCIL_EVIDENCE.md`).
 3. **Utility.** Someone who has never used a project-management tool
    must be able to pick this up and understand it unaided — the
-   first-contact test. No jargon, no technical lock-out; a surface that
-   needs explaining is not done.
+   first-contact test (`docs/FIRST_CONTACT_TEST.md`), whose automated
+   half runs as `pnpm first-contact:language`. No jargon, no technical
+   lock-out; a surface that needs explaining is not done.
 
 When the three pull against each other, that order decides. The durable
 record and the review date live in
