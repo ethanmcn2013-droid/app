@@ -16,7 +16,7 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch, useTasksState } from "@/lib/tasks/tasks-context";
 import { useTaskPanel } from "@/lib/tasks/use-task-panel";
 import { useColumnConfig } from "@/lib/domain-context";
-import { isTaskDone } from "@/lib/board-columns";
+import { columnByKey, isTaskDone, resolveBoardColumns } from "@/lib/board-columns";
 import {
   fieldsPatch,
   labToPriority,
@@ -325,8 +325,14 @@ export function HybridStoreProvider({
       addTask: (status, schedule?: TaskSchedule, title?: string) => {
         if (readOnly) return;
         const trimmed = title?.trim();
-        const isLaneKey = (LANE_ORDER as string[]).includes(status);
-        const lane = isLaneKey ? (status as LaneId) : "doing";
+        // A status IS a column key (T·121) — but only a key this workspace
+        // actually has. A caller holding a stale key (the lab's retired
+        // "queued") must land at the top of the board, never claim a
+        // phantom column no surface can render: that orphaned the task.
+        const columns = resolveBoardColumns(columnConfig);
+        const key = columnByKey(columns, status)?.key ?? columns[0]?.key ?? "todo";
+        const isLaneKey = (LANE_ORDER as string[]).includes(key);
+        const lane = isLaneKey ? (key as LaneId) : "doing";
         const patch = schedule ? scheduleToPatch(schedule, calendar) : {};
         const created = prod.addTask({
           title: trimmed || "Untitled task",
@@ -336,7 +342,7 @@ export function HybridStoreProvider({
         });
         // A custom-column add claims the new task for that column; its
         // lane stays canonical ("doing").
-        if (!isLaneKey) prod.moveTaskToColumn(created.id, status);
+        if (!isLaneKey) prod.moveTaskToColumn(created.id, key);
         if (schedule && (patch.startDay != null || patch.durationDays != null)) {
           prod.updateTask(created.id, { startDay: patch.startDay, durationDays: patch.durationDays });
         }

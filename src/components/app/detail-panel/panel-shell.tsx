@@ -41,6 +41,14 @@ export function PanelShell({
   const startX = useRef(0);
   const startW = useRef(DEFAULT_WIDTH);
 
+  const persistWidth = useCallback((value: number) => {
+    try {
+      localStorage.setItem(LS_KEY, String(value));
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
+
   // Pointer-capture drag on the left edge handle
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -60,18 +68,35 @@ export function PanelShell({
     setWidth(next);
   }, []);
 
-  const onPointerUp = useCallback((e: React.PointerEvent) => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    setResizing(false);
-    const delta = startX.current - e.clientX;
-    const final = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW.current + delta));
-    try {
-      localStorage.setItem(LS_KEY, String(final));
-    } catch {
-      // ignore storage errors
-    }
-  }, []);
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging.current) return;
+      dragging.current = false;
+      setResizing(false);
+      const delta = startX.current - e.clientX;
+      const final = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startW.current + delta));
+      persistWidth(final);
+    },
+    [persistWidth],
+  );
+
+  // Keyboard path for the splitter (ARIA window-splitter pattern): the
+  // panel is right-anchored, so Left widens and Right narrows.
+  const onHandleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const step = 16;
+      let next: number | null = null;
+      if (e.key === "ArrowLeft") next = Math.min(MAX_WIDTH, width + step);
+      else if (e.key === "ArrowRight") next = Math.max(MIN_WIDTH, width - step);
+      else if (e.key === "Home") next = MAX_WIDTH;
+      else if (e.key === "End") next = MIN_WIDTH;
+      if (next === null) return;
+      e.preventDefault();
+      setWidth(next);
+      persistWidth(next);
+    },
+    [persistWidth, width],
+  );
 
   // Escape closes (PanelShell owns it; TaskDetail focus shell handles its own).
   // Skipped while a layered surface (Radix menu, field popover) is open — that
@@ -159,8 +184,11 @@ export function PanelShell({
             aria-hidden
           />
 
-          {/* Panel */}
-          <motion.aside
+          {/* Panel. A section, not an aside: role="dialog" is not an
+              allowed role on aside (axe: aria-allowed-role), and section
+              is sectioning content, so the panel's inner <header> stops
+              reading as a second page banner (axe: landmark-unique). */}
+          <motion.section
             key="panel"
             ref={panelRef}
             role="dialog"
@@ -180,12 +208,12 @@ export function PanelShell({
               ...(reduce ? { opacity: 0 } : { transform: "translateX(100%)" }),
               transition: reduce
                 ? { duration: 0.1 }
-                : { duration: 0.2, ease: [0.32, 0.72, 0, 1] },
+                : { duration: 0.2, ease: [0.23, 1, 0.32, 1] },
             }}
             transition={
               reduce
                 ? { duration: 0.12 }
-                : { transform: { duration: 0.28, ease: [0.23, 1, 0.32, 1] } }
+                : { transform: { duration: 0.32, ease: [0.23, 1, 0.32, 1] } }
             }
             className="fixed right-0 top-0 z-[81] flex h-screen w-full flex-col overflow-hidden border-l border-line-soft bg-bg-elevated md:w-auto"
             style={{
@@ -197,25 +225,31 @@ export function PanelShell({
                 "-28px 0 60px -20px rgba(20,21,26,0.28), -8px 0 16px -8px rgba(20,21,26,0.10)",
             }}
           >
-            {/* Drag handle on the left edge (md+ only via pointer interaction) */}
+            {/* Resize handle on the left edge: pointer drag, or focus it and
+                use Left/Right (Home/End for the extremes). */}
             <div
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onKeyDown={onHandleKeyDown}
               style={{
                 position: "absolute",
                 left: 0,
                 top: 0,
                 bottom: 0,
-                width: 6,
+                width: 8,
                 cursor: "col-resize",
                 zIndex: 10,
                 touchAction: "none",
               }}
               role="separator"
-              aria-label="Drag to resize panel"
+              tabIndex={0}
+              aria-label="Resize panel"
               aria-orientation="vertical"
-              title={`Panel width: ${width}px (drag to resize, min ${MIN_WIDTH}px, max ${MAX_WIDTH}px)`}
+              aria-valuemin={MIN_WIDTH}
+              aria-valuemax={MAX_WIDTH}
+              aria-valuenow={width}
+              title={`Panel width: ${width}px (drag or use arrow keys, min ${MIN_WIDTH}px, max ${MAX_WIDTH}px)`}
             >
               {/* Visible indicator bar */}
               <div
@@ -234,7 +268,7 @@ export function PanelShell({
             </div>
 
             {children}
-          </motion.aside>
+          </motion.section>
         </>
       ) : null}
     </AnimatePresence>

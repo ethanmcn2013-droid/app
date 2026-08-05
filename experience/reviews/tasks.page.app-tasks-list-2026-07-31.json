@@ -1,10 +1,10 @@
 {
   "schemaVersion": "signal-materiality-review/2",
-  "experienceId": "tasks.page.app-settings",
-  "source": "tasks/src/app/app/settings/page.tsx",
-  "materialityHash": "d9988ba395545970",
+  "experienceId": "tasks.page.app-tasks-list",
+  "source": "tasks/src/app/app/tasks/list/page.tsx",
+  "materialityHash": "cc5db7e841cafabc",
   "reviewedAt": "2026-08-04",
-  "reviewer": "claude-fable-5 (T·126 cycle)",
+  "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
   "playwrightEvidence": {
     "attestationPath": "experience/evidence-runs/tasks-playwright-fb4562a7736970e441208776-f11882e3f2958daa.json",
     "attestationSha256": "41a2a62ee20090f9fa68c0681778952142e81eae6d64b9ad866754ef69a4879f",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Evidence contract advanced: the critical-experiences spec now pins the countdown-first artifact default (T·126). Surface source unchanged; re-attested against the fresh 128/128 production run.",
-  "decision": "approve"
+  "reviewedChange": "T-126 continue-batch: each Tasks view page gains its own document title via a metadata export (Board / List / Schedule / Calendar - Tasks). No rendered-surface change.",
+  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); the rendered case is unchanged and passing."
 }

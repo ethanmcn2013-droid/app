@@ -98,7 +98,7 @@ export function TaskContextMenu({ menu, onClose }: { menu: MenuState; onClose: (
       ) : (
         <button disabled={store.readOnly} onClick={() => run(() => store.unscheduleTask(task.id))} role="menuitem" type="button"><Icon name="calendar" size={15} />Unschedule</button>
       )}
-      <button disabled={store.readOnly} onClick={() => run(() => store.toggleComplete(task.id))} role="menuitem" type="button"><Icon name="check" size={15} />{task.completed ? "Reopen" : "Complete"}</button>
+      <button disabled={store.readOnly} onClick={() => run(() => store.toggleComplete(task.id))} role="menuitem" type="button"><Icon name="check" size={15} />{task.completed ? "Reopen" : "Mark done"}</button>
       <button disabled={store.readOnly} onClick={() => run(() => store.duplicateTask(task.id))} role="menuitem" type="button"><Icon name="add" size={15} />Duplicate</button>
       <button
         className={styles.dangerMenuItem}

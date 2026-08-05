@@ -751,7 +751,7 @@ export function ProjectsSidebar({
   return (
     <div className={`${styles.projectsSidebarHost} hidden md:block`} data-collapsed={collapsed || undefined}>
       {collapsed ? (
-        <div className={styles.sidebarStrip}>
+        <div className={`${styles.sidebarStrip} flex`}>
           <button
             aria-expanded={false}
             aria-label="Expand Projects sidebar"

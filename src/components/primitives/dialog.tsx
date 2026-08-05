@@ -9,6 +9,7 @@ export function Dialog({
   onClose,
   children,
   labelledBy,
+  ariaLabel,
   width = 480,
   motionMode = "standard",
 }: {
@@ -16,6 +17,9 @@ export function Dialog({
   onClose: () => void;
   children: ReactNode;
   labelledBy?: string;
+  /** Fixed accessible name. Prefer this when the only labelling candidate
+   *  is an input whose VALUE would otherwise become the dialog's name. */
+  ariaLabel?: string;
   width?: number;
   motionMode?: "standard" | "instant";
 }) {
@@ -82,7 +86,8 @@ export function Dialog({
               ref={dialogRef}
               role="dialog"
               aria-modal="true"
-              aria-labelledby={labelledBy}
+              aria-label={ariaLabel}
+              aria-labelledby={ariaLabel ? undefined : labelledBy}
               initial={instant ? false : reduce ? { opacity: 0 } : { opacity: 0, transform: "scale(0.97)" }}
               animate={{ opacity: 1, transform: "scale(1)" }}
               exit={instant ? { opacity: 1 } : reduce ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}

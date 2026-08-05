@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent } from "react";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import {
   addDays,
@@ -8,6 +8,8 @@ import {
   eachDate,
   formatDate,
   formatSchedule,
+  isTaskDueToday,
+  isTaskOverdue,
   scheduleStart,
   startOfWeek,
 } from "../../dates";
@@ -48,6 +50,17 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
     startOfWeek(calendar.today)) as CalendarDate;
   const [start, setStart] = useState<CalendarDate>(() => fitStart);
   const resizeTask = useRef<string | null>(null);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  // First paint keeps today (and with it, this week's bars) in view. The
+  // range can start at the planning period's opening date — on a phone
+  // that left the visible window entirely empty until a manual pan.
+  const didAnchorScroll = useRef(false);
+  // Where the pointer was when the drag began. The drop moves the schedule
+  // by the pointer's own travel, so manipulation is one-to-one by
+  // construction (motion contract, Budgets) — no grid or element geometry
+  // to get wrong. Measuring the grabbed ELEMENT instead was what threw a
+  // due marker days off: its pill is as wide as its label, not its day.
+  const dragStartX = useRef<number | null>(null);
   const config = ZOOM[zoom];
   const dates = useMemo(() => eachDate(start, addDays(start, config.days - 1)), [config.days, start]);
   const gridWidth = dates.length * config.cell;
@@ -58,6 +71,17 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
   const orderedIds = [...scheduled, ...unscheduled].map((task) => task.id);
   const activeTask = store.activeId ? store.taskById(store.activeId) : undefined;
   const todayIndex = differenceInDays(start, calendar.today);
+
+  useEffect(() => {
+    if (didAnchorScroll.current) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    didAnchorScroll.current = true;
+    if (todayIndex <= 1 || todayIndex >= dates.length) return;
+    const target = Math.max(0, (todayIndex - 1) * config.cell);
+    // Only pan when today would otherwise be off-screen (phones, mostly).
+    if (target > scroller.clientWidth * 0.5) scroller.scrollLeft = target;
+  }, [config.cell, dates.length, todayIndex]);
 
   const dropAtDate = (event: DragEvent, date: CalendarDate) => {
     event.preventDefault();
@@ -70,10 +94,15 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       store.resizeScheduleByDays(task.id, differenceInDays(task.schedule.dueOn, date));
     } else if (task.schedule.kind === "unscheduled") {
       store.scheduleTask(task.id, scheduleFromDrop(date));
+    } else if (dragStartX.current !== null) {
+      // The schedule travels exactly as far as the pointer did.
+      const days = Math.round((event.clientX - dragStartX.current) / config.cell);
+      if (days !== 0) store.moveScheduleByDays(task.id, days);
     } else {
       const currentStart = scheduleStart(task.schedule);
       if (currentStart) store.moveScheduleByDays(task.id, differenceInDays(currentStart, date));
     }
+    dragStartX.current = null;
     resizeTask.current = null;
     store.setDrag(null);
     store.setActive(task.id);
@@ -131,6 +160,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
     if (store.readOnly) return;
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/task-id", task.id);
+    dragStartX.current = event.clientX;
     store.setDrag({ kind: "schedule", taskId: task.id, source: "timeline", targetDate: null });
   };
 
@@ -203,7 +233,9 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       <TaskOpenButton
         aria-label={`${task.title}, ${formatSchedule(task.schedule)}. Alt plus Left or Right moves by one day.`}
         className={task.schedule.kind === "milestone" ? styles.timelineMilestone : styles.timelineDue}
+        data-due-today={isTaskDueToday(task, calendar.today) || undefined}
         data-dragging={store.drag?.kind === "schedule" && store.drag.taskId === task.id || undefined}
+        data-overdue={isTaskOverdue(task, calendar.today) || undefined}
         data-inspected={store.inspectedId === task.id || undefined}
         data-recently-placed={store.recentlyPlacedId === task.id || undefined}
         data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
@@ -233,7 +265,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
           <button onClick={() => { setStart(fitStart); setZoom("month"); }} type="button">Fit</button>
           <button aria-label="Next timeline range" onClick={() => setStart(addDays(start, config.shift))} type="button"><Icon name="arrow-right" size={14} /></button>
         </div>
-        <strong>{formatDate(dates[0], { day: "numeric", month: "short", year: "numeric" })} - {formatDate(dates[dates.length - 1], { day: "numeric", month: "short", year: "numeric" })}</strong>
+        <strong>{formatDate(dates[0], { day: "numeric", month: "short", year: "numeric" })} – {formatDate(dates[dates.length - 1], { day: "numeric", month: "short", year: "numeric" })}</strong>
         <div aria-label="Schedule zoom" className={styles.zoomControl} role="group">
           {(["day", "week", "month"] as TimelineZoom[]).map((level) => <button aria-pressed={zoom === level} key={level} onClick={() => setZoom(level)} type="button">{level[0].toUpperCase() + level.slice(1)}</button>)}
         </div>
@@ -280,7 +312,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
       </section>
 
       {scheduled.length ? (
-        <div aria-label="Schedule planning surface" className={styles.timelineScroller} role="region">
+        <div aria-label="Schedule planning surface" className={styles.timelineScroller} ref={scrollerRef} role="region">
           <div className={styles.timelineCanvas} style={{ "--timeline-cell": `${config.cell}px`, "--timeline-width": `${gridWidth}px` } as CSSProperties}>
             <div className={styles.timelineHeaderRow}>
               <div className={styles.timelinePaneHeader}><span>Task</span><span>{scheduled.length} scheduled</span></div>

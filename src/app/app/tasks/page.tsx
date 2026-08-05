@@ -13,6 +13,8 @@ import {
   DEMO_WORKSPACE_SLUG,
 } from "@/server/demo/tasks-demo";
 
+export const metadata = { title: "Board · Tasks · Signal Studio" };
+
 export default async function TasksPage({
   searchParams,
 }: {

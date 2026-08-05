@@ -62,7 +62,9 @@ export function formatDueLabelOn(d: Date, today: Date): string {
   if (delta === 0) return "Today";
   if (delta === 1) return "Tomorrow";
   if (delta > 1 && delta < 7) return DOW_SHORT[d.getDay()];
-  return `${MONTH_SHORT[d.getMonth()]} ${d.getDate()}`;
+  // Day-month, matching every other date in the product (en-GB register)
+  // — this was the one formatter printing US month-first ("Aug 1").
+  return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
 }
 
 export function DueCalendar({

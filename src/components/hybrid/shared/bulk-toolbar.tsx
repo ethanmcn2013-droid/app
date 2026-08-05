@@ -34,7 +34,7 @@ export function BulkToolbar() {
           {columns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
         </select>
       </label>
-      <button disabled={store.readOnly} onClick={() => store.bulkComplete()} type="button"><Icon name="check" size={15} />Complete</button>
+      <button disabled={store.readOnly} onClick={() => store.bulkComplete()} type="button"><Icon name="check" size={15} />Mark done</button>
       <button
         disabled={store.readOnly}
         onClick={() => {

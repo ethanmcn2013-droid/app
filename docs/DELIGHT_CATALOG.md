@@ -73,12 +73,15 @@ then **F5** and **F7**. F9 and F10 are decisions, not builds.
 
 ## Already done (for register calibration)
 
+Values re-verified against the shipped CSS/JS 2026-07-31 — the table had
+drifted from the code (420ms/240ms were never what production ran).
+
 | Site | Treatment shipped |
 |---|---|
-| Task panel open/close | Slide from right edge, 420ms glide in / 260ms out |
-| Lane collapse/expand | Width travel 240ms glide + rail fade-in |
+| Task panel open/close | Slide from right edge, 320ms ease-out in (the contract's moderate-token exception) / 200ms out |
+| Lane collapse/expand | Width travel 220ms glide + collapsed-rail fade-in |
 | Card completion | 200ms colour/background settle |
-| Card hover | Border strengthen + shadow lift, 120ms |
+| Card hover | Border strengthen + shadow, 120ms — no translate/lift (contract forbids it) |
 | ••• and diamond reveal | 120ms opacity on hover/focus |
 
 ## Catalog — board view

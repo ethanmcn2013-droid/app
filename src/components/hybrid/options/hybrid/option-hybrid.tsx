@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { WorkspaceBoardColumnsProvider } from "../../columns-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import type { TasksOptionProps } from "../../option-contract";
 import { useLabStore } from "../../store";
 import { SuiteRail, ViewTabs } from "../../shared/lab-chrome";

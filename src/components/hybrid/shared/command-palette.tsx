@@ -48,7 +48,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       >
         <label><Icon name="search" size={18} /><input aria-label="Search tasks and commands" onChange={(event) => setQuery(event.target.value)} placeholder="Search tasks and commands…" ref={inputRef} value={query} /><kbd>esc</kbd></label>
         <div className={styles.paletteCommands}>
-          <button disabled={store.readOnly} onClick={() => { store.addTask("queued"); close(); }} type="button"><Icon name="add" size={16} /><span><b>Create a task</b><small>Add to Queued · session only</small></span><kbd>C</kbd></button>
+          <button disabled={store.readOnly} onClick={() => { store.addTask("todo"); close(); }} type="button"><Icon name="add" size={16} /><span><b>Create a task</b><small>Lands at the top of the board</small></span><kbd>C</kbd></button>
           <div className={styles.paletteLabel}>Tasks</div>
           {results.map((task) => <button key={task.id} onClick={() => { store.openTask(task.id); close(); }} type="button"><span className={styles.paletteStatus} data-status={task.status} /><span><b>{task.title}</b><small>{columnDisplayName(columns, task.status)}</small></span></button>)}
           {results.length === 0 ? <p>No matching tasks</p> : null}
