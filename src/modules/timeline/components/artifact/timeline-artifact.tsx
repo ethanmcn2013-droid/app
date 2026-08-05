@@ -14,6 +14,7 @@ import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeli
 import { useHydrated } from "@/lib/use-hydrated";
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
+  artifactTitleLength,
   buildTimelineArtifactModel,
   buildTimelineCountdown,
   extraLabelIndices,
@@ -23,6 +24,7 @@ import {
   timelinePointStatus,
   timelinePresentation,
   timelineRailCaps,
+  type MetricValueScale,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
 } from "./timeline-artifact-model";
@@ -45,6 +47,8 @@ type MetricFact = Readonly<{
   receipt?: string;
   spoken: string;
   alternate: string;
+  /** Which sized treatment the value takes. See `metricValueScale`. */
+  scale: MetricValueScale;
 }>;
 
 type StageStyle = CSSProperties & {
@@ -105,14 +109,28 @@ function artifactPurpose(timeline: AudienceTimelineDto): string {
   return "A clear view of what is complete and what comes next.";
 }
 
+/**
+ * Progress, stated once.
+ *
+ * The face used to say the same thing three ways — a giant percentage, a `%`
+ * severed from its own number, and a receipt reading "N of N settled". None of
+ * the three was the fact a viewer wants: a couple does not think in percent,
+ * and `settled` was never a concept in this product (no column, no state, no
+ * meaning outside a drag animation elsewhere in the codebase).
+ *
+ * So the count IS the value. "0 of 1 complete" is one expression, it needs no
+ * unit glyph beside it, and it is the same sentence the rail's progressbar
+ * speaks in `aria-valuetext`, so the screen and the screen reader agree.
+ */
 function progressFact(model: TimelineArtifactModel): MetricFact {
+  const counted = `${model.completedCount} of ${model.totalCount} complete`;
   return {
-    label: "Milestones complete",
-    value: String(model.percent),
-    unit: "%",
-    receipt: `${model.completedCount} of ${model.totalCount} settled`,
-    spoken: `${model.percent} percent, ${model.completedCount} of ${model.totalCount} milestones complete`,
-    alternate: `${model.percent}% complete`,
+    label: "Milestones",
+    value: counted,
+    unit: "",
+    spoken: `${model.completedCount} of ${model.totalCount} milestones complete`,
+    alternate: counted,
+    scale: "count",
   };
 }
 
@@ -121,11 +139,11 @@ function countdownFact(
   eventLabel: string,
   model: TimelineArtifactModel,
 ): MetricFact {
-  // Both faces carry a receipt, so whichever one the artifact opens on states
-  // the plan's other fact too. Paper already prints both; the screen owed the
-  // same completeness — a couple leading with the countdown should not have to
-  // press to learn anything settled.
-  const receipt = `${model.completedCount} of ${model.totalCount} settled`;
+  // The countdown face carries the plan's other fact too, so whichever face
+  // the artifact opens on states both. Paper already prints both; the screen
+  // owed the same completeness — a couple leading with the countdown should
+  // not have to press to learn how much is done.
+  const receipt = `${model.completedCount} of ${model.totalCount} complete`;
 
   if (countdown.kind === "today") {
     return {
@@ -135,16 +153,19 @@ function countdownFact(
       receipt,
       spoken: `${eventLabel} is today`,
       alternate: `${eventLabel} today`,
+      scale: metricValueScale("Today"),
     };
   }
 
+  const value = String(countdown.days);
   return {
     label: `Until ${eventLabel.toLowerCase()}`,
-    value: String(countdown.days),
+    value,
     unit: countdown.days === 1 ? "day" : "days",
     receipt,
     spoken: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} remaining`,
     alternate: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`,
+    scale: metricValueScale(value),
   };
 }
 
@@ -264,7 +285,7 @@ function TimeLens({
           className={`${styles.timeLens} ${styles.timeLensStatic}`}
           data-timeline-metric
           data-metric-mode="progress"
-          data-metric-scale={metricValueScale(completion.value)}
+          data-metric-scale={completion.scale}
           role="group"
           aria-label={`${completion.spoken}${dateSpoken ? `. ${dateSpoken}` : ""}`}
         >
@@ -288,7 +309,7 @@ function TimeLens({
         data-timeline-metric
         data-timeline-metric-toggle
         data-metric-mode={mode}
-        data-metric-scale={metricValueScale(active.value)}
+        data-metric-scale={active.scale}
         type="button"
         aria-label={controlLabel}
         onClick={() => {
@@ -845,21 +866,12 @@ function Journey({
           itself with month names and the Today dash and stays quiet. */}
       {axisNote ? <p className={styles.axisNote}>{axisNote}</p> : null}
 
-      {/* Paper has no hover: the printed page carries every milestone as a
-          ruled index beneath the rail, so the keepsake keeps its content. */}
-      {model.points.length ? (
-        <ol className={styles.printIndex} aria-hidden="true">
-          {model.points.map((point) => (
-            <li key={point.item.publicId}>
-              <span>{timelinePointStatus(point)}</span>
-              <strong>{point.item.title}</strong>
-              <span>
-                {point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      {/* Paper has no hover, and it used to be handed a second copy of every
+          milestone as a ruled index under the rail — the same plan rendered
+          twice into one document. The list above is now the only one: print
+          stands it up as the stacked rail, where every label is visible and
+          nothing collides, so the keepsake keeps its content without the
+          artifact saying anything twice. */}
 
       <p className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
         {detailOpen && selectedPoint
@@ -923,6 +935,7 @@ export function TimelineArtifact({
       data-embedded={embedded ? "true" : undefined}
       data-density={model.density}
       data-axis={model.axis.mode}
+      data-title-length={artifactTitleLength(timeline.label)}
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>

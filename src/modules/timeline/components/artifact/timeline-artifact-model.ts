@@ -630,7 +630,7 @@ export function formatTimelineDate(value: string, style: "short" | "long" = "sho
   return (style === "long" ? LONG_DATE_FORMATTER : SHORT_DATE_FORMATTER).format(new Date(day));
 }
 
-export type MetricValueScale = "base" | "three" | "four" | "word";
+export type MetricValueScale = "base" | "three" | "four" | "word" | "count";
 
 /**
  * The metric face must fit its column by construction, not by hoping the
@@ -638,12 +638,37 @@ export type MetricValueScale = "base" | "three" | "four" | "word";
  * face declares its width class and the CSS sizes each class to fit: one or
  * two digits ride the display size, longer counts step down, and word values
  * ("Today") take a size measured to clear the column on the day it matters.
+ *
+ * `count` is not derived here: it belongs to the progress face, whose value is
+ * a whole sentence ("3 of 8 complete") rather than a number with a unit, and
+ * which therefore reads at sentence scale and is allowed to wrap.
  */
 export function metricValueScale(value: string): MetricValueScale {
   if (!/^\d+$/.test(value)) return "word";
   if (value.length >= 4) return "four";
   if (value.length === 3) return "three";
   return "base";
+}
+
+export type TimelineTitleLength = "short" | "long";
+
+/**
+ * How much room the project's own name needs.
+ *
+ * The artifact's display register is set once in `--x-artifact-display`, and
+ * that size is right for a name a person can say in one breath — "Glenmara
+ * House". A name three times that long at the same size is not bolder, it is
+ * four lines of headline pushing the plan off the screen, and the exhibition
+ * tokens' own comment forbids inventing a parallel clamp to escape it.
+ *
+ * So the length picks between the two sizes that already exist:
+ * `--x-artifact-display` for a name that fits the display measure, and the
+ * compact step for one that does not. The threshold is the display measure
+ * itself — 16ch — with one line of tolerance, because a name that wraps once
+ * is still a headline and a name that wraps three times is a paragraph.
+ */
+export function artifactTitleLength(label: string): TimelineTitleLength {
+  return label.trim().length > 32 ? "long" : "short";
 }
 
 export function timelinePointStatus(point: TimelineArtifactPoint): string {

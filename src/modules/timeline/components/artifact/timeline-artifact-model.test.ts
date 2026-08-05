@@ -7,6 +7,7 @@ import {
   type AudienceTimelineItemDto,
 } from "@/modules/timeline/lib/audience-timeline";
 import {
+  artifactTitleLength,
   buildTimelineArtifactModel,
   buildTimelineCountdown,
   capStackGaps,
@@ -659,4 +660,41 @@ test("month ticks ride the same distortion as the points and thin on long spans"
     item("two", "later"),
   ]));
   assert.deepEqual(undated.monthTicks, []);
+});
+
+test("a project name picks its display size by length, and is never cut", () => {
+  // Names a person says in one breath keep the exhibition display size.
+  for (const short of [
+    "Mara & Finn",
+    "Glenmara House",
+    "Year 3 · Digital Media",
+    "The Orchard",
+  ]) {
+    assert.equal(artifactTitleLength(short), "short");
+  }
+
+  // Names that would take four lines of headline step down to the compact
+  // size of the same register instead. Nothing is truncated: the decision is
+  // about which ratified size the whole name reads at.
+  for (const long of [
+    "The Ballyvaughan Farmhouse Midsummer Wedding Weekend",
+    "Ballyvaughan Farmhouse and Gardens Summer Wedding",
+  ]) {
+    assert.equal(artifactTitleLength(long), "long");
+  }
+
+  // Surrounding whitespace is not length.
+  assert.equal(artifactTitleLength(`   ${"a".repeat(30)}   `), "short");
+  assert.equal(artifactTitleLength("a".repeat(33)), "long");
+});
+
+test("the progress count declares its own treatment, not a digit width class", () => {
+  // metricValueScale answers for numbers with units. "3 of 8 complete" is a
+  // sentence and must not be mistaken for the one-word "Today" face, so the
+  // progress fact names its scale rather than deriving one from the string.
+  assert.equal(metricValueScale("79"), "base");
+  assert.equal(metricValueScale("311"), "three");
+  assert.equal(metricValueScale("1024"), "four");
+  assert.equal(metricValueScale("Today"), "word");
+  assert.equal(metricValueScale("3 of 8 complete"), "word");
 });

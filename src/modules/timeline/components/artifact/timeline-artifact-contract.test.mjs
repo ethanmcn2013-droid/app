@@ -110,16 +110,31 @@ test("the completed ink is drawn to the frontier dot, never the count percentage
 });
 
 test("every metric face declares its width class so no value can clip", () => {
-  assert.match(artifact, /data-metric-scale=\{metricValueScale\(/);
+  // The face carries its own scale rather than the view guessing from the
+  // string, because progress is a sentence and the countdown is a number and
+  // they take different treatments at the same moment in the same box.
+  assert.match(artifact, /data-metric-scale=\{active\.scale\}/);
+  assert.match(artifact, /data-metric-scale=\{completion\.scale\}/);
+  assert.match(artifact, /scale: metricValueScale\(value\)/);
   assert.match(styles, /data-metric-scale="word"/);
   assert.match(styles, /data-metric-scale="four"/);
+  assert.match(styles, /data-metric-scale="count"/);
 });
 
-test("paper keeps the content: print carries the milestone index and both metric facts", () => {
-  assert.match(artifact, /styles\.printIndex/);
+test("paper keeps the content from ONE list, not a second copy of it", () => {
+  // The printed page used to carry a separate ruled index below the rail, so
+  // every milestone was rendered into the document twice. Print now stands the
+  // rail's own list up as the stacked layout instead: same <ol>, every label
+  // visible, nothing rendered a second time.
+  assert.doesNotMatch(artifact, /printIndex/);
+  assert.doesNotMatch(styles, /\.printIndex/);
   assert.match(artifact, /styles\.printFacts/);
-  assert.match(styles, /\.printIndex\s*\{\s*display:\s*none;/);
   assert.match(styles, /\.printFacts\s*\{\s*display:\s*none;/);
+
+  const print = styles.slice(styles.indexOf("@media print"));
+  assert.match(print, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position-stack/);
+  assert.match(print, /\.milestone\[data-labelled="false"\][\s\S]{0,120}\{\s*opacity:\s*1;/);
+  assert.match(print, /\.completedRailVertical\s*\{\s*display:\s*block;/);
 });
 
 test("the rail's cartography rides the model's mapping and yields to information", () => {
