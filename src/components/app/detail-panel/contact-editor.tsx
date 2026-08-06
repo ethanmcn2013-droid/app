@@ -61,7 +61,7 @@ export function ContactEditor({ task }: { task: Task }) {
           aria-expanded={expanded}
           className={
             hasContact
-              ? "group inline-flex w-fit max-w-full items-baseline gap-2 rounded-md border border-transparent px-1.5 py-1 text-left transition-colors hover:border-line-soft"
+              ? "group inline-flex w-fit max-w-full cursor-pointer items-baseline gap-2 rounded-md border border-line-soft px-1.5 py-1 text-left transition-colors hover:border-ink-ghost"
               : "inline-flex items-center gap-1.5 rounded-md border border-dashed border-line px-2 py-1 text-[12px] font-medium text-ink-quiet transition-colors hover:border-ink-soft/50 hover:text-ink-soft"
           }
         >
