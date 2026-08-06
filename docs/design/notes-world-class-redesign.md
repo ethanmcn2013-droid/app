@@ -203,7 +203,53 @@ Engineering
 
 ---
 
-## 4. Decisions taken
+## 4. What the review panel found
+
+Eight independent reviewers graded the shipped artifact against "built by an
+award-winning studio and iterated for months" (gate 9.5). They scored it
+**7.4 / 7.6 / 6.9 / 6.6** (design, IA, interaction, non-technical user) and
+**6.3 / 5.1 / 5.6 / 7.6** (accessibility, data integrity, performance,
+design systems). The gate was not met on the first pass.
+
+Their findings were right, and several were things this work had not seen.
+The remediation commit `221ead0` closes every blocker and every high finding.
+The most serious were content loss, which is the one failure this product
+cannot have:
+
+- A dictation was truncated to 600 characters and reported as a success.
+- "Stop waiting" during processing discarded a dictation outright.
+- Deleting a second note inside the first one's undo window finalised the
+  first delete early; Undo then restored a row that was already gone.
+- Turn into task from Review carried the wrong note's version and, on a
+  conflict, wrote one note's body into another note's recovery slot.
+- Captures still in flight were absent from the unload guard.
+- A partial extraction save duplicated the notes that had already saved.
+
+And two that were about trust rather than data:
+
+- The privacy popover's headline was contradicted by its own body copy.
+  Voice and photo do leave the device; the headline now says so.
+- Five user-facing strings said "Signal", which is neither the company name
+  nor a current product name.
+
+### What is still open
+
+- **Component tests.** The pure view model has 61 unit tests and the surface
+  has 22 Playwright tests. There is no unit-level coverage of the voice and
+  photo state machines, the delete-undo window, or conflict resolution. The
+  Playwright suite exercises them end to end; that is not the same thing.
+- **Large notebooks.** Search filters and the row list are recomputed per
+  keystroke with no memoised row component and no virtualisation. Measured
+  at 500 notes this is expensive. The pagination this needs was already an
+  open question on `listNotes` before this work.
+- **The module migration has no receipted runner.** `pnpm db:migrate` covers
+  the Tasks database only. `drizzle-notes/0001` must be applied by hand;
+  DEPLOY.md §4 records the requirement and the risk.
+- **Review keyboard shortcuts.** The queue is mouse and touch only.
+- **Date grouping** in the list at scale, and a camera-capture entry point on
+  mobile (the input exists but nothing opens it).
+
+## 5. Decisions taken
 
 1. **One design system.** Notes uses the vendored DS semantic tokens
    directly and the shared `--x-lead-*` leading scale, not a parallel
