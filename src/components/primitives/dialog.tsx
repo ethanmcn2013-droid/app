@@ -1,8 +1,11 @@
 "use client";
 
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+
+const FOCUSABLE =
+  'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
 export function Dialog({
   open,
@@ -41,12 +44,14 @@ export function Dialog({
     }
     document.addEventListener("keydown", onKey);
 
-    // Focus first input/textarea/button inside the dialog.
+    // Focus first input/textarea/button inside the dialog, and the dialog
+    // itself when it holds nothing focusable — the Tab trap below has to have
+    // somewhere to start, or focus is still standing in the inert page.
     requestAnimationFrame(() => {
       const focusable = dialogRef.current?.querySelector<HTMLElement>(
         "input, textarea, [tabindex]:not([tabindex='-1']), button:not([data-dialog-skip-focus])",
       );
-      focusable?.focus({ preventScroll: true });
+      (focusable ?? dialogRef.current)?.focus({ preventScroll: true });
     });
 
     return () => {
@@ -54,6 +59,36 @@ export function Dialog({
       lastFocusedRef.current?.focus({ preventScroll: true });
     };
   }, [open, onClose]);
+
+  /**
+   * The keyboard half of `aria-modal`.
+   *
+   * `aria-modal="true"` tells a screen reader that everything behind this
+   * dialog is inert. It does nothing at all to the Tab order, so focus walked
+   * straight out of the dialog and into the page the same attribute had just
+   * declared unreachable — the two channels contradicting each other on every
+   * dialog in the app. This is the trap the task focus window has always had
+   * (`components/app/detail-panel/focus-window.tsx`), lifted into the
+   * primitive so every dialog gets it rather than one surface.
+   */
+  const trapTab = useCallback((event: React.KeyboardEvent) => {
+    if (event.key !== "Tab") return;
+    const node = dialogRef.current;
+    if (!node) return;
+    const focusables = Array.from(
+      node.querySelectorAll<HTMLElement>(FOCUSABLE),
+    ).filter((element) => element.offsetParent !== null || element === document.activeElement);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
 
   // SSR safety
   if (typeof document === "undefined") return null;
@@ -100,6 +135,8 @@ export function Dialog({
                     }
               }
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={trapTab}
+              tabIndex={-1}
               className="overflow-hidden rounded-[14px] border border-line bg-bg-elevated"
               style={{
                 width,

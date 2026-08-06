@@ -87,8 +87,11 @@ test("the six write paths that needed a subject resolve one without a serial rou
 
 test("Timeline proves a canonical workspace rather than a slug", () => {
   // Split on the call, not the identifier, so the import is not counted.
+  // System B (publishWorkspaceAction / unpublishWorkspaceAction) was deleted
+  // as dead code with zero callers (2026-08-05); curate is the one surviving
+  // emit site in this file.
   const emits = timeline.split("recordSponsoredUse(").slice(1);
-  assert.ok(emits.length >= 3, "publish, unpublish, and curate must all emit");
+  assert.ok(emits.length >= 1, "curate must emit");
   for (const block of emits) {
     assert.match(
       block.slice(0, 400),
@@ -96,12 +99,6 @@ test("Timeline proves a canonical workspace rather than a slug", () => {
       "a Timeline emit must carry the canonical workspace, which may be null",
     );
   }
-});
-
-test("Timeline does not emit on a refused empty publish", () => {
-  const guard = timeline.indexOf("Add at least one project before publishing");
-  const publish = timeline.indexOf("await publishWorkspace(workspaceSlug)");
-  assert.ok(guard > 0 && publish > guard, "the guards must precede the write");
 });
 
 test("the emit helper cannot throw into a write path", () => {

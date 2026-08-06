@@ -1,12 +1,12 @@
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_TIMELINE_DTO_VERSION,
-  SECTION_LABELS,
   calendarDateInTimeZone,
   validateAudienceTimelineDto,
   type AudienceKind,
   type AudienceTimelineDto,
 } from "@/modules/timeline/lib/audience-timeline";
+import { MILESTONE_STATE_LABELS } from "@/modules/timeline/lib/vocabulary";
 import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
 import type { EffectiveNode } from "@/modules/timeline/server/db/timeline-queries";
 
@@ -39,7 +39,7 @@ export function ownerPublicationToTimelineDto(
     today: calendarDateInTimeZone(now, publication.timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
-      label: SECTION_LABELS[state],
+      label: MILESTONE_STATE_LABELS[state],
       items: publication.items
         .filter((item) => item.state === state)
         .sort((left, right) => left.sortOrder - right.sortOrder)
@@ -145,7 +145,7 @@ export function ownerProjectToTimelineDto(input: {
     today: calendarDateInTimeZone(now, timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
-      label: SECTION_LABELS[state],
+      label: MILESTONE_STATE_LABELS[state],
       items: visible
         .map((node, index) => ({
           publicId: `owner-preview-${index + 1}`,

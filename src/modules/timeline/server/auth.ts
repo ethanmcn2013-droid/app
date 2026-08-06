@@ -7,7 +7,11 @@ import {
   isReviewSuiteWorkspaceId,
   REVIEW_SUITE_FIXTURE,
 } from "@/lib/review-suite-fixture";
-import { DEMO_USER_ID, demoWorkspace } from "@/modules/timeline/lib/roadmap/demo-data";
+import {
+  DEMO_USER_ID,
+  demoWorkspace,
+  weddingDemoWorkspace,
+} from "@/modules/timeline/lib/roadmap/demo-data";
 import { getWorkspacesForUser, getWorkspaceForSuiteIdForUser } from "@/modules/timeline/server/db/timeline-queries";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
 import {
@@ -134,6 +138,20 @@ export async function resolveTimelineContext(
 ): Promise<ResolvedTimelineContext | null> {
   // Demo/review is a self-contained fixture boundary.
   if (isDemoMode()) {
+    // The redesign needs to render sparse, undated, overdue and twenty-plus
+    // milestone states through the real page rather than a parallel harness
+    // that could drift from it. Those fixtures live in a second demo
+    // workspace, addressed here by slug because a fixture has no suite id.
+    // Reachable only inside this branch, so production resolution is
+    // untouched and no real workspace can be addressed this way.
+    if (requestedWorkspaceId.trim() === weddingDemoWorkspace.slug) {
+      return {
+        workspace: weddingDemoWorkspace,
+        workspaceId: weddingDemoWorkspace.slug,
+        planningPeriodId: null,
+      };
+    }
+
     const planningPeriodId = requestedPlanningPeriodId?.trim();
     if (
       !isReviewSuiteWorkspaceId(requestedWorkspaceId) ||

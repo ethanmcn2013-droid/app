@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnchorChip } from "@/modules/timeline/app/_components/anchor-countdown";
+import { latestPublicationForProject } from "@/modules/timeline/app/audience/project-publications";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
+import { LocalViewTabs } from "@/modules/timeline/app/plan/[projectSlug]/_components/local-view-tabs";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
+import {
+  SharePanel,
+  type SharePublicationSummary,
+} from "@/modules/timeline/app/plan/[projectSlug]/_components/share-panel";
 import { TimelineArtifact } from "@/modules/timeline/components/artifact";
 import { ownerProjectToTimelineDto } from "@/modules/timeline/lib/owner-artifact";
 import { isDemoMode } from "@/lib/access-mode";
@@ -35,15 +41,21 @@ export async function generateMetadata({
 
 export const dynamic = "force-dynamic";
 
-function modeHref(
+/** Preview keeps whichever workspace and period the owner arrived with. */
+function previewHref(
   projectSlug: string,
   context: { workspaceId?: string | null; planningPeriodId?: string | null },
-  mode: OwnerMode,
 ) {
-  return buildTimelineProjectHref(projectSlug, {
-    ...context,
-    mode: mode === "edit" ? "edit" : null,
-  });
+  const query = new URLSearchParams();
+  const workspaceId = context.workspaceId?.trim();
+  const planningPeriodId = context.planningPeriodId?.trim();
+  if (workspaceId) {
+    query.set("workspaceId", workspaceId);
+    if (planningPeriodId) query.set("planningPeriodId", planningPeriodId);
+  }
+  const value = query.toString();
+  const path = `/app/timeline/${encodeURIComponent(projectSlug)}/preview`;
+  return value ? `${path}?${value}` : path;
 }
 
 export default async function TimelineProjectPage({
@@ -79,7 +91,7 @@ export default async function TimelineProjectPage({
 
   const projectOptions = toAuthorizedProjectOptions(projects, workspace.slug);
   // Mode rides the switcher context: changing projects mid-edit stays in
-  // edit. The mode toggle itself overrides it per destination (modeHref).
+  // edit. The local view tabs override it per destination.
   const queryContext = {
     workspaceId: context?.workspaceId,
     planningPeriodId: context?.planningPeriodId,
@@ -92,7 +104,7 @@ export default async function TimelineProjectPage({
   if (queryContext.planningPeriodId) {
     shareQuery.set("planningPeriodId", queryContext.planningPeriodId);
   }
-  const shareHref = `/app/timeline/audience?${shareQuery.toString()}`;
+  const manageHref = `/app/timeline/audience?${shareQuery.toString()}`;
   // One clock: review mode reads the pinned suite calendar frame; production
   // reads the request clock at this RSC boundary only.
   const now = isDemoMode()
@@ -105,13 +117,32 @@ export default async function TimelineProjectPage({
   const projectNodes = effectiveNodes.filter(
     (node) => node.projectSlug === project.slug,
   );
+  // One selection rule for the whole owner surface — the header metadata
+  // below, Preview, and Share must all mean the same publication.
+  const latestPublication = latestPublicationForProject(
+    publications,
+    project.slug,
+    new Set(projectNodes.map((node) => node.id)),
+  );
+  const shareSummary: SharePublicationSummary | null = latestPublication
+    ? {
+        id: latestPublication.id,
+        label: latestPublication.label,
+        state: latestPublication.state,
+        activeShareCount: latestPublication.activeShareCount,
+        timezone: latestPublication.timezone,
+        divergedTitles: latestPublication.items
+          .filter((item) => item.divergedAt !== null)
+          .map((item) => item.title),
+      }
+    : null;
   const content = TimelineProjectContent({
     mode,
     project,
     workspace,
-    shareHref,
+    manageHref,
     projectNodes,
-    publications,
+    latestPublication,
     now,
   });
 
@@ -119,10 +150,19 @@ export default async function TimelineProjectPage({
     <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
       <header className="relative z-30 border-b border-line-soft bg-white">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="hidden text-xs font-semibold uppercase tracking-[0.13em] text-ink-quiet sm:inline">
-              Project timeline
-            </span>
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            {/* Parent context, then the project itself. No wordmark here: the
+                Studio Bar above already carries `timeline.` and it already
+                links to Timeline home (studio-bar.tsx, activeModuleIdentity),
+                so a second one is duplicated chrome, not context. What stood
+                here was dead text reading "Project timeline". */}
+            <Link
+              href={buildTimelineProjectHref(null, queryContext)}
+              className="hidden min-h-[44px] max-w-[18ch] shrink-0 items-center truncate rounded-md px-1 text-[13px] text-ink-quiet transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
+            >
+              {workspace.name}
+            </Link>
+            <span aria-hidden className="hidden h-3.5 w-px bg-ink-ghost lg:block" />
             <ProjectSwitcher
               currentProject={{ slug: project.slug, name: project.name }}
               projects={projectOptions}
@@ -136,43 +176,28 @@ export default async function TimelineProjectPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <nav
-              aria-label="Timeline owner mode"
-              className="inline-flex rounded-lg border border-line-soft bg-bg-sunken p-1"
-            >
-              <Link
-                href={modeHref(project.slug, queryContext, "view")}
-                aria-label="View timeline"
-                aria-current={mode === "view" ? "page" : undefined}
-                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  mode === "view"
-                    ? "bg-white text-ink shadow-sm"
-                    : "text-ink-soft hover:text-ink"
-                }`}
-              >
-                View<span className="hidden sm:inline">&nbsp;timeline</span>
-              </Link>
-              <Link
-                href={modeHref(project.slug, queryContext, "edit")}
-                aria-label="Edit milestones"
-                aria-current={mode === "edit" ? "page" : undefined}
-                className={`inline-flex min-h-[44px] items-center rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  mode === "edit"
-                    ? "bg-white text-ink shadow-sm"
-                    : "text-ink-soft hover:text-ink"
-                }`}
-              >
-                Edit<span className="hidden sm:inline">&nbsp;milestones</span>
-              </Link>
-            </nav>
+            <LocalViewTabs
+              projectSlug={project.slug}
+              current={mode === "edit" ? "milestones" : "timeline"}
+              context={queryContext}
+            />
+            <span aria-hidden className="hidden h-5 w-px bg-line-soft sm:block" />
+            {/* Two acts, two controls. Preview opens the frozen page a guest
+                receives; Share opens the link itself. One button could only
+                ever do one of them, and the old one did neither. */}
             <Link
-              href={shareHref}
-              aria-label="Preview and share"
-              className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              href={previewHref(project.slug, queryContext)}
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
-              <span className="sm:hidden">Share</span>
-              <span className="hidden sm:inline">Preview and share</span>
+              Preview
             </Link>
+            <SharePanel
+              workspaceSlug={workspace.slug}
+              projectName={project.name}
+              publication={shareSummary}
+              manageHref={manageHref}
+              canManage={workspace.ownerUserId === userId}
+            />
           </div>
         </div>
       </header>
@@ -186,17 +211,19 @@ function TimelineProjectContent({
   mode,
   project,
   workspace,
-  shareHref,
+  manageHref,
   projectNodes,
-  publications,
+  latestPublication,
   now,
 }: {
   mode: OwnerMode;
   project: Awaited<ReturnType<typeof getProjectsForWorkspace>>[number];
   workspace: NonNullable<Awaited<ReturnType<typeof getCurrentWorkspace>>>;
-  shareHref: string;
+  manageHref: string;
   projectNodes: Awaited<ReturnType<typeof getEffectiveNodesForWorkspace>>;
-  publications: Awaited<ReturnType<typeof getOwnerAudiencePublications>>;
+  latestPublication:
+    | Awaited<ReturnType<typeof getOwnerAudiencePublications>>[number]
+    | undefined;
   now: Date;
 }) {
   if (mode === "edit") {
@@ -209,31 +236,27 @@ function TimelineProjectContent({
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-ink">
             Shape {project.name}
           </h1>
+          {/* This used to promise that the Timeline view showed "the exact
+              artifact your audience will receive". It does not: that view
+              renders your live milestones, while a guest reads a frozen copy
+              made when you published. Preview is the only screen that shows
+              the guest's page. */}
           <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">
-            Milestone tasks sync into this draft. Refine the labels, dates,
-            order, lane, and visibility here. View timeline shows the exact
-            artifact your audience will receive.
+            Milestone tasks arrive here from Tasks. Rename them, move dates,
+            reorder, and choose what stays private. Nothing you change reaches a
+            shared page until you publish it again.
           </p>
         </div>
         <CurationSurface
           initialNodes={projectNodes}
           workspaceSlug={workspace.slug}
           projectSlug={project.slug}
-          shareHref={shareHref}
+          shareHref={manageHref}
         />
       </div>
     );
   }
 
-  const sourceIds = new Set(projectNodes.map((node) => node.id));
-  const latestPublication = publications
-    .filter((publication) =>
-      publication.items.some((item) => sourceIds.has(item.sourceRelation)),
-    )
-    .sort(
-      (left, right) =>
-        right.lastUpdatedAt.getTime() - left.lastUpdatedAt.getTime(),
-    )[0];
   const visibleNodes = projectNodes.filter((node) => !node.hidden);
 
   if (visibleNodes.length === 0) {
@@ -247,16 +270,15 @@ function TimelineProjectContent({
             No visible milestones yet.
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-soft">
-            Mark tasks as milestones, or add a manual milestone in the owner
-            edit. This project stays private until you deliberately publish a
-            frozen share link.
+            Mark tasks as milestones, or add one by hand under Milestones. This
+            project stays private until you publish a frozen copy of it.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href={`/app/timeline/${encodeURIComponent(project.slug)}?mode=edit`}
               className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
-              Edit milestones
+              Open milestones
             </Link>
             <Link
               href="/app/tasks"
@@ -288,13 +310,12 @@ function TimelineProjectContent({
     now,
   });
 
+  // No caption. The one that stood here — "Owner view · the page your audience
+  // receives" — was untrue: this renders ownerProjectToTimelineDto, the live
+  // current milestones, not the frozen publication a guest reads. Preview is
+  // where that claim can be made honestly, so it is made there instead.
   return (
     <div className="w-full flex-1 bg-white">
-      <div className="mx-auto w-full max-w-[100rem] px-[clamp(1rem,4.2vw,4rem)]">
-        <p className="border-b border-line-soft pb-2.5 pt-4 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
-          Owner view · the page your audience receives
-        </p>
-      </div>
       <TimelineArtifact timeline={timeline} embedded showProductHeader={false} />
     </div>
   );

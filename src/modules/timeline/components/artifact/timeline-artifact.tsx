@@ -8,18 +8,33 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type Ref,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
 import { useHydrated } from "@/lib/use-hydrated";
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
+  MILESTONE_RAIL_LABELS,
+  NO_TIMING_LABEL,
+  PLACE_IN_PLAN_LABEL,
+  milestonePlace,
+  timelineNouns,
+} from "@/modules/timeline/lib/vocabulary";
+import {
+  artifactTitleLength,
   buildTimelineArtifactModel,
   buildTimelineCountdown,
   extraLabelIndices,
   formatTimelineDate,
+  labelShifts,
   metricValueScale,
+  timelineAxisDescription,
+  timelineAxisNote,
   timelinePointStatus,
+  timelinePresentation,
+  timelineRailCaps,
+  type MetricValueScale,
   type TimelineArtifactModel,
   type TimelineArtifactPoint,
 } from "./timeline-artifact-model";
@@ -42,6 +57,8 @@ type MetricFact = Readonly<{
   receipt?: string;
   spoken: string;
   alternate: string;
+  /** Which sized treatment the value takes. See `metricValueScale`. */
+  scale: MetricValueScale;
 }>;
 
 type StageStyle = CSSProperties & {
@@ -53,6 +70,9 @@ type PositionStyle = CSSProperties & {
   "--timeline-position": string;
   "--timeline-position-stack"?: string;
   "--timeline-point-delay"?: string;
+  /** Rail-percent the LABEL is nudged by to clear its neighbour. The mark
+   *  never moves; see `labelShifts`. */
+  "--timeline-label-shift"?: string;
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
@@ -87,29 +107,28 @@ export type TimelineArtifactProps = Readonly<{
   shareLabel?: string;
 }>;
 
-function artifactKicker(timeline: AudienceTimelineDto): string {
-  if (timeline.audienceKind === "couple") return "A shared wedding timeline";
-  if (timeline.audienceKind === "class") return "A shared class timeline";
-  // "module" is the storage enum, not viewer vocabulary — a bakery's plan
-  // must never introduce itself with campus wording.
-  return "A shared project timeline";
-}
-
-function artifactPurpose(timeline: AudienceTimelineDto): string {
-  if (timeline.audienceKind === "couple") {
-    return "Every decision, visit and small moment on the way to the day.";
-  }
-  return "A clear view of what is complete and what comes next.";
-}
-
+/**
+ * Progress, stated once.
+ *
+ * The face used to say the same thing three ways — a giant percentage, a `%`
+ * severed from its own number, and a receipt reading "N of N settled". None of
+ * the three was the fact a viewer wants: a couple does not think in percent,
+ * and `settled` was never a concept in this product (no column, no state, no
+ * meaning outside a drag animation elsewhere in the codebase).
+ *
+ * So the count IS the value. "0 of 1 complete" is one expression, it needs no
+ * unit glyph beside it, and it is the same sentence the rail's progressbar
+ * speaks in `aria-valuetext`, so the screen and the screen reader agree.
+ */
 function progressFact(model: TimelineArtifactModel): MetricFact {
+  const counted = `${model.completedCount} of ${model.totalCount} complete`;
   return {
-    label: "Milestones complete",
-    value: String(model.percent),
-    unit: "%",
-    receipt: `${model.completedCount} of ${model.totalCount} settled`,
-    spoken: `${model.percent} percent, ${model.completedCount} of ${model.totalCount} milestones complete`,
-    alternate: `${model.percent}% complete`,
+    label: "Milestones",
+    value: counted,
+    unit: "",
+    spoken: `${model.completedCount} of ${model.totalCount} milestones complete`,
+    alternate: counted,
+    scale: "count",
   };
 }
 
@@ -118,11 +137,11 @@ function countdownFact(
   eventLabel: string,
   model: TimelineArtifactModel,
 ): MetricFact {
-  // Both faces carry a receipt, so whichever one the artifact opens on states
-  // the plan's other fact too. Paper already prints both; the screen owed the
-  // same completeness — a couple leading with the countdown should not have to
-  // press to learn anything settled.
-  const receipt = `${model.completedCount} of ${model.totalCount} settled`;
+  // The countdown face carries the plan's other fact too, so whichever face
+  // the artifact opens on states both. Paper already prints both; the screen
+  // owed the same completeness — a couple leading with the countdown should
+  // not have to press to learn how much is done.
+  const receipt = `${model.completedCount} of ${model.totalCount} complete`;
 
   if (countdown.kind === "today") {
     return {
@@ -132,20 +151,34 @@ function countdownFact(
       receipt,
       spoken: `${eventLabel} is today`,
       alternate: `${eventLabel} today`,
+      scale: metricValueScale("Today"),
     };
   }
 
+  const value = String(countdown.days);
   return {
     label: `Until ${eventLabel.toLowerCase()}`,
-    value: String(countdown.days),
+    value,
     unit: countdown.days === 1 ? "day" : "days",
     receipt,
     spoken: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} remaining`,
     alternate: `${countdown.days} ${countdown.days === 1 ? "day" : "days"} left`,
+    scale: metricValueScale(value),
   };
 }
 
-function MetricFace({ fact }: { fact: MetricFact }) {
+function MetricFace({
+  fact,
+  receiptIsAffordance = false,
+}: {
+  fact: MetricFact;
+  /**
+   * True when the receipt is the only line the alternate would have printed,
+   * so the receipt carries the pressable underline the alternate used to wear
+   * and the fact is stated once instead of twice.
+   */
+  receiptIsAffordance?: boolean;
+}) {
   return (
     <span className={styles.metricFace} aria-hidden="true">
       <span className={styles.metricLabel}>{fact.label}</span>
@@ -153,7 +186,14 @@ function MetricFace({ fact }: { fact: MetricFact }) {
         <strong data-timeline-metric-value>{fact.value}</strong>
         {fact.unit ? <small>{fact.unit}</small> : null}
       </span>
-      {fact.receipt ? <span className={styles.metricReceipt}>{fact.receipt}</span> : null}
+      {fact.receipt ? (
+        <span
+          className={styles.metricReceipt}
+          data-metric-receipt-affordance={receiptIsAffordance ? "true" : undefined}
+        >
+          {fact.receipt}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -182,7 +222,14 @@ function TimeLens({
     ? countdownFact(countdown, timeline.primaryDate.label, model)
     : null;
   const active = mode === "countdown" && remaining ? remaining : completion;
-  const alternate = mode === "progress" ? remaining : completion;
+  const otherFace = mode === "progress" ? remaining : completion;
+  // The countdown face carries the completion count as its receipt, and the
+  // alternate line offered to "Show" the identical sentence directly beneath
+  // it — "2 of 9 complete" printed twice, one line apart, in the artifact's
+  // quietest voice. The fact is stated once now; when the two strings match,
+  // the receipt becomes the pressable line and the alternate stands down.
+  const receiptIsAffordance = otherFace !== null && otherFace.alternate === active.receipt;
+  const alternate = receiptIsAffordance ? null : otherFace;
   const direction = mode === "countdown" ? 1 : -1;
   const dateSpoken = timeline.primaryDate
     ? `${timeline.primaryDate.label}, ${formatTimelineDate(timeline.primaryDate.date, "long")}`
@@ -206,7 +253,7 @@ function TimeLens({
             exit={reduceMotion ? undefined : { opacity: 0, x: direction * -10 }}
             transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
           >
-            <MetricFace fact={active} />
+            <MetricFace fact={active} receiptIsAffordance={receiptIsAffordance} />
           </motion.span>
         </AnimatePresence>
         <motion.span
@@ -227,20 +274,26 @@ function TimeLens({
           aria-hidden="true"
         />
       </span>
-      {alternate ? (
+      {/* The row is always here; only its line comes and goes. Withholding the
+          box as well would move the rail 29px up and down every time the
+          metric was pressed, which is the same class of fault the reserved
+          metric box exists to prevent. */}
+      {otherFace ? (
         <span className={styles.metricAlternateViewport} aria-hidden="true">
-          <AnimatePresence initial={false} mode="wait">
-            <motion.span
-              className={styles.metricAlternate}
-              key={`alternate-${mode}`}
-              initial={reduceMotion ? false : { opacity: 0, x: direction * -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: direction * 6 }}
-              transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
-            >
-              Show {alternate.alternate}
-            </motion.span>
-          </AnimatePresence>
+          {alternate ? (
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                className={styles.metricAlternate}
+                key={`alternate-${mode}`}
+                initial={reduceMotion ? false : { opacity: 0, x: direction * -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, x: direction * 6 }}
+                transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
+              >
+                Show {alternate.alternate}
+              </motion.span>
+            </AnimatePresence>
+          ) : null}
         </span>
       ) : null}
       {timeline.primaryDate ? (
@@ -261,7 +314,7 @@ function TimeLens({
           className={`${styles.timeLens} ${styles.timeLensStatic}`}
           data-timeline-metric
           data-metric-mode="progress"
-          data-metric-scale={metricValueScale(completion.value)}
+          data-metric-scale={completion.scale}
           role="group"
           aria-label={`${completion.spoken}${dateSpoken ? `. ${dateSpoken}` : ""}`}
         >
@@ -285,7 +338,7 @@ function TimeLens({
         data-timeline-metric
         data-timeline-metric-toggle
         data-metric-mode={mode}
-        data-metric-scale={metricValueScale(active.value)}
+        data-metric-scale={active.scale}
         type="button"
         aria-label={controlLabel}
         onClick={() => {
@@ -371,10 +424,10 @@ function ProductIdentity({
 
 function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
   return (
-    <span className={styles.milestoneLabel} aria-hidden="true">
+    <span className={styles.milestoneLabel} data-timeline-milestone-label aria-hidden="true">
       <span>{timelinePointStatus(point)}</span>
       <strong>{point.item.title}</strong>
-      <small>{point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}</small>
+      <small>{point.item.date ? formatTimelineDate(point.item.date) : NO_TIMING_LABEL}</small>
     </span>
   );
 }
@@ -386,10 +439,16 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
  * internal string. Kept short and plain, and kept deliberately rather than
  * removed, because it is the slot a real milestone story lands in once the
  * published DTO can carry one (E06.02 and E06.03).
+ *
+ * The next milestone gets no line at all. Its status sits three lines above in
+ * the module's own words ("Our next milestone"), the mark it opened from is
+ * `aria-current="step"`, and the rail draws it as the one indigo object on the
+ * page — so "This one is next." was the fourth statement of the same fact
+ * inside one panel. Saying nothing is more honest than saying it again.
  */
-function detailNote(point: TimelineArtifactPoint): string {
+function detailNote(point: TimelineArtifactPoint): string | null {
   if (point.state === "complete") return "This one is already behind you.";
-  if (point.isNext) return "This one is next.";
+  if (point.isNext) return null;
   return "This one comes later.";
 }
 
@@ -411,6 +470,7 @@ function MilestoneDetail({
   today,
   detailId,
   titleId,
+  sectionRef,
 }: {
   point: TimelineArtifactPoint;
   ordinal: number;
@@ -418,9 +478,11 @@ function MilestoneDetail({
   today: string;
   detailId: string;
   titleId: string;
+  sectionRef?: Ref<HTMLElement>;
 }) {
   const reduceMotion = useArtifactReducedMotion();
   const relative = detailTiming(point, today);
+  const note = detailNote(point);
 
   return (
     <section
@@ -429,6 +491,7 @@ function MilestoneDetail({
       data-selected-milestone={point.item.publicId}
       id={detailId}
       aria-labelledby={titleId}
+      ref={sectionRef}
     >
       <AnimatePresence initial={false} mode="wait">
         <motion.div
@@ -442,7 +505,7 @@ function MilestoneDetail({
           <div className={styles.detailLead}>
             <p className={styles.detailStatus}>{timelinePointStatus(point)}</p>
             <h3 id={titleId}>{point.item.title}</h3>
-            <p>{detailNote(point)}</p>
+            {note ? <p>{note}</p> : null}
           </div>
           <dl className={styles.detailFacts}>
             <div>
@@ -455,12 +518,12 @@ function MilestoneDetail({
                     </time>
                     {relative ? ` · ${relative}` : null}
                   </>
-                ) : "Timing not set"}
+                ) : NO_TIMING_LABEL}
               </dd>
             </div>
             <div>
-              <dt>Place in the plan</dt>
-              <dd>{`Milestone ${ordinal} of ${total}`}</dd>
+              <dt>{PLACE_IN_PLAN_LABEL}</dt>
+              <dd>{milestonePlace(ordinal, total)}</dd>
             </div>
           </dl>
         </motion.div>
@@ -469,11 +532,52 @@ function MilestoneDetail({
   );
 }
 
+/**
+ * One milestone with no usable timing. A rail would have to place its single
+ * dot somewhere, and every somewhere on a time axis is a claim about time —
+ * dead centre most of all. So this plan is stated as what it actually is: a
+ * place in a sequence, with the timing named honestly underneath.
+ */
+function SequenceState({
+  heading,
+  model,
+  idPrefix,
+}: {
+  heading: string;
+  model: TimelineArtifactModel;
+  idPrefix: string;
+}) {
+  const point = model.points[0];
+  const sectionId = `${idPrefix}-timeline`;
+
+  return (
+    <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
+      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
+      <div className={styles.sequenceCard} data-state={point.state} data-sequence-card>
+        <p className={styles.sequenceStep}>
+          {milestonePlace(1, model.points.length)}
+        </p>
+        <p className={styles.sequenceStatus}>{timelinePointStatus(point)}</p>
+        <h3 className={styles.sequenceTitle}>{point.item.title}</h3>
+        <p className={styles.sequenceTiming}>
+          {point.item.date ? (
+            <time dateTime={point.item.date}>
+              {formatTimelineDate(point.item.date, "long")}
+            </time>
+          ) : NO_TIMING_LABEL}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function Journey({
+  heading,
   timeline,
   model,
   idPrefix,
 }: {
+  heading: string;
   timeline: AudienceTimelineDto;
   model: TimelineArtifactModel;
   idPrefix: string;
@@ -491,6 +595,12 @@ function Journey({
   const [overflowEnd, setOverflowEnd] = useState(false);
   const pointRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const detailRef = useRef<HTMLElement | null>(null);
+  // How much of the rail one label box actually occupies, in rail-percent.
+  // Null until the rail has been measured; see the geometry effect below for
+  // why this cannot be a constant.
+  const [labelSpan, setLabelSpan] = useState<number | null>(null);
   const selectedPoint = model.points.find((point) => point.item.publicId === selectedId)
     ?? model.points.find((point) => point.item.publicId === model.defaultSelectedId)
     ?? null;
@@ -510,6 +620,23 @@ function Journey({
     if (viewport.scrollWidth <= viewport.clientWidth) return;
     const target = (point.position / 100) * viewport.scrollWidth - viewport.clientWidth / 2;
     viewport.scrollTo({ left: Math.max(0, target), behavior });
+  };
+
+  /**
+   * Selecting a milestone has to produce something the viewer can see, and on
+   * a phone the detail sits a full stacked rail below the mark that was
+   * tapped — far enough that the tap read as doing nothing at all. `nearest`
+   * means a detail already on screen is left exactly where it is, so this
+   * costs desktop nothing and rescues the phone.
+   */
+  const revealDetail = () => {
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    });
   };
 
   useEffect(() => {
@@ -539,6 +666,72 @@ function Journey({
       observer.disconnect();
     };
   }, [model.points.length]);
+
+  /**
+   * Rail geometry, read off the rail rather than assumed.
+   *
+   * Two numbers were previously guessed, and both guesses were wrong in a way
+   * only a rendered page could show.
+   *
+   * The stage's height is a calculation from `--x-timeline-label-block`, which
+   * budgets a fixed 4.5rem for "a status line, a title and a date". A milestone
+   * whose title runs to three or four lines needs half as much again, and the
+   * stage's `overflow: clip` cut the difference off — a real milestone losing
+   * its date at every desktop width. The tallest label measured here feeds that
+   * budget back, so spacing follows content instead of the other way round.
+   *
+   * The label's width in rail-percent was the constant 16 in
+   * `extraLabelIndices`. The rail is a scroll canvas at least
+   * `count x --x-timeline-pitch` wide, so on a twenty-two-milestone plan it is
+   * ~1848px at every desktop width and one 136-200px label occupies 7-11
+   * percent of it, not 16. The constant refused labels that had ample room, and
+   * refused the same ones at 1920 as at 768 because it could not see either.
+   *
+   * Both readings are stable under their own effect: labels are absolutely
+   * positioned at a fixed width, so neither a taller stage nor a newly revealed
+   * label changes what is measured here.
+   */
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const stage = stageRef.current;
+    if (!viewport || !stage) return;
+    const measure = () => {
+      const labels = Array.from(
+        stage.querySelectorAll<HTMLElement>("[data-timeline-milestone-label]"),
+      );
+      if (!labels.length) return;
+      let tallest = 0;
+      let widest = 0;
+      for (const label of labels) {
+        const rect = label.getBoundingClientRect();
+        if (rect.height > tallest) tallest = rect.height;
+        if (rect.width > widest) widest = rect.width;
+      }
+      const previous = stage.style.getPropertyValue("--x-timeline-label-measured");
+      const next = `${Math.ceil(tallest)}px`;
+      if (previous !== next) stage.style.setProperty("--x-timeline-label-measured", next);
+
+      const railWidth = stage.getBoundingClientRect().width;
+      if (railWidth <= 0 || widest <= 0) return;
+      // The rail's own width, published to CSS so a label nudge expressed in
+      // rail-percent can be drawn in pixels. Nothing else can do this
+      // conversion: the label's containing block is its 3rem hit target, so a
+      // percentage there would resolve against the wrong box.
+      const railWidthPx = `${Math.round(railWidth)}px`;
+      if (stage.style.getPropertyValue("--x-timeline-rail-width") !== railWidthPx) {
+        stage.style.setProperty("--x-timeline-rail-width", railWidthPx);
+      }
+      const span = (widest / railWidth) * 100;
+      setLabelSpan((current) =>
+        current !== null && Math.abs(current - span) < 0.25 ? current : span,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [model.points]);
 
   const focusPoint = (nextIndex: number) => {
     const bounded = Math.min(Math.max(nextIndex, 0), model.points.length - 1);
@@ -584,8 +777,26 @@ function Journey({
     ]);
   }, [model.points]);
   const extraLabels = useMemo(
-    () => extraLabelIndices(model.points.map((point) => point.position), mandatoryLabels),
-    [model.points, mandatoryLabels],
+    () => extraLabelIndices(
+      model.points.map((point) => point.position),
+      mandatoryLabels,
+      labelSpan ?? undefined,
+    ),
+    [model.points, mandatoryLabels, labelSpan],
+  );
+  // Marks are where their dates are. When two visible labels would overlap it
+  // is the LABEL that gives way — never the mark, which is the whole of the
+  // proportionality repair. Held back until the rail has been measured, so the
+  // server and the first client render agree on an unshifted layout.
+  const labelNudges = useMemo(
+    () => (labelSpan === null
+      ? new Map<number, number>()
+      : labelShifts(
+          model.points.map((point) => point.position),
+          new Set([...mandatoryLabels, ...extraLabels]),
+          labelSpan,
+        )),
+    [model.points, mandatoryLabels, extraLabels, labelSpan],
   );
   // The Today chip negotiates for space like every label does: when an
   // above-side labelled point sits within its band, the chip yields to the
@@ -623,26 +834,30 @@ function Journey({
         "--timeline-position-stack": `${model.todayStackPosition ?? model.todayPosition}%`,
       };
   const nextMilestone = model.points.find((point) => point.isNext) ?? null;
-  // The cap under the rail's end names the destination. When the final
-  // milestone already carries that name as its persistent label, a second
-  // "Wedding day" stacked in the same corner is noise, not orientation.
-  const finishCandidate = model.percent === 100
-    ? "Complete"
-    : timeline.primaryDate?.label ?? "Finish";
-  const lastPointTitle = model.points.at(-1)?.item.title.trim().toLowerCase();
-  const finishCapLabel = lastPointTitle === finishCandidate.trim().toLowerCase()
-    ? null
-    : finishCandidate;
+  // The caps under the rail's ends come from the model, because what they may
+  // say depends on whether the rail is a calendar at all: real dates when it
+  // is, sequence words when it is not. "Start"/"Finish" on an ordered rail
+  // would re-assert the temporal reading the ordered mode exists to refuse.
+  const caps = timelineRailCaps(model);
+  const axisNote = timelineAxisNote(model);
+  // One name for this milestone, spoken the same way on the mark, in the Today
+  // marker and in the keyboard instructions. The instructions used to call it
+  // "the project's next milestone" on a page that had already introduced
+  // itself as a wedding.
   const todayLabel = model.todayPosition === null
     ? null
-    : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
-  const instructions = model.todayPosition === null
-    ? "Milestones without dates are arranged in plan order. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail."
-    : "The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.";
+    : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` ${MILESTONE_RAIL_LABELS.current} is ${nextMilestone.item.title}.` : ""}`;
+  // The rail's span, stated in words. The month ticks and the Today dash are
+  // aria-hidden decoration, so without this sentence the axis was invisible to
+  // low vision and absent from assistive technology at once.
+  const axisDescription = timelineAxisDescription(model);
+  const instructions = model.axis.mode === "ordered"
+    ? `${axisDescription} Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`
+    : `${axisDescription} The highlighted point is ${MILESTONE_RAIL_LABELS.current.toLowerCase()}. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`;
 
   return (
     <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
-      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>Project timeline</h2>
+      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
       <p className={styles.screenReaderOnly} id={instructionsId}>
         {instructions}
       </p>
@@ -650,16 +865,33 @@ function Journey({
         className={styles.railFrame}
         data-overflow-start={overflowStart ? "true" : undefined}
         data-overflow-end={overflowEnd ? "true" : undefined}
+        role="group"
+        aria-roledescription="timeline axis"
+        aria-label={axisDescription}
       >
         <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
-          <div className={styles.stage} style={stageStyle}>
+          <div className={styles.stage} ref={stageRef} style={stageStyle}>
+            {/* One statement, one number.
+                The ink is drawn to the furthest completed dot, because the
+                rail is a date axis and a fill that stopped anywhere else
+                would end at a date that means nothing — two coordinate
+                systems sharing one line, which is exactly what the dots and
+                the fill exist not to be. That decision stands.
+                What did not stand was this element claiming a different
+                number from the one it paints: `aria-valuenow` carried the
+                count percentage (40 on a plan whose ink reaches 0.34 of the
+                rail), so the bar's machine value and its drawing disagreed.
+                The value now tracks the drawing. The sentence a screen
+                reader actually announces is `aria-valuetext`, and that is
+                unchanged and still the honest count — the same words the
+                metric prints, so screen and screen reader agree. */}
             <div
               className={styles.progressGeometry}
               role="progressbar"
               aria-label="Milestone completion"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={model.percent}
+              aria-valuenow={Math.round(model.completedFrontier ?? 0)}
               aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
             >
               <span className={styles.baseRail} aria-hidden="true" />
@@ -744,12 +976,14 @@ function Journey({
                     || index === Math.max(0, firstUnfinished - 1)
                     || index === model.points.length - 1;
                   const extraLabel = !persistentLabel && extraLabels.has(index);
+                  const nudge = labelNudges.get(index) ?? 0;
                   const pointStyle: PositionStyle = {
                     "--timeline-position": `${point.position}%`,
                     "--timeline-position-stack": `${point.stackPosition}%`,
                     "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
+                    ...(nudge === 0 ? {} : { "--timeline-label-shift": String(nudge) }),
                   };
-                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
+                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : NO_TIMING_LABEL;
 
                   return (
                     <li
@@ -757,6 +991,7 @@ function Journey({
                       data-state={point.state}
                       data-selected={selected ? "true" : undefined}
                       data-labelled={persistentLabel ? "true" : extraLabel ? "extra" : "false"}
+                      data-label-shifted={nudge === 0 ? undefined : "true"}
                       data-side={index % 2 === 0 ? "above" : "below"}
                       data-edge={index === 0 ? "start" : index === model.points.length - 1 ? "end" : undefined}
                       key={point.item.publicId}
@@ -770,7 +1005,7 @@ function Journey({
                         aria-pressed={selected}
                         aria-expanded={selected ? detailOpen : false}
                         aria-controls={selected ? detailId : undefined}
-                        aria-label={`${point.item.title}. ${timelinePointStatus(point)}. ${timing}. Milestone ${index + 1} of ${model.points.length}.`}
+                        aria-label={`${point.item.title}. ${timelinePointStatus(point)}. ${timing}. ${milestonePlace(index + 1, model.points.length)}.`}
                         ref={(node) => { pointRefs.current[index] = node; }}
                         onFocus={() => setFocusIndex(index)}
                         onKeyDown={(event) => handleKeyDown(event, index)}
@@ -778,6 +1013,7 @@ function Journey({
                           setFocusIndex(index);
                           setSelectedId(point.item.publicId);
                           setDetailOpen(true);
+                          revealDetail();
                         }}
                       >
                         <span className={styles.point} aria-hidden="true" />
@@ -794,31 +1030,27 @@ function Journey({
               </p>
             )}
 
-            <span className={styles.startCap} aria-hidden="true">Start</span>
-            {finishCapLabel ? (
-              <span className={styles.finishCap} aria-hidden="true">
-                {finishCapLabel}
-              </span>
+            {caps.start ? (
+              <span className={styles.startCap} aria-hidden="true">{caps.start}</span>
+            ) : null}
+            {caps.finish ? (
+              <span className={styles.finishCap} aria-hidden="true">{caps.finish}</span>
             ) : null}
           </div>
         </div>
       </div>
 
-      {/* Paper has no hover: the printed page carries every milestone as a
-          ruled index beneath the rail, so the keepsake keeps its content. */}
-      {model.points.length ? (
-        <ol className={styles.printIndex} aria-hidden="true">
-          {model.points.map((point) => (
-            <li key={point.item.publicId}>
-              <span>{timelinePointStatus(point)}</span>
-              <strong>{point.item.title}</strong>
-              <span>
-                {point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}
-              </span>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+      {/* An ordered rail looks exactly like a time axis and is not one, so it
+          says so where the viewer is looking. A dated rail already declares
+          itself with month names and the Today dash and stays quiet. */}
+      {axisNote ? <p className={styles.axisNote}>{axisNote}</p> : null}
+
+      {/* Paper has no hover, and it used to be handed a second copy of every
+          milestone as a ruled index under the rail — the same plan rendered
+          twice into one document. The list above is now the only one: print
+          stands it up as the stacked rail, where every label is visible and
+          nothing collides, so the keepsake keeps its content without the
+          artifact saying anything twice. */}
 
       <p className={styles.screenReaderOnly} aria-live="polite" aria-atomic="true">
         {detailOpen && selectedPoint
@@ -827,6 +1059,7 @@ function Journey({
       </p>
       {detailOpen && selectedPoint ? (
         <MilestoneDetail
+          sectionRef={detailRef}
           point={selectedPoint}
           ordinal={model.points.findIndex(
             (candidate) => candidate.item.publicId === selectedPoint.item.publicId,
@@ -872,6 +1105,14 @@ export function TimelineArtifact({
 }: TimelineArtifactProps) {
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
+  const presentation = timelinePresentation(model);
+  // The artifact's own nouns, read from the module's one vocabulary rather
+  // than decided here. The kicker, the section heading and the purpose line
+  // used to be two local functions and a hard-coded heading, and only the
+  // heading was not audience-aware — so a wedding page introduced itself as a
+  // wedding timeline and then announced "Project timeline" to a screen reader
+  // six lines later.
+  const nouns = timelineNouns(timeline.audienceKind);
 
   return (
     <article
@@ -880,6 +1121,8 @@ export function TimelineArtifact({
       data-compact={compact ? "true" : undefined}
       data-embedded={embedded ? "true" : undefined}
       data-density={model.density}
+      data-axis={model.axis.mode}
+      data-title-length={artifactTitleLength(timeline.label)}
     >
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
@@ -892,15 +1135,24 @@ export function TimelineArtifact({
         ) : null}
         <div className={styles.titleRow}>
           <div className={styles.headerCopy}>
-            <p className={styles.heroKicker}>{artifactKicker(timeline)}</p>
+            <p className={styles.heroKicker}>{nouns.kicker}</p>
             <h1>{timeline.label}</h1>
-            <p className={styles.purpose}>{artifactPurpose(timeline)}</p>
+            <p className={styles.purpose}>{nouns.purpose}</p>
           </div>
           <TimeLens timeline={timeline} model={model} />
         </div>
       </header>
 
-      <Journey timeline={timeline} model={model} idPrefix={reactId} />
+      {presentation === "sequence-card" ? (
+        <SequenceState heading={nouns.heading} model={model} idPrefix={reactId} />
+      ) : (
+        <Journey
+          heading={nouns.heading}
+          timeline={timeline}
+          model={model}
+          idPrefix={reactId}
+        />
+      )}
       <PlanningDecisions timeline={timeline} model={model} />
 
       <footer className={styles.footer}>

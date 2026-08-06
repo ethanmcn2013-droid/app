@@ -181,7 +181,24 @@
   --x-artifact-display-compact: clamp(3rem, 15vw, 4.7rem);
   --x-artifact-display-tracking: -0.065em;
   --x-artifact-display-leading: 0.88;
-  --x-artifact-metric: clamp(4.4rem, 8vw, 8rem);
+  /* The metric is DERIVED from the display, at a ratio below one.
+     It used to be its own clamp — clamp(4.4rem, 8vw, 8rem) — which put the
+     countdown at 115px beside a 96px project name at 1440, and at 70px beside
+     a 58px name on a phone. The counter outranked the couple's own name at
+     every width, so the loudest thing on a wedding page was the number of days
+     left rather than whose wedding it was. One ratio, applied to whichever
+     display step is in force, makes that impossible to reintroduce: the name
+     always wins by construction rather than by two clamps happening to agree.
+     The three step-downs are for longer values (three digits, four digits, a
+     word), each a fraction of the metric so the whole ladder moves together. */
+  --x-artifact-metric-ratio: 0.78;
+  --x-artifact-metric: calc(var(--x-artifact-display) * var(--x-artifact-metric-ratio));
+  --x-artifact-metric-compact: calc(
+    var(--x-artifact-display-compact) * var(--x-artifact-metric-ratio)
+  );
+  --x-artifact-metric-three: calc(var(--x-artifact-metric) * 0.87);
+  --x-artifact-metric-four: calc(var(--x-artifact-metric) * 0.71);
+  --x-artifact-metric-word: calc(var(--x-artifact-metric) * 0.79);
   --x-artifact-metric-tracking: -0.08em;
   --x-artifact-metric-leading: 0.7;
 

@@ -391,28 +391,6 @@ export async function isWorkspacePublished(
   return manualNodeRows.length > 0;
 }
 
-/**
- * Publish all projects in a workspace. Sets published_at to now() on every
- * project row. Owner-only, callers must verify ownership before calling.
- */
-export async function publishWorkspace(workspaceSlug: string): Promise<void> {
-  await db
-    .update(projects)
-    .set({ publishedAt: new Date() })
-    .where(eq(projects.workspaceSlug, workspaceSlug));
-}
-
-/**
- * Unpublish all projects in a workspace. Sets published_at to null.
- * Owner-only, callers must verify ownership before calling.
- */
-export async function unpublishWorkspace(workspaceSlug: string): Promise<void> {
-  await db
-    .update(projects)
-    .set({ publishedAt: null })
-    .where(eq(projects.workspaceSlug, workspaceSlug));
-}
-
 /** Create a new project in a workspace. Slug must be unique within the workspace.
  *  publishedAt: if the workspace is currently published, pass new Date() so the
  *  new project inherits the published state and the public view stays live. */

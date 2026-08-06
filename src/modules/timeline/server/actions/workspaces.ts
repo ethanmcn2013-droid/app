@@ -13,8 +13,6 @@ import {
   getProjectsForWorkspace,
   getEffectiveNodesForWorkspace,
   seedWorkspaceFromTemplate,
-  publishWorkspace,
-  unpublishWorkspace,
   isWorkspacePublished,
   writeRoadmapNodes,
   upsertNodeOverlay,
@@ -568,111 +566,6 @@ export async function reorderNodesAction(
   revalidatePath("/app/timeline");
   revalidatePath(`/app/timeline/${projectSlug}`);
 
-  return { ok: true };
-}
-
-// ---------------------------------------------------------------------------
-// Publish / Unpublish workspace
-// ---------------------------------------------------------------------------
-
-export type PublishResult = { ok: true } | { error: string };
-
-/**
- * Publish all projects in the owner's workspace.
- * Sets published_at on every project row. /{workspaceSlug}/... public URLs
- * become live and no-auth forwardable after this action.
- *
- * Hard-refuses an empty publish (D2, P0-2): a workspace with no projects or
- * no tasks produces a blank public roadmap. The owner pressing Publish on an
- * empty workspace believed it would go live; instead they get a calm,
- * actionable message. published_at is never set on this path.
- */
-export async function publishWorkspaceAction(
-  workspaceSlug: string,
-): Promise<PublishResult> {
-  const userId = await requireUser();
-  const workspace = await getWorkspace(workspaceSlug);
-  if (!workspace || workspace.ownerUserId !== userId) {
-    return { error: "Workspace not found." };
-  }
-
-  // Guard: refuse to publish a workspace that has no content to share.
-  // Check projects first (cheap list), then tasks (one-fetch existence check).
-  const existingProjects = await getProjectsForWorkspace(workspaceSlug);
-  if (existingProjects.length === 0) {
-    return {
-      error:
-        "Add at least one project before publishing. Your roadmap needs something to share.",
-    };
-  }
-
-  // Use effective nodes (synced tasks + manual overlays), same source the
-  // curation surface renders. A manual-only roadmap (source="manual" rows,
-  // no tasks rows) is valid content and must not be blocked by a tasks-only check.
-  const effectiveNodes = await getEffectiveNodesForWorkspace(workspaceSlug);
-  const visibleNodes = effectiveNodes.filter((n) => !n.hidden);
-  if (visibleNodes.length === 0) {
-    return {
-      error:
-        "Add items to your projects before publishing. Your plan needs something to share.",
-    };
-  }
-
-  await publishWorkspace(workspaceSlug);
-  // Both empty-content guards above returned before this point, so reaching
-  // here means a real publish committed.
-  await recordSponsoredUse(
-    {
-      product: "timeline",
-      kind: "timeline_published",
-      objectKey: workspaceSlug,
-      subjectId: userId,
-      workspaceId: workspace.suiteWorkspaceId,
-    },
-    true,
-  );
-  // Revalidate the authed dashboard in the unified app.
-  revalidatePath("/app/timeline");
-  // PARITY NOTE (manifest §revalidation contracts): the DB write above sets
-  // publishedAt on the Timeline Turso row. The PUBLIC deployment at
-  // timeline.signalstudio.ie is a separate Next.js app — this unified app
-  // CANNOT revalidatePath across deployments. The public page picks up the
-  // change within its ISR window (revalidate=300, ~5 min). Document in
-  // cutover runbook and Phase 9 checks. No revalidatePath(`/${workspaceSlug}`)
-  // here — it would target the unified app's own route namespace, not the
-  // public Timeline deployment.
-  return { ok: true };
-}
-
-/**
- * Unpublish all projects in the owner's workspace.
- * Sets published_at to null. Non-owner visitors to /{workspaceSlug}/...
- * will see a "Not published yet" state instead of the roadmap.
- */
-export async function unpublishWorkspaceAction(
-  workspaceSlug: string,
-): Promise<PublishResult> {
-  const userId = await requireUser();
-  const workspace = await getWorkspace(workspaceSlug);
-  if (!workspace || workspace.ownerUserId !== userId) {
-    return { error: "Workspace not found." };
-  }
-  await unpublishWorkspace(workspaceSlug);
-  await recordSponsoredUse(
-    {
-      product: "timeline",
-      kind: "timeline_visibility_changed",
-      objectKey: workspaceSlug,
-      subjectId: userId,
-      workspaceId: workspace.suiteWorkspaceId,
-    },
-    true,
-  );
-  // Revalidate the authed dashboard in the unified app.
-  revalidatePath("/app/timeline");
-  // PARITY NOTE: same as publishWorkspaceAction — DB write is sufficient.
-  // Public Timeline deployment picks up the unpublished state within its
-  // own ISR window. See cutover runbook.
   return { ok: true };
 }
 

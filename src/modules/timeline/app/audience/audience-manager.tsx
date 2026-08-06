@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState } from "react";
 import {
   connectSuiteWorkspaceAction,
   createAudiencePublicationAction,
@@ -22,14 +22,17 @@ import {
   publicationStateLabel,
 } from "@/modules/timeline/lib/format";
 import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
+import { MILESTONE_STATE_OPTIONS } from "@/modules/timeline/lib/vocabulary";
+import {
+  ActionNotice,
+  ArmedSubmitButton,
+  ShareReceipt,
+  fieldClass,
+  primaryButton,
+  quietButton,
+} from "./share-controls";
 
 const INITIAL: AudienceActionState = { status: "idle" };
-const fieldClass =
-  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
-const quietButton =
-  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
-const primaryButton =
-  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
 
 type SourceNode = Readonly<{
   id: string;
@@ -37,145 +40,6 @@ type SourceNode = Readonly<{
   targetDate: string | null;
   lane: string;
 }>;
-
-/**
- * Two presses for actions that kill live links. The first press arms the
- * button and names the consequence; the second submits. Arming lapses on its
- * own, so an accidental click costs nothing and a modal never interrupts.
- */
-function ArmedSubmitButton({
-  label,
-  armedLabel,
-  disabled,
-}: {
-  label: string;
-  armedLabel: string;
-  disabled?: boolean;
-}) {
-  const [armed, setArmed] = useState(false);
-  const disarmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  return (
-    <button
-      type="submit"
-      disabled={disabled}
-      aria-live="polite"
-      className={quietButton}
-      style={armed ? { borderColor: "var(--x-timeline-alarm)", color: "var(--x-timeline-alarm)" } : undefined}
-      onClick={(event) => {
-        if (armed) return;
-        event.preventDefault();
-        setArmed(true);
-        if (disarmTimer.current) clearTimeout(disarmTimer.current);
-        disarmTimer.current = setTimeout(() => setArmed(false), 4000);
-      }}
-      onBlur={() => {
-        if (disarmTimer.current) clearTimeout(disarmTimer.current);
-        setArmed(false);
-      }}
-    >
-      {armed ? armedLabel : label}
-    </button>
-  );
-}
-
-function ActionNotice({ state }: { state: AudienceActionState }) {
-  if (state.status === "idle") return null;
-  return (
-    <p
-      role="status"
-      className="mt-3 text-sm leading-6"
-      style={{ color: state.status === "error" ? "var(--x-timeline-alarm)" : "var(--ink-soft)" }}
-    >
-      {state.message}
-    </p>
-  );
-}
-
-function ShareReceipt({ state }: { state: AudienceActionState }) {
-  const [copyStatus, setCopyStatus] = useState<
-    "idle" | "copied" | "manual"
-  >("idle");
-  const inputRef = useRef<HTMLInputElement>(null);
-  if (!state.shareUrl) return null;
-
-  function selectLink() {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }
-
-  async function copyLink() {
-    setCopyStatus("idle");
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard API unavailable");
-      }
-      await navigator.clipboard.writeText(state.shareUrl!);
-      setCopyStatus("copied");
-    } catch {
-      setCopyStatus("manual");
-      requestAnimationFrame(selectLink);
-    }
-  }
-
-  return (
-    <div
-      className="tl-rise-in mt-3 rounded-lg border border-line-soft bg-white p-3"
-      style={{ boxShadow: "inset 2px 0 0 var(--accent)" }}
-    >
-      <p
-        className="font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
-        style={{ color: "var(--accent-hover)" }}
-      >
-        One-time share link
-      </p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-        <input
-          ref={inputRef}
-          aria-label="New Audience Timeline share link"
-          readOnly
-          value={state.shareUrl}
-          className={`${fieldClass} min-w-0 flex-1 font-mono text-xs`}
-          onFocus={(event) => event.currentTarget.select()}
-        />
-        <button
-          type="button"
-          className={quietButton}
-          onClick={() => void copyLink()}
-        >
-          {copyStatus === "copied" ? "Copied" : "Copy link"}
-        </button>
-      </div>
-      <p
-        role="status"
-        aria-live="polite"
-        className={
-          copyStatus === "idle"
-            ? "sr-only"
-            : "mt-2 text-xs text-ink-soft"
-        }
-      >
-        {copyStatus === "copied"
-          ? "Share link copied."
-          : copyStatus === "manual"
-            ? "Automatic copy was blocked. The link is selected; use your device's copy command."
-            : ""}
-      </p>
-      {copyStatus === "manual" ? (
-        <button
-          type="button"
-          className={`${quietButton} mt-2`}
-          onClick={selectLink}
-        >
-          Select link again
-        </button>
-      ) : null}
-      <p className="mt-2 text-xs text-ink-quiet">
-        Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
-      </p>
-    </div>
-  );
-}
 
 export function AudienceManager({
   workspaceSlug,
@@ -392,7 +256,7 @@ export function AudienceManager({
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
-                      <p className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+                      <p className="flex items-center gap-2 text-xs font-medium text-ink-quiet">
                         <span
                           aria-hidden
                           className="h-1.5 w-1.5 rounded-full"
@@ -448,10 +312,14 @@ export function AudienceManager({
                       itself, not just from view. Your own plan keeps it.
                     </p>
                     <div className="mt-3 flex flex-wrap items-end gap-2">
+                      {/* These two labels sit on a sunken card, where
+                          --ink-quiet measures 4.40:1 and misses AA for normal
+                          text at any size. --ink-soft clears it; the rest of
+                          this surface's labels are on white and already do. */}
                       <form action={primaryDateAction} className="flex flex-wrap items-end gap-2">
                         <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                         <input type="hidden" name="publicationId" value={publication.id} />
-                        <label className="text-xs font-medium text-ink-quiet">
+                        <label className="text-xs font-medium text-ink-soft">
                           What to call it
                           <input
                             className={`${fieldClass} mt-1 w-44`}
@@ -461,7 +329,7 @@ export function AudienceManager({
                             placeholder="The day"
                           />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
+                        <label className="text-xs font-medium text-ink-soft">
                           Date
                           <input
                             className={`${fieldClass} mt-1 w-44`}
@@ -514,12 +382,16 @@ export function AudienceManager({
                         </label>
                         <label className="text-xs font-medium text-ink-quiet sm:contents">
                           <span className="sm:sr-only">Shared state</span>
+                          {/* The five state words come from the module's one
+                              vocabulary, so the publish step cannot offer a
+                              different set from the Milestones editor that
+                              set them. */}
                           <select className={`${fieldClass} mt-1 sm:mt-0`} name="state" defaultValue={item.state}>
-                            <option value="covered">Covered</option>
-                            <option value="now">Now</option>
-                            <option value="next">Next</option>
-                            <option value="later">Later</option>
-                            <option value="cancelled">Cancelled</option>
+                            {MILESTONE_STATE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                         </label>
                         <button disabled={updatePending} className={quietButton}>Save copy</button>

@@ -13,6 +13,7 @@ import {
 } from "@/modules/timeline/server/db/timeline-schema";
 import { db } from "@/modules/timeline/server/db/timeline-client";
 import { checkRateLimit, getClientIp } from "@/modules/timeline/lib/rate-limit";
+import { MILESTONE_STATE_LABELS } from "@/modules/timeline/lib/vocabulary";
 import {
   getEffectiveNodesForWorkspace,
   getProjectsForWorkspace,
@@ -20,7 +21,6 @@ import {
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_TIMELINE_DTO_VERSION,
-  SECTION_LABELS,
   calendarDateInTimeZone,
   digestSourceFields,
   freezeAudienceItem,
@@ -844,7 +844,7 @@ export const resolveAudienceTimeline = cache(async (
     today: calendarDateInTimeZone(new Date(), publication.timezone),
     sections: AUDIENCE_ITEM_STATES.map((state) => ({
       state,
-      label: SECTION_LABELS[state],
+      label: MILESTONE_STATE_LABELS[state],
       items: items
         .filter((item) => item.state === state)
         .map((item) => ({

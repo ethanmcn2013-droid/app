@@ -1085,7 +1085,7 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Edit milestones",
+              "name": "Milestones",
               "proves": [
                 "populated"
               ]
@@ -1093,7 +1093,15 @@
             {
               "kind": "role",
               "role": "link",
-              "name": "Preview and share",
+              "name": "Preview",
+              "proves": [
+                "populated"
+              ]
+            },
+            {
+              "kind": "role",
+              "role": "button",
+              "name": "Share",
               "proves": [
                 "populated"
               ]
@@ -1125,6 +1133,37 @@
         {
           "label": "Timeline curation module boundary",
           "contains": "TimelineProjectPage"
+        },
+        {
+          "label": "defence-in-depth call",
+          "contains": "await requireAppAccess()"
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "populated",
+        "loading",
+        "error",
+        "empty",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
+      "id": "tasks.page.app-timeline-by-project-slug-preview",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        {
+          "label": "force-dynamic export",
+          "contains": "force-dynamic"
+        },
+        {
+          "label": "requireAppAccess gate",
+          "contains": "requireAppAccess"
+        },
+        {
+          "label": "Timeline preview module boundary",
+          "contains": "TimelineProjectPreviewPage"
         },
         {
           "label": "defence-in-depth call",

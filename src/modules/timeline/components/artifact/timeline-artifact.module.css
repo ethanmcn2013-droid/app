@@ -3,8 +3,27 @@
   --x-timeline-gutter: clamp(var(--space-4), 4.2vw, var(--space-10));
   --x-timeline-hit: 3rem;
   --x-timeline-pitch: 5.25rem;
+  /* One labelled rail point, measured from the rail outward: half the touch
+     target the label hangs off, the label's own offset, then the label — a
+     status line, a title and a date with the two gaps between them. The
+     density tiers divide this by the rail's own 48% to size the stage. */
+  --x-timeline-label-block: calc(
+    var(--x-timeline-hit) / 2 + var(--space-6) + 4.5rem
+  );
+  /* The gap between the artifact's parts. One knob, so a plan with little to
+     say does not have to manufacture the whitespace of a plan with a lot —
+     the density tiers below step it down rather than each part carrying its
+     own private minimum. */
+  --x-timeline-rhythm: clamp(var(--space-8), 6vw, var(--space-11));
+  --x-timeline-rhythm-tight: clamp(var(--space-6), 3.5vw, var(--space-8));
   width: min(100%, var(--x-timeline-max));
   min-height: 100dvh;
+  /* The page fills the screen and the footer rests at its foot. Before this
+     the 100dvh floor left the footer stranded mid-page with blank paper under
+     it whenever the plan was short; the height was claimed and nothing was
+     done with it. */
+  display: flex;
+  flex-direction: column;
   margin-inline: auto;
   overflow: clip;
   padding: 0 var(--x-timeline-gutter) max(var(--space-7), env(safe-area-inset-bottom));
@@ -74,12 +93,22 @@
   background: var(--accent);
 }
 
+/* ── The metadata layer reads in the same voice as the headline ─────────────
+   Every date, status line, kicker, rail cap, detail label and footnote in this
+   artifact used to be set in Geist Mono, most of them at 10-11px, several of
+   them uppercase and tracked. That is the register of a technical readout, and
+   it was bolted onto a display face at 96px: two typographic voices on one
+   page, and the quieter of the two doing all the talking.
+   The metadata is now Geist sans in the reading range (12-13px), sentence
+   case, no tracking. Mono is kept only where it earns its keep — the share
+   link, which is a string to be copied character by character, and nothing
+   else on this page. Tabular numerals stay wherever numbers have to line up;
+   that is a numeric feature of the sans face, not a second font. */
 .productMeta {
   display: flex;
   align-items: center;
   gap: var(--space-5);
   color: var(--ink-faint);
-  font-family: var(--font-mono);
   font-size: var(--text-caption);
 }
 
@@ -126,7 +155,7 @@ button.timeLens:active {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   gap: clamp(var(--space-7), 6vw, var(--space-11));
-  margin-block-start: clamp(var(--space-8), 6vw, var(--space-11));
+  margin-block-start: var(--x-timeline-rhythm);
 }
 
 /* ── Load choreography ────────────────────────────────────────────────────────
@@ -189,14 +218,15 @@ button.timeLens:active {
   margin: 0;
 }
 
+/* The line that introduces the page to a guest who has never seen this
+   product. It was 11px of tracked uppercase mono, which reads as a system
+   label above a name, not as the first thing a person is told. */
 .heroKicker {
   margin-block-end: var(--space-4);
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  line-height: var(--x-lead-ui);
 }
 
 .header h1 {
@@ -205,7 +235,35 @@ button.timeLens:active {
   font-weight: var(--weight-semibold);
   letter-spacing: var(--x-artifact-display-tracking);
   line-height: var(--x-artifact-display-leading);
+  /* A name is user content and can be anything: one unbroken 40-character
+     word must fold rather than run under the metric or out through the
+     artifact's own clip. */
+  overflow-wrap: break-word;
   text-wrap: balance;
+}
+
+/* A long name is not bolder at display size — it is four lines of headline
+   pushing the plan off the screen. The compact step of the same exhibition
+   register takes it, and the measure widens so the extra words use the column
+   they already have rather than adding lines. Nothing is truncated: the name
+   the owner typed is the name that shows. */
+.artifact[data-title-length="long"] .header h1 {
+  max-width: 22ch;
+  font-size: var(--x-artifact-display-compact);
+  line-height: 0.94;
+}
+
+/* Past three lines of the compact measure the name is not display type at any
+   size — it is a title, and it reads at the ramp's own title step. The exhibition
+   register deliberately stops here rather than growing a third private clamp:
+   its token comment forbids that, and a 100-character committee name has left
+   exhibition scale behind. The measure widens with it so the extra words spend
+   the column they already have. */
+.artifact[data-title-length="epic"] .header h1 {
+  max-width: 34ch;
+  font-size: var(--text-title);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .purpose {
@@ -227,7 +285,6 @@ button.timeLens:active {
   position: relative;
   width: 100%;
   min-width: 0;
-  min-height: 12.5rem;
   display: grid;
   justify-items: end;
   margin: 0;
@@ -244,17 +301,19 @@ button.timeLens {
   cursor: pointer;
 }
 
+/* The two faces share one grid cell, so the box is exactly as tall as the
+   face inside it — no declared height to be wrong about. The toggle version
+   additionally floors the box at the taller face's height (below), because a
+   metric that resized itself on every press would move the whole page. */
 .metricViewport {
   position: relative;
-  display: block;
+  display: grid;
   width: 100%;
-  height: clamp(8.25rem, 11vw, 10rem);
   overflow: clip;
 }
 
 .metricMotion {
-  position: absolute;
-  inset: 0;
+  grid-area: 1 / 1;
   display: block;
 }
 
@@ -276,18 +335,33 @@ button.timeLens {
 }
 
 .metricFace {
-  position: absolute;
-  inset: 0;
   display: grid;
   align-content: start;
   justify-items: end;
+}
+
+/* Only the face that can swap needs a reserved box, and the reservation is
+   read off the type it holds rather than guessed.
+   Both faces, not one: the countdown is a numeral at the metric size on its
+   own tight leading, and the progress face is a sentence at the section step
+   that is allowed to take two lines. Reserving only the first meant pressing
+   the toggle resized the box and moved the page, which is the exact thing a
+   reserved box exists to prevent. */
+.timeLens[data-timeline-metric-toggle] .metricViewport {
+  min-height: calc(
+    max(
+      var(--x-artifact-metric) * var(--x-artifact-metric-leading),
+      var(--text-section) * var(--leading-section) * 2
+    )
+    + var(--text-caption) * 2.8
+    + var(--space-3) * 2
+  );
 }
 
 .metricLabel,
 .metricReceipt,
 .metricAlternate,
 .metricDate {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 
@@ -297,12 +371,21 @@ button.timeLens {
   font-weight: var(--weight-medium);
 }
 
+/* ── The numeral and its unit are one object ────────────────────────────────
+   The size lives on the lockup rather than on the numeral, so the unit is a
+   fraction of the number it belongs to and cannot drift out of proportion with
+   it. It was a clamp of its own in a different family, hung from the numeral's
+   top edge — a mono "days" floating beside a sans "79". Now: same family, same
+   colour family, sitting on the numeral's baseline with an optical gap
+   measured in the numeral's own em. */
 .metricPrimary {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
   justify-content: flex-end;
+  gap: 0.14em;
   margin-block-start: var(--space-3);
   color: var(--ink);
+  font-size: var(--x-artifact-metric);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--x-artifact-metric-tracking);
   line-height: var(--x-artifact-metric-leading);
@@ -310,30 +393,46 @@ button.timeLens {
 }
 
 .metricPrimary strong {
-  font-size: var(--x-artifact-metric);
+  font-size: 1em;
   font-weight: var(--weight-medium);
 }
 
 /* ── Metric fit-by-construction ─────────────────────────────────────────────
    Tabular numerals make width deterministic, so each face declares its width
    class (data-metric-scale) and every class is sized to clear the column —
-   including "Today", the one word face, on the one day it appears. */
+   including "Today", the one word face, on the one day it appears.
+   Every one of these is derived from the display register in globals.css at a
+   ratio below 1, so a four-digit countdown steps down from a three-digit one
+   and all of them stay under the project's own name. */
 
-.timeLens[data-metric-scale="three"] .metricPrimary strong {
-  font-size: clamp(4rem, 7vw, 6.9rem);
+.timeLens[data-metric-scale="three"] .metricPrimary {
+  font-size: var(--x-artifact-metric-three);
 }
 
-.timeLens[data-metric-scale="four"] .metricPrimary strong {
-  font-size: clamp(3.4rem, 6vw, 5.4rem);
+.timeLens[data-metric-scale="four"] .metricPrimary {
+  font-size: var(--x-artifact-metric-four);
 }
 
 .timeLens[data-metric-scale="word"] .metricPrimary {
+  font-size: var(--x-artifact-metric-word);
   letter-spacing: -0.05em;
   line-height: 0.8;
 }
 
-.timeLens[data-metric-scale="word"] .metricPrimary strong {
-  font-size: clamp(2.9rem, 5.6vw, 5.05rem);
+/* ── Progress, said once ────────────────────────────────────────────────────
+   "3 of 8 complete" is a sentence, not a number with a unit, so it takes a
+   ratified reading size and its own leading and tracking instead of the
+   exhibition metric's. It is allowed to wrap — a plan with three-digit counts
+   takes two lines rather than being clipped or shrunk out of the register —
+   and it carries no severed glyph beside it, because there is nothing left to
+   sever. */
+.timeLens[data-metric-scale="count"] .metricPrimary {
+  font-size: var(--text-section);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-section);
+  line-height: var(--leading-section);
+  text-wrap: balance;
+  white-space: normal;
 }
 
 /* Both facts, one static line — print only. */
@@ -342,10 +441,8 @@ button.timeLens {
 }
 
 .metricPrimary small {
-  margin-block-start: 0.12em;
   color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: clamp(0.8rem, 1.2vw, 1rem);
+  font-size: 0.26em;
   font-weight: var(--weight-regular);
   letter-spacing: 0;
   line-height: 1;
@@ -358,24 +455,45 @@ button.timeLens {
   font-size: var(--text-caption);
 }
 
+/* When the alternate line would have said exactly what this receipt already
+   says, the alternate stands down and the receipt takes the pressable
+   underline every text control in this artifact wears. The affordance stays
+   visible; the sentence is printed once. */
+.metricReceipt[data-metric-receipt-affordance="true"] {
+  padding-block-end: var(--space-1);
+  border-block-end: 1px solid var(--hairline);
+  transition: color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+}
+
+button.timeLens:hover .metricReceipt[data-metric-receipt-affordance="true"],
+button.timeLens:focus-visible .metricReceipt[data-metric-receipt-affordance="true"] {
+  border-block-end-color: var(--ink-faint);
+  color: var(--ink-soft);
+}
+
+/* Same one-cell stack as the metric above it, for the same reason: the line
+   was clipped by three pixels at every width because 1rem was a guess about
+   how tall a line of 11px text with a rule under it is. */
 .metricAlternateViewport {
   position: relative;
-  display: block;
+  display: grid;
+  justify-items: end;
   width: 100%;
-  height: 1rem;
+  /* Reserved off the line it holds, so the row keeps its place on the face
+     that does not print one. */
+  min-height: calc(var(--text-caption) * var(--x-lead-ui) + var(--space-1) + 1px);
   margin-block-start: var(--space-2);
-  overflow: clip;
+  overflow-x: clip;
 }
 
 .metricAlternate {
-  position: absolute;
-  inset-inline-end: 0;
+  grid-area: 1 / 1;
   display: inline-flex;
   padding-block-end: var(--space-1);
   border-block-end: 1px solid var(--hairline);
   color: var(--ink-faint);
-  font-size: var(--text-label);
-  line-height: 1.25;
+  font-size: var(--text-caption);
+  line-height: var(--x-lead-ui);
   transition: color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
 }
 
@@ -390,8 +508,8 @@ button.timeLens:focus-visible .metricAlternate {
   gap: var(--space-2);
   margin-block-start: var(--space-3);
   color: var(--ink-faint);
-  font-size: var(--text-label);
-  line-height: 1.2;
+  font-size: var(--text-caption);
+  line-height: var(--x-lead-ui);
 }
 
 .metricDate time::before {
@@ -403,7 +521,7 @@ button.timeLens:focus-visible .metricAlternate {
 .journey {
   /* The rail hangs close enough to the header to read as one plate; the
      whitespace between them is composed, not leftover. */
-  margin-block-start: clamp(var(--space-6), 3.5vw, var(--space-8));
+  margin-block-start: var(--x-timeline-rhythm-tight);
 }
 
 .railFrame {
@@ -455,9 +573,24 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .stage {
+  /* Content-aware, not assumed. The artifact-level budget above reserves a
+     flat 4.5rem for a label's status line, title and date, which is right
+     until a milestone title runs to three or four lines — and then the stage
+     stayed the same height and `overflow: clip` cut the date off the bottom.
+     The rail measures its tallest label and reports it here (see the geometry
+     effect in timeline-artifact.tsx); the budget takes whichever is larger, so
+     the fallback below is exactly today's behaviour before the measurement
+     lands, and no plan without JavaScript loses a millimetre it had. */
+  --x-timeline-label-block: calc(
+    var(--x-timeline-hit) / 2 + var(--space-6)
+      + max(4.5rem, var(--x-timeline-label-measured, 0px))
+  );
   position: relative;
   min-width: max(100%, calc(var(--timeline-point-count) * var(--x-timeline-pitch)));
-  min-height: clamp(18rem, 24vw, 21rem);
+  min-height: max(
+    clamp(18rem, 24vw, 21rem),
+    calc(var(--x-timeline-label-block) / 0.48)
+  );
   overflow: clip;
 }
 
@@ -512,22 +645,40 @@ button.timeLens:focus-visible .metricAlternate {
   inset-inline-start: var(--timeline-position);
   width: 1px;
   height: 0.5rem;
-  background: var(--ink-ghost);
   translate: -50% -50%;
   animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
 }
 
+/* The mark is painted by a pseudo-element rather than by the tick's own
+   background, the way the Today dash already is. The tick is the positioning
+   box for its NAME as well as for its hairline, and a name drawn inside a box
+   filled with ink is a name on ink as far as any tool reading computed styles
+   is concerned — including the contrast gate, which read every month on the
+   rail as text at 1:1. Same pixels, one fewer lie. */
+.monthTick::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Was --ink-ghost, which is 1.48:1 on paper. The month names are the only
+     thing on the rail that says what its spacing means, and they were set at
+     10px in a colour a third of the way to invisible — on the page a guest
+     receives, not an internal screen. --ink-faint is 4.83:1, so the tick and
+     its name both clear AA, and the mark stays a hairline. */
+  background: var(--ink-faint);
+}
+
+/* The month's own name, as a person writes it. It was 10px of tracked
+   uppercase mono, which is the smallest and most technical setting anywhere on
+   a page a guest receives. Sentence case at the caption step reads as the rail
+   annotating itself rather than as a machine label. */
 .monthTick > span {
   position: absolute;
   inset-block-start: calc(100% + var(--space-2));
   inset-inline-start: 50%;
-  color: var(--ink-ghost);
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
   font-weight: var(--weight-medium);
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-transform: uppercase;
+  line-height: var(--x-lead-flush);
   white-space: nowrap;
   translate: -50% 0;
 }
@@ -538,12 +689,21 @@ button.timeLens:focus-visible .metricAlternate {
   visibility: hidden;
 }
 
-/* Tightly-spaced months keep their labels only where four rail-percent is
-   real paper: below 980px (print included) the tick stays, the text goes. */
-@container timeline-artifact (max-width: 980px) {
-  .monthTick[data-tight="true"] > span {
-    visibility: hidden;
-  }
+/* A tick whose name would land on top of the previous one keeps its mark and
+   drops its text.
+
+   This used to be gated at 980px, and the gate was a consequence of the
+   spacing defect rather than of anything about width: when the marks were
+   shoved apart to clear their labels, everything else on the rail was bent
+   through the same distortion, so month boundaries bunched into stretches four
+   rail-percent wide and a breakpoint was needed to hide the pile-up on narrow
+   rails while keeping it on wide ones. Proportional spacing puts month
+   boundaries a month apart by construction — the shortest month on the longest
+   span that still draws months is 5.6 rail-percent — so the rule now fires
+   only where it is genuinely true, which is a plan spanning decades, and it
+   fires at every width because a collision is a collision. */
+.monthTick[data-tight="true"] > span {
+  visibility: hidden;
 }
 
 .todayMarker {
@@ -577,10 +737,9 @@ button.timeLens:focus-visible .metricAlternate {
   padding-inline: var(--space-1);
   background: var(--paper);
   color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  font-size: var(--text-caption);
   font-weight: var(--weight-medium);
-  line-height: 1;
+  line-height: var(--x-lead-flush);
   translate: -50% 0;
 }
 
@@ -643,11 +802,20 @@ button.timeLens:focus-visible .metricAlternate {
      complete  · a solid ink bead sitting ON the ink fill — settled
      current   · a full solid indigo mark, larger than the beads — the one
                  earned indigo moment on the rail, at full strength
-     overdue   · the same solid mark drawn in ink — it IS the next
-                 milestone, running late; the status text says so
+     overdue   · the same solid mark drawn in the module's restrained red —
+                 it IS the next milestone, running late; the status text
+                 says so
    Shape parity between current and overdue is deliberate: lateness changes
    the colour of the moment, never its importance. Size separates overdue
-   from the settled beads; the label and detail echo name it. */
+   from the settled beads; the label and detail echo name it.
+
+   Overdue was ink, and so was complete — the two states a viewer most needs
+   to tell apart computed to the same rgb(17,17,17), separated only by four
+   pixels of diameter. The mark keeps every one of its non-colour cues (the
+   larger diameter, the status line, the detail echo) and now spends colour on
+   the distinction as well. The red is the module's own --x-timeline-alarm,
+   already the overdue colour in the owner's curation surface, so late means
+   the same thing on both sides of the publish boundary. */
 
 .milestone[data-state="complete"] .point {
   width: 0.64rem;
@@ -665,7 +833,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .milestone[data-state="overdue"] .point {
-  background: var(--ink);
+  background: var(--x-timeline-alarm);
 }
 
 /* The rail's single spent motion: after the points settle, the next
@@ -677,22 +845,55 @@ button.timeLens:focus-visible .metricAlternate {
   animation-delay: var(--timeline-point-delay, 0s), 0.6s;
 }
 
-.milestone[data-selected="true"] .point,
-.milestoneButton:hover .point,
+/* ── Pointing at a milestone, and having chosen one ─────────────────────────
+   These were the same four pixels of ring. Hover, focus and selection are
+   three different facts — "your cursor is here", "your keyboard is here",
+   "this is the one being read below" — and a viewer on a phone, who has no
+   hover at all, was given no mark for the third.
+
+   So they separate by weight, and by whether they persist:
+     hover  · a soft ring; transient, and the lightest of the three
+     focus  · the same ring at full ink; this is the focus indicator
+     chosen · a heavier ring AND a stem down to the detail that is showing
+              it — the only one of the three that draws a second element,
+              because it is the only one that is still true after the pointer
+              leaves. */
+.milestoneButton:hover .point {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink-faint);
+}
+
 .milestoneButton:focus-visible .point {
   box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink);
 }
 
+/* Chosen: a DOUBLE ring — two rings of ink with paper between them. A single
+   ring is what hover and focus already draw, so selection needed its own
+   shape rather than its own thickness, and it had to stay inside the mark's
+   own footprint: a stem dropped toward the detail panel was tried and drew
+   straight through the month name underneath the rail. */
+.milestone[data-selected="true"] .point {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--ink),
+    0 0 0 7px var(--paper),
+    0 0 0 8px var(--ink);
+}
+
 /* The current mark never wears the selection halo — a ring around the solid
    indigo would hand the hollow back. It is already the one indigo object on
-   the rail; the label, the detail echo, and the button's own focus outline
-   carry selection. */
+   the rail; the stem, the label, and the detail echo carry selection. */
 .milestone[data-state="current"][data-selected="true"] .point,
 .milestone[data-state="current"] .milestoneButton:hover .point,
 .milestone[data-state="current"] .milestoneButton:focus-visible .point {
   box-shadow: none;
 }
 
+/* The label may move; the mark may not.
+   `--timeline-label-shift` is a rail-percent computed by the model
+   (`labelShifts`) and drawn in pixels here, because a percentage on this
+   element would resolve against its 3rem hit target rather than the rail. It
+   is the whole of the collision policy: a title that would sit on top of its
+   neighbour steps aside, and the dot it belongs to stays on its own date. */
 .milestoneLabel {
   position: absolute;
   inset-inline-start: 50%;
@@ -701,11 +902,38 @@ button.timeLens:focus-visible .metricAlternate {
   gap: var(--space-1);
   padding-inline: var(--space-1);
   background: var(--paper);
-  translate: -50% 0;
+  translate: calc(
+    -50% + var(--timeline-label-shift, 0) * var(--x-timeline-rail-width, 0px) / 100
+  ) 0;
   text-align: center;
   transition: opacity var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
+/* A label that stepped aside owes a line back to the mark it names, or it
+   reads as belonging to whichever dot it now sits above. One hairline, drawn
+   only on the labels that actually moved. */
+.milestone[data-label-shifted="true"] .milestoneLabel::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: calc(
+    50% - var(--timeline-label-shift, 0) * var(--x-timeline-rail-width, 0px) / 100
+  );
+  width: 1px;
+  height: var(--space-5);
+  background: var(--ink-ghost);
+}
+
+.milestone[data-side="above"][data-label-shifted="true"] .milestoneLabel::after {
+  inset-block-start: 100%;
+}
+
+.milestone[data-side="below"][data-label-shifted="true"] .milestoneLabel::after {
+  inset-block-end: 100%;
+}
+
+/* The end labels are anchored rather than centred, and `labelShifts` never
+   moves them for exactly that reason: they have already resolved their own
+   edge collision by growing inward. */
 .milestone[data-edge="start"] .milestoneLabel {
   translate: 0 0;
   text-align: start;
@@ -724,12 +952,13 @@ button.timeLens:focus-visible .metricAlternate {
   inset-block-start: calc(100% + var(--space-6));
 }
 
+/* The status line and the date under every mark. Two of the four things a
+   guest reads on the rail, and both were 11px mono. */
 .milestoneLabel > span,
 .milestoneLabel small {
   color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  line-height: 1.3;
+  font-size: var(--text-caption);
+  line-height: var(--x-lead-ui);
 }
 
 .milestone[data-state="current"] .milestoneLabel > span {
@@ -738,7 +967,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .milestone[data-state="overdue"] .milestoneLabel > span {
-  color: var(--ink);
+  color: var(--x-timeline-alarm);
   font-weight: var(--weight-semibold);
 }
 
@@ -756,18 +985,45 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-soft);
 }
 
+/* A label with no room is HIDDEN, not merely transparent.
+   `opacity: 0` alone left the text in the page: still measured, still picked
+   up by contrast tooling as an unreadable 1:1 node, and still exposed to some
+   assistive technology. On the proportional rail more labels are withheld in a
+   tight cluster than the old spread-out spacing ever withheld, which turned a
+   quiet wrongness into a loud one — eleven more phantom nodes on the review
+   plan alone. `visibility` takes it out of rendering and out of those tools
+   while opacity keeps the fade, and every rule that reveals a label turns both
+   back on. */
 .milestone[data-labelled="false"] .milestoneLabel,
 .milestone[data-labelled="extra"] .milestoneLabel {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
+  /* Hiding waits for the fade to finish; revealing does not, because the
+     revealing rules do not list visibility and so flip it at once. */
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    visibility 0s linear var(--motion-fast);
 }
 
-/* Collision-aware labels: points granted an "extra" label by the model show
-   it once the rail is wide enough for the label boxes to actually fit. */
-@container timeline-artifact (min-width: 980px) {
+/* Collision-aware labels: a point granted an "extra" label by the model has
+   already been checked against the rail's real width and its neighbours' real
+   label boxes, so there is nothing left for a breakpoint to second-guess.
+
+   This was gated at 980px while the model measured label width as a fixed 16
+   rail-percent — a number it could not check, and one that was wrong in both
+   directions: too generous on a nine-point rail, far too mean on a
+   twenty-two-point one, where the same eight labels showed at 390 and at 1920
+   because neither the model nor this gate could see that the rail is a
+   1848px scroll canvas at both. The model measures now (see the geometry
+   effect in timeline-artifact.tsx), so the gate is only the horizontal tier's
+   own floor: below it the rail stacks and every label shows anyway. */
+@container timeline-artifact (min-width: 621px) {
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
   }
 }
 
@@ -777,6 +1033,14 @@ button.timeLens:focus-visible .metricAlternate {
   z-index: 4;
   opacity: 1;
   color: var(--ink);
+  visibility: visible;
+}
+
+/* Selection carries into the title's own weight, so the chosen milestone is
+   distinguishable from a hovered one in a still frame and in greyscale. */
+.milestone[data-selected="true"] .milestoneLabel strong {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
 }
 
 .startCap,
@@ -784,8 +1048,7 @@ button.timeLens:focus-visible .metricAlternate {
   position: absolute;
   inset-block-start: calc(48% + var(--space-6));
   color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  font-size: var(--text-caption);
 }
 
 .startCap {
@@ -804,8 +1067,95 @@ button.timeLens:focus-visible .metricAlternate {
   font-size: var(--text-body-sm);
 }
 
+/* An ordered rail looks exactly like a time axis and is not one. The note
+   sits under the rail in the caps' own quiet register, so it reads as the
+   axis explaining itself rather than as a warning about the content. */
+.axisNote {
+  margin: var(--space-3) 0 0;
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+
+/* One milestone, no usable timing: no rail, so no dot that has to be
+   somewhere. The card claims the width it needs and no vertical minimum,
+   which is also why this state cannot overflow a viewport the way the
+   rail's stacked minimums do. */
+.sequenceCard {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 44ch;
+  margin-block-start: var(--space-5);
+  border-block-start: 1px solid var(--ink);
+  padding-block-start: var(--space-5);
+}
+
+.sequenceStep,
+.sequenceStatus {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: var(--text-caption);
+  line-height: var(--x-lead-ui);
+}
+
+/* The state carries the rail's own bead, so the compact state and the rail
+   are visibly the same system seen at two sizes. */
+.sequenceStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-soft);
+}
+
+.sequenceStatus::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.64rem;
+  height: 0.64rem;
+  border: 1px solid var(--ink-faint);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+}
+
+.sequenceCard[data-state="complete"] .sequenceStatus::before {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.sequenceCard[data-state="current"] .sequenceStatus::before,
+.sequenceCard[data-state="overdue"] .sequenceStatus::before {
+  width: 0.88rem;
+  height: 0.88rem;
+  border: 0;
+  background: var(--accent);
+}
+
+.sequenceCard[data-state="overdue"] .sequenceStatus::before {
+  background: var(--x-timeline-alarm);
+}
+
+.sequenceTitle {
+  max-width: 24ch;
+  margin: var(--space-1) 0 0;
+  font-size: clamp(1.45rem, 2.2vw, 2rem);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+.sequenceTiming {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+}
+
+/* No floor. The panel is exactly as tall as the milestone it is reading,
+   which on a one-milestone plan is the difference between a page that fits
+   and a page that does not. */
 .detail {
-  min-height: 10rem;
   border-block-start: 1px solid var(--ink);
 }
 
@@ -825,7 +1175,6 @@ button.timeLens:focus-visible .metricAlternate {
 .detailStatus,
 .detailFacts dt {
   color: var(--ink-faint);
-  font-family: var(--font-mono);
   font-size: var(--text-caption);
 }
 
@@ -865,7 +1214,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .detail[data-detail-state="overdue"] .detailStatus::before {
-  background: var(--ink);
+  background: var(--x-timeline-alarm);
 }
 
 .detailLead h3 {
@@ -935,7 +1284,6 @@ button.timeLens:focus-visible .metricAlternate {
 .decisions summary::after {
   content: "+";
   color: var(--ink-faint);
-  font-family: var(--font-mono);
   transition: rotate var(--motion-fast) var(--ease-out);
 }
 
@@ -978,11 +1326,12 @@ button.timeLens:focus-visible .metricAlternate {
 
 .decisions time {
   color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  font-size: var(--text-caption);
 }
 
 .footer {
+  /* Rests at the foot of the page rather than wherever the content stopped. */
+  margin-block-start: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -991,7 +1340,6 @@ button.timeLens:focus-visible .metricAlternate {
   padding-block: var(--space-5);
   border-block-start: 1px solid var(--hairline);
   color: var(--ink-faint);
-  font-family: var(--font-mono);
   font-size: var(--text-caption);
 }
 
@@ -1013,11 +1361,6 @@ button.timeLens:focus-visible .metricAlternate {
 .footerLink:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-}
-
-/* The print index exists for paper only (see below). */
-.printIndex {
-  display: none;
 }
 
 .artifact[data-compact="true"] {
@@ -1067,8 +1410,12 @@ button.timeLens:focus-visible .metricAlternate {
   min-width: 0;
 }
 
+/* The narrow lockup swaps the display step, so the metric — which is derived
+   from it — follows without a second ladder of clamps to keep in sync. Four
+   rules of hand-tuned sizes used to live here and four more in the 620px tier;
+   both sets put the counter above the name. */
 .artifact[data-compact="true"] .timeLens {
-  min-height: 7.75rem;
+  --x-artifact-metric: var(--x-artifact-metric-compact);
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
     "metric alternate"
@@ -1083,7 +1430,6 @@ button.timeLens:focus-visible .metricAlternate {
 
 .artifact[data-compact="true"] .metricViewport {
   grid-area: metric;
-  height: 7rem;
 }
 
 .artifact[data-compact="true"] .metricFace {
@@ -1093,22 +1439,6 @@ button.timeLens:focus-visible .metricAlternate {
 .artifact[data-compact="true"] .metricPrimary {
   justify-content: flex-start;
   margin-block-start: var(--space-2);
-}
-
-.artifact[data-compact="true"] .metricPrimary strong {
-  font-size: clamp(3.8rem, 18vw, 5.1rem);
-}
-
-.artifact[data-compact="true"] .timeLens[data-metric-scale="three"] .metricPrimary strong {
-  font-size: clamp(3.3rem, 15vw, 4.4rem);
-}
-
-.artifact[data-compact="true"] .timeLens[data-metric-scale="four"] .metricPrimary strong {
-  font-size: clamp(2.9rem, 13vw, 3.8rem);
-}
-
-.artifact[data-compact="true"] .timeLens[data-metric-scale="word"] .metricPrimary strong {
-  font-size: clamp(2.6rem, 12vw, 3.5rem);
 }
 
 .artifact[data-compact="true"] .metricReceipt {
@@ -1147,10 +1477,6 @@ button.timeLens:focus-visible .metricAlternate {
 
 .artifact[data-compact="true"] .milestoneLabel strong {
   font-size: 0.92rem;
-}
-
-.artifact[data-compact="true"] .detail {
-  min-height: 0;
 }
 
 .artifact[data-compact="true"] .detailInner {
@@ -1200,8 +1526,10 @@ button.timeLens:focus-visible .metricAlternate {
     min-width: 0;
   }
 
+  /* The narrow tier takes the compact display step, and the metric derived
+     from it, for the same reason the compact variant above does. */
   .timeLens {
-    min-height: 7.75rem;
+    --x-artifact-metric: var(--x-artifact-metric-compact);
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "metric alternate"
@@ -1216,7 +1544,6 @@ button.timeLens:focus-visible .metricAlternate {
 
   .metricViewport {
     grid-area: metric;
-    height: 7rem;
   }
 
   .metricFace {
@@ -1226,22 +1553,6 @@ button.timeLens:focus-visible .metricAlternate {
   .metricPrimary {
     justify-content: flex-start;
     margin-block-start: var(--space-2);
-  }
-
-  .metricPrimary strong {
-    font-size: clamp(3.8rem, 18vw, 5.1rem);
-  }
-
-  .timeLens[data-metric-scale="three"] .metricPrimary strong {
-    font-size: clamp(3.3rem, 15vw, 4.4rem);
-  }
-
-  .timeLens[data-metric-scale="four"] .metricPrimary strong {
-    font-size: clamp(2.9rem, 13vw, 3.8rem);
-  }
-
-  .timeLens[data-metric-scale="word"] .metricPrimary strong {
-    font-size: clamp(2.6rem, 12vw, 3.5rem);
   }
 
   .metricAlternateViewport {
@@ -1328,8 +1639,19 @@ button.timeLens:focus-visible .metricAlternate {
     translate: -50% -50%;
   }
 
+  /* Today, when it lands within a label's reach on the stacked axis.
+     The milestone labels and this chip share one column here, and a label is a
+     three-line block centred on its mark with a paper background of its own,
+     so a chip lifted by 140% of its own line height was still inside the block
+     and still painted over by it — "Today" showed as half a word behind the
+     next milestone's status line on a phone. It clears the block instead, and
+     it outranks it: a working annotation is never hidden by a title. */
+  .todayMarker[data-today-nudged="true"] {
+    z-index: 5;
+  }
+
   .todayMarker[data-today-nudged="true"] > span {
-    translate: 0 -140%;
+    translate: 0 calc(-50% - var(--space-6));
   }
 
   .todayMarker::before {
@@ -1371,6 +1693,7 @@ button.timeLens:focus-visible .metricAlternate {
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
   }
 
   /* The stacked axis reads top-to-bottom on its own; the caps earned their
@@ -1386,23 +1709,85 @@ button.timeLens:focus-visible .metricAlternate {
   }
 }
 
+/* ── Low-information densities ──────────────────────────────────────────────
+   A plan with one milestone was floored at roughly 40rem of minimums before
+   the hero, the header or the footer were counted, none of them derived from
+   how much the milestone actually says — and the public route is the one
+   surface where the 100dvh floor also still applies, so the state was worst
+   exactly where the audience sees it.
+
+   These heights are now read off the thing the rail has to hold:
+   `--x-timeline-label-block`, declared with the artifact's other measurements
+   at the top of this file. The rail sits at 48% of the stage, so the stage
+   needs that block divided by 0.48 and nothing more. */
+.artifact[data-density="empty"],
+.artifact[data-density="single"],
+.artifact[data-density="sparse"] {
+  --x-timeline-rhythm: clamp(var(--space-5), 3.2vw, var(--space-8));
+  --x-timeline-rhythm-tight: clamp(var(--space-4), 2vw, var(--space-6));
+}
+
 .artifact[data-density="empty"] .journey {
-  margin-block-start: clamp(var(--space-7), 4vw, var(--space-9));
+  margin-block-start: clamp(var(--space-6), 4vw, var(--space-9));
 }
 
 .artifact[data-density="empty"] .stage {
   min-width: 100%;
-  min-height: clamp(12rem, 18vw, 15rem);
+  /* Two lines of message under the rail, and nothing else to hold. */
+  min-height: calc((var(--space-6) + 3rem) / 0.52);
 }
 
-.artifact[data-density="single"] .stage {
-  min-width: 100%;
-  min-height: clamp(15rem, 20vw, 18rem);
-}
-
+/* The rail sits at 48% of the stage, so the stage is the label block divided
+   by 0.48 and nothing more. Sparse rails alternate their labels above and
+   below the line, and the 52% underside is the roomier of the two, so the
+   same figure covers both. */
 .artifact[data-density="sparse"] .stage {
   min-width: 100%;
-  min-height: clamp(16rem, 22vw, 19rem);
+  min-height: calc(var(--x-timeline-label-block) / 0.48);
+}
+
+/* One milestone is always the selected one, so its title is already set in
+   the panel directly beneath the rail at reading size. The marker states when
+   rather than repeating what — which is also why this rail cannot be pushed
+   off the screen by a long title: there is no title on it to grow. */
+.artifact[data-density="single"] .stage {
+  min-width: 100%;
+  min-height: calc(
+    (var(--x-timeline-hit) / 2 + var(--space-6) + 2.25rem) / 0.48
+  );
+}
+
+/* Short plans do not need the reading panel's full padding: the panel is the
+   page's last plate rather than one of several, and the space under it is
+   already the footer's. */
+.artifact[data-density="single"] .detailInner,
+.artifact[data-density="sparse"] .detailInner {
+  padding-block: var(--space-5) var(--space-6);
+}
+
+/* A rail with one or three points has horizontal room to spare and no
+   vertical room at all, so a long milestone title spends the room it has: the
+   label grows sideways instead of downward into the rail's ceiling. This is
+   what keeps the tighter stage from costing legibility — a title that used to
+   wrap five times and lose its top two lines now wraps two or three times.
+   The full text is in the detail panel regardless.
+
+   Gated above the stacked tier, which sets its own label measure against the
+   phone's width and must keep it. */
+@container timeline-artifact (min-width: 621px) {
+  .artifact[data-density="single"] .milestoneLabel,
+  .artifact[data-density="sparse"] .milestoneLabel {
+    width: min(26rem, 42cqw);
+  }
+
+  /* The one marker on a one-milestone rail says when. What it is, is the
+     heading of the panel underneath it — the same milestone was being
+     lettered twice, once in 18px on the rail and once in 32px in the
+     detail. The button's accessible name still carries the title, so
+     nothing is lost to a screen reader either. */
+  .artifact[data-density="single"] .milestoneLabel strong {
+    display: none;
+  }
 }
 
 .artifact[data-density="empty"] .empty {
@@ -1458,6 +1843,7 @@ button.timeLens:focus-visible .metricAlternate {
 @media (prefers-reduced-motion: reduce) {
   .productMeta button,
   .metricAlternate,
+  .metricReceipt,
   .headerCopy,
   .point,
   .milestoneLabel,
@@ -1509,7 +1895,6 @@ button.timeLens:focus-visible .metricAlternate {
     display: block;
     margin-block-start: var(--space-2);
     color: var(--ink-soft);
-    font-family: var(--font-mono);
     font-size: var(--text-caption);
     text-align: end;
   }
@@ -1518,38 +1903,78 @@ button.timeLens:focus-visible .metricAlternate {
     overflow: visible;
   }
 
+  /* ── Paper takes the stacked rail ────────────────────────────────────────
+     Paper has no hover, so a horizontal rail can only print the two or three
+     labels that fit and leaves the rest as anonymous dots. That is why a
+     second, complete list of the same milestones used to be shipped in the
+     document alongside it — the plan rendered twice.
+
+     The stacked rail is the arrangement that already solves this, and it is
+     the same list: the line runs down the page, every milestone keeps its
+     label, and nothing collides. One list, two arrangements, and the keepsake
+     still carries every milestone. */
   .stage {
     min-width: 100%;
+    min-height: max(30rem, calc(var(--timeline-point-count) * 5.5rem));
+    overflow: visible;
   }
 
-  /* Paper has no hover, so the page carries every milestone as a ruled
-     index beneath the rail — the keepsake keeps its content. */
-  .printIndex {
-    display: grid;
-    margin: var(--space-6) 0 0;
-    padding: 0;
-    list-style: none;
+  .progressGeometry {
+    inset-block: var(--space-5);
+    inset-inline: 1.75rem auto;
+    width: 2px;
+    height: auto;
+  }
+
+  .baseRail,
+  .completedRail,
+  .completedRailVertical {
+    inset-block: 0;
+    inset-inline: 50% auto;
+    width: 1px;
+    height: auto;
+    transform-origin: top center;
+  }
+
+  .completedRail {
+    display: none;
+  }
+
+  .completedRailVertical {
+    display: block;
+    width: 2px;
+  }
+
+  /* The atlas and the Today dash are working screen annotations; the caps
+     collide with the first and last labels on a stacked rail. */
+  .monthTicks,
+  .todayMarker,
+  .startCap,
+  .finishCap {
+    display: none;
+  }
+
+  .milestone {
+    inset-block-start: var(--timeline-position-stack, var(--timeline-position));
+    inset-inline-start: 1.75rem;
     break-inside: avoid;
   }
 
-  .printIndex li {
-    display: grid;
-    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: var(--space-4);
-    padding-block: var(--space-2);
-    border-block-start: 1px solid var(--hairline-soft);
+  .milestone[data-side="above"] .milestoneLabel,
+  .milestone[data-side="below"] .milestoneLabel,
+  .milestone[data-edge="start"] .milestoneLabel,
+  .milestone[data-edge="end"] .milestoneLabel {
+    inset-block-start: 50%;
+    inset-block-end: auto;
+    inset-inline-start: calc(var(--x-timeline-hit) / 2 + var(--space-4));
+    width: min(28rem, calc(100cqw - 5.5rem));
+    translate: 0 -50%;
+    text-align: start;
   }
 
-  .printIndex li > span {
-    color: var(--ink-faint);
-    font-family: var(--font-mono);
-    font-size: var(--text-label);
-  }
-
-  .printIndex li > strong {
-    color: var(--ink);
-    font-size: var(--text-body-sm);
-    font-weight: var(--weight-medium);
+  .milestone[data-labelled="false"] .milestoneLabel,
+  .milestone[data-labelled="extra"] .milestoneLabel {
+    opacity: 1;
+    visibility: visible;
   }
 }
