@@ -525,6 +525,38 @@ export function collectTimelineQaMeasurement(): TimelineQaMeasurement {
       const softClipX = ox === "auto" || ox === "scroll";
       const softClipY = oy === "auto" || oy === "scroll";
 
+      // Axes are decided one at a time, because a single box can be hard on
+      // one and scrollable on the other, and this walk used to hand the whole
+      // element to whichever branch matched first.
+      //
+      // The case that made it matter, measured: the Timeline rail's
+      // .stageViewport is `overflow-x: auto; overflow-y: hidden` and is a live
+      // scroll container (scrollWidth 756 against clientWidth 644 at 768px).
+      // Rail labels sitting past its right edge are reachable by scrolling the
+      // rail — the edge fade even says so. The old order took the hard branch
+      // because overflow-y was hidden, found no VERTICAL overhang, and fell
+      // through without ever reaching the soft branch, so the artifact's own
+      // `overflow: clip` two levels up was blamed for a horizontal overflow a
+      // scroll container had already absorbed. That reported seven to nine
+      // hard clips per viewport on both the owner route and the real public
+      // bearer link, none of which cut a single character off anything a
+      // viewer could not reach.
+      //
+      // Absorbed first, then clipped: an axis that scrolls and genuinely
+      // overflows has taken the overflow, which is the conclusion the soft
+      // branch below already drew — this only makes it reachable when the
+      // other axis happens to be hidden. Hard clipping on the remaining axis
+      // is still recorded, so a box that scrolls sideways and clips downward
+      // (the long-milestone-title defect) is caught exactly as before.
+      const scrollAbsorbsX =
+        softClipX && ancestor.scrollWidth > ancestor.clientWidth + EPSILON;
+      const scrollAbsorbsY =
+        softClipY && ancestor.scrollHeight > ancestor.clientHeight + EPSILON;
+      if (scrollAbsorbsX || scrollAbsorbsY) {
+        scrollableOverflowLeafCount += 1;
+        break;
+      }
+
       if (hardClipX || hardClipY) {
         const aRect = ancestor.getBoundingClientRect();
         const overTop = hardClipY ? Math.max(0, aRect.top - leafRect.top) : 0;
@@ -547,13 +579,6 @@ export function collectTimelineQaMeasurement(): TimelineQaMeasurement {
             clipperRect: rectOf(ancestor),
             overhang: { top: overTop, right: overRight, bottom: overBottom, left: overLeft },
           });
-          break;
-        }
-      } else if (softClipX || softClipY) {
-        const overflowsX = softClipX && ancestor.scrollWidth > ancestor.clientWidth + EPSILON;
-        const overflowsY = softClipY && ancestor.scrollHeight > ancestor.clientHeight + EPSILON;
-        if (overflowsX || overflowsY) {
-          scrollableOverflowLeafCount += 1;
           break;
         }
       }

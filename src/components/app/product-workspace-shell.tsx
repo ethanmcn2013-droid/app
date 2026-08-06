@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/app/sidebar";
 import { RoomToolsProvider } from "@/components/app/room/room-tools-context";
+import { useBareChromeRoute } from "@/components/app/suite-scroll-frame";
 import type { ProjectsTreeData } from "@/server/actions/projects-tree";
 
 function isTasksSurface(pathname: string): boolean {
@@ -28,6 +29,12 @@ export function ProductWorkspaceShell({
 }) {
   const pathname = usePathname() ?? "";
   const tasksSurface = isTasksSurface(pathname);
+  // The chrome-free surfaces let the document scroll instead of holding a
+  // scroll container of their own — see suite-scroll-frame.tsx. A canvas that
+  // kept `overflow-y-auto` here would re-impose the one-viewport height the
+  // frame just released, and the artifact's own `overflow: clip` would go on
+  // cutting its content off below the fold.
+  const bareChrome = useBareChromeRoute();
 
   // The shared /app layout calls this component without Tasks data. Let the
   // nested Tasks runtime provide its own sidebar/providers/main landmark.
@@ -40,7 +47,11 @@ export function ProductWorkspaceShell({
       <main
         id="app-main-content"
         tabIndex={-1}
-        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--paper)]"
+        className={
+          bareChrome
+            ? "flex min-w-0 flex-1 flex-col bg-[var(--paper)]"
+            : "flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--paper)]"
+        }
         data-product-canvas="module"
       >
         {children}

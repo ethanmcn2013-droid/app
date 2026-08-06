@@ -3,6 +3,10 @@ import { ClerkRuntimeProvider } from "@/components/clerk-runtime-provider";
 import { MobileSuiteNav } from "@/components/app/mobile-suite-nav";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { SuiteChromeGate } from "@/components/app/suite-chrome-gate";
+import {
+  SuiteScrollFrame,
+  SuiteScrollFrameBody,
+} from "@/components/app/suite-scroll-frame";
 import { SuiteCommandRoot } from "@/components/app/suite-command-root";
 import { SuiteLoading } from "@/components/app/suite-loading";
 import { StudioBar } from "@/components/studio-bar/studio-bar";
@@ -41,13 +45,15 @@ const SKIP_LINK_CLASS =
  *
  * One tree, always. The chrome-free surfaces (today the Timeline owner
  * preview) are handled by SuiteChromeGate, a client component that withholds
- * the navigation on those paths. Branching the tree here instead would look
- * simpler and be wrong: this layout is a server component shared by every /app
- * route, so it does not run again on a client navigation, and whichever branch
- * the first document happened to take would then be stuck for the rest of the
- * session. Everything the gate does not wrap — the access gate, the main
- * landmark, the skip link — is identical on every route, which is why Tasks
- * and Notes see no change at all.
+ * the navigation on those paths, and by SuiteScrollFrame, which releases the
+ * one-viewport window so the document scrolls the way the public /s/[token]
+ * route does. Branching the tree here instead would look simpler and be wrong:
+ * this layout is a server component shared by every /app route, so it does not
+ * run again on a client navigation, and whichever branch the first document
+ * happened to take would then be stuck for the rest of the session. Everything
+ * the gates do not wrap — the access gate, the main landmark, the skip link —
+ * is identical on every route, which is why Tasks and Notes see no change at
+ * all.
  */
 export default function AppLayout({
   children,
@@ -56,14 +62,14 @@ export default function AppLayout({
 }) {
   const shell = (
     <StudioChromeProvider>
-      <div className="flex h-dvh w-full flex-col bg-[var(--paper)]">
+      <SuiteScrollFrame>
         <a href="#app-main-content" className={SKIP_LINK_CLASS}>
           Skip to main content
         </a>
         <SuiteChromeGate>
           <StudioBar />
         </SuiteChromeGate>
-        <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <SuiteScrollFrameBody>
           <SuiteChromeGate>
             <StudioRail />
           </SuiteChromeGate>
@@ -72,12 +78,12 @@ export default function AppLayout({
               <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
             </SharedAppGate>
           </Suspense>
-        </div>
+        </SuiteScrollFrameBody>
         <SuiteChromeGate>
           <MobileSuiteNav />
           <SuiteCommandRoot />
         </SuiteChromeGate>
-      </div>
+      </SuiteScrollFrame>
     </StudioChromeProvider>
   );
 

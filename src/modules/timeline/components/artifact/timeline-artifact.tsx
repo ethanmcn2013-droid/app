@@ -395,7 +395,7 @@ function ProductIdentity({
 
 function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
   return (
-    <span className={styles.milestoneLabel} aria-hidden="true">
+    <span className={styles.milestoneLabel} data-timeline-milestone-label aria-hidden="true">
       <span>{timelinePointStatus(point)}</span>
       <strong>{point.item.title}</strong>
       <small>{point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}</small>
@@ -552,6 +552,11 @@ function Journey({
   const [overflowEnd, setOverflowEnd] = useState(false);
   const pointRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  // How much of the rail one label box actually occupies, in rail-percent.
+  // Null until the rail has been measured; see the geometry effect below for
+  // why this cannot be a constant.
+  const [labelSpan, setLabelSpan] = useState<number | null>(null);
   const selectedPoint = model.points.find((point) => point.item.publicId === selectedId)
     ?? model.points.find((point) => point.item.publicId === model.defaultSelectedId)
     ?? null;
@@ -601,6 +606,64 @@ function Journey({
     };
   }, [model.points.length]);
 
+  /**
+   * Rail geometry, read off the rail rather than assumed.
+   *
+   * Two numbers were previously guessed, and both guesses were wrong in a way
+   * only a rendered page could show.
+   *
+   * The stage's height is a calculation from `--x-timeline-label-block`, which
+   * budgets a fixed 4.5rem for "a status line, a title and a date". A milestone
+   * whose title runs to three or four lines needs half as much again, and the
+   * stage's `overflow: clip` cut the difference off — a real milestone losing
+   * its date at every desktop width. The tallest label measured here feeds that
+   * budget back, so spacing follows content instead of the other way round.
+   *
+   * The label's width in rail-percent was the constant 16 in
+   * `extraLabelIndices`. The rail is a scroll canvas at least
+   * `count x --x-timeline-pitch` wide, so on a twenty-two-milestone plan it is
+   * ~1848px at every desktop width and one 136-200px label occupies 7-11
+   * percent of it, not 16. The constant refused labels that had ample room, and
+   * refused the same ones at 1920 as at 768 because it could not see either.
+   *
+   * Both readings are stable under their own effect: labels are absolutely
+   * positioned at a fixed width, so neither a taller stage nor a newly revealed
+   * label changes what is measured here.
+   */
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const stage = stageRef.current;
+    if (!viewport || !stage) return;
+    const measure = () => {
+      const labels = Array.from(
+        stage.querySelectorAll<HTMLElement>("[data-timeline-milestone-label]"),
+      );
+      if (!labels.length) return;
+      let tallest = 0;
+      let widest = 0;
+      for (const label of labels) {
+        const rect = label.getBoundingClientRect();
+        if (rect.height > tallest) tallest = rect.height;
+        if (rect.width > widest) widest = rect.width;
+      }
+      const previous = stage.style.getPropertyValue("--x-timeline-label-measured");
+      const next = `${Math.ceil(tallest)}px`;
+      if (previous !== next) stage.style.setProperty("--x-timeline-label-measured", next);
+
+      const railWidth = stage.getBoundingClientRect().width;
+      if (railWidth <= 0 || widest <= 0) return;
+      const span = (widest / railWidth) * 100;
+      setLabelSpan((current) =>
+        current !== null && Math.abs(current - span) < 0.25 ? current : span,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [model.points]);
+
   const focusPoint = (nextIndex: number) => {
     const bounded = Math.min(Math.max(nextIndex, 0), model.points.length - 1);
     setFocusIndex(bounded);
@@ -645,8 +708,12 @@ function Journey({
     ]);
   }, [model.points]);
   const extraLabels = useMemo(
-    () => extraLabelIndices(model.points.map((point) => point.position), mandatoryLabels),
-    [model.points, mandatoryLabels],
+    () => extraLabelIndices(
+      model.points.map((point) => point.position),
+      mandatoryLabels,
+      labelSpan ?? undefined,
+    ),
+    [model.points, mandatoryLabels, labelSpan],
   );
   // The Today chip negotiates for space like every label does: when an
   // above-side labelled point sits within its band, the chip yields to the
@@ -709,14 +776,28 @@ function Journey({
         data-overflow-end={overflowEnd ? "true" : undefined}
       >
         <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
-          <div className={styles.stage} style={stageStyle}>
+          <div className={styles.stage} ref={stageRef} style={stageStyle}>
+            {/* One statement, one number.
+                The ink is drawn to the furthest completed dot, because the
+                rail is a date axis and a fill that stopped anywhere else
+                would end at a date that means nothing — two coordinate
+                systems sharing one line, which is exactly what the dots and
+                the fill exist not to be. That decision stands.
+                What did not stand was this element claiming a different
+                number from the one it paints: `aria-valuenow` carried the
+                count percentage (40 on a plan whose ink reaches 0.34 of the
+                rail), so the bar's machine value and its drawing disagreed.
+                The value now tracks the drawing. The sentence a screen
+                reader actually announces is `aria-valuetext`, and that is
+                unchanged and still the honest count — the same words the
+                metric prints, so screen and screen reader agree. */}
             <div
               className={styles.progressGeometry}
               role="progressbar"
               aria-label="Milestone completion"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={model.percent}
+              aria-valuenow={Math.round(model.completedFrontier ?? 0)}
               aria-valuetext={`${model.completedCount} of ${model.totalCount} milestones complete`}
             >
               <span className={styles.baseRail} aria-hidden="true" />

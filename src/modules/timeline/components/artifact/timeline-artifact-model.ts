@@ -559,8 +559,15 @@ export function timelineAxisNote(model: TimelineArtifactModel): string | null {
  * the SAME side of the rail (sides alternate by index) is at least `minGap`
  * rail-percent away — the same collision thinking the point positions use,
  * applied to their titles. Wide rails label everything that fits instead of
- * defaulting to three titles and six anonymous dots; the CSS gates these to
- * containers wide enough for the label boxes.
+ * defaulting to three titles and six anonymous dots.
+ *
+ * `labelWidth` is how much of the rail one label box occupies, in rail-percent.
+ * The caller measures it (see the geometry effect in timeline-artifact.tsx),
+ * because it cannot be known from the positions alone: the rail is a scroll
+ * canvas at least `count x --x-timeline-pitch` wide, so a label's share of it
+ * falls as the plan grows and rises as the viewport does. The default below is
+ * a conservative guess for the first render and for callers with no layout —
+ * a rendered rail should always pass the measured value.
  */
 export function extraLabelIndices(
   positions: readonly number[],
@@ -650,7 +657,7 @@ export function metricValueScale(value: string): MetricValueScale {
   return "base";
 }
 
-export type TimelineTitleLength = "short" | "long";
+export type TimelineTitleLength = "short" | "long" | "epic";
 
 /**
  * How much room the project's own name needs.
@@ -661,14 +668,25 @@ export type TimelineTitleLength = "short" | "long";
  * four lines of headline pushing the plan off the screen, and the exhibition
  * tokens' own comment forbids inventing a parallel clamp to escape it.
  *
- * So the length picks between the two sizes that already exist:
+ * So the length picks between the sizes that already exist:
  * `--x-artifact-display` for a name that fits the display measure, and the
  * compact step for one that does not. The threshold is the display measure
  * itself — 16ch — with one line of tolerance, because a name that wraps once
  * is still a headline and a name that wraps three times is a paragraph.
+ *
+ * Two steps were not enough. A committee that writes its full legal name into
+ * the field — "The Ballyneety and District Community Hall Renovation, Roof
+ * Repair and Accessibility Upgrade Committee", 101 characters — still took
+ * four lines of headline at 1920 and eleven on a phone, where it stood 695px
+ * tall and left nothing of the plan on screen. Past three lines of the compact
+ * measure (22ch, so 64 characters) the name has stopped being display type
+ * whatever size it is set at, and it takes the ramp's own title step instead.
+ * Still nothing truncated: every character the owner typed is on the page.
  */
 export function artifactTitleLength(label: string): TimelineTitleLength {
-  return label.trim().length > 32 ? "long" : "short";
+  const length = label.trim().length;
+  if (length > 64) return "epic";
+  return length > 32 ? "long" : "short";
 }
 
 export function timelinePointStatus(point: TimelineArtifactPoint): string {

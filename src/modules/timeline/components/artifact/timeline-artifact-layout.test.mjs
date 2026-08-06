@@ -254,7 +254,10 @@ test("progress reads as one count, and `settled` is gone", () => {
     /aria-valuetext=\{`\$\{model\.completedCount\} of \$\{model\.totalCount\} milestones complete`\}/,
   );
   assert.match(artifact, /role="progressbar"/);
-  assert.match(artifact, /aria-valuenow=\{model\.percent\}/);
+  // The value tracks the ink the bar actually paints (the frontier dot on the
+  // date axis), not the count percentage; the count stays in aria-valuetext
+  // above, which is what a screen reader reads out.
+  assert.match(artifact, /aria-valuenow=\{Math\.round\(model\.completedFrontier \?\? 0\)\}/);
 });
 
 test("the count is typeset as a sentence, never as a number and a stranded glyph", () => {

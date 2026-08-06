@@ -105,8 +105,14 @@ test("owner surfaces embed the exact artifact without claiming a document-height
 test("the completed ink is drawn to the frontier dot, never the count percentage", () => {
   assert.match(artifact, /scaleX\(\$\{\(model\.completedFrontier \?\? 0\) \/ 100\}\)/);
   assert.match(artifact, /scaleY\(\$\{\(model\.completedStackFrontier \?\? 0\) \/ 100\}\)/);
-  // The spoken progressbar keeps the honest count; only the paint changed.
-  assert.match(artifact, /aria-valuenow=\{model\.percent\}/);
+  // The spoken progressbar keeps the honest count — `aria-valuetext` is the
+  // sentence a screen reader announces, and it is still "N of N milestones
+  // complete". The machine value now tracks the drawing rather than the count
+  // percentage: a bar reading 40 while painting 0.34 of its own track is one
+  // element making two different claims, which is the defect a visual sweep
+  // found and unit tests could not.
+  assert.match(artifact, /aria-valuenow=\{Math\.round\(model\.completedFrontier \?\? 0\)\}/);
+  assert.doesNotMatch(artifact, /aria-valuenow=\{model\.percent\}/);
 });
 
 test("every metric face declares its width class so no value can clip", () => {
@@ -222,8 +228,19 @@ test("collision avoidance is replaced by showing every label on the vertical Tim
 });
 
 test("the desktop editorial Timeline keeps its own widest tier", () => {
-  assert.match(styles, /@container timeline-artifact \(min-width: 980px\)/);
   assert.match(styles, /@container timeline-artifact \(max-width: 980px\)/);
+  // The extra-label gate used to be a second breakpoint at 980px, and it was
+  // the wrong instrument: the rail is a scroll canvas at least
+  // `count x --x-timeline-pitch` wide, so a twenty-two-milestone plan renders
+  // the same 1848px rail at 768 and at 1920 and the breakpoint could not see
+  // that. The model measures the label's real share of the real rail now, so
+  // the only gate left is the horizontal tier's own floor — below it the rail
+  // stacks and shows every label anyway.
+  assert.match(styles, /@container timeline-artifact \(min-width: 621px\)/);
+  assert.match(
+    styles,
+    /@container timeline-artifact \(min-width: 621px\)\s*\{\s*\.milestone\[data-labelled="extra"\]/,
+  );
   // Horizontal scroll with hidden scrollbars is the editorial rail's own
   // affordance and belongs only to the wide layout.
   assert.match(styles, /\.stageViewport\s*\{[^}]*overflow-x:\s*auto;/);

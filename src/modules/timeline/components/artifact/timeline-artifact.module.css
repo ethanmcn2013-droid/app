@@ -242,6 +242,19 @@ button.timeLens:active {
   line-height: 0.94;
 }
 
+/* Past three lines of the compact measure the name is not display type at any
+   size — it is a title, and it reads at the ramp's own title step. The exhibition
+   register deliberately stops here rather than growing a third private clamp:
+   its token comment forbids that, and a 100-character committee name has left
+   exhibition scale behind. The measure widens with it so the extra words spend
+   the column they already have. */
+.artifact[data-title-length="epic"] .header h1 {
+  max-width: 34ch;
+  font-size: var(--text-title);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
 .purpose {
   max-width: 42ch;
   margin-block-start: var(--space-5);
@@ -520,9 +533,24 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .stage {
+  /* Content-aware, not assumed. The artifact-level budget above reserves a
+     flat 4.5rem for a label's status line, title and date, which is right
+     until a milestone title runs to three or four lines — and then the stage
+     stayed the same height and `overflow: clip` cut the date off the bottom.
+     The rail measures its tallest label and reports it here (see the geometry
+     effect in timeline-artifact.tsx); the budget takes whichever is larger, so
+     the fallback below is exactly today's behaviour before the measurement
+     lands, and no plan without JavaScript loses a millimetre it had. */
+  --x-timeline-label-block: calc(
+    var(--x-timeline-hit) / 2 + var(--space-6)
+      + max(4.5rem, var(--x-timeline-label-measured, 0px))
+  );
   position: relative;
   min-width: max(100%, calc(var(--timeline-point-count) * var(--x-timeline-pitch)));
-  min-height: clamp(18rem, 24vw, 21rem);
+  min-height: max(
+    clamp(18rem, 24vw, 21rem),
+    calc(var(--x-timeline-label-block) / 0.48)
+  );
   overflow: clip;
 }
 
@@ -708,11 +736,20 @@ button.timeLens:focus-visible .metricAlternate {
      complete  · a solid ink bead sitting ON the ink fill — settled
      current   · a full solid indigo mark, larger than the beads — the one
                  earned indigo moment on the rail, at full strength
-     overdue   · the same solid mark drawn in ink — it IS the next
-                 milestone, running late; the status text says so
+     overdue   · the same solid mark drawn in the module's restrained red —
+                 it IS the next milestone, running late; the status text
+                 says so
    Shape parity between current and overdue is deliberate: lateness changes
    the colour of the moment, never its importance. Size separates overdue
-   from the settled beads; the label and detail echo name it. */
+   from the settled beads; the label and detail echo name it.
+
+   Overdue was ink, and so was complete — the two states a viewer most needs
+   to tell apart computed to the same rgb(17,17,17), separated only by four
+   pixels of diameter. The mark keeps every one of its non-colour cues (the
+   larger diameter, the status line, the detail echo) and now spends colour on
+   the distinction as well. The red is the module's own --x-timeline-alarm,
+   already the overdue colour in the owner's curation surface, so late means
+   the same thing on both sides of the publish boundary. */
 
 .milestone[data-state="complete"] .point {
   width: 0.64rem;
@@ -730,7 +767,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .milestone[data-state="overdue"] .point {
-  background: var(--ink);
+  background: var(--x-timeline-alarm);
 }
 
 /* The rail's single spent motion: after the points settle, the next
@@ -803,7 +840,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .milestone[data-state="overdue"] .milestoneLabel > span {
-  color: var(--ink);
+  color: var(--x-timeline-alarm);
   font-weight: var(--weight-semibold);
 }
 
@@ -827,9 +864,19 @@ button.timeLens:focus-visible .metricAlternate {
   pointer-events: none;
 }
 
-/* Collision-aware labels: points granted an "extra" label by the model show
-   it once the rail is wide enough for the label boxes to actually fit. */
-@container timeline-artifact (min-width: 980px) {
+/* Collision-aware labels: a point granted an "extra" label by the model has
+   already been checked against the rail's real width and its neighbours' real
+   label boxes, so there is nothing left for a breakpoint to second-guess.
+
+   This was gated at 980px while the model measured label width as a fixed 16
+   rail-percent — a number it could not check, and one that was wrong in both
+   directions: too generous on a nine-point rail, far too mean on a
+   twenty-two-point one, where the same eight labels showed at 390 and at 1920
+   because neither the model nor this gate could see that the rail is a
+   1848px scroll canvas at both. The model measures now (see the geometry
+   effect in timeline-artifact.tsx), so the gate is only the horizontal tier's
+   own floor: below it the rail stacks and every label shows anyway. */
+@container timeline-artifact (min-width: 621px) {
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
@@ -936,7 +983,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .sequenceCard[data-state="overdue"] .sequenceStatus::before {
-  background: var(--ink);
+  background: var(--x-timeline-alarm);
 }
 
 .sequenceTitle {
@@ -1019,7 +1066,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .detail[data-detail-state="overdue"] .detailStatus::before {
-  background: var(--ink);
+  background: var(--x-timeline-alarm);
 }
 
 .detailLead h3 {

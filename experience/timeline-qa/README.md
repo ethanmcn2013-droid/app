@@ -145,7 +145,21 @@ fact.
 The check compares each text-bearing element's own rendered rect against
 every ancestor whose computed `overflow-x`/`overflow-y` is `hidden` or
 `clip` (the case the brief specifically called out: `overflow: clip` creates
-no scroll container, so `scrollHeight` never reveals it). What it can prove:
+no scroll container, so `scrollHeight` never reveals it).
+
+The walk stops at the first ancestor that has genuinely absorbed the
+overflow by scrolling, and it decides that **per axis**. A box can be hard on
+one axis and scrollable on the other — the Timeline rail's own
+`.stageViewport` is `overflow-x: auto; overflow-y: hidden` — and until
+2026-08-06 the walk handed such a box to whichever branch matched first,
+found no overhang on the hidden axis, and carried on upward, so an outer
+`overflow: clip` box was reported as cutting text that a live scroll
+container had already taken and a viewer could reach. Text inside a
+scrollable region therefore does **not** count as clipped here; whether a
+region *should* need scrolling is a design question this check does not
+answer.
+
+What it can prove:
 that specific text, at that specific viewport, in the settled resting state,
 after motion finishes, is or is not geometrically cut off by a real clipping
 ancestor. What it cannot prove: anything about the mid-transition state
