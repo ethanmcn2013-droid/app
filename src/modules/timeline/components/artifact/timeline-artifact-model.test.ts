@@ -15,6 +15,7 @@ import {
   labelShifts,
   metricValueScale,
   resolveTimelineAxis,
+  stackMinimumGap,
   timelineAxisDescription,
   timelineAxisNote,
   timelinePresentation,
@@ -778,6 +779,59 @@ test("capStackGaps leaves already-even sequences and tiny sets untouched", () =>
   assert.deepEqual(capStackGaps([10, 90]), [10, 90]);
   assert.deepEqual(capStackGaps([50]), [50]);
   assert.deepEqual(capStackGaps([]), []);
+});
+
+test("no two stacked milestones are drawn closer than one label", () => {
+  // The cost of putting marks back on their real dates: a phone stacks the
+  // rail, and a cluster of five milestones inside four weeks stacked into one
+  // illegible block of overlapping titles. Found in a rendered capture at
+  // 390x844, not by any unit test, which is why this one exists.
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-04-18"),
+    item("menu", "now", "2026-08-01"),
+    item("invites", "next", "2026-08-08"),
+    item("fitting", "next", "2026-08-22"),
+    item("music", "next", "2026-08-29"),
+    item("guests", "later", "2026-09-05"),
+    item("walkthrough", "later", "2026-09-19"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+  const stacked = model.points.map((point) => point.stackPosition);
+  const floor = stackMinimumGap(stacked.length);
+  assert.ok(floor > 0);
+  for (let index = 1; index < stacked.length; index += 1) {
+    assert.ok(
+      stacked[index] - stacked[index - 1] >= floor - 1e-9,
+      `stacked gap ${index} is ${(stacked[index] - stacked[index - 1]).toFixed(2)}, floor ${floor.toFixed(2)}`,
+    );
+  }
+  // The horizontal rail is untouched by any of this: it is still exactly
+  // proportional, which is the whole point of keeping the two axes separate.
+  const day = (value: string) => Date.parse(`${value}T00:00:00.000Z`) / 86_400_000;
+  const rates = model.points.slice(1).map((point, index) => (
+    (point.position - model.points[index].position)
+      / (day(point.item.date!) - day(model.points[index].item.date!))
+  ));
+  for (const rate of rates) assert.ok(Math.abs(rate - rates[0]) < 1e-9);
+
+  // Ends and order survive the reshaping exactly.
+  assert.equal(stacked[0], model.points[0].position);
+  assert.ok(
+    Math.abs(stacked[stacked.length - 1] - model.points[model.points.length - 1].position) < 1e-9,
+  );
+
+  // A floor that cannot fit is not applied: twenty-two milestones on one rail
+  // still land in order rather than being pushed off the end of it.
+  const crowded = capStackGaps(
+    Array.from({ length: 22 }, (_, index) => 4 + index * (92 / 21)),
+    1.9,
+    40,
+  );
+  for (let index = 1; index < crowded.length; index += 1) {
+    assert.ok(crowded[index] > crowded[index - 1]);
+  }
+  assert.ok(crowded[crowded.length - 1] <= 96 + 1e-9);
 });
 
 test("metric faces declare a width class so the wedding-day face can never clip", () => {

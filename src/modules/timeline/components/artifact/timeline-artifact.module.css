@@ -1637,8 +1637,19 @@ button.timeLens:focus-visible .metricAlternate {
     translate: -50% -50%;
   }
 
+  /* Today, when it lands within a label's reach on the stacked axis.
+     The milestone labels and this chip share one column here, and a label is a
+     three-line block centred on its mark with a paper background of its own,
+     so a chip lifted by 140% of its own line height was still inside the block
+     and still painted over by it — "Today" showed as half a word behind the
+     next milestone's status line on a phone. It clears the block instead, and
+     it outranks it: a working annotation is never hidden by a title. */
+  .todayMarker[data-today-nudged="true"] {
+    z-index: 5;
+  }
+
   .todayMarker[data-today-nudged="true"] > span {
-    translate: 0 -140%;
+    translate: 0 calc(-50% - var(--space-6));
   }
 
   .todayMarker::before {

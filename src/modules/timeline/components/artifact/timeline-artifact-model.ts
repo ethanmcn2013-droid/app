@@ -440,15 +440,59 @@ function railPositions(
 }
 
 /**
- * Cap long empty stretches for the stacked (vertical) axis. Horizontal
- * whitespace reads as time; vertical whitespace reads as a broken page. Gaps
- * are limited to `capRatio` × the mean gap and the sequence is rescaled back
- * onto the original span, so order and edge padding are preserved exactly.
- * Returns the input unchanged when nothing exceeds the cap.
+ * The stacked (vertical) rail's own height, in px, as the stylesheet computes
+ * it below 620px: `count x 6.5rem` with a `42rem` floor, and a shorter
+ * dedicated figure for the two- and three-milestone tiers. Duplicated here
+ * because the minimum readable gap below is a question about pixels and this
+ * function answers in percent; if those rules move, this moves with them.
+ */
+const STACK_PITCH_PX = 104;
+const STACK_FLOOR_PX = 672;
+const STACK_SPARSE_PAD_PX = 112;
+/** One stacked label: a status line, a title and a date. The same 4.5rem the
+ *  stylesheet budgets in `--x-timeline-label-block`. */
+const STACK_LABEL_PX = 72;
+
+function stackHeight(count: number): number {
+  if (count <= 3) return count * STACK_PITCH_PX + STACK_SPARSE_PAD_PX;
+  return Math.max(STACK_FLOOR_PX, count * STACK_PITCH_PX);
+}
+
+/** The smallest stacked gap that still fits a label, in rail-percent. */
+export function stackMinimumGap(count: number): number {
+  if (count < 2) return 0;
+  return (STACK_LABEL_PX / stackHeight(count)) * 100;
+}
+
+/**
+ * Reshape the stacked (vertical) axis so it can be read.
+ *
+ * Horizontal whitespace reads as time; vertical whitespace reads as a broken
+ * page, and vertical crowding reads as two milestones printed on top of each
+ * other. So this axis, and ONLY this axis, is allowed to depart from strict
+ * proportion — a decision that predates the proportionality repair and is kept
+ * deliberately. The horizontal rail is untouched by any of it.
+ *
+ * Two bounds, applied in order and then solved exactly onto the original span:
+ *
+ * - `capRatio` x the mean gap is the most a quiet stretch may occupy, so a
+ *   phone never spends a screen on one empty season.
+ * - `minGap` is the least any gap may occupy, because below it two labels
+ *   overlap. This is new, and it is the cost of drawing marks at their real
+ *   dates: once the marks stopped being spread out to make room, a cluster of
+ *   five milestones inside four weeks stacked into a single illegible block on
+ *   a phone. Every gap gets its floor first, and the room left over is shared
+ *   between the gaps that had more than the floor to begin with, in proportion
+ *   to how much more — so the long stretches still read as long, the tight
+ *   ones are still the tight ones, and nothing lands on top of anything.
+ *
+ * Order and both endpoints survive exactly. Returns the input unchanged when
+ * neither bound binds.
  */
 export function capStackGaps(
   positions: readonly number[],
   capRatio = 1.9,
+  minGap = 0,
 ): number[] {
   if (positions.length < 3) return [...positions];
   const first = positions[0];
@@ -456,19 +500,28 @@ export function capStackGaps(
   const span = last - first;
   if (span <= 0) return [...positions];
 
-  const mean = span / (positions.length - 1);
+  const count = positions.length - 1;
+  const mean = span / count;
   const cap = mean * capRatio;
+  // A floor that cannot fit is not a floor. When even the minimum would
+  // overflow the span the axis has more milestones than it has room for, and
+  // even spacing is the least dishonest thing left.
+  const floor = Math.min(minGap, span / count);
   const gaps = positions.slice(1).map((position, index) =>
-    Math.min(position - positions[index], cap),
+    Math.max(floor, Math.min(position - positions[index], cap)),
   );
   const total = gaps.reduce((sum, gap) => sum + gap, 0);
   if (total <= 0 || Math.abs(total - span) < 1e-9) return [...positions];
 
-  const scale = span / total;
+  const slack = gaps.map((gap) => gap - floor);
+  const slackTotal = slack.reduce((sum, value) => sum + value, 0);
+  const slackTarget = span - floor * count;
+  const scale = slackTotal > 0 ? slackTarget / slackTotal : 0;
   const stacked = [first];
-  for (const gap of gaps) {
-    stacked.push(stacked[stacked.length - 1] + gap * scale);
-  }
+  gaps.forEach((_, index) => {
+    const share = slackTotal > 0 ? slack[index] * scale : slackTarget / count;
+    stacked.push(stacked[stacked.length - 1] + floor + share);
+  });
   return stacked.map(clampPercent);
 }
 
@@ -502,7 +555,11 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
   const schedule = railPositions(activeItems, dto.today, axis);
   const todayDay = calendarDay(dto.today);
 
-  const stackPositions = capStackGaps(schedule.pointPositions);
+  const stackPositions = capStackGaps(
+    schedule.pointPositions,
+    undefined,
+    stackMinimumGap(schedule.pointPositions.length),
+  );
   const stackAnchors = schedule.pointPositions.map((position, index) => ({
     raw: position,
     adjusted: stackPositions[index],
