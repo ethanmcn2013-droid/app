@@ -130,6 +130,15 @@ function TitleTextarea({ task }: { task: Task }) {
     autoresize();
   }, [draft, autoresize]);
 
+  // The title steps up a size at `md` (below, unchanged). A live window
+  // resize across that line — or across the width where the window's own
+  // max-width caps in — changes the wrap width the last measurement was
+  // taken at, so re-measure or the box is left sized for stale text.
+  useEffect(() => {
+    window.addEventListener("resize", autoresize);
+    return () => window.removeEventListener("resize", autoresize);
+  }, [autoresize]);
+
   function commit() {
     const trimmed = draft.trim();
     if (!trimmed) {
@@ -159,7 +168,7 @@ function TitleTextarea({ task }: { task: Task }) {
           e.currentTarget.blur();
         }
       }}
-      className="block w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[var(--x-lead-tight)] tracking-[-0.02em] text-ink outline-none placeholder:text-ink-quiet"
+      className="block w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[var(--x-lead-tight)] tracking-[-0.02em] text-ink outline-none placeholder:text-ink-quiet md:text-[24px]"
       placeholder="Untitled task"
       aria-label="Task title"
     />
@@ -249,8 +258,9 @@ function TaskDetailHeader({
   const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
 
   return (
-    <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-6 pb-3 pt-4 lg:px-8">
-      {/* Top row: breadcrumb + controls */}
+    <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-6 pb-3 pt-3 lg:px-8">
+      {/* Thin line: breadcrumb + window controls. This row was never the
+          problem the redesign below exists to fix — it stays as it was. */}
       <div className="flex items-center justify-between gap-2">
         {/* Breadcrumb */}
         {/* One line, truncating from the project name — the id chip and
@@ -347,37 +357,47 @@ function TaskDetailHeader({
         </div>
       </div>
 
-      {/* Title row. Status lives with the other properties in the metadata
-          rail; a coloured pill up here dragged the title sideways and gave
-          the header two competing focal points. */}
-      <div className="mt-2.5">
-        <TitleTextarea task={task} />
-        {shell === "panel" ? (
-          /* The primary property strip: what a person checks first, on
-             one line under the title, instead of four labelled blocks
-             they have to read past to reach the work. */
-          <div className="mt-3">
+      {/*
+        Main band. Two review rounds named the same defect: the title sat
+        alone on its own row at the size it was in the 520px drawer this
+        window replaced, the property strip stacked under it, and Mark
+        done stacked under that — three left-aligned rows, each costing
+        height, each leaving several hundred pixels empty on its right.
+        One band now: the title sets the size of the row instead of
+        hiding inside one, and the strip plus the primary action dock to
+        its right on the same line, so the task's name is the first thing
+        the eye meets instead of an indigo pill two rows below it. Stacks
+        below `md`, where the window is a full-bleed sheet too narrow to
+        hold both sides of the band without crowding.
+      */}
+      <div className="mt-2 flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-x-6 md:gap-y-1.5">
+        <div className="min-w-0 md:flex-1">
+          <TitleTextarea task={task} />
+        </div>
+        <div className="flex flex-shrink-0 flex-wrap items-center gap-3">
+          {shell === "panel" ? (
+            /* The primary property strip: what a person checks first,
+               beside the title instead of on a row of its own. Status
+               lives here rather than as a coloured pill beside the
+               title, which used to drag the title sideways and give the
+               header two competing focal points. */
             <MetadataRail task={task} variant="strip" />
-          </div>
-        ) : null}
-      </div>
-
-      {/* Primary action row. The panel's one primary action carries the
-          suite's primary treatment — indigo and a pill, per the design
-          system. Ink-black read as a neutral control among neutral controls. */}
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => dispatchers.toggleComplete(task.id)}
-          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-        >
-          {!isTaskDone(task, columnConfig) ? (
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
           ) : null}
-          {primaryLabel}
-        </button>
+          {/* The panel's one primary action carries the suite's primary
+              treatment — indigo and a pill, per the design system. */}
+          <button
+            type="button"
+            onClick={() => dispatchers.toggleComplete(task.id)}
+            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            {!isTaskDone(task, columnConfig) ? (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            ) : null}
+            {primaryLabel}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -385,7 +405,15 @@ function TaskDetailHeader({
 
 // ─── Primary content column ───────────────────────────────────────────────────
 
-function PrimaryContent({ task, conversation }: { task: Task; conversation: ReturnType<typeof useConversation> }) {
+function PrimaryContent({
+  task,
+  conversation,
+  showTip,
+}: {
+  task: Task;
+  conversation: ReturnType<typeof useConversation>;
+  showTip: boolean;
+}) {
   const { items, loading, timedOut, retry } = conversation;
   return (
     <div className="min-w-0">
@@ -421,6 +449,21 @@ function PrimaryContent({ task, conversation }: { task: Task; conversation: Retu
           />
         )}
       </section>
+
+      {/*
+        The hint used to sit in its own grid row below the metadata rail —
+        a dedicated band the window had to keep tall enough for even when
+        the hint had nothing to say, which cost 219px of blank space at
+        1920 and was why the window scrolled at 1280 when nothing else on
+        the page needed it to. It is the least important thing here, so it
+        now closes the column that actually grows — the work — instead of
+        owning a row the layout has to keep solvent.
+      */}
+      {showTip ? (
+        <div className="mt-6">
+          <TipCard context="task-panel" />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -492,17 +535,10 @@ export function TaskDetail({
               : "mx-auto w-full px-6 pb-10 pt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 lg:px-8"
           }
         >
-          <PrimaryContent task={task} conversation={conversation} />
+          <PrimaryContent task={task} conversation={conversation} showTip={!isFocus} />
           <aside className="order-first mb-8 lg:order-none lg:mb-0 lg:border-l lg:border-line-soft lg:pl-7 lg:pt-5">
             <MetadataRail task={task} variant={isFocus ? "full" : "rest"} />
           </aside>
-          {isFocus ? null : (
-            /* A hint is the least important thing here and must never sit
-               between the properties and the work. It closes the rail. */
-            <div className="mt-8 lg:col-start-2 lg:mt-6">
-              <TipCard context="task-panel" />
-            </div>
-          )}
         </div>
       </div>
     </div>
