@@ -67,6 +67,7 @@ function makeDemoNote(overrides: Partial<NoteRead> = {}): NoteRead {
     extractBody: null,
     promotedTaskId: null,
     archivedAt: null,
+    reviewedAt: null,
     source: null,
     workspaceId: null,
     ...overrides,
@@ -82,6 +83,7 @@ export type NoteRead = Pick<
   | "extractBody"
   | "promotedTaskId"
   | "archivedAt"
+  | "reviewedAt"
   | "source"
   | "workspaceId"
 >;
@@ -219,6 +221,7 @@ export async function createNote(
     extractBody: null,
     promotedTaskId: null,
     archivedAt: null,
+    reviewedAt: null,
     source: null,
     workspaceId,
   };
@@ -242,17 +245,7 @@ export async function listNotes(): Promise<NoteRead[]> {
   const userId = await requireUser();
 
   const rows = await db
-    .select({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    })
+    .select(await noteSelection())
     .from(notes)
     .where(and(eq(notes.userId, userId), isNull(notes.archivedAt)))
     .orderBy(desc(notes.createdAt));
@@ -306,6 +299,7 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
   // Multi-token: AND-match via FTS5's implicit space-AND.
   const match = stripped.includes(" ") ? stripped : `${stripped}*`;
 
+  const reviewedAtSql = (await reviewedAtAvailable()) ? "n.reviewed_at" : "NULL";
   const rows = await db.all<{
     id: string;
     body: string;
@@ -314,10 +308,11 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
     extract_body: string | null;
     promoted_task_id: string | null;
     archived_at: number | null;
+    reviewed_at: number | null;
     source: string | null;
     workspace_id: string | null;
   }>(sql`
-    SELECT n.id, n.body, n.created_at, n.updated_at, n.extract_body, n.promoted_task_id, n.archived_at, n.source, n.workspace_id
+    SELECT n.id, n.body, n.created_at, n.updated_at, n.extract_body, n.promoted_task_id, n.archived_at, ${sql.raw(reviewedAtSql)} AS reviewed_at, n.source, n.workspace_id
     FROM notes_fts fts
     JOIN notes n ON n.rowid = fts.rowid
     WHERE fts.user_id = ${userId}
@@ -335,6 +330,7 @@ export async function searchNotes(query: string): Promise<NoteRead[]> {
     extractBody: r.extract_body,
     promotedTaskId: r.promoted_task_id,
     archivedAt: r.archived_at,
+    reviewedAt: r.reviewed_at,
     source: r.source,
     workspaceId: r.workspace_id,
   }));
@@ -430,6 +426,7 @@ export async function setNoteWorkspace(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -488,6 +485,7 @@ export async function setNoteExtract(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -532,6 +530,7 @@ export async function clearNoteExtract(id: string): Promise<NoteRead> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -678,6 +677,7 @@ export async function sendExtractToTasks(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -749,17 +749,7 @@ export async function promoteNoteToTasks(
 
   // Read the note fresh, confirms ownership, gets the latest body.
   const [note] = await db
-    .select({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    })
+    .select(await noteSelection())
     .from(notes)
     .where(
       and(
@@ -856,6 +846,7 @@ export async function promoteNoteToTasks(
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -892,17 +883,7 @@ export async function listArchivedNotes(): Promise<NoteRead[]> {
   const userId = await requireUser();
 
   const rows = await db
-    .select({
-      id: notes.id,
-      body: notes.body,
-      createdAt: notes.createdAt,
-      updatedAt: notes.updatedAt,
-      extractBody: notes.extractBody,
-      promotedTaskId: notes.promotedTaskId,
-      archivedAt: notes.archivedAt,
-      source: notes.source,
-      workspaceId: notes.workspaceId,
-    })
+    .select(await noteSelection())
     .from(notes)
     .where(
       and(
@@ -955,6 +936,7 @@ export async function unPromoteNote(noteId: string): Promise<NoteRead> {
       extractBody: notes.extractBody,
       promotedTaskId: notes.promotedTaskId,
       archivedAt: notes.archivedAt,
+      reviewedAt: notes.reviewedAt,
       source: notes.source,
       workspaceId: notes.workspaceId,
     });
@@ -976,6 +958,45 @@ export type CreateNoteIdempotentInput = {
   id: string;
   body: string;
   workspaceId: string | null;
+  /**
+   * How this note was captured. Absent means the composer, which is what
+   * every note written before capture provenance existed was.
+   */
+  source?: NoteCaptureSource | null;
+};
+
+/**
+ * The capture routes Notes records. Deliberately a closed union here even
+ * though the column has no CHECK: the server is the only writer, so the
+ * union is the constraint, and nothing else can drift a value in.
+ *
+ * "calendar" is not in this union because Notes never creates a calendar
+ * note through capture; the calendar worker owns that value.
+ */
+export type NoteCaptureSource = "typed" | "voice" | "photo" | "email";
+
+const CAPTURE_SOURCES: readonly NoteCaptureSource[] = [
+  "typed",
+  "voice",
+  "photo",
+  "email",
+];
+
+function normalizeCaptureSource(
+  value: NoteCaptureSource | null | undefined,
+): NoteCaptureSource | null {
+  if (!value) return null;
+  if (!CAPTURE_SOURCES.includes(value)) {
+    throw new TypeError("Unknown capture source");
+  }
+  // Typed is the default reading of an absent value, so storing it would add
+  // a row's worth of nothing. Keep NULL as the one representation.
+  return value === "typed" ? null : value;
+}
+
+export type SetNoteReviewedInput = {
+  id: string;
+  reviewed: boolean;
 };
 
 export type UpdateNoteWithVersionInput = {
@@ -1038,9 +1059,55 @@ const hybridNoteSelection = {
   extractBody: notes.extractBody,
   promotedTaskId: notes.promotedTaskId,
   archivedAt: notes.archivedAt,
+  reviewedAt: notes.reviewedAt,
   source: notes.source,
   workspaceId: notes.workspaceId,
 };
+
+/**
+ * Whether the notes database has `reviewed_at` yet.
+ *
+ * The column arrived with the Review queue (drizzle-notes/0001). The module
+ * databases have no receipted forward-migration runner, so a deploy can
+ * legitimately reach production before the column does — and selecting a
+ * column that is not there does not degrade a query, it fails it, which
+ * would take the whole notebook down over a feature nobody had used yet.
+ *
+ * So it is probed once per process and cached. Absent, every note reads as
+ * "not yet reviewed", which is exactly what it is, and only the one action
+ * that writes the column fails, with something a person can act on.
+ */
+let reviewedAtColumn: boolean | null = null;
+
+async function reviewedAtAvailable(): Promise<boolean> {
+  if (reviewedAtColumn !== null) return reviewedAtColumn;
+  try {
+    await db.get(sql`SELECT reviewed_at FROM notes LIMIT 1`);
+    reviewedAtColumn = true;
+  } catch {
+    reviewedAtColumn = false;
+  }
+  return reviewedAtColumn;
+}
+
+/** Exported for the migration-readiness check and for tests. */
+export async function notesReviewStateReady(): Promise<boolean> {
+  if (isDemoMode()) return true;
+  return reviewedAtAvailable();
+}
+
+/**
+ * The note projection, with `reviewed_at` replaced by a literal NULL when the
+ * column is not there. Same shape either way, so nothing downstream has to
+ * know which database it is talking to.
+ */
+async function noteSelection(): Promise<typeof hybridNoteSelection> {
+  if (await reviewedAtAvailable()) return hybridNoteSelection;
+  return {
+    ...hybridNoteSelection,
+    reviewedAt: sql<number | null>`NULL`,
+  } as unknown as typeof hybridNoteSelection;
+}
 
 const tasksSendOutboxSelection = {
   operationId: noteTaskSendOutbox.operationId,
@@ -1084,7 +1151,7 @@ async function readOwnedNote(
   noteId: string,
 ): Promise<NoteRead | null> {
   const [row] = await db
-    .select(hybridNoteSelection)
+    .select(await noteSelection())
     .from(notes)
     .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
     .limit(1);
@@ -1223,6 +1290,7 @@ export async function createNoteIdempotent(
   const id = validateStableNoteId(input.id);
   const body = validateNoteBody(input.body);
   const requestedWorkspaceId = normalizeOptionalWorkspaceId(input.workspaceId);
+  const source = normalizeCaptureSource(input.source);
   const userId = await requireUser();
   // Capture is the load-bearing private action. A stale membership or a
   // temporarily unavailable sister product must never hold the writing
@@ -1242,9 +1310,10 @@ export async function createNoteIdempotent(
       createdAt: now,
       updatedAt: now,
       workspaceId,
+      source,
     })
     .onConflictDoNothing()
-    .returning(hybridNoteSelection);
+    .returning(await noteSelection());
 
   if (inserted[0]) {
     // Only a real insert counts. The replay path below reconciles a lost
@@ -1303,7 +1372,7 @@ export async function updateNoteWithVersion(
         noPendingTasksSend(userId, id),
       ),
     )
-    .returning(hybridNoteSelection);
+    .returning(await noteSelection());
 
   if (updated[0]) {
     // Only the compare-and-swap that actually wrote counts. The lost-response
@@ -1364,7 +1433,7 @@ export async function deleteNoteWithVersion(
 
   return db.transaction(async (tx) => {
     const [current] = await tx
-      .select(hybridNoteSelection)
+      .select(await noteSelection())
       .from(notes)
       .where(and(eq(notes.id, id), eq(notes.userId, userId)))
       .limit(1);
@@ -1412,13 +1481,41 @@ export async function deleteNoteWithVersion(
     // A late writer won after our first read. Returning the latest row keeps
     // the user's private text recoverable instead of flattening this to 404.
     const [remote] = await tx
-      .select(hybridNoteSelection)
+      .select(await noteSelection())
       .from(notes)
       .where(and(eq(notes.id, id), eq(notes.userId, userId)))
       .limit(1);
     if (!remote) throw new Error("Note not found");
     return { status: "conflict" as const, remote };
   });
+}
+
+/**
+ * Record that the owner has decided about this note in Review.
+ *
+ * Owner-scoped and deliberately not version-checked. This writes one
+ * boolean-shaped fact about the person's own attention, not about the note's
+ * content, so a concurrent edit elsewhere must not make the decision fail or
+ * silently roll a body back. `updatedAt` is left alone for the same reason:
+ * bumping it would invalidate an open editor's version and cost someone their
+ * in-flight text to record that they had glanced at it.
+ *
+ * Reversible on purpose. Undo after "Keep in Notes" calls this with
+ * `reviewed: false`, which returns the note to the queue exactly where it was.
+ */
+export async function setNoteReviewed(
+  input: SetNoteReviewedInput,
+): Promise<NoteRead> {
+  refuseDemoMutation();
+  const noteId = validateStableNoteId(input.id);
+  const userId = await requireUser();
+  const [row] = await db
+    .update(notes)
+    .set({ reviewedAt: input.reviewed ? Date.now() : null })
+    .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
+    .returning(await noteSelection());
+  if (!row) throw new Error("Note not found");
+  return row;
 }
 
 /**
@@ -1446,7 +1543,7 @@ export async function restoreArchivedNoteForHybrid(
         noPendingTasksSend(userId, noteId),
       ),
     )
-    .returning(hybridNoteSelection);
+    .returning(await noteSelection());
   if (!row) throw new Error("Note not found or not archived");
   return row;
 }
@@ -1515,7 +1612,7 @@ export async function getApprovedTaskSendRecoveryForHybrid(
     }
 
     const [note] = await tx
-      .select(hybridNoteSelection)
+      .select(await noteSelection())
       .from(notes)
       .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
       .limit(1);
@@ -1608,7 +1705,7 @@ export async function sendApprovedExtractToTasks(
 
   const reservation: Reservation = await db.transaction(async (tx) => {
     const [current] = await tx
-      .select(hybridNoteSelection)
+      .select(await noteSelection())
       .from(notes)
       .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
       .limit(1);
@@ -1753,10 +1850,10 @@ export async function sendApprovedExtractToTasks(
           isNull(notes.promotedTaskId),
         ),
       )
-      .returning(hybridNoteSelection);
+      .returning(await noteSelection());
     if (!reserved[0]) {
       const [remote] = await tx
-        .select(hybridNoteSelection)
+        .select(await noteSelection())
         .from(notes)
         .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
         .limit(1);
@@ -1889,7 +1986,7 @@ export async function sendApprovedExtractToTasks(
       )
       .limit(1);
     const [current] = await tx
-      .select(hybridNoteSelection)
+      .select(await noteSelection())
       .from(notes)
       .where(and(eq(notes.id, noteId), eq(notes.userId, userId)))
       .limit(1);
@@ -1948,7 +2045,7 @@ export async function sendApprovedExtractToTasks(
           isNull(notes.promotedTaskId),
         ),
       )
-      .returning(hybridNoteSelection);
+      .returning(await noteSelection());
     if (!stored[0]) {
       throw new Error("The source note changed while storing the Tasks receipt");
     }

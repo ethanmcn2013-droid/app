@@ -119,6 +119,40 @@ identity. The module databases (notes / timeline / signal) are created from
 their tracked baselines in `drizzle-notes/`, `drizzle-timeline/`,
 `drizzle-signal/`. See `drizzle/MIGRATIONS.md` for the full contract.
 
+### Pending module migration: notes 0001
+
+`drizzle-notes/0001_notes_reviewed_at.sql` adds one nullable column and one
+index to `notes`, for the Review queue (N·25, 2026-08-05):
+
+```sql
+ALTER TABLE `notes` ADD `reviewed_at` integer;
+CREATE INDEX `notes_user_reviewed_idx` ON `notes` (`user_id`,`reviewed_at`,`created_at`);
+```
+
+It is additive and backward compatible: every existing row reads as "not yet
+reviewed", which is true, and the previous release keeps working against the
+new schema.
+
+**Deploy order does not matter.** The app probes for the column once per
+process (`notesReviewStateReady()` in
+`src/modules/notes/server/actions/notes.ts`) and projects a literal NULL when
+it is absent. Shipping the code first is safe: the notebook, search, capture,
+editing, Turn into task and Sent all work, every note simply reads as "not
+yet reviewed", and the only thing that fails is the one action that writes
+the column — which reports itself and rolls back on screen.
+
+Until the migration is applied, therefore:
+
+- Review lists every note and the queue never empties.
+- "Keep in Notes" says the decision was not saved, and means it.
+
+Applying it switches Review on with no further deploy. There is no
+receipt-backed runner for the module databases yet — `pnpm db:migrate` covers
+the Tasks database only — so apply it by hand against `NOTES_DATABASE_URL`
+with `turso db shell`, after a backup, and record the applied hash beside the
+release. Building that runner for the module databases is open work; the
+probe above is what makes its absence survivable rather than blocking.
+
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against

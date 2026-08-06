@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import {
   NOTES_DELIGHT_DECISION_COUNTS,
@@ -7,28 +7,76 @@ import {
   type NotesDelightDecision,
 } from "../notes-delight-ledger.contract";
 
-async function openNotebook(
-  page: Page,
-  fixture = "populated",
-  hybridMode?: string,
-) {
-  const params = new URLSearchParams({ fixture });
-  if (hybridMode) params.set("hybridMode", hybridMode);
-  const response = await page.goto(`/app/notes?${params.toString()}`);
-  expect(response?.ok()).toBeTruthy();
+/**
+ * Signal Notes — the workspace.
+ *
+ * Three views (Notebook, Review, Sent) inside the module canvas, no floating
+ * card, one composer with three ways in. Every selector here is derived from
+ * the render tree in src/modules/notes/app/workspace, and prefers the role
+ * and the name a person would use over an id invented for a test.
+ */
 
-  const notebook = page.locator('[data-hybrid-notebook="true"]');
-  await expect(notebook).toBeVisible();
-  const capture = page.locator("[data-notes-hybrid-capture]");
-  await expect(capture).toBeVisible();
-  await expect(page.locator("[data-note-row]").first()).toBeVisible();
-  // The route streams before React claims the early-capture surface. Prove the
-  // client event boundary is live, then return the fixture to its empty draft.
-  await capture.fill("hydration check");
-  await expect(page.getByRole("button", { name: "Save note" })).toBeEnabled();
-  await capture.fill("");
-  await expect(page.getByRole("button", { name: "Save note" })).toBeDisabled();
-  return notebook;
+const WORKSPACE = "[data-notes-workspace]";
+const COMPOSER = "[data-notes-composer]";
+const ROW = "[data-note-row]";
+const SENT_ROW = "[data-sent-row]";
+const REVIEW_CARD = "[data-review-card]";
+
+/** Dates a person would say out loud. "3d ago" is a log line, not a date. */
+const FRIENDLY_DATE =
+  /Just now|minutes? ago|hours? ago|Yesterday|days ago|\d{1,2} \w{3}/;
+
+/** The largest duration in a computed transition/animation list, in seconds. */
+function longestDuration(value: string): number {
+  return value
+    .split(",")
+    .map((part) => {
+      const trimmed = part.trim();
+      const amount = Number.parseFloat(trimmed);
+      if (!Number.isFinite(amount)) return 0;
+      return trimmed.endsWith("ms") ? amount / 1000 : amount;
+    })
+    .reduce((longest, amount) => Math.max(longest, amount), 0);
+}
+
+/**
+ * Load a view and wait for React to own it.
+ *
+ * The route streams, so the markup is on screen before any click means
+ * anything. The React fiber key on the workspace root is the honest signal
+ * that hydration has happened; asserting on it beats sleeping.
+ */
+async function openNotes(
+  page: Page,
+  params: Record<string, string> = {},
+): Promise<Locator> {
+  const search = new URLSearchParams({ fixture: "populated", ...params });
+  const response = await page.goto(`/app/notes?${search.toString()}`);
+  expect(response?.ok()).toBeTruthy();
+  const workspace = page.locator(WORKSPACE);
+  await expect(workspace).toBeVisible();
+  await page.waitForFunction(() => {
+    const node = document.querySelector("[data-notes-workspace]");
+    return Boolean(
+      node && Object.keys(node).some((key) => key.startsWith("__reactFiber$")),
+    );
+  });
+  return workspace;
+}
+
+function viewTab(page: Page, name: "Notebook" | "Review" | "Sent"): Locator {
+  return page
+    .getByRole("navigation", { name: "Notes views" })
+    .getByRole("link", { name });
+}
+
+function composerField(page: Page): Locator {
+  return page.getByRole("textbox", { name: "Write a note" });
+}
+
+/** The reading and editing field for the open note. */
+function noteBody(page: Page): Locator {
+  return page.getByRole("textbox", { name: "Note", exact: true });
 }
 
 test("the executable contract accounts for every exhaustive ledger decision", () => {
@@ -61,388 +109,503 @@ test("the executable contract accounts for every exhaustive ledger decision", ()
   expect(actualCounts).toEqual(NOTES_DELIGHT_DECISION_COUNTS);
 });
 
-test("desktop opens on artifact history and enters detail only by intent", async ({
+test("the workspace is the page itself, not a card floating on it", async ({
   page,
 }) => {
-  const notebook = await openNotebook(page);
-  const capture = page.getByRole("textbox", { name: "Capture" });
+  await openNotes(page);
 
-  await expect(capture).toBeFocused();
-  await expect(
-    page.getByRole("heading", { name: "Sent to Tasks" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("textbox", { name: "Private note body" }),
-  ).toHaveCount(0);
-  await expect(
-    page.locator("[data-note-row]").first(),
-  ).not.toHaveAttribute("aria-current", "true");
-  await expect(
-    page.getByRole("searchbox", { name: "Find in Notes" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { level: 1, name: "Notes" }),
-  ).toHaveCount(1);
-  await expect(page.getByText("Synced account", { exact: true })).toHaveCount(0);
-  await expect(
-    page.getByText("Tasks destinations are unavailable", { exact: false }),
-  ).toHaveCount(0);
-
-  await page.locator("[data-note-row]").first().click();
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await expect(detail).toBeVisible();
-  await expect(detail).toBeFocused();
-
-  const geometry = await notebook.evaluate((root) => {
-    const workspace = root.querySelector<HTMLElement>('[class*="workspace"]');
-    const stream = root.querySelector<HTMLElement>('[class*="streamPane"]');
-    const detailPane = root.querySelector<HTMLElement>('[class*="detailPane"]');
-    const textarea = root.querySelector<HTMLElement>('[class*="detailTextarea"]');
+  const structure = await page.evaluate(() => {
+    const workspace = document.querySelector<HTMLElement>(
+      "[data-notes-workspace]",
+    );
+    const canvas = document.querySelector<HTMLElement>(
+      'main[data-product-canvas="module"]',
+    );
+    if (!workspace || !canvas) return null;
+    const styles = getComputedStyle(workspace);
+    const ancestors: { tag: string; boxShadow: string }[] = [];
+    let node: HTMLElement | null = workspace.parentElement;
+    while (node && node !== canvas) {
+      ancestors.push({
+        tag: `${node.tagName.toLowerCase()}${node.className ? `.${String(node.className).split(/\s+/)[0]}` : ""}`,
+        boxShadow: getComputedStyle(node).boxShadow,
+      });
+      node = node.parentElement;
+    }
     return {
-      workspaceWidth: workspace?.getBoundingClientRect().width ?? 0,
-      rootHeight: root.getBoundingClientRect().height,
-      workspaceHeight: workspace?.getBoundingClientRect().height ?? 0,
-      streamOverflow: stream ? getComputedStyle(stream).overflowY : "",
-      detailOverflow: detailPane ? getComputedStyle(detailPane).overflowY : "",
-      readingWidth: textarea?.getBoundingClientRect().width ?? 0,
+      reachedCanvas: node === canvas,
+      corners: [
+        styles.borderTopLeftRadius,
+        styles.borderTopRightRadius,
+        styles.borderBottomRightRadius,
+        styles.borderBottomLeftRadius,
+      ],
+      workspaceShadow: styles.boxShadow,
+      ancestors,
+      canvasBackground: getComputedStyle(canvas).backgroundColor,
     };
   });
-  expect(geometry.workspaceWidth).toBeGreaterThanOrEqual(1200);
-  expect(geometry.workspaceWidth).toBeLessThanOrEqual(1400);
-  expect(geometry.workspaceHeight).toBeLessThanOrEqual(geometry.rootHeight);
-  expect(geometry.streamOverflow).toBe("auto");
-  expect(geometry.detailOverflow).toBe("auto");
-  expect(geometry.readingWidth).toBeLessThanOrEqual(760);
 
-  const accessibility = await new AxeBuilder({ page })
-    .include('[data-hybrid-notebook="true"]')
-    .analyze();
+  expect(structure).not.toBeNull();
+  expect(structure?.reachedCanvas).toBe(true);
+  expect(structure?.corners).toEqual(["0px", "0px", "0px", "0px"]);
+  expect(structure?.workspaceShadow).toBe("none");
   expect(
-    accessibility.violations.filter(({ impact }) =>
-      impact === "serious" || impact === "critical",
-    ),
+    structure?.ancestors.filter(({ boxShadow }) => boxShadow !== "none"),
   ).toEqual([]);
+  expect(structure?.canvasBackground).toBe("rgb(255, 255, 255)");
 });
 
-test("mobile leaves the stream closed until a person chooses a note", async ({
+test("Notebook, Review and Sent are links that write themselves into the URL", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openNotebook(page);
+  await openNotes(page);
 
-  const capture = page.getByRole("textbox", { name: "Capture" });
-  await expect(capture).toBeFocused();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.locator("[data-note-row]").first(),
-  ).not.toHaveAttribute("aria-current", "true");
+  await expect(viewTab(page, "Notebook")).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(viewTab(page, "Review")).not.toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(viewTab(page, "Sent")).not.toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 
-  await page.locator("[data-note-row]").first().click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog).toBeVisible();
-  await expect(
-    dialog.getByRole("textbox", { name: "Private note body" }),
-  ).toBeFocused();
-});
+  // Counts sit beside the tab they belong to, and they are numbers.
+  const counts = page
+    .getByRole("navigation", { name: "Notes views" })
+    .locator("a > span");
+  await expect(counts).toHaveCount(3);
+  for (const text of await counts.allTextContents()) {
+    expect(text.trim()).toMatch(/^\d+$/);
+  }
+  expect(Number((await counts.first().textContent())?.trim())).toBe(
+    await page.locator(ROW).count(),
+  );
 
-test("Tasks destination appears only after exact wording enters approval", async ({
-  page,
-}) => {
-  await openNotebook(page);
-  await expect(page.getByLabel("Tasks destination")).toHaveCount(0);
-
-  await page
-    .locator("[data-note-row]")
-    .filter({ hasText: "Idea for the studio newsletter" })
-    .click();
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await detail.evaluate((element) => {
-    const field = element as HTMLTextAreaElement;
-    const end = Math.min(field.value.length, 24);
-    field.focus();
-    field.setSelectionRange(0, end);
-    document.dispatchEvent(new Event("selectionchange", { bubbles: true }));
-    field.dispatchEvent(new Event("select", { bubbles: true }));
-    field.dispatchEvent(new KeyboardEvent("keyup", { key: "Shift", bubbles: true }));
+  // Sent is not smuggled into the Notebook view.
+  const sentHeading = page.getByRole("heading", {
+    name: "Notes you turned into tasks",
   });
-  await page.getByRole("button", { name: "Use selection" }).click();
+  await expect(sentHeading).toHaveCount(0);
 
-  await expect(page.getByLabel("Tasks destination")).toBeVisible();
+  await viewTab(page, "Review").click();
+  await expect(page).toHaveURL(/[?&]view=review(&|$)/);
+  await expect(viewTab(page, "Review")).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(REVIEW_CARD)).toHaveCount(1);
+
+  await viewTab(page, "Sent").click();
+  await expect(page).toHaveURL(/[?&]view=sent(&|$)/);
+  await expect(viewTab(page, "Sent")).toHaveAttribute("aria-current", "page");
+  await expect(sentHeading).toHaveCount(1);
+
+  await viewTab(page, "Notebook").click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("view"))
+    .toBeNull();
+  await expect(viewTab(page, "Notebook")).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(sentHeading).toHaveCount(0);
+});
+
+test("Control+Enter saves the note, puts it at the top, and opens it", async ({
+  page,
+}) => {
+  await openNotes(page);
+  const before = await page.locator(ROW).count();
+
+  const composer = composerField(page);
+  await composer.fill("Confirm the handwritten place cards before Friday.");
+  await composer.press("Control+Enter");
+
+  await expect(page.locator(ROW)).toHaveCount(before + 1);
+  const first = page.locator(ROW).first();
+  await expect(first).toContainText(
+    "Confirm the handwritten place cards before Friday.",
+  );
+  await expect(first).toHaveAttribute("aria-current", "true");
+  await expect(noteBody(page)).toHaveValue(
+    "Confirm the handwritten place cards before Friday.",
+  );
+  await expect(composer).toHaveValue("");
+});
+
+test("the composer carries the whole capture and nothing it does not need", async ({
+  page,
+}) => {
+  const workspace = await openNotes(page);
+  const composer = page.locator(COMPOSER);
+
+  await expect(page.getByRole("button", { name: "Save note" })).toBeDisabled();
+
+  // No character counter until the writing is anywhere near the limit.
+  await expect(composer.getByText(/\d[\d,]* \/ 10,000/)).toHaveCount(0);
+
+  for (const mode of ["Type", "Voice", "Photo"]) {
+    await expect(
+      composer.getByRole("button", { name: mode, exact: true }),
+    ).toHaveCount(1);
+  }
+
+  const text = (await workspace.textContent()) ?? "";
+  expect(text).not.toContain("Escape asks before discarding");
+  expect(text).not.toContain("Ctrl + Enter saves");
+});
+
+test("capture by email lives in the header menu, never in the composer", async ({
+  page,
+}) => {
+  const workspace = await openNotes(page);
+
+  await expect(page.locator(COMPOSER)).not.toContainText("Capture by email");
+  expect((await workspace.textContent()) ?? "").not.toContain(
+    "Capture by email",
+  );
+
+  await page.getByRole("button", { name: "Notes options" }).click();
+  const menu = page.getByRole("menu", { name: "Notes options" });
+  await expect(menu).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Send to Tasks" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Your note stays here.", { exact: true }),
+    menu.getByRole("menuitem", { name: /Capture by email/ }),
   ).toBeVisible();
 });
 
-test("high-frequency search and exact selection remain immediate", async ({
+test("a draft survives a trip to Review and back", async ({ page }) => {
+  await openNotes(page);
+  const draft = "Half a thought about the terrace lights";
+
+  await composerField(page).fill(draft);
+  await viewTab(page, "Review").click();
+  await expect(page.locator(REVIEW_CARD)).toHaveCount(1);
+  await expect(page.locator(COMPOSER)).toHaveCount(0);
+
+  await viewTab(page, "Notebook").click();
+  await expect(composerField(page)).toHaveValue(draft);
+});
+
+test("slash finds the search, the match is marked, Escape clears it", async ({
   page,
 }) => {
-  await openNotebook(page);
+  await openNotes(page);
+  const everything = await page.locator(ROW).count();
 
-  await page.getByRole("heading", { name: "Notebook" }).click();
+  const search = page.getByRole("searchbox", { name: "Search notebook" });
+  await expect(search).not.toBeFocused();
   await page.keyboard.press("/");
-  const search = page.getByRole("searchbox", { name: "Find in Notes" });
   await expect(search).toBeFocused();
 
   await search.fill("newsletter");
-  const stream = page.locator('[data-delight-moment="artifact-presence"]');
-  await expect(stream).toHaveAttribute("data-motion-policy", "immediate-filter");
-  await expect(page.locator("[data-note-row]")).toHaveCount(1);
-  await search.press("Enter");
+  await expect(page.locator(ROW)).toHaveCount(1);
+  await expect(page.locator(`${ROW} mark`).first()).toHaveText(/newsletter/i);
 
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await expect(detail).toBeFocused();
-  await detail.evaluate((element) => {
-    const field = element as HTMLTextAreaElement;
-    field.setSelectionRange(0, Math.min(field.value.length, 30));
-    field.dispatchEvent(new Event("select", { bubbles: true }));
-    field.dispatchEvent(
-      new KeyboardEvent("keyup", { key: "Shift", bubbles: true }),
-    );
-  });
-
-  const selectedWording = page.locator(
-    '[data-motion-policy="immediate-selection"]',
-  );
-  await expect(selectedWording).toContainText("Selected privately");
-  const transform = await selectedWording.evaluate(
-    (element) => getComputedStyle(element).transform,
-  );
-  expect(["none", "matrix(1, 0, 0, 1, 0, 0)"]).toContain(transform);
+  await search.press("Escape");
+  await expect(search).toHaveValue("");
+  await expect(page.locator(ROW)).toHaveCount(everything);
 });
 
-test("all six approved delight moments are integrated into the real Notes flow", async ({
+test("a row says what it is, when it was, and in words people use", async ({
   page,
 }) => {
-  await openNotebook(page);
+  const workspace = await openNotes(page);
 
+  const first = page.locator(ROW).first();
+  await expect(first).toContainText("Saturday wedding, Mara + Finn");
+  // The source label is the accessible half of the source icon.
+  await expect(first).toContainText("Written");
   await expect(
-    page.locator('[data-delight-moment="artifact-presence"]'),
-  ).toBeVisible();
-  await expect(
-    page.locator('[data-delight-moment="stream-to-detail"]'),
-  ).toBeVisible();
+    page.locator(ROW).filter({ hasText: "ballroom can be accessed from 8am" }),
+  ).toContainText("Spoken");
 
-  const capture = page.getByRole("textbox", { name: "Capture" });
-  await capture.fill("Confirm the handwritten place cards before Friday.");
-  await capture.press("Control+Enter");
-  await expect(page.locator("[data-note-row]").first()).toContainText(
-    "Confirm the handwritten place cards",
+  expect((await first.textContent()) ?? "").toMatch(FRIENDLY_DATE);
+
+  const text = (await workspace.textContent()) ?? "";
+  expect(text).not.toContain("3d ago");
+  expect(text).not.toMatch(/\d+ active/);
+  await expect(workspace.getByText(/^\d+ notes$/)).toBeVisible();
+});
+
+test("a wide screen opens with a note already open", async ({ page }) => {
+  await openNotes(page);
+
+  const selected = page.locator(`${ROW}[aria-current="true"]`);
+  await expect(selected).toHaveCount(1);
+  await expect(selected).toContainText("Saturday wedding, Mara + Finn");
+
+  await expect(page.getByRole("region", { name: "Selected note" })).toBeVisible();
+  await expect(noteBody(page)).toHaveValue(/Ceremony 2pm in the orchard/);
+});
+
+test("a phone keeps the list until a row is chosen, and Back returns to it", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openNotes(page);
+
+  const detail = page.getByRole("region", { name: "Selected note" });
+  await expect(page.locator(`${ROW}[aria-current="true"]`)).toHaveCount(0);
+  await expect(detail).toBeHidden();
+
+  await page.locator(ROW).first().click();
+  await expect(detail).toBeVisible();
+  await expect(noteBody(page)).toHaveValue(/Ceremony 2pm in the orchard/);
+  await expect(page.getByRole("button", { name: "Notebook" })).toBeVisible();
+
+  await page.goBack();
+  await expect(page.locator(`${ROW}[aria-current="true"]`)).toHaveCount(0);
+  await expect(detail).toBeHidden();
+  await expect(page.locator(ROW).first()).toBeVisible();
+});
+
+test("editing the note and leaving the field saves it", async ({ page }) => {
+  await openNotes(page);
+
+  await page
+    .locator(ROW)
+    .filter({ hasText: "welcome sign by the gate" })
+    .click();
+  const body = noteBody(page);
+  await expect(body).toHaveValue(/welcome sign by the gate/);
+
+  await body.fill("Reprint the welcome sign before the open day.");
+  await body.blur();
+
+  await expect(page.locator(`${ROW}[aria-current="true"]`)).toContainText(
+    "Reprint the welcome sign before the open day.",
   );
+});
 
+test("Turn into task opens a modal, and Escape hands the focus back", async ({
+  page,
+}) => {
+  await openNotes(page);
   await page
-    .locator("[data-note-row]")
-    .filter({ hasText: "Small thing but it matters" })
+    .locator(ROW)
+    .filter({ hasText: "Idea for the studio newsletter" })
     .click();
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await detail.evaluate((element) => {
-    const field = element as HTMLTextAreaElement;
-    const end = Math.min(field.value.length, 34);
-    field.focus();
-    field.setSelectionRange(0, end);
-    field.dispatchEvent(new Event("select", { bubbles: true }));
-    field.dispatchEvent(
-      new KeyboardEvent("keyup", { key: "Shift", bubbles: true }),
-    );
-  });
 
-  await expect(
-    page.locator('[data-delight-moment="private-to-approved"]'),
-  ).toContainText("Selected privately");
-  await page.getByRole("button", { name: "Use selection" }).click();
-  await expect(
-    page
-      .locator('[data-delight-moment="private-to-approved"]')
-      .filter({ hasText: "Approved source" }),
-  ).toContainText("Approved source");
+  const trigger = page.getByRole("button", { name: "Turn into task" });
+  await trigger.click();
 
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(
+    dialog.getByRole("heading", { name: "Turn this into a task" }),
+  ).toBeVisible();
+
+  const wording = dialog.getByLabel("What the task says");
+  await expect(wording).toHaveValue(/Idea for the studio newsletter/);
+  await wording.fill("Write the backstage piece for the newsletter");
+  await expect(wording).toHaveValue(
+    "Write the backstage piece for the newsletter",
+  );
+  await expect(dialog.getByLabel("Project")).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("creating the task confirms it and links straight to it", async ({
+  page,
+}) => {
+  await openNotes(page);
   await page
-    .getByRole("button", { name: "Send to Tasks", exact: true })
+    .locator(ROW)
+    .filter({ hasText: "Idea for the studio newsletter" })
     .click();
-  await expect(
-    page.locator('[data-delight-moment="approved-to-tasks"]'),
-  ).toHaveAttribute("data-state", "complete");
-  await expect(page.getByText(/^Sent to .+\.$/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Turn into task" }).click();
 
-  await page.getByRole("button", { name: "Delete…" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Create task" }).click();
+
+  await expect(dialog.getByRole("heading", { name: "Task created" })).toBeVisible();
+  const openTask = dialog.getByRole("link", { name: "Open task" });
+  await expect(openTask).toBeVisible();
+  expect(await openTask.getAttribute("href")).toMatch(/^\/app\/task\//);
+});
+
+test("Review is one note at a time with three ways out", async ({ page }) => {
+  await openNotes(page, { view: "review" });
+
+  // The old "N of M reviewed" denominator was session state: it reset on
+  // reload and disagreed with the tab badge on the same screen. What is
+  // true and stable is how many are still waiting.
+  await expect(page.getByText(/^(\d+ notes to review|One note left)$/)).toBeVisible();
+  await expect(page.locator(REVIEW_CARD)).toHaveCount(1);
+  for (const name of ["Keep in Notes", "Turn into task", "Delete"]) {
+    await expect(
+      page.getByRole("button", { name, exact: true }),
+    ).toBeVisible();
+  }
+});
+
+test("Keep in Notes moves the queue on and offers the way back", async ({
+  page,
+}) => {
+  await openNotes(page, { view: "review" });
+
+  const body = page.locator(`${REVIEW_CARD} p`).first();
+  const firstNote = (await body.innerText()).trim();
+  const queueBefore = await page
+    .getByText(/^(\d+ notes to review|One note left)$/)
+    .innerText();
+
+  await page.getByRole("button", { name: "Keep in Notes", exact: true }).click();
+
+  // Deciding shortens the queue and shows a running count of this session's
+  // decisions. Both are facts about now, neither is a stored denominator.
+  await expect(page.getByText("1 decided just now")).toBeVisible();
   await expect(
-    page.locator('[data-delight-moment="decision-region"]'),
-  ).toContainText("Delete this private note?");
-  await page.getByRole("button", { name: "Delete note" }).click();
+    page.getByText(/^(\d+ notes to review|One note left)$/),
+  ).not.toHaveText(queueBefore);
+  await expect(body).not.toHaveText(firstNote);
+
   const undo = page.getByRole("button", { name: "Undo", exact: true });
+  await expect(undo).toBeVisible();
   await expect(
-    page
-      .locator('[data-delight-moment="toast-lifecycle"]')
-      .filter({ hasText: "Note deleted." }),
-  ).toContainText("Note deleted.");
-  await expect(undo).toBeFocused();
-  await undo.click();
-  await expect(
-    page
-      .locator('[data-delight-moment="toast-lifecycle"]')
-      .filter({ hasText: "Note restored." }),
-  ).toContainText("Note restored.");
+    page.getByRole("status").filter({ has: undo }),
+  ).toContainText("Kept in Notes.");
 });
 
-test("lost Tasks receipts retry immutably without replaying handoff travel", async ({
+test("every review gesture has a button a thumb can hit", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openNotes(page, { view: "review" });
+
+  for (const name of ["Keep in Notes", "Turn into task", "Delete"]) {
+    const button = page.getByRole("button", { name, exact: true });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box?.height ?? 0, `${name} height`).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test("Sent carries the task wording, the note behind it, and the way back", async ({
   page,
 }) => {
-  await openNotebook(page, "populated", "tasks-lost-reply");
-  await page
-    .locator("[data-note-row]")
-    .filter({ hasText: "Idea for the studio newsletter" })
-    .click();
+  await openNotes(page, { view: "sent" });
 
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await detail.evaluate((element) => {
-    const field = element as HTMLTextAreaElement;
-    field.setSelectionRange(0, Math.min(field.value.length, 36));
-    field.dispatchEvent(new Event("select", { bubbles: true }));
-    field.dispatchEvent(
-      new KeyboardEvent("keyup", { key: "Shift", bubbles: true }),
-    );
-  });
-  await page.getByRole("button", { name: "Use selection" }).click();
-  await page
-    .getByRole("button", { name: "Send to Tasks", exact: true })
-    .click();
-
-  const retry = page.getByRole("button", { name: "Retry approved send" });
-  await expect(retry).toBeVisible();
+  const detail = page.getByRole("region", { name: "Sent note" });
+  await expect(detail.getByText("What the task says")).toBeVisible();
   await expect(
-    page.getByText("Locked for this exact receipt retry"),
+    detail.getByText("Confirm marquee sides with hire company before Thursday"),
   ).toBeVisible();
-  await retry.click();
-
+  await expect(detail.getByText("The note it came from")).toBeVisible();
   await expect(
-    page.locator(
-      '[data-delight-moment="approved-to-tasks"][data-state="complete"]',
-    ),
-  ).toHaveAttribute("data-handoff-travel", "false");
-  await expect(page.getByText(/^Sent to .+\.$/).first()).toBeVisible();
-});
-
-test("capture, conflict, and archive recovery use one attached decision grammar", async ({
-  page,
-}) => {
-  await openNotebook(page);
-
-  const capture = page.getByRole("textbox", { name: "Capture" });
-  await capture.fill("Keep this exact unsaved line.");
-  await capture.press("Escape");
-  const keepWriting = page.getByRole("button", { name: "Keep writing" });
-  await expect(
-    page.locator('[data-delight-moment="decision-region"]'),
-  ).toContainText("Discard this unsaved capture?");
-  await expect(keepWriting).toBeFocused();
-  await keepWriting.click();
-  await capture.fill("");
-
-  const activeBefore = await page.locator("[data-note-row]").count();
-  await page.getByRole("button", { name: "Restore to notebook" }).first().click();
-  await expect(page.locator("[data-note-row]")).toHaveCount(activeBefore + 1);
-  await expect(
-    page
-      .locator('[data-delight-moment="toast-lifecycle"]')
-      .filter({ hasText: "Private source restored" }),
+    detail.getByText("Ceremony 2pm in the orchard", { exact: false }),
   ).toBeVisible();
 
-  await openNotebook(page, "populated", "conflict");
-  await page
-    .locator("[data-note-row]")
-    .filter({ hasText: "Idea for the studio newsletter" })
-    .click();
-  const detail = page.getByRole("textbox", { name: "Private note body" });
-  await detail.fill(`${await detail.inputValue()}\nLocal revision.`);
-  await page.getByRole("button", { name: "Save edit" }).click();
+  const openTask = detail.getByRole("link", { name: "Open task" });
+  await expect(openTask).toBeVisible();
+  expect(await openTask.getAttribute("href")).toMatch(/^\/app\/task\//);
+
+  // Still in the notebook: the way back is a way back, not a restore.
   await expect(
-    page.locator('[data-delight-moment="decision-region"]'),
-  ).toContainText("This note changed somewhere else.");
-  await expect(page.getByRole("button", { name: "Keep mine" })).toBeFocused();
+    detail.getByRole("button", { name: "Open in Notebook" }),
+  ).toBeVisible();
+  await expect(
+    detail.getByRole("button", { name: "Restore to Notebook" }),
+  ).toHaveCount(0);
+
+  // One that left the notebook: restore, and the promise about the task.
+  await page
+    .locator(SENT_ROW)
+    .filter({ hasText: "Not in your notebook" })
+    .first()
+    .click();
+  await expect(
+    detail.getByRole("button", { name: "Restore to Notebook" }),
+  ).toBeVisible();
+  await expect(
+    detail.getByText(/The task it created stays in Tasks/),
+  ).toBeVisible();
+  await expect(
+    detail.getByRole("button", { name: "Open in Notebook" }),
+  ).toHaveCount(0);
 });
 
-test("reduced motion keeps every state change functional without transform travel", async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await openNotebook(page);
-  await page.locator("[data-note-row]").nth(2).click();
-
-  const detailSurface = page.locator(
-    '[data-delight-moment="stream-to-detail"]',
-  );
-  await expect(detailSurface).toBeVisible();
-  const motion = await detailSurface.evaluate((element) => {
-    const styles = getComputedStyle(element);
-    return {
-      animationDuration: styles.animationDuration,
-      transitionDuration: styles.transitionDuration,
-      transform: styles.transform,
-    };
-  });
-  expect(motion.animationDuration).toMatch(/^(0s|0\.001s)$/);
-  expect(motion.transitionDuration).toBe("0s");
-  expect(["none", "matrix(1, 0, 0, 1, 0, 0)"]).toContain(motion.transform);
-});
-
-test("empty, first-capture, partial, long-content, and read-only states stay legible", async ({
-  page,
-}) => {
-  await page.goto("/app/notes?fixture=empty");
-  await expect(page.locator('[data-hybrid-notebook="true"]')).toBeVisible();
-  await expect(page.locator("[data-note-row]")).toHaveCount(0);
+test("the empty states are quiet", async ({ page }) => {
+  await openNotes(page, { fixture: "empty" });
+  await expect(page.locator(ROW)).toHaveCount(0);
   await expect(
     page.getByText("Your notebook starts with one private thought."),
   ).toBeVisible();
 
-  await page.goto("/app/notes?fixture=first-capture");
-  await expect(page.getByText("Your notebook starts here.")).toBeVisible();
-
-  await page.goto("/app/notes?fixture=partial-failure");
-  await expect(
-    page.getByRole("status").filter({
-      hasText: "Connected details are temporarily unavailable.",
-    }),
-  ).toBeVisible();
-
-  await openNotebook(page, "long-content");
-  await page.locator("[data-note-row]").first().click();
-  const longNote = page.getByRole("textbox", { name: "Private note body" });
-  await expect(longNote).toBeFocused();
-  expect(
-    await longNote.evaluate((element) => getComputedStyle(element).scrollBehavior),
-  ).toBe("auto");
-
-  await page.goto("/app/notes?fixture=populated&hybridMode=read-only");
-  const readOnlyCapture = page.locator("[data-notes-hybrid-capture]");
-  await expect(readOnlyCapture).toBeVisible();
-  await expect(readOnlyCapture).toHaveAttribute("readonly", "");
-  await expect(page.getByRole("button", { name: "Save note" })).toBeDisabled();
+  await openNotes(page, { fixture: "empty", view: "sent" });
+  const nothingSent = page.getByText("Nothing sent yet");
+  await expect(nothingSent).toBeVisible();
+  const fontSize = await nothingSent.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(fontSize).toBeLessThanOrEqual(20);
 });
 
-test("email capture is integrated beside capture guidance without decorative emoji", async ({
+test("no serious or critical accessibility violations on any of the three views", async ({
   page,
 }) => {
-  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await openNotebook(page, "capture-email");
-  const composer = page
-    .getByRole("textbox", { name: "Capture" })
-    .locator("xpath=ancestor::section");
-  const emailCapture = composer.getByLabel("Email capture address");
+  const blocking: string[] = [];
+  for (const view of ["notebook", "review", "sent"] as const) {
+    await openNotes(page, view === "notebook" ? {} : { view });
+    const accessibility = await new AxeBuilder({ page })
+      .include(WORKSPACE)
+      .analyze();
+    blocking.push(
+      ...accessibility.violations
+        .filter(({ impact }) => impact === "serious" || impact === "critical")
+        .map(
+          ({ id, impact, nodes }) =>
+            `${view}: ${id} (${impact}) → ${nodes
+              .map((node) => node.target.join(" "))
+              .join(" | ")}`,
+        ),
+    );
+  }
+  expect(blocking).toEqual([]);
+});
 
-  await expect(emailCapture).toBeVisible();
-  await expect(emailCapture).toContainText("Capture by email");
-  await expect(emailCapture).toContainText(
-    "review-notebook@capture.signalstudio.test",
-  );
-  expect(await emailCapture.textContent()).not.toContain("✉");
+test("reduced motion leaves nothing travelling", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
 
-  await page.getByRole("button", { name: "Copy capture email address" }).click();
-  await expect(
-    page
-      .locator('[data-delight-moment="toast-lifecycle"]')
-      .filter({ hasText: "Capture email address copied." }),
-  ).toBeVisible();
+  await openNotes(page, { view: "review" });
+  const fill = page.locator(`${WORKSPACE} [class*="progressFill"]`);
+  await expect(fill).toHaveCount(1);
+  const progressMotion = await fill.evaluate((element) => {
+    const styles = getComputedStyle(element);
+    return {
+      transition: styles.transitionDuration,
+      animation: styles.animationDuration,
+    };
+  });
+  expect(longestDuration(progressMotion.transition)).toBeLessThanOrEqual(0.001);
+  expect(longestDuration(progressMotion.animation)).toBeLessThanOrEqual(0.001);
+
+  await openNotes(page);
+  const composerMotion = await page.locator(COMPOSER).evaluate((element) => {
+    const styles = getComputedStyle(element);
+    return {
+      transition: styles.transitionDuration,
+      animation: styles.animationDuration,
+    };
+  });
+  expect(longestDuration(composerMotion.transition)).toBeLessThanOrEqual(0.001);
+  expect(longestDuration(composerMotion.animation)).toBeLessThanOrEqual(0.001);
+});
+
+test("the live region exists and speaks after a save", async ({ page }) => {
+  await openNotes(page);
+
+  const live = page.locator(`${WORKSPACE} [role="status"][aria-live="polite"]`);
+  await expect(live).toHaveCount(1);
+  await expect(live).toHaveText("");
+
+  const composer = composerField(page);
+  await composer.fill("Ring the florist about the aisle foliage.");
+  await composer.press("Control+Enter");
+
+  await expect(live).toHaveText("Note saved.");
 });

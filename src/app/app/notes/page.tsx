@@ -1,6 +1,6 @@
 import { requireAppAccess } from "@/server/require-app-access";
 import { NotebookPage } from "@/modules/notes";
-import "@/modules/notes/notes.css";
+
 
 export const dynamic = "force-dynamic";
 

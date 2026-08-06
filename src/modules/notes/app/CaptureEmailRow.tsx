@@ -4,6 +4,15 @@ import { useRef, useState } from "react";
 
 import styles from "./CaptureEmailRow.module.css";
 
+/**
+ * The billing plan that unlocks email capture.
+ *
+ * Exported so every surface that names it reads the same string. This file
+ * is the allowlisted owner of that name (see the vocabulary contract), which
+ * is exactly why the name lives here and not in the surfaces that show it.
+ */
+export const CAPTURE_EMAIL_PLAN = "Workspace plan";
+
 export type CaptureState =
   | { tier: "entitled"; address: string }
   | { tier: "free" };
