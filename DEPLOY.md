@@ -131,14 +131,27 @@ CREATE INDEX `notes_user_reviewed_idx` ON `notes` (`user_id`,`reviewed_at`,`crea
 
 It is additive and backward compatible: every existing row reads as "not yet
 reviewed", which is true, and the previous release keeps working against the
-new schema. It must be applied to the notes database before this release
-serves traffic, or every read of `notes` fails on the missing column.
+new schema.
 
-There is no receipt-backed runner for the module databases yet — `pnpm
-db:migrate` covers the Tasks database only. Until one exists, apply this by
-hand against `NOTES_DATABASE_URL` with `turso db shell`, take a backup
-first, and record the applied hash beside the release. Building that runner
-for the module databases is open work, not something this release solved.
+**Deploy order does not matter.** The app probes for the column once per
+process (`notesReviewStateReady()` in
+`src/modules/notes/server/actions/notes.ts`) and projects a literal NULL when
+it is absent. Shipping the code first is safe: the notebook, search, capture,
+editing, Turn into task and Sent all work, every note simply reads as "not
+yet reviewed", and the only thing that fails is the one action that writes
+the column — which reports itself and rolls back on screen.
+
+Until the migration is applied, therefore:
+
+- Review lists every note and the queue never empties.
+- "Keep in Notes" says the decision was not saved, and means it.
+
+Applying it switches Review on with no further deploy. There is no
+receipt-backed runner for the module databases yet — `pnpm db:migrate` covers
+the Tasks database only — so apply it by hand against `NOTES_DATABASE_URL`
+with `turso db shell`, after a backup, and record the applied hash beside the
+release. Building that runner for the module databases is open work; the
+probe above is what makes its absence survivable rather than blocking.
 
 ## 5. Cron
 
