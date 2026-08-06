@@ -404,3 +404,78 @@ through the repo's existing Playwright setup
 (`experience/playwright.config.ts`) so the evidence is reproducible in CI
 rather than one-off. Measurement-based checks (scroll ratios, overflow, clipped
 containers, computed styles) are being used alongside, not instead.
+
+---
+
+## 14. Panel round 1 — 2026-08-06
+
+Nine independent seats, none seeing another's opinion, every finding then
+put to a fresh agent whose job was to refute it. Gate 9.5. Baseline 6.0.
+
+| Seat | Score |
+|---|---|
+| accessibility | 7.2 |
+| product design | 7.1 |
+| interaction | 6.8 |
+| brand | 6.8 |
+| emotional resonance | 6.8 |
+| typography | 6.4 |
+| engineering | 6.4 |
+| measured evidence | 6.4 |
+| UX / IA | 6.2 |
+
+Mean 6.7. **Not unanimous, not close.** No seat reached 7.3.
+
+### The findings that matter, in the order they should be fixed
+
+1. **The dated rail is not proportional to time.** `collisionSafePositions`
+   resolves label collisions by moving the *points*, so the calendar mapping
+   distorts — measured off by 4.7x. Three seats found this independently.
+   Phase 2 stopped undated milestones from claiming a position; this is the
+   same class of untruth one layer down, and it is the artifact's central
+   claim. Fix by moving labels, not points, and dropping to the ordered
+   presentation once density makes proportional spacing unreadable.
+
+2. **The Share panel cannot give you the link.** The only non-destructive
+   action routes to a builder console. The UX seat's words: a share panel
+   that cannot hand over the link makes every other improvement here
+   unshippable. If the hashed-token model genuinely cannot re-display an
+   existing link, that is a data-model problem to solve, not copy to explain.
+
+3. **Month ticks measure 1.48:1 on the page guests actually receive.** A
+   one-token change on the highest-severity accessibility defect, on the only
+   surface that gets shared. The rail also needs an accessible description
+   naming the span it covers.
+
+4. **Preview clips its own content** at 8 of 10 viewports — nested in the app
+   shell's scroll container while the real `/s/` route scrolls the document.
+
+5. **The dialog has no focus trap.** `aria-hidden` tells screen readers the
+   background is inert while keyboard focus walks straight out of it. A trap
+   already exists at `detail-panel/panel-shell.tsx:117-122`; porting it into
+   `primitives/dialog.tsx` fixes every dialog in the app.
+
+6. **The metadata layer is still monospace.** Every date, status, kicker, cap
+   and footnote. A display face bolted onto a technical readout.
+
+7. **The hero counts down louder than it names the couple**, and prints the
+   progress sentence twice.
+
+8. **One state machine speaks three vocabularies** — three local label arrays
+   plus the artifact's own nouns. Em dashes and straight apostrophes at 96px
+   survive on pages ordinary people read.
+
+9. **Selection is silent on mobile and ambiguous on desktop** — the selected
+   dot is byte-identical to hover.
+
+10. **The Milestones editor has no list semantics**, on the one surface whose
+    entire purpose is order.
+
+11. **Ordered rails draw their end milestones as half-circles.**
+
+### What the panel confirmed is working
+
+The ordered-mode fallback, the sequence card, the one-milestone fit, the
+keyboard model on the guest artifact, and the owner/public separation as an
+idea. The register is genuinely distinctive. The problems are execution, not
+direction.
