@@ -321,14 +321,25 @@ async function auditTimelineContract(
   // the working count stays one press away. The progressbar's aria-valuenow
   // tracks the frontier it paints (the furthest completed dot's position on
   // the date-scaled rail), which is not the same fraction as completed-of-
-  // total when milestones are unevenly spaced — two of nine complete still
-  // reads 33 here because those two sit a third of the way along the dated
-  // span. The spoken aria-valuetext keeps the honest count regardless.
+  // total when milestones are unevenly spaced — two of nine complete reads
+  // 40 here because the second of them, 18 April, falls 106 days into a 274
+  // day span and the rail is inset 4 points at each end. The spoken
+  // aria-valuetext keeps the honest count regardless.
+  //
+  // This read 33 until the dated rail became proportional again: marks used
+  // to be shoved apart until their labels stopped colliding, which put the
+  // frontier dot at a position no calendar supported. Distance on this rail
+  // is now calendar distance and nothing may move a mark off its day, so the
+  // frontier moved with it. Verified against the rendered DOM of a built app
+  // rather than recomputed: the fill beside this attribute paints
+  // scaleX(0.39591…), and 40 is that number rounded — the value and the ink
+  // are one statement, which is the invariant the artifact contract test
+  // enforces.
   const toggle = page.locator("[data-timeline-metric-toggle]");
   await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
   await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
   await expect(page.getByRole("progressbar", { name: "Milestone completion" }))
-    .toHaveAttribute("aria-valuenow", "33");
+    .toHaveAttribute("aria-valuenow", "40");
   await expect(page.locator("[data-today-marker]")).toHaveAttribute(
     "aria-label",
     /Our next milestone is Menu tasting at The Orchard/,

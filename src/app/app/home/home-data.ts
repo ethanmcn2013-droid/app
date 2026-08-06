@@ -1,12 +1,18 @@
 import "server-only";
 
+/**
+ * Signal's narrow entry point, not its barrel. The barrel also re-exports
+ * the three briefing route components, so importing the data surface
+ * through it put that client tree in Home's chunk group and the build
+ * emitted a near-duplicate of it for a page that renders none of it.
+ */
 import {
   buildBriefingForUser,
   calendarDayDifference,
   localWeekday,
   type BriefItem,
   type TaskSignal,
-} from "@/modules/signal";
+} from "@/modules/signal/home";
 
 /**
  * Home view model — assembled from ONE briefing build (D5): the same

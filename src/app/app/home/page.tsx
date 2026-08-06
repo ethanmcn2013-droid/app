@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccess } from "@/server/require-app-access";
-import { requireSignalUser } from "@/modules/signal";
+import { requireSignalUser } from "@/modules/signal/home";
 import { HomeNewUser, HomeView } from "@/components/app/home/home-view";
 import { loadHomeData } from "./home-data";
 
