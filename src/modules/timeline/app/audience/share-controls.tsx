@@ -162,7 +162,7 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
       ) : null}
       <p className="mt-2 text-xs text-ink-quiet">
         Copy it now. The link is not kept here, so this is the only time it can
-        be shown. If you lose it, make a new one — that stops this one working.
+        be shown. If you lose it, make a new one. That stops this one working.
       </p>
     </div>
   );

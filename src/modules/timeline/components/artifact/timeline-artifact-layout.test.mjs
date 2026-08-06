@@ -108,7 +108,15 @@ const TOKENS = {
   "--space-10": "64px",
   "--space-11": "80px",
   "--text-caption": "0.75rem",
-  "--x-artifact-metric": "clamp(4.4rem, 8vw, 8rem)",
+  "--text-section": "clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem)",
+  "--leading-section": "1.15",
+  // Mirrors globals.css. The metric is derived from the display register at a
+  // ratio below one, so the project's own name always outranks the counter;
+  // see the token comment there for why it stopped being its own clamp.
+  "--x-artifact-display": "clamp(3.4rem, 6.7vw, 7.7rem)",
+  "--x-artifact-metric-ratio": "0.78",
+  "--x-artifact-metric":
+    "calc(var(--x-artifact-display) * var(--x-artifact-metric-ratio))",
   "--x-artifact-metric-leading": "0.7",
   "--x-timeline-hit": "3rem",
 };
@@ -261,12 +269,37 @@ test("progress reads as one count, and `settled` is gone", () => {
 });
 
 test("the count is typeset as a sentence, never as a number and a stranded glyph", () => {
+  // The size sits on the lockup rather than on the numeral, so the unit is a
+  // fraction of the number it belongs to; the count face has no unit and
+  // simply takes the whole lockup down to a reading step.
   const count = block('.timeLens[data-metric-scale="count"] .metricPrimary');
   assert.match(count, /white-space:\s*normal;/);
-  const value = block('.timeLens[data-metric-scale="count"] .metricPrimary strong');
   // A ratified reading step, not the exhibition metric and not a new clamp.
-  assert.match(value, /font-size:\s*var\(--text-section\);/);
-  assert.doesNotMatch(value, /clamp\(/);
+  assert.match(count, /font-size:\s*var\(--text-section\);/);
+  assert.doesNotMatch(count, /clamp\(/);
+});
+
+test("the counter never outranks the name it counts towards", () => {
+  // The metric was its own clamp — clamp(4.4rem, 8vw, 8rem) — and measured
+  // 115px beside a 96px project name at 1440. It is derived from the display
+  // register now, so no pair of clamps can drift back across each other.
+  const metric = TOKENS["--x-artifact-metric"];
+  assert.match(metric, /var\(--x-artifact-display\)/);
+  assert.match(metric, /var\(--x-artifact-metric-ratio\)/);
+  assert.ok(
+    Number(TOKENS["--x-artifact-metric-ratio"]) < 1,
+    "the ratio must be below one or the counter can outrank the name",
+  );
+  for (const { width } of VIEWPORTS) {
+    const name = resolveLength(TOKENS["--x-artifact-display"], width, TOKENS);
+    const counter = resolveLength(metric, width, TOKENS);
+    assert.ok(
+      counter < name,
+      `at ${width}: counter ${Math.round(counter)}px must stay under name ${Math.round(name)}px`,
+    );
+  }
+  // And no hand-tuned ladder may come back beside it.
+  assert.doesNotMatch(styles, /\.metricPrimary strong\s*\{[^}]*clamp\(/);
 });
 
 test("one milestone renders one detail, and the plan renders one list", () => {

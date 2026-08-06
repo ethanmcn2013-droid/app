@@ -420,10 +420,9 @@ export function hasSourceDiverged(
   return !hashesEqual(frozenDigest, digestSourceFields(current));
 }
 
-export const SECTION_LABELS: Readonly<Record<AudienceItemState, string>> = {
-  covered: "Covered",
-  now: "Now",
-  next: "Next",
-  later: "Later",
-  cancelled: "Cancelled",
-};
+/**
+ * The section labels this file used to declare — "Covered / Now / Next /
+ * Later / Cancelled" — were one of three copies of the same five words. They
+ * live in `./vocabulary` now, with the editor's and the artifact's, so the
+ * frozen payload cannot name a state differently from the screen that set it.
+ */

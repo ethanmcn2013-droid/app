@@ -17,6 +17,16 @@ const artifactStudio = readFileSync(
   new URL("../../app/audience/artifact-studio.tsx", import.meta.url),
   "utf8",
 );
+/**
+ * The module's one vocabulary. Every state word and structural noun the
+ * artifact renders now lives here rather than in the component, so the
+ * assertions that used to grep the component for a phrase grep its home
+ * instead — and the component is checked for reading from that home.
+ */
+const vocabulary = readFileSync(
+  new URL("../../lib/vocabulary.ts", import.meta.url),
+  "utf8",
+);
 
 /**
  * Comments are documentation, not rendered output. The "no studio chrome"
@@ -33,7 +43,8 @@ test("the artifact keeps the locked Option D identity and line-first hierarchy",
   assert.match(artifact, />\s*timeline<span/);
   assert.match(artifact, /role="progressbar"/);
   assert.match(artifact, /data-today-marker/);
-  assert.match(artifact, /Our next milestone/);
+  assert.match(vocabulary, /current: "Our next milestone"/);
+  assert.match(artifact, /MILESTONE_RAIL_LABELS\.current/);
   assert.match(styles, /\.baseRail/);
   assert.match(styles, /\.milestoneButton/);
   assert.doesNotMatch(artifactCode, /StudioRail|StudioBar|dashboard/i);
@@ -236,8 +247,39 @@ test("low-information timelines receive density-only refinements after the gener
 });
 
 test("undated milestone copy states the truth without implying a future date", () => {
-  assert.match(artifact, /Timing not set/);
+  assert.match(vocabulary, /NO_TIMING_LABEL = "Timing not set"/);
+  assert.match(artifact, /NO_TIMING_LABEL/);
   assert.doesNotMatch(artifact, /Date to come/);
+});
+
+test("one state machine speaks one vocabulary", () => {
+  // The five stored states, the two the rail derives, and the structural
+  // nouns all have exactly one home, and the artifact reads them from it
+  // rather than declaring its own.
+  assert.match(artifact, /from "@\/modules\/timeline\/lib\/vocabulary"/);
+  assert.match(vocabulary, /MILESTONE_STATE_LABELS/);
+  assert.match(vocabulary, /MILESTONE_STATE_OPTIONS/);
+  assert.match(vocabulary, /timelineNouns/);
+  // The artifact used to hard-code its own nouns, and the section heading
+  // said "Project timeline" on a wedding page.
+  assert.doesNotMatch(artifactCode, /"A shared (?:wedding|class|project) timeline"/);
+  assert.doesNotMatch(artifactCode, />Project timeline</);
+  // And the reader's words, not the schema's: "Covered" was a storage enum on
+  // a page a couple reads.
+  assert.doesNotMatch(vocabulary, /covered: "Covered"/);
+});
+
+test("no fact in the metric column is printed twice", () => {
+  // The countdown face prints the completion count as its receipt, and the
+  // alternate line offered to "Show" the same sentence one line below it.
+  assert.match(artifact, /otherFace\.alternate === active\.receipt/);
+  assert.match(artifact, /const alternate = receiptIsAffordance \? null : otherFace/);
+  // Suppressing the line may not move the page: the row it sat in is
+  // reserved off its own type.
+  assert.match(
+    styles,
+    /\.metricAlternateViewport\s*\{[\s\S]*?min-height:\s*calc\(var\(--text-caption\)/,
+  );
 });
 
 // ── E06.09 / E06.10 · the two Timelines are different objects ─────────

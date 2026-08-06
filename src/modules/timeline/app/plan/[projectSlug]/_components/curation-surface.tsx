@@ -30,19 +30,12 @@ import {
   type OwnerReorderDirection,
 } from "@/modules/timeline/lib/owner-reorder";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
+import {
+  MILESTONE_STATE_OPTIONS,
+  milestoneCountPhrase,
+} from "@/modules/timeline/lib/vocabulary";
 import type { AudienceItemState } from "@/modules/timeline/server/db/timeline-schema";
 import styles from "./curation-surface.module.css";
-
-const PUBLIC_STATE_OPTIONS: ReadonlyArray<{
-  value: AudienceItemState;
-  label: string;
-}> = [
-  { value: "covered", label: "Complete" },
-  { value: "now", label: "Now" },
-  { value: "next", label: "Next" },
-  { value: "later", label: "Later" },
-  { value: "cancelled", label: "Not going ahead" },
-];
 
 function laneForAudienceState(
   state: AudienceItemState,
@@ -639,7 +632,7 @@ function NodeCard({
               aria-label={`Public state for ${node.title}`}
               className={styles.stateGroup}
             >
-              {PUBLIC_STATE_OPTIONS.map((option) => (
+              {MILESTONE_STATE_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -1553,7 +1546,7 @@ export function CurationSurface({
   }
 
   // Group by the exact state the signed artifact will render.
-  const publicStates = PUBLIC_STATE_OPTIONS.filter((option) =>
+  const publicStates = MILESTONE_STATE_OPTIONS.filter((option) =>
     nodes.some(
       (node) =>
         node.audienceState === option.value &&
@@ -1732,7 +1725,9 @@ export function CurationSurface({
               <p className={styles.planNoticeCopy}>
                 {planIsOrdered
                   ? "This plan is in order, with no dates yet. That is a complete plan on its own, and the page people receive shows the order. Add dates whenever you know them."
-                  : `${untimedCount} of ${shownNodes.length} milestones have no timing yet. They keep their place in the order until you set a date.`}
+                  : untimedCount === 1
+                    ? `${milestoneCountPhrase(untimedCount, shownNodes.length)} has no timing yet. It keeps its place in the order until you set a date.`
+                    : `${milestoneCountPhrase(untimedCount, shownNodes.length)} have no timing yet. They keep their place in the order until you set a date.`}
               </p>
               <button
                 type="button"

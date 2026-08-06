@@ -15,6 +15,13 @@ import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeli
 import { useHydrated } from "@/lib/use-hydrated";
 import { PRODUCT_MARKETING_URLS } from "@/lib/product-urls";
 import {
+  MILESTONE_RAIL_LABELS,
+  NO_TIMING_LABEL,
+  PLACE_IN_PLAN_LABEL,
+  milestonePlace,
+  timelineNouns,
+} from "@/modules/timeline/lib/vocabulary";
+import {
   artifactTitleLength,
   buildTimelineArtifactModel,
   buildTimelineCountdown,
@@ -100,21 +107,6 @@ export type TimelineArtifactProps = Readonly<{
   shareLabel?: string;
 }>;
 
-function artifactKicker(timeline: AudienceTimelineDto): string {
-  if (timeline.audienceKind === "couple") return "A shared wedding timeline";
-  if (timeline.audienceKind === "class") return "A shared class timeline";
-  // "module" is the storage enum, not viewer vocabulary — a bakery's plan
-  // must never introduce itself with campus wording.
-  return "A shared project timeline";
-}
-
-function artifactPurpose(timeline: AudienceTimelineDto): string {
-  if (timeline.audienceKind === "couple") {
-    return "Every decision, visit and small moment on the way to the day.";
-  }
-  return "A clear view of what is complete and what comes next.";
-}
-
 /**
  * Progress, stated once.
  *
@@ -175,7 +167,18 @@ function countdownFact(
   };
 }
 
-function MetricFace({ fact }: { fact: MetricFact }) {
+function MetricFace({
+  fact,
+  receiptIsAffordance = false,
+}: {
+  fact: MetricFact;
+  /**
+   * True when the receipt is the only line the alternate would have printed,
+   * so the receipt carries the pressable underline the alternate used to wear
+   * and the fact is stated once instead of twice.
+   */
+  receiptIsAffordance?: boolean;
+}) {
   return (
     <span className={styles.metricFace} aria-hidden="true">
       <span className={styles.metricLabel}>{fact.label}</span>
@@ -183,7 +186,14 @@ function MetricFace({ fact }: { fact: MetricFact }) {
         <strong data-timeline-metric-value>{fact.value}</strong>
         {fact.unit ? <small>{fact.unit}</small> : null}
       </span>
-      {fact.receipt ? <span className={styles.metricReceipt}>{fact.receipt}</span> : null}
+      {fact.receipt ? (
+        <span
+          className={styles.metricReceipt}
+          data-metric-receipt-affordance={receiptIsAffordance ? "true" : undefined}
+        >
+          {fact.receipt}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -212,7 +222,14 @@ function TimeLens({
     ? countdownFact(countdown, timeline.primaryDate.label, model)
     : null;
   const active = mode === "countdown" && remaining ? remaining : completion;
-  const alternate = mode === "progress" ? remaining : completion;
+  const otherFace = mode === "progress" ? remaining : completion;
+  // The countdown face carries the completion count as its receipt, and the
+  // alternate line offered to "Show" the identical sentence directly beneath
+  // it — "2 of 9 complete" printed twice, one line apart, in the artifact's
+  // quietest voice. The fact is stated once now; when the two strings match,
+  // the receipt becomes the pressable line and the alternate stands down.
+  const receiptIsAffordance = otherFace !== null && otherFace.alternate === active.receipt;
+  const alternate = receiptIsAffordance ? null : otherFace;
   const direction = mode === "countdown" ? 1 : -1;
   const dateSpoken = timeline.primaryDate
     ? `${timeline.primaryDate.label}, ${formatTimelineDate(timeline.primaryDate.date, "long")}`
@@ -236,7 +253,7 @@ function TimeLens({
             exit={reduceMotion ? undefined : { opacity: 0, x: direction * -10 }}
             transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
           >
-            <MetricFace fact={active} />
+            <MetricFace fact={active} receiptIsAffordance={receiptIsAffordance} />
           </motion.span>
         </AnimatePresence>
         <motion.span
@@ -257,20 +274,26 @@ function TimeLens({
           aria-hidden="true"
         />
       </span>
-      {alternate ? (
+      {/* The row is always here; only its line comes and goes. Withholding the
+          box as well would move the rail 29px up and down every time the
+          metric was pressed, which is the same class of fault the reserved
+          metric box exists to prevent. */}
+      {otherFace ? (
         <span className={styles.metricAlternateViewport} aria-hidden="true">
-          <AnimatePresence initial={false} mode="wait">
-            <motion.span
-              className={styles.metricAlternate}
-              key={`alternate-${mode}`}
-              initial={reduceMotion ? false : { opacity: 0, x: direction * -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={reduceMotion ? undefined : { opacity: 0, x: direction * 6 }}
-              transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
-            >
-              Show {alternate.alternate}
-            </motion.span>
-          </AnimatePresence>
+          {alternate ? (
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                className={styles.metricAlternate}
+                key={`alternate-${mode}`}
+                initial={reduceMotion ? false : { opacity: 0, x: direction * -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, x: direction * 6 }}
+                transition={{ duration: reduceMotion ? 0 : 0.14, ease: METRIC_EASE }}
+              >
+                Show {alternate.alternate}
+              </motion.span>
+            </AnimatePresence>
+          ) : null}
         </span>
       ) : null}
       {timeline.primaryDate ? (
@@ -404,7 +427,7 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
     <span className={styles.milestoneLabel} data-timeline-milestone-label aria-hidden="true">
       <span>{timelinePointStatus(point)}</span>
       <strong>{point.item.title}</strong>
-      <small>{point.item.date ? formatTimelineDate(point.item.date) : "Timing not set"}</small>
+      <small>{point.item.date ? formatTimelineDate(point.item.date) : NO_TIMING_LABEL}</small>
     </span>
   );
 }
@@ -416,10 +439,16 @@ function MilestoneLabel({ point }: { point: TimelineArtifactPoint }) {
  * internal string. Kept short and plain, and kept deliberately rather than
  * removed, because it is the slot a real milestone story lands in once the
  * published DTO can carry one (E06.02 and E06.03).
+ *
+ * The next milestone gets no line at all. Its status sits three lines above in
+ * the module's own words ("Our next milestone"), the mark it opened from is
+ * `aria-current="step"`, and the rail draws it as the one indigo object on the
+ * page — so "This one is next." was the fourth statement of the same fact
+ * inside one panel. Saying nothing is more honest than saying it again.
  */
-function detailNote(point: TimelineArtifactPoint): string {
+function detailNote(point: TimelineArtifactPoint): string | null {
   if (point.state === "complete") return "This one is already behind you.";
-  if (point.isNext) return "This one is next.";
+  if (point.isNext) return null;
   return "This one comes later.";
 }
 
@@ -453,6 +482,7 @@ function MilestoneDetail({
 }) {
   const reduceMotion = useArtifactReducedMotion();
   const relative = detailTiming(point, today);
+  const note = detailNote(point);
 
   return (
     <section
@@ -475,7 +505,7 @@ function MilestoneDetail({
           <div className={styles.detailLead}>
             <p className={styles.detailStatus}>{timelinePointStatus(point)}</p>
             <h3 id={titleId}>{point.item.title}</h3>
-            <p>{detailNote(point)}</p>
+            {note ? <p>{note}</p> : null}
           </div>
           <dl className={styles.detailFacts}>
             <div>
@@ -488,12 +518,12 @@ function MilestoneDetail({
                     </time>
                     {relative ? ` · ${relative}` : null}
                   </>
-                ) : "Timing not set"}
+                ) : NO_TIMING_LABEL}
               </dd>
             </div>
             <div>
-              <dt>Place in the plan</dt>
-              <dd>{`Milestone ${ordinal} of ${total}`}</dd>
+              <dt>{PLACE_IN_PLAN_LABEL}</dt>
+              <dd>{milestonePlace(ordinal, total)}</dd>
             </div>
           </dl>
         </motion.div>
@@ -509,9 +539,11 @@ function MilestoneDetail({
  * place in a sequence, with the timing named honestly underneath.
  */
 function SequenceState({
+  heading,
   model,
   idPrefix,
 }: {
+  heading: string;
   model: TimelineArtifactModel;
   idPrefix: string;
 }) {
@@ -520,10 +552,10 @@ function SequenceState({
 
   return (
     <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
-      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>Project timeline</h2>
+      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
       <div className={styles.sequenceCard} data-state={point.state} data-sequence-card>
         <p className={styles.sequenceStep}>
-          {`Milestone 1 of ${model.points.length}`}
+          {milestonePlace(1, model.points.length)}
         </p>
         <p className={styles.sequenceStatus}>{timelinePointStatus(point)}</p>
         <h3 className={styles.sequenceTitle}>{point.item.title}</h3>
@@ -532,7 +564,7 @@ function SequenceState({
             <time dateTime={point.item.date}>
               {formatTimelineDate(point.item.date, "long")}
             </time>
-          ) : "Timing not set"}
+          ) : NO_TIMING_LABEL}
         </p>
       </div>
     </section>
@@ -540,10 +572,12 @@ function SequenceState({
 }
 
 function Journey({
+  heading,
   timeline,
   model,
   idPrefix,
 }: {
+  heading: string;
   timeline: AudienceTimelineDto;
   model: TimelineArtifactModel;
   idPrefix: string;
@@ -806,20 +840,24 @@ function Journey({
   // would re-assert the temporal reading the ordered mode exists to refuse.
   const caps = timelineRailCaps(model);
   const axisNote = timelineAxisNote(model);
+  // One name for this milestone, spoken the same way on the mark, in the Today
+  // marker and in the keyboard instructions. The instructions used to call it
+  // "the project's next milestone" on a page that had already introduced
+  // itself as a wedding.
   const todayLabel = model.todayPosition === null
     ? null
-    : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
+    : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` ${MILESTONE_RAIL_LABELS.current} is ${nextMilestone.item.title}.` : ""}`;
   // The rail's span, stated in words. The month ticks and the Today dash are
   // aria-hidden decoration, so without this sentence the axis was invisible to
   // low vision and absent from assistive technology at once.
   const axisDescription = timelineAxisDescription(model);
   const instructions = model.axis.mode === "ordered"
     ? `${axisDescription} Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`
-    : `${axisDescription} The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`;
+    : `${axisDescription} The highlighted point is ${MILESTONE_RAIL_LABELS.current.toLowerCase()}. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`;
 
   return (
     <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
-      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>Project timeline</h2>
+      <h2 className={styles.screenReaderOnly} id={`${sectionId}-title`}>{heading}</h2>
       <p className={styles.screenReaderOnly} id={instructionsId}>
         {instructions}
       </p>
@@ -945,7 +983,7 @@ function Journey({
                     "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
                     ...(nudge === 0 ? {} : { "--timeline-label-shift": String(nudge) }),
                   };
-                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
+                  const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : NO_TIMING_LABEL;
 
                   return (
                     <li
@@ -967,7 +1005,7 @@ function Journey({
                         aria-pressed={selected}
                         aria-expanded={selected ? detailOpen : false}
                         aria-controls={selected ? detailId : undefined}
-                        aria-label={`${point.item.title}. ${timelinePointStatus(point)}. ${timing}. Milestone ${index + 1} of ${model.points.length}.`}
+                        aria-label={`${point.item.title}. ${timelinePointStatus(point)}. ${timing}. ${milestonePlace(index + 1, model.points.length)}.`}
                         ref={(node) => { pointRefs.current[index] = node; }}
                         onFocus={() => setFocusIndex(index)}
                         onKeyDown={(event) => handleKeyDown(event, index)}
@@ -1068,6 +1106,13 @@ export function TimelineArtifact({
   const reactId = useId().replaceAll(":", "");
   const model = useMemo(() => buildTimelineArtifactModel(timeline), [timeline]);
   const presentation = timelinePresentation(model);
+  // The artifact's own nouns, read from the module's one vocabulary rather
+  // than decided here. The kicker, the section heading and the purpose line
+  // used to be two local functions and a hard-coded heading, and only the
+  // heading was not audience-aware — so a wedding page introduced itself as a
+  // wedding timeline and then announced "Project timeline" to a screen reader
+  // six lines later.
+  const nouns = timelineNouns(timeline.audienceKind);
 
   return (
     <article
@@ -1090,18 +1135,23 @@ export function TimelineArtifact({
         ) : null}
         <div className={styles.titleRow}>
           <div className={styles.headerCopy}>
-            <p className={styles.heroKicker}>{artifactKicker(timeline)}</p>
+            <p className={styles.heroKicker}>{nouns.kicker}</p>
             <h1>{timeline.label}</h1>
-            <p className={styles.purpose}>{artifactPurpose(timeline)}</p>
+            <p className={styles.purpose}>{nouns.purpose}</p>
           </div>
           <TimeLens timeline={timeline} model={model} />
         </div>
       </header>
 
       {presentation === "sequence-card" ? (
-        <SequenceState model={model} idPrefix={reactId} />
+        <SequenceState heading={nouns.heading} model={model} idPrefix={reactId} />
       ) : (
-        <Journey timeline={timeline} model={model} idPrefix={reactId} />
+        <Journey
+          heading={nouns.heading}
+          timeline={timeline}
+          model={model}
+          idPrefix={reactId}
+        />
       )}
       <PlanningDecisions timeline={timeline} model={model} />
 

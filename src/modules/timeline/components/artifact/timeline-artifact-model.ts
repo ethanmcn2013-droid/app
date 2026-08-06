@@ -3,6 +3,10 @@ import type {
   AudienceTimelineDto,
   AudienceTimelineItemDto,
 } from "@/modules/timeline/lib/audience-timeline";
+import {
+  MILESTONE_RAIL_LABELS,
+  MILESTONE_STATE_LABELS,
+} from "@/modules/timeline/lib/vocabulary";
 
 const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DAY_MS = 86_400_000;
@@ -906,11 +910,16 @@ export function artifactTitleLength(label: string): TimelineTitleLength {
   return length > 32 ? "long" : "short";
 }
 
+/**
+ * What a mark's status line says. Two of these are derived — the milestone a
+ * plan is standing on, and the same one running late — and the rest are the
+ * milestone's own stored state. Every word comes from the module's one
+ * vocabulary, so the rail cannot call a state "Coming up" while the screen
+ * that set it called the same state something else.
+ */
 export function timelinePointStatus(point: TimelineArtifactPoint): string {
-  if (point.state === "complete") return "Complete";
-  if (point.state === "overdue") return "Our next milestone, overdue";
-  if (point.state === "current") return "Our next milestone";
-  if (point.item.state === "now") return "Coming up";
-  if (point.item.state === "next") return "Next";
-  return "Later";
+  if (point.state === "complete") return MILESTONE_STATE_LABELS.covered;
+  if (point.state === "overdue") return MILESTONE_RAIL_LABELS.overdue;
+  if (point.state === "current") return MILESTONE_RAIL_LABELS.current;
+  return MILESTONE_STATE_LABELS[point.item.state] ?? MILESTONE_STATE_LABELS.later;
 }

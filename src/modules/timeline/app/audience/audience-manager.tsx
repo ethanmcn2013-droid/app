@@ -22,6 +22,7 @@ import {
   publicationStateLabel,
 } from "@/modules/timeline/lib/format";
 import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
+import { MILESTONE_STATE_OPTIONS } from "@/modules/timeline/lib/vocabulary";
 import {
   ActionNotice,
   ArmedSubmitButton,
@@ -255,7 +256,7 @@ export function AudienceManager({
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
-                      <p className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+                      <p className="flex items-center gap-2 text-xs font-medium text-ink-quiet">
                         <span
                           aria-hidden
                           className="h-1.5 w-1.5 rounded-full"
@@ -311,10 +312,14 @@ export function AudienceManager({
                       itself, not just from view. Your own plan keeps it.
                     </p>
                     <div className="mt-3 flex flex-wrap items-end gap-2">
+                      {/* These two labels sit on a sunken card, where
+                          --ink-quiet measures 4.40:1 and misses AA for normal
+                          text at any size. --ink-soft clears it; the rest of
+                          this surface's labels are on white and already do. */}
                       <form action={primaryDateAction} className="flex flex-wrap items-end gap-2">
                         <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                         <input type="hidden" name="publicationId" value={publication.id} />
-                        <label className="text-xs font-medium text-ink-quiet">
+                        <label className="text-xs font-medium text-ink-soft">
                           What to call it
                           <input
                             className={`${fieldClass} mt-1 w-44`}
@@ -324,7 +329,7 @@ export function AudienceManager({
                             placeholder="The day"
                           />
                         </label>
-                        <label className="text-xs font-medium text-ink-quiet">
+                        <label className="text-xs font-medium text-ink-soft">
                           Date
                           <input
                             className={`${fieldClass} mt-1 w-44`}
@@ -377,12 +382,16 @@ export function AudienceManager({
                         </label>
                         <label className="text-xs font-medium text-ink-quiet sm:contents">
                           <span className="sm:sr-only">Shared state</span>
+                          {/* The five state words come from the module's one
+                              vocabulary, so the publish step cannot offer a
+                              different set from the Milestones editor that
+                              set them. */}
                           <select className={`${fieldClass} mt-1 sm:mt-0`} name="state" defaultValue={item.state}>
-                            <option value="covered">Covered</option>
-                            <option value="now">Now</option>
-                            <option value="next">Next</option>
-                            <option value="later">Later</option>
-                            <option value="cancelled">Cancelled</option>
+                            {MILESTONE_STATE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                         </label>
                         <button disabled={updatePending} className={quietButton}>Save copy</button>

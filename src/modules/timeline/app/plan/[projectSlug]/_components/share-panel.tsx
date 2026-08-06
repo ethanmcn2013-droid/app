@@ -173,7 +173,7 @@ export function SharePanel({
                 Share {projectName}
               </h2>
               {effectiveState ? (
-                <p className="mt-1.5 flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+                <p className="mt-1.5 flex items-center gap-2 text-xs font-medium text-ink-quiet">
                   <span
                     aria-hidden
                     className="h-1.5 w-1.5 rounded-full"
@@ -211,8 +211,8 @@ export function SharePanel({
                   <p className="text-sm leading-6 text-ink">
                     {linkLive
                       ? publication.activeShareCount === 1
-                        ? "One link is working. Anyone holding it can open this timeline — there is no sign-in, and it is not tied to a named person."
-                        : `${publication.activeShareCount} links are working. Anyone holding one can open this timeline — there is no sign-in, and they are not tied to a named person.`
+                        ? "One link is working. Anyone holding it can open this timeline. There is no sign-in, and it is not tied to a named person."
+                        : `${publication.activeShareCount} links are working. Anyone holding one can open this timeline. There is no sign-in, and they are not tied to a named person.`
                       : publication.state === "published"
                         ? "Every link was switched off, so nobody can open this timeline. The page itself is still here."
                         : publication.state === "unpublished"
@@ -221,7 +221,7 @@ export function SharePanel({
                   </p>
                   <p className="mt-2 text-sm leading-6 text-ink-soft">
                     {linkLive
-                      ? "A link is shown once, when it is made. It is not kept here afterwards, so this page cannot show it to you again. If you no longer have it, make a new one below — that stops the old link working."
+                      ? "A link is shown once, when it is made. It is not kept here afterwards, so this page cannot show it to you again. If you no longer have it, make a new one below. Making a new one stops the old link working."
                       : "Making a link shows it to you once. Copy it then; this page cannot show it again."}
                   </p>
                   {canManage ? (
@@ -370,7 +370,7 @@ function Divergence({
       <ul className="mt-2 space-y-1 text-sm leading-6 text-ink-soft">
         {titles.map((title) => (
           <li key={title}>
-            {title} — the shared copy is unchanged.
+            {title} · the shared copy is unchanged.
           </li>
         ))}
       </ul>

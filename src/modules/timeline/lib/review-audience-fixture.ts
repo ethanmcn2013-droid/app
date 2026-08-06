@@ -1,9 +1,9 @@
 import {
   AUDIENCE_ITEM_STATES,
   AUDIENCE_TIMELINE_DTO_VERSION,
-  SECTION_LABELS,
   validateAudienceTimelineDto,
 } from "@/modules/timeline/lib/audience-timeline";
+import { MILESTONE_STATE_LABELS } from "@/modules/timeline/lib/vocabulary";
 import {
   REVIEW_PRIMARY_PROJECT,
   REVIEW_SUITE_FIXTURE,
@@ -26,7 +26,7 @@ export const REVIEW_AUDIENCE_TIMELINE_DTO = validateAudienceTimelineDto({
   today: REVIEW_SUITE_FIXTURE.reviewToday,
   sections: AUDIENCE_ITEM_STATES.map((state) => ({
     state,
-    label: SECTION_LABELS[state],
+    label: MILESTONE_STATE_LABELS[state],
     items: REVIEW_TIMELINE_MILESTONES.filter(
       (milestone) => milestone.state === state,
     ).map((milestone) => ({

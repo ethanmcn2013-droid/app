@@ -232,7 +232,7 @@ export const weddingDemoProjects: Project[] = [
     workspaceSlug: "wedding-planning",
     sourceTasksWorkspaceId: null,
     slug: "one-undated",
-    name: "St. Brigid's Sixth Class Musical",
+    name: "St. Brigid’s Sixth Class Musical",
     oneLiner: "One thing to plan so far, with no date picked yet.",
     accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 2,
@@ -252,7 +252,7 @@ export const weddingDemoProjects: Project[] = [
     workspaceSlug: "wedding-planning",
     sourceTasksWorkspaceId: null,
     slug: "two-dated",
-    name: "Aoibhinn's Final-Year Portfolio",
+    name: "Aoibhinn’s Final-Year Portfolio",
     oneLiner: "Two dates set, with more milestones still to add.",
     accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 4,
@@ -283,7 +283,7 @@ export const weddingDemoProjects: Project[] = [
     workspaceSlug: "wedding-planning",
     sourceTasksWorkspaceId: null,
     slug: "partial-timing",
-    name: "Conor's Leaving Cert Art Project",
+    name: "Conor’s Leaving Cert Art Project",
     oneLiner: "Some dates are set. Some pieces are still undecided.",
     accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 7,
@@ -293,7 +293,7 @@ export const weddingDemoProjects: Project[] = [
     workspaceSlug: "wedding-planning",
     sourceTasksWorkspaceId: null,
     slug: "overdue-plan",
-    name: "Fiona & Declan's Wedding",
+    name: "Fiona & Declan’s Wedding",
     oneLiner: "One thing is overdue and needs attention before the day.",
     accent: "rgb(190 24 93)", // ds-allow: CSS variables cannot safely cross the serialized fixture boundary.
     sortOrder: 8,

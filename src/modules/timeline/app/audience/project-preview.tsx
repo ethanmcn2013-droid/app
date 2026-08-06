@@ -105,7 +105,7 @@ export default async function TimelineProjectPreviewPage({
         className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8"
       >
         <section className="w-full rounded-2xl border border-dashed border-line-soft bg-bg-sunken p-7 text-center sm:p-10">
-          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+          <p className="text-xs font-medium text-ink-quiet">
             Preview
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">
@@ -113,7 +113,7 @@ export default async function TimelineProjectPreviewPage({
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-soft">
             A preview shows the page people actually receive, and that page only
-            exists once you publish. Your own plan is not it — showing it here
+            exists once you publish. Your own plan is not it. Showing it here
             would suggest people can read work they cannot.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -169,7 +169,12 @@ export default async function TimelineProjectPreviewPage({
             </svg>
             Back to {project.name}
           </Link>
-          <p className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet">
+          {/* --ink-quiet (a deprecated alias for --ink-faint) measures 4.40:1
+              on the sunken strip this row sits on, which is under AA for
+              normal text at any size. --ink-soft clears it, and this is the
+              one line of owner chrome on a route that is otherwise the
+              guest's page. */}
+          <p className="flex items-center gap-2 text-xs font-medium text-ink-soft">
             <span
               aria-hidden
               className="h-1.5 w-1.5 rounded-full"
