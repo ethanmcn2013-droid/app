@@ -323,6 +323,27 @@ evidence:
 - [ ] All gates green; production build passes; console clean
 - [ ] Screenshots demonstrate the improvement at all eight viewports
 
+## 10d. Two decisions, settled
+
+**The finished end of a dated rail shows its real date, not the word
+"Complete".** The cap is an axis endpoint. Labelling one end with a date and
+the other with a status makes the axis asymmetric, and completion is already
+stated twice — by the progress reading and by the progressbar's own
+`aria-valuetext`. Section 7.1 asks for real dates on the caps in dated mode;
+this is that. A third statement of completion would be redundancy, not
+emphasis.
+
+**The one-milestone rail marker does not repeat the milestone title.** The
+marker carries state and date; the detail panel directly beneath carries the
+milestone at full size. This is section 16's own requirement — *"Do not repeat
+the same full milestone title in both the axis label and detail area"* — and it
+is what makes the single-milestone case immune to long-title clipping. The
+button's accessible name still contains the title, so nothing is lost to a
+screen reader.
+
+Both were flagged as visible changes worth a second look rather than as open
+questions. Recorded here so they are not silently reopened.
+
 ## 11. Build constraints (CI-enforced, non-negotiable)
 
 - **Zero raw hex in new files.** `ds-check.mjs` grandfathers existing files on a
