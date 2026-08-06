@@ -3243,7 +3243,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d319ccfcdf7858b1"
+      "materialityHash": "47d0ce89760e81ee"
     },
     {
       "id": "tasks.state.app-notes-loading",
