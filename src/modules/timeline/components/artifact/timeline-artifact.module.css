@@ -605,16 +605,33 @@ button.timeLens:focus-visible .metricAlternate {
   inset-inline-start: var(--timeline-position);
   width: 1px;
   height: 0.5rem;
-  background: var(--ink-ghost);
   translate: -50% -50%;
   animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
+}
+
+/* The mark is painted by a pseudo-element rather than by the tick's own
+   background, the way the Today dash already is. The tick is the positioning
+   box for its NAME as well as for its hairline, and a name drawn inside a box
+   filled with ink is a name on ink as far as any tool reading computed styles
+   is concerned — including the contrast gate, which read every month on the
+   rail as text at 1:1. Same pixels, one fewer lie. */
+.monthTick::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Was --ink-ghost, which is 1.48:1 on paper. The month names are the only
+     thing on the rail that says what its spacing means, and they were set at
+     10px in a colour a third of the way to invisible — on the page a guest
+     receives, not an internal screen. --ink-faint is 4.83:1, so the tick and
+     its name both clear AA, and the mark stays a hairline. */
+  background: var(--ink-faint);
 }
 
 .monthTick > span {
   position: absolute;
   inset-block-start: calc(100% + var(--space-2));
   inset-inline-start: 50%;
-  color: var(--ink-ghost);
+  color: var(--ink-faint);
   font-family: var(--font-mono);
   font-size: 0.625rem;
   font-weight: var(--weight-medium);
@@ -631,12 +648,21 @@ button.timeLens:focus-visible .metricAlternate {
   visibility: hidden;
 }
 
-/* Tightly-spaced months keep their labels only where four rail-percent is
-   real paper: below 980px (print included) the tick stays, the text goes. */
-@container timeline-artifact (max-width: 980px) {
-  .monthTick[data-tight="true"] > span {
-    visibility: hidden;
-  }
+/* A tick whose name would land on top of the previous one keeps its mark and
+   drops its text.
+
+   This used to be gated at 980px, and the gate was a consequence of the
+   spacing defect rather than of anything about width: when the marks were
+   shoved apart to clear their labels, everything else on the rail was bent
+   through the same distortion, so month boundaries bunched into stretches four
+   rail-percent wide and a breakpoint was needed to hide the pile-up on narrow
+   rails while keeping it on wide ones. Proportional spacing puts month
+   boundaries a month apart by construction — the shortest month on the longest
+   span that still draws months is 5.6 rail-percent — so the rule now fires
+   only where it is genuinely true, which is a plan spanning decades, and it
+   fires at every width because a collision is a collision. */
+.monthTick[data-tight="true"] > span {
+  visibility: hidden;
 }
 
 .todayMarker {
@@ -779,22 +805,55 @@ button.timeLens:focus-visible .metricAlternate {
   animation-delay: var(--timeline-point-delay, 0s), 0.6s;
 }
 
-.milestone[data-selected="true"] .point,
-.milestoneButton:hover .point,
+/* ── Pointing at a milestone, and having chosen one ─────────────────────────
+   These were the same four pixels of ring. Hover, focus and selection are
+   three different facts — "your cursor is here", "your keyboard is here",
+   "this is the one being read below" — and a viewer on a phone, who has no
+   hover at all, was given no mark for the third.
+
+   So they separate by weight, and by whether they persist:
+     hover  · a soft ring; transient, and the lightest of the three
+     focus  · the same ring at full ink; this is the focus indicator
+     chosen · a heavier ring AND a stem down to the detail that is showing
+              it — the only one of the three that draws a second element,
+              because it is the only one that is still true after the pointer
+              leaves. */
+.milestoneButton:hover .point {
+  box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink-faint);
+}
+
 .milestoneButton:focus-visible .point {
   box-shadow: 0 0 0 3px var(--paper), 0 0 0 4px var(--ink);
 }
 
+/* Chosen: a DOUBLE ring — two rings of ink with paper between them. A single
+   ring is what hover and focus already draw, so selection needed its own
+   shape rather than its own thickness, and it had to stay inside the mark's
+   own footprint: a stem dropped toward the detail panel was tried and drew
+   straight through the month name underneath the rail. */
+.milestone[data-selected="true"] .point {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 5px var(--ink),
+    0 0 0 7px var(--paper),
+    0 0 0 8px var(--ink);
+}
+
 /* The current mark never wears the selection halo — a ring around the solid
    indigo would hand the hollow back. It is already the one indigo object on
-   the rail; the label, the detail echo, and the button's own focus outline
-   carry selection. */
+   the rail; the stem, the label, and the detail echo carry selection. */
 .milestone[data-state="current"][data-selected="true"] .point,
 .milestone[data-state="current"] .milestoneButton:hover .point,
 .milestone[data-state="current"] .milestoneButton:focus-visible .point {
   box-shadow: none;
 }
 
+/* The label may move; the mark may not.
+   `--timeline-label-shift` is a rail-percent computed by the model
+   (`labelShifts`) and drawn in pixels here, because a percentage on this
+   element would resolve against its 3rem hit target rather than the rail. It
+   is the whole of the collision policy: a title that would sit on top of its
+   neighbour steps aside, and the dot it belongs to stays on its own date. */
 .milestoneLabel {
   position: absolute;
   inset-inline-start: 50%;
@@ -803,11 +862,38 @@ button.timeLens:focus-visible .metricAlternate {
   gap: var(--space-1);
   padding-inline: var(--space-1);
   background: var(--paper);
-  translate: -50% 0;
+  translate: calc(
+    -50% + var(--timeline-label-shift, 0) * var(--x-timeline-rail-width, 0px) / 100
+  ) 0;
   text-align: center;
   transition: opacity var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out);
 }
 
+/* A label that stepped aside owes a line back to the mark it names, or it
+   reads as belonging to whichever dot it now sits above. One hairline, drawn
+   only on the labels that actually moved. */
+.milestone[data-label-shifted="true"] .milestoneLabel::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: calc(
+    50% - var(--timeline-label-shift, 0) * var(--x-timeline-rail-width, 0px) / 100
+  );
+  width: 1px;
+  height: var(--space-5);
+  background: var(--ink-ghost);
+}
+
+.milestone[data-side="above"][data-label-shifted="true"] .milestoneLabel::after {
+  inset-block-start: 100%;
+}
+
+.milestone[data-side="below"][data-label-shifted="true"] .milestoneLabel::after {
+  inset-block-end: 100%;
+}
+
+/* The end labels are anchored rather than centred, and `labelShifts` never
+   moves them for exactly that reason: they have already resolved their own
+   edge collision by growing inward. */
 .milestone[data-edge="start"] .milestoneLabel {
   translate: 0 0;
   text-align: start;
@@ -858,10 +944,26 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-soft);
 }
 
+/* A label with no room is HIDDEN, not merely transparent.
+   `opacity: 0` alone left the text in the page: still measured, still picked
+   up by contrast tooling as an unreadable 1:1 node, and still exposed to some
+   assistive technology. On the proportional rail more labels are withheld in a
+   tight cluster than the old spread-out spacing ever withheld, which turned a
+   quiet wrongness into a loud one — eleven more phantom nodes on the review
+   plan alone. `visibility` takes it out of rendering and out of those tools
+   while opacity keeps the fade, and every rule that reveals a label turns both
+   back on. */
 .milestone[data-labelled="false"] .milestoneLabel,
 .milestone[data-labelled="extra"] .milestoneLabel {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
+  /* Hiding waits for the fade to finish; revealing does not, because the
+     revealing rules do not list visibility and so flip it at once. */
+  transition:
+    opacity var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    visibility 0s linear var(--motion-fast);
 }
 
 /* Collision-aware labels: a point granted an "extra" label by the model has
@@ -880,6 +982,7 @@ button.timeLens:focus-visible .metricAlternate {
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
   }
 }
 
@@ -889,6 +992,14 @@ button.timeLens:focus-visible .metricAlternate {
   z-index: 4;
   opacity: 1;
   color: var(--ink);
+  visibility: visible;
+}
+
+/* Selection carries into the title's own weight, so the chosen milestone is
+   distinguishable from a hovered one in a still frame and in greyscale. */
+.milestone[data-selected="true"] .milestoneLabel strong {
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
 }
 
 .startCap,
@@ -1569,6 +1680,7 @@ button.timeLens:focus-visible .metricAlternate {
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
   }
 
   /* The stacked axis reads top-to-bottom on its own; the caps earned their
@@ -1850,5 +1962,6 @@ button.timeLens:focus-visible .metricAlternate {
   .milestone[data-labelled="false"] .milestoneLabel,
   .milestone[data-labelled="extra"] .milestoneLabel {
     opacity: 1;
+    visibility: visible;
   }
 }

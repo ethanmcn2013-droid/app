@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
   type KeyboardEvent,
+  type Ref,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { AudienceTimelineDto } from "@/modules/timeline/lib/audience-timeline";
@@ -19,7 +20,9 @@ import {
   buildTimelineCountdown,
   extraLabelIndices,
   formatTimelineDate,
+  labelShifts,
   metricValueScale,
+  timelineAxisDescription,
   timelineAxisNote,
   timelinePointStatus,
   timelinePresentation,
@@ -60,6 +63,9 @@ type PositionStyle = CSSProperties & {
   "--timeline-position": string;
   "--timeline-position-stack"?: string;
   "--timeline-point-delay"?: string;
+  /** Rail-percent the LABEL is nudged by to clear its neighbour. The mark
+   *  never moves; see `labelShifts`. */
+  "--timeline-label-shift"?: string;
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
@@ -435,6 +441,7 @@ function MilestoneDetail({
   today,
   detailId,
   titleId,
+  sectionRef,
 }: {
   point: TimelineArtifactPoint;
   ordinal: number;
@@ -442,6 +449,7 @@ function MilestoneDetail({
   today: string;
   detailId: string;
   titleId: string;
+  sectionRef?: Ref<HTMLElement>;
 }) {
   const reduceMotion = useArtifactReducedMotion();
   const relative = detailTiming(point, today);
@@ -453,6 +461,7 @@ function MilestoneDetail({
       data-selected-milestone={point.item.publicId}
       id={detailId}
       aria-labelledby={titleId}
+      ref={sectionRef}
     >
       <AnimatePresence initial={false} mode="wait">
         <motion.div
@@ -553,6 +562,7 @@ function Journey({
   const pointRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const detailRef = useRef<HTMLElement | null>(null);
   // How much of the rail one label box actually occupies, in rail-percent.
   // Null until the rail has been measured; see the geometry effect below for
   // why this cannot be a constant.
@@ -576,6 +586,23 @@ function Journey({
     if (viewport.scrollWidth <= viewport.clientWidth) return;
     const target = (point.position / 100) * viewport.scrollWidth - viewport.clientWidth / 2;
     viewport.scrollTo({ left: Math.max(0, target), behavior });
+  };
+
+  /**
+   * Selecting a milestone has to produce something the viewer can see, and on
+   * a phone the detail sits a full stacked rail below the mark that was
+   * tapped — far enough that the tap read as doing nothing at all. `nearest`
+   * means a detail already on screen is left exactly where it is, so this
+   * costs desktop nothing and rescues the phone.
+   */
+  const revealDetail = () => {
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({
+        block: "nearest",
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    });
   };
 
   useEffect(() => {
@@ -652,6 +679,14 @@ function Journey({
 
       const railWidth = stage.getBoundingClientRect().width;
       if (railWidth <= 0 || widest <= 0) return;
+      // The rail's own width, published to CSS so a label nudge expressed in
+      // rail-percent can be drawn in pixels. Nothing else can do this
+      // conversion: the label's containing block is its 3rem hit target, so a
+      // percentage there would resolve against the wrong box.
+      const railWidthPx = `${Math.round(railWidth)}px`;
+      if (stage.style.getPropertyValue("--x-timeline-rail-width") !== railWidthPx) {
+        stage.style.setProperty("--x-timeline-rail-width", railWidthPx);
+      }
       const span = (widest / railWidth) * 100;
       setLabelSpan((current) =>
         current !== null && Math.abs(current - span) < 0.25 ? current : span,
@@ -715,6 +750,20 @@ function Journey({
     ),
     [model.points, mandatoryLabels, labelSpan],
   );
+  // Marks are where their dates are. When two visible labels would overlap it
+  // is the LABEL that gives way — never the mark, which is the whole of the
+  // proportionality repair. Held back until the rail has been measured, so the
+  // server and the first client render agree on an unshifted layout.
+  const labelNudges = useMemo(
+    () => (labelSpan === null
+      ? new Map<number, number>()
+      : labelShifts(
+          model.points.map((point) => point.position),
+          new Set([...mandatoryLabels, ...extraLabels]),
+          labelSpan,
+        )),
+    [model.points, mandatoryLabels, extraLabels, labelSpan],
+  );
   // The Today chip negotiates for space like every label does: when an
   // above-side labelled point sits within its band, the chip yields to the
   // rail's underside; on the stacked axis it nudges clear instead.
@@ -760,9 +809,13 @@ function Journey({
   const todayLabel = model.todayPosition === null
     ? null
     : `Today, ${formatTimelineDate(timeline.today, "long")}.${nextMilestone ? ` Our next milestone is ${nextMilestone.item.title}.` : ""}`;
+  // The rail's span, stated in words. The month ticks and the Today dash are
+  // aria-hidden decoration, so without this sentence the axis was invisible to
+  // low vision and absent from assistive technology at once.
+  const axisDescription = timelineAxisDescription(model);
   const instructions = model.axis.mode === "ordered"
-    ? "These milestones are shown in order, not spaced by date. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail."
-    : "The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.";
+    ? `${axisDescription} Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`
+    : `${axisDescription} The highlighted point is the project's next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.`;
 
   return (
     <section className={styles.journey} id={sectionId} aria-labelledby={`${sectionId}-title`}>
@@ -774,6 +827,9 @@ function Journey({
         className={styles.railFrame}
         data-overflow-start={overflowStart ? "true" : undefined}
         data-overflow-end={overflowEnd ? "true" : undefined}
+        role="group"
+        aria-roledescription="timeline axis"
+        aria-label={axisDescription}
       >
         <div className={styles.stageViewport} ref={viewportRef} data-timeline-scroll-viewport>
           <div className={styles.stage} ref={stageRef} style={stageStyle}>
@@ -882,10 +938,12 @@ function Journey({
                     || index === Math.max(0, firstUnfinished - 1)
                     || index === model.points.length - 1;
                   const extraLabel = !persistentLabel && extraLabels.has(index);
+                  const nudge = labelNudges.get(index) ?? 0;
                   const pointStyle: PositionStyle = {
                     "--timeline-position": `${point.position}%`,
                     "--timeline-position-stack": `${point.stackPosition}%`,
                     "--timeline-point-delay": `${Math.min(0.08 + index * 0.012, 0.24)}s`,
+                    ...(nudge === 0 ? {} : { "--timeline-label-shift": String(nudge) }),
                   };
                   const timing = point.item.date ? formatTimelineDate(point.item.date, "long") : "Timing not set";
 
@@ -895,6 +953,7 @@ function Journey({
                       data-state={point.state}
                       data-selected={selected ? "true" : undefined}
                       data-labelled={persistentLabel ? "true" : extraLabel ? "extra" : "false"}
+                      data-label-shifted={nudge === 0 ? undefined : "true"}
                       data-side={index % 2 === 0 ? "above" : "below"}
                       data-edge={index === 0 ? "start" : index === model.points.length - 1 ? "end" : undefined}
                       key={point.item.publicId}
@@ -916,6 +975,7 @@ function Journey({
                           setFocusIndex(index);
                           setSelectedId(point.item.publicId);
                           setDetailOpen(true);
+                          revealDetail();
                         }}
                       >
                         <span className={styles.point} aria-hidden="true" />
@@ -961,6 +1021,7 @@ function Journey({
       </p>
       {detailOpen && selectedPoint ? (
         <MilestoneDetail
+          sectionRef={detailRef}
           point={selectedPoint}
           ordinal={model.points.findIndex(
             (candidate) => candidate.item.publicId === selectedPoint.item.publicId,

@@ -57,8 +57,22 @@ test("the milestone rail exposes roving keyboard navigation and touch-safe targe
   assert.match(artifact, /completedRailVertical/);
   assert.match(styles, /\.completedRailVertical/);
   assert.match(styles, /overflow-x:\s*hidden/);
-  assert.doesNotMatch(artifact, /scrollIntoView/);
+  // Moving along the rail scrolls the RAIL. `scrollIntoView` on a mark would
+  // drag the whole document sideways and vertically every time an arrow key
+  // moved focus, so the rail's own navigation uses viewport.scrollTo and the
+  // ban on scrollIntoView inside it stands.
   assert.match(artifact, /viewport\.scrollTo/);
+  assert.doesNotMatch(
+    artifact,
+    /const scrollPointIntoView[\s\S]{0,400}scrollIntoView/,
+  );
+  assert.doesNotMatch(artifact, /const focusPoint[\s\S]{0,300}scrollIntoView/);
+  // Choosing a milestone is different, and it owed the viewer a visible
+  // consequence: on a phone the detail sits a whole stacked rail below the
+  // mark that was tapped. `block: "nearest"` leaves a detail that is already
+  // on screen exactly where it is, so desktop pays nothing for it.
+  assert.match(artifact, /scrollIntoView\(\{[\s\S]{0,80}block: "nearest"/);
+  assert.match(artifact, /behavior: reduceMotion \? "auto" : "smooth"/);
 });
 
 test("motion has a reduced-motion path and the metric swaps as a single face", () => {
@@ -141,6 +155,49 @@ test("paper keeps the content from ONE list, not a second copy of it", () => {
   assert.match(print, /\.milestone\s*\{[^}]*inset-block-start:\s*var\(--timeline-position-stack/);
   assert.match(print, /\.milestone\[data-labelled="false"\][\s\S]{0,120}\{\s*opacity:\s*1;/);
   assert.match(print, /\.completedRailVertical\s*\{\s*display:\s*block;/);
+});
+
+test("the marks are never moved to make room for their own labels", () => {
+  // The proportionality repair, held at the source. A dated mark's position
+  // IS its date; when two labels collide it is the label that steps aside,
+  // and the model publishes that as a rail-percent the CSS draws in pixels.
+  assert.match(artifact, /labelShifts/);
+  assert.match(artifact, /--timeline-label-shift/);
+  assert.match(styles, /--timeline-label-shift, 0\) \* var\(--x-timeline-rail-width/);
+  // A label that moved owes a line back to the mark it names.
+  assert.match(styles, /\.milestone\[data-label-shifted="true"\] \.milestoneLabel::after/);
+  // The rail's width is measured, because a percentage on the label would
+  // resolve against its own hit target rather than the rail.
+  assert.match(artifact, /--x-timeline-rail-width/);
+});
+
+test("the month names a guest reads clear AA, and the axis says what it spans", () => {
+  // --ink-ghost is 1.48:1 on paper. The month names were set in it at 10px on
+  // the only page an audience ever sees.
+  const tick = styles.slice(styles.indexOf(".monthTick {"), styles.indexOf(".todayMarker"));
+  assert.doesNotMatch(tick, /var\(--ink-ghost\)/);
+  assert.match(tick, /background: var\(--ink-faint\)/);
+  assert.match(tick, /color: var\(--ink-faint\)/);
+  // The ticks are aria-hidden decoration, so the span they describe is stated
+  // in words instead of being available only to people who can see it.
+  assert.match(artifact, /timelineAxisDescription/);
+  assert.match(artifact, /aria-roledescription="timeline axis"/);
+});
+
+test("choosing a milestone does not look identical to pointing at one", () => {
+  // These were one selector and one box-shadow, so a phone — which has no
+  // hover at all — was given no mark for selection whatsoever.
+  const hover = styles.match(/\.milestoneButton:hover \.point \{[^}]*\}/)[0];
+  const chosen = styles.match(/\.milestone\[data-selected="true"\] \.point \{[^}]*\}/)[0];
+  assert.notEqual(hover, chosen);
+  // Two rings of ink with paper between them: a different shape, not a
+  // heavier version of the same one, and contained inside the mark so it
+  // cannot draw over the month name beneath the rail.
+  assert.match(chosen, /0 0 0 7px var\(--paper\),\s*0 0 0 8px var\(--ink\)/);
+  assert.doesNotMatch(styles, /\.milestone\[data-selected="true"\] \.point::after/);
+  // Selection persists after the pointer leaves, so it also carries into the
+  // title's weight — legible in a still frame and in greyscale.
+  assert.match(styles, /\.milestone\[data-selected="true"\] \.milestoneLabel strong/);
 });
 
 test("the rail's cartography rides the model's mapping and yields to information", () => {

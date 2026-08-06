@@ -8,6 +8,17 @@ import type { AudienceActionState } from "@/modules/timeline/server/actions/audi
  * focused Share surface on a project page and the full shared-timelines
  * manager cannot drift apart. Behaviour is unchanged from the manager's own
  * copies; only their address moved.
+ *
+ * Measured 2026-08-06, recorded so it is not re-tried: this file is emitted
+ * THREE times into `.next/static/chunks` — once as a chunk of its own for
+ * `/app/timeline/[projectSlug]`, and once inlined into each of the chunks for
+ * `/app/timeline` and `/app/timeline/audience` — because Turbopack does not
+ * hoist a small module shared by three independent route trees. That costs
+ * about 3.6 KB gzip. Removing the `"use client"` directive above (it is
+ * redundant: both importers already carry one) was tried and changed the
+ * output by nothing at all, so the duplication is chunk-group policy and not
+ * a client-boundary artefact. The only ways out are merging the route trees or
+ * letting the two share surfaces drift; neither is worth 3.6 KB.
  */
 
 export const fieldClass =
@@ -106,12 +117,12 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
         className="font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
         style={{ color: "var(--accent-hover)" }}
       >
-        One-time share link
+        Your link
       </p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
           ref={inputRef}
-          aria-label="New Audience Timeline share link"
+          aria-label="Share link for this timeline"
           readOnly
           value={state.shareUrl}
           className={`${fieldClass} min-w-0 flex-1 font-mono text-xs`}
@@ -150,7 +161,8 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
         </button>
       ) : null}
       <p className="mt-2 text-xs text-ink-quiet">
-        Only a protected fingerprint is stored. If this receipt is lost, rotate the link.
+        Copy it now. The link is not kept here, so this is the only time it can
+        be shown. If you lose it, make a new one — that stops this one working.
       </p>
     </div>
   );

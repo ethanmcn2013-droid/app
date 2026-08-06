@@ -34,6 +34,16 @@
   --x-lane-ink: var(--ink-soft);
 }
 
+/* The lane's milestones are an ordered list — order is the content on this
+   surface, and dragging a row changes what the audience is shown. The markers
+   are off because each row already carries a drag handle, a status mark and
+   its controls; what was missing was the semantics, not a column of numerals. */
+.laneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .laneHeader {
   display: flex;
   align-items: center;

@@ -43,6 +43,21 @@ export type SharePublicationSummary = Readonly<{
 /**
  * Share, separated from Preview.
  *
+ * THE LINK IS THE PANEL. It opens on the URL and a control that copies it;
+ * everything that can destroy a link — make a new one, switch them off,
+ * unpublish — sits below a rule in a second group of its own. It used to open
+ * on those three, with the link itself appearing only as a receipt beneath the
+ * form that had just minted it, so the one thing an owner comes here to do was
+ * the one thing the panel did not offer.
+ *
+ * Where the link genuinely cannot be handed over, this says so in those words.
+ * Publishing stores `sha256(token)` and nothing else (see
+ * `server/audience-timeline.ts`), so a link that was not written down at the
+ * moment it was made is gone — not hidden behind a control, gone. The panel
+ * does not imply otherwise, and it names the only real move: make a new link,
+ * which stops the old one working. That is a limit of the data model, recorded
+ * here rather than papered over with copy.
+ *
  * Every word here keys off `linkLive` — published AND at least one share still
  * active — never the raw state column. Revoking kills the links without
  * touching `state`, so a row can read "published" while nothing opens; keying
@@ -75,6 +90,7 @@ export function SharePanel({
 }) {
   const [open, setOpen] = useState(false);
   const headingId = useId();
+  const settingsId = `${headingId}-settings`;
   const router = useRouter();
 
   const [publishState, publishAction, publishPending] = useActionState(
@@ -123,6 +139,11 @@ export function SharePanel({
         ? "revoked"
         : publication.state
     : null;
+  // A URL only exists in this session, in the reply from the action that just
+  // minted it. Nothing on the server can produce one, because only the hash is
+  // stored. Whichever action ran most recently is the one holding it.
+  const mintedState =
+    rotateState.shareUrl ? rotateState : publishState.shareUrl ? publishState : null;
 
   return (
     <>
@@ -181,33 +202,75 @@ export function SharePanel({
             <NothingPublished manageHref={manageHref} />
           ) : (
             <div className="mt-4 space-y-4">
-              <p className="text-sm leading-6 text-ink-soft">
-                {linkLive
-                  ? "Anyone holding the link can open this timeline. There is no sign-in, and the link is not tied to a named person."
-                  : publication.state === "published"
-                    ? "Every link was switched off, so nobody can open this timeline. The published page is still here — create a new link when you are ready."
-                    : publication.state === "unpublished"
-                      ? "This timeline is not published, and no link opens it."
-                      : "This is a private draft. No link exists yet. Publishing makes the link in the same step."}
-              </p>
-
-              {linkLive ? (
-                <p className="text-sm leading-6 text-ink-soft">
-                  {publication.activeShareCount === 1
-                    ? "One link is working."
-                    : `${publication.activeShareCount} links are working.`}{" "}
-                  A link is shown once, at the moment it is made. Only a
-                  protected fingerprint is kept afterwards, so it can never be
-                  shown again — make a new link if you have lost it.
-                </p>
-              ) : null}
+              {/* First, and largest: the link, or the plain truth about why
+                  there is not one to hand over. */}
+              {mintedState ? (
+                <ShareReceipt state={mintedState} />
+              ) : (
+                <div className="rounded-lg border border-line-soft bg-bg-deep p-4">
+                  <p className="text-sm leading-6 text-ink">
+                    {linkLive
+                      ? publication.activeShareCount === 1
+                        ? "One link is working. Anyone holding it can open this timeline — there is no sign-in, and it is not tied to a named person."
+                        : `${publication.activeShareCount} links are working. Anyone holding one can open this timeline — there is no sign-in, and they are not tied to a named person.`
+                      : publication.state === "published"
+                        ? "Every link was switched off, so nobody can open this timeline. The page itself is still here."
+                        : publication.state === "unpublished"
+                          ? "This timeline is not published, and no link opens it."
+                          : "This is a private draft. No link exists yet, and publishing makes one in the same step."}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-ink-soft">
+                    {linkLive
+                      ? "A link is shown once, when it is made. It is not kept here afterwards, so this page cannot show it to you again. If you no longer have it, make a new one below — that stops the old link working."
+                      : "Making a link shows it to you once. Copy it then; this page cannot show it again."}
+                  </p>
+                  {canManage ? (
+                    <div className="mt-3">
+                      {publication.state === "published" ? (
+                        <form action={rotateAction} className="flex flex-wrap items-end gap-2">
+                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                          <input type="hidden" name="publicationId" value={publication.id} />
+                          <button disabled={rotatePending} className={primaryButton}>
+                            Make a new link
+                          </button>
+                        </form>
+                      ) : (
+                        <form action={publishAction} className="flex flex-wrap items-end gap-2">
+                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                          <input type="hidden" name="publicationId" value={publication.id} />
+                          <button disabled={publishPending} className={primaryButton}>
+                            Publish and make the link
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              <ActionNotice state={publishState} />
+              <ActionNotice state={rotateState} />
+              <ActionNotice state={revokeState} />
+              <ActionNotice state={unpublishState} />
 
               <Divergence titles={publication.divergedTitles} manageHref={manageHref} />
 
               {canManage ? (
-                <div className="space-y-3 border-t border-line-soft pt-4">
-                  {publication.state !== "published" ? (
-                    <form action={publishAction} className="flex flex-wrap items-end gap-2">
+                /* Demoted, not hidden. A disclosure was tried and measured
+                   badly: a closed <details> inside a dialog that clips its own
+                   overflow reports its contents as silently cut off at every
+                   viewport, and a control an owner cannot see is not obviously
+                   better than one they must scroll to. So the second group
+                   keeps its own quiet heading below a rule, and the link
+                   stays the thing the panel opens on. */
+                <section aria-labelledby={settingsId} className="border-t border-line-soft pt-4">
+                  <h3 id={settingsId} className="text-sm font-medium text-ink">
+                    Link settings
+                  </h3>
+                  <div className="mt-3 space-y-3">
+                    <form
+                      action={publication.state === "published" ? rotateAction : publishAction}
+                      className="flex flex-wrap items-end gap-2"
+                    >
                       <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                       <input type="hidden" name="publicationId" value={publication.id} />
                       <label className="text-xs font-medium text-ink-quiet">
@@ -215,24 +278,16 @@ export function SharePanel({
                         <span className="font-normal"> (optional)</span>
                         <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
                       </label>
-                      <button disabled={publishPending} className={primaryButton}>
-                        Publish and make the link
+                      <button
+                        disabled={publication.state === "published" ? rotatePending : publishPending}
+                        className={quietButton}
+                      >
+                        {publication.state === "published"
+                          ? "Make a new link"
+                          : "Publish and make the link"}
                       </button>
                     </form>
-                  ) : (
-                    <>
-                      <form action={rotateAction} className="flex flex-wrap items-end gap-2">
-                        <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-                        <input type="hidden" name="publicationId" value={publication.id} />
-                        <label className="text-xs font-medium text-ink-quiet">
-                          Stop the link working after
-                          <span className="font-normal"> (optional)</span>
-                          <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
-                        </label>
-                        <button disabled={rotatePending} className={quietButton}>
-                          Make a new link
-                        </button>
-                      </form>
+                    {publication.state === "published" ? (
                       <div className="flex flex-wrap gap-2">
                         <form action={revokeAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
@@ -253,33 +308,26 @@ export function SharePanel({
                           />
                         </form>
                       </div>
-                    </>
-                  )}
-                  <p className="text-xs leading-5 text-ink-quiet">
-                    A new link switches every earlier link off. Dates end at the
-                    close of that day in {publication.timezone}.
-                  </p>
-                  <ActionNotice state={publishState} />
-                  <ShareReceipt state={publishState} />
-                  <ActionNotice state={rotateState} />
-                  <ShareReceipt state={rotateState} />
-                  <ActionNotice state={revokeState} />
-                  <ActionNotice state={unpublishState} />
-                </div>
+                    ) : null}
+                    <p className="text-xs leading-5 text-ink-quiet">
+                      A new link switches every earlier link off. Dates end at the
+                      close of that day in {publication.timezone}.
+                    </p>
+                    <p className="text-sm">
+                      <Link
+                        href={manageHref}
+                        className="font-medium text-ink underline decoration-line-soft underline-offset-4 hover:decoration-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        Choose what the shared page shows
+                      </Link>
+                    </p>
+                  </div>
+                </section>
               ) : (
                 <p className="border-t border-line-soft pt-4 text-sm leading-6 text-ink-soft">
                   Only the person who owns this workspace can change sharing.
                 </p>
               )}
-
-              <p className="border-t border-line-soft pt-4 text-sm">
-                <Link
-                  href={manageHref}
-                  className="font-medium text-ink underline decoration-line-soft underline-offset-4 hover:decoration-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  Choose what the shared page shows
-                </Link>
-              </p>
             </div>
           )}
         </div>

@@ -490,7 +490,7 @@ function NodeCard({
   );
 
   return (
-    <div
+    <li
       data-node-id={node.id}
       draggable={canReorder}
       onDragStart={() => {
@@ -850,7 +850,7 @@ function NodeCard({
             )}
           </button>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -1787,6 +1787,16 @@ export function CurationSurface({
                     label={stateOption.label}
                     count={stateNodes.length}
                   />
+                  {/* An ordered list, because this is the one surface whose
+                      whole purpose is order: dragging a card changes the
+                      sequence the audience sees. It read as a stack of
+                      unrelated boxes to a screen reader — no list, no count,
+                      no position — on the screen where position is the
+                      content. */}
+                  <ol
+                    className={styles.laneList}
+                    aria-label={`${stateOption.label} milestones, in the order they are shown`}
+                  >
                   {stateNodes.map((node, nodeIndex) => (
                     <NodeCard
                       key={node.id}
@@ -1815,6 +1825,7 @@ export function CurationSurface({
                       isSettled={settledId === node.id}
                     />
                   ))}
+                  </ol>
                 </div>
               );
             })}
@@ -1830,7 +1841,7 @@ export function CurationSurface({
                 <span>Hidden milestones</span>
                 <span className={styles.hiddenCount}>{hiddenNodes.length}</span>
               </summary>
-              <div className={styles.hiddenBody}>
+              <ol className={`${styles.hiddenBody} ${styles.laneList}`} aria-label="Hidden milestones">
                 {hiddenNodes.map((node) => (
                   <NodeCard
                     key={node.id}
@@ -1859,7 +1870,7 @@ export function CurationSurface({
                     canReorder={false}
                   />
                 ))}
-              </div>
+              </ol>
             </details>
           )}
         </>

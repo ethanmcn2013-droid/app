@@ -25,7 +25,14 @@ export type TimelineOrderedReason =
   /** At least one plotted milestone has no date. Mixed data is ordered. */
   | "missing-timing"
   /** Every plotted milestone is dated, but they all land on one day. */
-  | "no-range";
+  | "no-range"
+  /**
+   * Every plotted milestone is dated and the span is real, but two of them
+   * fall so close together that proportional spacing would draw one mark on
+   * top of another. The rail states the sequence instead of distorting the
+   * scale to pull them apart.
+   */
+  | "too-crowded";
 
 /**
  * How the rail's spacing is allowed to be read.
@@ -64,9 +71,9 @@ export type TimelineArtifactPoint = Readonly<{
 }>;
 
 export type TimelineMonthTick = Readonly<{
-  /** Rail-percent on the horizontal axis, ridden through the same
-      distortion as the points — the cartography cannot disagree with
-      the dots it annotates. */
+  /** Rail-percent on the horizontal axis, from the same proportional
+      mapping the points use — the cartography cannot disagree with the
+      dots it annotates. */
   position: number;
   /** The stacked (vertical) axis position, capped like everything else. */
   stackPosition: number;
@@ -149,33 +156,58 @@ function flattenTimeline(dto: AudienceTimelineDto): AudienceTimelineItemDto[] {
     .map(({ item }) => item);
 }
 
-function collisionSafePositions(rawPositions: readonly number[]): number[] {
-  if (rawPositions.length === 0) return [];
-  if (rawPositions.length === 1) return [50];
+/**
+ * Physical facts about the rail, needed here because legibility is a question
+ * about pixels and the model answers in rail-percent.
+ *
+ * `RAIL_PITCH_PX` mirrors `--x-timeline-pitch` (5.25rem) and `RAIL_FLOOR_PX`
+ * the container width below which the rail stops being horizontal at all and
+ * stacks (620px, the artifact's own container breakpoint). Between them they
+ * give the narrowest a horizontal rail can ever be for a given count.
+ * `MARK_DIAMETER_PX` is the largest mark drawn on it (0.88rem, the current and
+ * overdue states). Two marks closer than one diameter are one blot.
+ */
+const RAIL_PITCH_PX = 84;
+const RAIL_FLOOR_PX = 620;
+const MARK_DIAMETER_PX = 14;
 
-  const edge = Math.min(6, Math.max(3, 36 / rawPositions.length));
+/**
+ * How far the first and last marks sit in from the rail's ends, in
+ * rail-percent. A mark drawn at 0 is a half-circle clipped by the stage, and
+ * its label has nothing to grow into.
+ *
+ * This is the ONLY adjustment a dated position receives, and it is affine —
+ * every position is scaled and shifted by the same two numbers — so the ratio
+ * between any two calendar distances survives it exactly. Ordered rails take
+ * the same inset for the same reason, which is what stops their end marks
+ * being drawn as half-circles.
+ */
+function railEdge(count: number): number {
+  return Math.min(6, Math.max(3, 36 / Math.max(1, count)));
+}
+
+/**
+ * The rail-percent below which two marks cannot be told apart, derived rather
+ * than guessed: one mark diameter measured against the narrowest this rail can
+ * ever be for this many milestones.
+ */
+function legibleGap(count: number): number {
+  const narrowestRail = Math.max(RAIL_FLOOR_PX, count * RAIL_PITCH_PX);
+  return (MARK_DIAMETER_PX / narrowestRail) * 100;
+}
+
+/** Raw 0-100 positions mapped into the rail's drawable span. Affine only. */
+function insetPositions(rawPositions: readonly number[]): number[] {
+  const edge = railEdge(rawPositions.length);
   const available = 100 - edge * 2;
-  const minimumGap = Math.min(9, 80 / (rawPositions.length - 1));
-  const resolved = rawPositions.map((position) => edge + (position / 100) * available);
-
-  for (let index = 1; index < resolved.length; index += 1) {
-    resolved[index] = Math.max(resolved[index], resolved[index - 1] + minimumGap);
-  }
-
-  const upper = 100 - edge;
-  if (resolved.at(-1)! > upper) {
-    resolved[resolved.length - 1] = upper;
-    for (let index = resolved.length - 2; index >= 0; index -= 1) {
-      resolved[index] = Math.min(resolved[index], resolved[index + 1] - minimumGap);
-    }
-  }
-
-  return resolved.map(clampPercent);
+  return rawPositions.map((position) => clampPercent(edge + (position / 100) * available));
 }
 
 /**
  * Positions that mean sequence, never time. Evenly spaced, because order is
- * the only fact being drawn.
+ * the only fact being drawn, and inset from the rail's ends like the dated
+ * ones — an ordered rail used to draw its first and last milestones at 0 and
+ * 100, where the stage clips them into half-circles.
  *
  * A lone milestone sits at the start of its own sequence rather than at the
  * centre of the rail. Dead centre of a time axis is a claim — "roughly
@@ -185,8 +217,10 @@ function collisionSafePositions(rawPositions: readonly number[]): number[] {
  */
 function sequencePositions(count: number): number[] {
   if (count === 0) return [];
-  if (count === 1) return [0];
-  return Array.from({ length: count }, (_, index) => (index / (count - 1)) * 100);
+  if (count === 1) return insetPositions([0]);
+  return insetPositions(
+    Array.from({ length: count }, (_, index) => (index / (count - 1)) * 100),
+  );
 }
 
 function artifactDensity(count: number): TimelineArtifactDensity {
@@ -197,15 +231,17 @@ function artifactDensity(count: number): TimelineArtifactDensity {
 }
 
 /**
- * Map a raw calendar percentage through the same distortion the points
- * received. `collisionSafePositions` may move clustered points a long way
- * from their raw calendar spots; anything else placed on the rail (the Today
- * dash) must ride the identical mapping or the artifact lies about order.
- * Piecewise-linear between each dated point's (raw, adjusted) pair, with the
- * rail's own edges as end anchors, keeps "between those two milestones"
- * truthful even when spacing is no longer calendar-proportional.
+ * Map a position through a remap the points have already taken.
+ *
+ * The horizontal rail no longer needs this: its points are proportional, so
+ * the Today dash and the month ticks are read off the same straight line the
+ * marks are. The STACKED axis still does, because `capStackGaps` deliberately
+ * shortens long quiet stretches there, and anything else drawn on that axis
+ * must ride the identical remap or it would sit between the wrong two
+ * milestones. Piecewise-linear between each point's (raw, adjusted) pair,
+ * with the rail's own ends as anchors.
  */
-function mapThroughPointDistortion(
+function mapThroughAnchors(
   rawValue: number,
   anchors: ReadonlyArray<{ raw: number; adjusted: number }>,
   edge: number,
@@ -291,6 +327,14 @@ function isoDay(day: number): string {
  * domain is widened to include today so the Today marker lands at a true
  * calendar position rather than being clamped onto the nearest milestone —
  * the caps then state the rail's actual ends, which is what they claim.
+ *
+ * 3. **Proportional spacing has to be readable.** Distance on a dated rail is
+ *    calendar distance and nothing may move a mark off its day, so a plan
+ *    whose milestones fall closer together than one mark's diameter cannot be
+ *    drawn on a calendar at all — two dots would occupy the same spot. Such a
+ *    plan states its sequence instead. The alternative, and the defect this
+ *    replaces, was to shove the marks apart until the labels fitted, which
+ *    made rail distance mean neither time nor order.
  */
 export function resolveTimelineAxis(dto: AudienceTimelineDto): TimelineAxis {
   const plotted = dto.sections
@@ -311,10 +355,21 @@ export function resolveTimelineAxis(dto: AudienceTimelineDto): TimelineAxis {
   if (planEnd <= planStart) return { mode: "ordered", reason: "no-range" };
 
   const todayDay = calendarDay(dto.today);
+  const axisStart = todayDay === null ? planStart : Math.min(planStart, todayDay);
+  const axisEnd = todayDay === null ? planEnd : Math.max(planEnd, todayDay);
+
+  const ordered = [...milestoneDays].sort((left, right) => left - right);
+  const available = 100 - railEdge(ordered.length) * 2;
+  const floor = legibleGap(ordered.length);
+  for (let index = 1; index < ordered.length; index += 1) {
+    const gap = ((ordered[index] - ordered[index - 1]) / (axisEnd - axisStart)) * available;
+    if (gap < floor) return { mode: "ordered", reason: "too-crowded" };
+  }
+
   return {
     mode: "dated",
-    startDate: isoDay(todayDay === null ? planStart : Math.min(planStart, todayDay)),
-    endDate: isoDay(todayDay === null ? planEnd : Math.max(planEnd, todayDay)),
+    startDate: isoDay(axisStart),
+    endDate: isoDay(axisEnd),
   };
 }
 
@@ -323,6 +378,20 @@ export function resolveTimelineAxis(dto: AudienceTimelineDto): TimelineAxis {
  * the same axis. Ordered mode returns sequence positions and no calendar
  * furniture at all: no Today marker, no month ticks. There is no path here
  * that derives a position for an undated milestone.
+ *
+ * In dated mode there is exactly ONE mapping from a day to a rail position,
+ * and it is a straight line: the marks, the Today dash and the month ticks all
+ * take it. That is what makes the spacing readable as calendar distance. It
+ * used to be two mappings — the marks were pushed apart until their labels
+ * stopped colliding, and everything else was then bent through that same
+ * distortion to stay consistent with them — which left a nine-milestone plan
+ * drawing its last nine weeks across half the rail and its first four months
+ * across a third of it, a scale error of fifteen to one, with the Today dash
+ * thirty points of the rail away from today.
+ *
+ * Labels collide on a proportional rail; that is a labelling problem and it is
+ * solved where labels are chosen and placed (`extraLabelIndices` and
+ * `labelShifts`), never by moving a mark off its day.
  */
 function railPositions(
   items: readonly AudienceTimelineItemDto[],
@@ -354,27 +423,20 @@ function railPositions(
     itemDays.push(day);
   }
 
-  const rawPosition = (day: number): number => ((day - axisStart) / (axisEnd - axisStart)) * 100;
-  const rawPointPositions = itemDays.map(rawPosition);
-  const safePointPositions = collisionSafePositions(rawPointPositions);
-  const edge = Math.min(6, Math.max(3, 36 / rawPointPositions.length));
-  const datedAnchors = rawPointPositions.map((raw, index) => ({
-    raw,
-    adjusted: safePointPositions[index],
-  }));
-  const mapDay = (day: number): number => mapThroughPointDistortion(
-    rawPosition(day),
-    datedAnchors,
-    edge,
-  );
-  const todayDay = calendarDay(today);
-  const todayPosition = todayDay === null ? null : mapDay(todayDay);
-  const monthTicks = monthBoundaries(axisStart, axisEnd).map(({ day, label }) => ({
-    position: mapDay(day),
-    label,
-  }));
+  const edge = railEdge(items.length);
+  const available = 100 - edge * 2;
+  const railPercent = (day: number): number =>
+    clampPercent(edge + ((day - axisStart) / (axisEnd - axisStart)) * available);
 
-  return { pointPositions: safePointPositions, todayPosition, monthTicks };
+  const todayDay = calendarDay(today);
+  return {
+    pointPositions: itemDays.map(railPercent),
+    todayPosition: todayDay === null ? null : railPercent(todayDay),
+    monthTicks: monthBoundaries(axisStart, axisEnd).map(({ day, label }) => ({
+      position: railPercent(day),
+      label,
+    })),
+  };
 }
 
 /**
@@ -420,12 +482,23 @@ function nextMilestone(items: readonly AudienceTimelineItemDto[]): AudienceTimel
 export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineArtifactModel {
   const allItems = flattenTimeline(dto);
   const cancelled = allItems.filter((item) => item.state === "cancelled");
-  const activeItems = allItems.filter((item) => item.state !== "cancelled");
-  const completedCount = activeItems.filter((item) => item.state === "covered").length;
-  const totalCount = activeItems.length;
+  const flattened = allItems.filter((item) => item.state !== "cancelled");
+  const completedCount = flattened.filter((item) => item.state === "covered").length;
+  const totalCount = flattened.length;
   const percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-  const next = nextMilestone(activeItems);
+  // Read off the state-ordered list, before the calendar has any say, so which
+  // milestone is "next" cannot change with the rail's mode.
+  const next = nextMilestone(flattened);
   const axis = resolveTimelineAxis(dto);
+  // On a calendar rail, index order IS calendar order. `flattenTimeline` sorts
+  // by state first, so a milestone completed ahead of schedule used to be
+  // listed before dots that are drawn to its left. That was invisible only
+  // because the old spacing forced positions to increase with the index; with
+  // real dates the list has to agree with the drawing, or "milestone 3 of 9"
+  // names the fifth mark along.
+  const activeItems = axis.mode === "dated"
+    ? [...flattened].sort((left, right) => (left.date ?? "").localeCompare(right.date ?? ""))
+    : flattened;
   const schedule = railPositions(activeItems, dto.today, axis);
   const todayDay = calendarDay(dto.today);
 
@@ -435,7 +508,7 @@ export function buildTimelineArtifactModel(dto: AudienceTimelineDto): TimelineAr
     adjusted: stackPositions[index],
   }));
   const mapStack = (position: number): number =>
-    mapThroughPointDistortion(position, stackAnchors, 0);
+    mapThroughAnchors(position, stackAnchors, 0);
   const todayStackPosition = schedule.todayPosition === null
     ? null
     : mapStack(schedule.todayPosition);
@@ -546,10 +619,97 @@ export function timelineRailCaps(model: TimelineArtifactModel): TimelineRailCaps
  */
 export function timelineAxisNote(model: TimelineArtifactModel): string | null {
   if (timelinePresentation(model) !== "sequence-rail") return null;
+  if (model.axis.mode === "ordered" && model.axis.reason === "too-crowded") {
+    // Every one of these milestones has a date, so "some do not have a date
+    // yet" would be a plain untruth here. The reason this rail shows order is
+    // that the dates sit too close together to draw apart.
+    return "These milestones are in order, not spaced by date. Some of them fall too close together to space apart on a calendar.";
+  }
   const dated = model.points.filter((point) => Boolean(point.item.date)).length;
   return dated === 0
     ? "These milestones are in order, not spaced by date. No dates are set yet."
     : "These milestones are in order, not spaced by date. Some do not have a date yet.";
+}
+
+/**
+ * What the rail's spacing means, in one sentence, for anyone who cannot see
+ * it. The month ticks and the Today dash are decoration to a screen reader —
+ * they are `aria-hidden`, correctly, because reading nine month names aloud is
+ * noise — so without this the axis was invisible to low vision and absent from
+ * assistive technology at the same time: the span the rail covers was stated
+ * nowhere at all.
+ */
+export function timelineAxisDescription(model: TimelineArtifactModel): string {
+  if (model.axis.mode === "dated") {
+    return `This timeline runs from ${formatTimelineDate(model.axis.startDate, "long")} to ${formatTimelineDate(model.axis.endDate, "long")}. Distance along it is calendar distance.`;
+  }
+  return `These ${model.points.length} milestones are shown in the order they happen. Distance along the timeline means sequence, not time.`;
+}
+
+/**
+ * Where each visible label sits relative to its own mark, in rail-percent.
+ *
+ * A dated mark may not move: its position IS its date. Its label may, and this
+ * is the whole of the collision policy that used to be run on the marks
+ * themselves. Labels alternate sides by index, so each side is resolved on its
+ * own: walk the visible labels left to right and push any that would overlap
+ * its predecessor far enough right to clear it, then, if the run has spilled
+ * past the rail, walk back leftward from the end. Both passes are the same
+ * spacing algorithm the marks used to suffer — applied to the thing that is
+ * allowed to move.
+ *
+ * `labelWidth` is one label box as a share of the rail; the view measures it,
+ * because it depends on the rail's rendered width. Shifts are capped at one
+ * label width so a label can never travel far enough to read as belonging to a
+ * different mark, and the view draws a connector on any label that moved.
+ */
+export function labelShifts(
+  positions: readonly number[],
+  visible: ReadonlySet<number>,
+  labelWidth: number,
+): Map<number, number> {
+  const shifts = new Map<number, number>();
+  if (labelWidth <= 0 || positions.length < 2) return shifts;
+  const last = positions.length - 1;
+  // The two end labels are anchored to the rail's ends by the CSS (the first
+  // grows rightward, the last leftward) and are not moved. They still occupy
+  // room, so they enter the pass as fixed obstacles at the centre of the box
+  // they actually cover.
+  const centre = (index: number): number => {
+    if (index === 0) return positions[index] + labelWidth / 2;
+    if (index === last) return positions[index] - labelWidth / 2;
+    return positions[index];
+  };
+
+  for (const side of [0, 1]) {
+    const indices = [...visible]
+      .filter((index) => index % 2 === side && positions[index] !== undefined)
+      .sort((left, right) => positions[left] - positions[right]);
+    if (indices.length < 2) continue;
+
+    const pinned = indices.map((index) => index === 0 || index === last);
+    const placed = indices.map(centre);
+    for (let step = 1; step < placed.length; step += 1) {
+      if (pinned[step]) continue;
+      placed[step] = Math.max(placed[step], placed[step - 1] + labelWidth);
+    }
+    for (let step = placed.length - 2; step >= 0; step -= 1) {
+      if (pinned[step]) continue;
+      placed[step] = Math.min(placed[step], placed[step + 1] - labelWidth);
+    }
+
+    indices.forEach((index, step) => {
+      if (pinned[step]) return;
+      // Bounded at half a label: past that the title stops reading as this
+      // mark's title, and an unplaceable label is better dropped by
+      // `extraLabelIndices` than dragged across the rail.
+      const limit = labelWidth / 2;
+      const shift = Math.max(-limit, Math.min(limit, placed[step] - centre(index)));
+      if (Math.abs(shift) >= 0.25) shifts.set(index, shift);
+    });
+  }
+
+  return shifts;
 }
 
 /**
