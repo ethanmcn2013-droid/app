@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * MetadataRail — compact or full metadata display for the task detail.
+ * MetadataRail — the task's properties, in the framing its shell asks for.
  *
- * compact = 2-col grid (used in panel shell, inline at top)
  * full    = flex-col (used in focus shell right rail)
  *
  * Rows reuse the exported row components from field-rows.tsx so all
@@ -12,6 +11,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { tagDisplayName } from "@/lib/tags";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import type { Task } from "@/lib/data";
 import { useDomain } from "@/lib/domain-context";
@@ -35,11 +35,25 @@ function MetaField({
   label,
   children,
   colSpan2 = false,
+  bare = false,
 }: {
   label: string;
   children: React.ReactNode;
   colSpan2?: boolean;
+  bare?: boolean;
 }) {
+  if (bare) {
+    // The strip carries no labels: a status chip, a face, a date and a
+    // priority read themselves, and stacking uppercase eyebrows above
+    // them is the wall this redesign exists to remove. The name survives
+    // for screen readers, which cannot see that a chip is a status.
+    return (
+      <div className="flex items-center">
+        <dt className="sr-only">{label}</dt>
+        <dd className="m-0">{children}</dd>
+      </div>
+    );
+  }
   return (
     <div className={["flex flex-col gap-0.5", colSpan2 ? "col-span-2" : ""].join(" ").trim()}>
       <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-ink-quiet leading-[var(--x-lead-tight)]">
@@ -54,11 +68,19 @@ function MetaField({
 
 export function MetadataRail({
   task,
-  compact = false,
+  variant = "full",
 }: {
   task: Task;
-  compact?: boolean;
+  /**
+   * "strip" renders only the four properties a person checks first —
+   * status, owner, due date, priority — labelless and in a row under the
+   * title. "rest" renders everything else. "full" is both, which is what
+   * the full-page workspace still uses.
+   */
+  variant?: "full" | "strip" | "rest";
 }) {
+  const showPrimary = variant !== "rest";
+  const showRest = variant !== "strip";
   const { boardName } = useDomain();
   const suiteContext = useSuiteContext();
   const projectLabel = boardName ?? "Project";
@@ -80,50 +102,54 @@ export function MetadataRail({
     showAmount ? null : { key: "amount" as const, label: "Amount" },
   ].filter((field): field is { key: "contact" | "amount"; label: string } => field !== null);
 
-  const wrapClass = compact
-    ? "grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]"
+  const wrapClass = variant === "strip"
+    ? "flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px]"
     : "flex flex-col gap-4 text-[13px]";
+  const bare = variant === "strip";
 
   return (
     <dl className={wrapClass}>
-      {/* Status leads: it is the one property the board is organised by. */}
-      <MetaField label="Status">
-        <StatusPillRow task={task} />
-      </MetaField>
-
-      {/* Assignees */}
-      <MetaField label="Assignees">
-        <AssigneesRow task={task} />
-      </MetaField>
-
-      {/* Due date */}
-      <MetaField label="Due date">
-        <DueRow task={task} />
-      </MetaField>
-
-      {/* Priority */}
-      <MetaField label="Priority">
-        <PriorityRow task={task} />
-      </MetaField>
+      {showPrimary ? (
+        <>
+          {/* The four a person checks first. In the strip they read as a
+              row of values under the title; in the full page they keep
+              their labels in the rail. */}
+          <MetaField bare={bare} label="Status">
+            <StatusPillRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Assignees">
+            <AssigneesRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Due date">
+            <DueRow task={task} />
+          </MetaField>
+          <MetaField bare={bare} label="Priority">
+            <PriorityRow task={task} />
+          </MetaField>
+        </>
+      ) : null}
 
       {/* Repeats (recurrence rule) */}
+      {showRest ? (
+        <>
       <MetaField label="Repeats">
         <RecurrenceRow task={task} />
       </MetaField>
 
-      {/* Tags — only when present */}
+      {/*
+        Tags — only when present. There is no tag editor yet, so this used
+        to be the rail's clearest contradiction: a bordered, rounded chip —
+        the exact shape Repeats and Due use for a real button — wrapped
+        around a value nobody could act on. Same shape, opposite meaning,
+        two rows apart. FIELD_TEXT is the rail's one inert grammar (Project
+        and Source already use it below); Tags uses it too now, so a
+        border only ever means "you can act on this".
+      */}
       {task.tags && task.tags.length > 0 ? (
-        <MetaField label="Tags" colSpan2={compact}>
-          <div className="flex flex-wrap gap-1">
-            {task.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-md border border-line-soft bg-bg-sunken/60 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft leading-[var(--x-lead-tight)]"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+        <MetaField label="Tags">
+          <span className={FIELD_TEXT}>
+            {task.tags.map((tag) => tagDisplayName(tag)).join(", ")}
+          </span>
         </MetaField>
       ) : null}
 
@@ -135,13 +161,13 @@ export function MetadataRail({
         then they live behind the single Add-field row below.
       */}
       {showContact ? (
-        <MetaField label="Contact" colSpan2={compact}>
+        <MetaField label="Contact">
           <ContactEditor key={task.id} task={task} />
         </MetaField>
       ) : null}
 
       {showAmount ? (
-        <MetaField label="Amount" colSpan2={compact}>
+        <MetaField label="Amount">
           <CentsEditor key={task.id} task={task} />
         </MetaField>
       ) : null}
@@ -171,7 +197,7 @@ export function MetadataRail({
 
       {/* Milestone cross-link — only when flagged */}
       {task.isMilestone ? (
-        <MetaField label="Milestone" colSpan2={compact}>
+        <MetaField label="Milestone">
           <Link
             href={timelineHref}
             className="inline-flex items-center gap-1 text-[12px] text-ink-quiet transition-colors hover:text-ink-soft"
@@ -200,14 +226,14 @@ export function MetadataRail({
       */}
 
       {hiddenFields.length > 0 ? (
-        <MetaField label="Add field" colSpan2={compact}>
+        <MetaField label="Add field">
           <div className="flex flex-wrap gap-1">
             {hiddenFields.map((field) => (
               <button
                 key={field.key}
                 type="button"
                 onClick={() => setRevealed((current) => ({ ...current, [field.key]: true }))}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
               >
                 <span aria-hidden>+</span>
                 {field.label}
@@ -215,6 +241,8 @@ export function MetadataRail({
             ))}
           </div>
         </MetaField>
+      ) : null}
+        </>
       ) : null}
     </dl>
   );

@@ -1,6 +1,6 @@
 import { requireAppAccess } from "@/server/require-app-access";
 import { NotebookPage } from "@/modules/notes";
-import "@/modules/notes/notes.css";
+
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +19,12 @@ export default async function NotesPage(
   props: { searchParams: Promise<Record<string, string | string[] | undefined>> },
 ) {
   await requireAppAccess();
+  // display:contents so this marker div does not become a height-auto box
+  // between the shell's <main> and the workspace. It was collapsing every
+  // percentage height inside Notes, which is why the empty states floated
+  // and the Review card sat in a 245px band inside a 1080px viewport.
   return (
-    <div data-notes-module>
+    <div data-notes-module style={{ display: "contents" }}>
       <NotebookPage searchParams={props.searchParams} />
     </div>
   );

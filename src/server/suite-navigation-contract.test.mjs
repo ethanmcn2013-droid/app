@@ -35,7 +35,7 @@ const tasksCalendar = read(
 // lab chrome. The task a person actually opens is the production detail
 // panel, so the accessible-name contract is asserted where it now lives.
 const taskDetailPanel = read(
-  "src/components/app/detail-panel/panel-shell.tsx",
+  "src/components/app/detail-panel/focus-window.tsx",
 );
 const taskSharedStyles = read(
   "src/components/hybrid/shared/shared.module.css",
@@ -54,8 +54,8 @@ const contextHook = read("src/components/app/use-suite-context.ts");
 const userButton = read("src/components/app/user-button-with-suite.tsx");
 const notesPage = read("src/modules/notes/app/page.tsx");
 const notesActions = read("src/modules/notes/server/actions/notes.ts");
-const notesHybrid = read(
-  "src/modules/notes/app/hybrid/HybridNotebook.tsx",
+const notesWorkspace = read(
+  "src/modules/notes/app/workspace/NotesWorkspace.tsx",
 );
 const roomBrief = read("src/server/actions/room.ts");
 const tasksDemo = read("src/server/demo/tasks-demo.ts");
@@ -420,23 +420,30 @@ test("the shared app frame starts with one stable skip-link destination", () => 
 
 test("Notes leaves command-K to the suite and exposes slash for local find", () => {
   assert.doesNotMatch(
-    notesHybrid,
+    notesWorkspace,
     /\(event\.metaKey \|\| event\.ctrlKey\)[\s\S]{0,100}key\.toLowerCase\(\) === "k"/,
   );
-  assert.match(notesHybrid, /event\.key === "\/"/);
-  assert.match(notesHybrid, /aria-keyshortcuts="\/"/);
-  assert.match(notesHybrid, /Press \/ to find/);
+  assert.match(notesWorkspace, /event\.key === "\/"/);
+  assert.match(notesWorkspace, /aria-keyshortcuts="\/"/);
+  // The standing sentence "Press / to find" was retired with the 2026-08-05
+  // redesign. The shortcut it described did not change, so the rule is now
+  // pinned to the keycap that shows it, not to a paragraph of instructions.
+  assert.match(notesWorkspace, /className=\{styles\.searchKey\}/);
 });
 
-test("Notes receipts stay in the unified app and preserve the review context", () => {
-  assert.match(notesHybrid, /const TASKS_APP_PATH = PRODUCT_APP_PATHS\.tasks/);
-  assert.doesNotMatch(notesHybrid, /PRODUCT_APP_URLS/);
-  assert.match(notesHybrid, /params\.set\("workspaceId", REVIEW_SUITE_FIXTURE\.workspace\.id\)/);
-  assert.match(
-    notesHybrid,
-    /params\.set\(\s*"planningPeriodId",\s*REVIEW_SUITE_FIXTURE\.workspace\.planningPeriodId,\s*\)/,
-  );
-  assert.match(notesHybrid, /params\.set\("projectId", REVIEW_PRIMARY_PROJECT\.id\)/);
+test("Notes opens a task through the approved focus route, never a hostname", () => {
+  // The redesign hands off to the Tasks focus experience at /app/task/[id]
+  // rather than deep-linking a board with review query parameters. What the
+  // old rule protected still holds: the link is built from the typed path
+  // helper, it stays inside the unified app, and no component here invents a
+  // hostname of its own.
+  assert.match(notesWorkspace, /taskFocusPath/);
+  assert.doesNotMatch(notesWorkspace, /PRODUCT_APP_URLS/);
+  assert.doesNotMatch(notesWorkspace, /https?:\/\//);
+  assert.doesNotMatch(notesWorkspace, /`\/app\/task\//);
+  const productUrls = read("src/lib/product-urls.ts");
+  assert.match(productUrls, /export function taskFocusPath/);
+  assert.match(productUrls, /\/app\/task\/\$\{encodeURIComponent\(taskId\)\}/);
 });
 
 test("canonical module identity stays visible in the mobile Studio Bar", () => {
@@ -455,15 +462,20 @@ test("canonical module identity stays visible in the mobile Studio Bar", () => {
   );
 });
 
-test("the approved Notes Hybrid is canonical and legacy is rollback-only", () => {
-  for (const source of [notesPage, notesActions]) {
-    assert.match(
-      source,
-      /process\.env\.NOTES_LEGACY_NOTEBOOK_ENABLED\s*!==\s*"1"/,
-    );
-    assert.doesNotMatch(source, /NOTES_HYBRID_NOTEBOOK_ENABLED/);
-  }
-  assert.match(notesPage, /<HybridNotebook/);
+test("the Notes workspace is the only notebook, and the legacy send seam stays flagged", () => {
+  // The legacy renderer was retired with the 2026-08-05 redesign: its stated
+  // one-release rollback window had passed, and rolling back to it would
+  // have restored the exact screen the redesign replaced. What the flag
+  // still governs is the legacy Notes-to-Tasks server actions, which are a
+  // separate seam and must stay refused by default.
+  assert.match(
+    notesActions,
+    /process\.env\.NOTES_LEGACY_NOTEBOOK_ENABLED\s*!==\s*"1"/,
+  );
+  assert.doesNotMatch(notesActions, /NOTES_HYBRID_NOTEBOOK_ENABLED/);
+  assert.match(notesPage, /<NotesWorkspace/);
+  assert.doesNotMatch(notesPage, /<HybridNotebook/);
+  assert.doesNotMatch(notesPage, /<Notebook\s/);
 });
 
 test("the Tasks room tells the same Mara and Finn venue story as Timeline", () => {

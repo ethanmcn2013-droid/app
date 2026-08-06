@@ -71,10 +71,13 @@
   scrollbar-width: thin;
 }
 
-/* The four views read as ONE control: a quiet capsule track whose active
-   segment is a raised paper chip. The tabs themselves are real links
-   (lab-chrome.tsx) — this skins them without touching their contract. */
-.tabsScroll { background: var(--x-task-hover); border-radius: 8px; flex: 0 0 auto; padding: 2px; }
+/* The four views sit on the workspace, not in a tray. The grey capsule
+   track made four buttons shout in chorus before the reader had chosen
+   anything — on a white canvas the loudest object in the toolbar was the
+   container, not the choice. Only the current view earns a ground now:
+   an indigo tint, weight, and the accent underline below, so "where am
+   I" is carried three ways and never by colour alone. */
+.tabsScroll { flex: 0 0 auto; }
 .tabsScroll nav { gap: 1px; }
 .tabsScroll nav a {
   border-radius: 6px;
@@ -84,10 +87,10 @@
   min-height: 28px;
   padding: 0 11px;
 }
-.tabsScroll nav a:hover { background: color-mix(in srgb, var(--x-task-raised) 55%, transparent); color: var(--x-task-text); }
+.tabsScroll nav a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .tabsScroll nav a[aria-current="page"] {
-  background: var(--x-task-raised);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent), 0 0 0 1px var(--x-task-border);
+  background: var(--x-task-selected);
+  box-shadow: inset 0 -2px 0 0 var(--x-task-accent);
   color: var(--x-task-text);
   font-weight: 600;
 }
@@ -355,6 +358,11 @@
 /* While a card drag is over this lane, the whole lane acknowledges it —
    a 3% accent wash that exists only for the duration of the gesture. */
 .boardLane[data-drop-target] { background: color-mix(in srgb, var(--x-task-accent) 3%, var(--x-task-raised)); }
+/* The column you've picked up: a lifted shadow, the same token the card
+   uses for the same fact (.boardCard[data-dragging] below). No scale, no
+   tilt — the motion contract permits a shadow lift on a column in flight
+   and nothing that springs, and this is a full lane, not a pocket card. */
+.boardLane[data-dragging] { box-shadow: var(--shadow-float); opacity: .92; }
 
 /* One row by default: pip · name · count · quiet actions. An authored
    description wraps onto its own second line (flex-wrap + flex-basis on
@@ -380,6 +388,12 @@
   position: relative;
   z-index: 2;
 }
+/* Same grammar as the list view's draggable column header
+   (.taskTable thead th[draggable="true"]): the grab cursor is the only
+   hint a header needs, since the pointer is the handle. It switches off
+   on its own with the attribute itself while a field in the header is
+   open (LaneHeader's headerDraggable). */
+.laneHeader[draggable="true"] { cursor: grab; }
 /* A tinted column's name is status ink: the accent mixed toward text ink
    so every hue — amber included — stays comfortably readable. */
 .boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
@@ -586,6 +600,33 @@
 @keyframes board-insertion-in {
   from { opacity: 0; transform: scaleX(.76); }
   to { opacity: 1; transform: scaleX(1); }
+}
+/* The column-reorder line reads as the same family as .boardInsertion
+   above — same accent, same capsule dot, same fast fade-and-grow entrance
+   — turned 90° for a column landing between two lanes instead of a card
+   landing between two rows. Pinned inside the lane's own box (.boardLane
+   is the positioning parent) so it never fights that lane's own
+   overflow: hidden. */
+.columnInsertion {
+  animation: column-insertion-in 140ms var(--ease-out) both;
+  background: var(--x-task-accent);
+  border-radius: 2px;
+  bottom: 6px;
+  left: -1px;
+  pointer-events: none;
+  position: absolute;
+  top: 6px;
+  transform-origin: center top;
+  width: 2px;
+  z-index: 5;
+}
+.columnInsertion::before { background: var(--x-task-raised); border: 2px solid var(--x-task-accent); border-radius: 50%; content: ""; height: 7px; left: -3px; position: absolute; top: -3px; width: 7px; }
+/* The "append at the end" case: the last lane's right edge instead of any
+   lane's left edge. */
+.columnInsertion[data-edge="end"] { left: auto; right: -1px; }
+@keyframes column-insertion-in {
+  from { opacity: 0; transform: scaleY(.76); }
+  to { opacity: 1; transform: scaleY(1); }
 }
 @keyframes task-placement-receipt {
   0% { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-raised)); box-shadow: 0 0 0 0 color-mix(in srgb, var(--x-task-accent) 18%, transparent); }
@@ -991,6 +1032,7 @@
   .boardCard[data-recently-placed],
   .boardCard[data-recently-updated],
   .boardInsertion,
+  .columnInsertion,
   .taskRow[data-recently-placed] > th,
   .taskRow[data-recently-placed] > td,
   .taskRow[data-recently-updated] > th,

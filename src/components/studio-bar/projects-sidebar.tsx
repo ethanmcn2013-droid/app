@@ -374,12 +374,6 @@ function SidebarBody({
   const [switchPendingId, setSwitchPendingId] = useState<string | null>(null);
   const [showSwitchPending, setShowSwitchPending] = useState(false);
   const [recentProjectId, setRecentProjectId] = useState<string | null>(null);
-  const activeGroup = tree.groups.find((g) =>
-    g.workspaces.some((w) => w.id === activeWorkspaceId),
-  );
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    activeGroup?.periodId ? { [activeGroup.periodId]: true } : {},
-  );
   const [archivedOpen, setArchivedOpen] = useState(false);
 
   useEffect(() => {
@@ -466,98 +460,39 @@ function SidebarBody({
       <nav aria-label="Projects" className={styles.projectsSection}>
         <h2 className={styles.projectsLabel}>Projects</h2>
         <ul className={styles.projectTree}>
-          {tree.groups.map((group) => {
-            if (group.periodId) {
-              const open = openGroups[group.periodId] ?? false;
-              const domId = `projects-${group.periodId}`;
-              return (
-                <li key={group.periodId}>
-                  <button
-                    aria-controls={domId}
-                    aria-expanded={open}
-                    className={styles.projectParent}
-                    onClick={() =>
-                      setOpenGroups((prev) => ({
-                        ...prev,
-                        [group.periodId as string]: !open,
-                      }))
-                    }
-                    type="button"
-                  >
-                    <span aria-hidden="true" className={styles.disclosure} data-open={open || undefined}>
-                      <ShellGlyph name="chevron" size={13} />
-                    </span>
-                    <span className={styles.projectName} title={group.periodName ?? undefined}>{group.periodName}</span>
-                    {group.dateRange ? (
-                      <span className={styles.projectDate} title={`${group.periodName} · planning period · ${group.dateRange}`}>{group.dateRange}</span>
-                    ) : null}
-                  </button>
-                  <AnimatePresence initial={false}>
-                  {open ? <motion.ul
-                    animate={{ opacity: 1, transform: "translateY(0)" }}
-                    className={styles.projectChildren}
-                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
-                    id={domId}
-                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(-2px)" }}
-                    transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.23, 1, 0.32, 1] }}
-                  >
-                    {group.workspaces.map((w) => (
-                      <li key={w.id}>
-                        <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
-                          <button
-                            aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
-                            aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
-                            className={styles.projectLeaf}
-                            onClick={() => chooseWorkspace(w.id)}
-                            type="button"
-                          >
-                            <span className={styles.projectName} title={w.name}>{w.name}</span>
-                            <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
-                              {w.taskCount}
-                            </span>
-                          </button>
-                          <ProjectRowMenu
-                            archived={false}
-                            name={w.name}
-                            onDone={refreshTree}
-                            workspaceId={w.id}
-                          />
-                        </div>
-                      </li>
-                    ))}
-                  </motion.ul> : null}
-                  </AnimatePresence>
-                </li>
-              );
-            }
-            // Periodless workspaces: standalone parent-level rows.
-            return group.workspaces.map((w) => (
-              <li key={w.id}>
-                <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
-                  <button
-                    aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
-                    aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
-                    className={styles.projectParent}
-                    data-active={w.id === activeWorkspaceId || undefined}
-                    onClick={() => chooseWorkspace(w.id)}
-                    type="button"
-                  >
-                    <span aria-hidden="true" className={styles.disclosureGhost} />
-                    <span className={styles.projectName} title={w.name}>{w.name}</span>
-                    <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
-                      {w.taskCount}
-                    </span>
-                  </button>
-                  <ProjectRowMenu
-                    archived={false}
-                    name={w.name}
-                    onDone={refreshTree}
-                    workspaceId={w.id}
-                  />
-                </div>
-              </li>
-            ));
-          })}
+          {/* Projects used to be grouped under a planning-period name + date
+              row (T·95 lab parity). The founder had that removed 2026-08-05:
+              it repeated the "Active work" period the brief header's crumb
+              also dropped, and every venue only ever has the one bucket to
+              group by. Every project is a flat top-level row now — the
+              ghost span keeps the name column aligned with Archived's
+              chevron below. */}
+          {tree.groups.flatMap((group) => group.workspaces).map((w) => (
+            <li key={w.id}>
+              <div className={styles.projectRowWrap} data-recently-placed={recentProjectId === w.id || undefined}>
+                <button
+                  aria-busy={showSwitchPending && switchPendingId === w.id || undefined}
+                  aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
+                  className={styles.projectParent}
+                  data-active={w.id === activeWorkspaceId || undefined}
+                  onClick={() => chooseWorkspace(w.id)}
+                  type="button"
+                >
+                  <span aria-hidden="true" className={styles.disclosureGhost} />
+                  <span className={styles.projectName} title={w.name}>{w.name}</span>
+                  <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
+                    {w.taskCount}
+                  </span>
+                </button>
+                <ProjectRowMenu
+                  archived={false}
+                  name={w.name}
+                  onDone={refreshTree}
+                  workspaceId={w.id}
+                />
+              </div>
+            </li>
+          ))}
           <AddProjectRow onCreated={onNavigate} />
           {tree.archived.length > 0 ? (
             <li>

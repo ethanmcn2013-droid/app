@@ -42,6 +42,8 @@ type Seed = {
   promotedTaskId?: string;
   archived?: boolean;
   source?: string;
+  /** Absent means the note is still waiting in Review, which is the point. */
+  reviewedAgo?: number;
 };
 
 const ACTIVE: Seed[] = [
@@ -63,7 +65,25 @@ const ACTIVE: Seed[] = [
     id: "demo_n_03",
     body: "Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind the bar”. People love the backstage angle.",
     ago: 5 * HOUR,
-    source: "notebook",
+  },
+  {
+    id: "demo_n_voice_01",
+    body: "Ask the venue whether the ballroom can be accessed from 8am on the Saturday. If not we lose the whole morning setup and the florist has to come back twice.",
+    ago: 3 * HOUR,
+    source: "voice",
+  },
+  {
+    id: "demo_n_photo_01",
+    body: "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it, and something that works on a phone at the back of a classroom.",
+    ago: 6 * HOUR,
+    source: "photo",
+  },
+  {
+    id: "demo_n_voice_02",
+    body: "Student launch pricing needs one simple annual option. Two prices and a discount code is already too many decisions for someone signing up between lectures.",
+    ago: 1 * DAY + 1 * HOUR,
+    source: "voice",
+    reviewedAgo: 22 * HOUR,
   },
   {
     id: "demo_n_04",
@@ -87,6 +107,7 @@ const ACTIVE: Seed[] = [
     id: "demo_n_07",
     body: "Photographer recommendation from the Hendersons: Aoife @ northlight. Natural light, doesn’t herd people. Keep her card for the recommended-suppliers list.",
     ago: 2 * DAY,
+    reviewedAgo: 1 * DAY,
   },
   {
     id: "demo_n_08",
@@ -97,7 +118,13 @@ const ACTIVE: Seed[] = [
     id: "demo_n_09",
     body: "Quote from today that I want to keep: “we don’t want a big production, we just want it to feel like us.” That’s the whole pitch, really.",
     ago: 3 * DAY,
-    source: "notebook",
+    reviewedAgo: 2 * DAY,
+  },
+  {
+    id: "demo_n_email_01",
+    body: "Follow up with the motion designer about the venue film. She needs the final music choice before she can lock the edit, and the cut is due the week after next.",
+    ago: 3 * DAY + 5 * HOUR,
+    source: "email",
   },
   {
     id: "demo_n_10",
@@ -137,6 +164,7 @@ const ARCHIVED: Seed[] = [
     id: "demo_n_a1",
     body: "Mara asked about a late checkout for the bridal suite, Sunday 11am instead of 9. Said yes in principle, just needs to clear housekeeping.",
     ago: 1 * DAY + 8 * HOUR,
+    source: "voice",
     extractBody: "Clear Sunday 11am late checkout with housekeeping",
     promotedTaskId: "demo_task_checkout",
     archived: true,
@@ -170,6 +198,7 @@ function toNote(s: Seed, now: number): NoteRead {
     extractBody: s.extractBody ?? null,
     promotedTaskId: s.promotedTaskId ?? null,
     archivedAt: s.archived ? now - Math.round(s.ago * 0.6) : null,
+    reviewedAt: s.reviewedAgo === undefined ? null : now - s.reviewedAgo,
     source: s.source ?? null,
     workspaceId: null,
   };

@@ -1,0 +1,1751 @@
+/*
+ * Notes — the working surface.
+ *
+ * There is no card here. The module <main> the app shell hands Notes is
+ * already brilliant white, and this sheet fills it edge to edge: the only
+ * structure is hairlines, space, and one indigo. A rounded page floating on
+ * grey was an application frame drawn inside an application, and it cost the
+ * notebook the width it needed.
+ *
+ * Type ramp, four weights are not needed and three are used: 400 for
+ * everything read, 500 for anything that names or labels, 600 for the two
+ * headings that exist. Sizes are 12 / 13 / 14 / 15 / 16 / 17 / 20 and nothing
+ * between them, with one stated exception: keyboard caps are set at
+ * --text-label, the design system's own 11px mono step, because that is what
+ * a keycap is. Reading sizes carry --x-lead-read, interface sizes carry
+ * --x-lead-ui, and the two caps carry --x-lead-tight.
+ *
+ * Tokens are the vendored design system's own names, with one stated
+ * exception: five semantic values (danger, warning, raised, done,
+ * done-strong) exist only in the Tasks --x-* layer, so they are aliased once
+ * at .root rather than referenced inline. Notes adds no palette of its own.
+ */
+
+.root {
+  /* Five semantic values Notes needs and the vendored layer does not yet
+     carry. They are aliased here rather than referenced inline so the
+     borrow from the Tasks namespace is stated once and is easy to retire
+     when these are promoted to the shared layer. */
+  --x-notes-danger: var(--x-task-danger);
+  --x-notes-warning: var(--x-task-warning);
+  --x-notes-raised: var(--x-task-raised);
+  --x-notes-done: var(--x-status-done);
+  --x-notes-done-strong: var(--x-status-done-hover);
+
+  --x-notes-list: 384px;
+  --x-notes-gutter: clamp(20px, 2.4vw, 32px);
+  --x-notes-measure: 68ch;
+
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 0;
+  block-size: 100%;
+  inline-size: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: var(--x-lead-read);
+}
+
+:where(.root) *,
+:where(.root) *::before,
+:where(.root) *::after {
+  box-sizing: border-box;
+}
+
+:where(.root) button,
+:where(.root) input,
+:where(.root) select,
+:where(.root) textarea {
+  max-inline-size: 100%;
+  color: inherit;
+  font: inherit;
+}
+
+:where(.root) button,
+:where(.root) select {
+  cursor: pointer;
+}
+
+:where(.root) button:disabled,
+:where(.root) input:disabled,
+:where(.root) textarea:disabled {
+  cursor: not-allowed;
+}
+
+/* No radius here: at (0,2,0) it outranked every component rule and every
+   button visibly changed shape the moment it took focus. */
+.root :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.root ::selection {
+  background: var(--accent-tint);
+  color: var(--ink);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Local header ─────────────────────────────────────────────────────── */
+
+.header {
+  /* The popover and the menu anchor to this. Without it they resolve against
+     whatever is positioned further up the tree and land on top of the black
+     product bar. */
+  position: relative;
+  display: flex;
+  min-block-size: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-inline: var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline);
+}
+
+.views {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-inline-start: -10px;
+}
+
+.viewTab {
+  display: inline-flex;
+  min-block-size: 32px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+  text-decoration: none;
+  transition: color var(--motion-instant) var(--ease-out),
+    background-color var(--motion-instant) var(--ease-out);
+}
+
+.viewTab:hover {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+/* --ink-faint clears 4.5:1 on paper and misses it on --paper-deep, which is
+   the hover ground for every control in this header. Step up on hover. */
+.viewTab:hover .viewCount,
+.menuItem:hover .menuHint {
+  color: var(--ink-soft);
+}
+
+.viewTab[aria-current="page"] {
+  color: var(--ink);
+  background: var(--accent-tint);
+}
+
+.viewCount {
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.viewTab[aria-current="page"] .viewCount {
+  color: var(--accent);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ── Privacy indicator and its popover ────────────────────────────────── */
+
+.privacy {
+  display: inline-flex;
+  min-block-size: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+  transition: color var(--motion-instant) var(--ease-out),
+    background-color var(--motion-instant) var(--ease-out);
+}
+
+.privacy:hover,
+.privacy[aria-expanded="true"] {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.privacy svg {
+  flex: none;
+  color: var(--ink-faint);
+}
+
+.privacyText {
+  white-space: nowrap;
+}
+
+.popover {
+  position: absolute;
+  z-index: 40;
+  inset-inline-end: var(--x-notes-gutter);
+  inset-block-start: 44px;
+  inline-size: min(380px, calc(100vw - 32px));
+  padding: var(--space-5);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-modal);
+}
+
+.popoverTitle {
+  margin: 0 0 var(--space-3);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: var(--x-lead-tight);
+  letter-spacing: -0.01em;
+}
+
+.popoverList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+  color: var(--ink-soft);
+}
+
+.popoverList dt {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.popoverList dd {
+  margin: 2px 0 0;
+}
+
+/* ── Overflow menu ────────────────────────────────────────────────────── */
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+  transition: color var(--motion-instant) var(--ease-out),
+    background-color var(--motion-instant) var(--ease-out);
+}
+
+.iconButton:hover,
+.iconButton[aria-expanded="true"] {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.menu {
+  position: absolute;
+  z-index: 40;
+  inset-inline-end: var(--x-notes-gutter);
+  inset-block-start: 44px;
+  inline-size: min(320px, calc(100vw - 32px));
+  padding: var(--space-2);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-modal);
+}
+
+.menuItem {
+  display: flex;
+  inline-size: 100%;
+  min-block-size: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+  text-align: start;
+  text-decoration: none;
+}
+
+.menuItem:hover {
+  background: var(--paper-deep);
+}
+
+.menuHint {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+.menuNote {
+  padding: var(--space-2) 10px var(--space-3);
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-read);
+}
+
+.menuAddress {
+  display: block;
+  padding: 0 10px var(--space-2);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* ── The view body ────────────────────────────────────────────────────── */
+
+.body {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.notebook {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-block-size: 100%;
+  overflow: hidden;
+}
+
+/* ── Composer ─────────────────────────────────────────────────────────── */
+
+.composerBand {
+  padding: var(--space-5) var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline);
+}
+
+.composer {
+  position: relative;
+  display: grid;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  transition: border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+.composer[data-focused="true"] {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline));
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.composer[data-mode="voice"],
+.composer[data-mode="photo"] {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--hairline));
+}
+
+.composerField {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 12px 14px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: var(--x-lead-read);
+  resize: none;
+  overflow-y: auto;
+}
+
+.composerField::placeholder {
+  color: var(--ink-faint);
+}
+
+.composerField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.composerFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 6px 8px 6px 8px;
+}
+
+.modeGroup {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.modeButton {
+  display: inline-flex;
+  min-block-size: 32px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+  transition: color var(--motion-instant) var(--ease-out),
+    background-color var(--motion-instant) var(--ease-out);
+}
+
+.modeButton:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+.modeButton[data-active="true"] {
+  color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.modeButton:disabled {
+  color: var(--ink-ghost);
+}
+
+.footerDivider {
+  inline-size: 1px;
+  block-size: 18px;
+  margin-inline: 6px;
+  background: var(--hairline);
+}
+
+.composerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.counter {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.counter[data-near="true"] {
+  color: var(--x-task-warning);
+}
+
+.counter[data-over="true"] {
+  color: var(--x-task-danger);
+}
+
+.primaryButton {
+  display: inline-flex;
+  min-block-size: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  /* Same as the Tasks primary: the raised surface token, so the label stays
+     legible on indigo in both themes without a literal white. */
+  color: var(--x-task-raised);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+  transition: background-color var(--motion-instant) var(--ease-out);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.primaryButton:disabled {
+  border-color: var(--hairline);
+  background: var(--paper-soft);
+  color: var(--ink-faint);
+}
+
+.keycap {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  /* A translucent wash put the cap at 4.02:1 against its own button. The
+     ring carries the shape instead, and the glyph keeps full contrast. */
+  border: 1px solid color-mix(in srgb, var(--x-task-raised) 45%, transparent);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: var(--x-lead-tight);
+}
+
+.primaryButton:disabled .keycap {
+  display: none;
+}
+
+.quietButton {
+  display: inline-flex;
+  min-block-size: 34px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+  transition: background-color var(--motion-instant) var(--ease-out),
+    border-color var(--motion-instant) var(--ease-out);
+}
+
+.quietButton:hover:not(:disabled) {
+  background: var(--paper-deep);
+  border-color: var(--ink-ghost);
+}
+
+.quietButton:disabled {
+  color: var(--ink-faint);
+}
+
+.dangerButton {
+  composes: quietButton;
+  color: var(--x-task-danger);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: var(--status-blocked-bg);
+  border-color: color-mix(in srgb, var(--status-blocked) 40%, var(--hairline));
+}
+
+.composerStatus {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.composerStatus[data-tone="error"] {
+  color: var(--x-task-danger);
+}
+
+.composerStatus[data-tone="saved"] {
+  color: var(--x-status-done);
+}
+
+/* ── Voice ────────────────────────────────────────────────────────────── */
+
+.captureStage {
+  display: grid;
+  gap: var(--space-4);
+  padding: 16px;
+}
+
+.recordRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.recordLabel {
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.recordDot {
+  flex: none;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: var(--radius-pill);
+  background: var(--status-blocked);
+}
+
+.recordElapsed {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--x-lead-flush);
+}
+
+.levels {
+  display: flex;
+  flex: 0 1 260px;
+  align-items: center;
+  gap: 3px;
+  block-size: 22px;
+  min-inline-size: 0;
+}
+
+.level {
+  /* align-self stretch, not a height: the parent centres its children, so
+     without this the bars collapse to nothing and the meter is invisible. */
+  align-self: stretch;
+  flex: 1 1 0;
+  min-inline-size: 2px;
+  max-inline-size: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  transform-origin: center;
+}
+
+.level[data-live="true"] {
+  background: var(--accent);
+}
+
+.transcript {
+  max-block-size: 132px;
+  overflow-y: auto;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: var(--x-lead-read);
+}
+
+.transcriptEmpty {
+  color: var(--ink-faint);
+}
+
+.captureDisclosure {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-read);
+}
+
+.stageActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.stageActionsRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.processing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: var(--x-lead-ui);
+}
+
+.spinner {
+  flex: none;
+  inline-size: 14px;
+  block-size: 14px;
+  border: 2px solid var(--accent-soft);
+  border-block-start-color: var(--accent);
+  border-radius: var(--radius-pill);
+  animation: notesSpin var(--motion-slow) linear infinite;
+}
+
+@keyframes notesSpin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* ── Photo ────────────────────────────────────────────────────────────── */
+
+.photoPreview {
+  display: block;
+  inline-size: 100%;
+  /* A fixed frame rather than the photo's own proportions: a page held at
+     arm's length and a wide whiteboard both land in the same box, and the
+     composer never jumps height with the picture. */
+  block-size: clamp(180px, 30vh, 260px);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  background: var(--paper-deep);
+}
+
+.photoPreview[data-rotation="90"] {
+  transform: rotate(90deg);
+}
+
+.photoPreview[data-rotation="180"] {
+  transform: rotate(180deg);
+}
+
+.photoPreview[data-rotation="270"] {
+  transform: rotate(270deg);
+}
+
+.dropTarget {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  border: 1px dashed var(--ink-ghost);
+  border-radius: var(--radius-md);
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+  text-align: center;
+}
+
+.dropTarget[data-over="true"] {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+
+/* display:none, not clipped. Clipped, these two sat in the tab order as
+   stops where the focus ring vanished, and one of them was never opened by
+   anything at all. */
+.fileInput {
+  display: none;
+}
+
+.composerNote {
+  margin: 0;
+  padding: 8px 12px 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+/* ── Extracted-note review ────────────────────────────────────────────── */
+
+.extractHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.extractTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: var(--x-lead-tight);
+  letter-spacing: -0.01em;
+}
+
+.extractHint {
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+.extractList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.extractItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-2);
+  padding: 10px 10px 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+
+.extractField {
+  inline-size: 100%;
+  min-block-size: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: var(--x-lead-read);
+  resize: none;
+  overflow: hidden;
+}
+
+.extractField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.extractItem:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--hairline));
+}
+
+.removeButton {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+}
+
+.removeButton:hover {
+  background: var(--paper-deep);
+  color: var(--ink);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  min-block-size: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-inline: var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline);
+}
+
+.search {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  max-inline-size: 340px;
+  padding-inline-start: 2px;
+  color: var(--ink-faint);
+}
+
+.searchInput {
+  inline-size: 100%;
+  min-block-size: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: var(--x-lead-ui);
+}
+
+.searchInput::placeholder {
+  color: var(--ink-faint);
+}
+
+/* The field itself takes the ring: the container border is 2.2:1 against
+   paper and is not a focus indicator. */
+.searchInput:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.search:focus-within {
+  color: var(--ink);
+}
+
+.searchKey {
+  flex: none;
+  padding: 1px 5px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm);
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: var(--x-lead-tight);
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sortSelect {
+  composes: select;
+}
+
+.select {
+  min-block-size: 32px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.select:hover {
+  color: var(--ink);
+  background: var(--paper-deep);
+}
+
+/* ── Split ────────────────────────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: var(--x-notes-list) minmax(0, 1fr);
+  /* Full height even when the list is short. Content-sized, the hairline
+     between list and note stopped mid-air with white below it. */
+  min-block-size: 100%;
+  overflow: hidden;
+}
+
+.listPane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 0;
+  border-inline-end: 1px solid var(--hairline);
+  overflow: hidden;
+}
+
+.listMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 12px var(--space-5) 8px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--x-lead-ui);
+}
+
+.list {
+  display: block;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0 0 var(--space-8);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  inline-size: 100%;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+  padding: 12px var(--space-5) 12px calc(var(--space-5) - 2px);
+  border: 0;
+  border-inline-start: 2px solid transparent;
+  background: transparent;
+  text-align: start;
+  transition: background-color var(--motion-instant) var(--ease-out);
+}
+
+.row:hover {
+  background: var(--paper-soft);
+}
+
+.row[aria-current="true"] {
+  border-inline-start-color: var(--accent);
+  background: var(--accent-tint);
+}
+
+.rowIcon {
+  display: grid;
+  place-items: center;
+  block-size: 20px;
+  color: var(--ink-faint);
+}
+
+.row[aria-current="true"] .rowIcon {
+  color: var(--accent);
+}
+
+.row[aria-current="true"] .rowPreview,
+.row[aria-current="true"] .rowMeta,
+.row[aria-current="true"] .rowFlag {
+  color: var(--ink-soft);
+}
+
+.row[aria-current="true"] .rowFlag[data-tone="sent"] {
+  color: var(--x-status-done-hover);
+}
+
+.row[aria-current="true"] .rowFlag[data-tone="review"] {
+  color: var(--accent-hover);
+}
+
+.row[aria-current="true"] .rowFlag[data-tone="attention"] {
+  color: var(--x-task-danger);
+}
+
+.rowBody {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.rowTitle {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.rowPreview {
+  overflow: hidden;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 3px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-ui);
+}
+
+.rowFlag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-faint);
+}
+
+.rowFlag[data-tone="sent"] {
+  color: var(--x-status-done);
+}
+
+.rowFlag[data-tone="attention"] {
+  color: var(--status-blocked);
+}
+
+.rowFlag[data-tone="review"] {
+  color: var(--accent);
+}
+
+.highlight {
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--ink);
+}
+
+.rowRetry {
+  display: flex;
+  padding: 0 var(--space-5) 12px 42px;
+}
+
+.rowSeparator {
+  block-size: 1px;
+  margin-inline: var(--space-5);
+  background: var(--hairline-soft);
+}
+
+/* ── Detail ───────────────────────────────────────────────────────────── */
+
+.detailPane {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.detailHeader {
+  display: flex;
+  min-block-size: 52px;
+  align-items: center;
+  padding-inline: var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline-soft);
+}
+
+/* The header shares the note's own column. Anchored to the pane instead, its
+   left edge drifted 350px away from the note's at 1920 and the pane had
+   three unrelated verticals. */
+.detailHeaderInner {
+  display: flex;
+  inline-size: 100%;
+  max-inline-size: var(--x-notes-measure);
+  margin-inline: auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.detailMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detailScroll {
+  min-block-size: 0;
+  padding: var(--space-6) var(--x-notes-gutter) var(--space-10);
+  overflow-y: auto;
+}
+
+.detailInner {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: var(--x-notes-measure);
+  margin-inline: auto;
+}
+
+.detailField {
+  inline-size: 100%;
+  min-block-size: 96px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: var(--x-lead-read);
+  resize: none;
+  overflow: hidden;
+}
+
+.detailField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.detailFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--hairline-soft);
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-ui);
+}
+
+.detailFooter dt {
+  display: inline;
+  font-weight: 400;
+}
+
+.detailFooter dd {
+  display: inline;
+  margin: 0 0 0 4px;
+  color: var(--ink-soft);
+}
+
+/* A div, not a span: a definition list may only have dt, dd and div as
+   direct children, and a span there is invalid markup that a screen reader
+   reads as an orphaned term. */
+.detailPair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.linkedTask {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.linkedTask:hover {
+  text-decoration: underline;
+}
+
+/* ── Empty states ─────────────────────────────────────────────────────── */
+
+/* One grammar for every empty state. Two of them, one left-aligned and one
+   centred, appeared in the same frame on an empty notebook. */
+.empty {
+  display: grid;
+  block-size: 100%;
+  align-content: center;
+  justify-items: center;
+  justify-self: center;
+  gap: 6px;
+  padding: var(--space-9) var(--x-notes-gutter);
+  max-inline-size: 44ch;
+  text-align: center;
+}
+
+.emptyCentred {
+  composes: empty;
+  block-size: 100%;
+  align-content: center;
+  justify-items: center;
+  justify-self: center;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: var(--x-lead-tight);
+  letter-spacing: -0.01em;
+}
+
+.emptyBody {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+/* ── Review ───────────────────────────────────────────────────────────── */
+
+.review {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 100%;
+  overflow: hidden;
+}
+
+.reviewProgress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 14px var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline);
+  color: var(--ink-faint);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--x-lead-ui);
+}
+
+.progressTrack {
+  position: relative;
+  /* Runs the width of the band. A 200px bar floating in an 1860px row was a
+     stub, not a rail. */
+  flex: 1 1 auto;
+  block-size: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--paper-deep);
+  overflow: hidden;
+}
+
+.progressFill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  transition: inline-size var(--motion-base) var(--ease-out);
+}
+
+.reviewStage {
+  display: grid;
+  /* Centred, not top-anchored. A 157px card pinned to the top of a 920px
+     field left 94% of the Review view empty, which reads as a page that
+     failed to load rather than one note asking for a decision. */
+  place-content: center;
+  justify-items: center;
+  block-size: 100%;
+  min-block-size: 0;
+  padding: var(--space-8) var(--x-notes-gutter) var(--space-9);
+  overflow-y: auto;
+}
+
+.reviewCard {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: var(--x-notes-measure);
+}
+
+.reviewMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.reviewBody {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  line-height: var(--x-lead-read);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--hairline-soft);
+}
+
+.reviewSpacer {
+  flex: 1 1 auto;
+}
+
+/* ── Sent ─────────────────────────────────────────────────────────────── */
+
+.sentRowTask {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-start: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.sentWording {
+  margin: 0;
+  padding: 10px 12px;
+  border-inline-start: 2px solid var(--accent-soft);
+  background: var(--paper-soft);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: var(--x-lead-read);
+}
+
+/* ── Dialog ───────────────────────────────────────────────────────────── */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--ink) 28%, transparent);
+}
+
+.dialog {
+  inline-size: min(520px, 100%);
+  max-block-size: min(86dvh, 720px);
+  overflow-y: auto;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: var(--shadow-modal);
+}
+
+.dialogTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: var(--x-lead-tight);
+  letter-spacing: -0.02em;
+}
+
+.dialogLede {
+  margin: 0 0 var(--space-5);
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-block-end: var(--space-4);
+}
+
+.fieldLabel {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+}
+
+.fieldControl {
+  inline-size: 100%;
+  min-block-size: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: var(--x-lead-ui);
+}
+
+.fieldControl:focus-visible {
+  border-color: var(--accent);
+  outline-offset: 0;
+}
+
+textarea.fieldControl {
+  min-block-size: 92px;
+  line-height: var(--x-lead-read);
+  resize: vertical;
+}
+
+.fieldHint {
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-ui);
+}
+
+.dialogActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-block-start: var(--space-5);
+}
+
+.errorText {
+  margin: 0;
+  color: var(--x-task-danger);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+/* ── Inline decision panels ───────────────────────────────────────────── */
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper-soft);
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: var(--x-lead-ui);
+}
+
+.panelBody {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+}
+
+.panelActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.conflictVersions {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.conflictVersion {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
+  white-space: pre-wrap;
+  max-block-size: 180px;
+  overflow-y: auto;
+}
+
+.conflictLabel {
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── Toast ────────────────────────────────────────────────────────────── */
+
+/* Above the scrim. A six-second undo rendered underneath a modal is a
+   six-second undo nobody can take. */
+.toastDock {
+  position: fixed;
+  z-index: 70;
+  inset-block-end: calc(20px + env(safe-area-inset-bottom));
+  inset-inline-end: 20px;
+  display: grid;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 10px 12px 10px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  box-shadow: var(--shadow-modal);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+  pointer-events: auto;
+}
+
+.toast[data-tone="error"] {
+  border-color: color-mix(in srgb, var(--status-blocked) 34%, var(--hairline));
+}
+
+/* The Undo for a delete. At 40x22 it missed WCAG 2.5.8; it is the last
+   chance to keep a note, so it gets a real target. */
+.toastAction {
+  min-block-size: 24px;
+  min-inline-size: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.toastAction:hover {
+  text-decoration: underline;
+}
+
+/* ── Mobile detail ────────────────────────────────────────────────────── */
+
+.backButton {
+  display: none;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+
+/* Past this width the extra pixels should go to the list, not to the gutters
+   either side of a fixed reading measure. 420px is the top of the range the
+   list was designed for. */
+@media (min-width: 1600px) {
+  .root {
+    --x-notes-list: 420px;
+  }
+}
+
+@media (max-width: 1279px) {
+  .root {
+    --x-notes-list: 336px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .root {
+    --x-notes-list: 300px;
+    --x-notes-gutter: 20px;
+  }
+
+  .detailScroll {
+    padding-block-start: var(--space-5);
+  }
+}
+
+/* One pane at a time. Below this width a split leaves neither side usable,
+   and opening a note over the list without being asked is how a list turns
+   into a trapdoor. */
+@media (max-width: 899px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .listPane {
+    border-inline-end: 0;
+  }
+
+  .split[data-detail-open="true"] .listPane {
+    display: none;
+  }
+
+  .split:not([data-detail-open="true"]) .detailPane {
+    display: none;
+  }
+
+  .backButton {
+    display: inline-flex;
+  }
+
+  .detailHeader {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--paper);
+  }
+
+  .composerBand {
+    padding: var(--space-4) var(--x-notes-gutter);
+  }
+
+  .toolbar {
+    min-block-size: 48px;
+  }
+
+  .toastDock {
+    inset-inline: 12px;
+    inset-block-end: calc(76px + env(safe-area-inset-bottom));
+  }
+
+  /* The product rail docks at the foot of the viewport below this width, so
+     the list has to end above it rather than under it. */
+  .list {
+    padding-block-end: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .detailScroll {
+    padding-block-end: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .popover,
+  .menu {
+    inset-inline: 12px;
+    inline-size: auto;
+  }
+
+  .reviewStage {
+    padding: var(--space-6) var(--x-notes-gutter) var(--space-9);
+  }
+}
+
+@media (max-width: 599px) {
+  .root {
+    --x-notes-gutter: 16px;
+  }
+
+  .header {
+    min-block-size: 44px;
+    padding-inline: 8px;
+  }
+
+
+  .composerField {
+    min-block-size: 48px;
+    font-size: 16px;
+  }
+
+  .composerFooter {
+    padding: 8px;
+  }
+
+  /* The capture labels stay visible. Speaking a note matters most on the
+     device you carry, and that is where "Voice" was being dropped. */
+  .modeButton {
+    gap: 5px;
+    padding: 0 7px;
+  }
+
+  /* The privacy words give way to their padlock, but only visually: hidden
+     with display:none the button had no accessible name at all, which is the
+     same defect the capture modes had. Tapping it still says everything. */
+  .privacyText {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* A keycap is advice for a keyboard nobody here has. */
+  .keycap {
+    display: none;
+  }
+
+  /* Reversing the order is a desk refinement. On a phone the toolbar has room
+     for the search and for what is being shown, and that is the right two. */
+  .sortSelect {
+    display: none;
+  }
+
+  .search {
+    max-inline-size: none;
+  }
+
+  .detailField {
+    font-size: 16px;
+  }
+
+  .reviewBody {
+    font-size: 16px;
+  }
+
+  .reviewActions .quietButton,
+  .reviewActions .primaryButton,
+  .reviewActions .dangerButton {
+    min-block-size: 44px;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .reviewSpacer {
+    display: none;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .spinner {
+    animation: none !important;
+    border-block-start-color: var(--accent);
+  }
+
+  .level {
+    transform: none !important;
+  }
+}

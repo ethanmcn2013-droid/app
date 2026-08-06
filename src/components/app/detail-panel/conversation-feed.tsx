@@ -546,8 +546,8 @@ function KbdHint({ state }: { state: "empty" | "ready" | "pending" }) {
       className={
         "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[11px] tabular-nums transition-opacity " +
         (state === "ready"
-          ? "text-ink-quiet opacity-100"
-          : "text-ink-faint opacity-50")
+          ? "text-ink-soft opacity-100"
+          : "text-ink-quiet opacity-100")
       }
     >
       ⏎

@@ -1,0 +1,4 @@
+output: docs/design/shots/after
+scenes attempted: 27
+scene failures: 0
+console errors: 0

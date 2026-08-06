@@ -181,7 +181,7 @@ export function StatusPillRow({ task }: { task: Task }) {
           onClick={onClick}
           aria-expanded={expanded}
           aria-haspopup="listbox"
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          className="inline-flex w-fit cursor-pointer items-center gap-1.5 rounded-md border border-line-soft px-2 py-1 text-[12px] font-medium transition-colors hover:border-line focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
           style={{ background: currentVisual.bg, color: currentVisual.ink }}
         >
           <span className="block h-1.5 w-1.5 rounded-full" style={{ background: currentVisual.dot }} aria-hidden />
@@ -203,7 +203,7 @@ export function StatusPillRow({ task }: { task: Task }) {
                     close();
                   }}
                   className={[
-                    "flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken",
+                    "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken",
                     active ? "font-medium text-ink" : "text-ink-soft",
                   ].join(" ")}
                 >
@@ -230,7 +230,7 @@ export function PriorityRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className={FIELD_CHIP}
+          className={FIELD_CHIP + " cursor-pointer"}
         >
           <span
             className="block h-1.5 w-1.5 rounded-full"
@@ -254,7 +254,7 @@ export function PriorityRow({ task }: { task: Task }) {
                     close();
                   }}
                   className={
-                    "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
+                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
                     (active ? "font-medium text-ink" : "text-ink-soft")
                   }
                 >
@@ -320,6 +320,19 @@ function MemberAvatar({
   );
 }
 
+/**
+ * The row's one line of plain-English text for who a task is assigned to.
+ * The avatar stack says a face; this says a name, so the two never carry
+ * different information. Two names read in full ("Orla & Sam"); three or
+ * more name the first and count the rest, the same shorthand the rest of
+ * the app already uses for overflow.
+ */
+function assigneeNamesLabel(names: string[]): string {
+  if (names.length === 0) return "Unassigned";
+  if (names.length <= 2) return names.join(" & ");
+  return `${names[0]} +${names.length - 1}`;
+}
+
 export function AssigneesRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const me = useCurrentUser();
@@ -333,6 +346,14 @@ export function AssigneesRow({ task }: { task: Task }) {
   // Show Nudge button only when there is at least one assignee that is not
   // the current user — hidden entirely when task has no other assignee.
   const hasOtherAssignee = assigned.some((a) => a !== me);
+  // The avatar carried a person's initials but never their name — the only
+  // place a name existed anywhere in the window was the `title="Remove
+  // {name}"` on the avatar itself, so learning who owns a task meant
+  // hovering a control whose one message was a destructive instruction.
+  // This label is the name in plain text, read without hovering anything;
+  // the avatar keeps doing the remove it always did. Zero assignees says
+  // so honestly ("Unassigned") instead of leaving the row blank.
+  const namesLabel = assigneeNamesLabel(assigned.map((id) => memberName(members, id)));
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex items-center -space-x-1.5">
@@ -349,7 +370,7 @@ export function AssigneesRow({ task }: { task: Task }) {
                   assignees: assigned.filter((a) => a !== id),
                 })
               }
-              className="group relative"
+              className="group relative cursor-pointer"
             >
               <MemberAvatar
                 member={member ?? { name, initials: name.slice(0, 2).toUpperCase(), color: "var(--ink-ghost)" }}
@@ -373,6 +394,15 @@ export function AssigneesRow({ task }: { task: Task }) {
           );
         })}
       </div>
+      <span
+        className={
+          assigned.length > 0
+            ? "text-[12px] font-medium text-ink"
+            : "text-[12px] text-ink-quiet"
+        }
+      >
+        {namesLabel}
+      </span>
       <Popover
         width={200}
         trigger={({ onClick, ref }) => (
@@ -381,7 +411,7 @@ export function AssigneesRow({ task }: { task: Task }) {
             type="button"
             onClick={onClick}
             aria-label="Add someone"
-            className="flex h-[22px] w-[22px] items-center justify-center rounded-full border border-dashed border-line text-ink-quiet transition-colors hover:border-ink-soft hover:text-ink-soft"
+            className="flex h-[22px] w-[22px] cursor-pointer items-center justify-center rounded-full border border-dashed border-line text-ink-quiet transition-colors hover:border-ink-soft hover:text-ink-soft"
           >
             <svg
               width="11"
@@ -417,7 +447,7 @@ export function AssigneesRow({ task }: { task: Task }) {
                         : [...assigned, member.id];
                       updateTask(task.id, { assignees: next });
                     }}
-                    className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken"
                   >
                     <MemberAvatar member={member} size={18} />
                     <span className="flex-1 text-ink-soft">{member.name}</span>
@@ -537,7 +567,7 @@ function NudgeButton({ taskId }: { taskId: string }) {
         "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium transition-colors",
         isDisabled
           ? "cursor-not-allowed text-ink-faint opacity-60"
-          : "text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
+          : "cursor-pointer text-ink-quiet hover:bg-bg-sunken hover:text-ink-soft",
       ].join(" ")}
     >
       {/* Hand-pointer glyph — "reminder", distinct from the bell (notifications) */}
@@ -591,7 +621,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
           ref={ref}
           type="button"
           onClick={onClick}
-          className={current ? FIELD_CHIP_ACTIVE : FIELD_CHIP}
+          className={(current ? FIELD_CHIP_ACTIVE : FIELD_CHIP) + " cursor-pointer"}
         >
           <svg
             width="11"
@@ -624,7 +654,7 @@ export function RecurrenceRow({ task }: { task: Task }) {
                     close();
                   }}
                   className={
-                    "flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
+                    "flex w-full cursor-pointer items-center justify-between gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-sunken " +
                     (active ? "font-medium text-ink" : "text-ink-soft")
                   }
                 >
@@ -711,7 +741,7 @@ export function DueRow({ task }: { task: Task }) {
           onClick={onClick}
           aria-expanded={expanded}
           aria-haspopup="dialog"
-          className={FIELD_CHIP + (hasDate ? "" : " text-ink-faint")}
+          className={FIELD_CHIP + " cursor-pointer" + (hasDate ? "" : " text-ink-faint")}
         >
           <svg
             width="12"
