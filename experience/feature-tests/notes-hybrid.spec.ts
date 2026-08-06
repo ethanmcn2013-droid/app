@@ -433,7 +433,10 @@ test("creating the task confirms it and links straight to it", async ({
 test("Review is one note at a time with three ways out", async ({ page }) => {
   await openNotes(page, { view: "review" });
 
-  await expect(page.getByText(/^\d+ of \d+ reviewed$/)).toBeVisible();
+  // The old "N of M reviewed" denominator was session state: it reset on
+  // reload and disagreed with the tab badge on the same screen. What is
+  // true and stable is how many are still waiting.
+  await expect(page.getByText(/^(\d+ notes to review|One note left)$/)).toBeVisible();
   await expect(page.locator(REVIEW_CARD)).toHaveCount(1);
   for (const name of ["Keep in Notes", "Turn into task", "Delete"]) {
     await expect(
@@ -449,11 +452,18 @@ test("Keep in Notes moves the queue on and offers the way back", async ({
 
   const body = page.locator(`${REVIEW_CARD} p`).first();
   const firstNote = (await body.innerText()).trim();
-  await expect(page.getByText(/^0 of \d+ reviewed$/)).toBeVisible();
+  const queueBefore = await page
+    .getByText(/^(\d+ notes to review|One note left)$/)
+    .innerText();
 
   await page.getByRole("button", { name: "Keep in Notes", exact: true }).click();
 
-  await expect(page.getByText(/^1 of \d+ reviewed$/)).toBeVisible();
+  // Deciding shortens the queue and shows a running count of this session's
+  // decisions. Both are facts about now, neither is a stored denominator.
+  await expect(page.getByText("1 decided just now")).toBeVisible();
+  await expect(
+    page.getByText(/^(\d+ notes to review|One note left)$/),
+  ).not.toHaveText(queueBefore);
   await expect(body).not.toHaveText(firstNote);
 
   const undo = page.getByRole("button", { name: "Undo", exact: true });
