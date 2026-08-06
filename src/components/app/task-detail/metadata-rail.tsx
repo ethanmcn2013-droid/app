@@ -136,19 +136,20 @@ export function MetadataRail({
         <RecurrenceRow task={task} />
       </MetaField>
 
-      {/* Tags — only when present */}
+      {/*
+        Tags — only when present. There is no tag editor yet, so this used
+        to be the rail's clearest contradiction: a bordered, rounded chip —
+        the exact shape Repeats and Due use for a real button — wrapped
+        around a value nobody could act on. Same shape, opposite meaning,
+        two rows apart. FIELD_TEXT is the rail's one inert grammar (Project
+        and Source already use it below); Tags uses it too now, so a
+        border only ever means "you can act on this".
+      */}
       {task.tags && task.tags.length > 0 ? (
         <MetaField label="Tags">
-          <div className="flex flex-wrap gap-1">
-            {task.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-md border border-line-soft px-2 py-0.5 text-[11px] text-ink-soft leading-[var(--x-lead-tight)]"
-              >
-                {tagDisplayName(tag)}
-              </span>
-            ))}
-          </div>
+          <span className={FIELD_TEXT}>
+            {task.tags.map((tag) => tagDisplayName(tag)).join(", ")}
+          </span>
         </MetaField>
       ) : null}
 
@@ -232,7 +233,7 @@ export function MetadataRail({
                 key={field.key}
                 type="button"
                 onClick={() => setRevealed((current) => ({ ...current, [field.key]: true }))}
-                className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-medium text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink-soft"
               >
                 <span aria-hidden>+</span>
                 {field.label}
