@@ -545,6 +545,27 @@ test("the empty states are quiet", async ({ page }) => {
   expect(fontSize).toBeLessThanOrEqual(20);
 });
 
+test("every control keeps its name at the width a phone uses", async ({ page }) => {
+  // The three composer modes were icon-only below 600px, and their icons are
+  // decorative, so all three buttons had no accessible name at all. Desktop
+  // was clean, which is exactly why this is asserted at 390.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openNotes(page);
+  for (const name of ["Type", "Voice", "Photo"]) {
+    await expect(
+      page.getByRole("button", { name, exact: true }),
+    ).toBeVisible();
+  }
+  const results = await new AxeBuilder({ page })
+    .include("[data-notes-workspace]")
+    .analyze();
+  expect(
+    results.violations.filter((violation) =>
+      ["serious", "critical"].includes(violation.impact ?? ""),
+    ),
+  ).toEqual([]);
+});
+
 test("no serious or critical accessibility violations on any of the three views", async ({
   page,
 }) => {
