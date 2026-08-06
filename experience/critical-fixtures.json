@@ -1150,6 +1150,37 @@
       ]
     },
     {
+      "id": "tasks.page.app-timeline-by-project-slug-preview",
+      "evidence": "source-contract",
+      "sourceAssertions": [
+        {
+          "label": "force-dynamic export",
+          "contains": "force-dynamic"
+        },
+        {
+          "label": "requireAppAccess gate",
+          "contains": "requireAppAccess"
+        },
+        {
+          "label": "Timeline preview module boundary",
+          "contains": "TimelineProjectPreviewPage"
+        },
+        {
+          "label": "defence-in-depth call",
+          "contains": "await requireAppAccess()"
+        }
+      ],
+      "remainingStates": [
+        "default",
+        "populated",
+        "loading",
+        "error",
+        "empty",
+        "reduced-motion",
+        "keyboard-only"
+      ]
+    },
+    {
       "id": "tasks.page.app-timeline-audience",
       "evidence": "source-contract",
       "sourceAssertions": [

@@ -318,13 +318,17 @@ async function auditTimelineContract(
   await expect(page.locator("[data-timeline-wordmark]")).toHaveText("timeline");
   // A couple's artifact leads with its heart (T·126): the countdown is the
   // opening face — one review clock, 16 July to 3 October is 79 days — and
-  // the working percent stays one press away. The spoken progressbar keeps
-  // the honest count regardless of the visible face.
+  // the working count stays one press away. The progressbar's aria-valuenow
+  // tracks the frontier it paints (the furthest completed dot's position on
+  // the date-scaled rail), which is not the same fraction as completed-of-
+  // total when milestones are unevenly spaced — two of nine complete still
+  // reads 33 here because those two sit a third of the way along the dated
+  // span. The spoken aria-valuetext keeps the honest count regardless.
   const toggle = page.locator("[data-timeline-metric-toggle]");
   await expect(toggle).toHaveAttribute("data-metric-mode", "countdown");
   await expect(page.locator("[data-timeline-metric-value]")).toHaveText("79");
   await expect(page.getByRole("progressbar", { name: "Milestone completion" }))
-    .toHaveAttribute("aria-valuenow", "22");
+    .toHaveAttribute("aria-valuenow", "33");
   await expect(page.locator("[data-today-marker]")).toHaveAttribute(
     "aria-label",
     /Our next milestone is Menu tasting at The Orchard/,
@@ -333,7 +337,9 @@ async function auditTimelineContract(
 
   await toggle.click();
   await expect(toggle).toHaveAttribute("data-metric-mode", "progress");
-  await expect(page.locator("[data-timeline-metric-value]")).toHaveText("22");
+  await expect(page.locator("[data-timeline-metric-value]")).toHaveText(
+    "2 of 9 complete",
+  );
 
   const current = page.getByRole("button", { name: /Menu tasting at The Orchard/ });
   await current.focus();
