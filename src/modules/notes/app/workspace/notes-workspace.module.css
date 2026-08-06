@@ -1494,6 +1494,15 @@ textarea.fieldControl {
 
 /* ── Responsive ───────────────────────────────────────────────────────── */
 
+/* Past this width the extra pixels should go to the list, not to the gutters
+   either side of a fixed reading measure. 420px is the top of the range the
+   list was designed for. */
+@media (min-width: 1600px) {
+  .root {
+    --x-notes-list: 420px;
+  }
+}
+
 @media (max-width: 1279px) {
   .root {
     --x-notes-list: 336px;
