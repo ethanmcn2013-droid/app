@@ -155,6 +155,10 @@ export default async function TimelineProjectPreviewPage({
           below the rule is the guest's page. */}
       <div className="border-b border-line-soft bg-bg-sunken">
         <div className="mx-auto flex w-full max-w-[100rem] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-[clamp(1rem,4.2vw,4rem)] py-2">
+          {/* The way out, and the only owner control on this route. The suite
+              chrome is withheld here by pathname (components/app/
+              suite-chrome-gate.tsx), so leaving is an ordinary client
+              navigation and the rail and bar come straight back with it. */}
           <Link
             href={backHref}
             className="inline-flex min-h-[44px] items-center gap-2 text-[13px] font-medium text-ink-soft hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"

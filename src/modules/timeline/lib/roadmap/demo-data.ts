@@ -139,6 +139,31 @@ export function demoEffectiveNodes(workspaceSlug = demoWorkspace.slug) {
   }));
 }
 
+/**
+ * The state-coverage demo workspace.
+ *
+ * `templateId` is null on purpose, and the null is the fix for a real defect.
+ * It claimed "wedding-planning-workspace", which is a workspace-creation fact
+ * the artifact reads as permission to frame every plan inside it as a wedding:
+ * `defaultAudienceKind` (lib/owner-artifact.ts) turned it into audience kind
+ * "couple", which captioned the final date of the coffee roastery and the
+ * bakery reopening "Wedding day", counted down "Until wedding day", and
+ * introduced both as "A shared wedding timeline".
+ *
+ * This workspace was never created from that template. It holds eleven plans
+ * across weddings, schools, small businesses and student work, deliberately,
+ * so the redesign can be judged against more than the case it was designed
+ * for. Null is what the column means for a workspace assembled from scratch
+ * (timeline-schema.ts), and it is what this one is.
+ *
+ * The consequence is accepted: the two plans in here that ARE weddings now
+ * read in the neutral register too, because nothing at project level can tell
+ * the artifact otherwise — audience kind is a workspace fact or an explicit
+ * publication choice, and there is no project column between them. Generic and
+ * true beats specific and false. The wedding showcase is `demoWorkspace` (The
+ * Orchard, three weddings), which is created from the wedding template and is
+ * untouched.
+ */
 export const weddingDemoWorkspace: Workspace = {
   slug: "wedding-planning",
   name: "Harbour House wedding",
@@ -151,7 +176,7 @@ export const weddingDemoWorkspace: Workspace = {
   plan: "free",
   createdAt,
   updatedAt: createdAt,
-  templateId: "wedding-planning-workspace",
+  templateId: null,
   isDemo: false,
 };
 

@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { GoogleTag } from "@/components/analytics/google-tag";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SuiteChromeGate } from "@/components/app/suite-chrome-gate";
 import { DevBanner } from "@/components/dev-banner";
 import { MotionProvider } from "@/components/motion-provider";
 import { isDemoMode } from "@/lib/access-mode";
+import { BARE_CHROME_HEADER } from "@/lib/bare-artifact-path";
 import { APP_ORIGIN } from "@/lib/product-urls";
 import "./globals.css";
 
@@ -46,16 +48,25 @@ export const metadata: Metadata = {
 function ProductRuntime({
   children,
   demoMode,
-  bareArtifact,
 }: Readonly<{
   children: React.ReactNode;
   demoMode: boolean;
-  bareArtifact: boolean;
 }>) {
   const runtime = (
     <>
       <MotionProvider>{children}</MotionProvider>
-      {demoMode && !bareArtifact ? <DevBanner /> : null}
+      {/* The review pill belongs to the application, so it comes off wherever
+          the application's chrome comes off — the bearer-link artifact and the
+          Timeline owner preview. The gate decides that from the pathname
+          rather than from the request header the <head> above reads, because
+          this layout renders once per document while the preview can be
+          reached by a client navigation. Deciding it twice from one predicate
+          keeps the two routes in, and the two ways in, agreeing. */}
+      {demoMode ? (
+        <SuiteChromeGate>
+          <DevBanner />
+        </SuiteChromeGate>
+      ) : null}
     </>
   );
 
@@ -67,10 +78,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Proxy writes this request header only for /s/* before any Clerk middleware
-  // runs. Selecting the runtime on the server keeps Clerk's client bundle and
-  // suite preconnect hints completely out of bearer-link HTML.
-  const bareArtifact = (await headers()).get("x-signal-bare-artifact") === "1";
+  // Proxy writes this request header for the chrome-free surfaces: /s/* before
+  // any Clerk middleware runs, and the Timeline owner preview after its gate.
+  // It governs the <head> only — the analytics tag and the suite preconnect
+  // hints, which are decided once when the document is built and cannot be
+  // taken back on a client navigation anyway.
+  const bareArtifact = (await headers()).get(BARE_CHROME_HEADER) === "1";
   const demoMode = isDemoMode();
 
   return (
@@ -92,9 +105,7 @@ export default async function RootLayout({
         ) : null}
       </head>
       <body className="min-h-full flex flex-col" style={{ background: "#fff" }}>
-        <ProductRuntime demoMode={demoMode} bareArtifact={bareArtifact}>
-          {children}
-        </ProductRuntime>
+        <ProductRuntime demoMode={demoMode}>{children}</ProductRuntime>
       </body>
     </html>
   );

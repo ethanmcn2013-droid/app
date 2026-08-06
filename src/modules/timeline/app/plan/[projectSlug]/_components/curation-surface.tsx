@@ -462,9 +462,22 @@ function NodeCard({
     });
   }
 
+  /** The one way this row's date gets set, wherever the offer is made. */
+  function openDatePicker() {
+    const input = dateInputRef.current;
+    if (!input) return;
+    input.focus();
+    try {
+      input.showPicker?.();
+    } catch {
+      /* showPicker unsupported or not user-activated; the field has focus */
+    }
+  }
+
   const isShipped =
     node.audienceState === "covered" ||
     node.audienceState === "cancelled";
+  const hasTiming = Boolean(node.targetDate);
   const [attentionNow] = useState(Date.now);
 
   // Tier 3 attention signal, surface drift at edit time (R·22). Calendar-day
@@ -494,6 +507,7 @@ function NodeCard({
         onDrop(node.id);
       }}
       className={`${styles.card}${isSettled ? " tl-settle" : ""}`}
+      data-timing={hasTiming ? "set" : "missing"}
       data-hidden={node.hidden ? "true" : undefined}
       data-pending={isPending ? "true" : undefined}
       data-drag-over={isDraggingOver ? "true" : undefined}
@@ -567,6 +581,8 @@ function NodeCard({
               type="button"
               className={styles.titleButton}
               data-settled={isShipped ? "true" : undefined}
+              aria-label={`Edit milestone: ${node.title}`}
+              title="Edit milestone"
               onClick={() => {
                 setTitleValue(node.title);
                 setEditingTitle(true);
@@ -648,6 +664,16 @@ function NodeCard({
               </button>
             ) : null}
 
+            {/* Timing, stated rather than left blank.
+                A date field with nothing in it is not an indicator — it reads
+                as a control the owner has not reached yet, when the fact is
+                that this milestone has no timing. So the row says so, and the
+                statement carries the action that resolves it. An undated
+                milestone stays a legitimate milestone; nothing here nags. */}
+            {hasTiming ? null : (
+              <span className={styles.timingMissing}>Timing not set</span>
+            )}
+
             {/* Date input, M2/fix3: same .date-input-wrapper/.date-input-custom treatment
                 as ManualAddForm. Button wraps the SVG and calls showPicker?.(). */}
             <div className={`date-input-wrapper ${styles.dateWrapper}`}>
@@ -664,9 +690,7 @@ function NodeCard({
                 type="button"
                 tabIndex={-1}
                 aria-label="Pick a date"
-                onClick={() => {
-                  try { dateInputRef.current?.showPicker?.(); } catch { /* showPicker unsupported or not user-activated */ }
-                }}
+                onClick={openDatePicker}
                 className="date-input-icon-btn"
               >
                 <svg
@@ -688,6 +712,17 @@ function NodeCard({
                 </svg>
               </button>
             </div>
+            {hasTiming ? null : (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={openDatePicker}
+                className={styles.quietAction}
+                data-timing-action="set"
+              >
+                Set timing
+              </button>
+            )}
             {node.dateOverrideMode !== "inherit" ? (
               <button
                 type="button"
@@ -786,10 +821,19 @@ function NodeCard({
             type="button"
             disabled={isPending}
             onClick={toggleHidden}
-            aria-label={node.hidden ? "Show this milestone" : "Hide this milestone"}
-            title={node.hidden ? "Show" : "Hide from public roadmap"}
+            aria-label={
+              node.hidden
+                ? `Show ${node.title} on the shared page`
+                : `Hide ${node.title} from the shared page`
+            }
+            title={
+              node.hidden
+                ? "Show on the shared page"
+                : "Hide from the shared page"
+            }
             className={styles.iconButton}
             data-active={node.hidden ? "true" : undefined}
+            data-visibility-action={node.hidden ? "show" : "hide"}
           >
             {node.hidden ? (
               // Eye-slash
@@ -1218,8 +1262,46 @@ export function CurationSurface({
     }
   }, [refresh]);
 
+  const listFrameRef = useRef<HTMLDivElement>(null);
+  const hiddenDetailsRef = useRef<HTMLDetailsElement>(null);
+
   const openManualAdd = useCallback(() => {
     setManualAddOpen(true);
+  }, []);
+
+  /**
+   * Open the hidden fold and put focus on the first milestone's show control.
+   * The notice above states that nothing is visible; this carries the owner to
+   * the milestones themselves rather than deciding for them which one returns.
+   */
+  const revealHiddenMilestones = useCallback(() => {
+    const details = hiddenDetailsRef.current;
+    if (!details) return;
+    details.open = true;
+    requestAnimationFrame(() => {
+      details
+        .querySelector<HTMLButtonElement>('[data-visibility-action="show"]')
+        ?.focus();
+    });
+  }, []);
+
+  /**
+   * Take the owner to the first milestone that has no timing and open its date
+   * field. The plan-level notice states how many are missing; this is the
+   * action that resolves the first of them, so the statement is never a
+   * dead end.
+   */
+  const addTimingToFirstUntimed = useCallback(() => {
+    const field = listFrameRef.current?.querySelector<HTMLInputElement>(
+      '[data-timing="missing"] input[type="date"]',
+    );
+    if (!field) return;
+    field.focus();
+    try {
+      field.showPicker?.();
+    } catch {
+      /* showPicker unsupported or not user-activated; the field has focus */
+    }
   }, []);
 
   const closeManualAdd = useCallback((reason: "complete" | "cancel") => {
@@ -1482,6 +1564,18 @@ export function CurationSurface({
 
   const isEmpty = nodes.length === 0;
 
+  // Timing, counted once for the whole plan. Hidden milestones are excluded:
+  // they are not part of the plan an audience reads, so they cannot make it
+  // look less finished than it is.
+  const shownNodes = nodes.filter((node) => !node.hidden);
+  const untimedCount = shownNodes.filter((node) => !node.targetDate).length;
+  const planIsOrdered = shownNodes.length > 0 && untimedCount === shownNodes.length;
+  // A plan can hold milestones and still show none of them. The lane list is
+  // built from visible milestones only, so this state used to render an empty
+  // frame with no explanation and no way back — the milestones were all one
+  // fold below, under "Hidden milestones", where nothing pointed.
+  const allHidden = nodes.length > 0 && shownNodes.length === 0;
+
   const isSaved = savedAt !== null;
 
   return (
@@ -1493,11 +1587,15 @@ export function CurationSurface({
           Owner draft · changes stay private until you create or update a
           shared artifact.
         </span>
+        {/* This said "Preview public copy" and previewed nothing: it opens the
+            publishing screen, where an owner chooses which milestones go out.
+            Preview is its own control in the header above, and it now opens a
+            real one, so this can say where it actually goes. */}
         <Link
           href={shareHref}
           className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
-          Preview public copy
+          Pick what to publish
         </Link>
       </div>
 
@@ -1598,30 +1696,81 @@ export function CurationSurface({
                 <path d="M12 2.5 21.5 12 12 21.5 2.5 12Z" />
               </svg>
             </span>
-            <p className={styles.emptyTitle}>Your plan fills itself in.</p>
+            <p className={styles.emptyTitle}>Nothing in this plan yet.</p>
             <p className={styles.emptyCopy}>
-              Mark tasks as milestones in Signal Tasks and they&apos;ll appear here automatically.
+              Write the first milestone here, or mark a task as a milestone in
+              Signal Tasks and it will appear on its own. A date is optional.
             </p>
+            {/* The action that fills this screen belongs on this screen.
+                "Open Tasks" was the only weighted control here, so the one
+                obvious move from an empty plan was to leave the product. */}
             <div className={styles.emptyActions}>
-              <a href={PRODUCT_APP_URLS.tasks} className={styles.emptyPrimary}>
+              <button
+                ref={manualAddTriggerRef}
+                type="button"
+                onClick={openManualAdd}
+                className={styles.emptyPrimary}
+              >
+                Add first milestone
+              </button>
+              <a href={PRODUCT_APP_URLS.tasks} className={styles.emptySecondary}>
                 Open Tasks
               </a>
             </div>
-            {/* Quiet inline manual-add link, no background, no border, no pill. */}
-            <button
-              ref={manualAddTriggerRef}
-              type="button"
-              onClick={openManualAdd}
-              className={styles.addTrigger}
-            >
-              or add one manually
-            </button>
           </div>
         )
       ) : (
         <>
-          {/* Lane-grouped node list with drag-to-reorder (UX-1) */}
-          <div className={styles.listFrame}>
+          {/* Timing, said once for the whole plan.
+              An ordered plan with no dates is a finished plan, not a draft
+              waiting to be corrected, so the notice states that rather than
+              warning about it. When only some milestones are undated it says
+              how many. Either way it carries the action, so the owner never
+              reads about a gap without being offered the way to close it. */}
+          {untimedCount > 0 ? (
+            <div className={styles.planNotice}>
+              <p className={styles.planNoticeCopy}>
+                {planIsOrdered
+                  ? "This plan is in order, with no dates yet. That is a complete plan on its own, and the page people receive shows the order. Add dates whenever you know them."
+                  : `${untimedCount} of ${shownNodes.length} milestones have no timing yet. They keep their place in the order until you set a date.`}
+              </p>
+              <button
+                type="button"
+                onClick={addTimingToFirstUntimed}
+                className={styles.planNoticeAction}
+              >
+                Add timing
+              </button>
+            </div>
+          ) : null}
+
+          {/* Everything hidden is a state, not an absence, and it has to say
+              so: the list below is built from visible milestones, so it draws
+              nothing at all here while the work sits one fold down. */}
+          {allHidden ? (
+            <div className={styles.planNotice}>
+              <p className={styles.planNoticeCopy}>
+                Every milestone in this plan is hidden, so the page people
+                receive has nothing on it. Show one to put it back.
+              </p>
+              <button
+                type="button"
+                onClick={revealHiddenMilestones}
+                className={styles.planNoticeAction}
+              >
+                Show a milestone
+              </button>
+            </div>
+          ) : null}
+
+          {/* Lane-grouped node list with drag-to-reorder (UX-1). Withheld when
+              nothing is visible, so the notice above stands alone rather than
+              over an empty ruled box. */}
+          <div
+            ref={listFrameRef}
+            className={styles.listFrame}
+            hidden={allHidden || undefined}
+          >
             {publicStates.map((stateOption) => {
               const stateNodes = nodes.filter(
                 (node) =>
@@ -1673,7 +1822,10 @@ export function CurationSurface({
 
           {/* Hidden milestones remain recoverable from the owner surface. */}
           {hiddenNodes.length > 0 && (
-            <details className={`${styles.hiddenDetails} tl-fold`}>
+            <details
+              ref={hiddenDetailsRef}
+              className={`${styles.hiddenDetails} tl-fold`}
+            >
               <summary className={styles.hiddenSummary}>
                 <span>Hidden milestones</span>
                 <span className={styles.hiddenCount}>{hiddenNodes.length}</span>

@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { isDemoMode, isProductionMode } from "@/lib/access-mode";
-import { isBareArtifactPath } from "@/lib/bare-artifact-path";
+import {
+  BARE_CHROME_HEADER,
+  isBareArtifactPath,
+  isBareChromePath,
+} from "@/lib/bare-artifact-path";
 import {
   APP_ORIGIN,
   PRODUCT_MARKETING_URLS,
@@ -48,6 +52,25 @@ const BARE_ARTIFACT_RESPONSE_HEADERS = {
   "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet",
   "Cross-Origin-Resource-Policy": "same-origin",
 } as const;
+
+/** Continue the request with the bare-chrome marker attached to it. */
+function bareChromeResponse(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set(BARE_CHROME_HEADER, "1");
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
+/**
+ * The marker for chrome-free routes that are NOT bearer links — today only the
+ * Timeline owner preview. Returns `undefined` everywhere else so each caller
+ * keeps whatever default response it already produced; this must never become
+ * a way around `auth.protect()`, so it is only ever called after the gate.
+ */
+function bareChromeContinue(request: NextRequest): NextResponse | undefined {
+  return isBareChromePath(request.nextUrl.pathname)
+    ? bareChromeResponse(request)
+    : undefined;
+}
 
 /**
  * @param isAuthed real Clerk session state (userId present), NOT raw cookie
@@ -156,7 +179,7 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
   // demo user bound to in-memory seed data (lib/access-mode.ts,
   // server/demo/tasks-demo.ts). Flip SIGNAL_ACCESS_MODE back to production to
   // restore this exact gate.
-  if (isDemoMode()) return;
+  if (isDemoMode()) return bareChromeContinue(req);
 
   if (!clerkConfigured) {
     // Fail CLOSED in production. A prod deploy missing Clerk keys must
@@ -168,7 +191,7 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
         status: 503,
       });
     }
-    return; // dev pass-through
+    return bareChromeContinue(req); // dev pass-through
   }
 
   // Layer 2, M-route redirect uses the REAL session (userId), so a stale
@@ -190,6 +213,11 @@ const productionProxy = clerkMiddleware(async (auth, req) => {
       unauthenticatedUrl: new URL("/sign-in", req.url).toString(),
     });
   }
+
+  // Past the gate, so a signed-in owner on the Timeline preview route gets the
+  // chrome-free marker. `auth.protect()` never falls through for a signed-out
+  // visitor, so this cannot leak an unauthenticated render.
+  return bareChromeContinue(req);
 }, {
   // Clerk's dashboard allowlist mirrors these two production origins.
   // app.signalstudio.ie is canonical; tasks.signalstudio.ie remains a
@@ -222,15 +250,13 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
   const legacySignal = legacySignalRedirect(req);
   if (legacySignal) return legacySignal;
   if (isBareArtifactPath(req.nextUrl.pathname)) {
-    const requestHeaders = new Headers(req.headers);
-    requestHeaders.set("x-signal-bare-artifact", "1");
-    const response = NextResponse.next({ request: { headers: requestHeaders } });
+    const response = bareChromeResponse(req);
     for (const [key, value] of Object.entries(BARE_ARTIFACT_RESPONSE_HEADERS)) {
       response.headers.set(key, value);
     }
     return response;
   }
-  if (isDemoMode()) return NextResponse.next();
+  if (isDemoMode()) return bareChromeContinue(req) ?? NextResponse.next();
   if (!clerkConfigured) {
     // Do not invoke Clerk without credentials. A genuine production
     // deployment fails closed; classified previews and local development may
@@ -240,7 +266,7 @@ export default function proxy(req: NextRequest, event: NextFetchEvent) {
         status: 503,
       });
     }
-    return NextResponse.next();
+    return bareChromeContinue(req) ?? NextResponse.next();
   }
   return productionProxy(req, event);
 }
