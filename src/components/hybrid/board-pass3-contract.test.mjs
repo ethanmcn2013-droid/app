@@ -55,20 +55,32 @@ test("the shell is a product switcher with a command trigger, not a place list",
   // The panel header is a quiet local label; Projects is a section label.
   assert.match(sidebar, /styles\.sidebarTitle\}>Tasks</);
   assert.match(sidebar, /styles\.projectsLabel\}>Projects</);
+  // 2026-08-05: the founder had the planning-period grouping (a name + end
+  // date row, one disclosure per period) removed from Projects — it
+  // repeated the crumb the brief header also dropped, and every venue only
+  // ever had the one bucket to group by. The list is flat projects now.
+  assert.doesNotMatch(sidebar, /group\.periodName/);
+  assert.doesNotMatch(sidebar, /group\.dateRange/);
+  assert.doesNotMatch(shellCss, /\.projectDate \{/);
   // No rotated strip, no reserved collapsed width, no persistent field.
   assert.doesNotMatch(sidebar, /stripLabel/);
   assert.doesNotMatch(shellCss, /\.stripLabel \{[^}]*writing-mode/s);
   assert.match(sidebar, /if \(!expanded\) return null;/);
   assert.doesNotMatch(studioBar, /data-slot="command-field"/);
   assert.match(studioBar, /data-slot="search-trigger"/);
-  // The band offers the reopen trigger and never drops the parent crumb.
+  // The band offers the reopen trigger; progress reads as a sentence,
+  // never a bare percentage.
   assert.match(workspaceBrief, /Open Tasks navigation/);
   assert.doesNotMatch(workspaceBrief, /% complete/);
 });
 
-test("the main header states the parent / project hierarchy", () => {
-  assert.match(workspaceBrief, /briefCrumb/);
-  assert.match(workspaceBrief, /calendar\.planningPeriod\?\.name/);
+test("the main header states the project alone — the parent crumb is gone", () => {
+  // 2026-08-05: the founder had the "<period> /" crumb removed from the
+  // brief header. In production it always read "Active work / <project>" —
+  // a hierarchy of one, since every venue has a single planning period —
+  // so the header now leads straight with the project name.
+  assert.doesNotMatch(workspaceBrief, /briefCrumb/);
+  assert.doesNotMatch(workspaceBrief, /calendar\.planningPeriod\?\.name/);
   // The description affordance reads as an action, not placeholder prose.
   assert.match(workspaceBrief, /\+ Add description/);
 });

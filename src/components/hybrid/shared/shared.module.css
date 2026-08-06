@@ -72,13 +72,24 @@
 .accountChip b { font-size: 11px; }
 .accountChip small { color: var(--x-task-text-muted); font-size: 11px; }
 
+/* Only the current view earns a background. Four buttons that all sit
+   grey-boxed until one is picked shout in chorus before the reader has
+   chosen anything; quiet at rest is what makes "this one is active"
+   mean something. Hover and focus still answer with the repo's own
+   tokens below — the rule is no background at rest, not no feedback. */
 .viewTabs { align-items: center; display: flex; gap: 2px; }
 .viewTabs button,
 .viewTabs a { align-items: center; background: transparent; border: 0; border-radius: 6px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 6px; min-height: 34px; padding: 0 10px; position: relative; text-decoration: none; }
 .viewTabs button:hover,
 .viewTabs a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+/* The active tab's tint and weight are untouched — this only adds a
+   solid indigo underline (inset, so it never shifts layout). On a
+   plain white bar a light indigo wash alone is nearly indistinguishable
+   from the page behind it, so the underline is what actually reads at
+   a glance; the weight change carries the same state without colour,
+   so "current view" is never colour-only either way. */
 .viewTabs button[aria-current="page"],
-.viewTabs a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 600; }
+.viewTabs a[aria-current="page"] { background: var(--x-task-selected); box-shadow: inset 0 -2px 0 0 var(--x-task-accent); color: var(--x-task-text); font-weight: 600; }
 
 .viewTools { align-items: center; display: flex; gap: 4px; min-width: 0; }
 .viewTools > button,

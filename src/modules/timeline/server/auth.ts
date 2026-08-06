@@ -10,7 +10,10 @@ import {
 import { DEMO_USER_ID, demoWorkspace } from "@/modules/timeline/lib/roadmap/demo-data";
 import { getWorkspacesForUser, getWorkspaceForSuiteIdForUser } from "@/modules/timeline/server/db/timeline-queries";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
-import { ensureTimelineWorkspaceForUser } from "@/modules/timeline/server/provision-workspace";
+import {
+  adoptTimelineForSuiteWorkspace,
+  ensureTimelineWorkspaceForUser,
+} from "@/modules/timeline/server/provision-workspace";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
 import { devFallbackEligible } from "./timeline-auth-policy";
 
@@ -147,17 +150,31 @@ export async function resolveTimelineContext(
     };
   }
 
-  const [workspace, current] = await Promise.all([
+  const [linked, current] = await Promise.all([
     getWorkspaceForSuiteIdForUser(requestedWorkspaceId, userId),
     getCurrentTasksWorkspaceContext(userId, requestedWorkspaceId),
   ]);
-  if (!workspace || !current) return null;
+
+  // Current Tasks membership is the authorization boundary, and the only one.
+  // Without it we refuse and never substitute a different workspace: a URL
+  // naming workspace B must not quietly render workspace A.
+  if (!current) return null;
   if (
     requestedPlanningPeriodId &&
     current.planningPeriodId !== requestedPlanningPeriodId
   ) {
     return null;
   }
+
+  // Membership is proved, so a missing row is a linkage gap rather than an
+  // access failure, and the two must not share an outcome. Timelines created
+  // in-app carry no suite id, which made every routing hint a dead end; adopt
+  // the owner's Timeline and record the link. See
+  // `adoptTimelineForSuiteWorkspace` for what it declines to guess.
+  const workspace =
+    linked ??
+    (await adoptTimelineForSuiteWorkspace(userId, requestedWorkspaceId));
+  if (!workspace) return null;
   return {
     workspace,
     workspaceId: current.workspaceId,

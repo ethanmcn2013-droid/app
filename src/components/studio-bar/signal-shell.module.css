@@ -505,15 +505,6 @@
 
 .disclosureGhost { flex: none; width: 14px; }
 
-.projectDate {
-  color: var(--x-task-text-muted);
-  flex: none;
-  font-family: var(--font-geist-mono), monospace;
-  font-size: 10px;
-  margin-left: auto;
-  padding-left: 6px;
-}
-
 .projectChildren {
   display: flex;
   flex-direction: column;
@@ -663,7 +654,6 @@
   .projectsSidebarHost { flex-basis: 212px; width: 212px; }
   .projectsSidebarHost[data-collapsed] { flex-basis: 44px; width: 44px; }
   .projectsSidebar { flex-basis: 212px; width: 212px; }
-  .projectDate { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

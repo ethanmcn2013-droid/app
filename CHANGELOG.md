@@ -4,6 +4,35 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-05 · T·133 · tightens · visiting Tasks no longer breaks Timeline
+
+**Opening Tasks and then clicking Timeline showed "That workspace is not
+available." — while the owner's own timeline sat one bare URL away.** The
+product rail stamps a `?workspaceId=` routing hint on every Timeline link,
+taken from the suite context Tasks publishes. Timeline authorised that hint
+against two lookups and refused if either came back empty. One of them asks
+for a Timeline row whose `suite_workspace_id` matches the Tasks workspace,
+and only the provisioning path ever sets that column — the in-app create
+flow leaves it null, and nothing backfilled it. Every timeline made that
+way was reachable as "the owner's first workspace" and by nothing else, so
+the hint that was meant to be a convenience was the thing that broke it.
+
+**A missing link and a missing membership are no longer the same answer.**
+Current Tasks membership stays the only authorisation boundary: without it
+Timeline refuses exactly as before, and never substitutes another workspace,
+because a URL naming one workspace must not quietly render a different one.
+With membership proved, an unlinked timeline is treated as the linkage gap
+it is — the owner's timeline is adopted, bound to the Tasks workspace, and
+the repair is written to the row, so the dead end closes on the first visit
+rather than being re-derived on every request.
+
+**It declines to guess.** Adoption needs exactly one unlinked timeline. When
+there are several, the owner's first is opened and nothing is written: a
+wrong join between a timeline and a Tasks workspace is silent, durable and
+far harder to notice than the missing link it would replace. That rule is a
+pure function with its own tests, and two contract tests now fail if the two
+outcomes are ever collapsed back together or if adoption is allowed to run
+before membership is proved.
 ## 2026-08-05 · N·25 · ships · Notes learns to listen, look and decide
 
 **Notes was one screen doing four jobs, and it now has three views that each

@@ -181,7 +181,7 @@ export function StatusPillRow({ task }: { task: Task }) {
           onClick={onClick}
           aria-expanded={expanded}
           aria-haspopup="listbox"
-          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          className="inline-flex w-fit items-center gap-1.5 rounded-md border border-line-soft px-2 py-1 text-[12px] font-medium transition-colors hover:border-line focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
           style={{ background: currentVisual.bg, color: currentVisual.ink }}
         >
           <span className="block h-1.5 w-1.5 rounded-full" style={{ background: currentVisual.dot }} aria-hidden />
