@@ -382,7 +382,7 @@ export function useNotebook(options: NotebookOptions) {
       if (!online) {
         setCaptureStatus(persistenceReady ? "offline" : "failed");
         const message = persistenceReady
-          ? "Saved on this device. Signal will try again when you reconnect."
+          ? "Saved on this device. Notes will save it as soon as you reconnect."
           : "This device cannot hold a spare copy. Your words are still in the composer, so keep this tab open until you reconnect.";
         setCaptureError(message);
         announce(message);
@@ -1089,10 +1089,17 @@ export function useNotebook(options: NotebookOptions) {
           receipt = result.result;
         }
         setNotes((current) => upsertNote(current, saved));
-        setDetailBase(saved.updatedAt);
+        // Only when the editor is holding this note. Sending from Review used
+        // to overwrite the open note's version with another note's, so its
+        // next save compared against the wrong one.
+        if (openNoteIdRef.current === saved.id) setDetailBase(saved.updatedAt);
         setPendingSends((current) => current.filter((item) => item.noteId !== saved.id));
         updateSend({ status: "sent", error: null, receipt, locked: null });
-        showToast({ tone: "info", message: receipt.created ? "Task created." : copy.receipts.recovered });
+        // No toast on success: the dialog already says "Task created" and
+        //. showing both meant two confirmations for one action.
+        if (!receipt.created) {
+          showToast({ tone: "info", message: copy.receipts.recovered });
+        }
         return true;
       } catch (error) {
         const message = friendlyError(error, copy.errors.tasksUnavailable);

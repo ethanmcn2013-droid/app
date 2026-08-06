@@ -106,7 +106,10 @@ export async function extractNotesFromSpeech(
       [{ type: "text", text: transcript }],
       transcript,
     );
-    return { status: "ok", notes, separated: true };
+    // If the sanitiser fell back to the source, nothing was separated and
+    // the interface must not say it was.
+    const separated = !(notes.length === 1 && notes[0]?.body === transcript);
+    return { status: "ok", notes, separated };
   } catch {
     // Every word survives. Where the words are longer than a note can hold
     // they are split across several, because losing the tail is not an

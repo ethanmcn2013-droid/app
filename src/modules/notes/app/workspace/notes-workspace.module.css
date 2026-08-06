@@ -15,11 +15,23 @@
  * a keycap is. Reading sizes carry --x-lead-read, interface sizes carry
  * --x-lead-ui, and the two caps carry --x-lead-tight.
  *
- * Tokens are the vendored design system's own names. Notes adds no parallel
- * palette; the three --x-notes-* values below are measurements, not colours.
+ * Tokens are the vendored design system's own names, with one stated
+ * exception: five semantic values (danger, warning, raised, done,
+ * done-strong) exist only in the Tasks --x-* layer, so they are aliased once
+ * at .root rather than referenced inline. Notes adds no palette of its own.
  */
 
 .root {
+  /* Five semantic values Notes needs and the vendored layer does not yet
+     carry. They are aliased here rather than referenced inline so the
+     borrow from the Tasks namespace is stated once and is easy to retire
+     when these are promoted to the shared layer. */
+  --x-notes-danger: var(--x-task-danger);
+  --x-notes-warning: var(--x-task-warning);
+  --x-notes-raised: var(--x-task-raised);
+  --x-notes-done: var(--x-status-done);
+  --x-notes-done-strong: var(--x-status-done-hover);
+
   --x-notes-list: 384px;
   --x-notes-gutter: clamp(20px, 2.4vw, 32px);
   --x-notes-measure: 68ch;
@@ -62,10 +74,11 @@
   cursor: not-allowed;
 }
 
+/* No radius here: at (0,2,0) it outranked every component rule and every
+   button visibly changed shape the moment it took focus. */
 .root :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
 .root ::selection {
@@ -129,6 +142,13 @@
 .viewTab:hover {
   color: var(--ink);
   background: var(--paper-deep);
+}
+
+/* --ink-faint clears 4.5:1 on paper and misses it on --paper-deep, which is
+   the hover ground for every control in this header. Step up on hover. */
+.viewTab:hover .viewCount,
+.menuItem:hover .menuHint {
+  color: var(--ink-soft);
 }
 
 .viewTab[aria-current="page"] {
@@ -315,7 +335,7 @@
 .notebook {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  min-block-size: 0;
+  min-block-size: 100%;
   overflow: hidden;
 }
 
@@ -364,8 +384,9 @@
   color: var(--ink-faint);
 }
 
-.composerField:focus {
-  outline: revert-layer;
+.composerField:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .composerFooter {
@@ -473,7 +494,10 @@
   align-items: center;
   padding: 1px 5px;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--x-task-raised) 22%, transparent);
+  /* A translucent wash put the cap at 4.02:1 against its own button. The
+     ring carries the shape instead, and the glyph keeps full contrast. */
+  border: 1px solid color-mix(in srgb, var(--x-task-raised) 45%, transparent);
+  background: transparent;
   font-family: var(--font-mono);
   font-size: var(--text-label);
   line-height: var(--x-lead-tight);
@@ -610,6 +634,13 @@
   color: var(--ink-faint);
 }
 
+.captureDisclosure {
+  margin: 0;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: var(--x-lead-read);
+}
+
 .stageActions {
   display: flex;
   align-items: center;
@@ -694,16 +725,19 @@
   color: var(--accent);
 }
 
+/* display:none, not clipped. Clipped, these two sat in the tab order as
+   stops where the focus ring vanished, and one of them was never opened by
+   anything at all. */
 .fileInput {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+  display: none;
+}
+
+.composerNote {
+  margin: 0;
+  padding: 8px 12px 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-read);
 }
 
 /* ── Extracted-note review ────────────────────────────────────────────── */
@@ -878,7 +912,9 @@
 .split {
   display: grid;
   grid-template-columns: var(--x-notes-list) minmax(0, 1fr);
-  min-block-size: 0;
+  /* Full height even when the list is short. Content-sized, the hairline
+     between list and note stopped mid-air with white below it. */
+  min-block-size: 100%;
   overflow: hidden;
 }
 
@@ -1025,6 +1061,11 @@
   color: var(--ink);
 }
 
+.rowRetry {
+  display: flex;
+  padding: 0 var(--space-5) 12px 42px;
+}
+
 .rowSeparator {
   block-size: 1px;
   margin-inline: var(--space-5);
@@ -1044,10 +1085,21 @@
   display: flex;
   min-block-size: 52px;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
   padding-inline: var(--x-notes-gutter);
   border-block-end: 1px solid var(--hairline-soft);
+}
+
+/* The header shares the note's own column. Anchored to the pane instead, its
+   left edge drifted 350px away from the note's at 1920 and the pane had
+   three unrelated verticals. */
+.detailHeaderInner {
+  display: flex;
+  inline-size: 100%;
+  max-inline-size: var(--x-notes-measure);
+  margin-inline: auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
 }
 
 .detailMeta {
@@ -1144,13 +1196,18 @@
 
 /* ── Empty states ─────────────────────────────────────────────────────── */
 
+/* One grammar for every empty state. Two of them, one left-aligned and one
+   centred, appeared in the same frame on an empty notebook. */
 .empty {
   display: grid;
+  block-size: 100%;
   align-content: center;
-  justify-items: start;
+  justify-items: center;
+  justify-self: center;
   gap: 6px;
   padding: var(--space-9) var(--x-notes-gutter);
   max-inline-size: 44ch;
+  text-align: center;
 }
 
 .emptyCentred {
@@ -1183,7 +1240,7 @@
 .review {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  min-block-size: 0;
+  min-block-size: 100%;
   overflow: hidden;
 }
 
@@ -1201,7 +1258,9 @@
 
 .progressTrack {
   position: relative;
-  flex: 0 1 200px;
+  /* Runs the width of the band. A 200px bar floating in an 1860px row was a
+     stub, not a rail. */
+  flex: 1 1 auto;
   block-size: 3px;
   border-radius: var(--radius-pill);
   background: var(--paper-deep);
@@ -1219,8 +1278,12 @@
 
 .reviewStage {
   display: grid;
-  align-content: start;
+  /* Centred, not top-anchored. A 157px card pinned to the top of a 920px
+     field left 94% of the Review view empty, which reads as a page that
+     failed to load rather than one note asking for a decision. */
+  place-content: center;
   justify-items: center;
+  block-size: 100%;
   min-block-size: 0;
   padding: var(--space-8) var(--x-notes-gutter) var(--space-9);
   overflow-y: auto;
@@ -1472,13 +1535,17 @@ textarea.fieldControl {
   border-color: color-mix(in srgb, var(--status-blocked) 34%, var(--hairline));
 }
 
+/* The Undo for a delete. At 40x22 it missed WCAG 2.5.8; it is the last
+   chance to keep a note, so it gets a real target. */
 .toastAction {
+  min-block-size: 24px;
+  min-inline-size: 44px;
   border: 0;
   background: transparent;
   color: var(--accent);
   font-size: 13px;
   font-weight: 500;
-  padding: 2px 4px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
 }
 

@@ -121,8 +121,9 @@ export function sanitizeExtractedNotes(
   }
 
   if (notes.length) return notes;
-  const fallback = tidyExtractedBody(fallbackSource);
-  return fallback ? [{ body: fallback }] : [];
+  // Nothing usable came back. The source is not a note and must not be cut
+  // to one note's length: chunk it so every word survives.
+  return chunkIntoNotes(fallbackSource);
 }
 
 /**

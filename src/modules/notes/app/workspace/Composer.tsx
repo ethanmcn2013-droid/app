@@ -204,7 +204,6 @@ export function Composer({
   const [savingExtracted, setSavingExtracted] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const firstExtractRef = useRef<HTMLTextAreaElement>(null);
   const stageHeadingId = useId();
   const statusId = useId();
@@ -264,26 +263,35 @@ export function Composer({
     async (transcript: string) => {
       setStage({ kind: "processing", source: "voice", transcript });
       const result = await extractNotesFromSpeech({ transcript });
+      const stillWaiting = (current: Stage) =>
+        current.kind === "processing" &&
+        current.source === "voice" &&
+        current.transcript === transcript;
       if (result.status === "ok") {
-        setStage({
-          kind: "review",
-          source: "voice",
-          notes: result.notes,
-          separated: result.separated,
-        });
+        setStage((current) =>
+          stillWaiting(current)
+            ? {
+                kind: "review",
+                source: "voice",
+                notes: result.notes,
+                separated: result.separated,
+              }
+            : current,
+        );
         return;
       }
       // The words are still here. Offer them rather than losing them to a
       // model that could not answer.
-      setStageError(
-        result.status === "unavailable" ? result.message : result.message,
-      );
-      setStage({
-        kind: "review",
-        source: "voice",
-        notes: [{ body: transcript }],
-        separated: false,
+      setStage((current) => {
+        if (!stillWaiting(current)) return current;
+        return {
+          kind: "review",
+          source: "voice",
+          notes: [{ body: transcript }],
+          separated: false,
+        };
       });
+      setStageError(result.message);
     },
     [],
   );
@@ -340,18 +348,24 @@ export function Composer({
       base64: oriented.base64,
       mediaType: oriented.mediaType,
     });
+    const stillReading = (current: Stage) =>
+      current.kind === "processing" && current.source === "photo";
     if (result.status === "ok") {
-      setStage({
-        kind: "review",
-        source: "photo",
-        notes: result.notes,
-        separated: result.separated,
-      });
+      setStage((current) =>
+        stillReading(current)
+          ? {
+              kind: "review",
+              source: "photo",
+              notes: result.notes,
+              separated: result.separated,
+            }
+          : current,
+      );
       return;
     }
     // The picture is untouched, so this is a retry, not a loss.
+    setStage((current) => (stillReading(current) ? { kind: "idle" } : current));
     setStageError(result.message);
-    setStage({ kind: "idle" });
   }, [photo]);
 
   const onPaste = useCallback(
@@ -452,7 +466,10 @@ export function Composer({
     if (stageError) return { tone: "error" as const, text: stageError };
     if (captureStatus === "saved") return { tone: "saved" as const, text: "Saved." };
     if (captureStatus === "offline") {
-      return { tone: "error" as const, text: "Offline. Held on this device until you reconnect." };
+      return {
+        tone: "saved" as const,
+        text: "Offline. Held on this device, and saved as soon as you reconnect.",
+      };
     }
     if (overLimit) {
       return {
@@ -496,7 +513,6 @@ export function Composer({
                 readOnly ? "This review notebook is read-only." : copy.capture.placeholder
               }
               rows={2}
-              maxLength={MAX_NOTE_BODY_CHARS + 500}
               aria-describedby={statusLine ? statusId : undefined}
               aria-invalid={overLimit || undefined}
               onChange={(event) => {
@@ -539,6 +555,14 @@ export function Composer({
             </div>
             <p className={speech.transcript ? styles.transcript : styles.transcriptEmpty}>
               {speech.transcript || "Listening. Speak whenever you are ready."}
+            </p>
+            {/* Standing, not a one-time dialog, and rendered before the first
+                word is spoken. It was defined and never shown. */}
+            <p className={styles.captureDisclosure}>
+              {copy.voice.disclosure}
+              {speechSeparates
+                ? ""
+                : " Separating spoken notes is not switched on for this account, so your words are kept exactly as you say them."}
             </p>
             <div className={styles.stageActions}>
               <button type="button" className={styles.quietButton} onClick={cancelVoice}>
@@ -623,7 +647,7 @@ export function Composer({
                   // photo is state and survives; the transcript is not, and
                   // dropping straight to idle used to throw a three-minute
                   // dictation away with one click.
-                  if (stage.source === "voice") {
+                                if (stage.source === "voice") {
                     const spoken = stage.transcript.trim();
                     if (spoken) {
                       setStage({
@@ -748,7 +772,12 @@ export function Composer({
                 type="button"
                 className={styles.modeButton}
                 onClick={() => fileInputRef.current?.click()}
-                disabled={readOnly || busy}
+                disabled={readOnly || busy || !photoAvailable}
+                title={
+                  photoAvailable
+                    ? undefined
+                    : "Reading photos is not switched on for this account yet."
+                }
               >
                 <PhotoIcon />
                 <span>Photo</span>
@@ -800,27 +829,10 @@ export function Composer({
           if (file) void acceptFile(file);
         }}
       />
-      <input
-        ref={cameraInputRef}
-        className={styles.fileInput}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        aria-label="Take a photo to read"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          event.target.value = "";
-          if (file) void acceptFile(file);
-        }}
-      />
       {!photoAvailable ? (
-        <p className={styles.srOnly}>
-          Reading photos is not switched on for this account yet.
-        </p>
-      ) : null}
-      {!speechSeparates ? (
-        <p className={styles.srOnly}>
-          Spoken notes are kept as one note on this account.
+        <p className={styles.composerNote}>
+          Reading photos is not switched on for this account yet. Typing and
+          voice both work.
         </p>
       ) : null}
     </div>

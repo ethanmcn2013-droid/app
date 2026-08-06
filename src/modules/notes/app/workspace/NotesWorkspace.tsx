@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  memo,
+  useDeferredValue,
 } from "react";
 
 import {
@@ -164,6 +166,105 @@ function Highlighted({ text, query }: { text: string; query: string }) {
   return <>{parts}</>;
 }
 
+/**
+ * One row in the notebook list.
+ *
+ * Memoised, and that is the whole point. The list lived inside the workspace
+ * component, so every keystroke in the composer re-derived the title, the
+ * preview, the date and two highlight passes for every note on screen — 8.8
+ * seconds of blocked main thread to type one sentence into a 500-note
+ * notebook. Nothing here depends on the composer, so nothing here needs to
+ * re-render with it.
+ */
+const NoteRow = memo(function NoteRow({
+  note,
+  index,
+  now,
+  query,
+  selected,
+  state,
+  onSelect,
+  onRetry,
+}: {
+  note: PresentableNote;
+  index: number;
+  now: number;
+  query: string;
+  selected: boolean;
+  state: string | undefined;
+  onSelect: (id: string) => void;
+  onRetry: (id: string) => void;
+}) {
+  const presentation = derivePresentation(note.body);
+  const source = noteSource(note.source);
+  const snippet = query.trim()
+    ? searchSnippet(note.body, query)
+    : presentation.preview;
+  return (
+    <li>
+      {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
+      <button
+        type="button"
+        className={styles.row}
+        data-note-row=""
+        data-note-id={note.id}
+        aria-current={selected ? "true" : undefined}
+        onClick={() => onSelect(note.id)}
+      >
+        <span className={styles.rowIcon}>
+          <SourceIcon source={source} />
+          <span className={styles.srOnly}>{SOURCE_LABELS[source]}</span>
+        </span>
+        <span className={styles.rowBody}>
+          <span className={styles.rowTitle}>
+            <Highlighted text={presentation.title} query={query} />
+          </span>
+          {snippet ? (
+            <span className={styles.rowPreview}>
+              <Highlighted text={snippet} query={query} />
+            </span>
+          ) : null}
+          <span className={styles.rowMeta}>
+            <span>{friendlyDate(note.createdAt, now)}</span>
+            {isSent(note) ? (
+              <span className={styles.rowFlag} data-tone="sent">
+                <TaskIcon />
+                In Tasks
+              </span>
+            ) : null}
+            {needsReview(note) ? (
+              <span className={styles.rowFlag} data-tone="review">
+                To review
+              </span>
+            ) : null}
+            {state === "pending" ? <span className={styles.rowFlag}>Saving</span> : null}
+            {state === "offline" ? (
+              <span className={styles.rowFlag}>Waiting to save</span>
+            ) : null}
+            {state === "failed" ? (
+              <span className={styles.rowFlag} data-tone="attention">
+                <AlertIcon />
+                Not saved
+              </span>
+            ) : null}
+          </span>
+        </span>
+      </button>
+      {state === "failed" ? (
+        <div className={styles.rowRetry}>
+          <button
+            type="button"
+            className={styles.quietButton}
+            onClick={() => void onRetry(note.id)}
+          >
+            Try saving again
+          </button>
+        </div>
+      ) : null}
+    </li>
+  );
+});
+
 export interface NotesWorkspaceProps {
   initialNotes: NoteRead[];
   initialArchivedNotes: NoteRead[];
@@ -220,10 +321,22 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   const headerRef = useRef<HTMLElement>(null);
   const liveRegionId = useId();
 
+  // The list is allowed to lag the field by a frame. Typing must never wait
+  // on 500 rows re-deriving themselves.
+  const deferredQuery = useDeferredValue(notebook.query);
   const allNotes = notebook.notes as PresentableNote[];
+  // A note still on its way to the server is not yet a note the account has.
+  // Counting it made the badge disagree with the database.
   const counts = useMemo(
-    () => countViews([...allNotes, ...(notebook.archivedNotes as PresentableNote[])]),
-    [allNotes, notebook.archivedNotes],
+    () =>
+      countViews([
+        ...allNotes.filter((note) => {
+          const state = notebook.mutationStates[note.id];
+          return state !== "pending" && state !== "offline" && state !== "failed";
+        }),
+        ...(notebook.archivedNotes as PresentableNote[]),
+      ]),
+    [allNotes, notebook.archivedNotes, notebook.mutationStates],
   );
 
   // ── URL state ───────────────────────────────────────────────────────
@@ -269,7 +382,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   // ── Notebook list ───────────────────────────────────────────────────
 
   const notebookNotes = useMemo(() => {
-    const source = notebook.query.trim()
+    const source = deferredQuery.trim()
       ? (notebook.searchResults as PresentableNote[])
       : allNotes;
     return sortNotes(
@@ -277,11 +390,11 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
         (note) =>
           !isArchived(note) &&
           matchesFilter(note, filter) &&
-          (!notebook.query.trim() || matchesQuery(note, notebook.query)),
+          (!deferredQuery.trim() || matchesQuery(note, deferredQuery)),
       ),
       sort,
     );
-  }, [allNotes, filter, notebook.query, notebook.searchResults, sort]);
+  }, [allNotes, deferredQuery, filter, notebook.searchResults, sort]);
 
   const sentNotes = useMemo(
     () =>
@@ -412,7 +525,12 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
             ? 0
             : rows.length - 1
           : Math.max(0, Math.min(rows.length - 1, current + (forward ? 1 : -1)));
-      rows[next]?.focus();
+      const row = rows[next];
+      row?.focus();
+      // Open what is focused. Walking the list while the reading pane stayed
+      // on the first note made the shortcut look broken.
+      const id = row?.getAttribute("data-note-id");
+      if (id && !narrow) selectNote(id, { replace: true });
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -544,10 +662,14 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     setReviewIndex(0);
   }, []);
 
-  /** Move past a note without deciding. It stays in the queue for next time. */
+  /**
+   * Move past a note without deciding. It stays in the queue, and the queue
+   * wraps: pressed at the end it returned to a clamped index and did nothing
+   * at all while still looking pressable.
+   */
   const skipReview = useCallback(() => {
-    setReviewIndex((current) => current + 1);
-  }, []);
+    setReviewIndex((current) => (current + 1) % Math.max(1, reviewQueue.length));
+  }, [reviewQueue.length]);
 
   const reviewKeep = useCallback(
     async (note: NoteRead) => {
@@ -623,7 +745,8 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
         {privacyOpen ? (
           <div className={styles.popover} role="dialog" aria-labelledby="notes-privacy-title">
             <h2 className={styles.popoverTitle} id="notes-privacy-title">
-              Only you can read your notes
+              Only you can read your notes. Speaking and photographing send
+              words out to be read.
             </h2>
             <dl className={styles.popoverList}>
               <div>
@@ -643,11 +766,11 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
               <div>
                 <dt>What you speak, and photos you take</dt>
                 <dd>
-                  These two do leave your device. Your browser turns speech into text with
-                  its own speech service, and the text, or the photo, goes to the outside
-                  service Signal Studio uses to turn it into notes. No recording is kept,
-                  because none is made, and the photo is read and then discarded. If you
-                  would rather nothing left the device, type the note instead.
+                  These two do leave your device. Your browser turns speech into text
+                  with its own speech service, and the text, or the photo, is sent to
+                  Anthropic, which Signal Studio uses to turn it into notes. No recording
+                  is kept, because none is made, and the photo is read and then discarded.
+                  If you would rather nothing left the device, type the note instead.
                 </dd>
               </div>
               <div>
@@ -786,7 +909,11 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
             </div>
 
             <div className={styles.split} data-detail-open={Boolean(selectedNote) || undefined}>
-              <section className={styles.listPane} aria-labelledby="notes-list-heading">
+              <section
+                className={styles.listPane}
+                id="notes-list"
+                aria-labelledby="notes-list-heading"
+              >
                 <div className={styles.listMeta}>
                   <h2 className={styles.srOnly} id="notes-list-heading">
                     Notebook
@@ -801,78 +928,20 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                   ) : null}
                 </div>
                 {notebookNotes.length ? (
-                  <ul className={styles.list} id="notes-list" ref={listRef}>
-                    {notebookNotes.map((note, index) => {
-                      const presentation = derivePresentation(note.body);
-                      const source = noteSource(note.source);
-                      const state = notebook.mutationStates[note.id];
-                      const snippet = notebook.query.trim()
-                        ? searchSnippet(note.body, notebook.query)
-                        : presentation.preview;
-                      return (
-                        <li key={note.id}>
-                          {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
-                          <button
-                            type="button"
-                            className={styles.row}
-                            data-note-row=""
-                            data-note-id={note.id}
-                            aria-current={note.id === effectiveSelectedId ? "true" : undefined}
-                            onClick={() => selectNote(note.id)}
-                          >
-                            <span className={styles.rowIcon}>
-                              <SourceIcon source={source} />
-                              <span className={styles.srOnly}>{SOURCE_LABELS[source]}</span>
-                            </span>
-                            <span className={styles.rowBody}>
-                              <span className={styles.rowTitle}>
-                                <Highlighted text={presentation.title} query={notebook.query} />
-                              </span>
-                              {snippet ? (
-                                <span className={styles.rowPreview}>
-                                  <Highlighted text={snippet} query={notebook.query} />
-                                </span>
-                              ) : null}
-                              <span className={styles.rowMeta}>
-                                <span>{friendlyDate(note.createdAt, now)}</span>
-                                {isSent(note) ? (
-                                  <span className={styles.rowFlag} data-tone="sent">
-                                    <TaskIcon />
-                                    In Tasks
-                                  </span>
-                                ) : null}
-                                {needsReview(note) ? (
-                                  <span className={styles.rowFlag} data-tone="review">
-                                    To review
-                                  </span>
-                                ) : null}
-                                {state === "pending" ? <span className={styles.rowFlag}>Saving</span> : null}
-                                {state === "offline" ? (
-                                  <span className={styles.rowFlag}>Waiting to save</span>
-                                ) : null}
-                                {state === "failed" ? (
-                                  <span className={styles.rowFlag} data-tone="attention">
-                                    <AlertIcon />
-                                    Not saved
-                                  </span>
-                                ) : null}
-                              </span>
-                            </span>
-                          </button>
-                          {state === "failed" ? (
-                            <div className={styles.panelActions} style={{ padding: "0 20px 12px 42px" }}>
-                              <button
-                                type="button"
-                                className={styles.quietButton}
-                                onClick={() => void notebook.retryCapture(note.id)}
-                              >
-                                Try saving again
-                              </button>
-                            </div>
-                          ) : null}
-                        </li>
-                      );
-                    })}
+                  <ul className={styles.list} ref={listRef}>
+                    {notebookNotes.map((note, index) => (
+                      <NoteRow
+                        key={note.id}
+                        note={note}
+                        index={index}
+                        now={now}
+                        query={deferredQuery}
+                        selected={note.id === effectiveSelectedId}
+                        state={notebook.mutationStates[note.id]}
+                        onSelect={selectNote}
+                        onRetry={notebook.retryCapture}
+                      />
+                    ))}
                   </ul>
                 ) : (
                   <div className={styles.empty}>
@@ -911,9 +980,13 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                   />
                 ) : (
                   <div className={styles.emptyCentred}>
-                    <p className={styles.emptyTitle}>Nothing open</p>
+                    <p className={styles.emptyTitle}>
+                      {notebookNotes.length ? "Nothing open" : "Nothing here yet"}
+                    </p>
                     <p className={styles.emptyBody}>
-                      Choose a note to read it, or write a new one above.
+                      {notebookNotes.length
+                        ? "Choose a note to read it, or write a new one above."
+                        : "Write your first note in the field above."}
                     </p>
                   </div>
                 )}
@@ -1042,6 +1115,7 @@ function NoteDetail({
   return (
     <>
       <div className={styles.detailHeader}>
+        <div className={styles.detailHeaderInner}>
         <div className={styles.detailMeta}>
           <button
             type="button"
@@ -1102,6 +1176,7 @@ function NoteDetail({
           >
             <MoreIcon />
           </button>
+        </div>
         </div>
       </div>
 
@@ -1302,10 +1377,17 @@ function ReviewView({
     <div className={styles.review}>
       <div className={styles.reviewProgress}>
         <span>{queueLength === 1 ? "One note left" : `${queueLength} notes to review`}</span>
-        <span className={styles.progressTrack} aria-hidden="true">
-          <span className={styles.progressFill} style={{ inlineSize: `${percent}%` }} />
-        </span>
-        {done > 0 ? <span>{done} decided just now</span> : null}
+        {/* The rail appears once there is progress to show. Empty, a
+            full-width track reads as a horizontal rule, and a short one
+            reads as a stub. */}
+        {done > 0 ? (
+          <>
+            <span className={styles.progressTrack} aria-hidden="true">
+              <span className={styles.progressFill} style={{ inlineSize: `${percent}%` }} />
+            </span>
+            <span>{done} decided just now</span>
+          </>
+        ) : null}
       </div>
       <div className={styles.reviewStage}>
         <article
@@ -1500,7 +1582,13 @@ function SentView({
                 <SourceIcon source={noteSource(selected.source)} />
                 <span>{SOURCE_LABELS[noteSource(selected.source)]}</span>
                 <span aria-hidden="true">·</span>
-                <span>Sent {friendlyDate(selected.archivedAt ?? selected.updatedAt, now)}</span>
+                {/* updated_at is the last edit, not the send. Until the send
+                    time is read from the outbox, say what the number is. */}
+                <span>
+                  {selected.archivedAt
+                    ? `Sent ${friendlyDate(selected.archivedAt, now)}`
+                    : `Last edited ${friendlyDate(selected.updatedAt, now)}`}
+                </span>
               </div>
               <div className={styles.detailActions}>
                 <a className={styles.primaryButton} href={taskFocusPath(selected.promotedTaskId ?? "")}>
