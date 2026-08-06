@@ -593,7 +593,7 @@ test("reduced motion leaves nothing travelling", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
 
   await openNotes(page, { view: "review" });
-  const fill = page.locator(`${WORKSPACE} [class*="progressFill"]`);
+  const fill = page.locator(`${WORKSPACE} [class*="reviewCard"]`);
   await expect(fill).toHaveCount(1);
   const progressMotion = await fill.evaluate((element) => {
     const styles = getComputedStyle(element);
