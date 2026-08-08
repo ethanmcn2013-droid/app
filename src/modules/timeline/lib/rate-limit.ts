@@ -25,6 +25,19 @@
 type MemEntry = { count: number; resetAt: number };
 const memStore = new Map<string, MemEntry>();
 
+function redisRestUrl(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+}
+
+function redisRestToken(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+}
+
+/** True once either half of a direct or Vercel-marketplace Redis config exists. */
+export function isRedisConfigured(): boolean {
+  return Boolean(redisRestUrl() || redisRestToken());
+}
+
 function memRateLimit(key: string, limit: number, windowSecs: number): boolean {
   const now = Date.now();
   const entry = memStore.get(key);
@@ -49,8 +62,8 @@ async function upstashRateLimit(
   limit: number,
   windowSecs: number,
 ): Promise<boolean> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = redisRestUrl();
+  const token = redisRestToken();
   if (!url) throw new Error("[rate-limit] UPSTASH_REDIS_REST_URL is required when Upstash is configured");
   if (!token) throw new Error("[rate-limit] UPSTASH_REDIS_REST_TOKEN is required when Upstash is configured");
 
@@ -144,9 +157,7 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const key = `rl:${action}:${ip}`;
 
-  const upstashConfigured =
-    Boolean(process.env.UPSTASH_REDIS_REST_URL) &&
-    Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
+  const upstashConfigured = Boolean(redisRestUrl()) && Boolean(redisRestToken());
 
   if (upstashConfigured) {
     const allowed = await upstashRateLimit(key, limit, windowSecs);

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/modules/timeline/server/auth";
 import { getWorkspace } from "@/modules/timeline/server/db/timeline-queries";
-import { checkRateLimit, getClientIp } from "@/modules/timeline/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  isRedisConfigured,
+} from "@/modules/timeline/lib/rate-limit";
 import {
   audienceTimelineEnabled,
   connectSuiteWorkspace,
@@ -95,10 +99,7 @@ async function allowWrite(action: string): Promise<void> {
   // distributed limiter optional so first-party sharing remains available on
   // deployments that have not provisioned Upstash; a partial configuration
   // still enters checkRateLimit() and fails closed.
-  if (
-    !process.env.UPSTASH_REDIS_REST_URL &&
-    !process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
+  if (!isRedisConfigured()) {
     return;
   }
   const result = await checkRateLimit(action, await getClientIp(), 12, 60);

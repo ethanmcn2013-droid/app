@@ -22,21 +22,18 @@
  *
  * ── Resolution ────────────────────────────────────────────────────────
  *
- *   1. NEXT_PUBLIC_SIGNAL_LAUNCH_STATE=open|pre, explicit, wins. Use it to
- *      rehearse the post-launch site before the date, or to hold the site
- *      closed past the date without a code change.
- *   2. Otherwise compare now against LAUNCH_AT.
+ *   1. NEXT_PUBLIC_SIGNAL_LAUNCH_STATE=open|pre, explicit, wins.
+ *   2. Otherwise remain in pre-launch. The readiness review date is a planning
+ *      milestone, never an automatic public-access switch.
  *
  * ── Known limitation, read before relying on the date ──────────────────
  *
- * Statically rendered pages bake this decision at BUILD time. A page built in
- * August still says "Join the waitlist" on 1 September until something
- * rebuilds it. The date is therefore the intent, not the mechanism: the flip
- * needs a deploy (or an ISR revalidation) on the day. That deploy is tracked
- * as an operator to-do rather than left to chance.
+ * Statically rendered pages bake this decision at BUILD time. Opening the
+ * suite therefore requires an explicit environment change and deploy after a
+ * founder go/no-go decision; no date comparison can open it by accident.
  */
 
-/** 2026-09-01, 00:00 UTC. Signal Studio opens to the public. */
+/** 2026-09-01, 00:00 UTC. Readiness-review milestone; not an opening trigger. */
 export const LAUNCH_AT = Date.parse("2026-09-01T00:00:00Z");
 
 export type LaunchState = "pre" | "open";
@@ -53,7 +50,8 @@ function override(): LaunchState | null {
 }
 
 export function launchState(now: number = Date.now()): LaunchState {
-  return override() ?? (now < LAUNCH_AT ? "pre" : "open");
+  void now;
+  return override() ?? "pre";
 }
 
 /** True while the suite is invite-only and every public CTA is the waitlist. */

@@ -5,6 +5,7 @@ import {
 import {
   checkRateLimit,
   getClientIp,
+  isRedisConfigured,
 } from "@/modules/timeline/lib/rate-limit";
 import { recordQualifiedAudienceView } from "@/modules/timeline/server/qualified-view";
 
@@ -34,10 +35,7 @@ export async function POST(
   // Distributed abuse protection is optional because the bearer token itself
   // is high entropy. Once either Upstash value is configured, a partial or
   // unavailable limiter fails closed through checkRateLimit().
-  if (
-    process.env.UPSTASH_REDIS_REST_URL ||
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
+  if (isRedisConfigured()) {
     const rateLimit = await checkRateLimit(
       "audience-qualified-view",
       await getClientIp(),
