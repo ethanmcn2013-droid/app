@@ -12,7 +12,11 @@ import {
   type AudienceKind,
 } from "@/modules/timeline/server/db/timeline-schema";
 import { db } from "@/modules/timeline/server/db/timeline-client";
-import { checkRateLimit, getClientIp } from "@/modules/timeline/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  isRedisConfigured,
+} from "@/modules/timeline/lib/rate-limit";
 import { MILESTONE_STATE_LABELS } from "@/modules/timeline/lib/vocabulary";
 import {
   getEffectiveNodesForWorkspace,
@@ -763,10 +767,7 @@ export const resolveAudienceTimeline = cache(async (
   // distributed limiter has not been provisioned. If either Upstash value is
   // present, treat the limiter as configured and fail closed on a missing
   // counterpart or service error through checkRateLimit().
-  const audienceLimiterConfigured = Boolean(
-    process.env.UPSTASH_REDIS_REST_URL ||
-      process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
+  const audienceLimiterConfigured = isRedisConfigured();
   if (audienceLimiterConfigured) {
     const rateLimit = await checkRateLimit(
       "audience-read",

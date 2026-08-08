@@ -30,8 +30,10 @@ import "server-only";
 
 type Duration = `${number} ${"ms" | "s" | "m" | "h" | "d"}`;
 
-const url = process.env.UPSTASH_REDIS_REST_URL;
-const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercel's current Upstash marketplace integration injects KV_REST_API_*;
+// retain the older direct-Upstash names for backwards compatibility.
+const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 
 const UNIT_SECONDS: Record<string, number> = {
   ms: 1 / 1000,
