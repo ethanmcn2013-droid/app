@@ -569,6 +569,61 @@
   padding: 16px;
 }
 
+.consentHeading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.consentIcon {
+  display: inline-grid;
+  flex: none;
+  inline-size: 40px;
+  block-size: 40px;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+
+.consentTitle {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: var(--x-lead-tight);
+}
+
+.consentSummary {
+  margin: 3px 0 0;
+  color: var(--ink-faint);
+  font-size: 13px;
+  line-height: var(--x-lead-ui);
+}
+
+.consentFacts {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--paper-deep);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: var(--x-lead-read);
+}
+
+.consentFacts span {
+  position: relative;
+  padding-inline-start: 14px;
+}
+
+.consentFacts span::before {
+  position: absolute;
+  inset-inline-start: 0;
+  content: "\2022";
+  color: var(--accent);
+}
+
 .recordRow {
   display: flex;
   align-items: center;
@@ -1180,14 +1235,24 @@
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
+  min-inline-size: 0;
+}
+
+.taskReceipt {
+  flex: 1 1 100%;
+  align-items: flex-start;
+}
+
+.taskReceipt dd {
+  min-inline-size: 0;
+  flex: 1 1 auto;
 }
 
 .linkedTask {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: inline;
   color: var(--accent);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 
 .linkedTask:hover {
@@ -1591,6 +1656,14 @@ textarea.fieldControl {
    and opening a note over the list without being asked is how a list turns
    into a trapdoor. */
 @media (max-width: 899px) {
+  /* A selected note is a focused reading/editing destination on a phone. The
+     capture and retrieval controls remain one Back away instead of consuming
+     half of the viewport above the note itself. */
+  .notebook[data-detail-open="true"] > .composerBand,
+  .notebook[data-detail-open="true"] > .toolbar {
+    display: none;
+  }
+
   .split {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1710,6 +1783,19 @@ textarea.fieldControl {
 
   .detailField {
     font-size: 16px;
+  }
+
+  /* The mobile reading header keeps only orientation and actions. Source and
+     relative time remain in the note footer, avoiding a crowded, clipped top
+     row at the 320px reflow width. */
+  .detailHeader .detailMeta > :not(.backButton) {
+    display: none;
+  }
+
+  .detailHeader .quietButton,
+  .detailHeader .primaryButton,
+  .detailHeader .iconButton {
+    min-block-size: 44px;
   }
 
   .reviewBody {

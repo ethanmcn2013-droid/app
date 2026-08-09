@@ -25,7 +25,7 @@ export function PanelHeader({
           type="button"
           aria-label="Close task panel"
           onClick={onClose}
-          className="-m-1.5 inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink"
+          className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink lg:h-7 lg:w-7"
         >
           <svg
             width="14"

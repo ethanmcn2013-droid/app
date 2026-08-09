@@ -51,6 +51,7 @@ export type ComposerMode = "type" | "voice" | "photo";
 
 type Stage =
   | { kind: "idle" }
+  | { kind: "voice-consent" }
   | { kind: "recording" }
   | {
       kind: "processing";
@@ -239,9 +240,13 @@ export function Composer({
 
   // ── Voice ───────────────────────────────────────────────────────────
 
-  const startVoice = useCallback(async () => {
+  const openVoiceConsent = useCallback(() => {
     setStageError(null);
     setMode("voice");
+    setStage({ kind: "voice-consent" });
+  }, []);
+
+  const startVoice = useCallback(async () => {
     const started = await speech.start();
     if (!started) {
       setMode("type");
@@ -531,6 +536,46 @@ export function Composer({
           </>
         ) : null}
 
+        {stage.kind === "voice-consent" ? (
+          <div
+            className={styles.captureStage}
+            role="group"
+            aria-labelledby={stageHeadingId}
+            aria-describedby={`${stageHeadingId}-detail`}
+          >
+            <div className={styles.consentHeading}>
+              <span className={styles.consentIcon} aria-hidden="true">
+                <VoiceIcon />
+              </span>
+              <div>
+                <h2 className={styles.consentTitle} id={stageHeadingId}>
+                  Before you record
+                </h2>
+                <p className={styles.consentSummary}>Nothing is listening yet.</p>
+              </div>
+            </div>
+            <p className={styles.captureDisclosure} id={`${stageHeadingId}-detail`}>
+              {copy.voice.disclosure}
+              {speechSeparates
+                ? " After you stop, the transcript is sent to Anthropic to separate it into notes."
+                : " After you stop, the transcript is kept as one note."}
+            </p>
+            <div className={styles.consentFacts}>
+              <span>Your browser asks for microphone access only after you start.</span>
+              <span>Cancel now and no audio or words leave this device.</span>
+            </div>
+            <div className={styles.stageActions}>
+              <button type="button" className={styles.quietButton} onClick={resetStage}>
+                Cancel
+              </button>
+              <button type="button" className={styles.primaryButton} onClick={() => void startVoice()}>
+                <VoiceIcon />
+                Start recording
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {stage.kind === "recording" ? (
           <div className={styles.captureStage}>
             <h2 className={styles.srOnly} id={stageHeadingId}>
@@ -556,13 +601,8 @@ export function Composer({
             <p className={speech.transcript ? styles.transcript : styles.transcriptEmpty}>
               {speech.transcript || "Listening. Speak whenever you are ready."}
             </p>
-            {/* Standing, not a one-time dialog, and rendered before the first
-                word is spoken. It was defined and never shown. */}
             <p className={styles.captureDisclosure}>
-              {copy.voice.disclosure}
-              {speechSeparates
-                ? ""
-                : " Separating spoken notes is not switched on for this account, so your words are kept exactly as you say them."}
+              Signal Studio keeps no audio. Stop ends microphone capture; Cancel discards this transcript.
             </p>
             <div className={styles.stageActions}>
               <button type="button" className={styles.quietButton} onClick={cancelVoice}>
@@ -761,7 +801,7 @@ export function Composer({
               <button
                 type="button"
                 className={styles.modeButton}
-                onClick={() => void startVoice()}
+                onClick={openVoiceConsent}
                 disabled={readOnly || speech.engine === "unavailable" || busy}
                 title={speech.engine === "unavailable" ? copy.voice.unavailable : undefined}
               >

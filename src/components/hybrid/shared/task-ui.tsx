@@ -16,16 +16,19 @@ export function TaskSelection({ task, orderedIds, ...props }: {
   const store = useLabStore();
   const checked = store.selectedIds.includes(task.id);
   return (
-    <input
-      {...props}
-      aria-label={checked ? "Deselect this task" : "Select this task"}
-      checked={checked}
-      className={styles.selectionBox}
-      disabled={store.readOnly && props.disabled}
-      onChange={(event) => store.toggleSelected(task.id, orderedIds, event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey)}
-      onClick={(event) => event.stopPropagation()}
-      type="checkbox"
-    />
+    <label className={styles.selectionTarget} onClick={(event) => event.stopPropagation()}>
+      <input
+        {...props}
+        aria-label={checked ? "Deselect this task" : "Select this task"}
+        checked={checked}
+        className={styles.controlInput}
+        disabled={store.readOnly || props.disabled}
+        onChange={(event) => store.toggleSelected(task.id, orderedIds, event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey)}
+        onClick={(event) => event.stopPropagation()}
+        type="checkbox"
+      />
+      <span className={styles.selectionGlyph} aria-hidden="true" />
+    </label>
   );
 }
 
@@ -102,15 +105,18 @@ export function ScheduleText({ task, compact = false }: { task: LabTask; compact
 export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: boolean }) {
   const store = useLabStore();
   return (
-    <input
-      aria-label={task.completed ? "Reopen this task" : "Mark this task done"}
-      checked={task.completed}
-      className={styles.completionBox}
-      disabled={disabled || store.readOnly}
-      onChange={() => { if (!store.readOnly) store.toggleComplete(task.id); }}
-      onClick={(event) => event.stopPropagation()}
-      type="checkbox"
-    />
+    <label className={styles.completionTarget} onClick={(event) => event.stopPropagation()}>
+      <input
+        aria-label={task.completed ? "Reopen this task" : "Mark this task done"}
+        checked={task.completed}
+        className={styles.controlInput}
+        disabled={disabled || store.readOnly}
+        onChange={() => { if (!store.readOnly) store.toggleComplete(task.id); }}
+        onClick={(event) => event.stopPropagation()}
+        type="checkbox"
+      />
+      <span className={styles.completionGlyph} aria-hidden="true" />
+    </label>
   );
 }
 

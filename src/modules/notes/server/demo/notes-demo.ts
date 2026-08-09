@@ -52,7 +52,7 @@ const ACTIVE: Seed[] = [
     body: "Saturday wedding, Mara + Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
     ago: 35 * MIN,
     extractBody: "Confirm marquee sides with hire company before Thursday",
-    promotedTaskId: "demo_task_marquee",
+    promotedTaskId: "demo-t-01",
   },
   {
     id: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
@@ -101,7 +101,7 @@ const ACTIVE: Seed[] = [
     body: "Bar restock: tonic running low, order two extra cases before the weekend. Also the good olives, last delivery was short.",
     ago: 1 * DAY + 6 * HOUR,
     extractBody: "Order 2 cases tonic + olives before weekend",
-    promotedTaskId: "demo_task_restock",
+    promotedTaskId: "demo-t-06",
   },
   {
     id: "demo_n_07",

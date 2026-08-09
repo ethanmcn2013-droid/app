@@ -271,6 +271,81 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
         </div>
       </header>
 
+      <div className={styles.mobileSchedule}>
+        <header className={styles.mobileScheduleHeader}>
+          <div>
+            <span>Schedule</span>
+            <strong>Put every task on a clear day.</strong>
+          </div>
+          <span>{scheduled.length} dated</span>
+        </header>
+
+        <div className={styles.mobileDateCommand}>
+          <DateCommand label="Edit dates" task={activeTask} />
+        </div>
+
+        <section aria-labelledby="mobile-unscheduled-heading" className={styles.mobileScheduleGroup}>
+          <header>
+            <div>
+              <strong id="mobile-unscheduled-heading">Needs a date</strong>
+              <span>{unscheduled.length}</span>
+            </div>
+            <small>Choose a task, then set its date above.</small>
+          </header>
+          <div className={styles.mobileScheduleList}>
+            {unscheduled.map((task) => (
+              <article className={styles.mobileScheduleCard} data-task-id={task.id} key={task.id}>
+                <TaskCompletion task={task} />
+                <span className={styles.mobileScheduleCopy}>
+                  <TaskOpenButton task={task}>{task.title}</TaskOpenButton>
+                  <span><PriorityMark task={task} withLabel /><ScheduleText compact task={task} /></span>
+                </span>
+                <button
+                  className={styles.mobileScheduleAction}
+                  disabled={store.readOnly}
+                  onClick={() => store.setActive(task.id)}
+                  type="button"
+                >
+                  Choose date
+                </button>
+              </article>
+            ))}
+            {unscheduled.length === 0 ? (
+              <p className={styles.mobileScheduleEmpty}>Every visible task has a date.</p>
+            ) : null}
+          </div>
+        </section>
+
+        <section aria-labelledby="mobile-dated-heading" className={styles.mobileScheduleGroup}>
+          <header>
+            <div>
+              <strong id="mobile-dated-heading">Scheduled</strong>
+              <span>{scheduled.length}</span>
+            </div>
+            <small>Earliest first.</small>
+          </header>
+          <div className={styles.mobileScheduleList}>
+            {scheduled.map((task) => (
+              <article className={styles.mobileScheduleCard} data-task-id={task.id} key={task.id}>
+                <TaskCompletion task={task} />
+                <span className={styles.mobileScheduleCopy}>
+                  <TaskOpenButton task={task}>{task.title}</TaskOpenButton>
+                  <span><PriorityMark task={task} withLabel /><ScheduleText compact task={task} /></span>
+                </span>
+                <button
+                  className={styles.mobileScheduleAction}
+                  disabled={store.readOnly}
+                  onClick={() => store.setActive(task.id)}
+                  type="button"
+                >
+                  Edit dates
+                </button>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+
       <section aria-labelledby="a-timeline-unscheduled" className={styles.unscheduledTray}>
         <header><div><Icon name="inbox" size={15} /><strong id="a-timeline-unscheduled">Unscheduled</strong><span>{unscheduled.length}</span></div><small>Drag a task onto any date, or focus it and use the date controls.</small></header>
         <div className={styles.unscheduledItems}>
@@ -380,7 +455,9 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
         </div>
       ) : <SurfaceEmpty body="Scheduled tasks will appear here as distinct ranges, due markers, and milestones." title="No scheduled work" />}
 
-      <DateCommand label="Schedule dates" task={activeTask} />
+      <div className={styles.desktopDateCommand}>
+        <DateCommand label="Schedule dates" task={activeTask} />
+      </div>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />
     </div>
   );

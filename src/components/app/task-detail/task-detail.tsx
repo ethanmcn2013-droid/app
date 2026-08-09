@@ -283,7 +283,7 @@ function TaskDetailHeader({
                 onClick={() => onNavigate("prev")}
                 aria-label="Previous task (k)"
                 title="Previous (k)"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent lg:h-7 lg:w-7"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                   <polyline points="18 15 12 9 6 15" />
@@ -294,7 +294,7 @@ function TaskDetailHeader({
                 onClick={() => onNavigate("next")}
                 aria-label="Next task (j)"
                 title="Next (j)"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent lg:h-7 lg:w-7"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                   <polyline points="6 9 12 15 18 9" />
@@ -309,7 +309,7 @@ function TaskDetailHeader({
             onClick={onFocusToggle}
             aria-label={isFocus ? "Return to board (e)" : "Expand to focus mode (e)"}
             title={isFocus ? "Return to board (e)" : "Expand to focus mode (e)"}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent lg:h-7 lg:w-7"
           >
             {isFocus ? (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -332,7 +332,7 @@ function TaskDetailHeader({
           <ActionsDropdown
             items={actions}
             triggerLabel="More actions"
-            triggerClassName="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            triggerClassName="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent lg:h-7 lg:w-7"
             trigger={
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <circle cx="5" cy="12" r="1.5" />
@@ -347,7 +347,7 @@ function TaskDetailHeader({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            className="inline-flex h-[44px] w-[44px] items-center justify-center rounded-md text-ink-quiet transition-colors hover:bg-bg-sunken hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent lg:h-7 lg:w-7"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -388,7 +388,7 @@ function TaskDetailHeader({
           <button
             type="button"
             onClick={() => dispatchers.toggleComplete(task.id)}
-            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:min-h-0 md:py-1.5"
           >
             {!isTaskDone(task, columnConfig) ? (
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
@@ -460,7 +460,7 @@ function PrimaryContent({
         owning a row the layout has to keep solvent.
       */}
       {showTip ? (
-        <div className="mt-6">
+        <div className="mt-6 hidden md:block">
           <TipCard context="task-panel" />
         </div>
       ) : null}

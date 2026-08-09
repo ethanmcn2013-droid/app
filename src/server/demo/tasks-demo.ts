@@ -47,6 +47,7 @@ type Seed = {
   dueAt?: string;
   isMilestone?: boolean;
   sourceNoteId?: string;
+  sourceNoteExtractBody?: string;
   tags?: string[];
   estimate?: number;
   comments?: number;
@@ -69,6 +70,8 @@ const SEED: Seed[] = [
     // made the public share board look like it carried real dates.
     tags: ["mara-finn"],
     externalContactName: "County Marquee Hire",
+    sourceNoteId: "demo_n_01",
+    sourceNoteExtractBody: "Confirm marquee sides with hire company before Thursday",
     editedHoursAgo: 1,
   },
   {
@@ -86,6 +89,7 @@ const SEED: Seed[] = [
     // header honestly reads "edited 1 Jul". One fact, every surface.
     isMilestone: true,
     sourceNoteId: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
+    sourceNoteExtractBody: REVIEW_MENU_MILESTONE.title,
     tags: [REVIEW_PRIMARY_PROJECT.slug],
     externalContactName: "Mara Doyle",
     editedHoursAgo: 15 * 24,
@@ -141,6 +145,8 @@ const SEED: Seed[] = [
     dueAt: "2026-07-14",
     tags: ["bar"],
     externalContactName: "Greenfield Wholesale",
+    sourceNoteId: "demo_n_06",
+    sourceNoteExtractBody: "Order 2 cases tonic + olives before weekend",
     cents: 18400,
     editedHoursAgo: 4,
   },
@@ -184,6 +190,36 @@ const SEED: Seed[] = [
     cents: 150000,
     editedHoursAgo: 48,
   },
+  {
+    id: "demo_task_checkout",
+    title: "Clear Sunday 11am late checkout with housekeeping",
+    lane: "done",
+    priority: "p2",
+    tags: ["mara-finn"],
+    sourceNoteId: "demo_n_a1",
+    sourceNoteExtractBody: "Clear Sunday 11am late checkout with housekeeping",
+    editedHoursAgo: 54,
+  },
+  {
+    id: "demo_task_linen",
+    title: "Chase linen order, now shipping Tuesday",
+    lane: "done",
+    priority: "p2",
+    tags: ["venue"],
+    sourceNoteId: "demo_n_a2",
+    sourceNoteExtractBody: "Chase linen order, now shipping Tuesday",
+    editedHoursAgo: 77,
+  },
+  {
+    id: "demo_task_registrar",
+    title: "Send registrar paperwork two weeks before the date",
+    lane: "done",
+    priority: "p1",
+    tags: ["mara-finn"],
+    sourceNoteId: "demo_n_a3",
+    sourceNoteExtractBody: "Send registrar paperwork two weeks before the date",
+    editedHoursAgo: 96,
+  },
 ];
 
 function toTask(s: Seed): Task {
@@ -199,6 +235,7 @@ function toTask(s: Seed): Task {
     dueAt: s.dueAt ? new Date(`${s.dueAt}T09:00:00.000Z`) : undefined,
     isMilestone: s.isMilestone,
     sourceNoteId: s.sourceNoteId ?? null,
+    sourceNoteExtractBody: s.sourceNoteExtractBody ?? null,
     tags: s.tags,
     comments: s.comments,
     parentTaskId: null,

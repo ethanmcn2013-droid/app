@@ -118,7 +118,7 @@ test("the wedding register promises the venue sees nothing", () => {
   assert.match(notesCopy("wedding").handoff.boundary, /venue never sees/i);
 });
 
-test("dictation discloses that spoken words leave the device", () => {
+test("dictation discloses the complete browser audio boundary", () => {
   // E05.04. The browser speech engine sends audio to the browser maker's
   // speech service. Nothing in the product said so before this task. If this
   // assertion is ever deleted, the disclosure has been dropped with it.
@@ -126,8 +126,8 @@ test("dictation discloses that spoken words leave the device", () => {
     const { disclosure } = notesCopy(register).voice;
     assert.match(
       disclosure,
-      /leave this device/i,
-      `${register}: dictation must say the words leave the device`,
+      /microphone audio/i,
+      `${register}: dictation must name the microphone audio`,
     );
     assert.match(
       disclosure,
@@ -138,6 +138,16 @@ test("dictation discloses that spoken words leave the device", () => {
       disclosure,
       /typing stays on your device/i,
       `${register}: the honest contrast with typing must be stated`,
+    );
+    assert.match(
+      disclosure,
+      /does not receive or retain/i,
+      `${register}: Signal Studio's audio boundary must be explicit`,
+    );
+    assert.match(
+      disclosure,
+      /provider controls its service retention/i,
+      `${register}: provider retention must not be invented`,
     );
   }
 });

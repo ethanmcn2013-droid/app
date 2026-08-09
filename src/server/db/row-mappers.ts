@@ -49,6 +49,7 @@ export function rowToTask(row: TaskRow): Task {
     // Tasks extract endpoint; drives the "↩ From Notes" chip in the
     // detail-panel header. Null on every task authored inside Tasks.
     sourceNoteId: row.sourceNoteId ?? null,
+    sourceNoteExtractBody: row.sourceNoteExtractBody ?? null,
     // Archive timestamp. Null when active or when the column predates
     // migration 0016 (libSQL returns undefined for an absent column).
     archivedAt: row.archivedAt ?? null,

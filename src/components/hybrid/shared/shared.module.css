@@ -108,27 +108,60 @@
 .searchBox kbd { background: var(--x-task-hover); border: 1px solid var(--x-task-border); border-radius: 3px; font: inherit; font-size: 11px; padding: 1px 4px; }
 .localTag { background: var(--x-task-hover); border-radius: 4px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 4px; text-transform: uppercase; }
 
-.selectionBox { accent-color: var(--x-task-accent); cursor: pointer; flex: 0 0 auto; height: 16px; margin: 0; position: relative; width: 16px; }
-.selectionBox::after { content: ""; inset: -4px; position: absolute; }
+.selectionTarget,
+.completionTarget {
+  position: relative;
+  display: inline-grid;
+  flex: 0 0 24px;
+  inline-size: 24px;
+  block-size: 24px;
+  place-items: center;
+  cursor: pointer;
+}
+.controlInput {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.selectionGlyph {
+  inline-size: 16px;
+  block-size: 16px;
+  border: 1.5px solid var(--x-task-control-border);
+  border-radius: 3px;
+  background: var(--x-task-raised);
+}
+.selectionTarget:has(.controlInput:checked) .selectionGlyph {
+  border-color: var(--x-task-accent);
+  background: var(--x-task-accent);
+  box-shadow: inset 0 0 0 3px var(--x-task-raised);
+}
+.selectionTarget:has(.controlInput:focus-visible),
+.completionTarget:has(.controlInput:focus-visible) {
+  border-radius: 6px;
+  outline: 2px solid var(--x-task-focus);
+  outline-offset: 0;
+}
+.selectionTarget:has(.controlInput:disabled),
+.completionTarget:has(.controlInput:disabled) { cursor: default; opacity: .55; }
 /* Completion is a different verb than selection, so it is a different
    shape: a circle that fills on done — the affordance every task tool
    spends on "mark this finished" — while selection stays the square
    checkbox. Before this split the two rendered pixel-identical and sat
    side by side on list and schedule rows. Same 24px hit area. */
-.completionBox {
-  appearance: none;
+.completionGlyph {
   background: var(--x-task-raised);
   border: 1.5px solid var(--x-task-control-border);
   border-radius: 50%;
-  cursor: pointer;
-  flex: 0 0 auto;
   height: 16px;
-  margin: 0;
   position: relative;
   transition: background var(--motion-instant) var(--ease-out), border-color var(--motion-instant) var(--ease-out);
   width: 16px;
 }
-.completionBox::before {
+.completionGlyph::before {
   border: solid transparent;
   border-width: 0 0 1.8px 1.8px;
   content: "";
@@ -139,15 +172,11 @@
   transform: rotate(-45deg);
   width: 8px;
 }
-.completionBox::after { content: ""; inset: -4px; position: absolute; }
-.completionBox:hover:not(:disabled),
-.completionBox:focus-visible { border-color: var(--x-task-success); }
-.completionBox:hover:not(:disabled):not(:checked)::before { border-color: var(--x-task-control-border); }
-.completionBox:checked { background: var(--x-task-success); border-color: var(--x-task-success); }
-.completionBox:checked:hover:not(:disabled) { background: var(--x-task-success-soft); }
-.completionBox:checked:hover:not(:disabled)::before { border-color: var(--x-task-success); }
-.completionBox:checked::before { animation: completion-check-in 160ms var(--ease-out); border-color: var(--x-task-raised); transform-origin: 45% 55%; }
-.completionBox:disabled { cursor: default; opacity: .55; }
+.completionTarget:hover .completionGlyph { border-color: var(--x-task-success); }
+.completionTarget:has(.controlInput:checked) .completionGlyph { background: var(--x-task-success); border-color: var(--x-task-success); }
+.completionTarget:has(.controlInput:checked):hover .completionGlyph { background: var(--x-task-success-soft); }
+.completionTarget:has(.controlInput:checked):hover .completionGlyph::before { border-color: var(--x-task-success); }
+.completionTarget:has(.controlInput:checked) .completionGlyph::before { animation: completion-check-in 160ms var(--ease-out) both; border-color: var(--x-task-raised); transform-origin: 45% 55%; }
 /* The routine local settle the motion contract allows on completion: the
    check draws in one fast beat. State lands instantly (the fill is on
    :checked with no delay); this is acknowledgement, not theatre. */
@@ -156,7 +185,16 @@
   to { opacity: 1; transform: rotate(-45deg) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .completionBox:checked::before { animation: none; }
+  .completionTarget:has(.controlInput:checked) .completionGlyph::before { animation: none; }
+}
+
+@media (pointer: coarse) {
+  .selectionTarget,
+  .completionTarget {
+    flex-basis: 44px;
+    inline-size: 44px;
+    block-size: 44px;
+  }
 }
 /* Elevated priority is words in the state's ink, not a cryptic dot: the
    dot survives as a small marker beside the word so the state is never
