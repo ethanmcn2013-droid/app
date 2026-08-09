@@ -203,8 +203,8 @@ export function ListView({
         </select>
       );
     }
-    if (column.id === "estimate") return task.estimate ? <span className={styles.monoValue}>{task.estimate}</span> : <span aria-label="No estimate" className={styles.absentValue}>—</span>;
-    if (column.id === "progress") return task.subtasks.length ? <span className={styles.monoValue}>{`${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}`}</span> : <span aria-label="No subtasks" className={styles.absentValue}>—</span>;
+    if (column.id === "estimate") return task.estimate ? <span className={styles.monoValue}>{task.estimate}</span> : <span className={styles.absentValue}><span aria-hidden="true">—</span><span className={styles.srOnly}>No estimate</span></span>;
+    if (column.id === "progress") return task.subtasks.length ? <span className={styles.monoValue}>{`${task.subtasks.filter((subtask) => subtask.completed).length}/${task.subtasks.length}`}</span> : <span className={styles.absentValue}><span aria-hidden="true">—</span><span className={styles.srOnly}>No subtasks</span></span>;
     if (column.id === "activity") return <TaskSignals task={task} />;
     return null;
   };
@@ -212,11 +212,11 @@ export function ListView({
   return (
     <div className={styles.listSurface}>
       <div className={styles.tableScroll}>
-        <table className={styles.taskTable} role="table">
+        <table className={styles.taskTable}>
           <caption>Launch project tasks. Columns can be resized, reordered, and hidden for this session.</caption>
           <colgroup>{visibleColumns.map((column) => <col key={column.id} style={{ width: column.width }} />)}</colgroup>
-          <thead role="rowgroup">
-            <tr role="row">
+          <thead>
+            <tr>
               {visibleColumns.map((column) => (
                 <th
                   data-column={column.id}
@@ -226,7 +226,6 @@ export function ListView({
                   onDragOver={(event) => { if (!store.readOnly && draggedColumn) event.preventDefault(); }}
                   onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; setDraggedColumn(column.id); }}
                   onDrop={() => reorderColumn(column.id)}
-                  role="columnheader"
                   scope="col"
                   style={columnSizing(column)}
                 >
@@ -275,7 +274,7 @@ export function ListView({
             const groupColumn = group === "status" ? boardColumns.find((c) => c.key === taskGroup.key) : undefined;
             const groupAccent = groupColumn ? COLUMN_COLORS[groupColumn.color].var ?? undefined : undefined;
             return (
-              <tbody data-group={taskGroup.key} key={taskGroup.key} role="rowgroup">
+              <tbody data-group={taskGroup.key} key={taskGroup.key}>
                 {/*
                   The group cell spans every column, so the band runs the full
                   row. It used to carry display:flex directly, which voids a
@@ -289,10 +288,9 @@ export function ListView({
                 <tr
                   className={styles.groupRow}
                   data-tinted={groupAccent ? "" : undefined}
-                  role="row"
                   style={groupColumn ? (laneAccentStyle(groupColumn.color) as React.CSSProperties | undefined) : undefined}
                 >
-                  <th colSpan={visibleColumns.length} role="rowheader" scope="rowgroup">
+                  <td colSpan={visibleColumns.length}>
                     <div className={styles.groupBand}>
                       <button aria-expanded={!isCollapsed} onClick={() => toggleGroup(taskGroup.key)} type="button">
                         <Icon name={isCollapsed ? "chevron-right" : "chevron-down"} size={14} />
@@ -303,10 +301,10 @@ export function ListView({
                       <span>{complete}/{taskGroup.tasks.length || 0} done</span>
                       {store.readOnly ? null : <button onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>}
                     </div>
-                  </th>
+                  </td>
                 </tr>
                 {!isCollapsed && taskGroup.tasks.length === 0 ? (
-                  <tr className={styles.groupEmpty} role="row"><td colSpan={visibleColumns.length} role="cell">No tasks in this group</td></tr>
+                  <tr className={styles.groupEmpty}><td colSpan={visibleColumns.length}>No tasks in this group</td></tr>
                 ) : null}
                 {!isCollapsed ? taskGroup.tasks.map((task) => {
                   const taskIndex = tasks.findIndex((item) => item.id === task.id);
@@ -328,11 +326,10 @@ export function ListView({
                       onKeyDown={(event) => keyRow(event, task, taskIndex)}
                       onMouseEnter={() => store.setPreview(task.id)}
                       onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
-                      role="row"
                       tabIndex={0}
                     >
                       {visibleColumns.map((column) => column.id === "title" ? (
-                        <th data-column="title" key={column.id} role="rowheader" scope="row" style={columnSizing(column)}>
+                        <th data-column="title" key={column.id} scope="row" style={columnSizing(column)}>
                           <div className={styles.titleCell}>
                             {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : <span className={styles.expandSpacer} />}
                             <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
@@ -344,10 +341,10 @@ export function ListView({
                             </div>
                           </div>
                         </th>
-                      ) : <td data-column={column.id} key={column.id} role="cell" style={columnSizing(column)}>{renderCell(task, column)}</td>)}
+                      ) : <td data-column={column.id} key={column.id} style={columnSizing(column)}>{renderCell(task, column)}</td>)}
                     </tr>,
                     isExpanded ? (
-                      <tr className={styles.subtaskRows} key={`${task.id}-subtasks`} role="row">
+                      <tr className={styles.subtaskRows} key={`${task.id}-subtasks`}>
                         <td colSpan={visibleColumns.length}>
                           {task.subtasks.some((subtask) => subtask.title.trim()) ? (
                             <ul aria-label={`Subtasks for ${task.title}`}>
@@ -368,7 +365,7 @@ export function ListView({
               </tbody>
             );
           })}
-          {tasks.length === 0 ? <tbody role="rowgroup"><tr role="row"><td colSpan={visibleColumns.length} role="cell"><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
+          {tasks.length === 0 ? <tbody><tr><td colSpan={visibleColumns.length}><SurfaceEmpty body="Adjust the current filter or add the first task." onAdd={() => store.addTask("todo")} title="No tasks in this list" /></td></tr></tbody> : null}
         </table>
       </div>
       <TaskContextMenu menu={context.menu} onClose={context.closeMenu} />

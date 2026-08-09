@@ -333,7 +333,7 @@ function MobileDayList({ anchor, calendar, tasks }: { anchor: CalendarDate; cale
   // Previous/Next/Today were verifiably dead controls at phone width.
   const dates = useMemo(() => eachDate(anchor, addDays(anchor, 13)), [anchor]);
   return (
-    <div aria-label="Upcoming 14 days" className={styles.calendarDayList}>
+    <div aria-label="Upcoming 14 days" className={styles.calendarDayList} role="region">
       {dates.map((date) => {
         const dayTasks = tasksForDate(tasks, date);
         const isToday = date === calendar.today;

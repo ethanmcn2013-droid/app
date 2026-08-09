@@ -209,7 +209,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
               >
                 <Icon name="panel" size={15} />
                 Planning
-                {unscheduledCount > 0 ? <strong aria-label={`${unscheduledCount} unscheduled tasks`}>{unscheduledCount}</strong> : null}
+                {unscheduledCount > 0 ? <strong>{unscheduledCount}<span className={styles.srOnly}> unscheduled tasks</span></strong> : null}
               </button>
               <span className={`inline-flex ${bandButtonWrap}`}>
                 <PageActionsOverflow

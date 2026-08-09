@@ -882,8 +882,28 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
       data-fixed-columns={fitColumns ? undefined : ""}
       data-overflowing={overflowing || undefined}
       ref={surfaceRef}
+      role="region"
     >
       <div aria-live="polite" className={styles.srOnly}>{columnAnnouncement}</div>
+      <nav aria-label="Go to board lane" className={styles.mobileLaneNav}>
+        {boardColumns.map((column) => {
+          const count = tasksInLane(column.key).length;
+          return (
+            <button
+              key={column.key}
+              onClick={() => {
+                const lane = scrollRef.current?.querySelector<HTMLElement>(`[data-lane-key="${CSS.escape(column.key)}"]`);
+                lane?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest", inline: "start" });
+                setColumnAnnouncement(`${column.name}, ${count} task${count === 1 ? "" : "s"}`);
+              }}
+              type="button"
+            >
+              <span>{column.name}</span>
+              <strong>{count}</strong>
+            </button>
+          );
+        })}
+      </nav>
       <LayoutGroup id="tasks-board">
       <div className={styles.boardTrack}>
       <div className={styles.boardScroll} ref={scrollRef}>
@@ -905,6 +925,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               <section
                 aria-labelledby={`a-lane-${status}`}
                 className={styles.boardLane}
+                data-lane-key={status}
                 data-collapsed=""
                 data-dragging={columnDrag?.key === status || undefined}
                 data-done={status === "done" || undefined}
@@ -928,7 +949,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   <Icon name="chevron-right" size={14} />
                   <span className={styles.statusPip} data-accent={accent ? "" : undefined} />
                   <span className={styles.railName} id={`a-lane-${status}`}>{label}</span>
-                  <span aria-label={countLabel} className={styles.railCount}>{laneTasks.length}</span>
+                  <span className={styles.railCount}>{laneTasks.length}<span className={styles.srOnly}> {countLabel}</span></span>
                 </button>
                 {columnDropIndex === boardColumns.length && columnIndex === boardColumns.length - 1 ? (
                   <div aria-hidden="true" className={styles.columnInsertion} data-edge="end" />
@@ -941,6 +962,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             <section
               aria-labelledby={`a-lane-${status}`}
               className={styles.boardLane}
+              data-lane-key={status}
               data-dragging={columnDrag?.key === status || undefined}
               data-done={status === "done" || undefined}
               data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
@@ -1541,8 +1563,8 @@ function LaneHeader({
         )}
       </div>
       <div className={styles.laneActions}>
-        <span aria-label={countLabel} className={styles.wipCount} data-near={nearLimit || undefined} data-over={overLimit || undefined}>
-          {column.limit !== undefined ? `${count}/${column.limit}` : count}
+        <span className={styles.wipCount} data-near={nearLimit || undefined} data-over={overLimit || undefined}>
+          {column.limit !== undefined ? `${count}/${column.limit}` : count}<span className={styles.srOnly}> {countLabel}</span>
         </span>
         <div className={styles.laneMenuWrap} ref={menuRef}>
           <button

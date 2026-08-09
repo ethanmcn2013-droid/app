@@ -125,13 +125,14 @@ export function AvatarStack({ task, limit = 3, showUnassigned = true }: { task: 
   if (people.length === 0) return showUnassigned ? <span className={styles.unassigned}>Unassigned</span> : null;
   const visible = people.slice(0, limit);
   return (
-    <span className={styles.avatarStack} aria-label={`Owner: ${people.map((person) => person?.name).filter(Boolean).join(", ")}`}>
+    <span className={styles.avatarStack}>
+      <span className={styles.srOnly}>Owner: {people.map((person) => person?.name).filter(Boolean).join(", ")}</span>
       {visible.map((person) => person ? (
-        <span className={styles.avatar} key={person.id} style={{ "--avatar-color": person.color } as React.CSSProperties} title={person.name}>
+        <span aria-hidden="true" className={styles.avatar} key={person.id} style={{ "--avatar-color": person.color } as React.CSSProperties} title={person.name}>
           {person.initials}
         </span>
       ) : null)}
-      {people.length > limit ? <span className={styles.avatarMore}>+{people.length - limit}</span> : null}
+      {people.length > limit ? <span aria-hidden="true" className={styles.avatarMore}>+{people.length - limit}</span> : null}
     </span>
   );
 }

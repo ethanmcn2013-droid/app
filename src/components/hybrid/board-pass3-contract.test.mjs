@@ -156,7 +156,8 @@ test("a card has one left edge, and says its title once", () => {
   // Four spoken repeats of the title made the board unskimmable by ear.
   assert.match(boardView, /triggerLabel="Task actions"/);
   assert.doesNotMatch(taskUi, /aria-label=\{`\$\{task\.completed \? "Reopen" : "Mark done"\} \$\{task\.title\}`\}/);
-  assert.match(taskUi, /Owner: \$\{people/);
+  assert.match(taskUi, /styles\.srOnly}>Owner:/);
+  assert.doesNotMatch(taskUi, /aria-label=.*Owner:/);
 });
 
 test("finishing work is witnessed, reversible, and announced", () => {
