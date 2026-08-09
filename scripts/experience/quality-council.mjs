@@ -20,7 +20,18 @@ const JOURNEY_SCHEMA = "signal-cross-suite-journey/1";
 const PRODUCT_RECEIPT_SCHEMA = "signal-quality-council-product-receipt/1";
 const JOURNEY_RECEIPT_SCHEMA = "signal-quality-council-journey-receipt/1";
 const PREPARATION_SCHEMA = "signal-quality-council-input/1";
+const BASELINE_SCHEMA = "signal-ui-council-baseline/1";
+const BASELINE_PATH = "experience/council-reviews/baselines/wave-0-b0.json";
 const REQUIRED_PRODUCTS = ["notes", "tasks", "timeline"];
+const REQUIRED_BASELINE_SURFACES = [
+  "tasks-views",
+  "task-cards-detail",
+  "notes",
+  "timeline",
+  "landing",
+  "about",
+  "pricing",
+];
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const COMMIT_PATTERN = /^[a-f0-9]{40}$/;
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -1092,6 +1103,200 @@ function validateJourneyReceipt({
   };
 }
 
+function validateBaselineArtifact(repoRoot, artifact, label, errors) {
+  if (!exactKeys(artifact, ARTIFACT_KEYS, label, errors)) return;
+  if (!HASH_PATTERN.test(artifact.sha256)) {
+    errors.push(`${label}.sha256 must be one full lowercase SHA-256 digest`);
+  }
+  const file = resolveRepoFile(
+    repoRoot,
+    artifact.path,
+    `${label}.path`,
+    errors,
+    "experience/council-evidence/wave-0-b0",
+  );
+  if (file && fileSha256(file) !== artifact.sha256) {
+    errors.push(`${label}.sha256 does not match current evidence bytes (${artifact.path})`);
+  }
+}
+
+function validateBaselineCouncil({ repoRoot, sourceTree, skipGit }) {
+  const errors = [];
+  const file = path.join(repoRoot, ...BASELINE_PATH.split("/"));
+  const baseline = readJson(file, "quality council B0 baseline", errors);
+  if (!baseline) return { valid: false, errors, baseline: null };
+  if (
+    !exactKeys(
+      baseline,
+      [
+        "artifacts",
+        "decision",
+        "gate",
+        "reviewedAt",
+        "reviewers",
+        "schemaVersion",
+        "sources",
+        "surfaces",
+        "wave",
+      ],
+      "quality council B0 baseline",
+      errors,
+    )
+  ) {
+    return { valid: false, errors, baseline };
+  }
+  if (baseline.schemaVersion !== BASELINE_SCHEMA || baseline.wave !== "wave-0-b0") {
+    errors.push(`quality council B0 baseline: schemaVersion and wave must be ${BASELINE_SCHEMA} / wave-0-b0`);
+  }
+  if (!isIsoDate(baseline.reviewedAt) || baseline.reviewedAt > new Date().toISOString().slice(0, 10)) {
+    errors.push("quality council B0 baseline: reviewedAt must be a current or past YYYY-MM-DD");
+  }
+  if (
+    !exactKeys(
+      baseline.gate,
+      ["aggregation", "minimumPassingScore", "minimumReviewers", "vetoPolicy"],
+      "quality council B0 baseline.gate",
+      errors,
+    )
+  ) {
+    return { valid: false, errors, baseline };
+  }
+  if (
+    baseline.gate.minimumPassingScore !== 9.5 ||
+    baseline.gate.minimumReviewers !== 10 ||
+    baseline.gate.aggregation !== "every-director-and-index-at-or-above-floor" ||
+    baseline.gate.vetoPolicy !== "any-veto-is-no-pass"
+  ) {
+    errors.push("quality council B0 baseline.gate must preserve the external ten-seat 9.5 floor and veto contract");
+  }
+  if (
+    !exactKeys(
+      baseline.sources,
+      ["app", "contract", "studio"],
+      "quality council B0 baseline.sources",
+      errors,
+    )
+  ) {
+    return { valid: false, errors, baseline };
+  }
+  if (
+    !exactKeys(
+      baseline.sources.contract,
+      ["homeRole", "products", "signalRouteRole"],
+      "quality council B0 baseline.sources.contract",
+      errors,
+    ) ||
+    JSON.stringify(baseline.sources.contract.products) !== JSON.stringify(REQUIRED_PRODUCTS) ||
+    baseline.sources.contract.homeRole !== "front-door-and-daily-briefing" ||
+    baseline.sources.contract.signalRouteRole !== "legacy-redirect"
+  ) {
+    errors.push("quality council B0 baseline: product contract must be Notes, Tasks, Timeline with Home briefing and legacy Signal redirect");
+  }
+  for (const sourceId of ["app", "studio"]) {
+    const source = baseline.sources[sourceId];
+    const label = `quality council B0 baseline.sources.${sourceId}`;
+    const sourceKeys = sourceId === "app"
+      ? ["deploymentId", "productionUrl", "sourceGitCommitSha", "sourceTreeSha256"]
+      : ["deploymentId", "productionUrl", "sourceGitCommitSha"];
+    if (!exactKeys(source, sourceKeys, label, errors)) continue;
+    if (!COMMIT_PATTERN.test(source.sourceGitCommitSha)) {
+      errors.push(`${label}.sourceGitCommitSha must be a 40-character lowercase commit SHA`);
+    }
+    if (!nonEmptyString(source.deploymentId) || !/^https:\/\//.test(source.productionUrl)) {
+      errors.push(`${label}: deploymentId and HTTPS productionUrl are required`);
+    }
+    if (
+      sourceId === "app" &&
+      (!HASH_PATTERN.test(source.sourceTreeSha256) || source.sourceTreeSha256 !== sourceTree.sha256)
+    ) {
+      errors.push(`${label}.sourceTreeSha256 must match the current product/backend source tree`);
+    }
+  }
+  if (baseline.sources.app.sourceGitCommitSha) {
+    validateGitCommit(
+      repoRoot,
+      baseline.sources.app.sourceGitCommitSha,
+      "quality council B0 baseline.sources.app",
+      errors,
+      skipGit,
+    );
+  }
+  if (!Array.isArray(baseline.artifacts) || baseline.artifacts.length !== 2) {
+    errors.push("quality council B0 baseline.artifacts must contain the report and evidence manifest");
+  } else {
+    baseline.artifacts.forEach((artifact, index) =>
+      validateBaselineArtifact(repoRoot, artifact, `quality council B0 baseline.artifacts[${index}]`, errors),
+    );
+  }
+  const reviewers = Array.isArray(baseline.reviewers) ? baseline.reviewers : [];
+  if (reviewers.length !== 10) {
+    errors.push("quality council B0 baseline.reviewers must contain exactly ten sealed directors");
+  }
+  const reviewerIds = new Set();
+  const reviewerLenses = new Set();
+  for (const [index, reviewer] of reviewers.entries()) {
+    const label = `quality council B0 baseline.reviewers[${index}]`;
+    if (!exactKeys(reviewer, ["id", "independentReviewSha256", "lens", "name"], label, errors)) continue;
+    if (!STABLE_ID_PATTERN.test(reviewer.id) || reviewerIds.has(reviewer.id)) {
+      errors.push(`${label}.id must be unique and stable`);
+    }
+    reviewerIds.add(reviewer.id);
+    if (!nonEmptyString(reviewer.name) || !nonEmptyString(reviewer.lens) || reviewerLenses.has(reviewer.lens)) {
+      errors.push(`${label}: name and lens must be non-empty and lens must be unique`);
+    }
+    reviewerLenses.add(reviewer.lens);
+    if (!HASH_PATTERN.test(reviewer.independentReviewSha256)) {
+      errors.push(`${label}.independentReviewSha256 must be one full lowercase SHA-256 digest`);
+    }
+  }
+  const surfaces = Array.isArray(baseline.surfaces) ? baseline.surfaces : [];
+  if (JSON.stringify(surfaces.map((surface) => surface?.id)) !== JSON.stringify(REQUIRED_BASELINE_SURFACES)) {
+    errors.push(`quality council B0 baseline.surfaces must exactly cover ${REQUIRED_BASELINE_SURFACES.join(", ")}`);
+  }
+  for (const [index, surface] of surfaces.entries()) {
+    const label = `quality council B0 baseline.surfaces[${index}]`;
+    if (!exactKeys(surface, ["councilIndex", "decision", "id", "lowestLens", "name", "scores", "vetoes"], label, errors)) continue;
+    const scores = Array.isArray(surface.scores) ? surface.scores : [];
+    if (scores.length !== 10 || JSON.stringify(scores.map((score) => score.reviewerId)) !== JSON.stringify(reviewers.map((reviewer) => reviewer.id))) {
+      errors.push(`${label}.scores must contain one ordered score for every director`);
+    }
+    for (const [scoreIndex, score] of scores.entries()) {
+      const scoreLabel = `${label}.scores[${scoreIndex}]`;
+      if (!exactKeys(score, ["reviewerId", "score", "veto"], scoreLabel, errors)) continue;
+      if (typeof score.score !== "number" || score.score < 0 || score.score > 10 || Math.round(score.score * 10) !== score.score * 10) {
+        errors.push(`${scoreLabel}.score must be a one-decimal number from 0 to 10`);
+      }
+      if (typeof score.veto !== "boolean") errors.push(`${scoreLabel}.veto must be boolean`);
+    }
+    const numericScores = scores.map((score) => score.score).filter((score) => typeof score === "number");
+    const expectedIndex = numericScores.length === 10
+      ? Number((numericScores.reduce((sum, score) => sum + score, 0) / 10).toFixed(2))
+      : null;
+    const expectedFloor = numericScores.length === 10 ? Math.min(...numericScores) : null;
+    const expectedVetoes = scores.filter((score) => score.veto).map((score) => score.reviewerId);
+    if (surface.councilIndex !== expectedIndex || surface.lowestLens !== expectedFloor) {
+      errors.push(`${label}: councilIndex and lowestLens must be derived exactly from the ten scores`);
+    }
+    if (JSON.stringify(surface.vetoes) !== JSON.stringify(expectedVetoes)) {
+      errors.push(`${label}.vetoes must exactly name the vetoing directors`);
+    }
+    if (surface.decision !== "no-pass" || (expectedFloor !== null && expectedFloor >= 9.5 && expectedVetoes.length === 0)) {
+      errors.push(`${label}.decision must preserve the observed no-pass result`);
+    }
+  }
+  if (baseline.decision !== "no-pass") {
+    errors.push("quality council B0 baseline.decision must be no-pass; a baseline receipt can never certify release quality");
+  }
+  return { valid: errors.length === 0, errors, baseline };
+}
+
+function isMissingCertificationReceipt(error) {
+  return (
+    /^(product receipt|journey receipt) .+: evidence file does not exist/.test(error) ||
+    error.startsWith("quality council: suite score is unavailable")
+  );
+}
+
 export function validateCouncil({ repoRoot = process.cwd(), skipGit = false } = {}) {
   const errors = [];
   const contract = validateContract(repoRoot, errors);
@@ -1183,6 +1388,34 @@ export function validateCouncil({ repoRoot = process.cwd(), skipGit = false } = 
         suiteRawScore === null ? "unavailable" : `${suiteRawScore}/52`
       }; every product and journey viewport must reach 50/52`,
     );
+  }
+  const baseline = validateBaselineCouncil({ repoRoot, sourceTree, skipGit });
+  if (
+    baseline.valid &&
+    errors.length > 0 &&
+    errors.every(isMissingCertificationReceipt)
+  ) {
+    const failedSurfaces = baseline.baseline.surfaces.map(
+      (surface) => `${surface.id} ${surface.lowestLens.toFixed(1)}/10 floor`,
+    );
+    return {
+      achieved: false,
+      errors: [
+        `quality council B0: NO PASS at the hard 9.5/10 floor (${failedSurfaces.join("; ")})`,
+      ],
+      mode: "external-baseline",
+      baseline: baseline.baseline,
+      sourceTreeSha256: sourceTree.sha256,
+      sourceTreeFileCount: sourceTree.fileCount,
+      contractHashes,
+      productScores: [],
+      journeyScores: [],
+      suiteRawScore: null,
+      suiteTenPointScore: null,
+    };
+  }
+  if (!baseline.valid && existsSync(path.join(repoRoot, ...BASELINE_PATH.split("/")))) {
+    errors.push(...baseline.errors);
   }
   return {
     achieved: errors.length === 0,
@@ -1594,6 +1827,22 @@ const args = process.argv.slice(2).filter((argument) => argument !== "--");
 if (args.length === 0) {
   const result = validateCouncil();
   if (!result.achieved) {
+    if (result.mode === "external-baseline") {
+      console.error(
+        "experience:council: current Wave 0 B0 matrix - NO PASS\n" +
+          result.baseline.surfaces
+            .map(
+              (surface) =>
+                `  x ${surface.name}: index ${surface.councilIndex.toFixed(2)}/10; ` +
+                `floor ${surface.lowestLens.toFixed(1)}/10; ` +
+                `vetoes ${surface.vetoes.length ? surface.vetoes.join(", ") : "none"}`,
+            )
+            .join("\n") +
+          "\n  x Gate: every director and Council Index must be >=9.5 with zero vetoes. " +
+          "The full state-by-viewport certification receipts remain reserved for a future pass attempt.",
+      );
+      process.exit(1);
+    }
     console.error(
       `experience:council: ${result.errors.length} failure(s)\n` +
         result.errors.map((error) => `  x ${error}`).join("\n"),

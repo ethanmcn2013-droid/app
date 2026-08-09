@@ -81,6 +81,22 @@ pnpm experience:quality
 score, evidence file, hash, source version, continuous journey, or hard-blocker
 result is missing or stale.
 
+## Wave 0 B0 external baseline
+
+Wave 0 adds a separate, non-certifying ten-director baseline at
+`experience/council-reviews/baselines/wave-0-b0.json`. It is bound to the
+released App product/backend source-tree digest, the released Studio SHA and
+both production deployment IDs. Its checked-in report and evidence manifest
+are hash verified. The receipt contains all ten sealed scores for the seven
+reviewed surfaces and preserves the external council's 9.5 floor and veto rule.
+
+When the strict product and journey certification receipts have not yet been
+issued, `pnpm experience:council` validates this B0 ledger and prints the
+complete current score matrix. It still exits red, but it fails on the observed
+9.5 threshold and vetoes rather than an absent or stale score. A B0 receipt is
+immutable evidence and can never certify a release; only the complete product
+state-by-viewport and continuous-journey receipts described above may do that.
+
 ## Superseded pre-Wave-0 state, measured 2026-08-01
 
 The gate was run end to end for the first time on 2026-08-01, as part of the
@@ -98,9 +114,9 @@ What passes today:
 | `experience:council:prepare` | wrote the old matrix — 120 product assessment units, 4 journey receipts |
 | `experience:council` | **9 failures** — the old four-product model expected 8 absent receipts and had no score |
 
-`experience/council-evidence/` does not exist. No product or journey receipt
-has ever been authored. `certificationStatus` reads
-`not-assessed-until-receipts-validate`.
+At that historical snapshot, `experience/council-evidence/` did not exist and
+no product or journey receipt had been authored. The Wave 0 B0 evidence now
+exists, while strict certification remains unissued.
 
 ### The bottleneck is review capacity, not engineering
 

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "signal-ui-review-evidence-manifest/1",
+  "capturedAt": "2026-08-09",
+  "provenance": {
+    "app": {
+      "mode": "source-identical-review-render",
+      "sourceGitCommitSha": "d1af9aea80de610adcb67189030095ba81eb8404",
+      "productionDeploymentId": "dpl_Eb1HemUb53Pt8CZkAZkL5um9cY9",
+      "productionUrl": "https://app.signalstudio.ie"
+    },
+    "studio": {
+      "mode": "live-production",
+      "sourceGitCommitSha": "084085f2e5d266aa53c49611b499c2c9456ff26a",
+      "productionDeploymentId": "dpl_6bffvDb1HojVaDmiwxnLFzCF89JB",
+      "productionUrl": "https://signalstudio.ie"
+    }
+  },
+  "viewports": [
+    { "id": "desktop", "width": 1440, "height": 900 },
+    { "id": "mobile", "width": 390, "height": 844 }
+  ],
+  "files": [
+    { "name": "axe-results.json", "bytes": 12403, "sha256": "9483d02a91446d38422650369b99c3cc480eaf1d1fa3f3eb3ed706c52b77a184" },
+    { "name": "capture-results.json", "bytes": 513377, "sha256": "3b4e4c717a65036e6ce5ea1d8dd1868e7fd0d31259b526dc8bc8a71a839d59af" },
+    { "name": "interaction-results.json", "bytes": 11081, "sha256": "77a4a703e660da71993344b7aeb22b0337b5a00462341ac78439460935ed41dc" },
+    { "name": "manual-reproductions.json", "bytes": 612, "sha256": "2fc503c342bf0c7cde07f7b62dd50cf8e0bf80577fef5289eaaabf3d783faaef" },
+    { "name": "marketing-about-desktop-full.png", "bytes": 251062, "sha256": "a08f2d64101d587ce7ad73495688d32ce7cfb460f03876f7299eff828130e675" },
+    { "name": "marketing-about-desktop-top.png", "bytes": 83386, "sha256": "2f9259b368862170b2111e18f3236dd7aa875264d103d8cb436dbcc1ec915ecb" },
+    { "name": "marketing-about-mobile-full.png", "bytes": 190507, "sha256": "0c11cb0942df31f24a9d68d5a99583f15695dc010072d8b3192f9a0baa15be9b" },
+    { "name": "marketing-about-mobile-top.png", "bytes": 47056, "sha256": "14476d2b519370673513475c808aeae1f77ceddb79ffefa07ac0f6c5241db335" },
+    { "name": "marketing-home-desktop-full.png", "bytes": 683566, "sha256": "6f1d651179b7b209fc1a93060e74b4452c401ac2486f2c56ea0791f5c0711c89" },
+    { "name": "marketing-home-desktop-top.png", "bytes": 68089, "sha256": "160f3b39224670a1ca18fe1a995b437609c014f34a0527afc20a07c7795fcba4" },
+    { "name": "marketing-home-mobile-full.png", "bytes": 458984, "sha256": "fb5a381908e98513d8b57a480444055f4d602b67321a1d23276ab61832006af6" },
+    { "name": "marketing-home-mobile-top.png", "bytes": 42521, "sha256": "1c3d5ee38b1af39a3c66a5f5f426907f95c84b1ba5c14b957b8279cb7db4b616" },
+    { "name": "marketing-pricing-desktop-full.png", "bytes": 624972, "sha256": "b15c7e37b80ed1209df8beba7f8d5e2ce723d40a25ceb4d1f8c45c9608d67470" },
+    { "name": "marketing-pricing-desktop-top.png", "bytes": 65505, "sha256": "293816b70efaa5ee05bb720e80e66e8604fbf0e594854d46bd3a41797b690180" },
+    { "name": "marketing-pricing-mobile-full.png", "bytes": 586706, "sha256": "0d8ad0380b6e5c8fde72ff975f125e998979552dc685fb26902c3f716619addd" },
+    { "name": "marketing-pricing-mobile-top.png", "bytes": 36680, "sha256": "0a7b9c807317435d09d82dd61514af87d03d57e6fb0578be9377e3c41fc68739" },
+    { "name": "notes-desktop-top.png", "bytes": 136325, "sha256": "9be694b8618e1b340ccba6abfe7d029c5d016c963aac4392cb0c9c48d7aaad4c" },
+    { "name": "notes-mobile-top.png", "bytes": 71995, "sha256": "1c640c0d4566662e30f892fd2b594b2c2136aa5e17d279f9ba14287a89275065" },
+    { "name": "notes-selected-desktop.png", "bytes": 136396, "sha256": "7fac59f2c4a7f6922d5bd9e08da8340e6f16caed2c89eb0cf6e0155b8e273f76" },
+    { "name": "notes-selected-mobile.png", "bytes": 53297, "sha256": "d7d11661fe237726930650841bc7816579b3c0a86ca77a1ce7ad22bb360e19da" },
+    { "name": "task-detail-desktop.png", "bytes": 140618, "sha256": "99dee106691d744e90e8cd87578a6f487be424c85943fc8c5faf811ea53d651f" },
+    { "name": "task-detail-mobile.png", "bytes": 49172, "sha256": "e703ba9bba167564aea3058d7f83e4ad80d2225326855fb76d030ae02d80be78" },
+    { "name": "tasks-board-desktop-top.png", "bytes": 149253, "sha256": "2d318f34c2904bdec0499b1e4ba979eb1763f8304ee332d2e1739fa39543e560" },
+    { "name": "tasks-board-mobile-top.png", "bytes": 67840, "sha256": "9be3565eb2a32158bf226a4554fab3cb12ac619c8e901064d16bc0ca00bb6e28" },
+    { "name": "tasks-calendar-desktop-top.png", "bytes": 96411, "sha256": "6d6229957bcaa85ec781d15358e69ec156416ee744056d25e22368658cf79862" },
+    { "name": "tasks-calendar-mobile-top.png", "bytes": 48579, "sha256": "3b204f6a90fb2d7a3155059fdf7b7212706bb6f62616746a523131885d3c46eb" },
+    { "name": "tasks-list-desktop-top.png", "bytes": 172926, "sha256": "b774666c3655709f1e535bfb8038e785ec52aba6b3bc80713c7b966aac076575" },
+    { "name": "tasks-list-mobile-top.png", "bytes": 72504, "sha256": "c6d6e85debd86785d8464b7fcfa0cc1c66e784bd53ece83905da80e9f051d147" },
+    { "name": "tasks-timeline-desktop-top.png", "bytes": 100836, "sha256": "7b9b858d1dd09ebaab4d9df72404e1728e4a4a056c7f69ab0914f1aa733aa561" },
+    { "name": "tasks-timeline-mobile-top.png", "bytes": 59756, "sha256": "243a7737b68de06a34d565adbf59669492acc0549c0cf823fbffd10eb03f0262" },
+    { "name": "timeline-audience-desktop-top.png", "bytes": 94134, "sha256": "9391f5c57539b5408ae9136f0fe5b0dbad9b452768ccc39dbf79dad4438d6078" },
+    { "name": "timeline-audience-mobile-top.png", "bytes": 60648, "sha256": "fab189b09769b178fc9a72515d97f1727bc14d7ec46d2b2d3a4f4de44ce30ef6" },
+    { "name": "timeline-milestone-desktop.png", "bytes": 98612, "sha256": "843bbf26adac971273eae0f2dd4052b9a11e493479b676b7532a3c379138ac0f" },
+    { "name": "timeline-milestone-mobile.png", "bytes": 50856, "sha256": "b99908b08178b62c6400d97f7490778b1809c8b0f2176853bb0b98a7979e78e3" },
+    { "name": "timeline-owner-desktop-top.png", "bytes": 105500, "sha256": "06d9d15c6530526c4a1504148262be6e8019435ce6ea5dfdc8f6c635b0af2db8" },
+    { "name": "timeline-owner-mobile-top.png", "bytes": 44181, "sha256": "3ed65fafebe15feb441000f273c48e376ceeec4653d960de6a79819bda4e4d42" }
+  ]
+}
