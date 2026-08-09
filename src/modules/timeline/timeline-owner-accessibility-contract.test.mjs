@@ -93,7 +93,11 @@ test("owner controls meet the 44px mobile target and error copy stays factual", 
   );
   assert.match(
     audienceManager,
-    /const primaryButton =\s*\n\s*"[^"]*\bmin-h-\[44px\]/,
+    /const primaryButton =\s*\n\s*`\$\{styles\.focusable\}[^`]*\bmin-h-\[44px\]/,
+  );
+  assert.match(
+    audienceManager,
+    /import styles from "\.\/share-controls\.module\.css"/,
   );
   assert.doesNotMatch(errorBoundary, /Nothing was lost|your .* (?:is|are) saved/i);
   assert.match(errorBoundary, /could not finish loading/);

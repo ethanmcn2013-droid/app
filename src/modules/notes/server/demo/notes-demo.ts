@@ -49,7 +49,7 @@ type Seed = {
 const ACTIVE: Seed[] = [
   {
     id: "demo_n_01",
-    body: "Saturday wedding, Mara + Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
+    body: "Saturday wedding, Mara & Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
     ago: 35 * MIN,
     extractBody: "Confirm marquee sides with hire company before Thursday",
     promotedTaskId: "demo-t-01",

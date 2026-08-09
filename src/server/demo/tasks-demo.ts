@@ -62,7 +62,7 @@ const SEED: Seed[] = [
     id: "demo-t-01",
     title: "Confirm marquee sides with the hire company",
     description:
-      "Mara + Finn, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
+      "Mara & Finn, Saturday. Terrace plan if dry, marquee if not, they need the call by Thursday.",
     lane: "todo",
     priority: "p1",
     // Deliberately undated: "by Thursday" lives in the description as
@@ -78,7 +78,7 @@ const SEED: Seed[] = [
     id: REVIEW_MENU_MILESTONE.sourceId,
     title: REVIEW_MENU_MILESTONE.title,
     description:
-      "Mara and Finn confirmed the tasting. The venue team needs the final dietary list before service notes are locked.",
+      "Mara & Finn confirmed the tasting. The venue team needs the final dietary list before service notes are locked.",
     lane: "doing",
     priority: "p1",
     due: "1 Aug",
@@ -182,7 +182,7 @@ const SEED: Seed[] = [
   },
   {
     id: "demo-t-10",
-    title: "Deposit invoice settled, Mara + Finn",
+    title: "Deposit invoice settled, Mara & Finn",
     lane: "done",
     priority: "p1",
     tags: ["mara-finn"],

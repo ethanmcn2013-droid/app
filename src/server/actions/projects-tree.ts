@@ -16,7 +16,11 @@ import { planningPeriods, tasks, workspaces } from "@/server/db/schema";
 import { listMyWorkspaces } from "@/server/auth";
 import { isDemoMode } from "@/lib/access-mode";
 import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
-import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 export type ProjectsTreeLeaf = Readonly<{
   id: string;
@@ -81,7 +85,11 @@ export async function getProjectsTreeData(): Promise<ProjectsTreeData> {
             ? `Ends ${compactDate(PINNED_REVIEW_CALENDAR_FRAME.planningPeriod.endDate)}`
             : null,
           workspaces: [
-            { id: DEMO_WORKSPACE_ID, name: "The Orchard, events", taskCount: 10 },
+            {
+              id: DEMO_WORKSPACE_ID,
+              name: DEMO_WORKSPACE_NAME,
+              taskCount: demoTasks().length,
+            },
           ],
         },
       ],

@@ -161,7 +161,7 @@ const COLOR_TO_TONE: Record<string, LabelTone> = {
 
 export function tagToLabel(name: string, color?: string): LabLabel {
   // The id stays the stored tag name — filters and writes key on it. Only
-  // the displayed name is humanised ("mara-finn" → "Mara Finn").
+  // the displayed name is humanised ("mara-finn" → "Mara & Finn").
   return { id: name, name: tagDisplayName(name), tone: color ? COLOR_TO_TONE[color] ?? "neutral" : "neutral" };
 }
 

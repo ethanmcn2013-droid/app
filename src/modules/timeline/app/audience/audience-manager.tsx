@@ -15,14 +15,20 @@ import {
   type AudienceActionState,
 } from "@/modules/timeline/server/actions/audience-timeline";
 import type { AudienceOwnerPublication } from "@/modules/timeline/server/audience-timeline";
-import type { AudienceKind } from "@/modules/timeline/lib/audience-timeline";
+import type {
+  AudienceItemState,
+  AudienceKind,
+} from "@/modules/timeline/lib/audience-timeline";
 import {
   audienceKindLabel,
   calendarDateLabel,
   publicationStateLabel,
 } from "@/modules/timeline/lib/format";
 import { viewerCountSummary } from "@/modules/timeline/lib/viewer-count";
-import { MILESTONE_STATE_OPTIONS } from "@/modules/timeline/lib/vocabulary";
+import {
+  MILESTONE_STATE_LABELS,
+  MILESTONE_STATE_OPTIONS,
+} from "@/modules/timeline/lib/vocabulary";
 import {
   ActionNotice,
   ArmedSubmitButton,
@@ -39,11 +45,13 @@ type SourceNode = Readonly<{
   title: string;
   targetDate: string | null;
   lane: string;
+  audienceState: AudienceItemState;
 }>;
 
 export function AudienceManager({
   workspaceSlug,
   suiteWorkspaceId,
+  workspaceName,
   enabled,
   sourceNodes,
   publications,
@@ -54,6 +62,7 @@ export function AudienceManager({
 }: {
   workspaceSlug: string;
   suiteWorkspaceId: string | null;
+  workspaceName: string;
   enabled: boolean;
   sourceNodes: readonly SourceNode[];
   publications: readonly AudienceOwnerPublication[];
@@ -129,7 +138,7 @@ export function AudienceManager({
         </section>
       ) : (
         <p className="text-sm text-ink-soft">
-          Canonical workspace <code className="rounded bg-bg-deep px-1.5 py-0.5 text-xs">{suiteWorkspaceId}</code>
+          Source plan · <span className="font-medium text-ink">{workspaceName}</span>
         </p>
       )}
 
@@ -224,7 +233,9 @@ export function AudienceManager({
                         className="h-4 w-4 rounded border-line-soft accent-accent"
                       />
                       <span className="min-w-0 flex-1 text-sm text-ink">{node.title}</span>
-                      <span className="text-xs tabular-nums text-ink-quiet">{node.targetDate ?? node.lane}</span>
+                      <span className="text-xs tabular-nums text-ink-quiet">
+                        {node.targetDate ?? MILESTONE_STATE_LABELS[node.audienceState]}
+                      </span>
                     </label>
                   ))
                 )}
@@ -257,6 +268,15 @@ export function AudienceManager({
                 : publication.state === "published"
                   ? "revoked"
                   : publication.state;
+              const setAsideCount = publication.items.filter(
+                (item) => item.state === "cancelled",
+              ).length;
+              const milestoneCount = publication.items.length - setAsideCount;
+              const selectionSummary = `${milestoneCount} timeline milestone${milestoneCount === 1 ? "" : "s"}${
+                setAsideCount > 0
+                  ? ` · ${setAsideCount} set-aside decision${setAsideCount === 1 ? "" : "s"}`
+                  : ""
+              }`;
               return (
               <article key={publication.id} className="overflow-hidden rounded-xl border border-line-soft bg-white">
                 <header className="border-b border-line-soft p-5">
@@ -274,7 +294,7 @@ export function AudienceManager({
                       </p>
                       <h3 className="mt-1.5 text-xl font-semibold tracking-tight text-ink">{publication.label}</h3>
                       <p className="mt-1 text-xs text-ink-quiet">
-                        {publication.items.length} shared milestone{publication.items.length === 1 ? "" : "s"} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"}
+                        {selectionSummary} · {publication.activeShareCount} active link{publication.activeShareCount === 1 ? "" : "s"}
                         {viewerCountSummary({ count: publication.qualifiedViewCount })
                           ? ` · ${viewerCountSummary({ count: publication.qualifiedViewCount })}`
                           : ""}
@@ -285,12 +305,12 @@ export function AudienceManager({
                         href={`/app/timeline/audience/${encodeURIComponent(publication.id)}`}
                         className={primaryButton}
                       >
-                        View artifact studio
+                        Open shared page
                       </Link>
                       <form action={divergenceAction}>
                         <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                         <input type="hidden" name="publicationId" value={publication.id} />
-                        <button disabled={divergencePending} className={quietButton}>Check source changes</button>
+                        <button disabled={divergencePending} className={quietButton}>Review changes from your plan</button>
                       </form>
                     </div>
                   </div>
@@ -369,7 +389,7 @@ export function AudienceManager({
                   <details className="group rounded-lg border border-line-soft bg-white">
                     <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       <span>Review copied milestones</span>
-                      <span className="font-normal text-ink-quiet">{publication.items.length} selected · source changes stay private</span>
+                      <span className="font-normal text-ink-quiet">{selectionSummary} · changes stay private until you review them</span>
                     </summary>
                     <div className="border-t border-line-soft px-4 pb-3 pt-3">
                   <div aria-hidden className="hidden border-b border-line-soft pb-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">

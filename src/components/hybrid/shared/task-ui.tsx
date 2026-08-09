@@ -105,7 +105,11 @@ export function ScheduleText({ task, compact = false }: { task: LabTask; compact
 export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: boolean }) {
   const store = useLabStore();
   return (
-    <label className={styles.completionTarget} onClick={(event) => event.stopPropagation()}>
+    <label
+      className={styles.completionTarget}
+      data-completion-event={store.recentlyCompletedId === task.id || undefined}
+      onClick={(event) => event.stopPropagation()}
+    >
       <input
         aria-label={task.completed ? "Reopen this task" : "Mark this task done"}
         checked={task.completed}

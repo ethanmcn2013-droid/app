@@ -112,15 +112,15 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled || isStreaming}
-        aria-label="Draft a reply"
-        title="Draft a reply"
-        className="group inline-flex h-[22px] items-center gap-1 rounded-full border border-line-soft bg-white px-2 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40"
+        aria-label="Draft with AI"
+        title="Draft with AI"
+        className="group inline-flex min-h-[44px] items-center gap-1 rounded-full border border-line-soft bg-white px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40 sm:min-h-7 sm:px-2.5"
         style={{
           transitionTimingFunction: "var(--ease-out-expo)",
         }}
       >
         <SparkleIcon spinning={isStreaming} />
-        <span>{isStreaming ? "Drafting" : "Draft"}</span>
+        <span>{isStreaming ? "Drafting" : "Draft with AI"}</span>
       </button>
 
       <AnimatePresence>
@@ -141,7 +141,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
               duration: 0.18,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="absolute bottom-[28px] right-0 z-30 w-[280px] rounded-xl border border-line-soft bg-white p-3 shadow-[0_18px_40px_-18px_rgba(15,15,30,0.25)]"
+            className="absolute bottom-[34px] right-0 z-30 w-[min(320px,calc(100vw-32px))] rounded-xl border border-line-soft bg-white p-4 shadow-[0_18px_40px_-18px_rgba(15,15,30,0.25)]"
           >
             <div className="flex items-center gap-1.5 pb-2">
               <span
@@ -153,9 +153,16 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 }}
               />
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-                Draft a reply
+                Draft with AI
               </span>
             </div>
+            <p className="mb-3 text-[12px] leading-[1.5] text-ink-soft">
+              Sends this task&apos;s title, description, conversation, your
+              name and instruction to Anthropic. Nothing is posted until you
+              review and send the draft.
+            </p>
+            <label className="block text-[11px] font-medium text-ink-quiet">
+              What should the reply do? <span className="font-normal">(optional)</span>
             <input
               ref={inputRef}
               type="text"
@@ -168,19 +175,24 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 }
               }}
               placeholder="Acknowledge and ship by Friday"
-              className="block w-full rounded-md border border-line-soft bg-bg-sunken/40 px-2.5 py-1.5 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand/50 focus:bg-white focus:outline-none"
+              className="mt-1.5 block min-h-[44px] w-full rounded-md border border-line-soft bg-bg-sunken/40 px-2.5 py-2 text-[13px] text-ink placeholder:text-ink-faint focus:border-brand/50 focus:bg-white focus:outline-none"
             />
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-[11px] leading-[1.4] text-ink-faint">
-                Optional. Empty = pick the natural reply.
-              </p>
+            </label>
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="inline-flex min-h-[44px] items-center rounded-lg px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              >
+                Cancel
+              </button>
               <button
                 type="button"
                 onClick={submit}
                 disabled={isStreaming}
-                className="inline-flex h-[22px] items-center gap-1 rounded-full bg-ink px-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
+                className="inline-flex min-h-[44px] items-center gap-1 rounded-lg bg-ink px-3 text-[12px] font-medium text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
               >
-                {isStreaming ? "Drafting…" : "Draft"}
+                {isStreaming ? "Drafting…" : "Send to AI and draft"}
               </button>
             </div>
           </motion.div>

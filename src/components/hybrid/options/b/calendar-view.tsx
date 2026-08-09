@@ -29,6 +29,7 @@ import {
   startOfWeek,
 } from "../../dates";
 import { useLabStore } from "../../store";
+import { activeUnscheduledTasks } from "../../planning";
 import type { CalendarDate, LabTask, TaskSchedule } from "../../types";
 import { Icon } from "../../shared/icons";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
@@ -380,7 +381,7 @@ export function CalendarView({
   const overflowDialogId = useId();
   const overflowTitleId = useId();
   const overflowTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
+  const unscheduled = activeUnscheduledTasks(tasks);
   const visibleIds = tasks.map((task) => task.id);
   const anchorWindowStart = mode === "month"
     ? startOfMonthGrid(anchorDate)

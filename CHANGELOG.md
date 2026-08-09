@@ -4,6 +4,22 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-09 · T·136 · tightens · state, trust, and motion now tell the same truth
+
+**Tasks now derives every review count and scheduling obligation from the same
+fixture and selector, so the rail, board, Schedule, Calendar, and Planning can
+no longer disagree about the work.** Completed checks animate only when a task
+is actually completed, never because an old Done card mounted again. The
+Mara & Finn display name is also consistent across Notes, Tasks, Timeline, and
+the briefing.
+
+AI drafting and conversation summaries now explain the exact task fields sent
+to Anthropic before any request leaves the product. Notes fits every focusable
+header action inside the true 320-pixel reflow boundary. Timeline sharing uses
+plain plan language, one link action, explicit set-aside counts, and a Windows
+forced-colours focus outline; its milestone acknowledgement now lands in one
+immediate 220-millisecond beat.
+
 ## 2026-08-09 · T·135 · tightens · core actions now explain where the work moved
 
 **Tasks now makes its mobile workflow explicit, reports task completion at the
