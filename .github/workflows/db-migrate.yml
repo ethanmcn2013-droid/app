@@ -21,9 +21,9 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "Runner command (execute = backup + dry run + receipt + apply; measure = read-only board-truth counts)"
+        description: "Runner command (execute = backup + dry run + receipt + apply; backup = verified read-only snapshot)"
         type: choice
-        options: [status, execute, measure]
+        options: [status, execute, measure, backup]
         default: status
 
 concurrency:
@@ -81,11 +81,19 @@ jobs:
           DB_EVIDENCE_DIR: .db-evidence
         run: node scripts/db/execute-production-migration.mjs
 
+      - name: backup (read-only + restore verification)
+        if: ${{ inputs.command == 'backup' }}
+        env:
+          TASKS_DATABASE_URL: ${{ secrets.TASKS_DATABASE_URL }}
+          TASKS_AUTH_TOKEN: ${{ secrets.TASKS_AUTH_TOKEN }}
+        run: node scripts/db/backup-all.mjs --modules=tasks --out=.db-evidence --verify
+
       - name: Retain backup + execution receipt
-        if: ${{ always() && inputs.command == 'execute' }}
+        if: ${{ always() && (inputs.command == 'execute' || inputs.command == 'backup') }}
         uses: actions/upload-artifact@v4
         with:
           name: db-migration-evidence
           path: .db-evidence/
           if-no-files-found: ignore
           retention-days: 90
+          include-hidden-files: true
