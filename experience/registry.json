@@ -109,7 +109,7 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-26",
+      "lastReviewedAt": "2026-08-09",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "33abda03de781cce"
@@ -1482,7 +1482,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "47bee2aabf4428be"
+      "materialityHash": "9844eacd60cb807d"
     },
     {
       "id": "tasks.page.redeem-by-code",
