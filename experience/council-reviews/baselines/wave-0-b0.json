@@ -1,0 +1,194 @@
+{
+  "schemaVersion": "signal-ui-council-baseline/1",
+  "wave": "wave-0-b0",
+  "reviewedAt": "2026-08-09",
+  "sources": {
+    "app": {
+      "sourceGitCommitSha": "d1af9aea80de610adcb67189030095ba81eb8404",
+      "sourceTreeSha256": "864cc0d0e7a63c905cbc2676655da93483f67792cabb24c9fda492d068aa7611",
+      "deploymentId": "dpl_Eb1HemUb53CTp8CZkAZkL5um9cY9",
+      "productionUrl": "https://app.signalstudio.ie"
+    },
+    "studio": {
+      "sourceGitCommitSha": "084085f2e5d266aa53c49611b499c2c9456ff26a",
+      "deploymentId": "dpl_6bffvDb1HojVaDmiwxnLFzCF89JB",
+      "productionUrl": "https://signalstudio.ie"
+    },
+    "contract": {
+      "products": ["notes", "tasks", "timeline"],
+      "homeRole": "front-door-and-daily-briefing",
+      "signalRouteRole": "legacy-redirect"
+    }
+  },
+  "gate": {
+    "minimumPassingScore": 9.5,
+    "minimumReviewers": 10,
+    "aggregation": "every-director-and-index-at-or-above-floor",
+    "vetoPolicy": "any-veto-is-no-pass"
+  },
+  "artifacts": [
+    {
+      "path": "experience/council-evidence/wave-0-b0/council-report.md",
+      "sha256": "d75e03589de3411503f53ac178d45ca7117abcf4a793eb77d694c927e40f39e7"
+    },
+    {
+      "path": "experience/council-evidence/wave-0-b0/evidence-manifest.json",
+      "sha256": "953c6bded0bf0c2ace6ddcf98ea196d0457a075b85860cf8c3c813aa6ef5cccd"
+    }
+  ],
+  "reviewers": [
+    { "id": "director-01", "name": "Director 01", "lens": "Executive Product Design and Council Chair", "independentReviewSha256": "62fb6bf765b5fa436af09eaca8a76ef1c3ef31d509ec0fc2fb8b76c4b65c5a0e" },
+    { "id": "director-02", "name": "Director 02", "lens": "Human Interface and Interaction", "independentReviewSha256": "48c2287b64945f214f6b7a1e1798ac4b32c1f82e769bd7dd82f83fc59ae3e225" },
+    { "id": "director-03", "name": "Director 03", "lens": "User Journey and Task Success", "independentReviewSha256": "3962b9ea7dac8667130220c43c1e09162bd6490154cad5960e87726aa7e1dd2f" },
+    { "id": "director-04", "name": "Director 04", "lens": "Information Architecture and Cognitive Ergonomics", "independentReviewSha256": "84d1bba3cf1b334c11f7ce39de3e4f770446e8fcd258544945685e8b7be8724d" },
+    { "id": "director-05", "name": "Director 05", "lens": "Visual Design and Art Direction", "independentReviewSha256": "e0f1006a7899215b2735191b24caed078084f473943d01656bb84e18fdb37064" },
+    { "id": "director-06", "name": "Director 06", "lens": "Content Design Language and Trust", "independentReviewSha256": "770cb5e478ac4bf0a0d3d3d16fea1e22361f0df20c32f92ae72537326e058789" },
+    { "id": "director-07", "name": "Director 07", "lens": "Motion Feedback and Delight", "independentReviewSha256": "301ac05a241383d2d91383afbb2ee4e76df9c42178acc872494516667e65c9f4" },
+    { "id": "director-08", "name": "Director 08", "lens": "Accessibility and Inclusive Design", "independentReviewSha256": "0f2fd7347789cdfb73fe53d1a7e139c7bd92bb82655f15788aecbca6e7d34e57" },
+    { "id": "director-09", "name": "Director 09", "lens": "Signal Studio Product System and Brand", "independentReviewSha256": "79dba4f89babde57f11b48882d17c0a2b2795daa363600b2299e92ad8a1f6e02" },
+    { "id": "director-10", "name": "Director 10", "lens": "Responsive Performance and Production Quality", "independentReviewSha256": "ce6aef318e251eb4a5079819d822bbc2a4100786f77a8378982947daea10a455" }
+  ],
+  "surfaces": [
+    {
+      "id": "tasks-views",
+      "name": "Tasks boards and views",
+      "scores": [
+        { "reviewerId": "director-01", "score": 7.8, "veto": false },
+        { "reviewerId": "director-02", "score": 7.7, "veto": false },
+        { "reviewerId": "director-03", "score": 7.6, "veto": false },
+        { "reviewerId": "director-04", "score": 8.1, "veto": false },
+        { "reviewerId": "director-05", "score": 7.8, "veto": false },
+        { "reviewerId": "director-06", "score": 8.1, "veto": false },
+        { "reviewerId": "director-07", "score": 6.8, "veto": false },
+        { "reviewerId": "director-08", "score": 8.0, "veto": false },
+        { "reviewerId": "director-09", "score": 7.9, "veto": false },
+        { "reviewerId": "director-10", "score": 8.2, "veto": false }
+      ],
+      "councilIndex": 7.8,
+      "lowestLens": 6.8,
+      "vetoes": [],
+      "decision": "no-pass"
+    },
+    {
+      "id": "task-cards-detail",
+      "name": "Task cards and detail",
+      "scores": [
+        { "reviewerId": "director-01", "score": 8.2, "veto": false },
+        { "reviewerId": "director-02", "score": 8.3, "veto": false },
+        { "reviewerId": "director-03", "score": 8.1, "veto": false },
+        { "reviewerId": "director-04", "score": 7.9, "veto": false },
+        { "reviewerId": "director-05", "score": 8.3, "veto": false },
+        { "reviewerId": "director-06", "score": 7.8, "veto": false },
+        { "reviewerId": "director-07", "score": 7.4, "veto": false },
+        { "reviewerId": "director-08", "score": 8.6, "veto": false },
+        { "reviewerId": "director-09", "score": 7.4, "veto": false },
+        { "reviewerId": "director-10", "score": 8.4, "veto": false }
+      ],
+      "councilIndex": 8.04,
+      "lowestLens": 7.4,
+      "vetoes": [],
+      "decision": "no-pass"
+    },
+    {
+      "id": "notes",
+      "name": "Notes",
+      "scores": [
+        { "reviewerId": "director-01", "score": 6.7, "veto": true },
+        { "reviewerId": "director-02", "score": 8.0, "veto": false },
+        { "reviewerId": "director-03", "score": 8.2, "veto": false },
+        { "reviewerId": "director-04", "score": 8.2, "veto": false },
+        { "reviewerId": "director-05", "score": 8.2, "veto": false },
+        { "reviewerId": "director-06", "score": 8.4, "veto": false },
+        { "reviewerId": "director-07", "score": 7.1, "veto": false },
+        { "reviewerId": "director-08", "score": 7.8, "veto": false },
+        { "reviewerId": "director-09", "score": 8.3, "veto": false },
+        { "reviewerId": "director-10", "score": 7.6, "veto": true }
+      ],
+      "councilIndex": 7.85,
+      "lowestLens": 6.7,
+      "vetoes": ["director-01", "director-10"],
+      "decision": "no-pass"
+    },
+    {
+      "id": "timeline",
+      "name": "Timeline owner and sharing",
+      "scores": [
+        { "reviewerId": "director-01", "score": 8.3, "veto": false },
+        { "reviewerId": "director-02", "score": 8.1, "veto": false },
+        { "reviewerId": "director-03", "score": 7.8, "veto": false },
+        { "reviewerId": "director-04", "score": 8.1, "veto": false },
+        { "reviewerId": "director-05", "score": 8.7, "veto": false },
+        { "reviewerId": "director-06", "score": 8.0, "veto": false },
+        { "reviewerId": "director-07", "score": 7.7, "veto": false },
+        { "reviewerId": "director-08", "score": 8.7, "veto": false },
+        { "reviewerId": "director-09", "score": 7.7, "veto": false },
+        { "reviewerId": "director-10", "score": 8.4, "veto": false }
+      ],
+      "councilIndex": 8.15,
+      "lowestLens": 7.7,
+      "vetoes": [],
+      "decision": "no-pass"
+    },
+    {
+      "id": "landing",
+      "name": "Main landing page",
+      "scores": [
+        { "reviewerId": "director-01", "score": 6.8, "veto": true },
+        { "reviewerId": "director-02", "score": 8.0, "veto": false },
+        { "reviewerId": "director-03", "score": 8.0, "veto": false },
+        { "reviewerId": "director-04", "score": 7.8, "veto": false },
+        { "reviewerId": "director-05", "score": 8.8, "veto": false },
+        { "reviewerId": "director-06", "score": 6.8, "veto": true },
+        { "reviewerId": "director-07", "score": 6.9, "veto": false },
+        { "reviewerId": "director-08", "score": 7.4, "veto": false },
+        { "reviewerId": "director-09", "score": 8.1, "veto": false },
+        { "reviewerId": "director-10", "score": 8.1, "veto": false }
+      ],
+      "councilIndex": 7.67,
+      "lowestLens": 6.8,
+      "vetoes": ["director-01", "director-06"],
+      "decision": "no-pass"
+    },
+    {
+      "id": "about",
+      "name": "About",
+      "scores": [
+        { "reviewerId": "director-01", "score": 8.1, "veto": false },
+        { "reviewerId": "director-02", "score": 7.5, "veto": false },
+        { "reviewerId": "director-03", "score": 8.4, "veto": false },
+        { "reviewerId": "director-04", "score": 8.6, "veto": false },
+        { "reviewerId": "director-05", "score": 7.8, "veto": false },
+        { "reviewerId": "director-06", "score": 8.4, "veto": false },
+        { "reviewerId": "director-07", "score": 6.8, "veto": false },
+        { "reviewerId": "director-08", "score": 8.6, "veto": false },
+        { "reviewerId": "director-09", "score": 8.4, "veto": false },
+        { "reviewerId": "director-10", "score": 8.5, "veto": false }
+      ],
+      "councilIndex": 8.11,
+      "lowestLens": 6.8,
+      "vetoes": [],
+      "decision": "no-pass"
+    },
+    {
+      "id": "pricing",
+      "name": "Pricing",
+      "scores": [
+        { "reviewerId": "director-01", "score": 7.4, "veto": false },
+        { "reviewerId": "director-02", "score": 7.8, "veto": false },
+        { "reviewerId": "director-03", "score": 7.5, "veto": false },
+        { "reviewerId": "director-04", "score": 7.7, "veto": false },
+        { "reviewerId": "director-05", "score": 8.0, "veto": false },
+        { "reviewerId": "director-06", "score": 7.3, "veto": false },
+        { "reviewerId": "director-07", "score": 6.6, "veto": false },
+        { "reviewerId": "director-08", "score": 8.0, "veto": false },
+        { "reviewerId": "director-09", "score": 7.1, "veto": false },
+        { "reviewerId": "director-10", "score": 8.2, "veto": false }
+      ],
+      "councilIndex": 7.56,
+      "lowestLens": 6.6,
+      "vetoes": [],
+      "decision": "no-pass"
+    }
+  ],
+  "decision": "no-pass"
+}
