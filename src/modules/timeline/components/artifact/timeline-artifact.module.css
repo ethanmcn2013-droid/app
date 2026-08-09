@@ -836,13 +836,13 @@ button.timeLens:focus-visible .metricAlternate {
   background: var(--x-timeline-alarm);
 }
 
-/* The rail's single spent motion: after the points settle, the next
-   milestone breathes one ring outward and rests. Never loops. */
+/* The rail's single spent motion: the next milestone acknowledges its state
+   in one local beat and rests. It never waits after the interface is ready. */
 .milestone[data-state="current"] .point {
   animation:
     timeline-pop 140ms cubic-bezier(0.23, 1, 0.32, 1) backwards,
-    timeline-target-ring 700ms cubic-bezier(0.23, 1, 0.32, 1) 0.6s backwards;
-  animation-delay: var(--timeline-point-delay, 0s), 0.6s;
+    timeline-target-ring 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation-delay: var(--timeline-point-delay, 0s), 0s;
 }
 
 /* ── Pointing at a milestone, and having chosen one ─────────────────────────

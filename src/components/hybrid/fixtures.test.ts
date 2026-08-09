@@ -89,7 +89,7 @@ test("runtime registries are authoritative once set; fixtures never leak past th
     setRuntimeLabels([{ id: "Venue", name: "Venue", tone: "success" }]);
     assert.equal(labelById("Venue")?.tone, "success");
     // T·132: an unknown live tag reads as its humanised display name — a
-    // stored slug ("mara-finn") is shown to people as "Mara Finn", while the
+    // stored slug ("mara-finn") is shown to people as "Mara & Finn", while the
     // id stays the lookup key.
     assert.deepEqual(labelById("launch"), { id: "launch", name: "Launch", tone: "neutral" });
     setRuntimeLabels([]);

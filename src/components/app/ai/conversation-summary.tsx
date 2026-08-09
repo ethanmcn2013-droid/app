@@ -23,6 +23,7 @@ type Props = {
 export function ConversationSummary({ taskId, eligible }: Props) {
   const [summary, setSummary] = useState<string>("");
   const [hasRun, setHasRun] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [isStreaming, startTransition] = useTransition();
   const reduce = useReducedMotion();
 
@@ -55,7 +56,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
   return (
     <div className="-mx-1 mb-3">
       <AnimatePresence initial={false} mode="wait">
-        {!hasRun ? (
+        {!hasRun && !confirming ? (
           <motion.div
             key="cta"
             initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
@@ -65,7 +66,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
           >
             <button
               type="button"
-              onClick={run}
+              onClick={() => setConfirming(true)}
               className="group flex w-full items-center justify-between gap-2 rounded-lg border border-dashed border-line-soft bg-bg-sunken/30 px-3 py-2 text-left transition-all duration-200 hover:border-brand/40 hover:bg-brand-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               style={{ transitionTimingFunction: "var(--ease-out-expo)" }}
             >
@@ -79,13 +80,46 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                   }}
                 />
                 <span className="text-[13px] font-medium text-ink-soft group-hover:text-ink">
-                  Summarize this thread
+                  Summarize with AI
                 </span>
               </span>
               <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint group-hover:text-brand">
                 2-3 sentences
               </span>
             </button>
+          </motion.div>
+        ) : confirming && !hasRun ? (
+          <motion.div
+            key="consent"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="rounded-lg border border-line-soft bg-white px-3 py-3"
+          >
+            <p className="text-[13px] leading-[1.55] text-ink-soft">
+              Sends this task&apos;s title, description and full conversation to
+              Anthropic. The summary stays here and nothing is posted.
+            </p>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="inline-flex min-h-[44px] items-center rounded-lg px-3 text-[12px] font-medium text-ink-soft hover:bg-bg-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirming(false);
+                  run();
+                }}
+                className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-3 text-[12px] font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+              >
+                Send to AI and summarize
+              </button>
+            </div>
           </motion.div>
         ) : (
           <motion.div

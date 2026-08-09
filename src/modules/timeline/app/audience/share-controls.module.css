@@ -1,0 +1,14 @@
+.focusable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Tailwind rings are box shadows. Windows forced-colours removes them, so
+   every sharing input and action also needs a real system-colour outline. */
+@media (forced-colors: active) {
+  .focusable:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px;
+    box-shadow: none !important;
+  }
+}

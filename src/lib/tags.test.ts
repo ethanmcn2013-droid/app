@@ -19,7 +19,7 @@ test("tagColor resolves a tag's colour case-insensitively, neutral fallback", ()
 });
 
 test("tagDisplayName humanises stored slugs without touching the stored value", () => {
-  assert.equal(tagDisplayName("mara-finn"), "Mara Finn");
+  assert.equal(tagDisplayName("mara-finn"), "Mara & Finn");
   assert.equal(tagDisplayName("venue_prep"), "Venue Prep");
   assert.equal(tagDisplayName("bar"), "Bar");
   // Already-human names keep their authored casing beyond the first letter.

@@ -42,6 +42,7 @@ type UiState = {
   inspectedId: string | null;
   recentlyPlacedId: string | null;
   recentlyUpdatedId: string | null;
+  recentlyCompletedId: string | null;
   previewId: string | null;
   editing: { taskId: string; field: string } | null;
   drag: LabDragOperation;
@@ -54,6 +55,7 @@ type UiAction =
   | { type: "SET_INSPECTED"; id: string | null }
   | { type: "SET_PLACED"; id: string | null }
   | { type: "SET_UPDATED"; id: string | null }
+  | { type: "SET_COMPLETED"; id: string | null }
   | { type: "SET_PREVIEW"; id: string | null }
   | { type: "SET_EDITING"; editing: UiState["editing"] }
   | { type: "SET_DRAG"; drag: LabDragOperation }
@@ -69,6 +71,7 @@ const INITIAL_UI: UiState = {
   inspectedId: null,
   recentlyPlacedId: null,
   recentlyUpdatedId: null,
+  recentlyCompletedId: null,
   previewId: null,
   editing: null,
   drag: null,
@@ -86,6 +89,8 @@ function uiReducer(state: UiState, action: UiAction): UiState {
       return { ...state, recentlyPlacedId: action.id };
     case "SET_UPDATED":
       return { ...state, recentlyUpdatedId: action.id };
+    case "SET_COMPLETED":
+      return { ...state, recentlyCompletedId: action.id };
     case "SET_PREVIEW":
       return { ...state, previewId: action.id };
     case "SET_EDITING":
@@ -142,7 +147,11 @@ export function HybridStoreProvider({
   const [ui, dispatch] = useReducer(uiReducer, INITIAL_UI);
   const knownTaskIds = useRef(new Set(prodTasks.map((task) => task.id)));
   const knownUpdatedAt = useRef(new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()])));
+  const knownCompleted = useRef(
+    new Map(prodTasks.map((task) => [task.id, isTaskDone(task, columnConfig)])),
+  );
   const updateReceiptTimer = useRef<number | undefined>(undefined);
+  const completionReceiptTimer = useRef<number | undefined>(undefined);
   const pendingDuplicate = useRef(false);
 
   const labTasks = useMemo<LabTask[]>(
@@ -162,6 +171,11 @@ export function HybridStoreProvider({
       const prior = knownUpdatedAt.current.get(task.id);
       return prior !== undefined && prior !== task.updatedAt.getTime();
     });
+    const completed = prodTasks.find(
+      (task) =>
+        knownCompleted.current.get(task.id) === false &&
+        isTaskDone(task, columnConfig),
+    );
     if (pendingDuplicate.current) {
       const added = prodTasks.find((task) => !knownTaskIds.current.has(task.id));
       if (added) {
@@ -176,12 +190,27 @@ export function HybridStoreProvider({
         dispatch({ type: "SET_UPDATED", id: null });
       }, 360);
     }
+    if (completed) {
+      dispatch({ type: "SET_COMPLETED", id: completed.id });
+      if (completionReceiptTimer.current !== undefined) {
+        window.clearTimeout(completionReceiptTimer.current);
+      }
+      completionReceiptTimer.current = window.setTimeout(() => {
+        dispatch({ type: "SET_COMPLETED", id: null });
+      }, 200);
+    }
     knownTaskIds.current = nextIds;
     knownUpdatedAt.current = new Map(prodTasks.map((task) => [task.id, task.updatedAt.getTime()]));
+    knownCompleted.current = new Map(
+      prodTasks.map((task) => [task.id, isTaskDone(task, columnConfig)]),
+    );
     return () => {
       if (updateReceiptTimer.current !== undefined) window.clearTimeout(updateReceiptTimer.current);
+      if (completionReceiptTimer.current !== undefined) {
+        window.clearTimeout(completionReceiptTimer.current);
+      }
     };
-  }, [prodTasks]);
+  }, [columnConfig, prodTasks]);
 
   const openTask = useCallback(
     (id: string | null) => {
@@ -244,6 +273,7 @@ export function HybridStoreProvider({
       inspectedId: taskPanel.taskId,
       recentlyPlacedId: ui.recentlyPlacedId,
       recentlyUpdatedId: ui.recentlyUpdatedId,
+      recentlyCompletedId: ui.recentlyCompletedId,
       previewId: ui.previewId,
       editing: ui.editing,
       drag: ui.drag,

@@ -157,6 +157,7 @@
   border: 1.5px solid var(--x-task-control-border);
   border-radius: 50%;
   height: 16px;
+  pointer-events: none;
   position: relative;
   transition: background var(--motion-instant) var(--ease-out), border-color var(--motion-instant) var(--ease-out);
   width: 16px;
@@ -176,7 +177,8 @@
 .completionTarget:has(.controlInput:checked) .completionGlyph { background: var(--x-task-success); border-color: var(--x-task-success); }
 .completionTarget:has(.controlInput:checked):hover .completionGlyph { background: var(--x-task-success-soft); }
 .completionTarget:has(.controlInput:checked):hover .completionGlyph::before { border-color: var(--x-task-success); }
-.completionTarget:has(.controlInput:checked) .completionGlyph::before { animation: completion-check-in 160ms var(--ease-out) both; border-color: var(--x-task-raised); transform-origin: 45% 55%; }
+.completionTarget:has(.controlInput:checked) .completionGlyph::before { border-color: var(--x-task-raised); transform-origin: 45% 55%; }
+.completionTarget[data-completion-event] .completionGlyph::before { animation: completion-check-in 160ms var(--ease-out) both; }
 /* The routine local settle the motion contract allows on completion: the
    check draws in one fast beat. State lands instantly (the fill is on
    :checked with no delay); this is acknowledgement, not theatre. */
@@ -185,7 +187,7 @@
   to { opacity: 1; transform: rotate(-45deg) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .completionTarget:has(.controlInput:checked) .completionGlyph::before { animation: none; }
+  .completionTarget[data-completion-event] .completionGlyph::before { animation: none; }
 }
 
 @media (pointer: coarse) {

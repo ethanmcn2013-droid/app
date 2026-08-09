@@ -110,12 +110,14 @@ export default async function AudienceTimelineManagerPage({
       <AudienceManager
         workspaceSlug={workspace.slug}
         suiteWorkspaceId={workspace.suiteWorkspaceId}
+        workspaceName={workspace.name}
         enabled={audienceTimelineEnabled()}
         sourceNodes={eligibleNodes.map((node) => ({
             id: node.id,
             title: node.title,
             targetDate: node.targetDate,
             lane: node.lane,
+            audienceState: node.audienceState,
           }))}
         publications={projectPublications}
         defaultLabel={project?.name}

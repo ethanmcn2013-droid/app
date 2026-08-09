@@ -131,7 +131,7 @@ function makeMockSignals(
     }),
     scoped({
       id: "demo-t-10",
-      title: "Deposit invoice settled, Mara + Finn",
+      title: "Deposit invoice settled, Mara & Finn",
       lane: "shipped",
       priority: 0,
       dueAt: null,

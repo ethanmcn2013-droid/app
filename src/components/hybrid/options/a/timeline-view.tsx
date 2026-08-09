@@ -14,6 +14,7 @@ import {
   startOfWeek,
 } from "../../dates";
 import { scheduleFromDrop, useLabStore } from "../../store";
+import { activeUnscheduledTasks } from "../../planning";
 import type { CalendarDate, LabTask } from "../../types";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
@@ -67,7 +68,7 @@ export function TimelineView({ tasks }: { tasks: LabTask[] }) {
   const scheduled = useMemo(() => tasks
     .filter((task) => task.schedule.kind !== "unscheduled")
     .sort((a, b) => (scheduleStart(a.schedule) ?? "9999-12-31").localeCompare(scheduleStart(b.schedule) ?? "9999-12-31")), [tasks]);
-  const unscheduled = tasks.filter((task) => task.schedule.kind === "unscheduled");
+  const unscheduled = activeUnscheduledTasks(tasks);
   const orderedIds = [...scheduled, ...unscheduled].map((task) => task.id);
   const activeTask = store.activeId ? store.taskById(store.activeId) : undefined;
   const todayIndex = differenceInDays(start, calendar.today);

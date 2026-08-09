@@ -497,9 +497,9 @@ function MilestoneDetail({
         <motion.div
           className={styles.detailInner}
           key={point.item.publicId}
-          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={reduceMotion ? undefined : { opacity: 0, y: -4 }}
+          initial={reduceMotion ? false : { opacity: 0, transform: "translateY(6px)" }}
+          animate={{ opacity: 1, transform: "translateY(0)" }}
+          exit={reduceMotion ? undefined : { opacity: 0, transform: "translateY(-4px)" }}
           transition={{ duration: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
         >
           <div className={styles.detailLead}>

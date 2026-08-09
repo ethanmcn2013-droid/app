@@ -221,30 +221,9 @@ export function SharePanel({
                   </p>
                   <p className="mt-2 text-sm leading-6 text-ink-soft">
                     {linkLive
-                      ? "A link is shown once, when it is made. It is not kept here afterwards, so this page cannot show it to you again. If you no longer have it, make a new one below. Making a new one stops the old link working."
-                      : "Making a link shows it to you once. Copy it then; this page cannot show it again."}
+                      ? "A link is shown once, when it is made. It is not kept here afterwards, so this page cannot show it to you again. Use Link settings below to replace it; the old address will stop working."
+                      : "Use Link settings below to publish. Copy the link when it appears; this page cannot show it again."}
                   </p>
-                  {canManage ? (
-                    <div className="mt-3">
-                      {publication.state === "published" ? (
-                        <form action={rotateAction} className="flex flex-wrap items-end gap-2">
-                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-                          <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={rotatePending} className={primaryButton}>
-                            Make a new link
-                          </button>
-                        </form>
-                      ) : (
-                        <form action={publishAction} className="flex flex-wrap items-end gap-2">
-                          <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-                          <input type="hidden" name="publicationId" value={publication.id} />
-                          <button disabled={publishPending} className={primaryButton}>
-                            Publish and make the link
-                          </button>
-                        </form>
-                      )}
-                    </div>
-                  ) : null}
                 </div>
               )}
               <ActionNotice state={publishState} />

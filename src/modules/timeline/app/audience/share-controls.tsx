@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { AudienceActionState } from "@/modules/timeline/server/actions/audience-timeline";
+import styles from "./share-controls.module.css";
 
 /**
  * The three sharing controls, extracted from audience-manager.tsx so the
@@ -22,11 +23,11 @@ import type { AudienceActionState } from "@/modules/timeline/server/actions/audi
  */
 
 export const fieldClass =
-  "min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2";
+  `${styles.focusable} min-h-10 w-full rounded-lg border border-line-soft bg-white px-3 text-sm text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2`;
 export const quietButton =
-  "min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  `${styles.focusable} min-h-10 rounded-lg border border-line-soft bg-white px-3 text-sm font-medium text-ink-soft hover:border-ink-ghost focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60`;
 export const primaryButton =
-  "inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60";
+  `${styles.focusable} inline-flex min-h-[44px] items-center justify-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-soft focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60`;
 
 /**
  * Two presses for actions that kill live links. The first press arms the

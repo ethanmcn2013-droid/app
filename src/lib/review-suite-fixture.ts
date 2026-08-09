@@ -7,6 +7,7 @@
  * Production access still resolves through the normal membership checks.
  */
 export const REVIEW_SUITE_FIXTURE = {
+  version: 3,
   user: {
     id: "demo-user",
     name: "Orla",

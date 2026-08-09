@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   type ReactNode,
@@ -35,6 +36,7 @@ type StoreState = {
   inspectedId: string | null;
   recentlyPlacedId: string | null;
   recentlyUpdatedId: string | null;
+  recentlyCompletedId: string | null;
   previewId: string | null;
   editing: { taskId: string; field: string } | null;
   drag: LabDragOperation;
@@ -58,6 +60,7 @@ type Action =
   | { type: "TOGGLE_SELECTED"; id: string; orderedIds?: string[]; range?: boolean }
   | { type: "CLEAR_SELECTION" }
   | { type: "UPDATE_TASK"; id: string; fields: UpdateFields; label: string }
+  | { type: "CLEAR_RECENT_COMPLETION"; id: string }
   | { type: "MOVE_STATUS"; id: string; status: TaskStatus; index?: number }
   | { type: "MOVE_SCHEDULE"; id: string; days: number }
   | { type: "RESIZE_SCHEDULE"; id: string; days: number }
@@ -120,9 +123,17 @@ function reducer(state: StoreState, action: Action): StoreState {
         ...snapshot(state, action.label),
         tasks: state.tasks.map((item) => item.id === action.id ? { ...item, ...action.fields } : item),
         recentlyUpdatedId: action.id,
+        recentlyCompletedId:
+          action.fields.completed === true && !task.completed
+            ? action.id
+            : state.recentlyCompletedId,
         announcement: `${task.title}: ${action.label}`,
       };
     }
+    case "CLEAR_RECENT_COMPLETION":
+      return state.recentlyCompletedId === action.id
+        ? { ...state, recentlyCompletedId: null }
+        : state;
     case "MOVE_STATUS": {
       if (state.readOnly) return { ...state, announcement: "Read-only prototype: changes are disabled" };
       const moving = state.tasks.find((task) => task.id === action.id);
@@ -302,6 +313,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         inspectedId: null,
         recentlyPlacedId: null,
         recentlyUpdatedId: null,
+        recentlyCompletedId: null,
         previewId: null,
         editing: null,
         drag: null,
@@ -370,6 +382,7 @@ export function LabStoreProvider({
     inspectedId: initialTasks.some((task) => task.id === initialInspectedId) ? initialInspectedId : null,
     recentlyPlacedId: null,
     recentlyUpdatedId: null,
+    recentlyCompletedId: null,
     previewId: null,
     editing: null,
     drag: null,
@@ -383,6 +396,19 @@ export function LabStoreProvider({
     dispatch({ type: "SET_INSPECTED", id });
     onInspectedChange(id);
   }, [onInspectedChange]);
+
+  // Completion motion belongs to the completion event, never to a checked
+  // state discovered on mount. Clear the event after the 160ms acknowledgement
+  // so changing views cannot replay historical work as if it just happened.
+  useEffect(() => {
+    if (!state.recentlyCompletedId) return;
+    const id = state.recentlyCompletedId;
+    const timer = window.setTimeout(
+      () => dispatch({ type: "CLEAR_RECENT_COMPLETION", id }),
+      200,
+    );
+    return () => window.clearTimeout(timer);
+  }, [state.recentlyCompletedId]);
 
   const setPreview = useCallback((id: string | null) => {
     dispatch({ type: "SET_PREVIEW", id });
