@@ -3,14 +3,14 @@
   "experienceId": "tasks.page.welcome-plan",
   "source": "tasks/src/app/welcome/plan/page.tsx",
   "materialityHash": "f532c7ecbb8ab980",
-  "reviewedAt": "2026-08-06",
-  "reviewer": "Claude Fable 5, T-126 review-repairs cycle",
+  "reviewedAt": "2026-08-09",
+  "reviewer": "Codex Wave 0 control-plane",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-21f1b4c92f2b56d887d3b049-6bba47ac0486da25.json",
-    "attestationSha256": "af5f066448d6ac1ac7f5c0a3fb06fbbb64a5bea2e0afbcba5eca85ce01bb31c8",
-    "runId": "tasks-playwright-21f1b4c92f2b56d887d3b049",
-    "canonicalEvidenceSha256": "21f1b4c92f2b56d887d3b049b2f70b37994fccd46852c08ea647828d758167ff",
-    "rawArtifactSha256": "6bba47ac0486da252aa1c51cf627e535d17b384af68ffad8d8ef2cc61029371c",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-e56b34a88c14c76835a58321-cfaf969457f01d83.json",
+    "attestationSha256": "a208255878caab6732ca8c0fcc7514e5ed8580f6c924a5a3ea6dd0e023fb7e04",
+    "runId": "tasks-playwright-e56b34a88c14c76835a58321",
+    "canonicalEvidenceSha256": "e56b34a88c14c76835a58321c440bee5b82eb3305a8de07511d81a8fb2b573b0",
+    "rawArtifactSha256": "cfaf969457f01d83a5d6a0f2574603dc714ae25381462e4781b42a7a73eaf01c",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.sign-up-by-sign-up",
     "caseName": "review-mode sign up",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "No source change. The T-126 cycle advanced the fixture manifest (quick-create accessible-name assertion; share read-only proof retargeted to 'Add project'), which retires attestations pinned to the prior manifest.",
-  "decision": "Re-attested against full-suite run tasks-playwright-5883c3d281ebebf2ef71f2d7 (128/128 on mobile, tablet, desktop, wide); surface unchanged and passing."
+  "reviewedChange": "Re-attested unchanged source against the 144-case current Home-first evidence contract after the deterministic harness update.",
+  "decision": "approve"
 }

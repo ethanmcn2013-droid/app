@@ -35,12 +35,12 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // is unaffected (module-isolated lazy DB init via file:roadmap.db dev fallback).
   ["TIMELINE_DATABASE_URL", "Timeline module database (timeline.signalstudio.ie Turso)"],
   ["TIMELINE_AUTH_TOKEN", "Timeline module database auth token"],
-  // Signal module (2026-07-31 reset: one database — briefing engine +
-  // folded-in user_preferences; the separate prefs DB is retired).
-  // Without these /app/signal DB calls throw at runtime; the rest of the app
-  // is unaffected (dev fallback file:signal.db).
-  ["SIGNAL_DATABASE_URL", "Signal module database (briefing engine + preferences)"],
-  ["SIGNAL_AUTH_TOKEN", "Signal module database auth token"],
+  // Home briefing capability (legacy SIGNAL_* database name, 2026-07-31
+  // reset: briefing engine + folded-in user_preferences).
+  // Without these /app/home and /app/home/briefing degrade; the three product
+  // routes remain isolated (dev fallback file:signal.db).
+  ["SIGNAL_DATABASE_URL", "Home briefing database (legacy name; briefing engine + preferences)"],
+  ["SIGNAL_AUTH_TOKEN", "Home briefing database auth token (legacy name)"],
 ];
 
 let validated = false;

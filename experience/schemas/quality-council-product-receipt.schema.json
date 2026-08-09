@@ -27,8 +27,7 @@
       "enum": [
         "notes",
         "tasks",
-        "timeline",
-        "signal"
+        "timeline"
       ]
     },
     "criticalExperienceId": {
@@ -37,7 +36,7 @@
     },
     "canonicalPath": {
       "type": "string",
-      "pattern": "^/app/(notes|tasks|timeline|signal)$"
+      "pattern": "^/app/(notes|tasks|timeline)$"
     },
     "reviewedAt": {
       "type": "string",

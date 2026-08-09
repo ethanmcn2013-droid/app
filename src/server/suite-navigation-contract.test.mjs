@@ -580,7 +580,7 @@ test("the cross-suite evidence contract separates read-only traversal from hashe
       "follow-preseeded-task-receipt",
       "inspect-preseeded-task-and-milestone-provenance",
       "inspect-owner-timeline",
-      "inspect-briefing-evidence",
+    "inspect-home-briefing-evidence",
     ],
   );
   assert.deepEqual(
@@ -591,7 +591,7 @@ test("the cross-suite evidence contract separates read-only traversal from hashe
       "notes-source-create-and-exact-task-send",
       "notes-task-send-idempotency-and-replay",
       "task-milestone-promotion-and-timeline-provenance",
-      "signal-opaque-evidence-resolution",
+    "home-briefing-opaque-evidence-resolution",
     ],
   );
   assert.ok(

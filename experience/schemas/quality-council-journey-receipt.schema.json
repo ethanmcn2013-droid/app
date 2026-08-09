@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://signalstudio.ie/schemas/quality-council-journey-receipt.schema.json",
   "title": "Signal Studio quality council cross-suite journey receipt",
-  "description": "One fail-closed receipt for a continuous Notes to Tasks to Timeline to Signal journey at one required viewport. The repository validator is authoritative for exact steps, hashes, score arithmetic, and hard blockers.",
+  "description": "One fail-closed receipt for a continuous Notes to Tasks to Timeline to Home briefing journey at one required viewport. The repository validator is authoritative for exact steps, hashes, score arithmetic, and hard blockers.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -27,7 +27,7 @@
       "const": "signal-quality-council-journey-receipt/1"
     },
     "journeyId": {
-      "const": "signal-studio.note-to-signal"
+      "const": "signal-studio.note-to-home"
     },
     "viewport": {
       "enum": [
@@ -218,12 +218,12 @@
             "notes",
             "tasks",
             "timeline",
-            "signal"
+            "home"
           ]
         },
         "path": {
           "type": "string",
-          "pattern": "^/app/(notes|tasks|timeline|signal)$"
+          "pattern": "^/app/(notes|tasks|timeline|home/briefing)$"
         },
         "action": {
           "type": "string",

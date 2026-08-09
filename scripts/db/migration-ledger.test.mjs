@@ -175,6 +175,17 @@ test("applied forward migration drift fails both migration no-op and current sta
   );
 }));
 
+test("migration-time backfill proofs do not become false production drift alarms", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  await client.execute({
+    sql: "INSERT INTO tasks (id, title, lane, priority, completed_at, seq) VALUES (?, ?, ?, ?, ?, ?)",
+    args: ["post-migration-task", "Completed after the migration", "done", "P2", 1_785_000_000, 999],
+  });
+
+  assert.equal((await migrationStatus({ client })).state, "current");
+  assert.deepEqual(await runMigrations({ client }), { status: "no-op", applied: [] });
+}));
+
 test("same-name wrong-definition source-note index fails semantic proofs", async () => withClient(async (client) => {
   await runMigrations({ client, releaseSha: "test-release" });
   await client.execute("DROP INDEX idx_tasks_source_note_id");

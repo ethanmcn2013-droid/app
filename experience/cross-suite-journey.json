@@ -1,7 +1,7 @@
 {
   "schemaVersion": "signal-cross-suite-journey/1",
   "generatedAt": "2026-07-26",
-  "id": "signal-studio.note-to-signal",
+  "id": "signal-studio.note-to-home",
   "status": "required-not-yet-evidenced",
   "proofMode": {
     "browser": "continuous-read-only-preseeded-traversal",
@@ -56,7 +56,7 @@
   },
   "contextInvariants": [
     "The same workspace and project identities are used in every product.",
-    "Product switching uses only /app/notes, /app/tasks, /app/timeline, and /app/signal.",
+    "Product switching uses only /app/notes, /app/tasks, and /app/timeline; Home is the authenticated front door.",
     "Switching products preserves the active workspace and project context.",
     "Every derived object retains a durable reference to its immediate source.",
     "Signal evidence resolves back to the exact task and milestone; it is not synthetic summary copy."
@@ -108,13 +108,14 @@
     },
     {
       "order": 5,
-      "product": "signal",
-      "path": "/app/signal",
-      "action": "inspect-briefing-evidence",
+      "product": "home",
+      "path": "/app/home/briefing",
+      "action": "inspect-home-briefing-evidence",
       "expected": [
         "The briefing describes only evidence available from the active project.",
         "The observation links back to the exact task and milestone.",
-        "Partial provider failure is disclosed rather than silently replaced."
+        "Partial provider failure is disclosed rather than silently replaced.",
+        "The briefing remains a capability inside Home and is not presented as a fourth product."
       ]
     }
   ],
@@ -166,7 +167,7 @@
         "hashRequired": true
       },
       {
-        "id": "signal-opaque-evidence-resolution",
+        "id": "home-briefing-opaque-evidence-resolution",
         "proves": [
           "the opaque Signal entry resolves server-side to the exact task",
           "the rebuilt evidence remains scoped to the authorised workspace and project",
@@ -177,10 +178,10 @@
     ]
   },
   "evidenceReceipts": [
-    "experience/council-reviews/journeys/signal-studio.note-to-signal.mobile.json",
-    "experience/council-reviews/journeys/signal-studio.note-to-signal.tablet.json",
-    "experience/council-reviews/journeys/signal-studio.note-to-signal.desktop.json",
-    "experience/council-reviews/journeys/signal-studio.note-to-signal.wide.json"
+    "experience/council-reviews/journeys/signal-studio.note-to-home.mobile.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-home.tablet.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-home.desktop.json",
+    "experience/council-reviews/journeys/signal-studio.note-to-home.wide.json"
   ],
   "certification": {
     "status": "not-assessed",

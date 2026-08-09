@@ -154,7 +154,10 @@ async function verifyAppliedEntryProofs(executor, context, appliedRuntimeCount) 
   );
   const results = [];
   for (const entry of appliedEntries) {
-    results.push(...await verifyProofs(executor, entry.receipt.record.proofs));
+    const continuousProofs = entry.continuousProofIds === undefined
+      ? entry.receipt.record.proofs
+      : entry.receipt.record.proofs.filter((proof) => entry.continuousProofIds.includes(proof.id));
+    results.push(...await verifyProofs(executor, continuousProofs));
   }
   return results;
 }
