@@ -4,7 +4,7 @@
 
 ## Provenance
 
-- App `d1af9aea80de610adcb67189030095ba81eb8404`, deployment `dpl_Eb1HemUb53Pt8CZkAZkL5um9cY9`, `https://app.signalstudio.ie`; source-identical review render.
+- App `d1af9aea80de610adcb67189030095ba81eb8404`, deployment `dpl_Eb1HemUb53CTp8CZkAZkL5um9cY9`, `https://app.signalstudio.ie`; source-identical review render.
 - Studio `084085f2e5d266aa53c49611b499c2c9456ff26a`, deployment `dpl_6bffvDb1HojVaDmiwxnLFzCF89JB`, live `https://signalstudio.ie`.
 - Contract: products are Notes, Tasks, Timeline; Home is front door and daily briefing; Signal route is legacy redirect.
 - Evidence: 32 images, 20 route/viewport captures, axe, interaction, and manual Notes→Task reproduction. Unknown performance, native assistive-technology, motion and unexercised mutation paths received no optimism.

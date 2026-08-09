@@ -6,7 +6,7 @@
     "app": {
       "sourceGitCommitSha": "d1af9aea80de610adcb67189030095ba81eb8404",
       "sourceTreeSha256": "864cc0d0e7a63c905cbc2676655da93483f67792cabb24c9fda492d068aa7611",
-      "deploymentId": "dpl_Eb1HemUb53Pt8CZkAZkL5um9cY9",
+      "deploymentId": "dpl_Eb1HemUb53CTp8CZkAZkL5um9cY9",
       "productionUrl": "https://app.signalstudio.ie"
     },
     "studio": {
@@ -29,24 +29,24 @@
   "artifacts": [
     {
       "path": "experience/council-evidence/wave-0-b0/council-report.md",
-      "sha256": "1f94c8272b6112f43ccbf98e3d598894e90ecfb286dc0958ead9b3f70de9e3ca"
+      "sha256": "d75e03589de3411503f53ac178d45ca7117abcf4a793eb77d694c927e40f39e7"
     },
     {
       "path": "experience/council-evidence/wave-0-b0/evidence-manifest.json",
-      "sha256": "a6782756662d989894b45606637664d6d33b508e7589065d500b5d1610ae841d"
+      "sha256": "953c6bded0bf0c2ace6ddcf98ea196d0457a075b85860cf8c3c813aa6ef5cccd"
     }
   ],
   "reviewers": [
     { "id": "director-01", "name": "Director 01", "lens": "Executive Product Design and Council Chair", "independentReviewSha256": "62fb6bf765b5fa436af09eaca8a76ef1c3ef31d509ec0fc2fb8b76c4b65c5a0e" },
     { "id": "director-02", "name": "Director 02", "lens": "Human Interface and Interaction", "independentReviewSha256": "48c2287b64945f214f6b7a1e1798ac4b32c1f82e769bd7dd82f83fc59ae3e225" },
-    { "id": "director-03", "name": "Director 03", "lens": "User Journey and Task Success", "independentReviewSha256": "edb4bf6fa8f7293ad0878432534a372790b0810a9f520f63c98d35fe134194a8" },
-    { "id": "director-04", "name": "Director 04", "lens": "Information Architecture and Cognitive Ergonomics", "independentReviewSha256": "89d9d32eef5b0bcfded14284937f257af365c86fa08c4ddc5533036a2dc8b9a6" },
-    { "id": "director-05", "name": "Director 05", "lens": "Visual Design and Art Direction", "independentReviewSha256": "7ef107080ca58dd00079264bd31c546d31b1da2ea6b9e05d724df2fcee60388a" },
-    { "id": "director-06", "name": "Director 06", "lens": "Content Design Language and Trust", "independentReviewSha256": "9a0e12101bc8e4864a7701ee0d404b1c3762d463764f1bad1c5915d73c450a9b" },
-    { "id": "director-07", "name": "Director 07", "lens": "Motion Feedback and Delight", "independentReviewSha256": "9b87a4a86d85087a08628ed2b63c159b480fe15f737aa0b5dcd0309d96691dd2" },
-    { "id": "director-08", "name": "Director 08", "lens": "Accessibility and Inclusive Design", "independentReviewSha256": "da6fc9dd06dd6db227f01ee728f2775fdf20d41fa4d77984ea476588c220bd74" },
-    { "id": "director-09", "name": "Director 09", "lens": "Signal Studio Product System and Brand", "independentReviewSha256": "f6cf6b065b69465b6c6be708949fca5ae18d849e44b364414bda995e8f401e4c" },
-    { "id": "director-10", "name": "Director 10", "lens": "Responsive Performance and Production Quality", "independentReviewSha256": "ceb9a51dcb8b829af988c8c7e093371922b6e4683328ac5d55a997d0bf8ea302" }
+    { "id": "director-03", "name": "Director 03", "lens": "User Journey and Task Success", "independentReviewSha256": "3962b9ea7dac8667130220c43c1e09162bd6490154cad5960e87726aa7e1dd2f" },
+    { "id": "director-04", "name": "Director 04", "lens": "Information Architecture and Cognitive Ergonomics", "independentReviewSha256": "84d1bba3cf1b334c11f7ce39de3e4f770446e8fcd258544945685e8b7be8724d" },
+    { "id": "director-05", "name": "Director 05", "lens": "Visual Design and Art Direction", "independentReviewSha256": "e0f1006a7899215b2735191b24caed078084f473943d01656bb84e18fdb37064" },
+    { "id": "director-06", "name": "Director 06", "lens": "Content Design Language and Trust", "independentReviewSha256": "770cb5e478ac4bf0a0d3d3d16fea1e22361f0df20c32f92ae72537326e058789" },
+    { "id": "director-07", "name": "Director 07", "lens": "Motion Feedback and Delight", "independentReviewSha256": "301ac05a241383d2d91383afbb2ee4e76df9c42178acc872494516667e65c9f4" },
+    { "id": "director-08", "name": "Director 08", "lens": "Accessibility and Inclusive Design", "independentReviewSha256": "0f2fd7347789cdfb73fe53d1a7e139c7bd92bb82655f15788aecbca6e7d34e57" },
+    { "id": "director-09", "name": "Director 09", "lens": "Signal Studio Product System and Brand", "independentReviewSha256": "79dba4f89babde57f11b48882d17c0a2b2795daa363600b2299e92ad8a1f6e02" },
+    { "id": "director-10", "name": "Director 10", "lens": "Responsive Performance and Production Quality", "independentReviewSha256": "ce6aef318e251eb4a5079819d822bbc2a4100786f77a8378982947daea10a455" }
   ],
   "surfaces": [
     {

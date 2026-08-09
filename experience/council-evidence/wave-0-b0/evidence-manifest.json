@@ -5,7 +5,7 @@
     "app": {
       "mode": "source-identical-review-render",
       "sourceGitCommitSha": "d1af9aea80de610adcb67189030095ba81eb8404",
-      "productionDeploymentId": "dpl_Eb1HemUb53Pt8CZkAZkL5um9cY9",
+      "productionDeploymentId": "dpl_Eb1HemUb53CTp8CZkAZkL5um9cY9",
       "productionUrl": "https://app.signalstudio.ie"
     },
     "studio": {
