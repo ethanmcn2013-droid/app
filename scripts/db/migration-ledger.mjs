@@ -144,6 +144,14 @@ export function loadAndValidateLedger({ root = defaultRoot } = {}) {
     }
 
     const receipt = validateReceipt(root, entry, receiptCache);
+    if (entry.continuousProofIds !== undefined) {
+      invariant(Array.isArray(entry.continuousProofIds), `${entry.id} continuousProofIds must be an array`);
+      invariant(new Set(entry.continuousProofIds).size === entry.continuousProofIds.length, `${entry.id} has duplicate continuousProofIds`);
+      const receiptProofIds = new Set(receipt.record.proofs.map((proof) => proof.id));
+      for (const proofId of entry.continuousProofIds) {
+        invariant(receiptProofIds.has(proofId), `${entry.id} continuous proof ${proofId} is not present in its receipt`);
+      }
+    }
     return {
       ...entry,
       filePath,

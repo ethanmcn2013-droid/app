@@ -20,7 +20,7 @@ const JOURNEY_SCHEMA = "signal-cross-suite-journey/1";
 const PRODUCT_RECEIPT_SCHEMA = "signal-quality-council-product-receipt/1";
 const JOURNEY_RECEIPT_SCHEMA = "signal-quality-council-journey-receipt/1";
 const PREPARATION_SCHEMA = "signal-quality-council-input/1";
-const REQUIRED_PRODUCTS = ["notes", "tasks", "timeline", "signal"];
+const REQUIRED_PRODUCTS = ["notes", "tasks", "timeline"];
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
 const COMMIT_PATTERN = /^[a-f0-9]{40}$/;
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -537,7 +537,7 @@ function validateContract(repoRoot, errors) {
   }
 
   if (
-    journey.id !== "signal-studio.note-to-signal" ||
+    journey.id !== "signal-studio.note-to-home" ||
     JSON.stringify(journey.requiredViewports) !== JSON.stringify(viewports)
   ) {
     errors.push("cross-suite journey: id and required viewports must match the suite gate");
@@ -1312,13 +1312,13 @@ function buildSelfTestFixture(root) {
     { order: 2, product: "notes", path: "/app/notes", action: "extract" },
     { order: 3, product: "tasks", path: "/app/tasks", action: "promote" },
     { order: 4, product: "timeline", path: "/app/timeline", action: "inspect" },
-    { order: 5, product: "signal", path: "/app/signal", action: "verify" },
+    { order: 5, product: "home", path: "/app/home/briefing", action: "verify" },
   ];
   const journeyReceiptPath =
-    "experience/council-reviews/journeys/signal-studio.note-to-signal.mobile.json";
+    "experience/council-reviews/journeys/signal-studio.note-to-home.mobile.json";
   const journey = {
     schemaVersion: JOURNEY_SCHEMA,
-    id: "signal-studio.note-to-signal",
+    id: "signal-studio.note-to-home",
     requiredViewports: ["mobile"],
     steps,
     evidenceReceipts: [journeyReceiptPath],

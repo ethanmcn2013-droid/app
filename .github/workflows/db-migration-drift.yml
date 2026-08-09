@@ -5,6 +5,8 @@ name: db-migration-drift
 # before its production database is current. This job is read-only.
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   schedule:

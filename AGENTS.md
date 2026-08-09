@@ -7,8 +7,10 @@ what the task needs.
 ## What this repo is
 
 This is the unified signed-in Signal Studio app at `app.signalstudio.ie`
-— one app, four modules: **Notes** (capture), **Tasks** (execution),
-**Timeline** (direction), **Signal** (attention). The GitHub repo is
+— one app with three products: **Notes** (capture), **Tasks** (execution),
+and **Timeline** (direction). **Home** is the authenticated front door and
+contains Today's Signal plus the Full Briefing; it is not a fourth product.
+The GitHub repo is
 named `app` (`ethanmcn2013-droid/app`); local clones should sit in a
 matching `app/` directory.
 
@@ -44,12 +46,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## URL and naming contract
 
 Full rules: `docs/SUITE_URL_AND_NAMING_CONTRACT.md`. Marketing:
-`signalstudio.ie/{notes|tasks|timeline|signal}`; signed-in:
-`app.signalstudio.ie/app/{notes|tasks|timeline|signal}`. Use the typed
+`signalstudio.ie/{notes|tasks|timeline}` plus
+`signalstudio.ie/features/daily-briefing`; signed-in:
+`app.signalstudio.ie/app/{notes|tasks|timeline}` with Home at `/app/home`
+and the Full Briefing at `/app/home/briefing`. Use the typed
 constants in `src/lib/product-urls.ts` — never invent hostnames or
 product names in components. `/app/board`, `/app/plan`, and `/app/brief`
 are retired compatibility inputs; new UI, docs, analytics, and email
-must never emit them.
+must never emit them. `/app/signal*` is a legacy redirect input only.
 
 ## Database release gate
 

@@ -267,7 +267,12 @@
       "sha256": "0d169a3ca395616c3d81868da31f732fd3181d7a5efc624bf703192ff3155613",
       "policy": "forward",
       "receipt": "drizzle/receipts/tasks-completed-at-2026-07-31.json",
-      "receiptSha256": "727bd3ae86594a541c2f8bf00b03395dc5547b9317d17ee79e7f61406f3b64f7"
+      "receiptSha256": "727bd3ae86594a541c2f8bf00b03395dc5547b9317d17ee79e7f61406f3b64f7",
+      "continuousProofIds": [
+        "completed-at-column-exists",
+        "integrity",
+        "foreign-keys"
+      ]
     },
     {
       "ordinal": 26,

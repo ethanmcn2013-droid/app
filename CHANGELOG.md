@@ -4,6 +4,24 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-09 · T·134 · tightens · the release gate now describes the product that ships
+
+**A historical backfill check can no longer report healthy new task data as a
+production migration failure, and the quality council no longer asks for a
+fourth product that the app retired.** Migration receipts still prove every
+postcondition atomically when SQL runs. Continuous drift checks now rerun only
+the proofs that remain true as customer data changes: schema shape, integrity,
+foreign keys, indexes, and guard definitions. A regression fixture adds a
+post-migration completed task without a historical backfill activity and proves
+both status and the second migration run stay current.
+
+The release contract now covers Notes, Tasks, and Timeline, then follows the
+same object into the Full Briefing inside Home. Legacy `/app/signal*` routes
+remain deterministic redirect fixtures, not product entries. The repo contract,
+deployment runbook, environment descriptions, council schemas, preparation
+matrix, and shared Wave 9.5 receipt schema all use the same model. Protected
+product UI is unchanged in this control-plane wave.
+
 ## 2026-08-05 · T·133 · tightens · visiting Tasks no longer breaks Timeline
 
 **Opening Tasks and then clicking Timeline showed "That workspace is not

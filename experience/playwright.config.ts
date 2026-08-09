@@ -63,8 +63,9 @@ export default defineConfig({
     cwd: process.cwd(),
     url: `http://localhost:${port}`,
     timeout: 240_000,
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.TASKS_EXPERIENCE_REUSE_SERVER === "1",
     env: {
+      NODE_OPTIONS: process.env.NODE_OPTIONS ?? "--max-old-space-size=4096",
       VERCEL_ENV: browserContract.determinism.deploymentEnvironment,
       SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,

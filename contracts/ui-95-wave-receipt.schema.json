@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://signalstudio.ie/schemas/ui-95-wave-receipt.schema.json",
+  "title": "Signal Studio UI 9.5 wave receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "waveId",
+    "objective",
+    "findingIds",
+    "baseShas",
+    "headShas",
+    "pullRequests",
+    "checks",
+    "deployments",
+    "liveRoutes",
+    "verification",
+    "council",
+    "gateResult",
+    "nextWave"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "signal-ui-95-wave-receipt/1" },
+    "waveId": { "type": "string", "pattern": "^wave-[0-9]+(?:-[a-z0-9-]+)?$" },
+    "objective": { "type": "string", "minLength": 20 },
+    "findingIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 2 } },
+    "baseShas": { "$ref": "#/$defs/repoShas" },
+    "headShas": { "$ref": "#/$defs/repoShas" },
+    "pullRequests": { "type": "array", "items": { "$ref": "#/$defs/linkRecord" } },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "deployments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rollback", "preview", "production"],
+      "properties": {
+        "rollback": { "type": "array", "items": { "$ref": "#/$defs/deployment" } },
+        "preview": { "type": "array", "items": { "$ref": "#/$defs/deployment" } },
+        "production": { "type": "array", "items": { "$ref": "#/$defs/deployment" } }
+      }
+    },
+    "liveRoutes": { "type": "array", "uniqueItems": true, "items": { "type": "string", "format": "uri" } },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stateMatrix", "testCommands", "accessibility", "performance", "captureHashes"],
+      "properties": {
+        "stateMatrix": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } },
+        "testCommands": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+        "accessibility": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } },
+        "performance": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } },
+        "captureHashes": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } }
+      }
+    },
+    "council": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panelSize", "scores", "scoreChangeLog", "newFindings", "closedFindings"],
+      "properties": {
+        "panelSize": { "const": 10 },
+        "scores": { "type": "array", "items": { "$ref": "#/$defs/score" } },
+        "scoreChangeLog": { "type": "array", "items": { "$ref": "#/$defs/evidenceRecord" } },
+        "newFindings": { "type": "array", "uniqueItems": true, "items": { "type": "string" } },
+        "closedFindings": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "gateResult": { "enum": ["pass", "fail", "blocked"] },
+    "nextWave": { "type": ["string", "null"] }
+  },
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "repoShas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["app", "studio"],
+      "properties": { "app": { "$ref": "#/$defs/sha" }, "studio": { "$ref": "#/$defs/sha" } }
+    },
+    "linkRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "url"],
+      "properties": { "repo": { "enum": ["app", "studio"] }, "url": { "type": "string", "format": "uri" } }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "evidence"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["pass", "fail", "not-applicable", "blocked"] },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "id", "url", "status"],
+      "properties": {
+        "repo": { "enum": ["app", "studio"] },
+        "id": { "type": "string", "minLength": 3 },
+        "url": { "type": "string", "format": "uri" },
+        "status": { "enum": ["READY", "ERROR", "CANCELED", "SUPERSEDED"] }
+      }
+    },
+    "evidenceRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["pass", "fail", "unknown", "not-applicable"] },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "prior", "current", "lowestLens", "p0", "p1", "veto", "gate", "evidence"],
+      "properties": {
+        "surface": { "type": "string", "minLength": 1 },
+        "prior": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+        "current": { "type": "number", "minimum": 0, "maximum": 10 },
+        "lowestLens": { "type": "number", "minimum": 0, "maximum": 10 },
+        "p0": { "type": "integer", "minimum": 0 },
+        "p1": { "type": "integer", "minimum": 0 },
+        "veto": { "type": "boolean" },
+        "gate": { "enum": ["pass", "fail"] },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
+

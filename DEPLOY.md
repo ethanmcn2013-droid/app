@@ -1,7 +1,10 @@
 # Signal Studio app · deploy notes
 
-Current as of the 2026-07-31 data-layer reset. The app deploys from this
-repo to the Vercel project serving `app.signalstudio.ie`. The canonical
+Current as of the 2026-08-09 Wave 0 deployment rebaseline. The `app` GitHub
+repo deploys through Vercel's existing `app` project and serves
+`app.signalstudio.ie`. A merge is not a deployment receipt: wait for the new
+production deployment to become READY and for the canonical alias to resolve
+to its deployment ID. The canonical
 infrastructure map (every service, account, env var, and rotation step)
 lives in `studio/docs/INFRASTRUCTURE.md`; this file is the app-side
 summary.
@@ -31,7 +34,7 @@ ENTITLEMENTS_AUTH_TOKEN=...
 # Clerk webhook
 CLERK_WEBHOOK_SIGNING_SECRET=whsec_...
 
-# Stripe (five prices, one per tier — no aliases)
+# Stripe (runtime variable names; visible commercial terms live in Studio)
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_WORKSPACE_MONTHLY=price_...
@@ -80,11 +83,12 @@ attachments should work in production — serverless disk is ephemeral),
 
 ## 3. Stripe products
 
-Five prices, one env var each (section 1). Tier vocabulary:
-Workspace (monthly + annual), Studio (monthly), Wedding (one-time),
-Event (one-time). Prices are set in the Stripe dashboard; copy each
-Price ID into the matching env var. `docs/STRIPE_SETUP.md` holds the
-detailed runbook.
+The environment names above mirror the current checkout implementation in
+`src/server/stripe.ts`; they are not permission to invent or restate public
+prices. Visible plan names, amounts, cadence, eligibility, duration, renewal,
+and editor limits come from Studio's canonical commercial-terms source. If
+code, Stripe, and that source disagree, stop the release and reconcile them.
+`docs/STRIPE_SETUP.md` is the provider runbook.
 
 ## 4. Database release gate
 
@@ -119,39 +123,17 @@ identity. The module databases (notes / timeline / signal) are created from
 their tracked baselines in `drizzle-notes/`, `drizzle-timeline/`,
 `drizzle-signal/`. See `drizzle/MIGRATIONS.md` for the full contract.
 
-### Pending module migration: notes 0001
+### Module-database boundary
 
-`drizzle-notes/0001_notes_reviewed_at.sql` adds one nullable column and one
-index to `notes`, for the Review queue (N·25, 2026-08-05):
-
-```sql
-ALTER TABLE `notes` ADD `reviewed_at` integer;
-CREATE INDEX `notes_user_reviewed_idx` ON `notes` (`user_id`,`reviewed_at`,`created_at`);
-```
-
-It is additive and backward compatible: every existing row reads as "not yet
-reviewed", which is true, and the previous release keeps working against the
-new schema.
-
-**Deploy order does not matter.** The app probes for the column once per
-process (`notesReviewStateReady()` in
-`src/modules/notes/server/actions/notes.ts`) and projects a literal NULL when
-it is absent. Shipping the code first is safe: the notebook, search, capture,
-editing, Turn into task and Sent all work, every note simply reads as "not
-yet reviewed", and the only thing that fails is the one action that writes
-the column — which reports itself and rolls back on screen.
-
-Until the migration is applied, therefore:
-
-- Review lists every note and the queue never empties.
-- "Keep in Notes" says the decision was not saved, and means it.
-
-Applying it switches Review on with no further deploy. There is no
-receipt-backed runner for the module databases yet — `pnpm db:migrate` covers
-the Tasks database only — so apply it by hand against `NOTES_DATABASE_URL`
-with `turso db shell`, after a backup, and record the applied hash beside the
-release. Building that runner for the module databases is open work; the
-probe above is what makes its absence survivable rather than blocking.
+`pnpm db:migrate` and the continuous `db-migration-drift` workflow cover the
+Tasks database only. Notes, Timeline, and the legacy-named Signal database
+(Home briefing capability and preferences) retain their tracked baselines in
+`drizzle-notes/`, `drizzle-timeline/`, and `drizzle-signal/`. A SQL file in the
+repository is not proof that a module database was changed in production.
+Any module write requires a fresh backup, isolated-copy dry run, applied-file
+hash, postcondition evidence, and second-run/no-op evidence in the release
+receipt. Never carry a dated "pending migration" claim in this runbook after
+its production state can change independently.
 
 ## 5. Cron
 
@@ -162,12 +144,15 @@ Cron Jobs after the first deploy.
 ## 6. Smoke test (production, from a phone in incognito)
 
 - [ ] `/` renders
-- [ ] Sign-in works → `/app/tasks` board renders
-- [ ] Each module renders: `/app/notes`, `/app/timeline`, `/app/signal`
+- [ ] Sign-in works → `/app/home` renders, then `/app/tasks` board renders
+- [ ] Each product renders: `/app/notes`, `/app/tasks`, `/app/timeline`
+- [ ] Home renders Today's Signal and `/app/home/briefing` renders the Full Briefing
+- [ ] Legacy `/app/signal` redirects to `/app/home/briefing` and is never emitted by new UI
 - [ ] Check off a task → completion animation fires
 - [ ] Share link → another tab/incognito visits → renders read-only
-- [ ] Pricing CTA → Stripe Checkout (test card `4242 4242 4242 4242`) →
-  entitlement granted
+- [ ] A safe test-environment pricing CTA preserves its selected plan through
+  checkout and the expected entitlement is granted; never use test-card data
+  against the live production account
 - [ ] Daily digest cron fires (`curl -H "Authorization: Bearer $CRON_SECRET"
   $URL/api/cron/digest?send=1`) → email lands
 - [ ] Clerk + Stripe webhooks show recent deliveries in their dashboards
