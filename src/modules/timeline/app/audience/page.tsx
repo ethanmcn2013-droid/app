@@ -97,8 +97,15 @@ export default async function AudienceTimelineManagerPage({
           {project ? `Share ${project.name}, not the workspace.` : "Share the journey, not the workspace."}
         </h1>
         <p className="mt-4 text-base leading-7 text-ink-soft">
-          Shared timelines are frozen, link-only copies. They are absent from directories and search; source changes wait for your review.
+          Anyone with a published link can open and forward the frozen copy.
+          It is absent from directories and search, never grants workspace
+          access, and source changes wait for your review before they appear.
         </p>
+        <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3" role="list" aria-label="Sharing boundary">
+          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">1. Choose</strong>Only the milestones you select are copied.</p>
+          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">2. Review</strong>The shared copy stays separate from your plan.</p>
+          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">3. Publish</strong>Anyone with the link can view or forward it.</p>
+        </div>
       </header>
       <AudienceManager
         workspaceSlug={workspace.slug}

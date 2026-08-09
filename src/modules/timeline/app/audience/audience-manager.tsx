@@ -143,12 +143,15 @@ export function AudienceManager({
       ) : suiteWorkspaceId ? (
         <section aria-labelledby="new-audience-heading">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Frozen projection</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">Private preview</p>
             <h2 id="new-audience-heading" className="mt-2 text-2xl font-semibold tracking-tight text-ink">
-              {projectName ? `Publish ${projectName}` : "Create a shared timeline"}
+              {projectName ? `Review the page for ${projectName}` : "Review a shared timeline"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-ink-soft">
-              Choose the exact milestone labels, dates, and completion states to copy. Notes, people, attachments, and source IDs never appear to viewers.
+              Choose the exact milestone labels, dates, and completion states
+              to copy. Nothing is public until you review the private preview
+              and publish its link. Notes, people, attachments, and source IDs
+              never appear to viewers.
             </p>
           </div>
           <form action={createAction} className="mt-5 rounded-xl border border-line-soft bg-white p-5">
@@ -169,12 +172,15 @@ export function AudienceManager({
                 />
               </label>
               <label className="text-sm font-medium text-ink-soft">
-                Named audience
+                Page language
                 <select className={`${fieldClass} mt-1.5`} name="audienceKind" defaultValue={defaultAudienceKind}>
                   <option value="couple">Couple</option>
                   <option value="class">Class</option>
                   <option value="module">Project</option>
                 </select>
+                <span className="mt-1 block text-xs font-normal leading-5 text-ink-quiet">
+                  Changes the wording only. It does not restrict who can open a published link.
+                </span>
               </label>
               <label className="text-sm font-medium text-ink-soft">
                 Owner display label <span className="font-normal text-ink-quiet">(optional)</span>
@@ -360,6 +366,12 @@ export function AudienceManager({
                   {/* One visible header row; per-row labels stay for screen
                       readers. Ten stacked label grids read as a form farm —
                       a single ruled list reads as the plan it is. */}
+                  <details className="group rounded-lg border border-line-soft bg-white">
+                    <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                      <span>Review copied milestones</span>
+                      <span className="font-normal text-ink-quiet">{publication.items.length} selected · source changes stay private</span>
+                    </summary>
+                    <div className="border-t border-line-soft px-4 pb-3 pt-3">
                   <div aria-hidden className="hidden border-b border-line-soft pb-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet sm:grid sm:grid-cols-[1fr_10rem_8rem_8.5rem] sm:gap-3">
                     <span>Shared title</span>
                     <span>Date</span>
@@ -404,6 +416,8 @@ export function AudienceManager({
                     ))}
                   </div>
                   {updateState.publicationId === publication.id ? <ActionNotice state={updateState} /> : null}
+                    </div>
+                  </details>
 
                   <div className="mt-5 flex flex-wrap items-end gap-2 border-t border-line-soft pt-5">
                     {publication.state !== "published" ? (
@@ -414,7 +428,7 @@ export function AudienceManager({
                           Link expiry <span className="font-normal">(optional)</span>
                           <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
                         </label>
-                        <button disabled={publishPending} className={primaryButton}>Publish and create link</button>
+                        <button disabled={publishPending} className={primaryButton}>Publish link for anyone to view</button>
                       </form>
                     ) : (
                       <>
@@ -425,14 +439,14 @@ export function AudienceManager({
                             New expiry <span className="font-normal">(optional)</span>
                             <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
                           </label>
-                          <button disabled={rotatePending} className={quietButton}>Rotate link</button>
+                          <button disabled={rotatePending} className={quietButton}>Replace link</button>
                         </form>
                         <form action={revokeAction}>
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
                           <ArmedSubmitButton
-                            label="Revoke links"
-                            armedLabel="Confirm: revoke every link"
+                            label="Turn off links"
+                            armedLabel="Confirm: stop every link"
                             disabled={revokePending}
                           />
                         </form>
@@ -440,14 +454,17 @@ export function AudienceManager({
                           <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
                           <input type="hidden" name="publicationId" value={publication.id} />
                           <ArmedSubmitButton
-                            label="Unpublish"
-                            armedLabel="Confirm: unpublish and revoke"
+                            label="Remove shared page"
+                            armedLabel="Confirm: remove page and links"
                             disabled={unpublishPending}
                           />
                         </form>
                       </>
                     )}
                   </div>
+                  <p className="mt-2 max-w-3xl text-xs leading-5 text-ink-quiet">
+                    Published links can be forwarded. Replace link stops the old address and makes a new one. Turn off links keeps this reviewed copy ready for later. Remove shared page takes the copy offline and stops every link.
+                  </p>
                   {publishState.publicationId === publication.id ? (
                     <><ActionNotice state={publishState} /><ShareReceipt state={publishState} /></>
                   ) : null}

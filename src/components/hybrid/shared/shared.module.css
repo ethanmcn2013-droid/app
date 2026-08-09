@@ -196,6 +196,14 @@
     block-size: 44px;
   }
 }
+@media (max-width: 640px) {
+  .selectionTarget,
+  .completionTarget {
+    flex-basis: 44px;
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}
 /* Elevated priority is words in the state's ink, not a cryptic dot: the
    dot survives as a small marker beside the word so the state is never
    colour-only, and the word is never meaning-free. */

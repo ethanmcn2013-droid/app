@@ -4,6 +4,21 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-09 · T·135 · tightens · core actions now explain where the work moved
+
+**Tasks now makes its mobile workflow explicit, reports task completion at the
+point of action, and removes unsupported ARIA from the board and list.** Phone
+boards gain 44-pixel lane controls with counts and focusable destinations;
+native table relationships remain native; task detail announces the resulting
+status immediately. The same pass gives Notes a 320-pixel capture layout and a
+plain pre-send Anthropic disclosure for photo reading.
+
+Timeline sharing now says exactly who can open or forward a published link and
+separates choose, review, and publish. Repetitive copied milestones collapse
+behind one review step, while replace, turn-off, and removal actions name their
+consequences. Private previews remain private and published pages remain frozen
+until the owner reviews another update.
+
 ## 2026-08-09 · T·134 · tightens · the release gate now describes the product that ships
 
 **A historical backfill check can no longer report healthy new task data as a

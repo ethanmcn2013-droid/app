@@ -246,6 +246,9 @@ function TaskDetailHeader({
   const columnConfig = useColumnConfig();
   const projectLabel = boardName ?? "Project";
   const isFocus = shell === "focus";
+  const done = isTaskDone(task, columnConfig);
+  const [completionReceipt, setCompletionReceipt] = useState<{ taskId: string; message: string } | null>(null);
+  const completionMessage = completionReceipt?.taskId === task.id ? completionReceipt.message : null;
 
   const actions = buildTaskDetailActions(task, {
     dispatchers,
@@ -255,7 +258,7 @@ function TaskDetailHeader({
     columnConfig,
   });
 
-  const primaryLabel = isTaskDone(task, columnConfig) ? "Reopen" : "Mark done";
+  const primaryLabel = done ? "Reopen" : "Mark done";
 
   return (
     <div className="flex-shrink-0 border-b border-line-soft bg-bg-elevated px-6 pb-3 pt-3 lg:px-8">
@@ -385,18 +388,29 @@ function TaskDetailHeader({
           ) : null}
           {/* The panel's one primary action carries the suite's primary
               treatment — indigo and a pill, per the design system. */}
-          <button
-            type="button"
-            onClick={() => dispatchers.toggleComplete(task.id)}
-            className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:min-h-0 md:py-1.5"
-          >
-            {!isTaskDone(task, columnConfig) ? (
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              type="button"
+              aria-describedby={completionMessage ? `task-completion-${task.id}` : undefined}
+              onClick={() => {
+                dispatchers.toggleComplete(task.id);
+                setCompletionReceipt({ taskId: task.id, message: done ? "Reopened in In progress." : "Moved to Done." });
+              }}
+              className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-full bg-brand px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent md:min-h-0 md:py-1.5"
+            >
+              {!done ? (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : null}
+              {primaryLabel}
+            </button>
+            {completionMessage ? (
+              <span className="text-[11px] font-medium text-ink-soft" id={`task-completion-${task.id}`} role="status">
+                {completionMessage}
+              </span>
             ) : null}
-            {primaryLabel}
-          </button>
+          </div>
         </div>
       </div>
     </div>

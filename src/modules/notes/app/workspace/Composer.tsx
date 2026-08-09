@@ -629,6 +629,14 @@ export function Composer({
               alt={`Photo to read: ${photo.name}`}
               data-rotation={photo.rotation}
             />
+            <div className={styles.photoDisclosure} role="note">
+              <strong>Still on this device.</strong>
+              <span>
+                Read this photo sends a resized copy to Anthropic to turn the
+                visible writing into text. Signal Studio does not keep the
+                photo; only notes you choose to save are stored.
+              </span>
+            </div>
             <div className={styles.stageActions}>
               <button
                 type="button"
@@ -663,7 +671,7 @@ export function Composer({
                   Replace
                 </button>
                 <button type="button" className={styles.primaryButton} onClick={() => void processPhoto()}>
-                  Read this photo
+                  Read with AI
                 </button>
               </div>
             </div>

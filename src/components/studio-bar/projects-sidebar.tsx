@@ -480,8 +480,9 @@ function SidebarBody({
                 >
                   <span aria-hidden="true" className={styles.disclosureGhost} />
                   <span className={styles.projectName} title={w.name}>{w.name}</span>
-                  <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
+                  <span className={styles.leafCount}>
                     {w.taskCount}
+                    <span className="sr-only"> task{w.taskCount === 1 ? "" : "s"}</span>
                   </span>
                 </button>
                 <ProjectRowMenu
@@ -507,8 +508,9 @@ function SidebarBody({
                   <ShellGlyph name="chevron" size={13} />
                 </span>
                 <span className={styles.projectName}>Archived</span>
-                <span aria-label={`${tree.archived.length} archived`} className={styles.leafCount}>
+                <span className={styles.leafCount}>
                   {tree.archived.length}
+                  <span className="sr-only"> archived</span>
                 </span>
               </button>
               <AnimatePresence initial={false}>
@@ -525,8 +527,9 @@ function SidebarBody({
                     <div className={styles.projectRowWrap}>
                       <span className={styles.projectLeaf} data-archived="true">
                         <span className={styles.projectName} title={w.name}>{w.name}</span>
-                        <span aria-label={`${w.taskCount} task${w.taskCount === 1 ? "" : "s"}`} className={styles.leafCount}>
+                        <span className={styles.leafCount}>
                           {w.taskCount}
+                          <span className="sr-only"> task{w.taskCount === 1 ? "" : "s"}</span>
                         </span>
                       </span>
                       <ProjectRowMenu

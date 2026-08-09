@@ -366,6 +366,25 @@
   border-color: color-mix(in srgb, var(--accent) 32%, var(--hairline));
 }
 
+.photoDisclosure {
+  display: grid;
+  gap: 3px;
+  margin: 0 12px 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--hairline));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 4%, var(--paper));
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.photoDisclosure strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .composerField {
   display: block;
   inline-size: 100%;
@@ -1812,6 +1831,50 @@ textarea.fieldControl {
 
   .reviewSpacer {
     display: none;
+  }
+}
+
+@media (max-width: 359px) {
+  /* At the 320px / 400% reflow floor, capture modes and the save action
+     become two deliberate rows. Nothing is clipped and every action keeps
+     its full accessible name and 44px touch target. */
+  .composerFooter {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .modeGroup {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .modeButton,
+  .primaryButton,
+  .quietButton {
+    min-block-size: 44px;
+  }
+
+  .modeButton {
+    justify-content: center;
+    padding-inline: 4px;
+  }
+
+  .composerRight {
+    justify-content: flex-end;
+    min-inline-size: 0;
+  }
+
+  .stageActions,
+  .stageActionsRight {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stageActions > *,
+  .stageActionsRight > * {
+    inline-size: 100%;
+    justify-content: center;
   }
 }
 

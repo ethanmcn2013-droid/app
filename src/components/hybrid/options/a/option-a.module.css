@@ -274,6 +274,7 @@
    that read as a scale model of the board rather than the board. The floor
    on this surface is the brand ramp's 11px label size; nothing ships below it. */
 .boardSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; position: relative; }
+.mobileLaneNav { display: none; }
 
 /* The lane track and the pinned add-column rail as one row: the rail sits
    BESIDE the horizontal scroll, never stacked under it. */
@@ -729,8 +730,8 @@
    `transparent` into the canvas does not tint it — it takes 6% of its
    alpha away, and a 0.94-opaque sticky header let every row scrolling
    under it print through the group name. */
-.groupRow th { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
-.groupRow th::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
+.groupRow td { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
+.groupRow td::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */
 .groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px 0 11px; position: sticky; width: max-content; }
@@ -1058,6 +1059,47 @@
  * horizontally scrollable work surface; its controls become a calm stack.
  */
 @media (max-width: 767px) {
+  .mobileLaneNav {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--x-task-border);
+    background: var(--x-task-raised);
+    scrollbar-width: none;
+  }
+
+  .mobileLaneNav::-webkit-scrollbar { display: none; }
+
+  .mobileLaneNav button {
+    display: inline-flex;
+    flex: 0 0 auto;
+    min-height: 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--x-task-border);
+    border-radius: 999px;
+    background: var(--x-task-surface);
+    color: var(--x-task-text-secondary);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .mobileLaneNav button:focus-visible {
+    outline: 2px solid var(--x-task-focus);
+    outline-offset: 2px;
+  }
+
+  .mobileLaneNav strong {
+    color: var(--x-task-text-muted);
+    font-family: var(--font-geist-mono), monospace;
+    font-size: 11px;
+  }
+
   .viewBar {
     display: grid;
     flex: 0 0 auto;
@@ -1554,7 +1596,7 @@
   .taskTable th[data-column="title"] { position: static; }
   /* The group band sticks under the column header on desktop. There is no
      column header here, so it sticks to the top of the scroller. */
-  .groupRow th { top: 0; }
+  .groupRow td { top: 0; }
   /* The desktop column grid is what made this 1321px wide. Give the
      widths back and the row is free to be as wide as the phone is. */
   .taskTable th[data-column],
