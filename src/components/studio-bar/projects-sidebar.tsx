@@ -617,7 +617,7 @@ export function ProjectsSidebar({
   // panel read one truth, and a collapsed panel renders NOTHING - no
   // strip, no reserved width.
   const { expanded, drawerOpen } = useTasksNav();
-  const sidebarRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
@@ -790,12 +790,12 @@ export function ProjectsSidebar({
   if (!expanded) return null;
 
   return (
-    <div
+    <nav
+      aria-label="Tasks navigation"
       className={`${styles.projectsSidebarHost} hidden md:block`}
       style={{ "--projects-sidebar-width": `${sidebarWidth}px` } as CSSProperties}
     >
-      <aside
-        aria-label="Tasks navigation"
+      <div
         className={styles.projectsSidebar}
         data-projects-sidebar="true"
         ref={sidebarRef}
@@ -812,7 +812,7 @@ export function ProjectsSidebar({
         />
         <SidebarBody activeWorkspaceId={activeWorkspaceId} projectsOpen={projectsOpen} tree={tree} />
         <div aria-hidden="true" className={styles.sidebarFoot} />
-      </aside>
+      </div>
       <button
         aria-label="Resize Projects sidebar"
         aria-orientation="vertical"
@@ -832,6 +832,6 @@ export function ProjectsSidebar({
         title="Drag to resize. Double-click to reset."
         type="button"
       />
-    </div>
+    </nav>
   );
 }
