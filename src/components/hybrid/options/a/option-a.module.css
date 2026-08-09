@@ -540,7 +540,7 @@
    on hover so it never costs a permanent row. */
 .cardHead { align-items: flex-start; display: flex; gap: 9px; min-width: 0; padding-right: 16px; }
 .cardBody { display: flex; flex: 1; flex-direction: column; min-width: 0; }
-.cardHead > input { margin-top: 2px; }
+.cardHead > label { margin: -4px; }
 
 /* ••• trigger floated over the card's top-right corner by ContextActions.
    Quiet at rest, present on hover or keyboard focus — the same actions are
@@ -807,6 +807,8 @@
 
 /* Timeline */
 .timelineSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.mobileSchedule { display: none; }
+.desktopDateCommand { display: contents; }
 .timelineToolbar { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 40px; gap: 12px; padding: 0 10px; }
 .timelineToolbar > strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; font-weight: 500; }
 .rangeNavigation,
@@ -823,7 +825,7 @@
 .unscheduledTray > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 11px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
-.unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 250px; gap: 5px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; min-height: 31px; padding: 3px 4px 3px 7px; }
+.unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 270px; gap: 3px; grid-template-columns: 24px 24px 8px minmax(0, 1fr) auto; min-height: 39px; padding: 3px 4px; }
 .unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
@@ -844,7 +846,7 @@
 .timelineDate[data-today] b { color: var(--x-task-accent); }
 .timelineRow { min-height: 39px; }
 .timelineRow[data-completed] { color: var(--x-task-text-muted); }
-.timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 6px; grid-template-columns: 15px 15px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 7px; position: sticky; z-index: 6; }
+.timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 3px; grid-template-columns: 24px 24px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 5px; position: sticky; z-index: 6; }
 .timelineTaskPane:focus { background: var(--x-task-selected); }
 .timelineTaskCopy { display: flex; flex-direction: column; min-width: 0; }
 .timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
@@ -1093,78 +1095,80 @@
     width: auto;
   }
 
-  .timelineToolbar {
+  .timelineToolbar,
+  .unscheduledTray,
+  .timelineScroller,
+  .desktopDateCommand { display: none; }
+
+  .mobileSchedule {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--x-task-canvas);
+    scrollbar-width: thin;
+  }
+
+  .mobileScheduleHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    border-bottom: 1px solid var(--x-task-border);
+    background: var(--x-task-raised);
+  }
+
+  .mobileScheduleHeader > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+  .mobileScheduleHeader > div > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+  .mobileScheduleHeader strong { overflow: hidden; color: var(--x-task-text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+  .mobileScheduleHeader > span { flex: none; color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+
+  .mobileDateCommand:has(.dateCommandEmpty) { display: none; }
+  .mobileDateCommand .dateCommand {
     display: grid;
-    flex: 0 0 auto;
-    gap: 5px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 6px 8px;
-  }
-
-  .timelineToolbar > strong {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    overflow: hidden;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .rangeNavigation,
-  .zoomControl {
-    margin-left: 0;
     min-width: 0;
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+    padding: 10px 14px;
+    border-top: 0;
+    border-bottom: 1px solid var(--x-task-border);
+    background: var(--x-task-surface);
   }
+  .mobileDateCommand .dateCommandTask { grid-column: 1 / -1; max-width: none; min-width: 0; }
+  .mobileDateCommand .dateCommand label { min-width: 0; }
+  .mobileDateCommand .dateCommand input { width: 100%; min-height: 44px; font-size: 13px; }
+  .mobileDateCommand .dateCommand > button,
+  .mobileDateCommand .dateStep button { min-height: 44px; }
+  .mobileDateCommand .dateStep { align-self: stretch; }
 
-  .rangeNavigation button,
-  .zoomControl button {
-    flex: 1 1 0;
-    height: 44px;
-  }
+  .mobileScheduleGroup { padding: 14px 10px 0; }
+  .mobileScheduleGroup:last-child { padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+  .mobileScheduleGroup > header { display: flex; align-items: end; justify-content: space-between; gap: 12px; padding: 0 4px 8px; }
+  .mobileScheduleGroup > header > div { display: flex; align-items: center; gap: 6px; }
+  .mobileScheduleGroup > header strong { font-size: 12px; }
+  .mobileScheduleGroup > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+  .mobileScheduleGroup > header small { color: var(--x-task-text-muted); font-size: 11px; text-align: right; }
 
-  .unscheduledTray {
-    padding: 7px 8px;
+  .mobileScheduleList { display: grid; gap: 7px; }
+  .mobileScheduleCard {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 64px;
+    padding: 7px 7px 7px 2px;
+    border: 1px solid var(--x-task-border);
+    border-radius: 8px;
+    background: var(--x-task-raised);
   }
-
-  .unscheduledTray > header {
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .unscheduledTray > header small {
-    max-width: 48%;
-    text-align: right;
-  }
-
-  .unscheduledItem {
-    flex-basis: min(78vw, 270px);
-    min-height: 48px;
-  }
-
-  .unscheduledItem > button:last-child {
-    height: 44px;
-  }
-
-  .timelineCanvas {
-    min-width: calc(168px + var(--timeline-width));
-  }
-
-  .timelineHeaderRow,
-  .timelineRow {
-    grid-template-columns: 168px var(--timeline-width);
-  }
-
-  .timelinePaneHeader,
-  .timelineTaskPane {
-    min-width: 168px;
-  }
-
-  .timelineTaskPane,
-  .timelineGeometry,
-  .timelineRow {
-    min-height: 44px;
-  }
+  .mobileScheduleCopy { display: flex; min-width: 0; flex-direction: column; gap: 5px; }
+  .mobileScheduleCopy > button { overflow: hidden; border: 0; background: transparent; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 13px; font-weight: 600; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+  .mobileScheduleCopy > span { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .mobileScheduleAction { min-height: 44px; margin-left: 8px; padding: 0 10px; border: 1px solid var(--x-task-border); border-radius: 6px; background: var(--x-task-surface); color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; }
+  .mobileScheduleAction:disabled { cursor: not-allowed; opacity: .45; }
+  .mobileScheduleEmpty { padding: 14px 10px; border: 1px dashed var(--x-task-border-strong); border-radius: 8px; color: var(--x-task-text-muted); font-size: 12px; text-align: center; }
 }
 
 @media (pointer: coarse) {

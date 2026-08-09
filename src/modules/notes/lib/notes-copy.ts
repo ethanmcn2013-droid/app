@@ -177,7 +177,7 @@ const generic: NotesCopy = {
     start: "Dictate",
     stop: "Stop listening",
     disclosure:
-      "Dictation uses your browser's speech service, so the words you speak leave this device to be turned into text. Typing stays on your device until you save.",
+      "Your browser may send microphone audio to its speech service to turn it into text. Signal Studio does not receive or retain that audio. Your browser or speech provider controls its service retention. Typing stays on your device until you save.",
     unavailable:
       "This browser has no speech engine, so dictation is off here. Chrome and Safari have one. Typing works everywhere.",
     denied: "Dictation needs microphone access. Allow it in your browser, or type instead.",
@@ -255,7 +255,7 @@ const wedding: NotesCopy = {
     start: "Speak it",
     stop: "Stop",
     disclosure:
-      "Speaking a note uses your browser's speech service, so the words you say leave this device to be turned into text. Typing stays on your device until you save.",
+      "Your browser may send microphone audio to its speech service to turn it into text. Signal Studio does not receive or retain that audio. Your browser or speech provider controls its service retention. Typing stays on your device until you save.",
     unavailable:
       "This browser cannot turn speech into text, so speaking is off here. Chrome and Safari can. Typing works everywhere.",
     denied: "Speaking needs microphone access. Allow it in your browser, or type it instead.",

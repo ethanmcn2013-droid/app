@@ -530,7 +530,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .selectedAgendaList { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .selectedAgendaList > li { border-bottom: 1px solid var(--x-task-border); padding: 12px; }
 .selectedAgendaList article { min-width: 0; }
-.agendaTaskLead { align-items: flex-start; display: grid; gap: 7px; grid-template-columns: 16px minmax(0, 1fr) 26px; }
+.agendaTaskLead { align-items: flex-start; display: grid; gap: 7px; grid-template-columns: 24px minmax(0, 1fr) 24px; }
 .agendaTaskLead > div { display: flex; flex-direction: column; min-width: 0; }
 .agendaTaskTitle { font-size: 13px; font-weight: 600; line-height: 1.4; }
 .agendaTaskLead > div > span { margin-top: 3px; }
@@ -767,6 +767,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 }
 
 @media (pointer: coarse) {
+  .agendaTaskLead { grid-template-columns: 44px minmax(0, 1fr) 44px; }
   .calendarDayHeader button,
   .calendarTaskChip,
   .calendarExtendButton,

@@ -27,8 +27,11 @@ test("one canonical Done green feeds header, dot, and completion control", () =>
   assert.equal((globals.match(/#1b873f/gi) ?? []).length, 2, "the literal appears only as the token and its doc comment");
   assert.match(globals, /--x-task-success: var\(--x-status-done\);/);
   assert.match(globals, /--x-col-emerald: var\(--x-status-done\);/);
-  // The completion control consumes the same semantic token.
-  assert.match(sharedCss, /\.completionBox:checked \{ background: var\(--x-task-success\); border-color: var\(--x-task-success\); \}/);
+  // The completion control consumes the same semantic token while the native
+  // checkbox fills an inclusive hit region and the visible glyph stays small.
+  assert.match(sharedCss, /\.completionTarget:has\(\.controlInput:checked\) \.completionGlyph \{ background: var\(--x-task-success\); border-color: var\(--x-task-success\); \}/);
+  assert.match(sharedCss, /@media \(pointer: coarse\) \{[\s\S]*\.completionTarget \{[\s\S]*inline-size: 44px;[\s\S]*block-size: 44px;/);
+  assert.match(taskUi, /className=\{styles\.controlInput\}/);
   // The old dark-forest formula and the dead lane palette stay gone.
   assert.doesNotMatch(globals, /var\(--status-done\) 60%, var\(--ink\)/);
   assert.doesNotMatch(globals, /--lane-done/);

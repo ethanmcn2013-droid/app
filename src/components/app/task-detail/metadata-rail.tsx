@@ -88,6 +88,15 @@ export function MetadataRail({
     PRODUCT_APP_PATHS.timeline,
     suiteContext,
   );
+  const rawSourceNoteId = task.sourceNoteId
+    ? task.sourceNoteId.slice(task.sourceNoteId.lastIndexOf(":") + 1)
+    : null;
+  const sourceNoteHref = rawSourceNoteId
+    ? withSuiteContext(
+        `${PRODUCT_APP_PATHS.notes}?note=${encodeURIComponent(rawSourceNoteId)}`,
+        suiteContext,
+      )
+    : null;
 
   // Optional fields show when they hold something, or once asked for.
   const [revealed, setRevealed] = useState({ contact: false, amount: false });
@@ -180,7 +189,23 @@ export function MetadataRail({
       {/* Provenance — used to crowd the header breadcrumb as a chip. */}
       {task.sourceNoteId ? (
         <MetaField label="Source">
-          <span className={FIELD_TEXT}>Drafted in Signal Notes</span>
+          <div className="flex min-w-0 flex-col items-start gap-1.5">
+            {sourceNoteHref ? (
+              <Link
+                href={sourceNoteHref}
+                className="inline-flex min-h-8 items-center gap-1 rounded-md text-[12px] font-medium text-ink-soft underline decoration-line-strong underline-offset-4 transition-colors hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                From Notes · open source
+              </Link>
+            ) : (
+              <span className={FIELD_TEXT}>From Notes</span>
+            )}
+            {task.sourceNoteExtractBody ? (
+              <span className="max-w-full text-pretty text-[12px] leading-5 text-ink-quiet">
+                Approved wording: “{task.sourceNoteExtractBody}”
+              </span>
+            ) : null}
+          </div>
         </MetaField>
       ) : null}
 

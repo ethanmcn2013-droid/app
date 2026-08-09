@@ -437,9 +437,11 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
    * note's words in the field for one paint, and a keystroke landing in that
    * frame would be saved against the wrong note.
    */
-  const [loadedNoteId, setLoadedNoteId] = useState<string | null>(
-    props.initialNoteId ?? null,
-  );
+  // The notebook editor owns its own draft state and starts empty. Even when
+  // the route arrives with a selected note, that note has not been copied into
+  // the editor yet, so the loaded marker must also start empty. Treating the
+  // URL id as already loaded produced a blank reading surface on direct links.
+  const [loadedNoteId, setLoadedNoteId] = useState<string | null>(null);
   if (loadedNoteId !== (selectedNote?.id ?? null)) {
     setLoadedNoteId(selectedNote?.id ?? null);
     notebook.applyOpenNote(selectedNote);
@@ -692,6 +694,9 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
 
   return (
     <div className={styles.root} data-notes-workspace="" data-view={view}>
+      <h1 className={styles.srOnly}>
+        {view === "notebook" ? "Notes notebook" : view === "review" ? "Review notes" : "Notes sent to Tasks"}
+      </h1>
       <header className={styles.header} ref={headerRef}>
         <nav className={styles.views} aria-label="Notes views">
           {(["notebook", "review", "sent"] as const).map((candidate) => {
@@ -836,7 +841,10 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
 
       <div className={styles.body}>
         {view === "notebook" ? (
-          <div className={styles.notebook}>
+          <div
+            className={styles.notebook}
+            data-detail-open={Boolean(selectedNote) || undefined}
+          >
             <Composer
               copy={copy}
               draft={notebook.draft}
@@ -1281,7 +1289,7 @@ function NoteDetail({
               </div>
             ) : null}
             {note.promotedTaskId ? (
-              <div className={styles.detailPair}>
+              <div className={`${styles.detailPair} ${styles.taskReceipt}`}>
                 <dt>Task</dt>
                 <dd>
                   <a className={styles.linkedTask} href={taskFocusPath(note.promotedTaskId ?? "")}>
