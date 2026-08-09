@@ -321,11 +321,12 @@
 /* ── Projects sidebar ─────────────────────────────────────────────────── */
 
 .projectsSidebarHost {
-  flex: 0 0 236px;
+  flex: 0 0 var(--projects-sidebar-width, 236px);
   height: 100%;
   overflow: hidden;
+  position: relative;
   transition: flex-basis 220ms var(--spring-glide), width 220ms var(--spring-glide);
-  width: 236px;
+  width: var(--projects-sidebar-width, 236px);
 }
 
 .projectsSidebarHost[data-collapsed] {
@@ -366,6 +367,54 @@
   font-size: 12.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
+}
+
+.sidebarPicker {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 6px 0 0;
+}
+
+.sidebarPicker:hover { color: var(--x-task-accent); }
+.sidebarPicker .disclosure { height: 13px; width: 13px; }
+
+.sidebarResizer {
+  background: transparent;
+  border: 0;
+  bottom: 0;
+  cursor: col-resize;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 12px;
+  z-index: 58;
+}
+
+.sidebarResizer::after {
+  background: transparent;
+  bottom: 0;
+  content: "";
+  left: 5px;
+  position: absolute;
+  top: 0;
+  transition: background 120ms ease, box-shadow 120ms ease;
+  width: 2px;
+}
+
+.sidebarResizer:hover::after,
+.sidebarResizer:focus-visible::after,
+.sidebarResizer:active::after {
+  background: var(--x-task-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 10%, transparent);
 }
 
 .sidebarCollapse {
@@ -645,15 +694,11 @@
 /* ── Responsive widths ────────────────────────────────────────────────── */
 
 @media (max-width: 1439px) {
-  .projectsSidebarHost { flex-basis: 228px; width: 228px; }
   .projectsSidebarHost[data-collapsed] { flex-basis: 44px; width: 44px; }
-  .projectsSidebar { flex-basis: 228px; width: 228px; }
 }
 
 @media (max-width: 1279px) {
-  .projectsSidebarHost { flex-basis: 212px; width: 212px; }
   .projectsSidebarHost[data-collapsed] { flex-basis: 44px; width: 44px; }
-  .projectsSidebar { flex-basis: 212px; width: 212px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -666,6 +711,7 @@
   .railLabel,
   .railUtility,
   .disclosure { transition: none; }
+  .sidebarResizer::after { transition: none; }
   .signalRail [data-tip]::after,
   .projectsSidebar [data-tip]::after,
   .projectsDrawer [data-tip]::after { transition: none; }

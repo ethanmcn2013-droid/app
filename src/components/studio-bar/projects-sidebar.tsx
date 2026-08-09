@@ -17,6 +17,7 @@ import {
   useSyncExternalStore,
   useTransition,
   type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
@@ -44,6 +45,14 @@ import {
 import styles from "./signal-shell.module.css";
 
 const DRAWER_QUERY = "(max-width: 1099px)";
+const SIDEBAR_WIDTH_KEY = "signal-tasks.projects-sidebar-width";
+const SIDEBAR_MIN_WIDTH = 196;
+const SIDEBAR_MAX_WIDTH = 420;
+const SIDEBAR_DEFAULT_WIDTH = 236;
+
+function clampSidebarWidth(value: number): number {
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(value)));
+}
 
 function useDrawerViewport(): boolean {
   const subscribe = useCallback((onChange: () => void) => {
@@ -357,10 +366,12 @@ function SidebarBody({
   tree,
   activeWorkspaceId,
   onNavigate,
+  projectsOpen,
 }: {
   tree: ProjectsTreeData;
   activeWorkspaceId: string;
   onNavigate?: () => void;
+  projectsOpen: boolean;
 }) {
   const pathname = usePathname() ?? "";
   // A project reads as "where you are" only on the Tasks views
@@ -457,8 +468,8 @@ function SidebarBody({
           <span>My work</span>
         </Link>
       </nav>
-      <nav aria-label="Projects" className={styles.projectsSection}>
-        <h2 className={styles.projectsLabel}>Projects</h2>
+      {projectsOpen ? <nav aria-label="Project folders" className={styles.projectsSection} id="projects-tree-panel">
+        <h2 className={styles.projectsLabel}>Project folders</h2>
         <ul className={styles.projectTree}>
           {/* Projects used to be grouped under a planning-period name + date
               row (T·95 lab parity). The founder had that removed 2026-08-05:
@@ -546,7 +557,7 @@ function SidebarBody({
             </li>
           ) : null}
         </ul>
-      </nav>
+      </nav> : null}
     </div>
   );
 }
@@ -554,17 +565,32 @@ function SidebarBody({
 function SidebarHeader({
   closeLabel,
   onClose,
+  onProjectsToggle,
+  projectsOpen,
   tip,
 }: {
   closeLabel: string;
   onClose: () => void;
+  onProjectsToggle: () => void;
+  projectsOpen: boolean;
   tip: string;
 }) {
   return (
     <header className={styles.sidebarHeader}>
       {/* A quiet local-navigation label — the brand lockup lives in the
           black bar; this is just "where inside Tasks". */}
-      <span className={styles.sidebarTitle}>Tasks</span>
+      <button
+        aria-controls="projects-tree-panel"
+        aria-expanded={projectsOpen}
+        className={styles.sidebarPicker}
+        onClick={onProjectsToggle}
+        type="button"
+      >
+        <span className={styles.sidebarTitle}>Projects</span>
+        <span aria-hidden="true" className={styles.disclosure} data-open={projectsOpen || undefined}>
+          <ShellGlyph name="chevron" size={13} />
+        </span>
+      </button>
       <button
         aria-label={closeLabel}
         className={styles.sidebarCollapse}
@@ -593,6 +619,62 @@ export function ProjectsSidebar({
   const { expanded, drawerOpen } = useTasksNav();
   const sidebarRef = useRef<HTMLElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const [projectsOpen, setProjectsOpen] = useState(true);
+  const [sidebarWidth, setSidebarWidth] = useState(SIDEBAR_DEFAULT_WIDTH);
+  const sidebarWidthRef = useRef(SIDEBAR_DEFAULT_WIDTH);
+
+  useEffect(() => {
+    let frame = 0;
+    try {
+      const stored = Number(window.localStorage.getItem(SIDEBAR_WIDTH_KEY));
+      if (Number.isFinite(stored) && stored > 0) {
+        const next = clampSidebarWidth(stored);
+        frame = window.requestAnimationFrame(() => {
+          sidebarWidthRef.current = next;
+          setSidebarWidth(next);
+        });
+      }
+    } catch {
+      // A blocked preference store leaves the authored default intact.
+    }
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const updateSidebarWidth = useCallback((value: number, persist = false) => {
+    const next = clampSidebarWidth(value);
+    sidebarWidthRef.current = next;
+    setSidebarWidth(next);
+    if (persist) {
+      try {
+        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next));
+      } catch {
+        // Resizing remains live for this session when storage is unavailable.
+      }
+    }
+  }, []);
+
+  const beginSidebarResize = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0) return;
+    event.currentTarget.focus({ preventScroll: true });
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = sidebarWidthRef.current;
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const move = (pointerEvent: globalThis.PointerEvent) => {
+      updateSidebarWidth(startWidth + pointerEvent.clientX - startX);
+    };
+    const finish = () => {
+      updateSidebarWidth(sidebarWidthRef.current, true);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+  }, [updateSidebarWidth]);
 
   const [wasDrawerMode, setWasDrawerMode] = useState(drawerMode);
   if (wasDrawerMode !== drawerMode) {
@@ -682,10 +764,17 @@ export function ProjectsSidebar({
               role="dialog"
               transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.23, 1, 0.32, 1] }}
             >
-              <SidebarHeader closeLabel="Close Tasks navigation" onClose={closeDrawer} tip="Close Tasks navigation" />
+              <SidebarHeader
+                closeLabel="Close Tasks navigation"
+                onClose={closeDrawer}
+                onProjectsToggle={() => setProjectsOpen((value) => !value)}
+                projectsOpen={projectsOpen}
+                tip="Close Tasks navigation"
+              />
               <SidebarBody
                 activeWorkspaceId={activeWorkspaceId}
                 onNavigate={closeDrawer}
+                projectsOpen={projectsOpen}
                 tree={tree}
               />
             </motion.div>
@@ -701,7 +790,10 @@ export function ProjectsSidebar({
   if (!expanded) return null;
 
   return (
-    <div className={`${styles.projectsSidebarHost} hidden md:block`}>
+    <div
+      className={`${styles.projectsSidebarHost} hidden md:block`}
+      style={{ "--projects-sidebar-width": `${sidebarWidth}px` } as CSSProperties}
+    >
       <aside
         aria-label="Tasks navigation"
         className={styles.projectsSidebar}
@@ -714,11 +806,32 @@ export function ProjectsSidebar({
             collapseNavPanel();
             focusBandTrigger();
           }}
+          onProjectsToggle={() => setProjectsOpen((value) => !value)}
+          projectsOpen={projectsOpen}
           tip="Collapse Tasks navigation"
         />
-        <SidebarBody activeWorkspaceId={activeWorkspaceId} tree={tree} />
+        <SidebarBody activeWorkspaceId={activeWorkspaceId} projectsOpen={projectsOpen} tree={tree} />
         <div aria-hidden="true" className={styles.sidebarFoot} />
       </aside>
+      <button
+        aria-label="Resize Projects sidebar"
+        aria-orientation="vertical"
+        aria-valuemax={SIDEBAR_MAX_WIDTH}
+        aria-valuemin={SIDEBAR_MIN_WIDTH}
+        aria-valuenow={sidebarWidth}
+        className={styles.sidebarResizer}
+        onDoubleClick={() => updateSidebarWidth(SIDEBAR_DEFAULT_WIDTH, true)}
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
+          event.preventDefault();
+          if (event.key === "Home") updateSidebarWidth(SIDEBAR_DEFAULT_WIDTH, true);
+          else updateSidebarWidth(sidebarWidthRef.current + (event.key === "ArrowRight" ? 12 : -12), true);
+        }}
+        onPointerDown={beginSidebarResize}
+        role="separator"
+        title="Drag to resize. Double-click to reset."
+        type="button"
+      />
     </div>
   );
 }

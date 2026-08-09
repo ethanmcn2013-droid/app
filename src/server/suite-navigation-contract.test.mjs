@@ -454,7 +454,7 @@ test("canonical module identity stays visible in the mobile Studio Bar", () => {
   assert.match(identityCell, /productIdFromAppPath|activeModuleIdentity/);
   assert.match(identityCell, /className="flex h-full min-w-0/);
   assert.match(identityCell, /md:w-\[248px\]/);
-  assert.match(identityCell, /text-\[20px\]/);
+  assert.match(identityCell, /text-\[22px\]/);
   assert.doesNotMatch(identityCell, /\bhidden\b/);
   assert.match(
     studioBar,

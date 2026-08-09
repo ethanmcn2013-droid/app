@@ -89,7 +89,7 @@
    a glance; the weight change carries the same state without colour,
    so "current view" is never colour-only either way. */
 .viewTabs button[aria-current="page"],
-.viewTabs a[aria-current="page"] { background: var(--x-task-selected); box-shadow: inset 0 -2px 0 0 var(--x-task-accent); color: var(--x-task-text); font-weight: 600; }
+.viewTabs a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 600; }
 
 .viewTools { align-items: center; display: flex; gap: 4px; min-width: 0; }
 .viewTools > button,
