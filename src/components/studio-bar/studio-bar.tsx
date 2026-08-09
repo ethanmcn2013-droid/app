@@ -10,7 +10,7 @@
  *
  * Column grid, aligned to the shell below it:
  *   60px   Signal Studio mark (over the product rail)
- *   248px  static "Tasks" wordmark + optional licence-edition slot (over the
+ *   248px  active product wordmark + optional licence-edition slot (over the
  *          sidebar). Phase 1: the workspace/project *dropdown* that used to
  *          live here was removed — workspace switching now lives in the
  *          Projects sidebar and the ⌘K palette, so the upper-left reads as
@@ -84,6 +84,28 @@ function activeModuleIdentity(pathname: string): { word: string; home: string; l
 }
 
 /**
+ * The suite's one boundary mark. It occupies the rail's 60px origin cell
+ * and returns to Home; the product wordmark begins in the next cell, aligned
+ * to the Projects sidebar below.
+ */
+function MarkCell() {
+  return (
+    <div className="hidden h-full w-[60px] flex-none items-center justify-center md:flex">
+      <a
+        aria-label="Signal Studio Home"
+        className="group flex h-[44px] w-[44px] items-center justify-center rounded-lg outline-none transition-colors hover:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)]"
+        href={HOME_APP_PATH}
+      >
+        <span
+          aria-hidden="true"
+          className="h-[11px] w-[11px] rounded-full bg-[var(--x-studio-accent)] transition-transform duration-150 group-active:scale-90"
+        />
+      </a>
+    </div>
+  );
+}
+
+/**
  * Module wordmark + licence-edition slot. Occupies the 248px
  * identity cell over the sidebar. The wordmark is a plain link to the
  * active module's home (no dropdown behaviour, no chevron); the edition
@@ -94,20 +116,14 @@ function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
   const identity = activeModuleIdentity(pathname ?? "");
   return (
-    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 pl-5 pr-3 md:w-[248px] md:pl-[21px] md:pr-4">
+    <div className="flex h-full min-w-0 flex-none items-center gap-2.5 pl-4 pr-3 md:w-[248px] md:pl-4 md:pr-4">
       <a
         href={identity.home}
         aria-label={identity.label}
-        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[20px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[24px] md:pointer-coarse:min-h-[44px]"
+        className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[22px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-[44px]"
         style={{ letterSpacing: "-0.045em" }}
       >
         {identity.word}
-        {/* The wordmark ends in the brand's indigo full stop — one
-            authored object, matching the marketing wordmarks. The link's
-            aria-label above supplies the accessible name, so the glyph
-            carries no ARIA of its own; the mobile-visibility contract
-            also forbids concealment utilities anywhere in this cell. */}
-        <span className="text-[var(--x-studio-accent)]">.</span>
       </a>
       {edition ? (
         <span
@@ -166,6 +182,7 @@ export function StudioBar() {
       className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
     >
 
+      <MarkCell />
       <IdentityCell edition={data?.edition ?? null} />
 
       {/* The open black field between the wordmark and the action cluster

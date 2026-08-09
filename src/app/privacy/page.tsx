@@ -8,7 +8,7 @@ export const metadata = {
     "What we collect, why, who else sees it, and how to get it back. Hand-written, not Termly mush.",
 };
 
-const LAST_UPDATED = "2026-05-07";
+const LAST_UPDATED = "2026-08-09";
 
 /**
  * /privacy, hand-written privacy notice. Long-form prose intentionally,
@@ -110,10 +110,25 @@ export default function PrivacyPage() {
                   </Link>{" "}
                  , hosting, edge network, function execution.
                 </li>
+                <li>
+                  <Link href="https://privacy.anthropic.com/en/">
+                    Anthropic
+                  </Link>{" "}
+                 , only when you explicitly choose an AI action. Depending on
+                  the action, the disclosed task text, note transcript, or
+                  resized photo is sent for drafting, separation, or text
+                  extraction. Nothing is sent before the in-product review and
+                  confirmation step.
+                </li>
               </ul>
               <p>
-                That&rsquo;s the entire list. If we add one we&rsquo;ll
-                add it here, with the date.
+                Voice dictation also uses your browser or device&rsquo;s speech
+                recognition service. That service may process microphone audio
+                outside Signal Studio; its provider and retention terms are
+                controlled by your browser or operating system. Signal Studio
+                does not receive or retain that audio. That&rsquo;s the entire
+                processor list for these product paths. If we add one
+                we&rsquo;ll add it here, with the date.
               </p>
             </Section>
 

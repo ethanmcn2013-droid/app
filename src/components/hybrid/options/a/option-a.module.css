@@ -351,6 +351,10 @@
 /* Fixed-width mode (View menu): lanes hold their base width and the
    track scrolls, instead of sharing the spare board width. */
 .boardSurface[data-fixed-columns] .boardLane { flex-grow: 0; }
+.boardLane[data-resized] {
+  flex: 0 0 var(--lane-width, 224px);
+  min-width: var(--lane-width, 224px);
+}
 /* While a card is flying to its new status the destination must hold
    still. Without this the lanes resize under a card that has already
    arrived, and the movement people see is the board, not the work. */
@@ -378,6 +382,7 @@
   align-items: center;
   background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised));
   border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised));
+  border-top: 3px solid var(--lane-accent, var(--x-task-border-strong));
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -385,7 +390,7 @@
   min-height: 38px;
   gap: 0 6px;
   justify-content: space-between;
-  padding: 2px 8px 2px 14px;
+  padding: 0 8px 2px 14px;
   position: relative;
   z-index: 2;
 }
@@ -435,6 +440,37 @@
 .laneIconButton:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .laneIconButton:disabled { cursor: not-allowed; opacity: .4; }
 .laneIconButton:disabled:hover { background: transparent; color: var(--x-task-text-muted); }
+
+.laneResizer {
+  background: transparent;
+  border: 0;
+  bottom: 0;
+  cursor: col-resize;
+  padding: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 14px;
+  z-index: 4;
+}
+
+.laneResizer::after {
+  background: transparent;
+  bottom: 0;
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: background var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out);
+  width: 2px;
+}
+
+.laneResizer:hover::after,
+.laneResizer:focus-visible::after,
+.laneResizer:active::after {
+  background: var(--x-task-accent);
+  box-shadow: -3px 0 0 color-mix(in srgb, var(--x-task-accent) 9%, transparent);
+}
 
 /* The lane's own scroll region. `overscroll-behavior: contain` stops a
    lane that has hit its end from chaining the scroll to the page. */
@@ -1028,6 +1064,7 @@
   .laneAdd,
   .laneIconButton,
   .cardMenuTrigger { transition: none; }
+  .laneResizer::after { transition: none; }
   .boardLane { transition: none; }
   .laneRail,
   .laneHeader,

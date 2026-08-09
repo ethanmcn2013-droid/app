@@ -480,7 +480,6 @@ function MilestoneDetail({
   titleId: string;
   sectionRef?: Ref<HTMLElement>;
 }) {
-  const reduceMotion = useArtifactReducedMotion();
   const relative = detailTiming(point, today);
   const note = detailNote(point);
 
@@ -493,14 +492,9 @@ function MilestoneDetail({
       aria-labelledby={titleId}
       ref={sectionRef}
     >
-      <AnimatePresence initial={false} mode="wait">
-        <motion.div
+      <div
           className={styles.detailInner}
           key={point.item.publicId}
-          initial={reduceMotion ? false : { opacity: 0, transform: "translateY(6px)" }}
-          animate={{ opacity: 1, transform: "translateY(0)" }}
-          exit={reduceMotion ? undefined : { opacity: 0, transform: "translateY(-4px)" }}
-          transition={{ duration: reduceMotion ? 0 : 0.22, ease: METRIC_EASE }}
         >
           <div className={styles.detailLead}>
             <p className={styles.detailStatus}>{timelinePointStatus(point)}</p>
@@ -526,8 +520,7 @@ function MilestoneDetail({
               <dd>{milestonePlace(ordinal, total)}</dd>
             </div>
           </dl>
-        </motion.div>
-      </AnimatePresence>
+      </div>
     </section>
   );
 }

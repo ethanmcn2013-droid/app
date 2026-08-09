@@ -54,11 +54,13 @@ export function Dialog({
       (focusable ?? dialogRef.current)?.focus({ preventScroll: true });
     });
 
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      lastFocusedRef.current?.focus({ preventScroll: true });
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  const restoreFocus = useCallback(() => {
+    const target = lastFocusedRef.current;
+    if (target?.isConnected) target.focus({ preventScroll: true });
+  }, []);
 
   /**
    * The keyboard half of `aria-modal`.
@@ -94,7 +96,7 @@ export function Dialog({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={restoreFocus}>
       {open ? (
         <>
           <motion.div

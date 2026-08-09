@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import type { DragEvent, KeyboardEvent, MouseEvent } from "react";
+import type { DragEvent, KeyboardEvent, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { useLabStore } from "../../store";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
@@ -53,6 +53,15 @@ import { uniformAssignees } from "../../planning";
 import styles from "./option-a.module.css";
 import { labelById, listPeople, personById } from "../../fixtures";
 import { addDays, isTaskOverdue } from "../../dates";
+
+const LANE_WIDTH_KEY = "signal-tasks.board-lane-widths";
+const LANE_MIN_WIDTH = 176;
+const LANE_MAX_WIDTH = 560;
+const LANE_DEFAULT_WIDTH = 224;
+
+function clampLaneWidth(value: number): number {
+  return Math.min(LANE_MAX_WIDTH, Math.max(LANE_MIN_WIDTH, Math.round(value)));
+}
 
 // The board's "today" comes from the server calendar frame, never the
 // browser clock (see lib/calendar-frame.ts). Reading the wall clock here made
@@ -552,12 +561,82 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const [collapsed, toggleCollapsed] = useCollapsedLanes();
   const [showDescriptions] = useShowStatusDescriptions();
   const [fitColumns] = useFitColumns();
+  const [laneWidths, setLaneWidths] = useState<Record<string, number>>({});
+  const laneWidthsRef = useRef<Record<string, number>>({});
   const [composing, setComposing] = useState<string | null>(null);
   const [keyboardMove, setKeyboardMove] = useState(false);
   const orderedIds = tasks.map((task) => task.id);
   // One avatar on every card differentiates nothing — when the whole
   // visible board shares an identical assignee set, cards drop it.
   const hideAvatars = uniformAssignees(tasks);
+
+  useEffect(() => {
+    let frame = 0;
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(LANE_WIDTH_KEY) ?? "{}") as Record<string, unknown>;
+      const next = Object.fromEntries(
+        Object.entries(parsed)
+          .filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1]))
+          .map(([key, value]) => [key, clampLaneWidth(value)]),
+      );
+      frame = window.requestAnimationFrame(() => {
+        laneWidthsRef.current = next;
+        setLaneWidths(next);
+      });
+    } catch {
+      // A blocked or stale preference store leaves the authored widths intact.
+    }
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const updateLaneWidth = useCallback((key: string, value: number, persist = false) => {
+    const next = { ...laneWidthsRef.current, [key]: clampLaneWidth(value) };
+    laneWidthsRef.current = next;
+    setLaneWidths(next);
+    if (persist) {
+      try {
+        window.localStorage.setItem(LANE_WIDTH_KEY, JSON.stringify(next));
+      } catch {
+        // Resizing remains live for this session when storage is unavailable.
+      }
+    }
+  }, []);
+
+  const resetLaneWidth = useCallback((key: string) => {
+    const next = { ...laneWidthsRef.current };
+    delete next[key];
+    laneWidthsRef.current = next;
+    setLaneWidths(next);
+    try {
+      window.localStorage.setItem(LANE_WIDTH_KEY, JSON.stringify(next));
+    } catch {
+      // The reset still applies for this session.
+    }
+  }, []);
+
+  const beginLaneResize = useCallback((event: ReactPointerEvent<HTMLButtonElement>, key: string) => {
+    if (event.button !== 0) return;
+    event.currentTarget.focus({ preventScroll: true });
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startWidth = laneWidthsRef.current[key] ?? event.currentTarget.parentElement?.getBoundingClientRect().width ?? LANE_DEFAULT_WIDTH;
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const move = (pointerEvent: globalThis.PointerEvent) => {
+      updateLaneWidth(key, startWidth + pointerEvent.clientX - startX);
+    };
+    const finish = () => {
+      updateLaneWidth(key, laneWidthsRef.current[key] ?? startWidth, true);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+  }, [updateLaneWidth]);
 
   // ── Columns: server config + optimistic overlay ─────────────────────────
   // The server value arrives through DomainProvider; column management
@@ -754,10 +833,13 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
    * focused card does the same thing from the keyboard.
    */
   const cardClick = (event: MouseEvent<HTMLElement>, task: LabTask) => {
+    if ((event.target as Element).closest("button, input, select, textarea, a")) return;
     const modifier = event.shiftKey || event.metaKey || event.ctrlKey;
-    if (store.selectedIds.length === 0 && !modifier) return;
-    if ((event.target as Element).closest("button, input, select, textarea")) return;
-    store.toggleSelected(task.id, orderedIds, event.shiftKey);
+    if (store.selectedIds.length > 0 || modifier) {
+      store.toggleSelected(task.id, orderedIds, event.shiftKey);
+      return;
+    }
+    store.openTask(task.id);
   };
 
   /**
@@ -916,6 +998,11 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
           const isCollapsed = Boolean(collapsed[status]);
           const label = column.name;
           const accent = laneAccentVar(column);
+          const laneWidth = laneWidths[status];
+          const laneStyle = {
+            ...(laneAccentStyle(column.color) ?? {}),
+            ...(laneWidth ? { "--lane-width": `${laneWidth}px` } : {}),
+          } as React.CSSProperties;
           const countLabel = limit !== undefined
             ? `${laneTasks.length} of ${limit} tasks in ${label}`
             : `${laneTasks.length} tasks in ${label}`;
@@ -929,11 +1016,12 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 data-collapsed=""
                 data-dragging={columnDrag?.key === status || undefined}
                 data-done={status === "done" || undefined}
+                data-resized={laneWidth ? "" : undefined}
                 data-tinted={accent ? "" : undefined}
                 key={status}
                 onDragOverCapture={(event) => columnDragOver(event, columnIndex)}
                 onDropCapture={(event) => columnDrop(event, columnIndex)}
-                style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
+                style={laneStyle}
               >
                 {/* A folded column has no header to grab, but it is still a
                     valid landing spot — the marker and the drop handlers
@@ -967,11 +1055,12 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
               data-done={status === "done" || undefined}
               data-drop-target={store.drag?.kind === "board" && store.drag.overStatus === status || undefined}
               data-empty={laneTasks.length === 0 || undefined}
+              data-resized={laneWidth ? "" : undefined}
               data-tinted={accent ? "" : undefined}
               key={status}
               onDragOverCapture={(event) => columnDragOver(event, columnIndex)}
               onDropCapture={(event) => columnDrop(event, columnIndex)}
-              style={laneAccentStyle(column.color) as React.CSSProperties | undefined}
+              style={laneStyle}
             >
               {columnDropIndex === columnIndex ? <div aria-hidden="true" className={styles.columnInsertion} /> : null}
               <LaneHeader
@@ -992,6 +1081,26 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 overLimit={overLimit}
                 readOnly={store.readOnly}
                 showDescription={showDescriptions}
+              />
+              <button
+                aria-label={`Resize ${label} column`}
+                aria-orientation="vertical"
+                aria-valuemax={LANE_MAX_WIDTH}
+                aria-valuemin={LANE_MIN_WIDTH}
+                aria-valuenow={laneWidth ?? Math.round(LANE_DEFAULT_WIDTH)}
+                className={styles.laneResizer}
+                onDoubleClick={() => resetLaneWidth(status)}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (event.key === "Home") resetLaneWidth(status);
+                  else updateLaneWidth(status, (laneWidthsRef.current[status] ?? LANE_DEFAULT_WIDTH) + (event.key === "ArrowRight" ? 12 : -12), true);
+                }}
+                onPointerDown={(event) => beginLaneResize(event, status)}
+                role="separator"
+                title="Drag to resize. Double-click to reset."
+                type="button"
               />
               <ul
                 aria-label={`${label} tasks`}

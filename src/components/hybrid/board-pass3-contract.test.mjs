@@ -40,6 +40,7 @@ test("one canonical Done green feeds header, dot, and completion control", () =>
 
 test("column colour lives in the header band only, perceptually tuned", () => {
   assert.match(boardCss, /\.laneHeader \{[^}]*var\(--lane-tint, 7%\)/s);
+  assert.match(boardCss, /\.laneHeader \{[^}]*border-top: 3px solid var\(--lane-accent/s);
   assert.match(boardCss, /var\(--lane-border-tint, 18%\)/);
   // The lane body itself stays paper — no full-column wash selector.
   assert.doesNotMatch(boardCss, /\.boardLane\[data-tinted\] \{[^}]*background/s);
@@ -56,8 +57,9 @@ test("the shell is a product switcher with a command trigger, not a place list",
   const inboxAt = sidebar.indexOf('href="/app/inbox"');
   assert.ok(homeAt > -1 && inboxAt > -1 && homeAt < inboxAt, "Home renders above Inbox");
   // The panel header is a quiet local label; Projects is a section label.
-  assert.match(sidebar, /styles\.sidebarTitle\}>Tasks</);
-  assert.match(sidebar, /styles\.projectsLabel\}>Projects</);
+  assert.match(sidebar, /styles\.sidebarTitle\}>Projects</);
+  assert.match(sidebar, /aria-controls="projects-tree-panel"/);
+  assert.match(sidebar, /styles\.projectsLabel\}>Project folders</);
   // 2026-08-05: the founder had the planning-period grouping (a name + end
   // date row, one disclosure per period) removed from Projects — it
   // repeated the crumb the brief header also dropped, and every venue only
@@ -111,8 +113,16 @@ test("add status is an end-cap action, not a reserved pseudo-lane", () => {
 });
 
 test("the shell carries one brand object — the wordmark's indigo stop", () => {
-  assert.match(studioBar, /text-\[var\(--x-studio-accent\)\]">\.<\/span>/);
-  assert.doesNotMatch(studioBar, /h-2\.5 w-2\.5 rounded-full bg-\[var\(--x-studio-accent\)\]/);
+  assert.match(studioBar, /function MarkCell\(\)/);
+  assert.match(studioBar, /h-\[11px\] w-\[11px\] rounded-full bg-\[var\(--x-studio-accent\)\]/);
+  assert.doesNotMatch(studioBar, /text-\[var\(--x-studio-accent\)\]">\.<\/span>/);
+});
+
+test("board cards and both working columns expose direct resizing", () => {
+  assert.match(boardView, /store\.openTask\(task\.id\)/);
+  assert.match(boardView, /Resize \$\{label\} column/);
+  const sidebar = read("src/components/studio-bar/projects-sidebar.tsx");
+  assert.match(sidebar, /Resize Projects sidebar/);
 });
 
 test("cards drop priority on finished work and noise-free avatars", () => {

@@ -64,12 +64,13 @@ export function TaskFocusWindow({
       if (!node) return;
       node.focus({ preventScroll: true });
     });
-    return () => {
-      cancelAnimationFrame(frame);
-      const opener = openerRef.current;
-      if (opener && opener.isConnected) opener.focus({ preventScroll: true });
-    };
+    return () => cancelAnimationFrame(frame);
   }, [open]);
+
+  const restoreOpener = useCallback(() => {
+    const opener = openerRef.current;
+    if (opener && opener.isConnected) opener.focus({ preventScroll: true });
+  }, []);
 
   const trapTab = useCallback((event: React.KeyboardEvent) => {
     if (event.key !== "Tab" || hasOpenLayer()) return;
@@ -93,7 +94,7 @@ export function TaskFocusWindow({
   }, []);
 
   return (
-    <AnimatePresence>
+    <AnimatePresence onExitComplete={restoreOpener}>
       {open ? (
         <>
           {/* The scrim covers the whole application — rail, header, board
@@ -135,10 +136,10 @@ export function TaskFocusWindow({
               // anything that could be called an expansion. Leaving is
               // faster than arriving, because a closed task should feel
               // dismissed rather than withdrawn.
-              initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.985, y: 8 }}
-              animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+              initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(8px) scale(0.985)" }}
+              animate={reduce ? { opacity: 1 } : { opacity: 1, transform: "translateY(0) scale(1)" }}
               exit={{
-                ...(reduce ? { opacity: 0 } : { opacity: 0, scale: 0.99, y: 4 }),
+                ...(reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px) scale(0.99)" }),
                 transition: reduce ? { duration: 0.1 } : { duration: 0.16, ease: [0.23, 1, 0.32, 1] },
               }}
               transition={reduce ? { duration: 0.12 } : { duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
