@@ -122,8 +122,8 @@
       "source": "tasks/src/app/app/tasks/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "editor-or-canvas",
-      "primaryJob": "Understand and use app Â· board.",
-      "primaryAction": "Complete the primary action on app Â· board.",
+      "primaryJob": "Understand and use app Ã‚Â· board.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· board.",
       "roles": [
         "owner",
         "member"
@@ -172,8 +172,8 @@
       "source": "tasks/src/app/app/tasks/calendar/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use app Â· calendar.",
-      "primaryAction": "Complete the primary action on app Â· calendar.",
+      "primaryJob": "Understand and use app Ã‚Â· calendar.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· calendar.",
       "roles": [
         "owner",
         "member"
@@ -221,8 +221,8 @@
       "source": "tasks/src/app/app/import/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "create-and-edit-form",
-      "primaryJob": "Understand and use app Â· import.",
-      "primaryAction": "Complete the primary action on app Â· import.",
+      "primaryJob": "Understand and use app Ã‚Â· import.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· import.",
       "roles": [
         "owner",
         "member"
@@ -271,8 +271,8 @@
       "source": "tasks/src/app/app/inbox/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "Understand and use app Â· inbox.",
-      "primaryAction": "Complete the primary action on app Â· inbox.",
+      "primaryJob": "Understand and use app Ã‚Â· inbox.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· inbox.",
       "roles": [
         "owner",
         "member"
@@ -322,8 +322,8 @@
       "source": "tasks/src/app/app/tasks/list/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "list-and-data-table",
-      "primaryJob": "Understand and use app Â· list.",
-      "primaryAction": "Complete the primary action on app Â· list.",
+      "primaryJob": "Understand and use app Ã‚Â· list.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· list.",
       "roles": [
         "owner",
         "member"
@@ -378,8 +378,8 @@
       "source": "tasks/src/app/app/my-tasks/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "dashboard-or-command-centre",
-      "primaryJob": "Understand and use app Â· my tasks.",
-      "primaryAction": "Complete the primary action on app Â· my tasks.",
+      "primaryJob": "Understand and use app Ã‚Â· my tasks.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· my tasks.",
       "roles": [
         "owner",
         "member"
@@ -429,8 +429,8 @@
       "source": "tasks/src/app/app/settings/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use app Â· settings.",
-      "primaryAction": "Complete the primary action on app Â· settings.",
+      "primaryJob": "Understand and use app Ã‚Â· settings.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· settings.",
       "roles": [
         "owner",
         "member"
@@ -478,8 +478,8 @@
       "source": "tasks/src/app/app/tasks/timeline/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use app Â· timeline.",
-      "primaryAction": "Complete the primary action on app Â· timeline.",
+      "primaryJob": "Understand and use app Ã‚Â· timeline.",
+      "primaryAction": "Complete the primary action on app Ã‚Â· timeline.",
       "roles": [
         "owner",
         "member"
@@ -672,8 +672,8 @@
       "source": "tasks/src/app/embed/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use embed Â· selected record.",
-      "primaryAction": "Complete the primary action on embed Â· selected record.",
+      "primaryJob": "Understand and use embed Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on embed Ã‚Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -722,8 +722,8 @@
       "source": "tasks/src/app/embed/guide/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use embed Â· guide.",
-      "primaryAction": "Complete the primary action on embed Â· guide.",
+      "primaryJob": "Understand and use embed Ã‚Â· guide.",
+      "primaryAction": "Complete the primary action on embed Ã‚Â· guide.",
       "roles": [
         "owner",
         "guest",
@@ -767,8 +767,8 @@
       "source": "tasks/src/app/for/community/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· community.",
-      "primaryAction": "Complete the primary action on for Â· community.",
+      "primaryJob": "Understand and use for Ã‚Â· community.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· community.",
       "roles": [
         "public"
       ],
@@ -810,8 +810,8 @@
       "source": "tasks/src/app/for/freelancers/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· freelancers.",
-      "primaryAction": "Complete the primary action on for Â· freelancers.",
+      "primaryJob": "Understand and use for Ã‚Â· freelancers.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· freelancers.",
       "roles": [
         "public"
       ],
@@ -853,8 +853,8 @@
       "source": "tasks/src/app/for/small-business/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· small business.",
-      "primaryAction": "Complete the primary action on for Â· small business.",
+      "primaryJob": "Understand and use for Ã‚Â· small business.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· small business.",
       "roles": [
         "public"
       ],
@@ -896,8 +896,8 @@
       "source": "tasks/src/app/for/students/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· students.",
-      "primaryAction": "Complete the primary action on for Â· students.",
+      "primaryJob": "Understand and use for Ã‚Â· students.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· students.",
       "roles": [
         "public"
       ],
@@ -939,8 +939,8 @@
       "source": "tasks/src/app/for/trades/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· trades.",
-      "primaryAction": "Complete the primary action on for Â· trades.",
+      "primaryJob": "Understand and use for Ã‚Â· trades.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· trades.",
       "roles": [
         "public"
       ],
@@ -982,8 +982,8 @@
       "source": "tasks/src/app/for/weddings/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Â· weddings.",
-      "primaryAction": "Complete the primary action on for Â· weddings.",
+      "primaryJob": "Understand and use for Ã‚Â· weddings.",
+      "primaryAction": "Complete the primary action on for Ã‚Â· weddings.",
       "roles": [
         "public"
       ],
@@ -1025,8 +1025,8 @@
       "source": "tasks/src/app/invite/[token]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use invite Â· selected record.",
-      "primaryAction": "Complete the primary action on invite Â· selected record.",
+      "primaryJob": "Understand and use invite Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on invite Ã‚Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1070,8 +1070,8 @@
       "source": "tasks/src/app/p/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use p Â· selected record.",
-      "primaryAction": "Complete the primary action on p Â· selected record.",
+      "primaryJob": "Understand and use p Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on p Ã‚Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -1244,8 +1244,8 @@
       "source": "tasks/src/app/print/board/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "editor-or-canvas",
-      "primaryJob": "Understand and use print Â· board.",
-      "primaryAction": "Complete the primary action on print Â· board.",
+      "primaryJob": "Understand and use print Ã‚Â· board.",
+      "primaryAction": "Complete the primary action on print Ã‚Â· board.",
       "roles": [
         "public"
       ],
@@ -1298,8 +1298,8 @@
       "source": "tasks/src/app/print/calendar/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use print Â· calendar.",
-      "primaryAction": "Complete the primary action on print Â· calendar.",
+      "primaryJob": "Understand and use print Ã‚Â· calendar.",
+      "primaryAction": "Complete the primary action on print Ã‚Â· calendar.",
       "roles": [
         "public"
       ],
@@ -1346,8 +1346,8 @@
       "source": "tasks/src/app/print/list/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "list-and-data-table",
-      "primaryJob": "Understand and use print Â· list.",
-      "primaryAction": "Complete the primary action on print Â· list.",
+      "primaryJob": "Understand and use print Ã‚Â· list.",
+      "primaryAction": "Complete the primary action on print Ã‚Â· list.",
       "roles": [
         "public"
       ],
@@ -1401,8 +1401,8 @@
       "source": "tasks/src/app/print/timeline/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use print Â· timeline.",
-      "primaryAction": "Complete the primary action on print Â· timeline.",
+      "primaryJob": "Understand and use print Ã‚Â· timeline.",
+      "primaryAction": "Complete the primary action on print Ã‚Â· timeline.",
       "roles": [
         "public"
       ],
@@ -1492,8 +1492,8 @@
       "source": "tasks/src/app/redeem/[code]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use redeem Â· selected record.",
-      "primaryAction": "Complete the primary action on redeem Â· selected record.",
+      "primaryJob": "Understand and use redeem Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on redeem Ã‚Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1667,8 +1667,8 @@
       "source": "tasks/src/app/settings/notifications/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings Â· notifications.",
-      "primaryAction": "Complete the primary action on settings Â· notifications.",
+      "primaryJob": "Understand and use settings Ã‚Â· notifications.",
+      "primaryAction": "Complete the primary action on settings Ã‚Â· notifications.",
       "roles": [
         "owner",
         "member"
@@ -1716,8 +1716,8 @@
       "source": "tasks/src/app/settings/plan/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings Â· plan.",
-      "primaryAction": "Complete the primary action on settings Â· plan.",
+      "primaryJob": "Understand and use settings Ã‚Â· plan.",
+      "primaryAction": "Complete the primary action on settings Ã‚Â· plan.",
       "roles": [
         "owner",
         "member"
@@ -1765,8 +1765,8 @@
       "source": "tasks/src/app/settings/profile/page.tsx",
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
-      "primaryJob": "Understand and use settings Â· profile.",
-      "primaryAction": "Complete the primary action on settings Â· profile.",
+      "primaryJob": "Understand and use settings Ã‚Â· profile.",
+      "primaryAction": "Complete the primary action on settings Ã‚Â· profile.",
       "roles": [
         "owner",
         "member"
@@ -1814,8 +1814,8 @@
       "source": "tasks/src/app/share/[token]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use share Â· selected record.",
-      "primaryAction": "Complete the primary action on share Â· selected record.",
+      "primaryJob": "Understand and use share Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on share Ã‚Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -1905,8 +1905,8 @@
       "source": "tasks/src/app/sign-in/[[...sign-in]]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use sign in Â· selected record.",
-      "primaryAction": "Complete the primary action on sign in Â· selected record.",
+      "primaryJob": "Understand and use sign in Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on sign in Ã‚Â· selected record.",
       "roles": [
         "public"
       ],
@@ -1950,8 +1950,8 @@
       "source": "tasks/src/app/sign-up/[[...sign-up]]/page.tsx",
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
-      "primaryJob": "Understand and use sign up Â· selected record.",
-      "primaryAction": "Complete the primary action on sign up Â· selected record.",
+      "primaryJob": "Understand and use sign up Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on sign up Ã‚Â· selected record.",
       "roles": [
         "public"
       ],
@@ -2124,8 +2124,8 @@
       "source": "tasks/src/app/templates/[slug]/page.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use templates Â· selected record.",
-      "primaryAction": "Complete the primary action on templates Â· selected record.",
+      "primaryJob": "Understand and use templates Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on templates Ã‚Â· selected record.",
       "roles": [
         "public"
       ],
@@ -2487,8 +2487,8 @@
       "source": "tasks/src/app/share/[token]/not-found.tsx",
       "parentJourney": "public-discovery-and-proof",
       "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Understand and use share Â· selected record.",
-      "primaryAction": "Complete the primary action on share Â· selected record.",
+      "primaryJob": "Understand and use share Ã‚Â· selected record.",
+      "primaryAction": "Complete the primary action on share Ã‚Â· selected record.",
       "roles": [
         "owner",
         "guest",
@@ -3073,7 +3073,7 @@
       "parentJourney": "signed-in-work",
       "archetype": "application-shell-and-navigation",
       "primaryJob": "Land on the Full Briefing from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None — permanent redirect.",
+      "primaryAction": "None â€” permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3117,7 +3117,7 @@
       "parentJourney": "access-and-onboarding",
       "archetype": "onboarding-and-authentication",
       "primaryJob": "Land on briefing onboarding from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None — permanent redirect.",
+      "primaryAction": "None â€” permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -3163,7 +3163,7 @@
       "parentJourney": "signed-in-work",
       "archetype": "settings-and-administration",
       "primaryJob": "Land on briefing notification settings from a legacy Signal link, bookmark or notification without breaking.",
-      "primaryAction": "None — permanent redirect.",
+      "primaryAction": "None â€” permanent redirect.",
       "roles": [
         "owner",
         "member"
@@ -4034,7 +4034,7 @@
       "parentJourney": "signed-in-work",
       "archetype": "feedback-interruption-and-exception",
       "primaryJob": "Wait for Home without losing orientation.",
-      "primaryAction": "None — resolves automatically.",
+      "primaryAction": "None â€” resolves automatically.",
       "roles": [
         "owner",
         "member"
@@ -4118,7 +4118,7 @@
       "parentJourney": "signed-in-work",
       "archetype": "feedback-interruption-and-exception",
       "primaryJob": "Wait for the Full Briefing without losing orientation.",
-      "primaryAction": "None — resolves automatically.",
+      "primaryAction": "None â€” resolves automatically.",
       "roles": [
         "owner",
         "member"
@@ -4324,6 +4324,134 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "6c134d66c44d9156"
+    },
+    {
+      "id": "tasks.state.app-tasks-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/tasks",
+      "source": "tasks/src/app/app/tasks/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand the Tasks workspace is loading.",
+      "primaryAction": "Wait for the workspace, or leave via the rail.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "critical",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-11",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "26726b2c64930e58"
+    },
+    {
+      "id": "tasks.state.app-tasks-error",
+      "product": "tasks",
+      "surfaceType": "error",
+      "route": "/app/tasks",
+      "source": "tasks/src/app/app/tasks/error.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand that Tasks failed and find the way back to the work.",
+      "primaryAction": "Try again, or return to the board.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "error",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-11",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ee83a9b986ecfeb3"
+    },
+    {
+      "id": "tasks.state.app-timeline-loading",
+      "product": "tasks",
+      "surfaceType": "loading",
+      "route": "/app/timeline",
+      "source": "tasks/src/app/app/timeline/loading.tsx",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Understand the timeline is loading.",
+      "primaryAction": "Wait for the timeline, or leave via the rail.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "loading",
+        "slow-loading",
+        "reduced-motion"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "registered",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "none",
+      "lastReviewedAt": "2026-08-11",
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "ffb26024e2b58eee"
     }
   ]
 }
