@@ -4,6 +4,24 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·137 · tightens · the three products now share one visual grammar
+
+**A seven-seat design review graded every surface against the 9.5 studio bar,
+and this wave closes its convergent findings across Tasks, Notes, and
+Timeline.** The board commits to one spatial grammar: equal lanes, neutral
+headers, one content grid line, and one task-title type role across all four
+views. Native form controls leave the list and calendar; the board becomes one
+Tab stop with arrow keys inside. Notes gains a real column grid, review
+decisions on the rows that need them, and the design-system type ramp. Timeline
+composes its hero countdown as one block, gives the axis a collision rule,
+states who can see the page, and loads under its own name instead of the Tasks
+wordmark. The product wordmark carries its dot again on every screen, and the
+quiet metadata register moves from the accessibility floor to a real margin.
+
+Honest edges: dark mode, the approved plain-language renames, and the motion
+pass ship in the next two waves; the Notes reading pane still runs wide at
+1920; the view switch still remounts the workspace shell.
+
 ## 2026-08-09 · T·136 · tightens · state, trust, and motion now tell the same truth
 
 **Tasks now derives every review count and scheduling obligation from the same
