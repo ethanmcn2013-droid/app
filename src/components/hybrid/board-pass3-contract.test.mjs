@@ -38,12 +38,76 @@ test("one canonical Done green feeds header, dot, and completion control", () =>
   assert.doesNotMatch(globals, /#1f7a45/i);
 });
 
-test("column colour lives in the header band only, perceptually tuned", () => {
-  assert.match(boardCss, /\.laneHeader \{[^}]*var\(--lane-tint, 7%\)/s);
-  assert.match(boardCss, /\.laneHeader \{[^}]*border-top: 3px solid var\(--lane-accent/s);
-  assert.match(boardCss, /var\(--lane-border-tint, 18%\)/);
-  // The lane body itself stays paper — no full-column wash selector.
+// SUPERSEDED BY WAVE 5. This test used to REQUIRE the tinted header band —
+// the 7% wash, the 3px accent top rule and the 18% lower rule — which is
+// precisely the treatment the design panel scored the board 6.2 for: three
+// lane hues shouting the column names, full-bleed bands butting edge to
+// edge while the cards inside them floated on a 12px gutter. The pinned
+// expectation is inverted, not weakened: a lane header must now be calm,
+// and a column's colour must survive in exactly one small object.
+test("a lane header is ink and a count — colour is one pip, not a band", () => {
+  assert.match(boardCss, /\.laneHeader \{[^}]*background: transparent/s);
+  assert.doesNotMatch(boardCss, /\.laneHeader \{[^}]*var\(--lane-tint/s);
+  assert.doesNotMatch(boardCss, /\.laneHeader \{[^}]*border-top: 3px solid var\(--lane-accent/s);
+  assert.doesNotMatch(boardCss, /\.boardLane\[data-tinted\] \.laneHeader h2/);
+  // The lane body stays paper — no full-column wash selector, as before.
   assert.doesNotMatch(boardCss, /\.boardLane\[data-tinted\] \{[^}]*background/s);
+  // The pip is where a column's configured colour still lands.
+  assert.match(boardCss, /\.boardLane \.statusPip\[data-accent\][\s\S]*?background: var\(--lane-accent\)/);
+  // No board stylesheet paints the unratified cyan any more.
+  for (const css of [boardCss, sharedCss, read("src/components/hybrid/options/b/option-b.module.css")]) {
+    assert.doesNotMatch(css, /--x-task-review\b/);
+  }
+});
+
+test("one content grid line: title, tabs, lane labels and card edges agree", () => {
+  // Page title x=316, lane band x=296, card edge x=308, lane label x=325 —
+  // four objects, four different x. Everything measures from one token now.
+  assert.match(boardCss, /--x-board-gutter: 16px;/);
+  assert.match(boardCss, /--x-lane-inset: 12px;/);
+  assert.match(boardCss, /\.boardScroll \{[^}]*padding-left: calc\(var\(--x-board-gutter\) - var\(--x-lane-inset\)\)/s);
+  assert.match(boardCss, /\.laneHeader \{[^}]*padding: 0 6px 2px var\(--x-lane-inset\)/s);
+  assert.match(boardCss, /\.laneList \{[^}]*padding: 6px var\(--x-lane-inset\) 14px/s);
+  assert.match(
+    read("src/components/hybrid/options/b/option-b.module.css"),
+    /\.workspaceBrief \{[^}]*padding: 6px 14px 6px var\(--x-board-gutter, 16px\)/s,
+  );
+});
+
+test("lane pitch is equal — an empty status is still a column", () => {
+  // .boardLane[data-empty] used to take flex 0 1 176px against its
+  // neighbours' 224px, so the board's rhythm broke wherever the work was
+  // thin and the pitch changed under the reader as cards moved.
+  assert.doesNotMatch(boardCss, /\.boardLane\[data-empty\] \{[^}]*flex:/s);
+  assert.doesNotMatch(boardCss, /\.boardLane\[data-empty\] \{[^}]*min-width:/s);
+});
+
+test("one task-title role covers all four views", () => {
+  const calendarCss = read("src/components/hybrid/options/b/option-b.module.css");
+  assert.match(boardCss, /--x-task-title-size: 15px;/);
+  assert.match(boardCss, /--x-task-title-size-compact: 13px;/);
+  // Board takes the full step; the dense tabular rows take the compact one.
+  assert.match(boardCss, /\.boardTitle \{[^}]*font-size: var\(--x-task-title-size\)/s);
+  assert.match(boardCss, /\.listTitle \{[^}]*font-size: var\(--x-task-title-size-compact\)/s);
+  assert.match(calendarCss, /\.calendarTaskChip span \{[^}]*font-size: var\(--x-task-title-size-compact\)/s);
+  assert.match(calendarCss, /\.timelineTaskTitle \{[^}]*font-size: var\(--x-task-title-size-compact\)/s);
+});
+
+test("the board is one composite widget, not forty tab stops", () => {
+  // Every card was tabIndex={0} with three tabbables inside it, and each
+  // lane put four chrome controls in front of its first card.
+  // Line-anchored: no element in this file is a STATIC tab stop any more.
+  assert.doesNotMatch(boardView, /^\s*tabIndex=\{0\}\s*$/m);
+  assert.match(boardView, /tabIndex=\{rovingTabIndex\}/);
+  assert.match(boardView, /triggerTabIndex=\{-1\}/);
+  assert.match(boardView, /<TaskCompletion disabled=\{store\.readOnly\} tabIndex=\{-1\}/);
+  // The existing arrow-key model and its live region both survive.
+  assert.match(boardView, /const keyCard = \(/);
+  assert.match(boardView, /aria-live="polite"/);
+  // The keyboard reference documents the model it now has.
+  const shortcuts = read("src/components/hybrid/shared/shortcuts-dialog.tsx");
+  assert.match(shortcuts, /Step into the columns, and back out/);
+  assert.match(shortcuts, /Move between cards and columns/);
 });
 
 test("the shell is a product switcher with a command trigger, not a place list", () => {
@@ -146,16 +210,20 @@ test("five statuses fit a 1440 canvas, and residual overflow is authored", () =>
   assert.match(boardView, /data-overflowing=\{overflowing/);
 });
 
-test("the type ramp is a ramp: four weights, no half-step sizes", () => {
+test("the type ramp is a ramp: three weights, no half-step sizes", () => {
   for (const css of [boardCss, drawerCss, sharedCss, read("src/components/hybrid/options/b/option-b.module.css")]) {
     const weights = [...css.matchAll(/font-weight: *(\d{3})/g)].map((m) => m[1]);
     for (const weight of weights) {
-      assert.ok(["400", "500", "600", "700"].includes(weight), `stray font-weight ${weight}`);
+      // The design system ends at 600. 700 was tolerated by the old
+      // expectation; wave 5 removed the last of it.
+      assert.ok(["400", "500", "600"].includes(weight), `stray font-weight ${weight}`);
     }
     assert.doesNotMatch(css, /font-size: *\d+\.\d+px/, "half-step font sizes buy no hierarchy");
+    // Caps tracking is the DS label value, +0.08em — never .12em.
+    assert.doesNotMatch(css, /letter-spacing: *0?\.12em/, "caps tracking is +0.08em");
   }
   // The board's primary content object outranks the chrome that frames it.
-  assert.match(boardCss, /\.boardTitle \{[^}]*font-size: 15px; font-weight: 600/s);
+  assert.match(boardCss, /\.boardTitle \{[^}]*font-size: var\(--x-task-title-size\); font-weight: var\(--x-task-title-weight\)/s);
   assert.match(boardCss, /\.laneHeader h2 \{[^}]*font-size: 12px; font-weight: 500/s);
 });
 

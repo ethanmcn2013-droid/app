@@ -30,11 +30,15 @@ const EVERYWHERE: ShortcutRow[] = [
 ];
 
 const PER_VIEW: Record<LabView, ShortcutRow[]> = {
+  // The board is one composite: Tab reaches it, arrows walk it, Tab leaves.
+  // Everything a card or a column can do is reached from the item itself.
   board: [
-    { keys: ["Arrows"], does: "Move between cards" },
-    { keys: ["Alt", "Arrows"], does: "Move a card, or reorder it" },
+    { keys: ["Tab"], does: "Step into the columns, and back out" },
+    { keys: ["Arrows"], does: "Move between cards and columns" },
+    { keys: ["Alt", "Arrows"], does: "Move a card, or resize a column" },
     { keys: ["Space"], does: "Select a card" },
     { keys: ["F2"], does: "Edit the title" },
+    { keys: ["Shift", "F10"], does: "Open the card's actions" },
   ],
   list: [
     { keys: ["Up", "Down"], does: "Move between rows" },
@@ -88,7 +92,7 @@ export function ShortcutsDialog({
     <Dialog ariaLabel="Keyboard shortcuts" onClose={onClose} open={open} width={420}>
       <div className="p-5">
         <div className="mb-1 flex items-start justify-between">
-          <h2 className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--x-task-text)]">
+          <h2 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--x-task-text)]">
             Keyboard shortcuts
           </h2>
           <button
@@ -103,18 +107,21 @@ export function ShortcutsDialog({
         <dl className="m-0">
           {EVERYWHERE.map((row) => (
             <div className="grid min-h-[34px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--x-task-border)] last:border-b-0" key={row.does}>
-              <dt className="text-[12.5px] text-[var(--x-task-text-secondary)]">{row.does}</dt>
+              <dt className="text-[13px] text-[var(--x-task-text-secondary)]">{row.does}</dt>
               <dd className="m-0"><Keys keys={row.keys} mod={mod} /></dd>
             </div>
           ))}
         </dl>
-        <h3 className="mb-1 mt-4 text-[11.5px] font-medium text-[var(--x-task-text-muted)]">
+        {/* 11px is the ramp's label step, so it wears the label's dialect:
+            caps at +0.08em. Sentence case at 11px was prose at a size the
+            ramp does not offer for prose. */}
+        <h3 className="mb-1 mt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-[var(--x-task-text-muted)]">
           {VIEW_HEADINGS[view]}
         </h3>
         <dl className="m-0">
           {PER_VIEW[view].map((row) => (
             <div className="grid min-h-[34px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[var(--x-task-border)] last:border-b-0" key={row.does}>
-              <dt className="text-[12.5px] text-[var(--x-task-text-secondary)]">{row.does}</dt>
+              <dt className="text-[13px] text-[var(--x-task-text-secondary)]">{row.does}</dt>
               <dd className="m-0"><Keys keys={row.keys} mod={mod} /></dd>
             </div>
           ))}

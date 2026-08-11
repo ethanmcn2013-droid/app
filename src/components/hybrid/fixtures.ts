@@ -38,13 +38,45 @@ const runtimeLabels = new Map<string, LabLabel>();
 let runtimePeopleActive = false;
 let runtimeLabelsActive = false;
 
+/**
+ * Both setters are IDEMPOTENT: installing a roster that is already
+ * installed is a no-op.
+ *
+ * These registries are module state that card, row and chip render read
+ * synchronously, so the install has to have happened before children
+ * render — which is why HybridWorkspace calls them from a render-phase
+ * initializer rather than an effect. A render-phase write to module state
+ * is only safe if repeating it changes nothing: React may abandon a render
+ * and start again, and Strict Mode runs every render twice. Comparing
+ * before clearing is what makes that true, and it also stops two Maps
+ * being torn down and rebuilt on every keystroke in the search box.
+ */
+function sameRoster<T extends { id: string }>(
+  current: Map<string, T>,
+  next: readonly T[],
+  fields: readonly (keyof T)[],
+): boolean {
+  if (current.size !== next.length) return false;
+  return next.every((entry) => {
+    const held = current.get(entry.id);
+    // Field-by-field, not id-only: a renamed member or a recoloured tag
+    // keeps its id, and an id-only check would pin the stale value.
+    return held !== undefined && fields.every((field) => held[field] === entry[field]);
+  });
+}
+
+const PERSON_FIELDS = ["name", "initials", "color", "role"] as const;
+const LABEL_FIELDS = ["name", "tone"] as const;
+
 export function setRuntimePeople(people: LabPerson[]): void {
+  if (runtimePeopleActive && sameRoster(runtimePeople, people, PERSON_FIELDS)) return;
   runtimePeopleActive = true;
   runtimePeople.clear();
   for (const person of people) runtimePeople.set(person.id, person);
 }
 
 export function setRuntimeLabels(labels: LabLabel[]): void {
+  if (runtimeLabelsActive && sameRoster(runtimeLabels, labels, LABEL_FIELDS)) return;
   runtimeLabelsActive = true;
   runtimeLabels.clear();
   for (const label of labels) runtimeLabels.set(label.id, label);

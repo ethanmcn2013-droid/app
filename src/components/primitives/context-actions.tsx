@@ -236,6 +236,15 @@ export type ActionsDropdownProps = {
   triggerLabel: string;
   /** Additional className applied to the ••• trigger button. */
   triggerClassName?: string;
+  /**
+   * Tab-order participation for the ••• trigger. Defaults to the browser's
+   * (a normal tab stop). Pass -1 when the trigger sits inside a composite
+   * widget that owns its own roving focus — the board's cards do this, so
+   * thirteen cards cost one Tab stop between them instead of thirteen. The
+   * trigger stays clickable, stays in the accessibility tree, and the same
+   * registry is still reachable from the keyboard via the context menu.
+   */
+  triggerTabIndex?: number;
 };
 
 /**
@@ -277,6 +286,7 @@ export function ActionsDropdown({
   trigger,
   triggerLabel,
   triggerClassName,
+  triggerTabIndex,
 }: ActionsDropdownProps) {
   return (
     <DropdownMenu.Root>
@@ -284,6 +294,7 @@ export function ActionsDropdown({
         <button
           aria-label={triggerLabel}
           className={triggerClassName}
+          tabIndex={triggerTabIndex}
           type="button"
           // Stop the click from bubbling to the card's onClick (which
           // handles selection) so opening the menu doesn't toggle selection.

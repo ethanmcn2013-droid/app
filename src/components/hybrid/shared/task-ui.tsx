@@ -102,7 +102,7 @@ export function ScheduleText({ task, compact = false }: { task: LabTask; compact
  * showed a struck-through title above an empty box. Selection keeps its
  * keyboard path (Space) and its modifier-click path on the card body.
  */
-export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: boolean }) {
+export function TaskCompletion({ task, disabled, tabIndex }: { task: LabTask; disabled?: boolean; tabIndex?: number }) {
   const store = useLabStore();
   return (
     <label
@@ -117,6 +117,10 @@ export function TaskCompletion({ task, disabled }: { task: LabTask; disabled?: b
         disabled={disabled || store.readOnly}
         onChange={() => { if (!store.readOnly) store.toggleComplete(task.id); }}
         onClick={(event) => event.stopPropagation()}
+        /* -1 on the board: the card is a composite item, so its own
+           controls are reached from the card rather than each costing a
+           Tab stop of their own. Everywhere else the default applies. */
+        tabIndex={tabIndex}
         type="checkbox"
       />
       <span className={styles.completionGlyph} aria-hidden="true" />

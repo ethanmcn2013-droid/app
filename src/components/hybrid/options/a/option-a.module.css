@@ -11,6 +11,39 @@
 .optionA {
   --a-context-height: 82px;
   --a-viewbar-height: 42px;
+
+  /* ── ONE content grid line ────────────────────────────────────────────
+     The interior used to run two spatial systems at once: full-bleed lane
+     bands butting edge to edge while the cards inside them floated on a
+     12px gutter, so the page title, the tab row, the band, the card edge
+     and the lane label each landed on a different x. Everything now
+     measures from --x-board-gutter. A lane's own inner gutter is
+     --x-lane-inset, and the track carries the difference as leading pad
+     so the FIRST lane's label and card edge land on the same line as the
+     project name above them. */
+  --x-board-gutter: 16px;
+  --x-lane-inset: 12px;
+
+  /* ── ONE task-title role ──────────────────────────────────────────────
+     A task title was four different objects: 15/600 on a card, 13/600 in
+     a row, 12/600 in a calendar chip, 11/600 in a schedule row. One role,
+     one compact variant for genuinely dense tabular rows, and nothing on
+     this surface invents a third. Size, leading and tracking are one
+     decision — consume all three together. */
+  --x-task-title-size: 15px;
+  --x-task-title-size-compact: 13px;
+  --x-task-title-weight: 600;
+  --x-task-title-leading: 1.35;
+  --x-task-title-tracking: -0.011em;
+
+  /* ── Quiet metadata ink ───────────────────────────────────────────────
+     12–13px metadata (lane descriptions, group meta, counts) rides
+     --x-ink-quiet — 7.7:1 on paper against the 5.5:1 the old muted step
+     managed, which is the difference between comfortable and just-legal
+     at these sizes. The fallback keeps the ramp honest if the token is
+     ever read before globals.css resolves. */
+  --x-meta-ink: var(--x-ink-quiet, var(--ink-faint));
+
   background: var(--x-task-canvas);
   /* The interior is the size container the planning drawer queries: on a
      wide canvas the drawer docks in flow, on a narrower one it overlays
@@ -48,12 +81,15 @@
 .contextCopy nav b { color: var(--x-task-text-secondary); font-weight: 600; }
 .contextCopy nav svg { margin: 0 2px; }
 .contextCopy > div { align-items: baseline; display: flex; gap: 10px; min-width: 0; }
-.contextCopy h1 { color: var(--x-task-text); font-size: 20px; font-weight: 700; letter-spacing: -.035em; margin: 0; white-space: nowrap; }
+/* The ramp ends at 600 and the heading step's tracking is -0.01em; 700 at
+   -0.035em was a fourth weight and a tracking value the system never
+   ratified. */
+.contextCopy h1 { color: var(--x-task-text); font-size: 20px; font-weight: 600; letter-spacing: var(--tracking-heading); line-height: var(--leading-heading); margin: 0; white-space: nowrap; }
 .contextCopy p { color: var(--x-task-text-secondary); font-size: 12px; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .contextFacts { display: flex; gap: 18px; margin: 0; }
 .contextFacts > div { display: flex; flex-direction: column; gap: 3px; }
-.contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.contextFacts dt { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .contextFacts dd { align-items: center; color: var(--x-task-text); display: flex; font-family: var(--font-geist-mono), monospace; font-size: 11px; gap: 4px; margin: 0; white-space: nowrap; }
 .readOnlyFlag { background: var(--x-task-waiting-soft); border: 1px solid color-mix(in srgb, var(--x-task-waiting) 26%, var(--x-task-border)); border-radius: 5px; color: var(--x-task-waiting); font-size: 11px; font-weight: 600; padding: 5px 7px; }
 
@@ -67,7 +103,10 @@
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 10px 0 14px;
+  /* The tab's own 10px inner padding is paid out of the bar's leading pad
+     so the first tab's TEXT — not its hover box — lands on the content
+     grid line the title and the first card sit on. */
+  padding: 0 10px 0 calc(var(--x-board-gutter) - 10px);
   scrollbar-width: thin;
 }
 
@@ -85,7 +124,7 @@
   font-size: 12px;
   font-weight: 500;
   min-height: 28px;
-  padding: 0 11px;
+  padding: 0 10px;
 }
 .tabsScroll nav a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .tabsScroll nav a[aria-current="page"] {
@@ -126,7 +165,7 @@
 .functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-task-raised); font-weight: 600; }
 .functionalTools > button[data-primary]:hover { background: var(--x-task-focus); color: var(--x-task-raised); }
 .functionalTools > button:disabled { background: transparent; color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
-.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; padding: 2px 3px; text-transform: uppercase; }
+.functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 2px 3px; text-transform: uppercase; }
 .functionalTools > button > em {
   background: color-mix(in srgb, var(--x-task-accent) 14%, transparent);
   border-radius: 999px;
@@ -216,7 +255,7 @@
 .statusPip { background: var(--x-task-text-muted); border-radius: 50%; display: inline-block; flex: 0 0 auto; height: 8px; width: 8px; }
 .statusPip:not([data-status]) { border: 1px solid var(--x-task-border-strong); background: transparent; }
 .statusPip[data-status="doing"] { background: var(--x-task-accent); }
-.statusPip[data-status="review"] { background: var(--x-task-review); }
+.statusPip[data-status="review"] { background: var(--x-task-text-secondary); }
 .statusPip[data-status="waiting"] { background: var(--x-task-waiting); }
 .statusPip[data-status="done"] { background: var(--x-task-success); }
 /* Inside a toned lane or group the pip is the configured colour at full
@@ -233,24 +272,25 @@
 
 .taskPeek { background: var(--x-task-overlay); border: 1px solid var(--x-task-border-strong); border-radius: 7px; bottom: 42px; box-shadow: var(--x-task-shadow); padding: 0 12px 12px; position: absolute; right: 14px; width: 340px; z-index: 30; }
 .taskPeek > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; height: 34px; justify-content: space-between; margin-bottom: 9px; }
-.taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.taskPeek > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
 .statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; }
 .statusText[data-status="doing"] { color: var(--x-task-accent); }
-.statusText[data-status="review"] { color: var(--x-task-review); }
+.statusText[data-status="review"] { color: var(--x-task-text-secondary); }
 .statusText[data-status="waiting"] { color: var(--x-task-waiting); }
 .statusText[data-status="done"] { color: var(--x-task-success); }
-.peekTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: block; font: inherit; font-size: 15px; font-weight: 700; letter-spacing: -.02em; margin: 9px 0 5px; padding: 0; text-align: left; }
+.peekTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: block; font: inherit; font-size: var(--x-task-title-size); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); line-height: var(--x-task-title-leading); margin: 9px 0 5px; padding: 0; text-align: left; }
 .taskPeek > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 12px; line-height: 1.45; margin: 0 0 10px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .taskPeek > footer { align-items: center; display: flex; gap: 9px; }
-.peekOpen { background: var(--x-task-text); border: 0; border-radius: 4px; color: var(--x-task-raised); cursor: pointer; font: inherit; font-size: 11px; margin-left: auto; min-height: 28px; padding: 0 8px; }
+.peekOpen { background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--paper); cursor: pointer; font: inherit; font-size: 12px; font-weight: 500; margin-left: auto; min-height: 28px; padding: 0 12px; }
+.peekOpen:hover { background: var(--x-task-focus); }
 
 .dateCommand,
 .dateCommandEmpty { align-items: end; background: var(--x-task-surface); border-top: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; gap: 6px; min-width: max-content; overflow-x: auto; padding: 6px 10px; }
 .dateCommandTask { display: flex; flex-direction: column; justify-content: center; margin-right: 4px; max-width: 180px; min-width: 140px; }
 .dateCommandTask span,
-.dateCommand label > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.dateCommand label > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .dateCommandTask strong { font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dateCommand label { display: flex; flex-direction: column; gap: 2px; }
 .dateCommand input { background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text); font: inherit; font-family: var(--font-geist-mono), monospace; font-size: 11px; height: 28px; padding: 0 5px; }
@@ -298,6 +338,11 @@
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
+  /* The leading pad is the difference between the page's content grid line
+     and a lane's own inner gutter, so the first lane's label and card edge
+     land exactly under the project name. */
+  padding-left: calc(var(--x-board-gutter) - var(--x-lane-inset));
+  scroll-padding-inline-start: calc(var(--x-board-gutter) - var(--x-lane-inset));
   scroll-padding-inline-end: 8px;
   scroll-snap-type: x proximity;
   scrollbar-width: thin;
@@ -318,20 +363,19 @@
 }
 .boardSurface[data-overflowing] .boardTrackEdge { opacity: 1; }
 
-/* An empty status asks for less: it compresses to a readable header plus
-   its add row, and takes its full width back the moment a drag is live
-   (it is still a drop target) or work lands in it. */
-.boardLane[data-empty] { flex: 0 1 176px; min-width: 176px; }
-.boardSurface[data-drag-active] .boardLane[data-empty],
-.boardLane[data-empty][data-drop-target] { flex: 1 0 224px; min-width: 224px; }
+/* Lane pitch is EQUAL, always. An empty status used to compress to 176px
+   while its neighbours held 224px, so the board's underlying rhythm broke
+   wherever the work happened to be thin — and the pitch changed under the
+   reader as cards moved. An empty status is a status; it keeps its column
+   and says something true inside it (.emptyLane below). */
 
 /* ── column colour ─────────────────────────────────────────────────────
-   Precision-white board (2026-08-05): the lane surface is paper, full
-   stop. A column's configured colour is spent in exactly three places —
-   the status pip, a 2px rule along the top of its header, and the
-   near/over-limit count states. The old 5% full-column wash fought the
-   cards, which are the thing to read. Tones still resolve to system
-   tokens via the configured `--lane-accent`, never raw hex. */
+   Calm-header board (wave 5): a lane header is ink and a count. It carries
+   no wash, no tinted rule, no coloured band — three hues shouting the
+   column names was the loudest thing on a board whose job is to let the
+   CARDS read. A column's configured colour survives as exactly one small
+   object: the status pip. Tones resolve to system tokens through
+   `--lane-accent`, never raw hex. */
 .boardLane {
   align-self: stretch;
   background: var(--x-task-raised);
@@ -373,16 +417,13 @@
    description wraps onto its own second line (flex-wrap + flex-basis on
    the description button).
 
-   The header is the ONE place a column wears its colour as a surface: a
-   4.5% wash over paper and a 14% lower rule, both derived from the
-   configured accent. Neutral columns (Queued, Waiting, custom-neutral)
-   take the same recipe from cool ink, so every header reads as a band
-   and the bodies below stay pure white. */
+   The header sits on the SAME gutter as the cards below it — it is not a
+   band, so there is nothing to run full-bleed. The only rule it draws is
+   the soft hairline that separates chrome from work, and that hairline is
+   inset to the content line too. */
 .laneHeader {
   align-items: center;
-  background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised));
-  border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised));
-  border-top: 3px solid var(--lane-accent, var(--x-task-border-strong));
+  background: transparent;
   display: flex;
   flex: 0 0 auto;
   flex-wrap: wrap;
@@ -390,9 +431,21 @@
   min-height: 38px;
   gap: 0 6px;
   justify-content: space-between;
-  padding: 0 8px 2px 14px;
+  padding: 0 6px 2px var(--x-lane-inset);
   position: relative;
   z-index: 2;
+}
+/* Inset hairline: drawn by a pseudo-element rather than border-bottom so
+   it starts and stops on the content grid line instead of bleeding to the
+   lane's structural edge. */
+.laneHeader::after {
+  background: var(--hairline-soft);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: var(--x-lane-inset);
+  position: absolute;
+  right: var(--x-lane-inset);
 }
 /* Same grammar as the list view's draggable column header
    (.taskTable thead th[draggable="true"]): the grab cursor is the only
@@ -400,18 +453,17 @@
    on its own with the attribute itself while a field in the header is
    open (LaneHeader's headerDraggable). */
 .laneHeader[draggable="true"] { cursor: grab; }
-/* A tinted column's name is status ink: the accent mixed toward text ink
-   so every hue — amber included — stays comfortably readable. */
-.boardLane[data-tinted] .laneHeader h2 { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
+/* Every column name is plain ink now — a lane says which lane it is with
+   its name and its pip, never by tinting its own label. */
 .laneIdentity { align-items: center; display: flex; flex: 1 1 auto; gap: 8px; min-width: 0; }
 .laneHeader h2 { color: var(--x-task-text); font-size: 12px; font-weight: 500; letter-spacing: -.01em; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The count carries the limit with it ("3/6"). The old surface showed the
    lane count and then "WIP 3/6" beside it — the same numerator twice, and
    "WIP" is project-management register the brand refuses. */
-.wipCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.wipCount { color: var(--x-meta-ink); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .wipCount[data-near] { color: var(--x-task-warning); }
-.wipCount[data-over] { color: var(--x-task-danger); font-weight: 700; }
+.wipCount[data-over] { color: var(--x-task-danger); font-weight: 600; }
 
 .laneActions { align-items: center; display: flex; flex: 0 0 auto; gap: 1px; min-height: 40px; }
 /* Column actions are quiet until the column is in play: they surface on
@@ -484,7 +536,7 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 6px 12px 14px;
+  padding: 6px var(--x-lane-inset) 14px;
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--x-task-text-muted) 30%, transparent) transparent;
@@ -499,11 +551,11 @@
 .laneList:hover::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--x-task-text-muted) 44%, transparent); background-clip: content-box; }
 
 /* ── collapsed lane ────────────────────────────────────────────────────
-   A folded lane keeps its identity: the pip, the 2px accent tick and the
-   count all survive the fold, so a collapsed column still reads by hue and
-   still tells you how much work is inside it. The vertical name is real,
-   labelled text on a real button — folded columns are an exceptional
-   state, and the rotation keeps them 44px instead of 276px. */
+   A folded lane keeps its identity: the pip, the name and the count all
+   survive the fold, so a collapsed column still tells you what it is and
+   how much work is inside it. The vertical name is real, labelled text on
+   a real button — folded columns are an exceptional state, and the
+   rotation keeps them 44px instead of 276px. */
 .boardLane[data-collapsed] { flex: 0 0 44px; min-width: 44px; }
 .laneRail {
   align-items: center;
@@ -531,11 +583,10 @@
   to { opacity: 1; }
 }
 
-.laneRail { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); }
-.laneRail:hover { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) calc(var(--lane-tint, 5.5%) + 3%), var(--x-task-raised)); color: var(--x-task-text); }
-.boardLane[data-tinted] .railName { color: color-mix(in srgb, var(--lane-accent) var(--lane-ink-mix, 58%), var(--x-task-text)); }
+.laneRail { background: var(--x-task-surface); }
+.laneRail:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .railName { font-size: 12px; font-weight: 600; letter-spacing: .01em; min-height: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; writing-mode: vertical-rl; }
-.railCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
+.railCount { color: var(--x-meta-ink); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-variant-numeric: tabular-nums; margin-top: auto; }
 
 .boardCard {
   background: var(--x-task-raised);
@@ -568,10 +619,15 @@
 .boardCard[data-recently-placed] { animation: task-placement-receipt 280ms var(--ease-out) both; }
 .boardCard[data-recently-updated] { animation: task-update-receipt var(--motion-base) var(--ease-out) both; }
 .boardCard[data-completed] { color: var(--x-task-text-muted); }
-/* A finished card recedes as a whole: its chips and people mute with it,
-   so the strikethrough is not fighting full-strength colour below. */
-.boardCard[data-completed] .cardLabels,
-.boardCard[data-completed] .cardMeta { opacity: .85; }
+/* A finished card recedes as a whole. This used to be `opacity: .85` on
+   the wrappers, which made every chip's contrast depend on a decorative
+   ancestor — a label's legibility is not something a container should be
+   allowed to decide. The muted step is composited in directly instead, so
+   what the chip declares is what the chip renders. */
+.boardCard[data-completed] .cardLabels span,
+.boardCard[data-completed] .cardMeta,
+.boardCard[data-completed] .cardMeta span { color: var(--x-meta-ink); }
+.boardCard[data-completed] .cardLabels span { border-color: var(--hairline-soft); }
 /* Head row: completion control on the title's first line. A card with
    only a title is one line tall; the ••• trigger floats over the corner
    on hover so it never costs a permanent row. */
@@ -619,7 +675,7 @@
 /* Title sizes to its own lines. The old 30px floor aligned single- and
    two-line cards across lanes, but the lanes scroll independently now, so
    that alignment never held and the floor only bought dead space. */
-.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: 15px; font-weight: 600; letter-spacing: -.011em; line-height: 1.38; margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.boardTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: -webkit-box; flex: 1; font: inherit; font-size: var(--x-task-title-size); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); line-height: var(--x-task-title-leading); margin: 0; min-width: 0; overflow: hidden; overflow-wrap: anywhere; padding: 0; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 /* Done stays readable: the check, the muted ink and the "Completed" fact
    carry the state — striking the title out erased work people are proud
    of. The Done column already says where the card lives. */
@@ -675,17 +731,19 @@
   45% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--x-task-accent) 9%, transparent); }
   100% { box-shadow: none; }
 }
-/* An ordinary empty lane is one quiet line — the add row directly below
-   it is the affordance. While a card drag is live the same element turns
-   into an explicit drop slot, because that is the moment the space means
-   something. */
-.emptyLane { align-items: flex-start; border: 1px dashed transparent; border-radius: 10px; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 3px; justify-content: center; min-height: 40px; padding: 9px 12px; text-align: left; transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out), min-height var(--motion-fast) var(--ease-out); }
+/* An empty lane holds its full width now, so the empty state has to be
+   designed for that width rather than tolerated at a compressed one: a
+   hairline-dashed slot the width of a card, one true sentence about what
+   an empty status of this kind means, and the add row directly beneath.
+   It reads as a place a card belongs, not as a gap. While a card drag is
+   live the same element deepens into an explicit drop target, because
+   that is the moment the space means something. */
+.emptyLane { align-items: flex-start; border: 1px dashed var(--hairline); border-radius: 10px; color: var(--x-meta-ink); display: flex; flex-direction: column; gap: 3px; justify-content: center; min-height: 72px; padding: 12px; text-align: left; transition: border-color var(--motion-fast) var(--ease-out), background var(--motion-fast) var(--ease-out); }
 .emptyLane span { font-size: 12px; }
-.emptyLane small { display: none; font-size: 11px; }
+.emptyLane small { display: none; font-size: 12px; }
 .boardLane[data-drop-target] .emptyLane,
 .boardSurface[data-drag-active] .emptyLane {
   border-color: color-mix(in srgb, var(--x-task-accent) 45%, transparent);
-  min-height: 72px;
 }
 .boardLane[data-drop-target] .emptyLane { background: color-mix(in srgb, var(--x-task-accent) 4%, transparent); color: var(--x-task-accent); }
 .boardSurface[data-drag-active] .emptyLane small { display: block; }
@@ -743,10 +801,24 @@
 .taskTable th[data-column],
 .taskTable td[data-column] { min-width: var(--column-min-width); width: var(--column-width); }
 .taskTable thead { position: sticky; top: 0; z-index: 12; }
-.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; height: 34px; letter-spacing: .12em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
+/* Column headers are the ramp's mono-caps label step and nothing else:
+   11px, +0.08em, uppercase. The calendar's weekday row was sentence case
+   at the same size, so the same object spoke two dialects one view apart;
+   both read as the DS label now. */
+.taskTable thead th { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); color: var(--x-meta-ink); font-size: 11px; font-weight: 600; height: 34px; letter-spacing: .08em; padding: 0 8px; position: relative; text-align: left; text-transform: uppercase; }
 .taskTable thead th[draggable="true"] { cursor: grab; }
 .taskTable th[data-column="title"] { background: var(--x-task-raised); left: 0; position: sticky; z-index: 7; }
 .taskTable thead th[data-column="title"] { background: var(--x-task-surface); z-index: 15; }
+/* Below this the sticky title stops helping and starts hurting: it pins
+   240–300px of a canvas that has only a few hundred to give, so the
+   columns to its right are reachable only by scrolling past a frozen
+   third of the table. Under 900px the table simply scrolls as one piece —
+   the header travels with its own column and nothing is left cut off
+   above an empty cell. `.optionA` is the containment context. */
+@container (max-width: 900px) {
+  .taskTable th[data-column="title"],
+  .taskTable thead th[data-column="title"] { left: auto; position: static; }
+}
 .columnLabel { align-items: center; display: flex; gap: 6px; min-width: 0; }
 .columnLabel input { accent-color: var(--x-task-accent); height: 14px; margin: 0; width: 14px; }
 .columnResizer { background: transparent; border: 0; cursor: col-resize; height: 100%; padding: 0; position: absolute; right: -4px; top: 0; width: 8px; z-index: 3; }
@@ -766,17 +838,19 @@
    `transparent` into the canvas does not tint it — it takes 6% of its
    alpha away, and a 0.94-opaque sticky header let every row scrolling
    under it print through the group name. */
-.groupRow td { background: color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-tint, 7%), var(--x-task-raised)); border-bottom: 1px solid color-mix(in srgb, var(--lane-accent, var(--ink-faint)) var(--lane-border-tint, 18%), var(--x-task-raised)); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
-.groupRow td::before { background: var(--lane-accent, transparent); bottom: 0; content: ""; left: 0; position: absolute; top: 0; width: 2px; }
+/* Same treatment as the board's lane header, because it is the same
+   object: a calm neutral band, name in ink, meta in quiet ink, and the
+   column's configured colour spent on the pip alone. */
+.groupRow td { background: var(--x-task-surface); border-bottom: 1px solid var(--hairline-soft); height: 34px; padding: 0; position: sticky; top: 34px; z-index: 9; }
 /* Sticky-left cluster: the band paints edge to edge, but its content stays
    in view while the table scrolls horizontally. */
-.groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px 0 11px; position: sticky; width: max-content; }
+.groupBand { align-items: center; display: flex; gap: 12px; height: 100%; left: 0; padding: 0 8px; position: sticky; width: max-content; }
 .groupRow button { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 600; gap: 6px; padding: 0; }
-.groupRow span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.groupRow button:last-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 500; }
+.groupRow span { color: var(--x-meta-ink); font-family: var(--font-geist-mono), monospace; font-size: 12px; }
+.groupRow button:last-child { color: var(--x-meta-ink); font-size: 12px; font-weight: 500; }
 .groupRow button:last-child:hover { color: var(--x-task-text); }
 .groupRow button:last-child:disabled { cursor: not-allowed; opacity: .45; }
-.groupEmpty td { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-muted); font-size: 11px; height: 42px; padding: 0 14px; }
+.groupEmpty td { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); color: var(--x-meta-ink); font-size: 12px; height: 42px; padding: 0 14px; }
 .taskRow { background: var(--x-task-raised); }
 .taskRow:hover { background: var(--x-task-hover); }
 .taskRow[aria-selected="true"] { background: var(--x-task-selected); }
@@ -798,22 +872,56 @@
 .taskRow > td { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid color-mix(in srgb, var(--x-task-border) 62%, transparent); font-size: 12px; font-weight: 400; height: 38px; overflow: hidden; padding: 0 8px; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow:hover > th[data-column="title"] { background: var(--x-task-hover); }
 .taskRow[aria-selected="true"] > th[data-column="title"] { background: var(--x-task-selected); }
-.taskRow td select { background: transparent; border: 1px solid transparent; border-radius: 4px; color: var(--x-task-text-secondary); font: inherit; font-size: 12px; height: 28px; max-width: 100%; padding: 0 4px; }
-.taskRow td select:hover,
-.taskRow td select:focus { background: var(--x-task-raised); border-color: var(--x-task-border-strong); }
+/* ── the house field control ──────────────────────────────────────────
+   Status and priority were native <select>s: an OS widget with an OS
+   arrow and an OS popup, on a surface where nothing else looks like the
+   operating system. They are house menus now (ActionsDropdown → Radix),
+   and this is their trigger: a quiet value that only draws an edge when
+   you touch it, so a row of them reads as a row of values rather than a
+   row of form controls. */
+.fieldMenuTrigger {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--x-task-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  gap: 4px;
+  justify-content: space-between;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 0 4px 0 6px;
+  text-align: left;
+  transition: background var(--motion-instant) var(--ease-out), border-color var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+}
+.fieldMenuTrigger > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fieldMenuTrigger > svg { color: var(--x-meta-ink); flex: 0 0 auto; }
+.fieldMenuTrigger:hover:not(:disabled),
+.fieldMenuTrigger[data-state="open"] { background: var(--x-task-raised); border-color: var(--x-task-control-border); color: var(--x-task-text); }
+.fieldMenuTrigger:disabled { cursor: not-allowed; opacity: .55; }
+/* Read-only: the value is text, not a control you can focus and not use. */
+.fieldMenuStatic { color: var(--x-task-text-secondary); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Selection and completion are the only two affordances left of a title.
+   The subtask disclosure moved after the title stack; the priority dot is
+   gone from here entirely — the Priority column already says the word. */
+.rowSelect { display: inline-flex; flex: 0 0 auto; }
 .titleCell { align-items: center; display: flex; gap: 6px; min-width: 0; }
-.expandButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; flex: 0 0 20px; height: 24px; justify-content: center; padding: 0; }
+.expandButton { align-items: center; background: transparent; border: 0; color: var(--x-meta-ink); cursor: pointer; display: flex; flex: 0 0 20px; height: 24px; justify-content: center; padding: 0; }
 .expandSpacer { flex: 0 0 20px; }
-.listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: 13px; font-weight: 600; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+/* The compact step of the one task-title role. */
+.listTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); line-height: var(--x-task-title-leading); min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .taskRow[data-completed] .listTitle { color: var(--x-task-text-secondary); }
 .listTitleEdit { min-width: 120px; }
 /* Absent tabular value: a quiet dash instead of a repeated word. */
-.absentValue { color: var(--x-task-text-muted); font-size: 11px; }
+.absentValue { color: var(--x-meta-ink); font-size: 12px; }
 
-.monoValue { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
+.monoValue { color: var(--x-meta-ink); font-family: var(--font-geist-mono), monospace; font-size: 12px; }
 .subtaskRows td { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border); padding: 5px 12px 6px 62px; }
 .subtaskRows ul { display: flex; flex-direction: column; gap: 2px; list-style: none; margin: 0; padding: 0; }
-.subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 11px; gap: 6px; min-height: 25px; }
+.subtaskRows li { align-items: center; color: var(--x-task-text-secondary); display: flex; font-size: 12px; gap: 6px; min-height: 25px; }
 .subtaskRows span[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
 @keyframes list-placement-receipt {
   0% { background: color-mix(in srgb, var(--x-task-accent) 10%, var(--x-task-raised)); }
@@ -863,7 +971,7 @@
 .unscheduledTray > header small { color: var(--x-task-text-muted); font-size: 11px; }
 .unscheduledItems { display: flex; gap: 5px; min-height: 32px; overflow-x: auto; padding-bottom: 1px; scrollbar-width: thin; }
 .unscheduledItem { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; flex: 0 0 270px; gap: 3px; grid-template-columns: 24px 24px 8px minmax(0, 1fr) auto; min-height: 39px; padding: 3px 4px; }
-.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.unscheduledItem > button:nth-of-type(1) { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .unscheduledItem > button:last-child { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; height: 23px; padding: 0 5px; }
 .unscheduledItem > button:last-child:disabled { cursor: not-allowed; opacity: .45; }
 .trayEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; font-size: 11px; min-height: 30px; }
@@ -874,7 +982,7 @@
 .timelineRow { display: grid; grid-template-columns: 274px var(--timeline-width); }
 .timelineHeaderRow { position: sticky; top: 0; z-index: 10; }
 .timelinePaneHeader { align-items: center; background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border-strong); display: flex; height: 38px; justify-content: space-between; left: 0; padding: 0 9px; position: sticky; z-index: 14; }
-.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.timelinePaneHeader span:first-child { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .timelinePaneHeader span:last-child { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .timelineDateHeader { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); display: grid; height: 38px; }
 .timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 11px; justify-content: center; }
@@ -886,7 +994,7 @@
 .timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 3px; grid-template-columns: 24px 24px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 5px; position: sticky; z-index: 6; }
 .timelineTaskPane:focus { background: var(--x-task-selected); }
 .timelineTaskCopy { display: flex; flex-direction: column; min-width: 0; }
-.timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.timelineTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .timelineGeometry { background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); min-height: 39px; position: relative; }
 .timelineGrid { display: grid; inset: 0; pointer-events: none; position: absolute; }
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
@@ -896,7 +1004,7 @@
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
-.timelineRangeButton > span { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineRangeButton > span { font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timelineRangeButton small { color: var(--x-task-accent); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-left: auto; white-space: nowrap; }
 .rangeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
@@ -937,7 +1045,7 @@
 /* Calendar */
 .calendarSurface { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
 .calendarToolbar { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 40px; gap: 12px; padding: 0 10px; }
-.calendarToolbar h2 { font-size: 13px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+.calendarToolbar h2 { font-size: var(--text-heading); font-weight: 600; letter-spacing: var(--tracking-heading); line-height: var(--leading-heading); margin: 0; }
 .calendarNavigation,
 .calendarModes { align-items: center; display: flex; gap: 2px; }
 .calendarModes { margin-left: auto; }
@@ -958,13 +1066,13 @@
 .calendarCell > header { align-items: center; display: flex; height: 28px; justify-content: space-between; padding: 0 2px 0 4px; }
 .dateButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; justify-content: center; min-height: 24px; min-width: 24px; padding: 0 2px; }
 .dateButton b { font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.calendarCell[data-today] .dateButton { color: var(--x-task-accent); font-weight: 700; }
+.calendarCell[data-today] .dateButton { color: var(--x-task-accent); font-weight: 600; }
 .cellAdd { align-items: center; background: transparent; border: 0; border-radius: 3px; color: transparent; cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarCell:hover .cellAdd,
 .cellAdd:focus-visible { color: var(--x-task-text-muted); }
 .cellAdd:disabled { cursor: not-allowed; }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; padding: 0 3px; }
-.calendarTask { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; font-size: 11px; gap: 4px; height: 24px; min-width: 0; overflow: hidden; padding: 0 4px; text-align: left; width: 100%; }
+.calendarTask { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); gap: 4px; height: 24px; min-width: 0; overflow: hidden; padding: 0 4px; text-align: left; width: 100%; }
 .calendarTask > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarTask[data-segment="start"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-radius: 3px 0 0 3px; }
 .calendarTask[data-segment="middle"] { background: var(--x-task-accent-soft); border-color: color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); border-left: 0; border-radius: 0; border-right: 0; }
@@ -972,7 +1080,7 @@
 .calendarTask[data-completed] { color: var(--x-task-text-muted); }
 .calendarStatus { background: var(--x-task-text-muted); border-radius: 50%; flex: 0 0 auto; height: 5px; width: 5px; }
 .calendarStatus[data-status="doing"] { background: var(--x-task-accent); }
-.calendarStatus[data-status="review"] { background: var(--x-task-review); }
+.calendarStatus[data-status="review"] { background: var(--x-task-text-secondary); }
 .calendarStatus[data-status="waiting"] { background: var(--x-task-waiting); }
 .calendarStatus[data-status="done"] { background: var(--x-task-success); }
 .calendarDiamond { height: 6px; width: 6px; }
@@ -989,7 +1097,7 @@
 .dayAgenda { background: var(--x-task-surface); border-left: 1px solid var(--x-task-border-strong); display: flex; flex: 0 0 276px; flex-direction: column; min-height: 0; min-width: 276px; overflow: hidden; }
 .dayAgenda > header { align-items: center; border-bottom: 1px solid var(--x-task-border); display: flex; flex: 0 0 48px; justify-content: space-between; padding: 0 9px 0 11px; }
 .dayAgenda > header > div { display: flex; flex-direction: column; min-width: 0; }
-.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+.dayAgenda > header span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .dayAgenda > header strong { font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dayAgenda > header button { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; height: 27px; justify-content: center; width: 27px; }
 .dayAgenda > header button:disabled { cursor: not-allowed; opacity: .45; }
@@ -997,7 +1105,7 @@
 .dayAgendaList > p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; padding: 8px; }
 .agendaTask { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 5px; display: grid; gap: 6px; grid-template-columns: 15px minmax(0, 1fr) auto; margin-bottom: 4px; min-height: 38px; padding: 4px 5px; }
 .agendaTaskCopy { display: flex; flex-direction: column; min-width: 0; }
-.agendaTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.agendaTaskCopy > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .agendaRangeControls { display: flex; gap: 2px; grid-column: 2 / 4; justify-content: flex-end; }
 .agendaRangeControls button { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 22px; justify-content: center; width: 24px; }
 .agendaRangeControls button:disabled { cursor: not-allowed; opacity: .4; }
@@ -1007,7 +1115,7 @@
 .calendarUnscheduled > header span { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .calendarUnscheduled > div { overflow-y: auto; padding: 0 6px 6px; }
 .calendarUnscheduled article { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border); border-radius: 4px; display: flex; gap: 5px; margin-bottom: 3px; min-height: 28px; padding: 3px 4px 3px 7px; }
-.calendarUnscheduled article > button:first-child { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; flex: 1; font: inherit; font-size: 11px; min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.calendarUnscheduled article > button:first-child { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; flex: 1; font: inherit; font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); min-width: 0; overflow: hidden; padding: 0; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .calendarUnscheduled article > button:last-child { align-items: center; background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 3px; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 21px; justify-content: center; width: 24px; }
 .calendarUnscheduled article > button:last-child:disabled { cursor: not-allowed; opacity: .4; }
 .calendarUnscheduled p { color: var(--x-task-text-muted); font-size: 11px; padding: 5px; }
@@ -1200,8 +1308,8 @@
   }
 
   .mobileScheduleHeader > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
-  .mobileScheduleHeader > div > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
-  .mobileScheduleHeader strong { overflow: hidden; color: var(--x-task-text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+  .mobileScheduleHeader > div > span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .mobileScheduleHeader strong { overflow: hidden; color: var(--x-task-text); font-size: 15px; text-overflow: ellipsis; white-space: nowrap; }
   .mobileScheduleHeader > span { flex: none; color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 
   .mobileDateCommand:has(.dateCommandEmpty) { display: none; }
@@ -1400,10 +1508,10 @@
 .laneDescButton {
   background: transparent;
   border: 0;
-  color: var(--x-task-text-muted);
+  color: var(--x-meta-ink);
   cursor: text;
   flex: 1 1 100%;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.35;
   overflow: hidden;
   padding: 0 2px 6px;
@@ -1421,7 +1529,7 @@
   border: 1px solid var(--x-task-focus);
   border-radius: 4px;
   color: var(--x-task-text);
-  font-size: 11px;
+  font-size: 12px;
   margin: 0 2px 2px;
   outline: none;
   padding: 2px 4px;
@@ -1477,7 +1585,7 @@
   color: var(--x-task-text-muted);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 .addColumnField > span em { font-style: normal; font-weight: 400; text-transform: none; }
@@ -1573,7 +1681,7 @@
 
 /* T·125: shown when active filters admit no tasks — the view keeps its
    chrome; this band says why it is empty and offers the way back. */
-.filterEmptyNotice { align-items: center; background: var(--x-task-accent-soft); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); display: flex; flex: 0 0 auto; font-size: 12px; gap: 10px; padding: 8px 14px; }
+.filterEmptyNotice { align-items: center; background: var(--x-task-accent-soft); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); display: flex; flex: 0 0 auto; font-size: 12px; gap: 10px; padding: 8px var(--x-board-gutter); }
 .filterEmptyNotice button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 
 /* T·125 P2: list-view capability restorations. The per-row complete
@@ -1587,9 +1695,9 @@
 .taskRow th { font-weight: inherit; text-align: left; }
 
 .titleStack { display: flex; flex: 1; flex-direction: column; gap: 1px; min-width: 0; }
-.listDescription { color: var(--x-task-text-muted); font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listDescription { color: var(--x-meta-ink); font-size: 12px; line-height: var(--x-lead-ui); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .assigneeCell { align-items: center; display: flex; gap: 6px; min-width: 0; }
-.assigneeNames { color: var(--x-task-text-secondary); flex: 1; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assigneeNames { color: var(--x-task-text-secondary); flex: 1; font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Coarse-pointer overrides that must outrank later base rules ──────
    Media queries carry no specificity, so a hide declared above the rule
@@ -1665,33 +1773,40 @@
     white-space: normal;
   }
   .taskRow > th { display: block; margin-bottom: 3px; }
-  /* A title that wraps to three lines should not leave the checkbox
-     floating at its middle — the controls belong to the first line. */
+  /* A title that wraps to three lines should not leave the done control
+     floating at its middle — the control belongs to the first line. */
   .titleCell { align-items: start; }
+
+  /* ── the phone row is a card with ONE action ────────────────────────
+     It used to carry six-plus controls: a bulk-select checkbox and a done
+     circle side by side (visually near-identical, so neither read as
+     "finish this"), a priority dot, a disclosure caret, and two native
+     selects on the meta line. A phone row is a thing you tap to open or
+     tap to finish; status and priority are edits, and edits belong in the
+     task sheet the row opens. So the meta line is READING now — due
+     state, owner, subtask count — and the only control left is the done
+     circle. Selection stays reachable through the long-press/context
+     menu the row already carries. */
   .taskRow > td {
-    color: var(--x-task-text-muted);
+    color: var(--x-meta-ink);
     display: inline-block;
-    font-size: 11px;
-    line-height: 1.35;
-    margin-right: 8px;
-    margin-top: 5px;
+    font-size: 12px;
+    line-height: var(--x-lead-ui);
+    margin-right: 10px;
+    margin-top: 6px;
     vertical-align: middle;
   }
   /* A cell that rendered nothing must not leave a gap in the run. */
   .taskRow > td:empty { display: none; }
-
-  /* The two selects are the only controls on the meta line. At 11px they
-     keep their boundary — a control's edge is not decoration (1.4.11) —
-     but shed the desktop cell's full height so the line reads as a line. */
-  .taskRow > td select {
-    background: var(--x-task-raised);
-    border: 1px solid var(--x-task-control-border);
-    border-radius: 5px;
-    font-size: 11px;
-    height: 26px;
-    max-width: 116px;
-    padding: 0 4px;
-  }
+  /* Editing fields is the sheet's job on a phone; the cells that hold
+     them are hidden rather than emptied so the meta run stays a run. */
+  .taskRow > td[data-column="status"],
+  .taskRow > td[data-column="priority"] { display: none; }
+  /* Bulk select and the subtask disclosure are desktop affordances. The
+     phone row keeps exactly one: the done circle. */
+  .taskRow .expandButton,
+  .taskRow .expandSpacer,
+  .taskRow .rowSelect { display: none; }
 
   /* Both of these are declared with nowrap plus ellipsis further up, for
      a fixed-width desktop column. Here the line is free to wrap — and it
