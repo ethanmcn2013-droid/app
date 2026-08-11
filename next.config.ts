@@ -233,6 +233,9 @@ const embedFrameHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Dev-only: the floating dev-tools badge sits over the bottom-nav Home tab
+  // at 375px and contaminates every mobile design capture. No production effect.
+  devIndicators: false,
   env: {
     // Build-time, non-secret deployment posture used by shared server/client
     // access-mode code. Vercel preview and production builds receive the same
