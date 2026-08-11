@@ -183,8 +183,12 @@ const NoteRow = memo(function NoteRow({
   query,
   selected,
   state,
+  canSendToTasks,
   onSelect,
   onRetry,
+  onKeep,
+  onTurnIntoTask,
+  onDelete,
 }: {
   note: PresentableNote;
   index: number;
@@ -192,14 +196,21 @@ const NoteRow = memo(function NoteRow({
   query: string;
   selected: boolean;
   state: string | undefined;
+  canSendToTasks: boolean;
   onSelect: (id: string) => void;
   onRetry: (id: string) => void;
+  onKeep: (note: NoteRead) => void | Promise<void>;
+  onTurnIntoTask: (note: NoteRead) => void;
+  onDelete: (note: NoteRead) => void;
 }) {
   const presentation = derivePresentation(note.body);
   const source = noteSource(note.source);
   const snippet = query.trim()
     ? searchSnippet(note.body, query)
     : presentation.preview;
+  // The decision belongs on the note it is about. A note that has not reached
+  // the server yet cannot be decided about, so the strip waits for the save.
+  const awaitingDecision = needsReview(note) && !state;
   return (
     <li>
       {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
@@ -228,7 +239,6 @@ const NoteRow = memo(function NoteRow({
             <span>{friendlyDate(note.createdAt, now)}</span>
             {isSent(note) ? (
               <span className={styles.rowFlag} data-tone="sent">
-                <TaskIcon />
                 In Tasks
               </span>
             ) : null}
@@ -258,6 +268,36 @@ const NoteRow = memo(function NoteRow({
             onClick={() => void onRetry(note.id)}
           >
             Try saving again
+          </button>
+        </div>
+      ) : null}
+      {awaitingDecision ? (
+        <div className={styles.rowActions}>
+          <button
+            type="button"
+            className={styles.quietButton}
+            aria-label={`Keep: ${presentation.title}`}
+            onClick={() => void onKeep(note)}
+          >
+            <CheckIcon />
+            Keep
+          </button>
+          <button
+            type="button"
+            className={styles.quietButton}
+            aria-label={`Turn into task: ${presentation.title}`}
+            disabled={!canSendToTasks}
+            onClick={() => onTurnIntoTask(note)}
+          >
+            Turn into task
+          </button>
+          <button
+            type="button"
+            className={styles.dangerButton}
+            aria-label={`Delete: ${presentation.title}`}
+            onClick={() => onDelete(note)}
+          >
+            Delete
           </button>
         </div>
       ) : null}
@@ -648,15 +688,20 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     return id;
   }, [narrow, notebook, selectNote]);
 
+  // Depends on beginSend, not on the whole notebook object. The notebook is a
+  // fresh object on every render, so taking it as a dependency made this
+  // callback new on every keystroke, and every memoised row re-rendered with
+  // it — the exact cost NoteRow's memo exists to avoid.
+  const beginSend = notebook.beginSend;
   const openTaskDialog = useCallback(
     (note: NoteRead) => {
       const known = workspaces.some((item) => item.id === props.initialWorkspaceId);
       const workspaceId =
         (known ? props.initialWorkspaceId : null) ?? workspaces[0]?.id ?? "";
-      notebook.beginSend(note, workspaceId);
+      beginSend(note, workspaceId);
       setTaskDialogNote(note);
     },
-    [notebook, props.initialWorkspaceId, workspaces],
+    [beginSend, props.initialWorkspaceId, workspaces],
   );
 
   const advanceReview = useCallback(() => {
@@ -946,8 +991,12 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                         query={deferredQuery}
                         selected={note.id === effectiveSelectedId}
                         state={notebook.mutationStates[note.id]}
+                        canSendToTasks={workspaces.length > 0}
                         onSelect={selectNote}
                         onRetry={notebook.retryCapture}
+                        onKeep={notebook.keepInNotes}
+                        onTurnIntoTask={openTaskDialog}
+                        onDelete={notebook.deleteNote}
                       />
                     ))}
                   </ul>
@@ -1155,12 +1204,13 @@ function NoteDetail({
               Save changes
             </button>
           ) : null}
-          {isSent(note as PresentableNote) ? (
-            <a className={styles.quietButton} href={taskFocusPath(note.promotedTaskId ?? "")}>
-              <TaskIcon />
-              Open task
-            </a>
-          ) : (
+          {/* One place for the note-to-task relationship. The header carries
+              the verb while it is still available; once the note has become a
+              task the record, the wording that crossed and the way into Tasks
+              all live together in the note's own footer. Open task used to sit
+              here in the top-right while the task link sat in the bottom-left,
+              opposite corners of one pane saying one thing twice. */}
+          {isSent(note as PresentableNote) ? null : (
             <button
               type="button"
               className={styles.primaryButton}
@@ -1290,7 +1340,7 @@ function NoteDetail({
             ) : null}
             {note.promotedTaskId ? (
               <div className={`${styles.detailPair} ${styles.taskReceipt}`}>
-                <dt>Task</dt>
+                <dt>In Tasks</dt>
                 <dd>
                   <a className={styles.linkedTask} href={taskFocusPath(note.promotedTaskId ?? "")}>
                     {note.extractBody || "Open the task"}
@@ -1576,33 +1626,39 @@ function SentView({
       <section className={styles.detailPane} aria-label="Sent note">
         {selected ? (
           <>
+            {/* The same header object as the notebook's, wrapper and all.
+                Without the inner column this row had no spacer, so Open task
+                sat flush against the last word of the timestamp instead of on
+                the note's right edge. */}
             <div className={styles.detailHeader}>
-              <div className={styles.detailMeta}>
-                <button
-                  type="button"
-                  data-notes-back=""
-                  className={`${styles.quietButton} ${styles.backButton}`}
-                  onClick={() => onSelect(null)}
-                >
-                  <BackIcon />
-                  Sent
-                </button>
-                <SourceIcon source={noteSource(selected.source)} />
-                <span>{SOURCE_LABELS[noteSource(selected.source)]}</span>
-                <span aria-hidden="true">·</span>
-                {/* updated_at is the last edit, not the send. Until the send
-                    time is read from the outbox, say what the number is. */}
-                <span>
-                  {selected.archivedAt
-                    ? `Sent ${friendlyDate(selected.archivedAt, now)}`
-                    : `Last edited ${friendlyDate(selected.updatedAt, now)}`}
-                </span>
-              </div>
-              <div className={styles.detailActions}>
-                <a className={styles.primaryButton} href={taskFocusPath(selected.promotedTaskId ?? "")}>
-                  <TaskIcon />
-                  Open task
-                </a>
+              <div className={styles.detailHeaderInner}>
+                <div className={styles.detailMeta}>
+                  <button
+                    type="button"
+                    data-notes-back=""
+                    className={`${styles.quietButton} ${styles.backButton}`}
+                    onClick={() => onSelect(null)}
+                  >
+                    <BackIcon />
+                    Sent
+                  </button>
+                  <SourceIcon source={noteSource(selected.source)} />
+                  <span>{SOURCE_LABELS[noteSource(selected.source)]}</span>
+                  <span aria-hidden="true">·</span>
+                  {/* updated_at is the last edit, not the send. Until the send
+                      time is read from the outbox, say what the number is. */}
+                  <span>
+                    {selected.archivedAt
+                      ? `Sent ${friendlyDate(selected.archivedAt, now)}`
+                      : `Last edited ${friendlyDate(selected.updatedAt, now)}`}
+                  </span>
+                </div>
+                <div className={styles.detailActions}>
+                  <a className={styles.primaryButton} href={taskFocusPath(selected.promotedTaskId ?? "")}>
+                    <TaskIcon />
+                    Open task
+                  </a>
+                </div>
               </div>
             </div>
             <div className={styles.detailScroll}>

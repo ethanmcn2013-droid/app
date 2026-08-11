@@ -25,7 +25,11 @@
  * exists. After a real 5s wait one calm line appears, "Opening the
  * notebook", with role="status" aria-live="polite".
  */
-import { LongWaitStatus } from "@/modules/notes/components/long-wait-status";
+// The suite component, not a copy of it. Notes carried its own near-identical
+// LongWaitStatus and SuiteLoader under src/modules/notes/components; the two
+// files had already drifted from src/components/system in their token
+// fallbacks, and the SuiteLoader copy had no importer at all. Both are gone.
+import { LongWaitStatus } from "@/components/system/long-wait-status";
 
 export default function NotesLoading() {
   const word = "notes";

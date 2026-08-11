@@ -208,6 +208,8 @@ export function Composer({
   const firstExtractRef = useRef<HTMLTextAreaElement>(null);
   const stageHeadingId = useId();
   const statusId = useId();
+  const voiceNoteId = useId();
+  const photoNoteId = useId();
 
   // Review builds run headless Chromium, which has no speech engine at all.
   // Rehearsing there is the only way the spoken-capture route can be seen on
@@ -216,6 +218,13 @@ export function Composer({
 
   const busy =
     stage.kind === "processing" || captureStatus === "pending" || savingExtracted;
+
+  // A route that is closed says so on the page, not in a tooltip. A disabled
+  // button carrying a title attribute explains itself to a mouse pointer and
+  // to nothing else: touch never hovers, and a disabled control is not in the
+  // tab order, so a keyboard never reaches the tooltip either. The line below
+  // the composer is visible to everyone, and the button points at it.
+  const voiceUnavailable = speech.engine === "unavailable";
 
   // The field grows with the writing rather than scrolling inside a fixed
   // box, up to the point where growing further would push the notebook off
@@ -810,8 +819,8 @@ export function Composer({
                 type="button"
                 className={styles.modeButton}
                 onClick={openVoiceConsent}
-                disabled={readOnly || speech.engine === "unavailable" || busy}
-                title={speech.engine === "unavailable" ? copy.voice.unavailable : undefined}
+                disabled={readOnly || voiceUnavailable || busy}
+                aria-describedby={voiceUnavailable ? voiceNoteId : undefined}
               >
                 <VoiceIcon />
                 <span>Voice</span>
@@ -821,11 +830,7 @@ export function Composer({
                 className={styles.modeButton}
                 onClick={() => fileInputRef.current?.click()}
                 disabled={readOnly || busy || !photoAvailable}
-                title={
-                  photoAvailable
-                    ? undefined
-                    : "Reading photos is not switched on for this account yet."
-                }
+                aria-describedby={photoAvailable ? undefined : photoNoteId}
               >
                 <PhotoIcon />
                 <span>Photo</span>
@@ -877,11 +882,20 @@ export function Composer({
           if (file) void acceptFile(file);
         }}
       />
-      {!photoAvailable ? (
-        <p className={styles.composerNote}>
-          Reading photos is not switched on for this account yet. Typing and
-          voice both work.
-        </p>
+      {voiceUnavailable || !photoAvailable ? (
+        <div className={styles.composerNotes}>
+          {voiceUnavailable ? (
+            <p className={styles.composerNote} id={voiceNoteId}>
+              {copy.voice.unavailable}
+            </p>
+          ) : null}
+          {!photoAvailable ? (
+            <p className={styles.composerNote} id={photoNoteId}>
+              Reading photos is not switched on for this account yet.
+              {voiceUnavailable ? " Typing works everywhere." : " Typing and voice both work."}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
