@@ -4352,7 +4352,7 @@
       ],
       "componentDependencies": [],
       "patternDependencies": [],
-      "reviewTier": "critical",
+      "reviewTier": "core",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
       "implementationStatus": "preview",
