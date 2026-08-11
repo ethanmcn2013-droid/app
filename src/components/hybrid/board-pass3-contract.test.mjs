@@ -178,7 +178,11 @@ test("add status is an end-cap action, not a reserved pseudo-lane", () => {
 
 test("the shell carries one brand object — the wordmark's indigo stop", () => {
   assert.match(studioBar, /function MarkCell\(\)/);
-  assert.match(studioBar, /h-\[11px\] w-\[11px\] rounded-full bg-\[var\(--x-studio-accent\)\]/);
+  // The stop belongs to the word: a pseudo-element on the wordmark, never a
+  // detached accent circle in the origin cell and never a literal "." span.
+  assert.match(studioBar, /studio-wordmark/);
+  assert.match(globals, /\.studio-wordmark::after \{[^}]*background-color: var\(--x-studio-accent\)/s);
+  assert.doesNotMatch(studioBar, /h-\[11px\] w-\[11px\] rounded-full bg-\[var\(--x-studio-accent\)\]/);
   assert.doesNotMatch(studioBar, /text-\[var\(--x-studio-accent\)\]">\.<\/span>/);
 });
 
