@@ -51,6 +51,9 @@ const publication: AudienceOwnerPublication = {
   timezone: "Europe/Dublin",
   state: "published",
   lastUpdatedAt: new Date("2026-07-22T10:00:00.000Z"),
+  // Distinct from lastUpdatedAt on purpose: the owner's visibility line says
+  // "live since", and that is the day it went live, not the day it moved.
+  publishedAt: new Date("2026-07-04T09:00:00.000Z"),
   qualifiedViewCount: 12,
   lastQualifiedViewAt: new Date("2026-07-22T10:30:00.000Z"),
   activeShareCount: 1,

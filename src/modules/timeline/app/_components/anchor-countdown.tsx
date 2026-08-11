@@ -1,19 +1,23 @@
 import {
   anchorMilestone,
   countdown,
-  countdownToken,
   type AnchorCandidate,
+  type Countdown,
 } from "@/modules/timeline/lib/roadmap/anchor";
 
 /**
- * The countdown to a plan's anchor day, in the operator register.
+ * The plan's anchor day, in the artifact's own metadata voice.
  *
- * AnchorChip is a quiet mono readout for the owner's own surfaces (the
- * dashboard, the editor), the "good context" of seeing how far out the day is
- * without opening anything. The recipient register that once lived beside it
- * was retired with T·127: the shared artifact answers "how far out is this"
- * with its own metric face, and a second plain-English countdown on the same
- * page would have stated the fact twice in two voices.
+ * AnchorChip is the owner's context line: how far out the day is, without
+ * opening anything. It used to be set in Geist Mono and to open with "T-79",
+ * a token nobody outside a launch room decodes — and it sat in the same
+ * header as a page whose whole lower half had already abolished the mono-caps
+ * register (see the metadata note in timeline-artifact.module.css). Two
+ * metadata voices, one screen, and the technical one on top.
+ *
+ * So: sans at the caption step, sentence case, plain words. Same three facts
+ * in the same order of importance — the day, its date, how far out it is —
+ * and no jargon left to decode.
  *
  * A pure server component, zero client JS, resolving the anchor itself so a
  * caller passes the milestone list it already has and gets null when there is
@@ -24,17 +28,38 @@ import {
  * plan does not nag about a date it has already met.
  */
 
-/** "Jun 20", with the year only when it is not the current one. */
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+/**
+ * "20 Jun", with the year only when it is not the current one.
+ *
+ * Composed rather than formatted, for the reason the artifact's own dates
+ * are: `toLocaleDateString` with a short month returns "Sept" in en-GB, so
+ * this header would have spelled September differently from the rail
+ * directly beneath it.
+ */
 function formatDay(iso: string, now: number): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!match) return iso;
   const year = Number(match[1]);
-  const d = new Date(year, Number(match[2]) - 1, Number(match[3]));
-  return d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    ...(year !== new Date(now).getFullYear() ? { year: "numeric" } : {}),
-  });
+  const day = Number(match[3]);
+  const month = SHORT_MONTHS[Number(match[2]) - 1] ?? match[2];
+  const suffix = year !== new Date(now).getFullYear() ? ` ${year}` : "";
+  return `${day} ${month}${suffix}`;
+}
+
+/**
+ * The countdown in words. `countdownToken` renders the same fact as "T-79",
+ * which is the operator dialect this chip is leaving behind; the function
+ * stays where it is because the milestone card still speaks it.
+ */
+function countdownPhrase(value: Countdown): string | null {
+  if (value.kind === "today") return "today";
+  if (value.kind === "past") return null;
+  return value.days === 1 ? "1 day to go" : `${value.days} days to go`;
 }
 
 /** A milestone the chip can render: anchor fields plus a display title. */
@@ -56,29 +81,13 @@ export function AnchorChip({
   // A passed anchor is not context worth carrying in the chrome.
   if (c.kind === "past") return null;
 
-  const isLive = c.kind === "future" || c.kind === "today";
+  const phrase = countdownPhrase(c);
 
   return (
     <span
-      className="inline-flex items-center gap-2"
-      style={{
-        fontFamily: "var(--font-mono-stack)",
-        fontSize: 12,
-        letterSpacing: "0.01em",
-      }}
+      className="inline-flex items-center gap-1.5 text-[12px] leading-5"
+      style={{ color: "var(--x-ink-quiet, var(--ink-quiet))" }}
     >
-      <span
-        style={{
-          fontWeight: 600,
-          fontVariantNumeric: "tabular-nums",
-          color: isLive ? "var(--accent)" : "var(--ink-quiet)",
-        }}
-      >
-        {countdownToken(c)}
-      </span>
-      <span aria-hidden style={{ color: "var(--ink-faint)" }}>
-        ·
-      </span>
       <span
         style={{
           maxWidth: 180,
@@ -90,9 +99,27 @@ export function AnchorChip({
       >
         {anchor.title}
       </span>
-      <span style={{ color: "var(--ink-quiet)" }}>
+      <span aria-hidden style={{ color: "var(--ink-ghost)" }}>
+        ·
+      </span>
+      <span style={{ fontVariantNumeric: "tabular-nums" }}>
         {formatDay(anchor.targetDate, now)}
       </span>
+      {phrase ? (
+        <>
+          <span aria-hidden style={{ color: "var(--ink-ghost)" }}>
+            ·
+          </span>
+          <span
+            style={{
+              fontVariantNumeric: "tabular-nums",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {phrase}
+          </span>
+        </>
+      ) : null}
     </span>
   );
 }

@@ -174,6 +174,15 @@ function flattenTimeline(dto: AudienceTimelineDto): AudienceTimelineItemDto[] {
 const RAIL_PITCH_PX = 84;
 const RAIL_FLOOR_PX = 620;
 const MARK_DIAMETER_PX = 14;
+/**
+ * The month tick's own two footprints, in px: its 1px hairline, and the box a
+ * three-letter month name occupies at the caption step (~34px, plus the paper
+ * padding either side of it). Both are measured against the same narrowest
+ * rail as `legibleGap`, so a tick's right to be drawn is decided in the same
+ * physical terms as a mark's right to be told apart from its neighbour.
+ */
+const TICK_STROKE_PX = 1;
+const TICK_NAME_PX = 40;
 
 /**
  * How far the first and last marks sit in from the rail's ends, in
@@ -196,8 +205,36 @@ function railEdge(count: number): number {
  * ever be for this many milestones.
  */
 function legibleGap(count: number): number {
-  const narrowestRail = Math.max(RAIL_FLOOR_PX, count * RAIL_PITCH_PX);
-  return (MARK_DIAMETER_PX / narrowestRail) * 100;
+  return (MARK_DIAMETER_PX / narrowestRail(count)) * 100;
+}
+
+/** The narrowest a horizontal rail can be for this many milestones, in px. */
+function narrowestRail(count: number): number {
+  return Math.max(RAIL_FLOOR_PX, count * RAIL_PITCH_PX);
+}
+
+/**
+ * How close, in rail-percent, a month tick's hairline may come to a milestone
+ * mark before the two are drawn on top of each other.
+ *
+ * The atlas and the marks share one line and one mapping, which is the point
+ * of the cartography — but it also means a milestone that falls on the first
+ * of the month has its dot painted straight through the tick that names that
+ * month. Decoration never outranks information (the module's own rule for the
+ * Today chip), so the tick yields. Derived, not chosen: half a mark plus half
+ * a hairline, over the narrowest this rail can ever be for this many points.
+ */
+export function markCollisionGap(count: number): number {
+  return ((MARK_DIAMETER_PX / 2 + TICK_STROKE_PX / 2) / narrowestRail(count)) * 100;
+}
+
+/**
+ * The same question for the tick's NAME, which is forty times wider than its
+ * hairline. A month name landing under a mark collides with that mark's own
+ * status line and date, so it stands down well before the hairline has to.
+ */
+export function markLabelGap(count: number): number {
+  return ((MARK_DIAMETER_PX / 2 + TICK_NAME_PX / 2) / narrowestRail(count)) * 100;
 }
 
 /** Raw 0-100 positions mapped into the rail's drawable span. Affine only. */
@@ -267,10 +304,26 @@ function mapThroughAnchors(
   return clampPercent(100 - edge);
 }
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  month: "short",
-  timeZone: "UTC",
-});
+/**
+ * The artifact's one short-month vocabulary, fixed at three letters.
+ *
+ * `Intl.DateTimeFormat("en-GB", { month: "short" })` returns "Sept" for
+ * September and three letters for the other eleven, so the rail's atlas read
+ * `Jul · Aug · Sept · Oct` — one month a letter wider than its neighbours in a
+ * row whose whole job is even rhythm, and the same string turning up as
+ * "3 Sept 2026" in the milestone labels directly beneath it. A repo QA script
+ * already had to `replace("Sept", "Sep")` before it could parse those dates,
+ * which is the tell that the locale's answer was never the intended one here.
+ *
+ * Fixed rather than formatted, because this is a typographic decision about a
+ * fixed-width row, not a localisation one: every tick is three letters, the
+ * milestone dates under them are the same three letters, and the axis and its
+ * labels can no longer disagree about the name of a month.
+ */
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+] as const;
 
 /**
  * First-of-month instants strictly inside (axisStart, axisEnd). When a plan
@@ -289,7 +342,7 @@ function monthBoundaries(axisStart: number, axisEnd: number): Array<{ day: numbe
       day: cursor.getTime(),
       label: month === 0
         ? `Jan ’${String(cursor.getUTCFullYear() % 100).padStart(2, "0")}`
-        : MONTH_FORMATTER.format(cursor),
+        : SHORT_MONTHS[month],
     });
     cursor.setUTCMonth(month + 1);
   }
@@ -824,6 +877,72 @@ export function extraLabelIndices(
   return granted;
 }
 
+export type TimelineLabelCluster = Readonly<{
+  /** The consecutive rail indices this caption speaks for. */
+  indices: readonly number[];
+  /** Rail-percent of the run's first and last mark, on each axis. */
+  start: number;
+  end: number;
+  startStack: number;
+  endStack: number;
+  /** What the run is called. A count, never one title standing in for four. */
+  label: string;
+}>;
+
+/**
+ * The other half of the density rule.
+ *
+ * `extraLabelIndices` decides who gets a title when there is room for one. In a
+ * genuinely crowded span there is no room for any, and the rail's answer used
+ * to be silence: five dots inside four weeks, no titles, nothing saying they
+ * were milestones at all — a sighted viewer could hover them one at a time and
+ * a low-vision one had to probe each dot to find out what it was.
+ *
+ * So a run of adjacent unlabelled marks gets ONE caption between them, naming
+ * how many are in the run. It is a count and not a borrowed title on purpose:
+ * no single milestone in a cluster speaks for the others, and picking one to
+ * print would be the same error as picking one date to draw them all at.
+ *
+ * Runs of one are not clustered — a lone unlabelled dot between two labelled
+ * ones is already located by its neighbours, and a caption reading
+ * "1 milestone" beside a dot is noise.
+ *
+ * Pure and index-based, so it can be checked without a rail: `labelled` is the
+ * persistent set the view actually draws (mandatory titles plus the extras the
+ * measured collision pass granted), never the transient hover/selection state.
+ */
+export function labelClusters(
+  points: readonly TimelineArtifactPoint[],
+  labelled: ReadonlySet<number>,
+): TimelineLabelCluster[] {
+  const clusters: TimelineLabelCluster[] = [];
+  let run: number[] = [];
+
+  const close = () => {
+    if (run.length >= 2) {
+      const first = run[0];
+      const last = run[run.length - 1];
+      clusters.push({
+        indices: [...run],
+        start: points[first].position,
+        end: points[last].position,
+        startStack: points[first].stackPosition,
+        endStack: points[last].stackPosition,
+        label: `${run.length} milestones`,
+      });
+    }
+    run = [];
+  };
+
+  points.forEach((_point, index) => {
+    if (labelled.has(index)) close();
+    else run.push(index);
+  });
+  close();
+
+  return clusters;
+}
+
 export function buildTimelineCountdown(
   targetDate: string | null | undefined,
   today: string | null | undefined,
@@ -838,13 +957,6 @@ export function buildTimelineCountdown(
   return { kind: "today" };
 }
 
-const SHORT_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
 const LONG_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "long",
@@ -852,10 +964,19 @@ const LONG_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
   timeZone: "UTC",
 });
 
+/**
+ * A date in the artifact's own voice. The short form is composed from
+ * `SHORT_MONTHS` rather than from the locale, so "3 Sep 2026" under the rail
+ * uses the same three letters the "Sep" tick above it does. The long form —
+ * "3 September 2026", the reading-panel and screen-reader register — keeps the
+ * locale's full month name, which has no such ambiguity.
+ */
 export function formatTimelineDate(value: string, style: "short" | "long" = "short"): string {
   const day = calendarDay(value);
   if (day === null) return value;
-  return (style === "long" ? LONG_DATE_FORMATTER : SHORT_DATE_FORMATTER).format(new Date(day));
+  const date = new Date(day);
+  if (style === "long") return LONG_DATE_FORMATTER.format(date);
+  return `${date.getUTCDate()} ${SHORT_MONTHS[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }
 
 export type MetricValueScale = "base" | "three" | "four" | "word" | "count";

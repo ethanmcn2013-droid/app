@@ -12,7 +12,10 @@ import {
   buildTimelineCountdown,
   capStackGaps,
   extraLabelIndices,
+  labelClusters,
   labelShifts,
+  markCollisionGap,
+  markLabelGap,
   metricValueScale,
   resolveTimelineAxis,
   stackMinimumGap,
@@ -587,6 +590,69 @@ test("extra labels fill the rail exactly as far as same-side spacing allows", ()
   assert.ok(!granted.has(1) && !granted.has(2) && !granted.has(8));
 });
 
+test("a run of marks no label could reach says how many it holds", () => {
+  // The other half of the density rule. `extraLabelIndices` above decides who
+  // gets a title where there is room; this decides what a span with no room
+  // says instead of saying nothing. A run of adjacent unlabelled marks used
+  // to be a row of anonymous dots — hoverable one at a time by a sighted
+  // viewer and probe-only for anyone else.
+  const model = buildTimelineArtifactModel(timeline([
+    item("yes", "covered", "2026-01-02"),
+    item("venue", "covered", "2026-02-14"),
+    item("dress", "next", "2026-09-06"),
+    item("cake", "next", "2026-09-14"),
+    item("music", "next", "2026-09-22"),
+    item("wedding", "later", "2026-10-03"),
+  ]));
+  // Still a calendar rail: the three September marks are close, but far
+  // enough apart to be told from one another, so nothing here is the
+  // "too-crowded" fallback in disguise.
+  assert.equal(model.axis.mode, "dated");
+
+  // One run, labelled by its own length. The caption is a count and never a
+  // borrowed title: no milestone in a cluster speaks for the others.
+  const clusters = labelClusters(model.points, new Set([0, 5]));
+  assert.deepEqual(clusters.map((cluster) => cluster.label), ["4 milestones"]);
+  assert.deepEqual(clusters[0].indices, [1, 2, 3, 4]);
+  assert.equal(clusters[0].start, model.points[1].position);
+  assert.equal(clusters[0].end, model.points[4].position);
+  assert.equal(clusters[0].startStack, model.points[1].stackPosition);
+  assert.equal(clusters[0].endStack, model.points[4].stackPosition);
+
+  // A labelled mark splits a run, and the leftover run of one is dropped.
+  const split = labelClusters(model.points, new Set([0, 3, 5]));
+  assert.deepEqual(split.map((cluster) => cluster.indices), [[1, 2]]);
+  assert.deepEqual(split.map((cluster) => cluster.label), ["2 milestones"]);
+
+  // A lone unlabelled mark between two labelled ones is already located by
+  // its neighbours; "1 milestone" beside one dot is noise, not information.
+  assert.deepEqual(labelClusters(model.points, new Set([0, 2, 4, 5])), []);
+  // And a fully labelled rail has nothing to cluster.
+  assert.deepEqual(labelClusters(model.points, new Set([0, 1, 2, 3, 4, 5])), []);
+});
+
+test("the atlas yields to the marks it annotates, by measurement", () => {
+  // A milestone dated the first of a month has its dot drawn straight through
+  // the tick that names that month. Both distances are physical — half a mark
+  // against the narrowest this rail can be for this many points — so a tick
+  // standing down is a measured collision and never a breakpoint's guess.
+  for (const count of [4, 9, 22]) {
+    assert.ok(
+      markCollisionGap(count) < markLabelGap(count),
+      "a tick's name must stand down long before its hairline does",
+    );
+    assert.ok(markCollisionGap(count) > 0);
+  }
+  // Both shrink as the rail grows, because the rail is a scroll canvas at
+  // least `count x pitch` wide: more milestones means more pixels per
+  // rail-percent, so the same collision covers less of the rail.
+  assert.ok(markLabelGap(22) < markLabelGap(9));
+  assert.ok(markCollisionGap(22) < markCollisionGap(9));
+  // Below the rail's own floor width the figures stop moving, because the
+  // rail stops getting narrower.
+  assert.equal(markLabelGap(2), markLabelGap(4));
+});
+
 test("a plan too crowded to space by date states its order instead", () => {
   // Two milestones on the same day cannot both be drawn at their own date and
   // still be told apart, and nothing is allowed to move them off it. So the
@@ -852,11 +918,15 @@ test("month ticks ride the same mapping as the points and thin on long spans", (
   ]));
 
   // Jan 2 → Oct 3 crosses nine first-of-month boundaries, Feb through Oct.
-  // "Sept" is en-GB's short September — the same formatter voice as every
-  // date already on the artifact.
+  // Three letters each, including September. This used to pin "Sept", which
+  // is what en-GB's short month gives you and which put one four-letter name
+  // in a row of eight three-letter ones — in a row whose whole job is even
+  // rhythm, and directly above milestone labels reading "3 Sept 2026". The
+  // artifact composes its short months from a fixed table now, so the atlas
+  // and the dates under it cannot disagree about the name of a month.
   assert.deepEqual(
     model.monthTicks.map((tick) => tick.label),
-    ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct"],
+    ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"],
   );
 
   // Strictly ordered on both axes, and honest about between-ness: the Feb
@@ -870,9 +940,9 @@ test("month ticks ride the same mapping as the points and thin on long spans", (
   const tick = (label: string) => model.monthTicks.find((candidate) => candidate.label === label)!;
   assert.ok(tick("Feb").position > yes.position && tick("Feb").position < venue.position);
   assert.ok(tick("Mar").position > yes.position && tick("Mar").position < venue.position);
-  assert.ok(tick("Sept").position > menu.position && tick("Sept").position < wedding.position);
-  assert.ok(tick("Sept").stackPosition > menu.stackPosition
-    && tick("Sept").stackPosition < wedding.stackPosition);
+  assert.ok(tick("Sep").position > menu.position && tick("Sep").position < wedding.position);
+  assert.ok(tick("Sep").stackPosition > menu.stackPosition
+    && tick("Sep").stackPosition < wedding.stackPosition);
 
   // A multi-year plan thins to quarters, Januarys carrying their year.
   const long = buildTimelineArtifactModel(timeline([

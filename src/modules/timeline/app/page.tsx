@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CreateProjectForm } from "@/modules/timeline/app/_components/create-project-form";
-import TimelineProjectPage from "@/modules/timeline/app/plan/[projectSlug]/page";
 import { getProjectEmptyCopy } from "@/modules/timeline/lib/onboarding/personalization";
+import { buildTimelineProjectHref } from "@/modules/timeline/lib/project-switcher-model";
 import {
   getCurrentWorkspace,
   requireUser,
@@ -81,15 +82,37 @@ export default async function TimelineOwnerHome({
     projects.find((candidate) => candidate.slug === requestedProjectSlug) ??
     projects[0];
   if (project) {
-    return TimelineProjectPage({
-      params: Promise.resolve({ projectSlug: project.slug }),
-      searchParams: Promise.resolve({
+    // Redirect, not a direct call.
+    //
+    // This used to invoke the project page as a plain async function and
+    // return its element, which renders the right pixels at the wrong
+    // address: the URL stays /app/timeline, so the [projectSlug] segment's
+    // own loading boundary never mounts (its Suspense fallback belongs to a
+    // route this request never entered) and its generateMetadata never runs,
+    // leaving the tab titled by the generic module metadata instead of the
+    // project. Every project link the app emits already points at the
+    // canonical path, so the entry that lands here — a bare /app/timeline, or
+    // an ?project= deep link — is the one case that was being served an
+    // uncanonical URL.
+    //
+    // The path comes from the module's own URL helper rather than being
+    // spelled here, so it stays inside the suite naming contract
+    // (docs/SUITE_URL_AND_NAMING_CONTRACT.md: signed-in Timeline lives at
+    // /app/timeline/*, and /app/plan/* is a retired input no new UI emits).
+    // `mode` rides along so a Milestones deep link still lands in Milestones.
+    redirect(
+      buildTimelineProjectHref(project.slug, {
         workspaceId: resolvedContext?.workspaceId,
-        planningPeriodId: resolvedContext?.planningPeriodId ?? undefined,
-        mode: requested.mode,
+        planningPeriodId: resolvedContext?.planningPeriodId,
+        mode: requested.mode === "edit" ? "edit" : null,
       }),
-    });
+    );
   }
+
+  // Everything below still renders in place at /app/timeline, because none of
+  // it has a project to redirect to: no workspace, an unavailable workspace
+  // context, and a workspace whose project list is empty. The route keeps its
+  // no-project semantics; only the has-a-project case moves.
 
   // The empty state speaks the workspace's own language. The copy lives in
   // one place rather than being paraphrased here, so a venue that started

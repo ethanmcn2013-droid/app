@@ -27,7 +27,10 @@ import {
   buildTimelineCountdown,
   extraLabelIndices,
   formatTimelineDate,
+  labelClusters,
   labelShifts,
+  markCollisionGap,
+  markLabelGap,
   metricValueScale,
   timelineAxisDescription,
   timelineAxisNote,
@@ -73,6 +76,14 @@ type PositionStyle = CSSProperties & {
   /** Rail-percent the LABEL is nudged by to clear its neighbour. The mark
    *  never moves; see `labelShifts`. */
   "--timeline-label-shift"?: string;
+};
+
+/** The two ends of a cluster's bracket, on each of the rail's two axes. */
+type ClusterStyle = CSSProperties & {
+  "--timeline-cluster-start": string;
+  "--timeline-cluster-end": string;
+  "--timeline-cluster-start-stack": string;
+  "--timeline-cluster-end-stack": string;
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
@@ -777,6 +788,31 @@ function Journey({
     ),
     [model.points, mandatoryLabels, labelSpan],
   );
+  // The persistent label set the rail actually draws above 620px: the
+  // mandatory titles plus whatever the measured collision pass could fit.
+  // Selection and hover are deliberately excluded — they are transient, and
+  // the density rule below has to describe the resting page.
+  const persistentLabels = useMemo(
+    () => new Set<number>([...mandatoryLabels, ...extraLabels]),
+    [mandatoryLabels, extraLabels],
+  );
+  // A crowded span used to say nothing at all: five dots inside four weeks,
+  // every title withheld for want of room, so the cluster was anonymous to
+  // anyone who could not hover it one dot at a time. Runs of adjacent
+  // unlabelled marks now share one caption naming how many are in the run.
+  const clusters = useMemo(
+    () => labelClusters(model.points, persistentLabels),
+    [model.points, persistentLabels],
+  );
+  // Cartography yields to the marks it annotates. Both distances are physical
+  // — half a mark against the narrowest this rail can be — so a tick standing
+  // down is a measured collision, never a breakpoint's guess.
+  const markPositions = useMemo(
+    () => model.points.map((point) => point.position),
+    [model.points],
+  );
+  const tickMarkGap = markCollisionGap(model.points.length);
+  const tickNameGap = markLabelGap(model.points.length);
   // Marks are where their dates are. When two visible labels would overlap it
   // is the LABEL that gives way — never the mark, which is the whole of the
   // proportionality repair. Held back until the rail has been measured, so the
@@ -784,12 +820,8 @@ function Journey({
   const labelNudges = useMemo(
     () => (labelSpan === null
       ? new Map<number, number>()
-      : labelShifts(
-          model.points.map((point) => point.position),
-          new Set([...mandatoryLabels, ...extraLabels]),
-          labelSpan,
-        )),
-    [model.points, mandatoryLabels, extraLabels, labelSpan],
+      : labelShifts(markPositions, persistentLabels, labelSpan)),
+    [markPositions, persistentLabels, labelSpan],
   );
   // The Today chip negotiates for space like every label does: when an
   // above-side labelled point sits within its band, the chip yields to the
@@ -922,7 +954,17 @@ function Journey({
                     const nearToday = model.todayPosition !== null
                       && Math.abs(tick.position - model.todayPosition) < 3;
                     const nearEdge = tick.position < 4 || tick.position > 96;
-                    const quiet = nearToday || nearEdge;
+                    // A milestone dated the first of the month has its dot
+                    // painted straight through the tick that names the month.
+                    // The tick's name stands down early; its hairline stands
+                    // down only when the mark is actually on top of it.
+                    const nearMark = markPositions.some(
+                      (position) => Math.abs(tick.position - position) < tickNameGap,
+                    );
+                    const onMark = markPositions.some(
+                      (position) => Math.abs(tick.position - position) < tickMarkGap,
+                    );
+                    const quiet = nearToday || nearEdge || nearMark;
                     const tight = !quiet && tick.position - lastLabelled < 4;
                     if (!quiet && !tight) lastLabelled = tick.position;
                     const tickStyle: PositionStyle = {
@@ -934,6 +976,7 @@ function Journey({
                         className={styles.monthTick}
                         data-quiet={quiet ? "true" : undefined}
                         data-tight={tight ? "true" : undefined}
+                        data-collides={onMark ? "true" : undefined}
                         key={`${tick.label}-${tick.position}`}
                         style={tickStyle}
                       >
@@ -942,6 +985,36 @@ function Journey({
                     );
                   });
                 })()}
+              </span>
+            ) : null}
+
+            {/* The density rule's other half. Where no title could fit, the
+                run of marks says how many it holds rather than saying
+                nothing — one bracket, one count, drawn under the rail in the
+                labels' own quiet register. Real titles are rendered after
+                this and paint over it, which is the correct precedence: a
+                milestone's name always outranks a count of milestones.
+                Hidden on the stacked axis and on paper, where every label
+                shows and there is nothing left to cluster. */}
+            {clusters.length ? (
+              <span className={styles.clusters} aria-hidden="true">
+                {clusters.map((cluster) => {
+                  const clusterStyle: ClusterStyle = {
+                    "--timeline-cluster-start": `${cluster.start}%`,
+                    "--timeline-cluster-end": `${cluster.end}%`,
+                    "--timeline-cluster-start-stack": `${cluster.startStack}%`,
+                    "--timeline-cluster-end-stack": `${cluster.endStack}%`,
+                  };
+                  return (
+                    <span
+                      className={styles.cluster}
+                      key={`cluster-${cluster.indices[0]}-${cluster.indices.length}`}
+                      style={clusterStyle}
+                    >
+                      <span>{cluster.label}</span>
+                    </span>
+                  );
+                })}
               </span>
             ) : null}
 
@@ -963,11 +1036,12 @@ function Journey({
               <ol className={styles.milestones} aria-describedby={instructionsId}>
                 {model.points.map((point, index) => {
                   const selected = point.item.publicId === selectedPoint?.item.publicId;
-                  const firstUnfinished = model.points.findIndex((candidate) => candidate.state !== "complete");
-                  const persistentLabel = selected
-                    || point.isNext
-                    || index === Math.max(0, firstUnfinished - 1)
-                    || index === model.points.length - 1;
+                  // One source for the mandatory set, shared with the density
+                  // rule above. It used to be recomputed here from the same
+                  // three conditions, so a change to either copy could leave
+                  // the cluster captions describing a different rail from the
+                  // one being drawn.
+                  const persistentLabel = selected || mandatoryLabels.has(index);
                   const extraLabel = !persistentLabel && extraLabels.has(index);
                   const nudge = labelNudges.get(index) ?? 0;
                   const pointStyle: PositionStyle = {
