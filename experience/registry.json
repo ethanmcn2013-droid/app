@@ -420,11 +420,11 @@
       "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "d9988ba395545970",
+      "materialityHash": "6da4c7b4b47c7912",
       "materialityReview": {
-        "materialityHash": "d9988ba395545970",
+        "materialityHash": "6da4c7b4b47c7912",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-12-estate.json"
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-12-close.json"
       }
     },
     {
