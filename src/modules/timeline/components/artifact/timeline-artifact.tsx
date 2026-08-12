@@ -1257,6 +1257,12 @@ export function TimelineArtifact({
   return (
     <article
       ref={artifactRef}
+      // ENTRANCE_GUARD writes data-entrance and data-entrance-guard onto this
+      // element before hydration, so React finds attributes it did not render
+      // and reports a mismatch. That is the sanctioned use of this escape
+      // hatch: the attributes are deliberately set by a pre-hydration script,
+      // and CSS reads them, so they cannot move to a property.
+      suppressHydrationWarning
       className={[styles.artifact, className].filter(Boolean).join(" ")}
       data-timeline-artifact
       data-compact={compact ? "true" : undefined}

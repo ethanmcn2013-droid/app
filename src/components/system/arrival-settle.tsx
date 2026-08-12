@@ -70,7 +70,12 @@ const SETTLE_ID = "surface-arrival";
  * remembers when it last settled, and a second announcement inside this
  * window is treated as the same arrival and ignored.
  */
-const SETTLE_STAMP = "surfaceSettledAt";
+// A property on the element, NOT a data attribute. React diffs attributes at
+// hydration, and this one is written by the inline script BEFORE hydration
+// runs, so a `data-` stamp made the server and client trees disagree and threw
+// a hydration mismatch on every product surface. An expando is invisible to
+// that diff, and nothing styles on it.
+const SETTLE_STAMP = "__signalSettledAt";
 const SETTLE_WINDOW_MS = 400;
 /** Where the surface resolves from. Paper-toned, not a fade-in from nothing. */
 const FROM_OPACITY = 0.6;
@@ -90,10 +95,11 @@ function playSurfaceSettle(): void {
   if (window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
   const target = document.querySelector<HTMLElement>(SURFACE);
   if (!target?.animate) return;
-  const last = Number(target.dataset[SETTLE_STAMP] ?? "");
+  const stamped = target as HTMLElement & { [SETTLE_STAMP]?: number };
+  const last = Number(stamped[SETTLE_STAMP] ?? 0);
   const now = performance.now();
   if (Number.isFinite(last) && last > 0 && now - last < SETTLE_WINDOW_MS) return;
-  target.dataset[SETTLE_STAMP] = String(now);
+  stamped[SETTLE_STAMP] = now;
   const tokens = getComputedStyle(document.documentElement);
   const raw = tokens.getPropertyValue("--motion-fast").trim();
   let duration = parseFloat(raw) || 0;
@@ -121,7 +127,7 @@ function playSurfaceSettle(): void {
  * fallback, which is what makes a childList observation on it the exact
  * signal for "the loader has been replaced".
  */
-const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,p=s&&s.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(s.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var L=Number(t.dataset.${SETTLE_STAMP}||""),N=performance.now();if(L>0&&N-L<${SETTLE_WINDOW_MS})return;t.dataset.${SETTLE_STAMP}=String(N);var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
+const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,p=s&&s.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(s.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var L=Number(t.${SETTLE_STAMP}||0),N=performance.now();if(L>0&&N-L<${SETTLE_WINDOW_MS})return;t.${SETTLE_STAMP}=N;var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
 
 export function ArrivalSettle() {
   // The cleanup, not the effect: this component only ever exists inside a
