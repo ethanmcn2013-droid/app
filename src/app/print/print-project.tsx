@@ -38,6 +38,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { isFirstRun } from "@/server/db/queries";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
+import { withActiveProject } from "@/lib/projects/project-url";
 import type { ProjectId } from "@/lib/projects/project-ref";
 
 export type PrintSearchParams = Promise<{ workspaceId?: string | string[] }>;
@@ -67,9 +68,8 @@ export async function gatePrintProject(
   }
 
   if (project.kind === "ready" && project.canonicalRedirectTo !== null) {
-    const query = new URLSearchParams({ workspaceId: project.canonicalRedirectTo });
     // Outside any try/catch: `redirect` throws Next's control-flow exception.
-    redirect(`${printPath}?${query.toString()}`);
+    redirect(withActiveProject(printPath, project.canonicalRedirectTo));
   }
 
   // The first-run gate, previously in the layout against the cookie's Project

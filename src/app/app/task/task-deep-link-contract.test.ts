@@ -130,7 +130,13 @@ test("the canonical URL carries the task's own Project and the task", async () =
   assert(decision.kind === "canonical");
 
   const url = canonicalTaskUrl(decision.workspaceId, decision.taskId);
-  assert.equal(url, "/app/tasks?workspaceId=ws-b&task=t-in-b");
+  // Parameter order follows `withActiveProject`, which preserves the local
+  // parameters it was handed and then sets the Project. Order is not
+  // semantically meaningful; both parameters being present is.
+  assert.equal(url, "/app/tasks?task=t-in-b&workspaceId=ws-b");
+  const parsed = new URLSearchParams(url.slice(url.indexOf("?") + 1));
+  assert.equal(parsed.get("workspaceId"), "ws-b");
+  assert.equal(parsed.get("task"), "t-in-b");
 
   // ADR 0001 §8: a V3 link never emits V2 context vocabulary, and never a
   // retired path.

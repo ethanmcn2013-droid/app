@@ -4,6 +4,7 @@ import { getProjectOverviewData } from "@/server/actions/project-overview";
 import { ProjectOverview } from "@/components/app/project/project-overview";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { PROJECT_APP_PATH } from "@/lib/product-urls";
+import { withActiveProject } from "@/lib/projects/project-url";
 import type { ProjectId } from "@/lib/projects/project-ref";
 
 // Inherited from the /app layout: force-dynamic
@@ -44,10 +45,10 @@ export const dynamic = "force-dynamic";
  * controls. It becomes a no-op the moment the parameter exists.
  */
 function canonicalProjectUrl(workspaceId: ProjectId): string {
-  // Built explicitly rather than via `withActiveProject`, which currently
-  // drops a URL fragment (`src/lib/projects/project-url.ts:216`). A fragment
-  // is never transmitted to a server in any case, so nothing is lost here.
-  return `${PROJECT_APP_PATH}?${new URLSearchParams({ workspaceId })}`;
+  // The shared contextual-link builder. An earlier draft built this query
+  // locally to avoid the helper's silent fragment drop; #132 fixed the helper,
+  // so there is no longer a reason for this route to have its own builder.
+  return withActiveProject(PROJECT_APP_PATH, workspaceId);
 }
 
 function Unavailable() {
