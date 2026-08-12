@@ -4,6 +4,54 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·139 · cuts · the app stops being a second marketing site
+
+**Every marketing page this host served is gone. Pricing, about, press,
+principles, templates, the five audience pages, the student page and the legal
+pages all live on signalstudio.ie now, and an old link lands there in one hop.**
+
+Nineteen route directories left, along with the components and the sixteen
+template essays that only they used. What stays here is the product: the
+workspace, sign-in and sign-up, welcome, the closed-beta waiting list, shared
+and published pages, invites, redemptions, embeds, print, and the wedding page.
+The app is the product now, not a second marketing site with the product
+attached.
+
+Every cut path redirects to its umbrella equivalent. The rules are host-scoped
+to both app. and tasks., so links sent from the old Tasks host resolve too, and
+each one is a single hop rather than a chain. Two old template slug renames
+were deleted because they would have chained into the new wildcard. The sitemap
+is gone, and robots now disallows everything except the wedding page and the
+embed and published surfaces, because a host that serves no marketing pages
+should not be walking a crawler through them.
+
+Four repairs ride along. Welcome was listed as a public route while its first
+act is to read the current user, which throws on a request with no session, so
+every signed-out visit was a guaranteed 500. It needs a session, so it is a
+protected route now and a signed-out visitor is sent to sign-in. That matters
+more than it used to: welcome is the only surface sign-up hands off to once
+the marketing pages are gone. The root layout declared a canonical URL of
+app.signalstudio.ie for every page that inherited it, which told search
+engines the wrong home for pages that belong to the umbrella; that line is
+gone. Privacy, terms and
+security on the sign-in stage and in the Clerk configuration are absolute
+umbrella URLs rather than paths that redirect, because a consent link is the
+one link that must show the reader exactly what they are agreeing to. The
+status link left with the page it named. The sign-in QR aimed at a retired iOS
+page, so both the link and the encoded matrix now carry the umbrella root.
+
+Two gates were lying about the tree. The route manifest asserted twenty
+directories the cut removed, and comments in the proxy sent readers to a route
+allowlist document that was never written in this repo or any other. Both now
+describe what actually exists.
+
+One deviation from the plan, recorded rather than smoothed over. The plan
+called for the public invite page to drop the marketing navigation and footer
+for a minimal functional one. It kept both and had their dead links repointed
+at the umbrella instead. No reader meets a broken destination there today, but
+a page whose only job is to accept an invitation is still carrying marketing
+chrome. The swap is outstanding.
+
 ## 2026-08-12 · T·138 · ships · dark mode, and the words your board already uses
 
 **The signed-in app now follows your device's colour scheme, and dark is a

@@ -256,33 +256,6 @@
       ]
     },
     {
-      "id": "tasks.page.privacy",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "published privacy notice",
-          "path": "/privacy",
-          "states": [
-            "default",
-            "long-content",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "What we collect, and why.",
-              "proves": [
-                "default"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": []
-    },
-    {
       "id": "tasks.page.p-by-slug",
       "evidence": "rendered",
       "cases": [
@@ -405,33 +378,6 @@
               "kind": "role",
               "role": "heading",
               "name": "Execution clarity for live work.",
-              "proves": [
-                "default"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": []
-    },
-    {
-      "id": "tasks.page.security",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "published security notice",
-          "path": "/security",
-          "states": [
-            "default",
-            "long-content",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "How the thing is built.",
               "proves": [
                 "default"
               ]
@@ -635,33 +581,6 @@
         "error",
         "success"
       ]
-    },
-    {
-      "id": "tasks.page.terms",
-      "evidence": "rendered",
-      "cases": [
-        {
-          "name": "published terms",
-          "path": "/terms",
-          "states": [
-            "default",
-            "long-content",
-            "reduced-motion",
-            "keyboard-only"
-          ],
-          "assertions": [
-            {
-              "kind": "role",
-              "role": "heading",
-              "name": "The deal, in plain words.",
-              "proves": [
-                "default"
-              ]
-            }
-          ]
-        }
-      ],
-      "remainingStates": []
     },
     {
       "id": "tasks.state.app-error",

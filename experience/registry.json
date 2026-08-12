@@ -21,49 +21,6 @@
   },
   "experiences": [
     {
-      "id": "tasks.page.about",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/about",
-      "source": "tasks/src/app/about/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use about.",
-      "primaryAction": "Complete the primary action on about.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "166201f23ee5dfe4"
-    },
-    {
       "id": "tasks.page.app",
       "product": "tasks",
       "surfaceType": "page",
@@ -210,7 +167,7 @@
       "materialityReview": {
         "materialityHash": "742f6da52fc2ae6e",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-08-12-estate.json"
       }
     },
     {
@@ -367,7 +324,7 @@
       "materialityReview": {
         "materialityHash": "cc5db7e841cafabc",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-08-12-estate.json"
       }
     },
     {
@@ -467,7 +424,7 @@
       "materialityReview": {
         "materialityHash": "d9988ba395545970",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-12-estate.json"
       }
     },
     {
@@ -516,7 +473,7 @@
       "materialityReview": {
         "materialityHash": "0d372879eb4d3aef",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-08-12-estate.json"
       }
     },
     {
@@ -572,7 +529,7 @@
       "materialityReview": {
         "materialityHash": "d94465a3f791a266",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-your-work-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-your-work-2026-08-12-estate.json"
       }
     },
     {
@@ -622,49 +579,6 @@
       "materialityHash": "36fa95281db4d8eb"
     },
     {
-      "id": "tasks.page.changelog",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/changelog",
-      "source": "tasks/src/app/changelog/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use changelog.",
-      "primaryAction": "Complete the primary action on changelog.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "eedf1ab6ab359315"
-    },
-    {
       "id": "tasks.page.embed-by-slug",
       "product": "tasks",
       "surfaceType": "page",
@@ -711,311 +625,8 @@
       "materialityReview": {
         "materialityHash": "d226ac71e96df95f",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-08-12-estate.json"
       }
-    },
-    {
-      "id": "tasks.page.embed-guide",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/embed/guide",
-      "source": "tasks/src/app/embed/guide/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use embed Ã‚Â· guide.",
-      "primaryAction": "Complete the primary action on embed Ã‚Â· guide.",
-      "roles": [
-        "owner",
-        "guest",
-        "viewer"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "9062e8a41863d3c9"
-    },
-    {
-      "id": "tasks.page.for-community",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/community",
-      "source": "tasks/src/app/for/community/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· community.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· community.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "d8c2a5a50b965473"
-    },
-    {
-      "id": "tasks.page.for-freelancers",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/freelancers",
-      "source": "tasks/src/app/for/freelancers/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· freelancers.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· freelancers.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "167c8b6d039e7e4e"
-    },
-    {
-      "id": "tasks.page.for-small-business",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/small-business",
-      "source": "tasks/src/app/for/small-business/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· small business.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· small business.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "a4c92a3eeca72b47"
-    },
-    {
-      "id": "tasks.page.for-students",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/students",
-      "source": "tasks/src/app/for/students/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· students.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· students.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "619a82d711af56eb"
-    },
-    {
-      "id": "tasks.page.for-trades",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/trades",
-      "source": "tasks/src/app/for/trades/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· trades.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· trades.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "13d89e8b636a7340"
-    },
-    {
-      "id": "tasks.page.for-weddings",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/for/weddings",
-      "source": "tasks/src/app/for/weddings/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use for Ã‚Â· weddings.",
-      "primaryAction": "Complete the primary action on for Ã‚Â· weddings.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "b2643d77a5359607"
     },
     {
       "id": "tasks.page.invite-by-token",
@@ -1108,135 +719,6 @@
       "materialityHash": "c281fb7642e216ff"
     },
     {
-      "id": "tasks.page.press",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/press",
-      "source": "tasks/src/app/press/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use press.",
-      "primaryAction": "Complete the primary action on press.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "f486f2303d074424"
-    },
-    {
-      "id": "tasks.page.pricing",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/pricing",
-      "source": "tasks/src/app/pricing/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use pricing.",
-      "primaryAction": "Complete the primary action on pricing.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "4bdd68406610ffbd"
-    },
-    {
-      "id": "tasks.page.principles",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/principles",
-      "source": "tasks/src/app/principles/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use principles.",
-      "primaryAction": "Complete the primary action on principles.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "a676f9ed13cdd0d0"
-    },
-    {
       "id": "tasks.page.print-board",
       "product": "tasks",
       "surfaceType": "page",
@@ -1287,7 +769,7 @@
       "materialityReview": {
         "materialityHash": "05f3816d6030a501",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-board-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.print-board-2026-08-12-estate.json"
       }
     },
     {
@@ -1335,7 +817,7 @@
       "materialityReview": {
         "materialityHash": "b9f94c73108490b0",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-calendar-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.print-calendar-2026-08-12-estate.json"
       }
     },
     {
@@ -1390,7 +872,7 @@
       "materialityReview": {
         "materialityHash": "d68e7b7dc1af8677",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-list-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.print-list-2026-08-12-estate.json"
       }
     },
     {
@@ -1438,51 +920,8 @@
       "materialityReview": {
         "materialityHash": "d90764270932869e",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-timeline-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.print-timeline-2026-08-12-estate.json"
       }
-    },
-    {
-      "id": "tasks.page.privacy",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/privacy",
-      "source": "tasks/src/app/privacy/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use privacy.",
-      "primaryAction": "Complete the primary action on privacy.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-26",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "9844eacd60cb807d"
     },
     {
       "id": "tasks.page.redeem-by-code",
@@ -1571,49 +1010,6 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d2d0cc13074d8d4c"
-    },
-    {
-      "id": "tasks.page.security",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/security",
-      "source": "tasks/src/app/security/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use security.",
-      "primaryAction": "Complete the primary action on security.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-26",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "4cb383908ef9e546"
     },
     {
       "id": "tasks.page.settings",
@@ -1705,7 +1101,7 @@
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-08-12-estate.json"
       }
     },
     {
@@ -1754,7 +1150,7 @@
       "materialityReview": {
         "materialityHash": "0b8e551245bd1e38",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-12-wave6.json"
+        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-12-estate.json"
       }
     },
     {
@@ -1803,7 +1199,7 @@
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-profile-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.settings-profile-2026-08-12-estate.json"
       }
     },
     {
@@ -1988,221 +1384,6 @@
       "materialityHash": "ec6806da27043be0"
     },
     {
-      "id": "tasks.page.status",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/status",
-      "source": "tasks/src/app/status/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use status.",
-      "primaryAction": "Complete the primary action on status.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "f50f3ca3179ed22c"
-    },
-    {
-      "id": "tasks.page.students",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/students",
-      "source": "tasks/src/app/students/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use students.",
-      "primaryAction": "Complete the primary action on students.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "030df7d172095b16"
-    },
-    {
-      "id": "tasks.page.templates",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/templates",
-      "source": "tasks/src/app/templates/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use templates.",
-      "primaryAction": "Complete the primary action on templates.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "121242ed2a95df8b"
-    },
-    {
-      "id": "tasks.page.templates-by-slug",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/templates/[slug]",
-      "source": "tasks/src/app/templates/[slug]/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "detail-or-record-view",
-      "primaryJob": "Understand and use templates Ã‚Â· selected record.",
-      "primaryAction": "Complete the primary action on templates Ã‚Â· selected record.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "supporting",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": null,
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "03e072a2de6b2cb5"
-    },
-    {
-      "id": "tasks.page.terms",
-      "product": "tasks",
-      "surfaceType": "page",
-      "route": "/terms",
-      "source": "tasks/src/app/terms/page.tsx",
-      "parentJourney": "public-discovery-and-proof",
-      "archetype": "public-information-and-proof",
-      "primaryJob": "Understand and use terms.",
-      "primaryAction": "Complete the primary action on terms.",
-      "roles": [
-        "public"
-      ],
-      "requiredStates": [
-        "default",
-        "long-content",
-        "reduced-motion",
-        "keyboard-only"
-      ],
-      "requiredBreakpoints": [
-        "mobile",
-        "tablet",
-        "desktop",
-        "wide"
-      ],
-      "componentDependencies": [],
-      "patternDependencies": [],
-      "reviewTier": "critical",
-      "designOwner": "product-taste-design-integrity",
-      "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
-      "auditScore": null,
-      "openFindingIds": [],
-      "automatedTestCoverage": "partial",
-      "screenshotCoverage": "partial",
-      "accessibilityCoverage": "partial",
-      "fixtureCoverage": "partial",
-      "lastReviewedAt": "2026-07-26",
-      "approvedBaselineReference": null,
-      "intentionalExceptions": [],
-      "materialityHash": "1f46b887e430bca9"
-    },
-    {
       "id": "tasks.page.waitlist",
       "product": "tasks",
       "surfaceType": "page",
@@ -2299,7 +1480,7 @@
       "materialityReview": {
         "materialityHash": "11d00f9a07f33588",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.welcome-2026-08-12-estate.json"
       }
     },
     {
@@ -2350,7 +1531,7 @@
       "materialityReview": {
         "materialityHash": "f532c7ecbb8ab980",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-08-12-estate.json"
       }
     },
     {
@@ -2797,7 +1978,7 @@
       "materialityReview": {
         "materialityHash": "36c47fbab79ad4f1",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-08-12-estate.json"
       }
     },
     {

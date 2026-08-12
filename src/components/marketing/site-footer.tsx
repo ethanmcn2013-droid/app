@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
-import {
-  IOS_APP_URL,
-  PRODUCT_MARKETING_URLS,
-  STUDIO_URL,
-} from "@/lib/product-urls";
+import { PRODUCT_MARKETING_URLS, STUDIO_URL } from "@/lib/product-urls";
 
 type FooterLink = {
   href: string;
@@ -50,35 +46,49 @@ export function SiteFooter() {
           <SocialLinks />
         </div>
 
+        {/*
+          Estate consolidation (2026-08-12). This footer renders on the host
+          root, the embed layout and the public /invite/[token] page, so a
+          dead link here is a dead link in front of somebody being invited to
+          a workspace. Templates, Status, About and Principles were cut from
+          this host; everything company-facing now points at the umbrella,
+          which is the only host serving marketing pages.
+        */}
         <FooterCol
           heading="Product"
           links={[
             { href: "/#demo", label: "Demo" },
             { href: "/#anatomy", label: "Anatomy" },
             { href: "/app/tasks", label: "Workspace" },
-            { href: "/templates", label: "Templates" },
-            { href: "/status", label: "Status" },
           ]}
         />
         <FooterCol
           heading="Company"
           links={[
-            { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
-            { href: "/about", label: "About" },
-            { href: "/principles", label: "Principles" },
-            { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
-            { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
+            { href: `${STUDIO_URL}/pricing`, label: "Pricing", external: true },
+            { href: `${STUDIO_URL}/about`, label: "About", external: true },
+            { href: `${STUDIO_URL}/principles`, label: "Principles", external: true },
+            // /contact was folded into /about as an anchored section (D5).
+            // Linking the old path would put a redirect in front of somebody
+            // trying to reach a human.
+            { href: `${STUDIO_URL}/about#contact`, label: "Contact", external: true },
+            { href: `${STUDIO_URL}/dispatch`, label: "Dispatch", external: true },
           ]}
         />
+        {/*
+          Resources held the five /for pages and the iOS page. All six were
+          cut, which emptied the column rather than retiring it: the
+          four-column footer is locked in BRAND.md and the chrome contract
+          gates it, because a column quietly disappearing is how a footer
+          drifts. Rebuilt from umbrella pages that survived the cut.
+        */}
         <FooterCol
           heading="Resources"
           links={[
-            { href: "/for/community", label: "For coordinators" },
-            { href: "/for/freelancers", label: "For freelancers" },
-            { href: "/for/small-business", label: "For small business" },
-            { href: "/for/students", label: "For students" },
-            { href: "/for/trades", label: "For trades" },
-            { href: IOS_APP_URL, label: "iOS app", external: true },
+            { href: `${STUDIO_URL}/students`, label: "Students", external: true },
+            { href: `${STUDIO_URL}/venues`, label: "Venues", external: true },
+            { href: `${STUDIO_URL}/press`, label: "Press", external: true },
+            { href: `${STUDIO_URL}/design`, label: "Design", external: true },
           ]}
         />
         <FooterCol

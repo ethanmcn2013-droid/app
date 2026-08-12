@@ -5,7 +5,8 @@
  * directory under src/app against silent deletion.
  *
  * The manifest is the full set of canonical route directories after the
- * one-app product URL migration (2026-07-25). If any listed
+ * one-app product URL migration (2026-07-25), less the marketing routes cut
+ * in the 2026-08-12 estate consolidation. If any listed
  * directory stops existing the gate fails, surfacing the accidental drop
  * before it reaches CI or a phase merge.
  *
@@ -59,7 +60,6 @@ const MANIFEST = [
   // ── Sharing / collaboration surface routes ───────────────────────────────
   "embed",
   "embed/[slug]",
-  "embed/guide",
   "invite",
   "invite/[token]",
   "p",
@@ -92,31 +92,21 @@ const MANIFEST = [
   "settings/plan",
   "settings/profile",
 
-  // ── Marketing pages ──────────────────────────────────────────────────────
-  "about",
-  "changelog",
-  "for",
-  "for/community",
-  "for/freelancers",
-  "for/small-business",
-  "for/students",
-  "for/trades",
-  "for/weddings",
-  "press",
-  "pricing",
-  "principles",
-  "privacy",  "security",
+  // ── Social share images ──────────────────────────────────────────
+  // The marketing pages this group also held (about, changelog, for/*,
+  // press, pricing, principles, privacy, security, status, students,
+  // templates, templates/[slug], terms) were cut on 2026-08-12 and now
+  // redirect to signalstudio.ie. They are gone on purpose, so the gate
+  // must not assert them.
   "social",
   "social/bluesky-banner",
   "social/bluesky-pinned",
   "social/reddit-ads-wedding",
   "social/x-banner",
   "social/x-pinned",
-  "status",
-  "students",
-  "templates",
-  "templates/[slug]",
-  "terms",
+
+  // ── Access and onboarding ────────────────────────────────────────
+  // /waitlist is the closed-beta holding wall, not a marketing page.
   "waitlist",
   "welcome",
   "welcome/plan",

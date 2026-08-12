@@ -48,7 +48,7 @@ import type {
   NoteRead,
   PendingApprovedTasksSendRead,
 } from "@/modules/notes/server/actions/notes";
-import { taskFocusPath } from "@/lib/product-urls";
+import { PRICING_URL, taskFocusPath } from "@/lib/product-urls";
 import {
   CONTEXT_TERMINOLOGY,
   PLANNING_PERIOD_CONTEXTS,
@@ -869,7 +869,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                 </button>
               </>
             ) : (
-              <a role="menuitem" className={styles.menuItem} href="/pricing">
+              <a role="menuitem" className={styles.menuItem} href={PRICING_URL}>
                 Capture by email
                 <span className={styles.menuHint}>{CAPTURE_EMAIL_PLAN}</span>
               </a>

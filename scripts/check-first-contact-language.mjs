@@ -88,11 +88,6 @@ const BASELINE = new Set([
   // CORRECT AS WRITTEN — the refusal renders as a strikethrough list
   // (`const STRIKES`), so the word is on screen precisely to be crossed out.
   // Sentence-level negation cannot see markup, hence the entry.
-  "src/components/marketing/about-manifesto.tsx :: sprint",
-  "src/components/marketing/about-manifesto.tsx :: epic",
-  "src/components/marketing/about-manifesto.tsx :: triage",
-  "src/components/marketing/about-manifesto.tsx :: burndown",
-  "src/components/marketing/about-manifesto.tsx :: backlog",
   "src/app/social/x-banner/opengraph-image.tsx :: sprint",
   "src/app/social/x-banner/opengraph-image.tsx :: epic",
   "src/app/social/x-banner/opengraph-image.tsx :: triage",
@@ -112,9 +107,13 @@ const BASELINE = new Set([
   // when T·130 retired that exploration (#94). The ratchet caught it — a
   // baselined entry that vanishes fails just as loudly as a new one, so the
   // list cannot quietly drift back up.
+  //
+  // Shrank again on 2026-08-12: the estate consolidation cut the about
+  // manifesto and the /for pages off this host, taking seven entries with
+  // them. Five were the strikethrough refusal list, which the x-banner
+  // still carries; two were the real "list for triage" debt, now down to
+  // one page. The ratchet caught this one too.
   "src/components/marketing/features.tsx :: triage",
-  "src/components/marketing/for-freelancers.tsx :: triage",
-  "src/components/marketing/for-students.tsx :: triage",
   "src/components/app/blockers/blocker-badge.tsx :: blocked by",
 ]);
 

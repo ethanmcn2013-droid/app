@@ -14,13 +14,16 @@
  *   node scripts/brand/generate-qr.mjs
  *
  * Change TARGET when the iPhone app has an App Store listing, then re-run.
+ * It aimed at the umbrella `/ios` page until the 2026-08-12 estate
+ * consolidation retired that page. A QR is printed and scanned months after
+ * it ships, so it encodes a live URL, never one that redirects.
  */
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import QRCode from "qrcode";
 
-const TARGET = "https://signalstudio.ie/ios";
+const TARGET = "https://signalstudio.ie/";
 const OUT = path.join(
   process.cwd(),
   "src",
