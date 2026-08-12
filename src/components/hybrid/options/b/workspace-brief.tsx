@@ -423,10 +423,13 @@ export function WorkspaceBrief({
         <span
           aria-live="polite"
           className={styles.syncState}
-          data-state={cleared ? "cleared" : syncState}
+          // A congratulation must never speak over a failed save: an
+          // unsaved change outranks the good news, and the error state is
+          // the one thing in this slot the owner has to act on.
+          data-state={cleared && syncState !== "error" ? "cleared" : syncState}
           role="status"
         >
-          {cleared
+          {cleared && syncState !== "error"
             ? "Nothing overdue"
             : syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
         </span>

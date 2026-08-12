@@ -160,10 +160,16 @@ p.editable { min-height: 24px; padding: 4px 0; }
 /* Progress: one quiet cluster. The bar carries the proportion, the
    sentence carries the numbers, red appears only for genuinely overdue
    work. The sync whisper fades in beside it while a change saves. */
-.briefProgress { align-items: center; display: flex; flex: 0 0 auto; gap: 12px; }
+.briefProgress { align-items: center; display: flex; flex: 0 0 auto; gap: 12px; position: relative; }
+/* Out of flow on purpose. As a flex sibling its text width was added to
+   the band on every autosave, dragging the receipts sentence sideways
+   and pushing the project title's ellipsis on and off twice per save. */
 .syncState {
+  bottom: calc(100% + 2px);
   color: var(--x-task-text-muted);
-  font-size: 11px;
+  font-size: var(--text-caption);
+  position: absolute;
+  right: 0;
   /* 500, not 400: the whisper is the band's one "we have your back"
      moment and at regular weight it was nearly subliminal. Still quiet —
      weight, not size or motion. */
@@ -200,7 +206,7 @@ p.editable { min-height: 24px; padding: 4px 0; }
    fired only when the number goes UP. */
 .briefFacts strong[data-advanced] { animation: brief-progress-receipt 280ms var(--ease-out) both; }
 @keyframes brief-progress-receipt {
-  0% { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); }
+  0% { background: color-mix(in srgb, var(--x-task-accent) 22%, transparent); }
   100% { background: transparent; }
 }
 .briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -272,7 +278,11 @@ p.editable { min-height: 24px; padding: 4px 0; }
    side, and the ghost buttons to the right carry 8px of invisible
    padding before their ink — 16 vs 3+2+8 puts the hairline optically
    centred between the receipts' ink and the actions' ink. */
-.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 3px 0 0; width: 1px; }
+/* The band's 16px flex gap pays the left side and the ghost buttons'
+   8px inner padding pays most of the right, so the hairline needs a
+   negative left pull to sit optically centred between the two runs of
+   ink rather than 16-vs-5. */
+.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 3px 0 -6px; width: 1px; }
 
 /* Touch floor. Row 2's view tabs already bump to 44px on coarse
    pointers; row 1's controls sat at 24–30px on the same phones. The
@@ -296,8 +306,11 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .workspaceIdentity p.editable::after,
   .briefActions [data-band-action]::after { content: ""; position: absolute; }
   .navTrigger::after { inset: -8px; }
-  .planningTrigger::after,
-  .briefActions [data-band-action]::after { inset: -8px 0; }
+  .planningTrigger::after { inset: -8px 0; }
+  /* Square icon triggers need width as well as height — the "..." was
+     the one band control still under the floor on a phone. */
+  .briefActions [data-band-action] { inset: auto; }
+  .briefActions [data-band-action]::after { inset: -8px -6px; }
   .briefOverdue::after { inset: -8px -2px; }
   .briefPeriod::after { inset: -8px 0; }
   /* The two contenteditables were the band's only controls outside the
@@ -872,7 +885,10 @@ p.editable { min-height: 24px; padding: 4px 0; }
      movement, not less meaning. */
   .briefFacts strong[data-advanced] { animation: none; }
   .calendarTaskWrap { transition: none; }
-  .editable { transition: none; }
+  .editable,
+  .workspaceIdentity p.editable[data-empty],
+  .titleAffordance,
+  .syncState { transition: none; }
   :where(.optionB) button:active:not(:disabled) { transform: none; }
 }
 
