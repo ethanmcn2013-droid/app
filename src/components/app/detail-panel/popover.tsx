@@ -46,15 +46,19 @@ export function Popover({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
   /**
-   * How this layer is leaving. Mutated before the `setOpen(false)` that
-   * removes it, so the render AnimatePresence uses to start the exit already
-   * carries the right value — Escape is a command and cuts (motion contract:
-   * no animated keyboard commands), everything else takes the short exit.
+   * How this layer is leaving. State rather than a ref, because the exit
+   * variant and AnimatePresence both read it while rendering, and a value
+   * render depends on is state by definition — a ref read during render is
+   * exactly what the compiler rule forbids. Set in the same handler as
+   * `setOpen(false)`, so React batches them and the render that starts the
+   * exit already carries the right value: Escape is a command and cuts
+   * (motion contract: no animated keyboard commands), everything else takes
+   * the short exit.
    */
-  const dismissRef = useRef<AnchoredDismiss>("pointer");
+  const [dismiss, setDismiss] = useState<AnchoredDismiss>("pointer");
 
-  function close(dismiss: AnchoredDismiss = "pointer") {
-    dismissRef.current = dismiss;
+  function close(reason: AnchoredDismiss = "pointer") {
+    setDismiss(reason);
     setOpen(false);
   }
 
@@ -83,17 +87,17 @@ export function Popover({
     <span className="relative inline-block">
       {trigger({
         onClick: () => {
-          dismissRef.current = "pointer";
+          setDismiss("pointer");
           setOpen((v) => !v);
         },
         "aria-expanded": open,
         ref: triggerRef,
       })}
-      <AnimatePresence custom={dismissRef.current}>
+      <AnimatePresence custom={dismiss}>
         {open ? (
           <motion.div
             ref={popRef}
-            {...anchoredLayerProps(reduceMotion, dismissRef.current)}
+            {...anchoredLayerProps(reduceMotion, dismiss)}
             className={cn(
               "absolute z-50 mt-1.5 rounded-lg border border-line bg-white p-1 shadow-[0_18px_44px_-16px_rgba(20,21,26,0.22),0_0_0_1px_rgba(20,21,26,0.04)]",
               align === "end" ? "right-0" : "left-0",
