@@ -336,3 +336,99 @@ has no UI — it currently renders the existing "not available" state. That is a
 rather than a wrong answer, so it is safe to ship, but it is a dead end for owners with
 two Projects and an unclaimed Timeline. Connect-existing / Start-new is WP4/WP5 and is
 recorded as an open item, not silently deferred.
+
+### D-017 amendment · the premise was not met by the implementation
+
+Independent review refuted the reasoning above **as implemented**. The decision stands;
+the code did not satisfy its stated premise.
+
+`getSoleOwnedTasksWorkspaceIdForUser` counted only **non-archived** owned Projects. D-017
+argued *"the actor owns exactly one Tasks Project… there is no second pairing the evidence
+could support."* With archived and deleted siblings excluded from the count, there is one.
+
+Reproduced: owner holds archived `ws_2024` and active `ws_2026`, plus one unclaimed in-app
+Timeline created for 2024. A request for `ws_2026` returned `adopt` and bound the 2024 plan
+to the 2026 Project **permanently** — `connectSuiteWorkspaceAction` refuses to rebind.
+
+**Correction:** the uniqueness proof must count *all* owned Projects regardless of archive
+state. The requested Project is already proven non-archived before this is consulted, so
+counting archived rows makes the proof strictly stronger. Fixed and re-verified.
+
+A second door to the same lockout was then found on the **adopt** branch, which had no
+ownership gate at all: a co-owner promoted to `role:"owner"` on someone else's Project
+could bind their own Timeline to it. The eligibility gate belongs on the branch, **not**
+on the count — narrowing the count would reopen the archived-sibling hole, because a
+co-owned Project is still a Project an unclaimed Timeline could belong to.
+
+**Process note.** This was accepted on my own inspection and passed the lane's tests. It
+took an adversarial reviewer with a reproduction to find it — twice. The lesson
+generalises: a safety argument is only as good as the query implementing it, and "I read
+the code" is not equivalent to "I tried to break it."
+
+---
+
+## D-018 · The defect class: authorization expressed as a row filter
+
+WP1's blocker was one instance of a general class. Naming the class found seven more.
+
+> **When a permission check lives inside `WHERE`, `EXISTS`, or a JOIN rather than as its
+> own proof, "you may not read this" and "there is nothing here" become the same empty
+> result.** Wherever that empty result then drives a destructive or state-changing
+> decision, it is data loss waiting for the right account state.
+
+**Decision.** Every lane from WP3 onward prefers an explicit membership/capability proof
+*before* the query over adding another `AND workspaceId = ?`. Where an empty result gates
+a delete, revoke, unpublish, erase, "all clear", or a count that gates an action, a
+separate proof is **mandatory**, and the module must be self-sufficient rather than relying
+on a caller's gate — a shield that lives in the caller breaks the moment a second caller
+appears.
+
+The repo already contains the discipline to copy: the Notes→Tasks outbox
+(`src/modules/notes/server/actions/notes.ts:1238-1254`) uses `.returning()` and throws on
+zero rows for every reservation, release and commit. Planning lifecycle mutations do the
+same (`src/server/actions/planning.ts:526,557,1009`).
+
+---
+
+## D-019 · Two pre-existing erasure defects that report success without erasing
+
+**Found by the WP1 auth-as-filter sweep. Outside this programme's scope, more serious than
+anything inside it, and recorded here so they are not lost.**
+
+Both read an empty scoping query as "there was nothing to erase", when it is equally
+consistent with "the identity key did not match".
+
+**1 · Timeline GDPR erasure** — `src/modules/timeline/server/timeline-gdpr.ts:157-161`
+
+```ts
+const ownedWorkspaces = await db.select(...).where(eq(workspaces.ownerUserId, clerkId));
+if (ownedWorkspaces.length === 0) return { ok: true };
+```
+
+`workspaces.ownerUserId` is written from `requireUser()` — a Clerk subject in production,
+but `"david"` under the dev fallback (`src/modules/timeline/server/auth.ts:54`) and a
+fixture id in seeds. On any identity drift this returns `ok` having erased nothing.
+
+**2 · Tasks account erasure** — `src/server/account-erasure.ts:69-74` returns early when no
+`users` row matches `clerkId`. Its docblock justifies this for "nothing provisioned yet" —
+but the schema names the other cause at `src/server/db/schema.ts:175-178`: a legacy user
+whose `clerk_id` is null until the webhook claims them, or a re-signup mid-webhook. In that
+state the user's entire Tasks corpus survives an erasure that reports success.
+
+**Why this compounds into something irreversible.** `deleteUnifiedAccountDataWith`
+(`src/server/account-unified-erasure.ts:88-98`) logs module failures but **never aborts**,
+and the caller deletes the Clerk identity **last**. Once that subject is gone, the surviving
+rows can never be matched to a data subject again.
+
+**Decision.** Assigned to **WP10**, where the plan already requires durable per-module
+erasure receipts before account identity deletion completes. Fix shape for both: return a
+**count**, not a boolean, and have the orchestrator refuse to proceed to Clerk deletion when
+a module erased zero rows for a subject Tasks proved exists.
+
+**Deliberately not fixed opportunistically.** Erasure correctness deserves its own change,
+tests and review — not a drive-by inside a Timeline safety wave. Flagged to the founder as
+a legal/privacy item: GDPR erasure reporting success without erasing is a compliance
+exposure, not merely a bug.
+
+**Reachability unverified** — needs production data: how many `workspaces` rows have
+`owner_user_id IS NULL`, and how many owners have `users.clerk_id IS NULL`.
