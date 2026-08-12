@@ -34,19 +34,45 @@
  * content (not real DOM text nodes). None of the three findings this gate
  * was written for involved either.
  *
- * Usage: node scripts/check-contrast.mjs [url]
- *   url defaults to http://localhost:3499/app/tasks and is the only
- *   accepted positional argument.
+ * WHAT THE DEFAULT RUN COVERS. Until wave 6 this gate measured one seat —
+ * /app/tasks, pinned to `colorScheme: "light"` — so dark mode (D-013,
+ * 2026-08-11) shipped with zero instrumented contrast coverage and the two
+ * product surfaces beside Tasks had none either. The default sweep is now the
+ * cross product of three surfaces and both themes:
  *
- * Exits non-zero on any AA violation, and also on any computed colour it
- * could not parse — an unparseable colour is a blind spot, not a pass.
+ *     /app/tasks · /app/notes · /app/timeline   ×   light · dark
+ *
+ * Theme is driven purely by `colorScheme` emulation, which is enough because
+ * the resolver in src/app/app/theme-runtime.tsx reads
+ * `matchMedia("(prefers-color-scheme:dark)")` and writes data-theme before
+ * first paint; in demo mode no stored preference ever overrides it. Each
+ * combination gets its own page so no style, cache or media state leaks
+ * between runs.
+ *
+ * Usage: node scripts/check-contrast.mjs [url|path ...] [--base=<origin>] [--theme=light|dark]
+ *   With no positional argument the three default surfaces are swept.
+ *   Positional arguments override the surface list and may be absolute URLs
+ *   (the pre-wave-6 single-URL invocation still works verbatim) or
+ *   `/app/...` paths resolved against --base.
+ *   --base overrides the origin for path-form surfaces (default
+ *   http://localhost:3499). --theme restricts the sweep to one theme;
+ *   without it both are measured.
+ *
+ * NO BASELINE. This gate carries no known-outstanding list on purpose: every
+ * violation it can see is a violation someone can fix, and a contrast waiver
+ * is a decision for the design owner, not a line in a script. Exits non-zero
+ * on any AA violation in any surface/theme combination, and also on any
+ * computed colour it could not parse — an unparseable colour is a blind spot,
+ * not a pass.
  */
 
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_URL = "http://localhost:3499/app/tasks";
+const DEFAULT_BASE = "http://localhost:3499";
+const DEFAULT_PATHS = ["/app/tasks", "/app/notes", "/app/timeline"];
+const ALL_THEMES = ["light", "dark"];
 // Matches the "desktop" project in experience/browser-contract.json, this
 // repo's own reference viewport for production-representative captures.
 const VIEWPORT = { width: 1280, height: 900 };
@@ -302,79 +328,261 @@ function fmtRGB(rgb) {
   return `rgb(${Math.round(rgb.r)}, ${Math.round(rgb.g)}, ${Math.round(rgb.b)})`;
 }
 
-async function main() {
-  const url = process.argv[2] || DEFAULT_URL;
+/**
+ * Turns argv into { surfaces, themes }. Positional arguments replace the
+ * default surface list; anything starting with "-" is a flag. A bare path is
+ * resolved against --base so `check-contrast.mjs /app/notes --base=…:3100`
+ * reads the way it sounds.
+ */
+function parseArgs(argv) {
+  let base = DEFAULT_BASE;
+  let themes = ALL_THEMES;
+  const positional = [];
 
-  const browser = await chromium.launch();
+  for (const arg of argv) {
+    if (arg.startsWith("--base=")) {
+      base = arg.slice("--base=".length).replace(/\/+$/, "");
+      continue;
+    }
+    if (arg.startsWith("--theme=")) {
+      const requested = arg.slice("--theme=".length);
+      if (!ALL_THEMES.includes(requested)) {
+        throw new Error(`--theme must be one of ${ALL_THEMES.join("|")}, got "${requested}"`);
+      }
+      themes = [requested];
+      continue;
+    }
+    if (arg.startsWith("-")) throw new Error(`Unknown flag: ${arg}`);
+    positional.push(arg);
+  }
+
+  const targets = positional.length > 0 ? positional : DEFAULT_PATHS;
+  const surfaces = targets.map((t) => (/^https?:\/\//i.test(t) ? t : `${base}${t.startsWith("/") ? "" : "/"}${t}`));
+  return { surfaces, themes };
+}
+
+/**
+ * One surface at one theme, on its own page.
+ *
+ * The settle is two-stage because some /app entries resolve their real
+ * destination on the client — /app/timeline sends an operator on into their
+ * own plan — so a single fixed wait can land mid-navigation and the evaluation
+ * context is destroyed under the read. Waiting, re-awaiting `load`, waiting
+ * again and retrying the read once makes the measurement land on the document
+ * the user actually ends up looking at; `finalUrl` records which one that was,
+ * so the table can never quietly credit a redirect to the URL that was asked
+ * for.
+ *
+ * Never throws for a page-level failure — a surface that will not load is
+ * reported as a hard error row so the rest of the sweep still runs and the
+ * exit code still fails.
+ */
+async function auditSurface(browser, url, colorScheme) {
+  const page = await browser.newPage({ viewport: VIEWPORT, colorScheme });
   try {
-    const page = await browser.newPage({ viewport: VIEWPORT });
-    await page.emulateMedia({ colorScheme: "light" });
+    await page.emulateMedia({ colorScheme });
     // Next's dev server keeps an HMR websocket (and dev-only polling) open
     // indefinitely, so `networkidle` never resolves against `next dev` —
     // wait for `load` and then a generous hydration/paint settle instead.
-    await page.goto(url, { waitUntil: "load", timeout: 30_000 });
+    // 60s because a cold `next dev` compiles each route on first request and
+    // this sweep is the first request for two of the three surfaces.
+    await page.goto(url, { waitUntil: "load", timeout: 60_000 });
     await page.waitForTimeout(1500);
+    await page.waitForLoadState("load");
+    await page.waitForTimeout(500);
 
-    const { results, skipped, unparseable, scannedElements } = await page.evaluate(
-      collectContrastFindings,
-    );
+    const read = async () => ({
+      appliedTheme: await page.evaluate(
+        () => document.documentElement.getAttribute("data-theme") ?? "(unset)",
+      ),
+      collected: await page.evaluate(collectContrastFindings),
+    });
 
-    const failures = results.filter((r) => !r.pass);
-    const skipTotal = Object.values(skipped).reduce((a, b) => a + b, 0);
+    let outcome;
+    try {
+      outcome = await read();
+    } catch (err) {
+      if (!/Execution context was destroyed/i.test(String(err))) throw err;
+      await page.waitForLoadState("load");
+      await page.waitForTimeout(1000);
+      outcome = await read();
+    }
 
-    console.log(`Contrast gate — ${url}`);
-    console.log(
-      `Scanned ${scannedElements} text-bearing elements (${results.length} evaluated, ` +
-        `${skipTotal} skipped, ${unparseable.length} unparseable).`,
-    );
-    console.log(
-      `  skipped: display:none=${skipped["display:none"]}, visibility:hidden=${skipped["visibility:hidden"]}, ` +
-        `zero-size=${skipped["zero-size"]}, empty-text=${skipped["empty-text"]}`,
-    );
+    return {
+      url,
+      finalUrl: page.url(),
+      colorScheme,
+      appliedTheme: outcome.appliedTheme,
+      error: null,
+      ...outcome.collected,
+    };
+  } catch (err) {
+    return {
+      url,
+      finalUrl: page.url(),
+      colorScheme,
+      appliedTheme: "(unreached)",
+      error: err instanceof Error ? err.message : String(err),
+      results: [],
+      skipped: { "display:none": 0, "visibility:hidden": 0, "zero-size": 0, "empty-text": 0 },
+      unparseable: [],
+      scannedElements: 0,
+    };
+  } finally {
+    await page.close();
+  }
+}
+
+function reportRun(run) {
+  const { url, finalUrl, colorScheme, appliedTheme, results, skipped, unparseable, scannedElements } =
+    run;
+  console.log("────────────────────────────────────────────────────────────────");
+  console.log(`Contrast gate — ${url}  [emulated ${colorScheme}, document data-theme="${appliedTheme}"]`);
+  if (finalUrl && finalUrl !== url) console.log(`  measured after redirect: ${finalUrl}`);
+
+  if (run.error) {
+    console.log(`ERROR — surface could not be measured: ${run.error}`);
     console.log("");
+    return;
+  }
 
-    if (unparseable.length > 0) {
-      console.log(`COULD NOT EVALUATE (${unparseable.length}) — unparseable computed colour:`);
-      for (const u of unparseable) {
-        console.log(`  ${u.selector}`);
-        console.log(`    text: "${u.text}"`);
-        console.log(`    color: ${u.raw}`);
-      }
-      console.log("");
+  const failures = results.filter((r) => !r.pass);
+  const skipTotal = Object.values(skipped).reduce((a, b) => a + b, 0);
+
+  console.log(
+    `Scanned ${scannedElements} text-bearing elements (${results.length} evaluated, ` +
+      `${skipTotal} skipped, ${unparseable.length} unparseable).`,
+  );
+  console.log(
+    `  skipped: display:none=${skipped["display:none"]}, visibility:hidden=${skipped["visibility:hidden"]}, ` +
+      `zero-size=${skipped["zero-size"]}, empty-text=${skipped["empty-text"]}`,
+  );
+  console.log("");
+
+  if (unparseable.length > 0) {
+    console.log(`COULD NOT EVALUATE (${unparseable.length}) — unparseable computed colour:`);
+    for (const u of unparseable) {
+      console.log(`  ${u.selector}`);
+      console.log(`    text: "${u.text}"`);
+      console.log(`    color: ${u.raw}`);
     }
+    console.log("");
+  }
 
-    if (failures.length > 0) {
-      console.log(`FAIL — ${failures.length} AA contrast violation(s):`);
-      console.log("");
-      for (const f of failures) {
-        console.log(
-          `  ${f.ratio.toFixed(2)}:1 (needs ${f.threshold.toFixed(1)}:1) — ` +
-            `${f.large ? "large" : "normal"} text, ${f.fontSizePx.toFixed(1)}px/${f.fontWeight}`,
-        );
-        console.log(`    selector: ${f.selector}`);
-        console.log(`    text: "${f.text}"`);
-        console.log(
-          `    color:      ${f.rawColor}  →  effective ${fmtRGB(f.effectiveTextRGB)}` +
-            (f.opacityProduct < 1 ? ` (opacity chain × ${f.opacityProduct.toFixed(3)})` : ""),
-        );
-        console.log(`    background: ${f.rawBackground}  →  resolved ${fmtRGB(f.backdropRGB)}`);
-        console.log("");
-      }
-    }
-
-    const ok = failures.length === 0 && unparseable.length === 0;
-    if (ok) {
-      console.log(`PASS — ${results.length} text nodes checked, 0 AA violations.`);
-    } else {
+  if (failures.length > 0) {
+    console.log(`FAIL — ${failures.length} AA contrast violation(s):`);
+    console.log("");
+    for (const f of failures) {
       console.log(
-        `${failures.length} contrast failure(s), ${unparseable.length} unparseable colour(s). ` +
-          `Threshold: 4.5:1 normal text / 3:1 large text (>=24px any weight, >=18.66px bold).`,
+        `  ${f.ratio.toFixed(2)}:1 (needs ${f.threshold.toFixed(1)}:1) — ` +
+          `${f.large ? "large" : "normal"} text, ${f.fontSizePx.toFixed(1)}px/${f.fontWeight}`,
       );
+      console.log(`    selector: ${f.selector}`);
+      console.log(`    text: "${f.text}"`);
+      console.log(
+        `    color:      ${f.rawColor}  →  effective ${fmtRGB(f.effectiveTextRGB)}` +
+          (f.opacityProduct < 1 ? ` (opacity chain × ${f.opacityProduct.toFixed(3)})` : ""),
+      );
+      console.log(`    background: ${f.rawBackground}  →  resolved ${fmtRGB(f.backdropRGB)}`);
+      console.log("");
     }
-    process.exitCode = ok ? 0 : 1;
+  } else {
+    console.log(`PASS — ${results.length} text nodes checked, 0 AA violations.`);
+    console.log("");
+  }
+}
+
+/** The per-surface-per-theme table. This is the artefact a reviewer reads:
+ *  one row per combination, so a surface that is clean in light and broken in
+ *  dark cannot hide behind an aggregate. */
+function reportSummary(runs) {
+  const pathOf = (u) => {
+    try {
+      return new URL(u).pathname;
+    } catch {
+      return u;
+    }
+  };
+  const rows = runs.map((r) => ({
+    surface: (() => {
+      const asked = pathOf(r.url);
+      const landed = r.finalUrl ? pathOf(r.finalUrl) : asked;
+      // A redirect is named, never absorbed: the row says where the pixels
+      // that were measured actually came from.
+      return landed === asked ? asked : `${asked} → ${landed}`;
+    })(),
+    theme: r.colorScheme,
+    applied: r.appliedTheme,
+    nodes: r.results.length,
+    fail: r.error ? "—" : String(r.results.filter((x) => !x.pass).length),
+    unparseable: r.error ? "—" : String(r.unparseable.length),
+    verdict: r.error
+      ? "ERROR"
+      : r.results.filter((x) => !x.pass).length === 0 && r.unparseable.length === 0
+        ? "PASS"
+        : "FAIL",
+  }));
+
+  const w = (key, header) => Math.max(header.length, ...rows.map((r) => String(r[key]).length));
+  const cols = [
+    ["surface", "SURFACE"],
+    ["theme", "EMULATED"],
+    ["applied", "DATA-THEME"],
+    ["nodes", "NODES"],
+    ["fail", "FAIL"],
+    ["unparseable", "UNPARSEABLE"],
+    ["verdict", "VERDICT"],
+  ].map(([key, header]) => ({ key, header, width: w(key, header) }));
+
+  const line = (cells) => cells.map((c, i) => String(c).padEnd(cols[i].width)).join("  ").trimEnd();
+
+  console.log("════════════════════════════════════════════════════════════════");
+  console.log("Per-surface-per-theme summary");
+  console.log("");
+  console.log(line(cols.map((c) => c.header)));
+  console.log(cols.map((c) => "─".repeat(c.width)).join("  "));
+  for (const r of rows) console.log(line(cols.map((c) => r[c.key])));
+  console.log("");
+}
+
+async function main() {
+  const { surfaces, themes } = parseArgs(process.argv.slice(2));
+
+  const browser = await chromium.launch();
+  const runs = [];
+  try {
+    for (const url of surfaces) {
+      for (const theme of themes) {
+        runs.push(await auditSurface(browser, url, theme));
+      }
+    }
   } finally {
     await browser.close();
   }
+
+  for (const run of runs) reportRun(run);
+  reportSummary(runs);
+
+  const totalFailures = runs.reduce((n, r) => n + r.results.filter((x) => !x.pass).length, 0);
+  const totalUnparseable = runs.reduce((n, r) => n + r.unparseable.length, 0);
+  const errored = runs.filter((r) => r.error);
+  const totalNodes = runs.reduce((n, r) => n + r.results.length, 0);
+
+  const ok = totalFailures === 0 && totalUnparseable === 0 && errored.length === 0;
+  if (ok) {
+    console.log(
+      `PASS — ${runs.length} surface/theme combination(s), ${totalNodes} text nodes checked, ` +
+        `0 AA violations.`,
+    );
+  } else {
+    console.log(
+      `${totalFailures} contrast failure(s), ${totalUnparseable} unparseable colour(s), ` +
+        `${errored.length} unmeasurable surface(s) across ${runs.length} surface/theme ` +
+        `combination(s). Threshold: 4.5:1 normal text / 3:1 large text (>=24px any weight, ` +
+        `>=18.66px bold).`,
+    );
+  }
+  process.exitCode = ok ? 0 : 1;
 }
 
 main().catch((err) => {

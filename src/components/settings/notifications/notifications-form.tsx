@@ -49,7 +49,7 @@ export function NotificationsForm({
         timeZone: detected,
       }).catch((cause) => {
         if (!userSelectedTimeZoneRef.current) {
-          setError(cause instanceof Error ? cause.message : "Couldn't save");
+          setError(cause instanceof Error ? cause.message : "Couldn’t save");
         }
       });
     }, 0);
@@ -76,7 +76,7 @@ export function NotificationsForm({
         setTimeout(() => setSavedKey((k) => (k === key ? null : k)), 1600);
       } catch (e) {
         setError(
-          e instanceof Error ? e.message : "Couldn't save",
+          e instanceof Error ? e.message : "Couldn’t save",
         );
       }
     });
@@ -86,7 +86,7 @@ export function NotificationsForm({
     <div className="-mt-2">
       <SettingsRow
         label="Daily Signal email"
-        hint="One quiet briefing per morning: the few things needing your eyes today. Skip the days you don't want it."
+        hint="One quiet briefing per morning: the few things needing your eyes today. Skip the days you don’t want it."
         control={
           <RadioGroup
             options={CADENCE_OPTIONS}
@@ -102,7 +102,7 @@ export function NotificationsForm({
       />
       <SettingsRow
         label="Weekly summary"
-        hint="Monday-morning view of last week and this week. Shipped on Mondays only, there's no daily-roundup-as-weekly trick."
+        hint="Monday-morning view of last week and this week. Shipped on Mondays only, there’s no daily-roundup-as-weekly trick."
         control={
           <RadioGroup
             options={SUMMARY_OPTIONS}
@@ -162,7 +162,7 @@ export function NotificationsForm({
       />
       <SettingsRow
         label="Plan changes & expiry notices"
-        hint="We'll let you know two weeks before a plan expires. There's no way to turn this off, it's the difference between a refund window and a surprise."
+        hint="We’ll let you know two weeks before a plan expires. There’s no way to turn this off, it’s the difference between a refund window and a surprise."
         control={
           <div className="text-[12px] text-ink-quiet">Always on</div>
         }

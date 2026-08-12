@@ -129,7 +129,7 @@ export function laneAccentStyle(color: ColumnColorKey): Record<string, string> |
  * Every default here is a DS status token, and each one is used for the
  * single thing that token means (see the hue contract at the top):
  *
- *   Queued  neutral  a backlog is not a state, it is an absence of one.
+ *   To do   neutral  a backlog is not a state, it is an absence of one.
  *   Doing   amber    --status-flight IS "in progress". It used to be
  *                    `sky`, which resolved to the off-system cyan.
  *   Review  neutral  waiting on a check is not blocked and not in flight;

@@ -145,13 +145,23 @@ export function AvatarStack({ task, limit = 3, showUnassigned = true }: { task: 
   );
 }
 
+/**
+ * `${n} thing${n === 1 ? "" : "s"}`, the shape the rest of the board already
+ * writes by hand. Signal titles are the only place it was skipped, and a title
+ * here doubles as the span's accessible name: a card with one comment
+ * announced "1 comments".
+ */
+function counted(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 export function TaskSignals({ task }: { task: LabTask }) {
   const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
   return (
     <span className={styles.signals}>
-      {task.subtasks.length > 0 ? <span title={`${completedSubtasks} of ${task.subtasks.length} subtasks complete`}><Icon name="check" size={13} />{completedSubtasks}/{task.subtasks.length}</span> : null}
-      {task.comments.length > 0 ? <span title={`${task.comments.length} comments`}><Icon name="comment" size={13} />{task.comments.length}</span> : null}
-      {task.attachments.length > 0 ? <span title={`${task.attachments.length} attachments`}><Icon name="attachment" size={13} />{task.attachments.length}</span> : null}
+      {task.subtasks.length > 0 ? <span title={`${completedSubtasks} of ${counted(task.subtasks.length, "subtask")} complete`}><Icon name="check" size={13} />{completedSubtasks}/{task.subtasks.length}</span> : null}
+      {task.comments.length > 0 ? <span title={counted(task.comments.length, "comment")}><Icon name="comment" size={13} />{task.comments.length}</span> : null}
+      {task.attachments.length > 0 ? <span title={counted(task.attachments.length, "attachment")}><Icon name="attachment" size={13} />{task.attachments.length}</span> : null}
       {task.blockedByIds.length > 0 || task.blockerIds.length > 0 ? <span title="Has dependencies"><Icon name="dependency" size={13} />{task.blockedByIds.length + task.blockerIds.length}</span> : null}
     </span>
   );

@@ -63,7 +63,7 @@ function EmailChangeFlow({
 
   async function sendCode() {
     if (!/^\S+@\S+\.\S+$/.test(newEmail)) {
-      setError("That doesn't look like an email");
+      setError("That doesn’t look like an email");
       return;
     }
     setPending("send");
@@ -74,7 +74,7 @@ function EmailChangeFlow({
       setPendingEmail(created);
       setStep("verify");
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't send the code");
+      setError(extractClerkError(e) ?? "Couldn’t send the code");
     } finally {
       setPending(null);
     }
@@ -103,7 +103,7 @@ function EmailChangeFlow({
       );
       setStep("done");
     } catch (e) {
-      setError(extractClerkError(e) ?? "That code didn't match");
+      setError(extractClerkError(e) ?? "That code didn’t match");
     } finally {
       setPending(null);
     }

@@ -159,16 +159,22 @@ export const LANES: Record<
   { id: LaneId; name: string; ink: string; bg: string; dot: string }
 > = {
   // T·121: the default display names are the ones the shipped board has
-  // used since 2026-07-20 — Queued · In progress · Review · Done. The
+  // used since 2026-07-20 — To do · In progress · Review · Done. The
   // 2026-07-18 relabel (Blocked · In Progress · Reviewing) never rendered
   // in the app after the T·99 port, but share, print, embed and export
   // kept it, so a guest's copy disagreed with the operator's screen.
   // Internal LaneId values (todo/doing/review/done) are STABLE — only
   // labels change — and every label is overridable per workspace via the
   // column config `system` map, which wins wherever a config exists.
+  //
+  // Wave 6: the first lane was "Queued" until 2026-08-11. It is systems
+  // vocabulary a first-timer has no referent for (north star priority 3),
+  // and four columns from "Waiting" it read as a near-synonym. "To do" is
+  // the plain word, and it is only the DEFAULT — a workspace that renamed
+  // this lane stores its own name in config.system.todo and keeps it.
   todo: {
     id: "todo",
-    name: "Queued",
+    name: "To do",
     ink: "var(--lane-todo-ink)",
     bg: "var(--lane-todo)",
     dot: "var(--lane-todo-dot)",

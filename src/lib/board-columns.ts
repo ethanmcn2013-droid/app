@@ -16,7 +16,7 @@
  *   that only understand lanes stay coherent (schema.ts: the effective
  *   column is COALESCE(boardColumnKey, lane)).
  * - "Waiting" is a DEFAULT custom column: with no stored config, the board
- *   is Queued · In progress · Review · Waiting · Done — exactly what the
+ *   is To do · In progress · Review · Waiting · Done — exactly what the
  *   shipped app has rendered since 2026-07-20 — and once a workspace stores
  *   a config, Waiting is theirs to rename, recolour or delete like any
  *   other custom column.

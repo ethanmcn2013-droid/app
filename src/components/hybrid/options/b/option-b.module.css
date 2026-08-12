@@ -84,7 +84,7 @@
 */
 .editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; transition: color var(--motion-instant) var(--ease-out); }
 p.editable[data-empty]:hover::before,
-p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
+p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
 .editable[data-empty]:focus::before { opacity: .55; }
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: 7px 14px; margin-top: 13px; }
 .workspaceMeta span { position: relative; }
@@ -150,7 +150,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
   white-space: nowrap;
 }
 .planningTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-task-accent); }
+.planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 .planningTrigger strong {
   background: var(--x-task-hover);
   border-radius: 999px;
@@ -163,7 +163,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
   padding: 3px 5px;
   text-align: center;
 }
-.planningTrigger[aria-expanded="true"] strong { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); color: var(--x-task-accent); }
+.planningTrigger[aria-expanded="true"] strong { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); color: var(--x-accent-ink); }
 
 .roomViewBar {
   align-items: center;
@@ -182,7 +182,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .roomViewBar > div { margin-left: auto; }
 .roomResultCount { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; white-space: nowrap; }
 .roomResultCount span { font-family: var(--font-geist-sans), sans-serif; }
-.activeFilterButton { background: var(--x-task-accent-soft) !important; border-color: color-mix(in srgb, var(--x-task-accent) 26%, var(--x-task-border)) !important; color: var(--x-task-accent) !important; }
+.activeFilterButton { background: var(--x-task-accent-soft) !important; border-color: color-mix(in srgb, var(--x-task-accent) 26%, var(--x-task-border)) !important; color: var(--x-accent-ink) !important; }
 
 .roomToolPanel {
   background: var(--x-task-overlay);
@@ -209,7 +209,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .roomFilterFields fieldset { border: 0; margin: 0; padding: 0; }
 .roomFilterFields fieldset > label { align-items: center; display: inline-flex; font-size: 11px; gap: 5px; margin: 7px 12px 0 0; }
 .roomFilterFields input { accent-color: var(--x-task-accent); }
-.roomResetFilters { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 11px; justify-self: start; padding: 0; }
+.roomResetFilters { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; font: inherit; font-size: 11px; justify-self: start; padding: 0; }
 .roomSortOptions { border: 0; display: grid; gap: 4px; margin: 0; padding: 0; }
 .roomSortOptions label { align-items: center; border-radius: 6px; cursor: pointer; display: grid; gap: 9px; grid-template-columns: 16px 1fr; padding: 8px; }
 .roomSortOptions label:has(input:checked) { background: var(--x-task-selected); }
@@ -345,7 +345,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .listEmpty { align-items: center; color: var(--x-task-text-muted); display: flex; flex-direction: column; gap: 5px; justify-content: center; min-height: 330px; text-align: center; }
 .listEmpty strong { color: var(--x-task-text); font-size: 13px; margin-top: 7px; }
 .listEmpty p { font-size: 11px; margin: 0 0 7px; }
-.listEmpty button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--paper); cursor: pointer; display: flex; font: inherit; font-size: 13px; font-weight: 500; gap: 5px; min-height: 32px; padding: 0 14px; }
+.listEmpty button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--x-on-accent); cursor: pointer; display: flex; font: inherit; font-size: 13px; font-weight: 500; gap: 5px; min-height: 32px; padding: 0 14px; }
 .listEmpty button:hover { background: var(--x-task-focus); }
 
 .fieldPanel { background: var(--x-task-overlay); border: 1px solid var(--x-task-border); border-radius: 8px; box-shadow: var(--x-task-shadow); max-height: calc(100% - 24px); overflow-y: auto; padding: 12px; position: absolute; right: 12px; top: 12px; width: 332px; z-index: 35; }
@@ -382,7 +382,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .trayTask > p { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.4; margin: 4px 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .trayScheduleForm { align-items: center; display: flex; gap: 5px; }
 .trayScheduleForm input { background: var(--x-task-surface); border: 1px solid var(--x-task-border); border-radius: 5px; color: var(--x-task-text); font: inherit; font-size: 11px; height: 28px; min-width: 0; padding: 0 4px; width: 110px; }
-.trayScheduleForm button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--paper); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 12px; font-weight: 500; gap: 4px; height: 28px; justify-content: center; }
+.trayScheduleForm button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--x-on-accent); cursor: pointer; display: flex; flex: 1; font: inherit; font-size: 12px; font-weight: 500; gap: 4px; height: 28px; justify-content: center; }
 .trayScheduleForm button:hover:not(:disabled) { background: var(--x-task-focus); }
 .trayScheduleForm button:disabled,
 .trayScheduleForm input:disabled { cursor: not-allowed; opacity: .42; }
@@ -418,7 +418,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .timelineDateHeading { align-items: center; border-bottom: 1px solid var(--x-task-border-strong); border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; }
 .timelineDateHeading span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .timelineDateHeading strong { font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 2px; }
-.timelineDateHeading[data-today] { background: var(--x-task-accent-soft); color: var(--x-task-accent); }
+.timelineDateHeading[data-today] { background: var(--x-task-accent-soft); color: var(--x-accent-ink); }
 .timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 8px; grid-template-columns: 16px minmax(0, 1fr) auto; left: 0; min-width: 0; padding: 5px 10px; position: sticky; z-index: 9; }
 .timelineTaskPane > div { display: flex; flex-direction: column; min-width: 0; }
 .timelineTaskTitle { font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -429,7 +429,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .timelineSharedCells > span[data-today] { border-left: 2px solid var(--x-task-accent); }
 .timelineDropColumn { background: var(--x-task-accent-soft); bottom: 0; position: absolute; top: 0; }
 .timelineRange { align-items: stretch; background: color-mix(in srgb, var(--x-task-accent-soft) 82%, var(--x-task-raised)); border: 1px solid color-mix(in srgb, var(--x-task-accent) 34%, var(--x-task-border)); border-radius: 5px; display: flex; height: 28px; min-width: 26px; position: absolute; top: 9px; z-index: 4; }
-.timelineRange > button:first-child { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: 1; font: inherit; min-width: 0; overflow: hidden; padding: 0 8px; text-align: left; }
+.timelineRange > button:first-child { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; flex: 1; font: inherit; min-width: 0; overflow: hidden; padding: 0 8px; text-align: left; }
 .timelineRange > button:first-child span { display: block; font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .timelineResizeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .timelineResizeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 25%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
@@ -493,7 +493,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .calendarDayHeader button:last-child { color: var(--x-task-text-muted); opacity: .45; }
 .calendarCell:hover .calendarDayHeader button:last-child,
 .calendarCell:focus-within .calendarDayHeader button:last-child { opacity: 1; }
-.calendarCell[data-today] .calendarDayHeader button:first-child { background: var(--x-task-accent); color: var(--x-task-raised); }
+.calendarCell[data-today] .calendarDayHeader button:first-child { background: var(--x-task-accent); color: var(--x-on-accent); }
 .calendarItems { display: flex; flex-direction: column; gap: 3px; }
 .calendarTaskWrap { align-items: stretch; background: var(--x-task-hover); border: 1px solid transparent; border-radius: 4px; display: flex; min-width: 0; transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); }
 .calendarTaskWrap[data-kind="due"] { border-left-color: var(--x-task-danger); }
@@ -502,7 +502,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
    day list, overflow — the same strike-and-mute the other views use. */
 .calendarTaskWrap[data-completed] { opacity: .68; }
 .calendarView button[data-completed] { color: var(--x-task-text-muted); text-decoration: line-through; }
-.calendarTaskWrap[data-kind="range"] { background: var(--x-task-accent-soft); border-radius: 0; color: var(--x-task-accent); margin-left: -5px; margin-right: -5px; padding-left: 5px; padding-right: 5px; }
+.calendarTaskWrap[data-kind="range"] { background: var(--x-task-accent-soft); border-radius: 0; color: var(--x-accent-ink); margin-left: -5px; margin-right: -5px; padding-left: 5px; padding-right: 5px; }
 .calendarTaskWrap[data-kind="range"][data-range-start] { border-radius: 4px 0 0 4px; margin-left: 0; padding-left: 0; }
 .calendarTaskWrap[data-kind="range"][data-range-end] { border-radius: 0 4px 4px 0; margin-right: 0; padding-right: 0; }
 .calendarTaskWrap[data-kind="range"][data-range-start][data-range-end] { border-radius: 4px; margin: 0; padding: 0; }
@@ -529,20 +529,20 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .calendarTaskChip { align-items: center; background: transparent; border: 0; color: inherit; cursor: pointer; display: flex; flex: 1; font: inherit; gap: 4px; height: 24px; min-width: 0; padding: 0 5px; text-align: left; }
 .calendarTaskChip span { font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .calendarTaskChip:focus-visible { outline: 2px solid var(--x-task-focus); outline-offset: 1px; }
-.calendarExtendButton { align-items: center; background: transparent; border: 0; border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 22%, transparent); color: var(--x-task-accent); cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
+.calendarExtendButton { align-items: center; background: transparent; border: 0; border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 22%, transparent); color: var(--x-accent-ink); cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarExtendButton:disabled { cursor: not-allowed; opacity: .38; }
-.calendarMoreButton { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 12px; padding: 2px 4px; text-align: left; }
+.calendarMoreButton { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; font: inherit; font-size: 12px; padding: 2px 4px; text-align: left; }
 .selectedAgenda { align-self: start; background: var(--x-task-surface); border: 1px solid var(--x-task-border); max-height: 620px; min-height: 100%; overflow-y: auto; position: sticky; top: 42px; }
 .selectedAgenda > header { border-bottom: 1px solid var(--x-task-border); padding: 13px; }
 .selectedAgenda > header > span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .selectedAgenda h2 { font-size: 15px; font-weight: 600; letter-spacing: var(--tracking-heading); line-height: var(--leading-heading); margin: 6px 0 4px; }
 .selectedAgenda > header p { color: var(--x-meta-ink); font-size: 12px; line-height: var(--x-lead-ui); margin: 0 0 10px; }
-.selectedAgenda > header button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--paper); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 500; gap: 5px; min-height: 30px; padding: 0 13px; }
+.selectedAgenda > header button { align-items: center; background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--x-on-accent); cursor: pointer; display: flex; font: inherit; font-size: 12px; font-weight: 500; gap: 5px; min-height: 30px; padding: 0 13px; }
 .selectedAgenda > header button:hover:not(:disabled) { background: var(--x-task-focus); }
 .selectedAgenda > header button:disabled { cursor: not-allowed; opacity: .42; }
 .calendarPreview { background: var(--x-task-selected); border-bottom: 1px solid color-mix(in srgb, var(--x-task-accent) 24%, var(--x-task-border)); padding: 11px 13px; }
 .calendarPreview > div { align-items: center; display: flex; justify-content: space-between; }
-.calendarPreview > div span { color: var(--x-task-accent); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.calendarPreview > div span { color: var(--x-accent-ink); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .calendarPreview > div button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 24px; justify-content: center; width: 24px; }
 .calendarPreview > strong { display: block; font-size: 13px; margin-top: 4px; }
 .calendarPreview > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 12px; line-height: var(--x-lead-ui); margin: 5px 0 8px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
@@ -827,7 +827,7 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-task-accent); }
 .calendarDayListRow > header span { color: var(--x-task-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
 .calendarDayListRow > header strong { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
 .calendarDayListRow[data-today] { border-color: color-mix(in srgb, var(--x-task-accent) 40%, var(--x-task-border)); }
-.calendarDayListRow[data-today] > header span { color: var(--x-task-accent); }
+.calendarDayListRow[data-today] > header span { color: var(--x-accent-ink); }
 .calendarDayListRow ul { border-top: 1px solid var(--x-task-border); display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .calendarDayListRow li { border-bottom: 1px solid var(--x-task-border); display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; }
 .calendarDayListRow li:last-child { border-bottom: 0; }

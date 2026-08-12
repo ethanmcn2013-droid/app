@@ -13,7 +13,10 @@ test("standard columns default to the shipped board vocabulary (T·121)", () => 
   // print, embed and export label from LANES, so this alignment is what
   // keeps a guest's copy agreeing with the operator's screen. Workspace
   // configs override per project.
-  assert.equal(LANES.todo.name, "Queued");
+  //
+  // Wave 6: "Queued" became "To do". The DEFAULT changed; a stored
+  // config.system.todo still wins, so no workspace is renamed under it.
+  assert.equal(LANES.todo.name, "To do");
   assert.equal(LANES.doing.name, "In progress");
   assert.equal(LANES.review.name, "Review");
   assert.equal(LANES.done.name, "Done");

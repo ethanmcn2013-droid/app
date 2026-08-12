@@ -158,8 +158,8 @@ export default async function TimelineProjectPage({
   });
 
   return (
-    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
-      <header className="relative z-30 border-b border-line-soft bg-white">
+    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-paper">
+      <header className="relative z-30 border-b border-line-soft bg-paper">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex min-w-0 flex-col gap-0.5">
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -203,7 +203,7 @@ export default async function TimelineProjectPage({
                 ever do one of them, and the old one did neither. */}
             <Link
               href={previewHref(project.slug, queryContext)}
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-bg-elevated px-3.5 text-[13px] font-medium text-ink transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Preview
             </Link>
@@ -303,7 +303,7 @@ function TimelineProjectContent({
             </Link>
             <Link
               href="/app/tasks"
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-bg-elevated px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Open Tasks
             </Link>
@@ -336,7 +336,7 @@ function TimelineProjectContent({
   // current milestones, not the frozen publication a guest reads. Preview is
   // where that claim can be made honestly, so it is made there instead.
   return (
-    <div className="w-full flex-1 bg-white">
+    <div className="w-full flex-1 bg-paper">
       <TimelineArtifact timeline={timeline} embedded showProductHeader={false} />
     </div>
   );

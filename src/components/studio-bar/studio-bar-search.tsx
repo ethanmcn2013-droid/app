@@ -68,13 +68,21 @@ export function StudioBarSearch({
 
   return (
     <div ref={rootRef} className="relative flex-none md:hidden">
-      {/* Collapsed trigger — the search icon, matching the create/account chips. */}
+      {/* Collapsed trigger — the search icon, matching the create/account chips.
+          32x32 is the chip's look; it is not a target. This component only
+          renders below md, which is exactly where every hand is a finger, and
+          it sat between two 44px neighbours in the same cluster. On a coarse
+          pointer it takes the bar's own 44px floor, written as a bracketed
+          value because the numeric scale in this repo does not mean what it
+          reads (scripts/check-tap-target-scale.mjs). Focus is the chrome's
+          2px --x-studio-focus ring every other control in the bar wears, not
+          a 1px border tint that a hover also produces. */}
       <button
         type="button"
         aria-label={label}
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:border-[var(--x-studio-accent)]"
+        className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-white/[0.09] bg-white/[0.04] text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:border-white/[0.14] hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] pointer-coarse:h-[44px] pointer-coarse:w-[44px]"
         style={{ opacity: open ? 0 : 1, pointerEvents: open ? "none" : undefined }}
       >
         <SearchGlyph />

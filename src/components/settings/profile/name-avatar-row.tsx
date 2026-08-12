@@ -30,7 +30,7 @@ export function NameAvatarRow({
       setSavedHint("name");
       setTimeout(() => setSavedHint(null), 1600);
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't save name");
+      setError(extractClerkError(e) ?? "Couldn’t save name");
     } finally {
       setPending(false);
     }
@@ -54,7 +54,7 @@ export function NameAvatarRow({
       setSavedHint("avatar");
       setTimeout(() => setSavedHint(null), 1600);
     } catch (err) {
-      setError(extractClerkError(err) ?? "Couldn't upload avatar");
+      setError(extractClerkError(err) ?? "Couldn’t upload avatar");
     } finally {
       setPending(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -69,7 +69,7 @@ export function NameAvatarRow({
       setSavedHint("avatar");
       setTimeout(() => setSavedHint(null), 1600);
     } catch (err) {
-      setError(extractClerkError(err) ?? "Couldn't remove avatar");
+      setError(extractClerkError(err) ?? "Couldn’t remove avatar");
     } finally {
       setPending(false);
     }

@@ -102,9 +102,9 @@ export default async function AudienceTimelineManagerPage({
           access, and source changes wait for your review before they appear.
         </p>
         <div className="mt-5 grid gap-3 text-sm sm:grid-cols-3" role="list" aria-label="Sharing boundary">
-          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">1. Choose</strong>Only the milestones you select are copied.</p>
-          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">2. Review</strong>The shared copy stays separate from your plan.</p>
-          <p className="rounded-lg border border-line-soft bg-white p-3 text-ink-soft" role="listitem"><strong className="block text-ink">3. Publish</strong>Anyone with the link can view or forward it.</p>
+          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">1. Choose</strong>Only the milestones you select are copied.</p>
+          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">2. Review</strong>The shared copy stays separate from your plan.</p>
+          <p className="rounded-lg border border-line-soft bg-bg-elevated p-3 text-ink-soft" role="listitem"><strong className="block text-ink">3. Publish</strong>Anyone with the link can view or forward it.</p>
         </div>
       </header>
       <AudienceManager

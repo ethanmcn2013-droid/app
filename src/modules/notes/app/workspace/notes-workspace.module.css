@@ -108,7 +108,7 @@
 /* No radius here: at (0,2,0) it outranked every component rule and every
    button visibly changed shape the moment it took focus. */
 .root :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -196,7 +196,7 @@
 }
 
 .viewTab[aria-current="page"] .viewCount {
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 /* The header's utilities end on the column, not on the frame. A percentage
@@ -457,7 +457,7 @@
 }
 
 .composerField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -498,7 +498,7 @@
 }
 
 .modeButton[data-active="true"] {
-  color: var(--accent);
+  color: var(--x-accent-ink);
   background: var(--accent-tint);
 }
 
@@ -542,9 +542,11 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--accent);
-  /* Same as the Tasks primary: the raised surface token, so the label stays
-     legible on indigo in both themes without a literal white. */
-  color: var(--x-task-raised);
+  /* The ink that rides an accent fill. It was --x-task-raised, which is
+     paper — and paper is the DEEPEST surface in dark, so the label went
+     near-black on indigo (3.05:1). --x-on-accent stays on the light side
+     of the fill in both themes, still without a literal white. */
+  color: var(--x-on-accent);
   font-size: 13px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
@@ -658,7 +660,7 @@
   place-items: center;
   border-radius: var(--radius-md);
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 .consentTitle {
@@ -697,7 +699,7 @@
   position: absolute;
   inset-inline-start: 0;
   content: "\2022";
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 .recordRow {
@@ -855,7 +857,7 @@
 .dropTarget[data-over="true"] {
   border-color: var(--accent);
   background: var(--accent-tint);
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 /* display:none, not clipped. Clipped, these two sat in the tab order as
@@ -939,7 +941,7 @@
 }
 
 .extractField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -1005,7 +1007,7 @@
 /* The field itself takes the ring: the container border is 2.2:1 against
    paper and is not a focus indicator. */
 .searchInput:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -1132,7 +1134,7 @@
 }
 
 .row[aria-current="true"] .rowIcon {
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 .row[aria-current="true"] .rowPreview,
@@ -1224,7 +1226,7 @@
 }
 
 .rowFlag[data-tone="review"] {
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 .highlight {
@@ -1348,7 +1350,7 @@
 }
 
 .detailField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 4px;
 }
 
@@ -1404,7 +1406,7 @@
 
 .linkedTask {
   display: inline;
-  color: var(--accent);
+  color: var(--x-accent-ink);
   text-decoration: none;
   overflow-wrap: anywhere;
 }
@@ -1762,7 +1764,7 @@ textarea.fieldControl {
   min-inline-size: 44px;
   border: 0;
   background: transparent;
-  color: var(--accent);
+  color: var(--x-accent-ink);
   font-size: 13px;
   font-weight: 500;
   padding: 4px 8px;

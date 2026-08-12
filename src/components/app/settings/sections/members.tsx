@@ -111,7 +111,7 @@ export function MembersSection({
           { tone: "success" },
         );
       } catch (e) {
-        toast("Couldn't change role", {
+        toast("Couldn’t change role", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -126,7 +126,7 @@ export function MembersSection({
         await removeMemberAction(target.userId);
         toast(`${displayName(target)} removed`, { tone: "success" });
       } catch (e) {
-        toast("Couldn't remove", {
+        toast("Couldn’t remove", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -154,12 +154,12 @@ export function MembersSection({
         }
         toast(`Invite sent to ${email}`, {
           tone: "success",
-          body: "Good for 7 days. They click the link, sign in with this address, and they're in.",
+          body: "Good for 7 days. They click the link, sign in with this address, and they’re in.",
         });
         setInviteEmail("");
         setInviteNotice(null);
       } catch (err) {
-        toast("Couldn't invite", {
+        toast("Couldn’t invite", {
           tone: "error",
           body: (err as Error).message,
         });
@@ -173,7 +173,7 @@ export function MembersSection({
         await revokePendingInviteAction(invite.token);
         toast(`Invite to ${invite.email} revoked`, { tone: "success" });
       } catch (err) {
-        toast("Couldn't revoke", {
+        toast("Couldn’t revoke", {
           tone: "error",
           body: (err as Error).message,
         });
@@ -201,10 +201,10 @@ export function MembersSection({
         }
         toast(`Resent to ${invite.email}`, {
           tone: "success",
-          body: "Same link, same expiry. Worth a follow-up if it's been days.",
+          body: "Same link, same expiry. Worth a follow-up if it’s been days.",
         });
       } catch (err) {
-        toast("Couldn't resend", {
+        toast("Couldn’t resend", {
           tone: "error",
           body: (err as Error).message,
         });
@@ -216,7 +216,7 @@ export function MembersSection({
     <div>
       <SectionHeader
         eyebrow="Members"
-        title="Who's in this project"
+        title="Who’s in this project"
         description="Roles, tenure, and the door. The owner controls who stays, everyone else can look but not touch."
       />
 

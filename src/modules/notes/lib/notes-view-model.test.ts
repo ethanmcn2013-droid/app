@@ -191,8 +191,11 @@ test("countLabel reads a count into the label for its view", () => {
   assert.equal(countLabel("notebook", 1), "1 note");
   assert.equal(countLabel("notebook", 10), "10 notes");
   assert.equal(countLabel("review", 4), "4 to review");
-  assert.equal(countLabel("sent", 1), "1 sent");
-  assert.equal(countLabel("sent", 3), "3 sent");
+  // The `sent` view id keeps its name in code; the label follows the tab,
+  // which reads "In Tasks" since wave 6. No singular special case: "1 in
+  // Tasks" and "3 in Tasks" are both correct English.
+  assert.equal(countLabel("sent", 1), "1 in Tasks");
+  assert.equal(countLabel("sent", 3), "3 in Tasks");
 });
 
 test("sortNotes orders newest-first and oldest-first", () => {

@@ -138,7 +138,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         const { url } = await createCheckoutSessionAction(target);
         window.location.href = url;
       } catch (e) {
-        toast("Couldn't start checkout", {
+        toast("Couldn’t start checkout", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -152,7 +152,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         const { url } = await createBillingPortalSessionAction("/app/settings");
         window.location.href = url;
       } catch (e) {
-        toast("Couldn't open billing portal", {
+        toast("Couldn’t open billing portal", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -170,7 +170,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         await expireEntitlementByNotes("dev:no-stripe");
         toast("Subscription cancelled", {
           tone: "success",
-          body: "You'll keep paid features until the period ends.",
+          body: "You’ll keep paid features until the period ends.",
         });
       } catch (e) {
         toast("Cancel failed", {
@@ -196,20 +196,20 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           });
           setCode("");
         } else {
-          toast("Code didn't take", {
+          toast("Code didn’t take", {
             tone: "warn",
             body:
               result.reason === "not-found"
-                ? "We don't recognize that code."
+                ? "We don’t recognize that code."
                 : result.reason === "exhausted"
                   ? "All seats on that code are claimed."
                   : result.reason === "expired"
                     ? "That code has expired."
-                    : "You've already redeemed this one.",
+                    : "You’ve already redeemed this one.",
           });
         }
       } catch (err) {
-        toast("Couldn't redeem", {
+        toast("Couldn’t redeem", {
           tone: "error",
           body: (err as Error).message,
         });
@@ -221,8 +221,8 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
     <div>
       <SectionHeader
         eyebrow="Billing"
-        title="What you're on, and what's next"
-        description="Plans aren't gates, they're shapes. Pick the one that fits, change your mind whenever."
+        title="What you’re on, and what’s next"
+        description="Plans aren’t gates, they’re shapes. Pick the one that fits, change your mind whenever."
       />
 
       {/* Current tier strip */}

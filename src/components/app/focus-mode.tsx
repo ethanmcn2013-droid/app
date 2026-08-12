@@ -23,7 +23,13 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react";
  * Strict no-pretense rules:
  *   - No notification sound, no system alert when the timer hits 0.
  *   - No streak counter, no analytics, no persistence.
- *   - Background is solid white, not the brand glow, not a gradient.
+ *   - Background is the flat page surface, not the brand glow, not a
+ *     gradient. It used to say "solid white" and paint a white literal,
+ *     which read as a rule about calm and shipped as a rule about a
+ *     colour: under [data-theme="dark"] the title and the timer both
+ *     resolve to near-white ink, and this overlay put them on a white
+ *     field. --paper is that same white in light and the deepest
+ *     surface in dark, so the rule survives the theme it predates.
  *   - The colon in 25:00 does NOT blink.
  */
 const TOTAL_SECONDS = 25 * 60;
@@ -165,14 +171,14 @@ export function FocusMode() {
               ? { duration: 0 }
               : { duration: 0.16, ease: [0.16, 1, 0.3, 1] },
           }}
-          style={{ background: "#ffffff" }}
+          style={{ background: "var(--paper)" }}
           className="fixed inset-0 z-[120] flex items-center justify-center"
         >
           <div className="flex w-full max-w-[600px] flex-col items-center px-8 text-center">
             <div
               className="text-[11px] font-semibold uppercase"
               style={{
-                color: "var(--brand)",
+                color: "var(--x-accent-ink)",
                 letterSpacing: "0.18em",
               }}
             >
@@ -188,7 +194,7 @@ export function FocusMode() {
             <div
               className="mt-14 text-[144px] font-semibold leading-none tabular-nums tracking-tight"
               style={{
-                color: done ? "var(--brand)" : "var(--ink, #14151a)",
+                color: done ? "var(--x-accent-ink)" : "var(--ink, #14151a)",
               }}
               aria-live="polite"
             >

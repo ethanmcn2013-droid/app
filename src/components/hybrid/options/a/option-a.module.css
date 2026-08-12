@@ -133,7 +133,7 @@
   color: var(--x-task-text);
   font-weight: 600;
 }
-.tabsScroll nav a[aria-current="page"] svg { color: var(--x-task-accent); }
+.tabsScroll nav a[aria-current="page"] svg { color: var(--x-accent-ink); }
 
 /* The working controls are ghosts: no boxes at rest, presence on touch. */
 .functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
@@ -159,17 +159,17 @@
 .functionalTools > button:hover,
 .densityControl:hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .functionalTools > button[data-active],
-.functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-task-accent); }
+.functionalTools > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 /* One accent CTA per bar: creating work is the bar's primary act, so
    Add task alone wears the brand — everything beside it stays quiet. */
-.functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-task-raised); font-weight: 600; }
+.functionalTools > button[data-primary] { background: var(--x-task-accent); color: var(--x-on-accent); font-weight: 600; }
 .functionalTools > button[data-primary]:hover { background: var(--x-task-focus); color: var(--x-task-raised); }
 .functionalTools > button:disabled { background: transparent; color: var(--x-task-text-muted); cursor: not-allowed; opacity: .62; }
 .functionalTools > button > span { background: var(--x-task-hover); border-radius: 3px; color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; padding: 2px 3px; text-transform: uppercase; }
 .functionalTools > button > em {
   background: color-mix(in srgb, var(--x-task-accent) 14%, transparent);
   border-radius: 999px;
-  color: var(--x-task-accent);
+  color: var(--x-accent-ink);
   font-family: var(--font-geist-mono), monospace;
   font-size: 11px;
   font-style: normal;
@@ -235,7 +235,7 @@
 
 .toolChoices { display: flex; flex-direction: column; padding: 5px; }
 .toolChoices button { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 12px; gap: 8px; min-height: 32px; padding: 0 8px; text-align: left; }
-.toolChoices button svg:last-child { color: var(--x-task-accent); margin-left: auto; }
+.toolChoices button svg:last-child { color: var(--x-accent-ink); margin-left: auto; }
 .toolChoices button:hover,
 .toolChoices button[aria-pressed="true"] { background: var(--x-task-hover); color: var(--x-task-text); }
 
@@ -276,14 +276,14 @@
 .taskPeek > header button { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; height: 26px; justify-content: center; width: 26px; }
 .peekMeta { align-items: center; display: flex; gap: 10px; min-width: 0; }
 .statusText { color: var(--x-task-text-secondary); font-size: 11px; font-weight: 600; }
-.statusText[data-status="doing"] { color: var(--x-task-accent); }
+.statusText[data-status="doing"] { color: var(--x-accent-ink); }
 .statusText[data-status="review"] { color: var(--x-task-text-secondary); }
 .statusText[data-status="waiting"] { color: var(--x-task-waiting); }
 .statusText[data-status="done"] { color: var(--x-task-success); }
 .peekTitle { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; display: block; font: inherit; font-size: var(--x-task-title-size); font-weight: var(--x-task-title-weight); letter-spacing: var(--x-task-title-tracking); line-height: var(--x-task-title-leading); margin: 9px 0 5px; padding: 0; text-align: left; }
 .taskPeek > p { color: var(--x-task-text-secondary); display: -webkit-box; font-size: 12px; line-height: 1.45; margin: 0 0 10px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .taskPeek > footer { align-items: center; display: flex; gap: 9px; }
-.peekOpen { background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--paper); cursor: pointer; font: inherit; font-size: 12px; font-weight: 500; margin-left: auto; min-height: 28px; padding: 0 12px; }
+.peekOpen { background: var(--x-task-accent); border: 0; border-radius: var(--radius-pill); color: var(--x-on-accent); cursor: pointer; font: inherit; font-size: 12px; font-weight: 500; margin-left: auto; min-height: 28px; padding: 0 12px; }
 .peekOpen:hover { background: var(--x-task-focus); }
 
 .dateCommand,
@@ -745,7 +745,7 @@
 .boardSurface[data-drag-active] .emptyLane {
   border-color: color-mix(in srgb, var(--x-task-accent) 45%, transparent);
 }
-.boardLane[data-drop-target] .emptyLane { background: color-mix(in srgb, var(--x-task-accent) 4%, transparent); color: var(--x-task-accent); }
+.boardLane[data-drop-target] .emptyLane { background: color-mix(in srgb, var(--x-task-accent) 4%, transparent); color: var(--x-accent-ink); }
 .boardSurface[data-drag-active] .emptyLane small { display: block; }
 
 /* The add affordance sits directly under the last card, inside the scroll
@@ -987,8 +987,8 @@
 .timelineDateHeader { background: var(--x-task-surface); border-bottom: 1px solid var(--x-task-border-strong); display: grid; height: 38px; }
 .timelineDate { align-items: center; border-right: 1px solid var(--x-task-border); color: var(--x-task-text-muted); display: flex; flex-direction: column; font-size: 11px; justify-content: center; }
 .timelineDate b { color: var(--x-task-text-secondary); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-top: 2px; }
-.timelineDate[data-today] { background: var(--x-task-accent-soft); color: var(--x-task-accent); }
-.timelineDate[data-today] b { color: var(--x-task-accent); }
+.timelineDate[data-today] { background: var(--x-task-accent-soft); color: var(--x-accent-ink); }
+.timelineDate[data-today] b { color: var(--x-accent-ink); }
 .timelineRow { min-height: 39px; }
 .timelineRow[data-completed] { color: var(--x-task-text-muted); }
 .timelineTaskPane { align-items: center; background: var(--x-task-raised); border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border-strong); display: grid; gap: 3px; grid-template-columns: 24px 24px 8px minmax(0, 1fr) auto; left: 0; min-height: 39px; padding: 3px 5px; position: sticky; z-index: 6; }
@@ -1005,7 +1005,7 @@
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
 .timelineRangeButton > span { font-size: var(--x-task-title-size-compact); font-weight: var(--x-task-title-weight); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.timelineRangeButton small { color: var(--x-task-accent); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-left: auto; white-space: nowrap; }
+.timelineRangeButton small { color: var(--x-accent-ink); font-family: var(--font-geist-mono), monospace; font-size: 11px; margin-left: auto; white-space: nowrap; }
 .rangeHandle { background: transparent; border: 0; cursor: ew-resize; flex: 0 0 24px; padding: 0; position: relative; }
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .rangeHandle:disabled { cursor: not-allowed; opacity: .35; }
@@ -1066,7 +1066,7 @@
 .calendarCell > header { align-items: center; display: flex; height: 28px; justify-content: space-between; padding: 0 2px 0 4px; }
 .dateButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; justify-content: center; min-height: 24px; min-width: 24px; padding: 0 2px; }
 .dateButton b { font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.calendarCell[data-today] .dateButton { color: var(--x-task-accent); font-weight: 600; }
+.calendarCell[data-today] .dateButton { color: var(--x-accent-ink); font-weight: 600; }
 .cellAdd { align-items: center; background: transparent; border: 0; border-radius: 3px; color: transparent; cursor: pointer; display: flex; height: 24px; justify-content: center; padding: 0; width: 24px; }
 .calendarCell:hover .cellAdd,
 .cellAdd:focus-visible { color: var(--x-task-text-muted); }
@@ -1085,7 +1085,7 @@
 .calendarStatus[data-status="done"] { background: var(--x-task-success); }
 .calendarDiamond { height: 6px; width: 6px; }
 .moreTasks { background: transparent; border: 0; color: var(--x-task-text-secondary); cursor: pointer; font: inherit; font-size: 11px; margin: 2px 4px; padding: 2px; }
-.moreTasks:hover { color: var(--x-task-accent); }
+.moreTasks:hover { color: var(--x-accent-ink); }
 .calendarOverflow { background: var(--x-task-overlay); border: 1px solid var(--x-task-border-strong); border-radius: 6px; box-shadow: var(--x-task-shadow); left: 4px; min-width: 190px; padding: 5px; position: absolute; top: 70px; z-index: 22; }
 .calendarOverflow > header { align-items: center; display: flex; height: 26px; justify-content: space-between; padding: 0 2px 4px; }
 .calendarOverflow > header strong { font-size: 11px; }
@@ -1614,7 +1614,7 @@
   padding: 0 10px;
 }
 .addColumnCancel { background: transparent; color: var(--x-task-text-secondary); }
-.addColumnCreate { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-task-accent-contrast, var(--paper)); }
+.addColumnCreate { background: var(--x-task-accent); border-color: var(--x-task-accent); color: var(--x-on-accent); }
 
 /* Board dialogs: column delete, task delete, nudge. Centred, backdrop-
    dismissed, focus lands inside. */
@@ -1682,7 +1682,7 @@
 /* T·125: shown when active filters admit no tasks — the view keeps its
    chrome; this band says why it is empty and offers the way back. */
 .filterEmptyNotice { align-items: center; background: var(--x-task-accent-soft); border-bottom: 1px solid var(--x-task-border); color: var(--x-task-text-secondary); display: flex; flex: 0 0 auto; font-size: 12px; gap: 10px; padding: 8px var(--x-board-gutter); }
-.filterEmptyNotice button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; font: inherit; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+.filterEmptyNotice button { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; font: inherit; font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
 
 /* T·125 P2: list-view capability restorations. The per-row complete
    toggle and the priority select reuse existing shared primitives and

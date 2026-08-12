@@ -164,7 +164,7 @@
 }
 
 .planNoticeAction:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -230,7 +230,14 @@
   width: var(--space-5);
   min-height: var(--space-7);
   margin-inline-start: calc(var(--space-2) * -1);
-  color: var(--ink-ghost);
+  /* The six-dot glyph is an AFFORDANCE, not decoration: it is the only thing
+     on the row that says this milestone can be dragged, so WCAG 1.4.11 asks
+     3:1 of it as a non-text graphic. --ink-ghost is a hairline value and gave
+     it 1.48:1 on paper, 1.83:1 in dark — a handle you have to already know is
+     there. --ink-faint clears the floor in both themes (4.83:1 / 7.48:1) and
+     is still the quietest thing on the card; the hover step moves up with it
+     so hovering still says something. */
+  color: var(--ink-faint);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -239,7 +246,7 @@
 
 .card:hover .dragHandle,
 .card:focus-within .dragHandle {
-  color: var(--ink-faint);
+  color: var(--x-ink-quiet, var(--ink-soft));
 }
 
 .statusDot {
@@ -401,7 +408,7 @@
 .hiddenSummary:focus-visible,
 .retryButton:focus-visible,
 .textField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -531,7 +538,7 @@
 }
 
 .iconButton[data-active="true"] {
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 /* ── Toolbar ────────────────────────────────────────────────────────────── */
@@ -778,7 +785,7 @@
 
 .emptyPrimary:focus-visible,
 .emptySecondary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 

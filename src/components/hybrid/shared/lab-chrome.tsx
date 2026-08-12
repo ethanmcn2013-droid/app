@@ -11,11 +11,18 @@ import { VIEW_LABELS, LAB_VIEWS, type LabRouteState } from "../types";
 import { Icon } from "./icons";
 import styles from "./shared.module.css";
 
+/**
+ * The four tooltips are the only explainer the views get, and they are read
+ * by someone who has never used a tool like this. So each one names what is
+ * on the screen behind the tab, not what the view is for: "Scan and edit
+ * operational task fields" described List to a person who already knew what
+ * List was.
+ */
 const VIEW_PURPOSES: Record<LabRouteState["view"], string> = {
-  board: "Move and prioritise work by status",
-  list: "Scan and edit operational task fields",
-  timeline: "Plan dated work and explicit unscheduled tasks",
-  calendar: "Review commitments by day, week, or agenda",
+  board: "Cards in columns, one for each task. Drag a card to move it.",
+  list: "One table, one row for each task, with owner, dates and priority.",
+  timeline: "Dated work laid out across the weeks, with undated work beside it.",
+  calendar: "Your dated work on a calendar, by month, by week, or as a list.",
 };
 
 export function ViewTabs({ route, onRouteChange, hrefFor, className = "" }: { route: LabRouteState; onRouteChange: (patch: Partial<LabRouteState>) => void; hrefFor?: (view: LabRouteState["view"]) => string; className?: string }) {

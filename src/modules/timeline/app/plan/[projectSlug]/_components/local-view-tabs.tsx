@@ -81,7 +81,7 @@ export function LocalViewTabs({
             title={view.purpose}
             className={`${TAB_BASE} ${
               isCurrent
-                ? "bg-white font-medium text-ink shadow-[0_0_0_1px_var(--line-soft),0_1px_2px_rgba(17,17,17,0.05)]"
+                ? "bg-bg-elevated font-medium text-ink shadow-[0_0_0_1px_var(--line-soft),0_1px_2px_rgba(17,17,17,0.05)]"
                 : "font-medium text-ink-soft hover:text-ink"
             }`}
           >

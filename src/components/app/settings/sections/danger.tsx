@@ -35,7 +35,7 @@ export function DangerSection({
         });
         router.refresh();
       } catch (e) {
-        toast("Couldn't load the demo", {
+        toast("Couldn’t load the demo", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -53,7 +53,7 @@ export function DangerSection({
           body: "Workspace is back to empty. Members and billing untouched.",
         });
       } catch (e) {
-        toast("Couldn't clear", {
+        toast("Couldn’t clear", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -74,7 +74,7 @@ export function DangerSection({
         router.push("/app/tasks");
         router.refresh();
       } catch (e) {
-        toast("Couldn't delete", {
+        toast("Couldn’t delete", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -86,15 +86,15 @@ export function DangerSection({
     <div>
       <SectionHeader
         eyebrow="Danger zone"
-        title="Things you can't undo"
-        description="The button-colored-red kind. We make you confirm because we're not in the business of regret."
+        title="Things you can’t undo"
+        description="The button-colored-red kind. We make you confirm because we’re not in the business of regret."
       />
 
       <div className="space-y-4">
         {/* Load the wedding demo */}
         <DangerCard
           title="Load the wedding demo"
-          description="Replaces this workspace's tasks with the wedding sample set (venue, vendors, run-of-show). Handy for demos and screenshots. Clears the current tasks first, so treat it like a reset."
+          description="Replaces this workspace’s tasks with the wedding sample set (venue, vendors, run-of-show). Handy for demos and screenshots. Clears the current tasks first, so treat it like a reset."
           buttonLabel="Load wedding demo"
           disabled={pending || !isOwner}
           tone="emerald"

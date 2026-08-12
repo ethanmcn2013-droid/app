@@ -1750,11 +1750,11 @@
       "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c2599ecd3d094b3d",
+      "materialityHash": "0b8e551245bd1e38",
       "materialityReview": {
-        "materialityHash": "c2599ecd3d094b3d",
+        "materialityHash": "0b8e551245bd1e38",
         "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-07-31.json"
+        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-12-wave6.json"
       }
     },
     {

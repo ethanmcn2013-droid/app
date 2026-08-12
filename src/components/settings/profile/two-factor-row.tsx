@@ -21,7 +21,7 @@ export function TwoFactorRow({ user }: { user: UserResource }) {
         label="Two-factor sign-in"
         hint={
           enabled
-            ? "On. We'll ask for a six-digit code from your authenticator app on every new device."
+            ? "On. We’ll ask for a six-digit code from your authenticator app on every new device."
             : "Off. Add a second factor if you want sign-in to require your phone too."
         }
         control={
@@ -96,7 +96,7 @@ function TotpSetupFlow({
         }
       } catch (e) {
         if (!cancelled) {
-          setError(extractClerkError(e) ?? "Couldn't start 2FA setup");
+          setError(extractClerkError(e) ?? "Couldn’t start 2FA setup");
         }
       } finally {
         if (!cancelled) setPending(false);
@@ -121,7 +121,7 @@ function TotpSetupFlow({
       setRecoveryCodes(backup.codes);
       setStep("recovery");
     } catch (e) {
-      setError(extractClerkError(e) ?? "That code didn't match");
+      setError(extractClerkError(e) ?? "That code didn’t match");
     } finally {
       setPending(false);
     }
@@ -299,7 +299,7 @@ function TotpDisableFlow({
       await user.disableTOTP();
       onClose();
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't turn off 2FA");
+      setError(extractClerkError(e) ?? "Couldn’t turn off 2FA");
     } finally {
       setPending(false);
     }

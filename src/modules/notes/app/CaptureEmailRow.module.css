@@ -66,7 +66,11 @@
   padding: 0.15rem 0.45rem;
   border: 1px solid var(--hairline, var(--color-line-strong));
   border-radius: var(--radius-sm, 0.25rem);
-  background: var(--paper, white);
+  /* No `white` fallback: if --paper ever failed to resolve inside a dark
+     document, a literal white input would be the one thing on the surface
+     that cannot be read. Unresolved, this falls through to the field it
+     sits on, which is legible in either theme. */
+  background: var(--paper);
   color: var(--ink, var(--color-ink));
   font: inherit;
 }

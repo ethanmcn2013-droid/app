@@ -18,7 +18,42 @@ type Props = {
  * Hover/click → popover lists the blockers as buttons that open
  * the detail panel for the upstream task. Color stays restrained
  * (amber, not red), blockers are friction, not failure.
+ *
+ * The two tones ride the board's own state tokens rather than absolute
+ * Tailwind palette steps. amber-50/emerald-50 are light-palette values the
+ * dark bridge has no way to remap, so the chip shipped a light-mode wash onto
+ * the dark board the moment a blocker fired — invisible in the evidence
+ * screenshots, because a screenshot of a calm board has no exceptions in it.
+ * The tokens are the amber and green the lanes already spend, and both
+ * derive through --paper and --ink, so each tone re-composes itself per
+ * theme instead of needing a second definition.
+ *
+ * Measured ink-on-wash, rest / hover:
+ *   blocked  5.36 / 4.60 light · 8.19 / 6.05 dark
+ *   cleared  6.18 / 5.28 light · 8.29 / 6.68 dark
  */
+type ChipTone = {
+  "--x-chip-ink": string;
+  "--x-chip-bg": string;
+  "--x-chip-bg-hover": string;
+  "--x-chip-edge": string;
+};
+
+/** Waiting: the board's amber, the same recipe --x-task-waiting is built on. */
+const TONE_BLOCKED: ChipTone = {
+  "--x-chip-ink": "var(--x-task-waiting)",
+  "--x-chip-bg": "var(--x-task-waiting-soft)",
+  "--x-chip-bg-hover": "color-mix(in srgb, var(--status-flight) 34%, var(--paper))",
+  "--x-chip-edge": "color-mix(in srgb, var(--status-flight) 45%, var(--paper))",
+};
+
+/** Cleared: the one canonical done green, mixed toward ink for a label. */
+const TONE_CLEARED: ChipTone = {
+  "--x-chip-ink": "color-mix(in srgb, var(--x-status-done) 72%, var(--ink))",
+  "--x-chip-bg": "var(--x-task-success-soft)",
+  "--x-chip-bg-hover": "color-mix(in srgb, var(--x-status-done) 22%, var(--paper))",
+  "--x-chip-edge": "color-mix(in srgb, var(--x-status-done) 45%, var(--paper))",
+};
 export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
@@ -58,15 +93,14 @@ export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
           e.stopPropagation();
           setOpen((o) => !o);
         }}
+        style={(allCleared ? TONE_CLEARED : TONE_BLOCKED) as React.CSSProperties}
         className={
-          "inline-flex items-center gap-1 rounded font-medium transition-colors " +
+          "inline-flex items-center gap-1 rounded border font-medium transition-colors " +
+          "border-[var(--x-chip-edge)] bg-[var(--x-chip-bg)] text-[var(--x-chip-ink)] " +
+          "hover:bg-[var(--x-chip-bg-hover)] " +
           padding +
           " " +
-          fontSize +
-          " " +
-          (allCleared
-            ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-            : "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100")
+          fontSize
         }
         aria-label={`Blocked by ${blockedBy.length} task${blockedBy.length === 1 ? "" : "s"}`}
       >
@@ -116,7 +150,9 @@ export function BlockerBadge({ blockedBy, size = "sm" }: Props) {
                       <span
                         className="block h-1.5 w-1.5 flex-shrink-0 rounded-full"
                         style={{
-                          background: cleared ? "#10b981" : "#d97706",
+                          background: cleared
+                            ? "var(--x-status-done)"
+                            : "var(--x-task-waiting)",
                         }}
                       />
                       <span className="line-clamp-1 flex-1">{b.title}</span>
