@@ -17,7 +17,6 @@ import { renameBoardAction } from "@/server/actions/board";
 import { setProjectDescriptionAction } from "@/server/actions/settings";
 import {
   TASKS_SYNC_EVENT,
-  beginTaskSync,
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
@@ -84,16 +83,33 @@ function EditableText({
     if (next === shown) return;
     // The band's own edits report through the same Saving…/Saved whisper as
     // task mutations — the status line sits 20px away and used to imply
-    // coverage it didn't have. On failure the user's text STAYS (the whisper
-    // and toast say it wasn't saved); snapping their words back to the old
-    // value read as the product losing the edit without a word.
-    const settle = beginTaskSync();
+    // coverage it didn't have. On failure the user's text STAYS; snapping
+    // their words back to the old value read as the product losing the
+    // edit without a word. Events are emitted directly rather than via
+    // beginTaskSync because its error toast says the last confirmed state
+    // was restored — true for task mutations, a lie here.
+    const emit = (phase: "pending" | "success" | "error") =>
+      window.dispatchEvent(
+        new CustomEvent<TaskSyncEventDetail>(TASKS_SYNC_EVENT, {
+          detail: { id: `brief-${ariaLabel}`, phase },
+        }),
+      );
+    emit("pending");
     startTransition(async () => {
       try {
         await onCommit(next);
-        settle();
-      } catch (error) {
-        settle(error ?? new Error("commit failed"));
+        emit("success");
+      } catch {
+        emit("error");
+        window.dispatchEvent(
+          new CustomEvent("tasks:toast", {
+            detail: {
+              title: "The change was not saved",
+              body: "Your text is still here. Press Enter to try again.",
+              tone: "error",
+            },
+          }),
+        );
       }
     });
   };
@@ -122,6 +138,16 @@ function EditableText({
       data-empty={shown.length === 0 ? "" : undefined}
       onBlur={commit}
       onInput={syncEmpty}
+      // contentEditable accepts rich clipboard payloads by default —
+      // pasted markup would render styled inside a plain-text field.
+      onPaste={(event) => {
+        event.preventDefault();
+        const text = event.clipboardData
+          .getData("text/plain")
+          .replace(/\s+/g, " ");
+        document.execCommand("insertText", false, text);
+        syncEmpty();
+      }}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
@@ -149,9 +175,12 @@ function EditableText({
 /**
  * The season fact. A hover tooltip was the only carrier of "days of
  * WHAT" — mute for every touch and keyboard user. Tapping the fact
- * swaps the clause for its referent ("Your planning period ends 29 Sep ·
- * 86 days left") and back; the title tooltip stays as a bonus for
- * pointer users, never the sole carrier.
+ * opens its referent ("Your planning period ends 29 Sep · 86 days
+ * left") in a small layer under the sentence — never swapped inline,
+ * which reflowed the whole receipts row and could live-truncate the
+ * title. role="status" reads the detail to screen readers when it
+ * opens; the title tooltip stays as a bonus for pointer users, never
+ * the sole carrier.
  */
 function PeriodFact({ label, detail }: { label: string; detail: string }) {
   const [showDetail, setShowDetail] = useState(false);
@@ -162,12 +191,18 @@ function PeriodFact({ label, detail }: { label: string; detail: string }) {
   }, [showDetail]);
   return (
     <button
+      aria-expanded={showDetail}
       className={styles.briefPeriod}
       onClick={() => setShowDetail((value) => !value)}
       title={showDetail ? undefined : detail}
       type="button"
     >
-      {showDetail ? detail : label}
+      {label}
+      {showDetail ? (
+        <span className={styles.briefPeriodDetail} role="status">
+          {detail}
+        </span>
+      ) : null}
     </button>
   );
 }

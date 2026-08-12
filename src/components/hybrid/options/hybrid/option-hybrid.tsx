@@ -248,7 +248,17 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
               >
                 <Icon name="panel" size={15} />
                 <span className={briefStyles.planningLabel}>Planning</span>
-                {unscheduledCount > 0 ? <strong aria-hidden="true">{unscheduledCount}</strong> : null}
+                {/* On phones the label collapses and the badge says what
+                    it counts — a bare "5" beside a panel glyph that
+                    near-duplicates the nav trigger's was the band's most
+                    prominent unexplained number exactly where tooltips
+                    don't exist. */}
+                {unscheduledCount > 0 ? (
+                  <strong aria-hidden="true">
+                    {unscheduledCount}
+                    <span className={briefStyles.planningUndated}> undated</span>
+                  </strong>
+                ) : null}
               </button>
               <span className={`inline-flex ${briefStyles.bandActionButton}`}>
                 <PageActionsOverflow

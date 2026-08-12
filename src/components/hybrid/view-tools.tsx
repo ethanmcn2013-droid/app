@@ -287,8 +287,25 @@ function ToolPanelShell({
     const node = shellRef.current;
     if (node && !node.contains(document.activeElement)) node.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCloseRef.current();
+      if (event.key !== "Escape") return;
+      // A native select swallows Escape to close its own dropdown, but
+      // the keydown still reaches the document — closing the whole panel
+      // from inside a half-open picker is a rug-pull. Tab away or use
+      // the × from there.
+      if ((event.target as HTMLElement).tagName === "SELECT") return;
+      onCloseRef.current();
     };
+    // A dialog that lets Tab walk out behind it while it floats open has
+    // no focus contract: when focus leaves the shell for anything other
+    // than its own trigger, close.
+    const onFocusOut = (event: FocusEvent) => {
+      const next = event.relatedTarget as HTMLElement | null;
+      if (!next) return;
+      if (node?.contains(next)) return;
+      if (next.closest?.("[data-tool-trigger]")) return;
+      onCloseRef.current();
+    };
+    node?.addEventListener("focusout", onFocusOut);
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
       if (node?.contains(target)) return;
@@ -305,6 +322,7 @@ function ToolPanelShell({
     return () => {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
+      node?.removeEventListener("focusout", onFocusOut);
       document
         .querySelector<HTMLElement>(`[data-tool-trigger="${panel}"]`)
         ?.focus();

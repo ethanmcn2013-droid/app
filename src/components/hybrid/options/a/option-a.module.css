@@ -144,9 +144,20 @@
 .tabsScroll nav :is(a, button):hover { background: var(--x-task-hover); color: var(--x-task-text); }
 .tabsScroll nav :is(a, button)[aria-current="page"] {
   background: var(--x-task-selected);
-  box-shadow: inset 0 -2px 0 0 var(--x-task-accent);
   color: var(--x-task-text);
   font-weight: 600;
+}
+/* A real bar, not an inset shadow: the shadow followed the 6px pill
+   radius and visibly curled up both bottom corners at retina. */
+.tabsScroll nav :is(a, button)[aria-current="page"]::after {
+  background: var(--x-task-accent);
+  border-radius: 1px;
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 8px;
+  position: absolute;
+  right: 8px;
 }
 .tabsScroll nav :is(a, button)[aria-current="page"] svg { color: var(--x-accent-ink); }
 /* The 28px pin above outranks shared.module.css's generic 44px touch
