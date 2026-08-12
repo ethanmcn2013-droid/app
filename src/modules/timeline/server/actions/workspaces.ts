@@ -21,6 +21,7 @@ import {
   type NodeOverlayInput,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { isValidSlug, slugify } from "@/modules/timeline/lib/reserved-slugs";
+import { planMilestoneReconciliation } from "@/modules/timeline/lib/milestone-reconciliation";
 import { checkRateLimit, getClientIp, type RateLimitResult } from "@/modules/timeline/lib/rate-limit";
 import { getSyncedTemplateRoadmap } from "@/modules/timeline/lib/templates.generated";
 import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
@@ -235,7 +236,15 @@ export async function createProjectAction(
 // ---------------------------------------------------------------------------
 
 export type SyncMilestonesResult =
-  | { ok: true; count: number }
+  | {
+      ok: true;
+      count: number;
+      /** False when the source was truncated, so the caller can say
+       *  "showing the first N" instead of implying the list is whole. */
+      complete: boolean;
+      /** Present when the source was truncated. */
+      totalCount?: number;
+    }
   | { error: string };
 
 export async function syncMilestonesAction(
@@ -246,7 +255,11 @@ export async function syncMilestonesAction(
   // its real autosync POST lifecycle, but the action returns deterministic
   // fixture evidence before auth, Tasks, or Timeline databases are touched.
   if (isDemoMode()) {
-    return { ok: true, count: demoEffectiveNodes(workspaceSlug).length };
+    return {
+      ok: true,
+      count: demoEffectiveNodes(workspaceSlug).length,
+      complete: true,
+    };
   }
 
   const userId = await requireUser();
@@ -286,10 +299,27 @@ export async function syncMilestonesAction(
     return { error: "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN." };
   }
 
-  const rawMilestones = await source.getMilestonesForClerkId(
+  const snapshot = await source.getMilestonesForClerkId(
     userId,
     canonicalWorkspaceId,
   );
+
+  // What the read proved decides what may be written. A failed, unauthorized
+  // or truncated read preserves the previous snapshot; only a snapshot that
+  // saw the whole Project may delete anything (plan §6.5). The rule itself is
+  // in `planMilestoneReconciliation`, pure and tested there.
+  const plan = planMilestoneReconciliation(snapshot);
+  if (plan.kind === "skip") {
+    // Nothing is written and nothing is deleted. The existing timeline stands
+    // and the owner is told, rather than being shown a successful sync of a
+    // Project that was never read.
+    return {
+      error:
+        plan.reason === "unauthorized"
+          ? "Tasks would not authorise this read. Nothing was changed."
+          : "Tasks could not be reached. Your timeline is unchanged.",
+    };
+  }
 
   // Persist the provenance mapping before writing synced rows. This turns
   // future publication checks into an exact project-level proof and prevents
@@ -302,18 +332,27 @@ export async function syncMilestonesAction(
 
   // One canonical Tasks workspace maps to this one explicitly selected
   // Timeline project. Never pool every member workspace into a first project.
-  const milestones = rawMilestones.map((m) => ({
+  const milestones = plan.items.map((m) => ({
     ...m,
     workspaceSlug,
     projectSlug: targetProject.slug,
   }));
-  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones);
+  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
+    reconcile: plan.reconcile,
+  });
 
   // Revalidate private draft only, NOT the public URL (D6 two-gate)
   revalidatePath("/app/timeline");
   revalidatePath(`/app/timeline/${targetProject.slug}`);
 
-  return { ok: true, count: milestones.length };
+  return plan.reconcile === "destructive"
+    ? { ok: true, count: milestones.length, complete: true }
+    : {
+        ok: true,
+        count: milestones.length,
+        complete: false,
+        totalCount: snapshot.kind === "partial" ? snapshot.totalCount : undefined,
+      };
 }
 
 // ---------------------------------------------------------------------------

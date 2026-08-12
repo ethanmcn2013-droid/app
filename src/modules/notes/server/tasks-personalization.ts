@@ -189,23 +189,51 @@ export async function authorizeTasksWorkspace(
     : "denied";
 }
 
+/**
+ * Which Project, if any, an incoming Notes URL is allowed to select.
+ *
+ * ── THE DEFECT THIS REPLACES (WP1 · DECISIONS.md D-006) ────────────────────
+ * These two lookups used to be links in one `??` chain. An EXPLICIT
+ * `workspaceId` that failed authorization therefore fell through to the period
+ * lookup and silently selected a DIFFERENT Project from the same Planning
+ * Period — and that Project then became the notebook's task destination. The
+ * URL said one Project, the notebook filed into another, and nothing said so.
+ *
+ * ── THE RULE (ADR 0001 §4, plan §1.2 rule 4) ───────────────────────────────
+ * An explicit Project is exact or nothing. A Planning Period may only supply a
+ * default when NO Project was named at all: a period is a grouping, never an
+ * authorization boundary and never a substitute for a Project someone asked
+ * for by id. Returning null here is the fail-closed answer — the notebook
+ * simply has no preselected destination, which is a state it already renders.
+ *
+ * This is not flag-gated. `SIGNAL_PLANNING_PERIODS_ENABLED` decides whether
+ * the caller consults hints at all; it cannot restore the substitution.
+ */
 export function selectAuthorizedWorkspaceHint(
   catalog: TasksWorkspaceCatalog,
   workspaceId: string | null,
   planningPeriodId: string | null,
 ): TasksWorkspaceDestination | null {
   if (catalog.status !== "ready") return null;
-  return (
-    (workspaceId
-      ? catalog.workspaces.find((workspace) => workspace.id === workspaceId)
-      : undefined) ??
-    (planningPeriodId
-      ? catalog.workspaces.find(
-          (workspace) => workspace.planningPeriodId === planningPeriodId,
-        )
-      : undefined) ??
-    null
-  );
+
+  // An explicit Project fails closed. No fall-through, by construction rather
+  // than by ordering: this branch returns, so nothing below it can run.
+  if (workspaceId) {
+    return (
+      catalog.workspaces.find((workspace) => workspace.id === workspaceId) ??
+      null
+    );
+  }
+
+  if (planningPeriodId) {
+    return (
+      catalog.workspaces.find(
+        (workspace) => workspace.planningPeriodId === planningPeriodId,
+      ) ?? null
+    );
+  }
+
+  return null;
 }
 
 function createTasksWorkspaceAssertion(subject: string, secret: string): string {

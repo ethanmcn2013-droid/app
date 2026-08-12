@@ -39,12 +39,25 @@ test("workspace-only suite hints are membership checked and project hints remain
 });
 
 test("review Timeline accepts the canonical Tasks context only inside the demo boundary", () => {
+  // The invariant is unchanged: the review-fixture branch is self-contained and
+  // sits INSIDE the demo boundary, and real production resolution happens only
+  // after it, so a fixture id can never be resolved through the production
+  // path and no real workspace can be reached through the fixture one.
+  //
+  // WP1 changed only what production resolution is anchored to. It used to be
+  // `getWorkspaceForSuiteIdForUser`, the local Timeline lookup, which
+  // `resolveTimelineContext` no longer calls directly — resolution now runs
+  // through `resolveCanonicalTimeline` (ADR 0001 §6, DECISIONS.md D-002). The
+  // anchor moves to `getCurrentTasksWorkspaceContext`, which is the Tasks
+  // membership read and therefore a truer name for "production authorization"
+  // than the local lookup ever was. Renegotiated explicitly per D-007, not
+  // deleted to make a build green.
   const demoBoundary = timelineAuth.indexOf("if (isDemoMode())");
   const fixtureAuthorization = timelineAuth.indexOf(
     "isReviewSuiteWorkspaceId(requestedWorkspaceId)",
   );
   const productionMembership = timelineAuth.indexOf(
-    "getWorkspaceForSuiteIdForUser(requestedWorkspaceId, userId)",
+    "getCurrentTasksWorkspaceContext(",
     fixtureAuthorization,
   );
 

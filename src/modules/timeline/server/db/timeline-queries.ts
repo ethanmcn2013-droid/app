@@ -582,7 +582,7 @@ export async function getLastUpdatedForWorkspace(
 // ---------------------------------------------------------------------------
 
 /**
- * Batched upsert of synced milestone nodes into the tasks table,
+ * Batched upsert of synced milestone nodes into the tasks table, optionally
  * followed by a G2 reconcile pass that deletes stale synced nodes.
  *
  * Reuses the tasks table (same schema, kind='milestone'), the
@@ -602,6 +602,15 @@ export async function getLastUpdatedForWorkspace(
  * When milestones is empty (all un-promoted): all synced nodes for this
  * workspace+project are deleted so no stale nodes remain.
  *
+ * ── WHY `reconcile` MUST BE ASKED FOR (WP1, plan §6.5) ─────────────────────
+ * G2 is right for a real un-promote and catastrophic for a failed read. The
+ * source used to convert every failure to `[]`, and `[]` here means "delete
+ * everything", so an expired token emptied a couple's timeline and reported
+ * success. The destructive pass is therefore opt-in: a caller must be holding
+ * a snapshot that proved it saw the whole Project before it may ask for it.
+ * The default is `preserve` because the safe default is the one you get when
+ * you forget, and the caller who forgets is the one about to delete real work.
+ *
  * Called by sync action + D5 manual-add path (D5 uses non-ms ids, so
  * the reconcile pass never touches D5 manual nodes).
  */
@@ -609,7 +618,9 @@ export async function writeRoadmapNodes(
   workspaceSlug: string,
   projectSlug: string,
   milestones: SyncedMilestone[],
+  options: Readonly<{ reconcile?: "destructive" | "preserve" }> = {},
 ): Promise<void> {
+  const reconcile = options.reconcile ?? "preserve";
   // Step 1, upsert incoming synced nodes (skip when empty, but still run step 2).
   if (milestones.length > 0) {
     await db
@@ -646,6 +657,12 @@ export async function writeRoadmapNodes(
   // (D5, any other non-ms prefix) are never deleted by this pass.
   // The nodeOverlays row is intentionally NOT deleted, orphaned overlays
   // re-activate if the milestone is re-promoted (ARCH_SPEC §1.5).
+  //
+  // Skipped entirely unless the caller proved it saw the whole source. An
+  // upsert-only pass leaves the previous snapshot standing, which is the
+  // correct answer to every failed, truncated or unauthorized read.
+  if (reconcile !== "destructive") return;
+
   const incomingIds = milestones.map((m) => m.id);
   if (incomingIds.length === 0) {
     // All milestones un-promoted, delete every synced node for this project.
