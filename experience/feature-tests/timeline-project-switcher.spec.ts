@@ -92,8 +92,10 @@ test.describe("Timeline project switcher", () => {
       /\/app\/timeline\/nora-cian\?workspaceId=demo-ws&planningPeriodId=demo-planning-period$/,
     );
     await page.goBack();
+    // The /app/timeline entry replace-redirects to the canonical project path,
+    // so Back lands on the first project page, never the bare entry URL.
     await expect(page).toHaveURL(
-      /\/app\/timeline\?.*workspaceId=demo-ws.*planningPeriodId=demo-planning-period/,
+      /\/app\/timeline\/mara-finn\?workspaceId=demo-ws&planningPeriodId=demo-planning-period$/,
     );
     await page.goForward();
     await expect(page).toHaveURL(
