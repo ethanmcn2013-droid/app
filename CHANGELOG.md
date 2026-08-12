@@ -4,7 +4,7 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
-## 2026-08-12 · T·138 · cuts · the app stops being a second marketing site
+## 2026-08-12 · T·139 · cuts · the app stops being a second marketing site
 
 **Every marketing page this host served is gone. Pricing, about, press,
 principles, templates, the five audience pages, the student page and the legal
