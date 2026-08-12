@@ -325,6 +325,30 @@ test("a caller with no Tasks membership is unauthorized, not an authorized zero"
   );
 });
 
+test("a deleted Project with an orphaned membership row is unauthorized", async (t) => {
+  // The module must not lean on its caller for this. Today's only caller
+  // inner-joins `workspaces` and refuses first, so a deleted Project never
+  // reaches here — but WP4 adds a second caller, and a membership row that
+  // outlives its Project would otherwise read as an authorized empty Project
+  // and delete every synchronized node.
+  const harness = makeHarness();
+  t.after(harness.cleanup);
+  const tasks = createClient({ url: harness.tasksUrl });
+  t.after(() => tasks.close());
+  await seedTasksDatabase(tasks, { milestoneCount: 4 });
+  await tasks.execute({
+    sql: "DELETE FROM workspaces WHERE id = ?",
+    args: [PROJECT_A],
+  });
+
+  const snapshot = await readSnapshot(harness.tasksUrl);
+  assert.equal(snapshot.kind, "unauthorized");
+  assert.equal(
+    snapshot.kind === "unauthorized" ? snapshot.code : null,
+    "membership_absent",
+  );
+});
+
 test("an unauthorized read deletes nothing, even though it saw zero rows", async (t) => {
   // The second half of F1, end to end: the snapshot above must not reach the
   // destructive branch. Before the fix this deleted every synchronized node

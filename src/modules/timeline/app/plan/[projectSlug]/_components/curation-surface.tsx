@@ -1212,10 +1212,14 @@ export function CurationSurface({
   const refreshAfterWrites = useRef(false);
   const [, startTransition] = useTransition();
   // D11 auto-sync: fires once on mount (pull-on-visit). Does NOT publish.
+  // A refusal is not always a failure. `retryable: false` means the answer is
+  // settled — the Project is archived, or access to it is gone — and offering a
+  // Retry that cannot work is worse than offering none, especially to a screen
+  // reader meeting an assertive alert on every single load.
   const [autoSyncState, setAutoSyncState] = useState<
     | { status: "idle" }
     | { status: "syncing" }
-    | { status: "error"; message: string }
+    | { status: "error"; message: string; retryable: boolean }
   >({ status: "idle" });
   const didAutoSync = useRef(false);
   // "Saved" tick DRAG: shows for 1.5s after any successful overlay upsert
@@ -1400,7 +1404,11 @@ export function CurationSurface({
     try {
       const result = await syncMilestonesAction(workspaceSlug, projectSlug);
       if ("error" in result) {
-        setAutoSyncState({ status: "error", message: result.error });
+        setAutoSyncState({
+          status: "error",
+          message: result.error,
+          retryable: result.retryable,
+        });
         return;
       }
       setAutoSyncState({ status: "idle" });
@@ -1412,6 +1420,8 @@ export function CurationSurface({
         status: "error",
         message:
           "Timeline couldn’t refresh milestones from Tasks. Check your connection and try again.",
+        // A thrown request is the network, which is what Retry is for.
+        retryable: true,
       });
     }
   }, [projectSlug, requestRefreshAfterWrite, workspaceSlug]);
@@ -1645,7 +1655,7 @@ export function CurationSurface({
         {reorderAnnouncement}
       </p>
 
-      {autoSyncState.status === "error" ? (
+      {autoSyncState.status === "error" && autoSyncState.retryable ? (
         <div
           role="alert"
           className="mb-5 flex flex-col gap-3 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between"
@@ -1662,6 +1672,19 @@ export function CurationSurface({
             Retry sync
           </button>
         </div>
+      ) : null}
+
+      {/* A settled refusal. Polite rather than assertive, because nothing has
+          gone wrong and nothing is waiting on the reader; stated plainly, with
+          no control, because there is no action that would change it. The plan
+          itself stays fully readable and editable underneath. */}
+      {autoSyncState.status === "error" && !autoSyncState.retryable ? (
+        <p
+          role="status"
+          className="mb-5 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 text-xs leading-5 text-ink-soft"
+        >
+          {autoSyncState.message}
+        </p>
       ) : null}
 
       {/* Empty state, H2: single primary CTA + quiet inline manual-add link.

@@ -245,7 +245,19 @@ export type SyncMilestonesResult =
       /** Present when the source was truncated. */
       totalCount?: number;
     }
-  | { error: string };
+  | {
+      error: string;
+      /**
+       * Whether pressing Retry could plausibly change the answer.
+       *
+       * A dropped connection is worth retrying. An archived Project, a Project
+       * the actor no longer has access to, or a plan that was never connected
+       * to one are SETTLED — they answer the same way every time, and a button
+       * that cannot work is worse than no button. The surface renders the two
+       * differently, so the decision belongs here, where the reason is known.
+       */
+      retryable: boolean;
+    };
 
 export async function syncMilestonesAction(
   workspaceSlug: string,
@@ -266,22 +278,25 @@ export async function syncMilestonesAction(
 
   const workspace = await getWorkspace(workspaceSlug);
   if (!workspace || workspace.ownerUserId !== userId) {
-    return { error: "Workspace not found." };
+    return { error: "Workspace not found.", retryable: false };
   }
 
   const ownedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (ownedProjects.length === 0) {
-    return { error: "Create a project first." };
+    return { error: "Create a project first.", retryable: false };
   }
 
   const targetProject = ownedProjects.find((project) => project.slug === projectSlug);
-  if (!targetProject) return { error: "Project not found." };
+  if (!targetProject) {
+    return { error: "Project not found.", retryable: false };
+  }
   const canonicalWorkspaceId =
     targetProject.sourceTasksWorkspaceId ?? workspace.suiteWorkspaceId;
   if (!canonicalWorkspaceId) {
     return {
       error:
         "Connect this plan to one canonical Signal Tasks workspace before syncing.",
+      retryable: false,
     };
   }
   if (
@@ -289,7 +304,10 @@ export async function syncMilestonesAction(
     workspace.suiteWorkspaceId &&
     targetProject.sourceTasksWorkspaceId !== workspace.suiteWorkspaceId
   ) {
-    return { error: "This project is connected to a different canonical workspace." };
+    return {
+      error: "This project is connected to a different canonical workspace.",
+      retryable: false,
+    };
   }
 
   // Import lazily to avoid bundling in the non-sync path
@@ -318,7 +336,8 @@ export async function syncMilestonesAction(
     return {
       error:
         "You no longer have access to the Signal Tasks project this plan is " +
-        "connected to. Your timeline is unchanged.",
+        "connected to. Milestones will not refresh from Tasks.",
+      retryable: false,
     };
   }
   if (tasksContext.archivedAt !== null) {
@@ -327,14 +346,19 @@ export async function syncMilestonesAction(
     // archived Project's timeline exactly as the owner left it.
     return {
       error:
-        "That Signal Tasks project is archived, so its timeline is read-only. " +
-        "Nothing was changed.",
+        "This Signal Tasks project is archived, so its timeline is read-only. " +
+        "Milestones will not refresh from Tasks.",
+      retryable: false,
     };
   }
 
   const source = makeMilestoneSyncSource();
   if (!source) {
-    return { error: "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN." };
+    return {
+      error:
+        "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN.",
+      retryable: false,
+    };
   }
 
   const snapshot = await source.getMilestonesForClerkId(
@@ -354,8 +378,11 @@ export async function syncMilestonesAction(
     return {
       error:
         plan.reason === "unauthorized"
-          ? "Tasks would not authorise this read. Nothing was changed."
+          ? "Tasks would not authorise this read. Your timeline is unchanged."
           : "Tasks could not be reached. Your timeline is unchanged.",
+      // Membership was proved above, so an unauthorized answer here is the
+      // read token or the connection, not the actor. Both are worth retrying.
+      retryable: true,
     };
   }
 

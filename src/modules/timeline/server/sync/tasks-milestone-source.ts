@@ -223,12 +223,22 @@ export function makeMilestoneSyncSource(): MilestoneSyncSource | null {
       // "there is nothing here", and a filter cannot tell those apart — only a
       // separate proof can. The `EXISTS` clause stays as the row-level scope;
       // this is the authorization.
+      //
+      // It joins `workspaces` so the PROJECT's existence is proved here too,
+      // not merely the membership row's. A deleted Project with an orphaned
+      // membership row would otherwise pass, read zero rows, and be reported as
+      // an authorized empty Project — the same delete-everything outcome by a
+      // narrower route. That is unreachable through today's only caller, which
+      // inner-joins `workspaces` and refuses first; this module must not depend
+      // on that, because WP4 adds a second caller (read-through freshness for
+      // View and Edit) and a shield that lives in the caller is not a shield.
       try {
         const membership = await getClient().execute({
           sql: `
             SELECT 1 AS authorized
-            FROM workspace_members
-            WHERE workspace_id = ? AND user_id = ?
+            FROM workspace_members wm
+            INNER JOIN workspaces w ON w.id = wm.workspace_id
+            WHERE wm.workspace_id = ? AND wm.user_id = ?
             LIMIT 1
           `,
           args: [canonicalWorkspaceId, tasksUserId],

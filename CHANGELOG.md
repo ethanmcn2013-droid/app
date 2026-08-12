@@ -118,6 +118,19 @@ exactly as it was and you are told. Deliberately clearing every milestone
 still works, immediately, because that is a successful read of an empty
 project rather than a failed read of a full one.
 
+Two things this does not claim. Refreshing is now refused outright for an
+archived project, and that is a capability traded away deliberately, not a hole
+closed: archived projects refreshed correctly before this, and the data loss was
+in the deleted and revoked cases, not this one. An archived project is read-only
+everywhere else in the suite and its timeline now matches, but the better answer
+is to let it refresh without deleting — the machinery for that already exists
+and is turned on next. Until then an archived project's timeline says so plainly
+and stays fully editable by hand.
+
+And a refusal is not always a failure. Where refreshing cannot work — the
+project is archived, or your access to it has gone — you get a quiet line saying
+so rather than an alarm with a Retry button that could never have worked.
+
 Notes gained the same refusal. A link naming a project you cannot open no
 longer quietly files your notes into a different project from the same term.
 

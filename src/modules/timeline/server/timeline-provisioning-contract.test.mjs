@@ -274,8 +274,7 @@ test("provisioning is owner-only and never runs for an archived Project", () => 
   assert.match(
     source,
     /provedTasksMembership\.ownerClerkId !== actorUserId/,
-    "the exact provisioner must refuse anyone who is not the Tasks Project's " +
-      "own owner",
+    "the resolver must refuse anyone who is not the Tasks Project's own owner",
   );
   assert.match(
     source,
@@ -286,6 +285,41 @@ test("provisioning is owner-only and never runs for an archived Project", () => 
   assert.ok(
     !/provedTasksMembership\.role !== "owner"/.test(source),
     "membership role must not be used as the ownership gate again",
+  );
+
+  // ONE GATE, ABOVE THE BRANCH SPLIT. The first version of this check sat
+  // INSIDE the `provision` branch, so the identical lockout stayed reachable
+  // through `adopt`: a promoted co-owner's personal Timeline was bound to
+  // somebody else's Project without passing any ownership check at all.
+  //
+  // Note what this assertion deliberately does NOT do. "Gate appears before
+  // `connectSuiteWorkspace` in the file" was true of the broken code too —
+  // the gate was earlier in the text, just nested in a branch that returns
+  // before the adopt path is reached. A guard that passes on the defect it
+  // names is worse than no guard, so the claim is structural: the gate must
+  // sit ABOVE the branch split, where no branch can bypass it.
+  const gate = source.indexOf("provedTasksMembership.ownerClerkId === null");
+  const branchSplit = source.indexOf('if (decision.kind === "provision")');
+  const provisionWrite = source.indexOf(
+    "await provisionTimelineForTasksWorkspace(actorUserId",
+  );
+  const adoptWrite = source.indexOf("await connectSuiteWorkspace(");
+  assert.ok(gate !== -1, "the ownership gate was removed");
+  assert.ok(
+    branchSplit !== -1 && provisionWrite !== -1 && adoptWrite !== -1,
+    "both write paths must still exist for this to mean anything",
+  );
+  assert.ok(
+    gate < branchSplit,
+    "the ownership gate must sit ABOVE the provision/adopt split, so neither " +
+      "write path can be reached without passing it. Nested inside one branch " +
+      "it only guards that branch, and adoption consumes " +
+      "uq_workspaces_suite_workspace_id exactly as provisioning does — locking " +
+      "the Project's real owner out just as permanently.",
+  );
+  assert.ok(
+    gate < provisionWrite && gate < adoptWrite,
+    "the ownership gate must precede both writes",
   );
   assert.match(
     source,

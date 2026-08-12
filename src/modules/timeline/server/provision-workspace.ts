@@ -167,11 +167,18 @@ export type CanonicalTimelineResolution =
     }>
   /** No Timeline existed for this Project and one was created for it. */
   | Readonly<{ kind: "provisioned"; workspace: Workspace }>
-  /** The evidence does not prove a single answer. The owner chooses; we do not.
-   *  `workspace` is deliberately absent — there is nothing safe to show. */
+  /** The evidence does not prove a single answer, or the actor may not write
+   *  the answer it proves. The owner chooses; we do not. `workspace` is
+   *  deliberately absent — there is nothing safe to show. */
   | Readonly<{
       kind: "owner-reconciliation-required";
-      reason: OwnerReconciliationReason | "claimed-elsewhere";
+      reason:
+        | OwnerReconciliationReason
+        | "claimed-elsewhere"
+        /** The actor is not the Tasks Project's owner, so they may not create
+         *  or bind its Timeline — a membership role of "owner" is not
+         *  ownership. Reads are unaffected. */
+        | "not-project-owner";
       candidateSlugs: readonly string[];
     }>
   /** The Tasks Project is archived. It accepts no new association, so an
@@ -289,33 +296,56 @@ export async function resolveCanonicalTimeline(
     };
   }
 
+  // `exact` cannot occur here — an existing binding was answered at the top —
+  // but it is a READ, and reads are authorized by Tasks membership alone
+  // (ADR 0001 §6.6). It is therefore answered before the write gate below, so
+  // narrowing who may write never narrows who may look.
+  if (decision.kind === "exact") {
+    const alreadyBound = owned.find(
+      (workspace) => workspace.slug === decision.slug,
+    );
+    return alreadyBound
+      ? { kind: "exact", workspace: alreadyBound, provenance: "binding" }
+      : { kind: "failed", code: "timeline_candidate_missing" };
+  }
+
+  // ── THE WRITE GATE ─────────────────────────────────────────────────────
+  // Every remaining outcome WRITES: `provision` creates a Timeline bound to
+  // this Project, `adopt` binds an existing one to it. Both consume
+  // `uq_workspaces_suite_workspace_id`, so both are one-way doors — whoever
+  // gets there first owns the Project's Timeline and the loser is refused for
+  // good, because every later resolution is owner-scoped and finds nothing.
+  //
+  // ONE gate for both, deliberately. The first version of this check sat
+  // inside the `provision` branch only, and the identical lockout stayed
+  // reachable through `adopt`: a co-owner promoted by `setMemberRoleAction`
+  // has `workspace_members.role = 'owner'` and, owning no Project of their
+  // own, resolves the SHARED Project as their sole owned one — so their
+  // personal unclaimed Timeline was bound to somebody else's Project on first
+  // visit. Gating one write path and not its twin is not a gate.
+  //
+  // The count behind that pairing proof stays broad on purpose (D-017, F2): a
+  // co-owned Project is still a Project an unclaimed Timeline could legitimately
+  // belong to, so narrowing the COUNT would reopen an F2-shaped hole. The
+  // eligibility to write is what must be narrow, and it belongs here.
+  //
+  // "Owner" means the Tasks Project's own owner — `workspaces.owner_user_id`
+  // joined to that user's immutable Clerk subject — never a membership role.
+  // Null means the Project has no owner row, which is missing identity rather
+  // than permission: plan §6.4 step 9 says refuse and let the owner reconcile.
+  // Collaborator-first provisioning needs owner-identity resolution and is WP4.
+  if (
+    provedTasksMembership.ownerClerkId === null ||
+    provedTasksMembership.ownerClerkId !== actorUserId
+  ) {
+    return {
+      kind: "owner-reconciliation-required",
+      reason: "not-project-owner",
+      candidateSlugs: [],
+    };
+  }
+
   if (decision.kind === "provision") {
-    // Owner-only, and "owner" means the Project's owner — not a membership
-    // role.
-    //
-    // This gated on `provedTasksMembership.role !== "owner"` and was wrong:
-    // `role` is `workspace_members.role`, which `setMemberRoleAction` hands to
-    // promoted co-owners. A co-owner's first visit therefore minted the
-    // Project's Timeline under THEIR Clerk subject, consumed
-    // `uq_workspaces_suite_workspace_id`, and locked the primary owner out for
-    // good — every later resolution for the real owner is owner-scoped, finds
-    // nothing, and answers "That workspace is not available."
-    //
-    // `ownerClerkId` is `workspaces.owner_user_id` joined to that user's
-    // immutable subject. Null means the Project has no owner row, which is
-    // missing identity, not permission — plan §6.4 step 9 says refuse and let
-    // the owner reconcile. Collaborator-first provisioning needs owner-identity
-    // resolution and is WP4.
-    if (
-      provedTasksMembership.ownerClerkId === null ||
-      provedTasksMembership.ownerClerkId !== actorUserId
-    ) {
-      return {
-        kind: "owner-reconciliation-required",
-        reason: "unproven-timeline-present",
-        candidateSlugs: [],
-      };
-    }
     try {
       const created = await provisionTimelineForTasksWorkspace(actorUserId, {
         workspaceId: requested,
@@ -335,15 +365,11 @@ export async function resolveCanonicalTimeline(
     }
   }
 
-  // decision.kind === "exact" | "adopt". "exact" cannot occur here (an exact
-  // binding was answered above), so this is the legacy-evidence adoption.
+  // The legacy-evidence adoption, past the write gate above.
   const adoptable = owned.find(
     (workspace) => workspace.slug === decision.slug,
   );
   if (!adoptable) return { kind: "failed", code: "timeline_candidate_missing" };
-  if (decision.kind === "exact") {
-    return { kind: "exact", workspace: adoptable, provenance: "binding" };
-  }
 
   try {
     const linked = await connectSuiteWorkspace(

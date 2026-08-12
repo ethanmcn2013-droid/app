@@ -37,6 +37,43 @@ test("automatic Tasks sync failure remains visible and retryable", () => {
   assert.match(source, /onClick=\{\(\) => void runAutoSync\(\)\}/);
 });
 
+test("a sync refusal that Retry cannot fix offers no Retry", () => {
+  // WP1. Every sync refusal used to render as role="alert" with a Retry
+  // button. Once an archived Project and a revoked Project became refusals
+  // rather than silent successes, their owners met a screen-reader-announced
+  // alert and a button that could never work, on EVERY edit-mode load. An
+  // assertive interruption should mean something has gone wrong and something
+  // can be done about it; neither is true of a settled state.
+  const source = read(
+    "app/plan/[projectSlug]/_components/curation-surface.tsx",
+  );
+
+  // The alert path is now conditional on the refusal being retryable...
+  assert.match(
+    source,
+    /autoSyncState\.status === "error" && autoSyncState\.retryable \? \(/,
+    "the assertive alert and its Retry must be reserved for refusals that " +
+      "retrying could actually change",
+  );
+
+  // ...and the settled path is polite, and carries no control at all.
+  const settledStart = source.indexOf(
+    'autoSyncState.status === "error" && !autoSyncState.retryable',
+  );
+  assert.ok(settledStart !== -1, "the settled refusal branch is missing");
+  const block = source.slice(settledStart);
+  const settled = block.slice(0, block.indexOf(") : null}"));
+  assert.match(settled, /role="status"/, "a settled state is polite, not assertive");
+  assert.ok(
+    !/<button/.test(settled),
+    "a settled refusal must not offer a control that cannot change it",
+  );
+  assert.ok(
+    !/role="alert"/.test(settled),
+    "a settled refusal must not interrupt the reader on every load",
+  );
+});
+
 test("one-time audience link copy has an announced manual recovery path", () => {
   // The share controls were extracted from audience-manager.tsx so the project
   // Share panel and the manager cannot drift apart. The recovery path itself is
