@@ -152,7 +152,7 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
         {copyStatus === "copied"
           ? "Share link copied."
           : copyStatus === "manual"
-            ? "Automatic copy was blocked. The link is selected; use your device's copy command."
+            ? "Automatic copy was blocked. The link is selected; use your device’s copy command."
             : ""}
       </p>
       {copyStatus === "manual" ? (

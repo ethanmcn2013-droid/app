@@ -36,7 +36,7 @@ import { recordSponsoredUse } from "@/lib/account/instrumentation/call-site";
 /** Translate a denied RateLimitResult into the correct user-facing error string. */
 function rateLimitError(result: RateLimitResult & { allowed: false }): string {
   if (result.reason === "config-miss") {
-    return "This isn't available right now. Try again shortly.";
+    return "This isn’t available right now. Try again shortly.";
   }
   return "Too many requests. Try again later.";
 }
@@ -421,7 +421,7 @@ export async function upsertNodeOverlayAction(
   try {
     await upsertNodeOverlay(workspaceSlug, overlay);
   } catch {
-    return { error: "Couldn't save that milestone. Check your connection and try again." };
+    return { error: "Couldn’t save that milestone. Check your connection and try again." };
   }
 
   // The catch above returns on failure, so reaching here proves the write.
@@ -497,7 +497,7 @@ export async function createManualMilestoneAction(
     });
   } catch {
     return {
-      error: "Couldn't add that milestone. Check your connection and try again.",
+      error: "Couldn’t add that milestone. Check your connection and try again.",
     };
   }
 
@@ -559,7 +559,7 @@ export async function reorderNodesAction(
     // C2 symmetry with upsertNodeOverlayAction, return string error so the
     // caller's optimistic UI can revert + surface a transient role=status
     // message, instead of bubbling a rejected promise into the React tree.
-    return { error: "Couldn't save that reorder. Check your connection and try again." };
+    return { error: "Couldn’t save that reorder. Check your connection and try again." };
   }
 
   // Revalidate private curation view only, D6 invariant preserved

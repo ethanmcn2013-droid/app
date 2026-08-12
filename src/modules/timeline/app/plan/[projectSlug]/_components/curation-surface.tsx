@@ -199,7 +199,7 @@ function NodeCard({
         );
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => () => saveTitle(nextTitle));
@@ -240,7 +240,7 @@ function NodeCard({
         handleEditResult(result, undefined, toggleHidden);
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => toggleHidden);
@@ -278,7 +278,7 @@ function NodeCard({
         );
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => () => setPublicState(state));
@@ -331,7 +331,7 @@ function NodeCard({
         );
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => () => setDate(dateStr));
@@ -388,7 +388,7 @@ function NodeCard({
         );
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => inheritDate);
@@ -440,7 +440,7 @@ function NodeCard({
         );
       } catch {
         const message =
-          "Couldn't save that change. Check your connection and try again.";
+          "Couldn’t save that change. Check your connection and try again.";
         onError(message);
         setRowError(message);
         setRetryAction(() => inheritPublicState);
@@ -892,7 +892,7 @@ function ManualAddForm({
 
   function handleAdd() {
     if (!title.trim()) {
-      setError("What's the milestone?");
+      setError("What’s the milestone?");
       return;
     }
     const laneToState: Record<
@@ -930,7 +930,7 @@ function ManualAddForm({
         onClose("complete");
       } catch {
         setError(
-          "Couldn't add that milestone. Check your connection and try again.",
+          "Couldn’t add that milestone. Check your connection and try again.",
         );
       } finally {
         onWriteEnd();
@@ -1120,7 +1120,7 @@ function SyncButton({
         }
       } catch {
         setErrorMsg(
-          "Timeline couldn't refresh milestones from Tasks. Check your connection and try again.",
+          "Timeline couldn’t refresh milestones from Tasks. Check your connection and try again.",
         );
         setResult("error");
       }
@@ -1402,7 +1402,7 @@ export function CurationSurface({
       setAutoSyncState({
         status: "error",
         message:
-          "Timeline couldn't refresh milestones from Tasks. Check your connection and try again.",
+          "Timeline couldn’t refresh milestones from Tasks. Check your connection and try again.",
       });
     }
   }, [projectSlug, requestRefreshAfterWrite, workspaceSlug]);
@@ -1453,7 +1453,7 @@ export function CurationSurface({
           setReorderAnnouncement(successAnnouncement);
         }
       } catch {
-        flashError("Couldn't save that reorder. Check your connection and try again.");
+        flashError("Couldn’t save that reorder. Check your connection and try again.");
         setNodes(previousNodes);
         if (successAnnouncement) {
           setReorderAnnouncement(
