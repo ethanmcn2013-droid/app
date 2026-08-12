@@ -63,7 +63,12 @@ import "server-only";
 
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
-import { planningPeriods, workspaceMembers, workspaces } from "@/server/db/schema";
+import {
+  planningPeriods,
+  tasks,
+  workspaceMembers,
+  workspaces,
+} from "@/server/db/schema";
 import { getCurrentUser } from "@/server/auth";
 import {
   projectCapabilities,
@@ -269,6 +274,55 @@ export async function authorizeStoredProject(input: {
     input.capability,
     input.archivePolicy,
   );
+}
+
+/**
+ * The Project a task operation may act on — ADR 0001 §9, object operation.
+ *
+ * Shared by every action that reaches a task by id: the board, the detail
+ * panel, comments, attachments, resources, nudges, the Timeline drag. All of
+ * them used to scope with `AND workspace_id = <ambient cookie>`, which is a
+ * filter and not a permission check. When the two disagreed the write matched
+ * no rows, did nothing, and reported success.
+ *
+ * Two outcomes are kept apart on purpose. "No such task" and "refused"
+ * collapse to the same neutral answer for the caller — telling them apart is
+ * an existence leak — but they must not collapse *inside* the server, because
+ * a refusal arriving as an empty result is exactly the shape that let an
+ * unauthorized read become an authorized zero in WP1.
+ */
+export type TaskScope =
+  | Readonly<{ ok: true; ws: string }>
+  | Readonly<{ ok: false; reason: "no-such-task" | "refused" }>;
+
+export async function scopeForTask(
+  taskId: string,
+  actorUserId: string,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<TaskScope> {
+  // isolation-ok: this read is by primary key and deliberately carries no
+  // tenant predicate — it is the step that *discovers* the tenant. Nothing is
+  // returned to the caller from it and nothing is written on the strength of
+  // it; the only field read is the Project id handed to the capability proof
+  // below. Adding `AND workspace_id = <cookie>` here is precisely the defect
+  // being removed.
+  const [target] = await db
+    .select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId));
+  // `tasks.workspace_id` is nullable in the schema. A row that belongs to no
+  // Project belongs to nobody, so there is no membership that could authorize
+  // it — refused, never treated as "any Project will do".
+  if (!target?.workspaceId) return { ok: false, reason: "no-such-task" };
+
+  const grant = await authorizeStoredProject({
+    storedProjectId: target.workspaceId,
+    capability,
+    actorUserId,
+  });
+  return grant.ok
+    ? { ok: true, ws: grant.projectId }
+    : { ok: false, reason: "refused" };
 }
 
 /**

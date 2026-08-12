@@ -255,7 +255,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],
-    ["moveTaskToColumnAction", ["getActiveWorkspace", "await db", "revalidatePath"]],
+    // WP3 renegotiation (ADR 0001 §9), same reasoning as getSubtasksAction
+    // above: moveTaskToColumnAction is an object operation, so it derives the
+    // dragged card's own Project instead of resolving one ambiently, and has
+    // no `getActiveWorkspace*` left to point at. The ordering invariant — demo
+    // exits before tenant resolution — is unchanged; only the name of the call
+    // that resolves the tenant has. Every other entry in this table is a
+    // create/list site that still resolves ambiently and keeps the old token.
+    ["moveTaskToColumnAction", ["scopeForTask", "await db", "revalidatePath"]],
   ]) {
     for (const boundary of boundaries) {
       assertDemoGuardBefore(boardActions, name, boundary);

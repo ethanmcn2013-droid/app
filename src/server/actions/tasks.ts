@@ -14,9 +14,8 @@ import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
-  authorizeStoredProject,
   readableProjectOrNull,
-  type ProjectCapabilityKey,
+  scopeForTask,
 } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { maybeAwardCompletionMilestone } from "@/server/milestones";
@@ -34,62 +33,6 @@ import {
   classifyLaneTransition,
   recordSponsoredUse,
 } from "@/lib/account/instrumentation/call-site";
-
-/**
- * The Project a task mutation may act on — ADR 0001 §9, object operation.
- *
- * Every mutation in this file used to scope itself with `AND workspace_id =
- * <ambient cookie>`. That is not a permission check, it is a filter, and the
- * two behave differently when they disagree: a task belonging to a Project
- * other than the cookie's produced zero matched rows, the write silently did
- * nothing, and the action still returned success. Data loss reported as a
- * save. The common way to reach it is mundane — a second tab switches Project,
- * the cookie moves, and the board still on screen keeps accepting drags.
- *
- * So the object decides. The target is read by primary key, its stored Project
- * is taken off the row, and capability is proved against *that* Project before
- * anything is written. The result is that the same gesture now lands where the
- * user could see it was going to land.
- *
- * Two outcomes are kept apart on purpose. "No such task" and "refused" collapse
- * to the same neutral answer for the caller — telling them apart is an
- * existence leak — but they must not collapse *inside* the server, because a
- * refusal that arrives as an empty result is exactly the shape that let an
- * unauthorized read become an authorized zero in WP1.
- */
-type TaskScope =
-  | Readonly<{ ok: true; ws: string }>
-  | Readonly<{ ok: false; reason: "no-such-task" | "refused" }>;
-
-async function scopeForTask(
-  taskId: string,
-  actorUserId: string,
-  capability: ProjectCapabilityKey = "createOrEditTasks",
-): Promise<TaskScope> {
-  // isolation-ok: this read is by primary key and deliberately carries no
-  // tenant predicate — it is the step that *discovers* the tenant. Nothing is
-  // returned to the caller from it and nothing is written on the strength of
-  // it; the only field read is the Project id handed to the capability proof
-  // on the next line. Adding `AND workspace_id = <cookie>` here is precisely
-  // the defect being removed.
-  const [target] = await db
-    .select({ workspaceId: tasks.workspaceId })
-    .from(tasks)
-    .where(eq(tasks.id, taskId));
-  // `tasks.workspace_id` is nullable in the schema. A row that belongs to no
-  // Project belongs to nobody, so there is no membership that could authorize
-  // it — refused, never treated as "any Project will do".
-  if (!target?.workspaceId) return { ok: false, reason: "no-such-task" };
-
-  const grant = await authorizeStoredProject({
-    storedProjectId: target.workspaceId,
-    capability,
-    actorUserId,
-  });
-  return grant.ok
-    ? { ok: true, ws: grant.projectId }
-    : { ok: false, reason: "refused" };
-}
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
