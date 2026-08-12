@@ -68,7 +68,10 @@ export function SiteFooter() {
             { href: `${STUDIO_URL}/pricing`, label: "Pricing", external: true },
             { href: `${STUDIO_URL}/about`, label: "About", external: true },
             { href: `${STUDIO_URL}/principles`, label: "Principles", external: true },
-            { href: `${STUDIO_URL}/contact`, label: "Contact", external: true },
+            // /contact was folded into /about as an anchored section (D5).
+            // Linking the old path would put a redirect in front of somebody
+            // trying to reach a human.
+            { href: `${STUDIO_URL}/about#contact`, label: "Contact", external: true },
             { href: `${STUDIO_URL}/dispatch`, label: "Dispatch", external: true },
           ]}
         />
