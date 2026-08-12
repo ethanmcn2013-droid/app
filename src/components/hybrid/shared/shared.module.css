@@ -407,7 +407,10 @@
 }
 
 @media (max-width: 767px) {
-  .viewTabs button {
+  /* :is(a, button): the hybrid mount renders the tabs as anchors (real
+     links, canonical hrefs) — a button-only selector silently dropped
+     the four primary navigation targets to 28px on phones. */
+  .viewTabs :is(a, button) {
     min-height: 44px;
   }
 
@@ -476,7 +479,7 @@
 }
 
 @media (pointer: coarse) {
-  .viewTabs button,
+  .viewTabs :is(a, button),
   .inspectorHeader button,
   .bulkToolbar button,
   .bulkToolbar select,

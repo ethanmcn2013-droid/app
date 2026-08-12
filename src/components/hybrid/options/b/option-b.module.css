@@ -69,19 +69,28 @@
   width: 30px;
 }
 .navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+/* ≥768px the trigger leaves the flow and hangs in the widened gutter
+   (option-a bumps --x-board-gutter to 58px while the rail is hidden), so
+   the title stays on the ONE content grid line the tabs and lanes sit
+   on. On phones it stays in-flow — the mobile block's own padding rules
+   compose that row. */
+@media (min-width: 768px) {
+  .workspaceBrief { position: relative; }
+  .navTrigger { left: 12px; margin-right: 0; position: absolute; top: 50%; transform: translateY(-50%); }
+}
 /* The flagship line takes the ramp's heading step — size, leading and
    tracking as one decision (the rule the calendar h2 already follows).
    The hand-set 17px/-0.025em it replaces existed on no ramp, and left a
    single weak 1.42× step between the title and the 12px receipts. */
 .workspaceIdentity h1 { flex: 0 1 auto; font-size: var(--text-heading); font-weight: 600; letter-spacing: var(--tracking-heading); line-height: var(--leading-heading); margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: var(--text-caption); line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*
   Inline-editable heading + supporting line (T·114). A heading that grows a
   full inset box on hover reads as a text input in costume, so editability is
   signalled by the caret plus a hairline under the baseline. Focus keeps a
   real ring — that one has to be unmistakable, and it must clear contrast.
 */
-.editable { border-radius: 0; cursor: text; margin-inline: 0; outline: none; padding: 2px 0; transition: box-shadow .14s ease, color .14s ease; }
+.editable { border-radius: 0; cursor: text; margin-inline: 0; outline: none; padding: 2px 0; transition: box-shadow var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
 .editable:hover { box-shadow: inset 0 -1px 0 0 var(--x-task-border-strong); }
 .editable:focus-visible { background: transparent; box-shadow: inset 0 -2px 0 0 var(--x-task-focus); }
 /*
@@ -109,6 +118,12 @@ p.editable { min-height: 24px; padding: 4px 0; }
 .workspaceBrief:hover .workspaceIdentity p.editable[data-empty],
 .workspaceIdentity p.editable[data-empty]:focus,
 .workspaceIdentity p.editable[data-empty]:focus-visible { opacity: 1; }
+/* Coarse pointers have no hover: the invitation rests visible where it
+   fits (tablet and up) — a hover-gated control a touch user can never
+   reveal is a capability deleted, not demoted. */
+@media (pointer: coarse) and (min-width: 768px) {
+  .workspaceIdentity p.editable[data-empty] { opacity: 1; }
+}
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); }
 .workspaceMeta span { position: relative; }
 .workspaceMeta span + span::before { background: var(--x-task-border-strong); content: ""; height: 10px; left: -7px; position: absolute; top: 1px; width: 1px; }
@@ -138,7 +153,7 @@ p.editable { min-height: 24px; padding: 4px 0; }
    receipts line); ISOLATED counts — badges, lane counts, the Planning
    pill — are Geist Mono. A mono "5" inside "5 of 13 complete" would
    break the sentence to match a badge. */
-.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: 12px; gap: 12px; margin: 0; }
+.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: var(--text-caption); gap: 12px; margin: 0; }
 .briefFacts strong { color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 .briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .briefFacts b { color: var(--x-task-danger); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
@@ -157,18 +172,39 @@ p.editable { min-height: 24px; padding: 4px 0; }
   font: inherit;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  margin: -5px -8px;
+  /* -6px, not -8px: pulling the full padding back left the wash 4px from
+     its quiet neighbours against 8px internal padding — the sentence's
+     one loud word sat shoulder-to-shoulder. */
+  margin: -5px -6px;
   min-height: 28px;
   padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }
 .briefOverdue:hover { background: color-mix(in srgb, var(--x-task-danger) 14%, transparent); }
-.briefPeriod { color: var(--x-task-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* A button now: tap swaps the clause for its referent, so the season
+   fact is no longer hover-locked away from touch and keyboard users. */
+.briefPeriod {
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  margin: -4px 0;
+  min-height: 24px;
+  padding: 0;
+  transition: color var(--motion-instant) var(--ease-out);
+  white-space: nowrap;
+}
+.briefPeriod:hover { color: var(--x-task-text-secondary); }
 
 /* Project-level actions: Share, Planning, overflow — one ghost register. */
 .briefActions { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; }
-.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 6px; width: 1px; }
+/* Asymmetric margins: the ghost buttons to the right carry 8px of
+   invisible padding before their ink, so an even 6px read 5px closer to
+   the actions than to the receipts. Ink-to-divider now matches. */
+.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 3px 0 9px; width: 1px; }
 
 /* Touch floor. Row 2's view tabs already bump to 44px on coarse
    pointers; row 1's controls sat at 24–30px on the same phones. The
@@ -177,15 +213,18 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .navTrigger,
   .planningTrigger,
   .briefOverdue,
+  .briefPeriod,
   .bandActionButton > div > button { position: relative; }
   .navTrigger::after,
   .planningTrigger::after,
   .briefOverdue::after,
+  .briefPeriod::after,
   .bandActionButton > div > button::after { content: ""; position: absolute; }
   .navTrigger::after { inset: -7px; }
   .planningTrigger::after,
   .bandActionButton > div > button::after { inset: -7px 0; }
   .briefOverdue::after { inset: -8px -2px; }
+  .briefPeriod::after { inset: -10px 0; }
 }
 .planningTrigger {
   align-items: center;
@@ -211,7 +250,12 @@ p.editable { min-height: 24px; padding: 4px 0; }
    second styling dialect one ShareButton refactor away from silently
    dropping Share out of the register. Targets `> div > button` so only
    the trigger is restyled, never the popover/menu buttons inside it. */
-.bandActionButton > div > button {
+/* Class doubled on purpose: (0,2,2) so the ghost register also outranks
+   the dark-scheme utility patches in globals.css ([data-theme="dark"]
+   .text-brand / .bg-white, both (0,2,0)) — without it Share turned
+   accent-indigo and the overflow grew a raised box in dark, splitting
+   one action cluster into three dialects. */
+.bandActionButton.bandActionButton > div > button {
   background: transparent;
   border: 0;
   border-radius: 6px;
@@ -224,7 +268,8 @@ p.editable { min-height: 24px; padding: 4px 0; }
   padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
 }
-.bandActionButton > div > button:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.bandActionButton.bandActionButton > div > button:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.bandActionButton.bandActionButton > div > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 .planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 .planningTrigger strong {
   background: var(--x-task-hover);
@@ -239,6 +284,12 @@ p.editable { min-height: 24px; padding: 4px 0; }
   text-align: center;
 }
 .planningTrigger[aria-expanded="true"] strong { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); color: var(--x-accent-ink); }
+/* Chrome yields before identity: on phones the trigger keeps its icon
+   and badge but gives up its text, so the project's own name — the one
+   string the owner typed — is the last thing in the band to truncate. */
+@media (max-width: 767px) {
+  .planningLabel { display: none; }
+}
 
 .roomViewBar {
   align-items: center;
@@ -679,11 +730,12 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .roomViewBar > div:last-of-type { margin-left: auto; }
 }
 
-/* Narrow desktop: the unwritten-description invitation yields first when
-   width gets tight — but a description the owner actually WROTE stays
+/* Phones: the unwritten-description invitation yields when width gets
+   genuinely tight — but a description the owner actually WROTE stays
    readable (truncated) at every width; it used to vanish below 1160px
-   with no way to read or edit it. */
-@media (max-width: 1160px) {
+   with no way to read or edit it. The receipts are one clause shorter
+   now, so tablet keeps the invitation too. */
+@media (max-width: 767px) {
   .workspaceIdentity > p[data-empty] { display: none; }
 }
 @media (max-width: 900px) {
@@ -766,7 +818,9 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .workspaceIdentity { flex: 1 1 0; min-width: 0; }
   .workspaceIdentity h1 { max-width: none; }
 
-  .briefProgress { flex: 1 1 100%; gap: 10px; order: 10; }
+  /* 44px = trigger 30 + gap 14, so the wrapped receipts' left ink sits
+     under the title's x — a designed second line, not flex fallout. */
+  .briefProgress { flex: 1 1 100%; gap: 10px; margin-left: 44px; order: 10; }
   .briefActions { margin-left: auto; }
 
   .calendarView {

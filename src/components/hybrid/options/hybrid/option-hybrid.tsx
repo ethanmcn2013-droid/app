@@ -14,7 +14,7 @@ import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-
 import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
 import { activeUnscheduledTasks } from "../../planning";
-import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT } from "@/components/app/tasks-nav-state";
+import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT, useNavPanelHidden } from "@/components/app/tasks-nav-state";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
@@ -110,6 +110,10 @@ function usePlanningOpen() {
 export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
   const store = useLabStore();
   const calendar = useCalendarFrame();
+  // With the projects rail hidden the brief's nav trigger renders, and at
+  // ≥768px the content gutter widens so the trigger hangs in it and the
+  // title keeps the one content grid line (option-a.module.css).
+  const navHidden = useNavPanelHidden();
   const [columns, setColumns] = useState<ListColumn[]>(() => INITIAL_LIST_COLUMNS.map((column) => ({ ...column })));
   const [planningOpen, togglePlanning] = usePlanningOpen();
   const planningCollapsed = !planningOpen;
@@ -200,7 +204,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
 
   return (
     <WorkspaceBoardColumnsProvider>
-    <div className={styles.optionA} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
+    <div className={styles.optionA} data-nav-hidden={navHidden || undefined} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
       <section className={styles.workspaceShell}>
         {/* Project-level actions live on the project band, not the view
             toolbar: sharing and printing concern the project, and the
@@ -208,30 +212,43 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
         <WorkspaceBrief
           actions={
             <>
-              <span className={`hidden lg:inline-flex ${briefStyles.bandActionButton}`}>
+              {/* md, not lg: sharing is the growth loop and the tablet row
+                  has visible room — it kept retreating to the overflow a
+                  full breakpoint early. (It still lives in the … menu below
+                  md, and redundantly between md and lg — the menu section is
+                  a shared production block gated at lg.) */}
+              <span className={`hidden md:inline-flex ${briefStyles.bandActionButton}`}>
                 <ShareButton view={shareView} />
               </span>
               <button
                 aria-controls="c-planning-rail"
                 aria-expanded={!planningCollapsed}
+                // The visible text hides on phones (chrome yields before the
+                // title truncates), so the accessible name is carried here
+                // and stays whole at every width.
+                aria-label={
+                  unscheduledCount > 0
+                    ? `Planning · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
+                    : "Planning"
+                }
                 className={briefStyles.planningTrigger}
                 onClick={openPlanningExclusive}
                 // The badge is the band's most prominent unexplained number:
                 // a sighted user got only "Open the planning drawer", which
                 // explains the verb, never the 5. The tooltip now names what
-                // the count counts.
+                // the count counts. Middot, never an em dash (BRAND.md).
                 title={
                   planningCollapsed
                     ? unscheduledCount > 0
-                      ? `Open the planning drawer — ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
+                      ? `Open the planning drawer · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
                       : "Open the planning drawer"
                     : "Close the planning drawer"
                 }
                 type="button"
               >
                 <Icon name="panel" size={15} />
-                Planning
-                {unscheduledCount > 0 ? <strong>{unscheduledCount}<span className={styles.srOnly}> unscheduled tasks</span></strong> : null}
+                <span className={briefStyles.planningLabel}>Planning</span>
+                {unscheduledCount > 0 ? <strong aria-hidden="true">{unscheduledCount}</strong> : null}
               </button>
               <span className={`inline-flex ${briefStyles.bandActionButton}`}>
                 <PageActionsOverflow
@@ -250,7 +267,10 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
               28px/underline tab spec instead of the button fallback. A
               plain click still routes client-side through onRouteChange. */}
           <div className={styles.tabsScroll}><ViewTabs hrefFor={(view) => TASKS_VIEW_PATHS[view]} onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
-          <div aria-label="View controls" className={styles.functionalTools} role="toolbar">
+          {/* group, not toolbar: three tab stops need no roving-tabindex
+              contract, and role="toolbar" promises arrow-key navigation
+              this row does not implement. */}
+          <div aria-label="View controls" className={styles.functionalTools} role="group">
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
           </div>
         </div>

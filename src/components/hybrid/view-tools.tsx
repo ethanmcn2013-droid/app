@@ -143,10 +143,11 @@ export function ViewToolButtons({
   return (
     <>
       <button
-        aria-controls="tool-panel-filter"
+        aria-controls={panel === "filter" ? "tool-panel-filter" : undefined}
         aria-expanded={panel === "filter"}
         aria-haspopup="dialog"
         data-active={activeFilterCount > 0 || undefined}
+        data-tool-trigger="filter"
         onClick={() => onToggle("filter")}
         title="Filter this view"
         type="button"
@@ -156,10 +157,11 @@ export function ViewToolButtons({
         {activeFilterCount > 0 ? <em aria-label={`${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`}>{activeFilterCount}</em> : null}
       </button>
       <button
-        aria-controls="tool-panel-sort"
+        aria-controls={panel === "sort" ? "tool-panel-sort" : undefined}
         aria-expanded={panel === "sort"}
         aria-haspopup="dialog"
         data-active={sort !== "manual" || undefined}
+        data-tool-trigger="sort"
         onClick={() => onToggle("sort")}
         title="Sort this view"
         type="button"
@@ -172,9 +174,10 @@ export function ViewToolButtons({
           saved views the label carries the count — the home the save
           toast promises has to look like one. */}
       <button
-        aria-controls="tool-panel-view"
+        aria-controls={panel === "view" ? "tool-panel-view" : undefined}
         aria-expanded={panel === "view"}
         aria-haspopup="dialog"
+        data-tool-trigger="view"
         onClick={() => onToggle("view")}
         title="Layout, cards, and saved views"
         type="button"
@@ -289,9 +292,12 @@ function ToolPanelShell({
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
       if (node?.contains(target)) return;
-      // The triggers toggle their own panel — closing here too would
-      // reopen it on the same click.
-      if (target.closest?.('[aria-haspopup="dialog"]')) return;
+      // The three tool triggers toggle their own panel — closing here too
+      // would reopen it on the same click. Scoped to THESE triggers only:
+      // a blanket aria-haspopup exclusion let unrelated popover triggers
+      // (the nav drawer's, notably) open their surface OVER a still-open
+      // panel.
+      if (target.closest?.("[data-tool-trigger]")) return;
       onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
@@ -300,7 +306,7 @@ function ToolPanelShell({
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
       document
-        .querySelector<HTMLElement>(`[aria-controls="tool-panel-${panel}"]`)
+        .querySelector<HTMLElement>(`[data-tool-trigger="${panel}"]`)
         ?.focus();
     };
   }, [panel]);
@@ -563,9 +569,11 @@ export function ViewToolPanels({
           >
             <label>
               <span>Name</span>
+              {/* No autoFocus: it won the race against the shell's own
+                  focus, landing screen readers mid-panel at a tertiary
+                  field instead of the dialog top. */}
               <input
                 aria-label="Saved view name"
-                autoFocus
                 className={styles.savedViewNameInput}
                 maxLength={40}
                 onChange={(event) => setSaveName(event.target.value)}

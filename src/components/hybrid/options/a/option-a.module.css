@@ -121,6 +121,14 @@
    I" is carried three ways and never by colour alone. */
 .tabsScroll { flex: 0 0 auto; }
 .tabsScroll nav { gap: 1px; }
+/* With the projects rail hidden, the nav trigger hangs in a widened
+   leading gutter (option-b positions it absolutely at ≥768px), so the
+   project title keeps the ONE content grid line at tablet widths —
+   the in-flow trigger used to push the title ~38px off the line the
+   tabs and lanes sit on. 58 = 16 gutter + 30 trigger + 12 gap. */
+@media (min-width: 768px) {
+  .optionA[data-nav-hidden] { --x-board-gutter: 58px; }
+}
 /* :is(a, button): the hybrid mount passes canonical hrefs so these render
    as anchors, but the spec must hold for the lab's button branch too —
    these rules silently stopped applying once, and the tabs shipped 34px
@@ -141,6 +149,15 @@
   font-weight: 600;
 }
 .tabsScroll nav :is(a, button)[aria-current="page"] svg { color: var(--x-accent-ink); }
+/* The 28px pin above outranks shared.module.css's generic 44px touch
+   bump, so the floor is restated here at the same specificity — after
+   the pin, so it wins where both apply. */
+@media (max-width: 767px) {
+  .tabsScroll nav :is(a, button) { min-height: 44px; }
+}
+@media (pointer: coarse) {
+  .tabsScroll nav :is(a, button) { min-height: 44px; }
+}
 
 /* The working controls are ghosts: no boxes at rest, presence on touch. */
 .functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
@@ -157,7 +174,9 @@
   font-size: 12px;
   font-weight: 500;
   gap: 6px;
-  height: 30px;
+  /* 28px — one control height inside the 41px bar: the tools used to sit
+     at 30px beside the tabs' designed 28px, a 2px seam on one row. */
+  height: 28px;
   padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
   white-space: nowrap;

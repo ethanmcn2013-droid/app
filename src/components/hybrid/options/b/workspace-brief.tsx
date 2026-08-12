@@ -146,6 +146,32 @@ function EditableText({
   );
 }
 
+/**
+ * The season fact. A hover tooltip was the only carrier of "days of
+ * WHAT" — mute for every touch and keyboard user. Tapping the fact
+ * swaps the clause for its referent ("Your planning period ends 29 Sep ·
+ * 86 days left") and back; the title tooltip stays as a bonus for
+ * pointer users, never the sole carrier.
+ */
+function PeriodFact({ label, detail }: { label: string; detail: string }) {
+  const [showDetail, setShowDetail] = useState(false);
+  useEffect(() => {
+    if (!showDetail) return;
+    const timer = window.setTimeout(() => setShowDetail(false), 8000);
+    return () => window.clearTimeout(timer);
+  }, [showDetail]);
+  return (
+    <button
+      className={styles.briefPeriod}
+      onClick={() => setShowDetail((value) => !value)}
+      title={showDetail ? undefined : detail}
+      type="button"
+    >
+      {showDetail ? detail : label}
+    </button>
+  );
+}
+
 export function WorkspaceBrief({
   tasks,
   actions,
@@ -186,7 +212,13 @@ export function WorkspaceBrief({
     const settle = (state: "saved" | "error") => {
       if (settleTimer !== undefined) window.clearTimeout(settleTimer);
       setSyncState(state);
-      settleTimer = window.setTimeout(() => setSyncState("idle"), state === "error" ? 3600 : 1400);
+      // "Saved" whispers and fades; "Not saved" HOLDS until the next
+      // attempt — a failure notice that evaporates after seconds leaves
+      // the band showing text the server never accepted, marked by
+      // nothing.
+      if (state === "saved") {
+        settleTimer = window.setTimeout(() => setSyncState("idle"), 1400);
+      }
     };
     const handleSync = (event: Event) => {
       const { id, phase } = (event as CustomEvent<TaskSyncEventDetail>).detail;
@@ -235,7 +267,7 @@ export function WorkspaceBrief({
     });
     return {
       label: `Day ${elapsed} of ${total}`,
-      detail: `Your planning period ends ${ends} — ${left} ${left === 1 ? "day" : "days"} left`,
+      detail: `Your planning period ends ${ends} · ${left} ${left === 1 ? "day" : "days"} left`,
     };
   })();
   const navHidden = useNavPanelHidden();
@@ -305,9 +337,7 @@ export function WorkspaceBrief({
             </button>
           ) : null}
           {periodProgress ? (
-            <span className={styles.briefPeriod} title={periodProgress.detail}>
-              {periodProgress.label}
-            </span>
+            <PeriodFact detail={periodProgress.detail} label={periodProgress.label} />
           ) : null}
         </p>
       </section>
