@@ -4,6 +4,21 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·143 · tightens · the Planning count says what it counts
+
+**The number beside Planning now names what it is. It reads "5 undated"
+instead of a bare 5, at every screen size.**
+
+The header holds three words about time: Planning, Schedule and Calendar.
+Two of them are views of work that already has a date. Planning is where
+you go to give work a date, see the milestones you have marked, and check
+how far through the season you are. A bare figure next to the first of
+those three told you nothing about which was which.
+
+Planning keeps its name, because that is what the drawer is. What changed
+is that its count carries its noun, so the control announces itself as a
+different kind of thing from the four view tabs, none of which ever show
+a number.
 ## 2026-08-12 · T·142 · corrects · the closing review's findings, closed
 
 **A five-seat closing review read the shipped product against its own claims,
