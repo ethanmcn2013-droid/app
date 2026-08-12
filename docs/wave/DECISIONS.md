@@ -299,3 +299,40 @@ understates R1: there are **three** colliding Project id spaces, not one.
 
 **Decision.** `ANALYTICS_TRUTH.md` supersedes the research report's gap list. Phase 0 of
 Analytics is scoped from the audit, not from the report alone.
+
+---
+
+## D-017 · The sole-owned pairing is accepted as a forced pairing, not an inference
+
+WP1's exact Timeline resolver refuses to guess in every branch but one. The lane
+correctly escalated it rather than deciding alone.
+
+**The branch** (`src/modules/timeline/lib/adopt-timeline.ts:158-166`): adopt an unclaimed
+Timeline only when **all three** hold — exactly one owned Timeline claims nothing, the
+actor owns exactly **one** Tasks Project (`LIMIT 2` uniqueness proof), and the Project
+requested **is** that Project.
+
+**Decision: accept.** This cannot produce a wrong-Project answer, which is the entire
+point of the P0:
+
+- The failure mode being prevented is "requesting B returns A's Timeline." In this
+  branch **there is no A** — the actor owns exactly one Project, and it is the one
+  requested. There is no second pairing the evidence could support.
+- Timelines bound to another Project are excluded from `unproven` before this branch is
+  reached (`:151-154`), so a sibling Project's Timeline can never be adopted here.
+- Provisioning is owner-only, so an unclaimed Timeline cannot belong to a Project the
+  actor merely has membership of.
+
+It is materially different from the defect it replaces: `open first existing Timeline`
+required no uniqueness on either side. This requires uniqueness on **both**.
+
+**The alternative is worse.** Removing this branch buys no safety — it cannot be wrong —
+and costs real users: a single-Project couple who created a Timeline in-app would hit a
+dead end until WP4 ships the reconciliation UI. That is exactly the production incident
+these paths were built to fix. Rejected.
+
+**Carried forward:** `owner-reconciliation-required` is returned, typed and tested, but
+has no UI — it currently renders the existing "not available" state. That is a *refusal*
+rather than a wrong answer, so it is safe to ship, but it is a dead end for owners with
+two Projects and an unclaimed Timeline. Connect-existing / Start-new is WP4/WP5 and is
+recorded as an open item, not silently deferred.

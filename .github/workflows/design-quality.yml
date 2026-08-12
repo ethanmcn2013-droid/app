@@ -1,8 +1,14 @@
 name: Design quality
 
+# `registry-and-drift` is a REQUIRED status check on main. A required check that
+# is path-filtered never reports on a PR outside those paths, and GitHub blocks
+# the merge waiting for a job that will never run — a docs-only PR was therefore
+# unmergeable. `docs/**` is listed so the check always reports; on a docs change
+# it passes trivially, which is the point.
 on:
   pull_request:
     paths:
+      - "docs/**"
       - "src/app/**"
       - "src/components/**"
       - "src/ds/**"
@@ -25,6 +31,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "docs/**"
       - "src/app/**"
       - "src/components/**"
       - "src/ds/**"
