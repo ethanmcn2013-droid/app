@@ -192,6 +192,78 @@ that change is lead-owned and needs its own regression check.
 
 **Owner.** Lead, Wave 2, before any Wave 3 deploy. Blocks Gate 3.
 
+### Status 2026-08-12 21:5x — closed IN PART
+
+Guard built and independently re-verified by the lead: `/lab/home-operating-layer` → **404**
+with `robots: noindex, nofollow, nocache`; all six existing labs → **200**, no regression.
+Contract at `contracts/LAB_ISOLATION.md`. Tests: 19 + 16 + 11 pass, scoped `tsc` and `eslint`
+both exit 0.
+
+Three corrections to what this entry originally claimed:
+
+1. **Five of the six existing labs carry `noindex`, not six.** `src/app/lab/welcome-b/page.tsx`
+   has no `robots` metadata and, being a `"use client"` page, cannot export any. Pinned by a
+   characterisation test. Outside this programme's write boundary; not fixed.
+2. **Adding `/lab/:path*` to the matcher alone would have broken things.** Traced through
+   `productionProxy`, a signed-out request hits
+   `if (!isPublicRoute(req)) await auth.protect(...)` — so the matcher entry alone would 307
+   every signed-out visitor on every `/lab` route to `/sign-in`, breaking the six existing labs
+   *and* making the protected route answer a redirect, which confirms it exists. The matcher
+   entry is therefore paired with `/lab` + `/lab/(.*)` in `isPublicRoute`, so Clerk **populates**
+   a session there without **enforcing** one.
+3. **The flag convention mattered.** `src/lib/planning/flags.ts` defaults to
+   `NODE_ENV !== "production"` — on by default in dev and test, which would have served the lab
+   on any non-production build. The analytics convention was chosen instead: only literal
+   `true`/`1` opens `HOME_REVIEW_LAB_ENABLED`; unset and unparseable both fail closed.
+
+**Still open:** the real Clerk path has never been exercised. The local server runs `review`
+mode, which bypasses Clerk, so the observed 404 comes from the flag-off branch, not an identity
+check. No one has watched a genuinely signed-in non-reviewer receive a 404 from a real session.
+
+---
+
+## R-H16 · P0 · A layout-only guard does not prevent the page from rendering
+
+**Evidence.** Measured, not inferred. With the lab guarded *only* from its `layout.tsx` calling
+`notFound()`, the response was a correct **404** whose **25,717-byte body carried the complete
+RSC flight payload of the page** — every heading and paragraph verbatim. Requiring every page to
+await the guard itself fixed it: still 404, page copy absent, 24,939 bytes. Independently
+re-verified by the lead.
+
+**Why it matters well beyond the lab.** In Next 16 the layout and page render in parallel, so a
+guard that throws in the layout does not stop the page component executing — and therefore does
+not stop its server-side data fetching. `src/app/app/layout.tsx` guards the entire authenticated
+app this way.
+
+**Live consequence.** `task_1bf52417` is fixing the narrow-gate bug on `/app/home`,
+`/app/home/briefing`, `/app/notes` and `/app/timeline`. This programme initially advised that
+session to **delete** the page-level gates and rely on the layout. That advice has been
+corrected in writing: keep a page-level gate and make it the *correct* one
+(`requireAppAccessTasks`), rather than remove it.
+
+**Honest limit.** The measurement was `notFound()`, not `redirect()`. The mechanism is the same
+— both are thrown control-flow signals during render — but the redirect case has **not** been
+measured here and is not asserted as fact.
+
+**Owner.** Lead. Every Home route in Wave 4 asserts its own guard; no route relies on an
+ancestor layout for access control. Whether the wider `/app/**` tree needs the same treatment is
+a question for a separate sweep.
+
+---
+
+## R-H17 · P1 · A Vercel preview cannot show the protected lab as configured
+
+**Evidence.** `src/lib/access-mode.ts:17-22`: a Vercel **preview** deployment falls back to
+`review` mode, which binds a synthetic demo user and never queries the real database. The lab
+guard requires a real Clerk identity plus a reviewer allowlist.
+
+**Consequence for the founder pause.** The protected preview Ethan uses to select a direction
+must either run with `SIGNAL_ACCESS_MODE=production` and real Clerk keys, or sit behind Vercel
+deployment protection with the flag on. Neither is the default. This has to be settled in Wave 2,
+not discovered at Wave 3 when the preview is due.
+
+**Owner.** Lead, Wave 2.
+
 ---
 
 ## R-H11 · P0 · Home cannot mutate outside the active-workspace cookie

@@ -173,6 +173,21 @@ const isPublicRoute = createRouteMatcher([
   "/robots.txt",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // /lab is in the matcher below so Clerk POPULATES a session there, and
+  // public here so Clerk does not ENFORCE one. Those are different jobs and
+  // the design lab needs exactly the first (R-H10).
+  //
+  // Two consequences, both intended:
+  //   · the six pre-existing lab mockups stay anonymously reachable, exactly
+  //     as they were before /lab entered the matcher;
+  //   · a signed-out visitor to /lab/home-operating-layer is NOT 307'd to
+  //     /sign-in. A sign-in redirect confirms a route exists; that route
+  //     family must not confirm it. Its layout guard answers 404 instead.
+  //
+  // The access decision for the protected lab is not here. It is
+  // src/lib/home-layer/lab/guard.ts, which fails closed to notFound().
+  "/lab",
+  "/lab/(.*)",
 ]);
 
 const clerkConfigured = Boolean(
@@ -294,5 +309,11 @@ export const config = {
     "/redeem/:path*",
     "/invite/:path*",
     "/settings/:path*",
+    // Design lab. Included ONLY so Clerk runs and a server component under
+    // /lab can read a real session — without this line `currentUser()` there
+    // has nothing to read and no guard can be written (R-H10). /lab is listed
+    // in `isPublicRoute` above, so `auth.protect()` never fires for it and
+    // the six existing lab routes keep serving anonymously.
+    "/lab/:path*",
   ],
 };
