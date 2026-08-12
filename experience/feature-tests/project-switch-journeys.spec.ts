@@ -74,6 +74,19 @@ async function committedProjectIds(page: Page): Promise<string[]> {
   });
 }
 
+/**
+ * The chrome builds its contextual links on the client, so a freshly navigated
+ * page carries no Project in its hrefs for a beat. Reading `committedProjectIds`
+ * before that lands returns an empty list, which would let a "no other Project
+ * is named here" assertion pass because nothing had been named yet. Wait for
+ * the commit first, always.
+ */
+async function waitForProjectCommit(page: Page): Promise<void> {
+  await expect(page.locator('a[href*="workspaceId="]').first()).toBeAttached({
+    timeout: 15_000,
+  });
+}
+
 async function horizontalOverflow(page: Page): Promise<number> {
   return page.evaluate(
     () =>
@@ -94,6 +107,7 @@ async function expectCommittedTo(
   await expect(page).toHaveURL(
     new RegExp(`workspaceId=${escapeRegExp(project.id)}(&|$)`),
   );
+  await waitForProjectCommit(page);
   // The chrome must not point anywhere else. This is the assertion that fails
   // today: the shell still emits the ambient cookie's Project.
   expect(await committedProjectIds(page)).toEqual([project.id]);
@@ -114,15 +128,15 @@ test.describe("Active Project · frame invariants", () => {
   test("the Tasks frame commits to exactly one Project", async ({ page }) => {
     await page.goto("/app/tasks");
     await expect(page.locator("main")).toBeVisible();
-
-    const committed = await committedProjectIds(page);
     // The chrome has to name a Project at all — a frame that carries none has
-    // no Project truth to be right or wrong about.
-    expect(committed.length).toBeGreaterThanOrEqual(1);
-    // And exactly one. Two different workspaceId values in one frame is the
+    // no Project truth to be right or wrong about, and every assertion below
+    // about "no other Project appears here" would pass for the wrong reason.
+    await waitForProjectCommit(page);
+
+    // Exactly one. Two different workspaceId values in one frame is the
     // mixed-project frame plan §13.4 #13 forbids, and the defect class this
     // whole wave exists to close.
-    expect(committed).toHaveLength(1);
+    expect(await committedProjectIds(page)).toHaveLength(1);
   });
 
   test("the Tasks frame does not overflow horizontally", async ({ page }) => {
@@ -223,11 +237,25 @@ test.describe("Active Project · A/B journeys", () => {
     // is precisely what this asserts against.
     test.fail();
 
+    // Measure the ambient Project this session would fall back to, in this
+    // same run. Without it the assertion below could pass merely because the
+    // chrome had not committed to anything yet — which is exactly how this
+    // test first passed when it was supposed to fail.
+    await page.goto("/app/tasks");
+    await waitForProjectCommit(page);
+    const ambient = await committedProjectIds(page);
+    expect(ambient).toHaveLength(1);
+
     await page.goto(tasksUrl(PROJECT_TRUTH_INACCESSIBLE_ID));
-    const committed = await committedProjectIds(page);
-    expect(
-      committed.filter((id) => id !== PROJECT_TRUTH_INACCESSIBLE_ID),
-    ).toEqual([]);
+    await expect(page.locator("main")).toBeVisible();
+    // A neutral unavailable state may legitimately name no Project at all.
+    // What it may never do is name a different one.
+    await page
+      .locator('a[href*="workspaceId="]')
+      .first()
+      .waitFor({ state: "attached", timeout: RED_BUDGET })
+      .catch(() => {});
+    expect(await committedProjectIds(page)).not.toContain(ambient[0]);
     // Nothing from an accessible Project may paint under an unavailable one.
     await expect(
       page.getByText(projectTruthContentFor(PROJECT_TRUTH_A.id).distinctWord),
