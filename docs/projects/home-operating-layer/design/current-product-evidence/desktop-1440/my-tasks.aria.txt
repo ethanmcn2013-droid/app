@@ -1,0 +1,130 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects": Search Ctrl K
+  - button "Add task C"
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Tasks Tasks · current":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Timeline Open Timeline":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- navigation "Tasks navigation":
+  - button "Projects" [expanded]
+  - button "Collapse Tasks navigation"
+  - navigation "Shortcuts":
+    - link "Home":
+      - /url: /app/home
+    - link "Inbox 8 open":
+      - /url: /app/inbox
+      - text: Inbox 8
+    - link "My work":
+      - /url: /app/my-tasks
+  - navigation "Project folders":
+    - heading "Project folders" [level=2]
+    - list:
+      - listitem:
+        - button "The Orchard, events 13 tasks"
+        - button "Project options for The Orchard, events"
+      - listitem:
+        - button "Add project"
+  - separator "Resize Projects sidebar"
+- main:
+  - heading "My work" [level=1]
+  - button "More actions":
+    - img
+  - paragraph: thursday 16 july
+  - heading "Good morning, Orla." [level=2]
+  - heading "Today" [level=3]
+  - text: "2"
+  - list:
+    - listitem:
+      - button "Mark \"Order tonic + the good olives\" done":
+        - img
+      - text: Order tonic + the good olives In progress · 14 Jul · bar
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Build the Saturday run-sheet\" done":
+        - img
+      - text: Build the Saturday run-sheet In progress · Today · mara-finn
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+  - heading "Waiting on you" [level=3]
+  - text: "2"
+  - list:
+    - listitem:
+      - button "Mark \"Approve the final seating plan\" done":
+        - img
+      - text: Approve the final seating plan Review · mara-finn
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Sign off the recommended-suppliers list\" done":
+        - img
+      - text: Sign off the recommended-suppliers list Review · venue
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+  - heading "Done this week" [level=3]
+  - text: "5"
+  - list:
+    - listitem:
+      - button "Mark \"Open day, nine couples through\" not done" [pressed]:
+        - img
+      - text: Open day, nine couples through · venue
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Deposit invoice settled, Mara & Finn\" not done" [pressed]:
+        - img
+      - text: Deposit invoice settled, Mara & Finn · mara-finn
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Clear Sunday 11am late checkout with housekeeping\" not done" [pressed]:
+        - img
+      - text: Clear Sunday 11am late checkout with housekeeping · mara-finn
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Chase linen order, now shipping Tuesday\" not done" [pressed]:
+        - img
+      - text: Chase linen order, now shipping Tuesday · venue
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+    - listitem:
+      - button "Mark \"Send registrar paperwork two weeks before the date\" not done" [pressed]:
+        - img
+      - text: Send registrar paperwork two weeks before the date · mara-finn
+      - 'group "Assignees: 1"':
+        - img "Orla": OR
+  - heading "What’s stuck" [level=3]
+  - text: "1"
+  - list:
+    - listitem:
+      - button "Order tonic + the good olives Slipped by 2 days. Today works.":
+        - text: Order tonic + the good olives
+        - paragraph: Slipped by 2 days. Today works.
+      - button "Dismiss":
+        - img
+- status
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

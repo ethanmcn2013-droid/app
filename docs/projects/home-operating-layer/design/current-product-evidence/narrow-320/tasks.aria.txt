@@ -1,0 +1,208 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects"
+  - button "Add task (C)"
+  - group: DO
+- navigation "Signal Studio products and Tasks views":
+  - list:
+    - listitem:
+      - link "Home":
+        - /url: /app/home?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - listitem:
+      - link "Notes":
+        - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - listitem:
+      - link "Tasks":
+        - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - listitem:
+      - link "Timeline":
+        - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - listitem:
+      - button "Board"
+- main:
+  - button "Open Tasks navigation"
+  - heading "The Orchard, events" [level=1]
+  - region "Project progress":
+    - status
+    - paragraph:
+      - strong: 5 of 13 complete
+      - button "1 overdue"
+      - button "Day 11 of 97"
+  - button "Planning · 5 tasks have no date"
+  - button "More actions":
+    - img
+  - navigation "Project views":
+    - link "Board":
+      - /url: /app/tasks
+    - link "List":
+      - /url: /app/tasks/list
+    - link "Schedule":
+      - /url: /app/tasks/timeline
+    - link "Calendar":
+      - /url: /app/tasks/calendar
+  - group "View controls":
+    - button "Filter"
+    - button "Sort"
+    - button "Display"
+  - region "board view":
+    - region "Board lanes":
+      - navigation "Go to board lane":
+        - button "To do 3":
+          - text: To do
+          - strong: "3"
+        - button "In progress 3":
+          - text: In progress
+          - strong: "3"
+        - button "Review 2":
+          - text: Review
+          - strong: "2"
+        - button "Waiting 0":
+          - text: Waiting
+          - strong: "0"
+        - button "Done 5":
+          - text: Done
+          - strong: "5"
+      - region "Rename To do":
+        - heading "Rename To do" [level=2]:
+          - button "Rename To do": To do
+        - text: 3 3 tasks in To do
+        - button "To do status options"
+        - button "Add a task to To do"
+        - button "Agreed and ready to start."
+        - separator "Resize To do column"
+        - list "To do tasks":
+          - listitem:
+            - article "Confirm marquee sides with the hire company, To do":
+              - checkbox "Mark this task done"
+              - button "Confirm marquee sides with the hire company"
+              - button "Task actions"
+              - text: Mara & Finn High
+          - listitem:
+            - article "Reprint the faded welcome sign before the open day, To do":
+              - checkbox "Mark this task done"
+              - button "Reprint the faded welcome sign before the open day"
+              - button "Task actions"
+              - text: Venue
+          - listitem:
+            - article "Send midweek rate to the June 2027 walk-in couple, To do":
+              - checkbox "Mark this task done"
+              - button "Send midweek rate to the June 2027 walk-in couple"
+              - button "Task actions"
+              - text: Enquiry
+          - listitem:
+            - button "Add task"
+      - region "Rename In progress":
+        - heading "Rename In progress" [level=2]:
+          - button "Rename In progress": In progress
+        - text: 3 3 tasks in In progress
+        - button "In progress status options"
+        - button "Add a task to In progress"
+        - button "In motion right now."
+        - separator "Resize In progress column"
+        - list "In progress tasks":
+          - listitem:
+            - article "Menu tasting at The Orchard, In progress":
+              - checkbox "Mark this task done"
+              - button "Menu tasting at The Orchard"
+              - button "Task actions"
+              - text: Mara & Finn High Milestone due 1 Aug
+          - listitem:
+            - article "Build the Saturday run-sheet, In progress":
+              - checkbox "Mark this task done"
+              - button "Build the Saturday run-sheet"
+              - button "Task actions"
+              - text: Mara & Finn High Due today 2
+          - listitem:
+            - article "Order tonic + the good olives, In progress":
+              - checkbox "Mark this task done"
+              - button "Order tonic + the good olives"
+              - button "Task actions"
+              - text: Bar Overdue by 2 days
+          - listitem:
+            - button "Add task"
+      - region "Rename Review":
+        - heading "Rename Review" [level=2]:
+          - button "Rename Review": Review
+        - text: 2 2 tasks in Review
+        - button "Review status options"
+        - button "Add a task to Review"
+        - button "Being checked before it goes out."
+        - separator "Resize Review column"
+        - list "Review tasks":
+          - listitem:
+            - article "Approve the final seating plan, Review":
+              - checkbox "Mark this task done"
+              - button "Approve the final seating plan"
+              - button "Task actions"
+              - text: Mara & Finn High 1
+          - listitem:
+            - article "Sign off the recommended-suppliers list, Review":
+              - checkbox "Mark this task done"
+              - button "Sign off the recommended-suppliers list"
+              - button "Task actions"
+              - text: Venue
+          - listitem:
+            - button "Add task"
+      - region "Rename Waiting":
+        - heading "Rename Waiting" [level=2]:
+          - button "Rename Waiting": Waiting
+        - text: 0 0 tasks in Waiting
+        - button "Waiting status options"
+        - button "Add a task to Waiting"
+        - button "Held by a reply, a delivery, or a decision."
+        - separator "Resize Waiting column"
+        - list "Waiting tasks":
+          - listitem: Nothing held up
+          - listitem:
+            - button "Add task"
+      - region "Rename Done":
+        - heading "Rename Done" [level=2]:
+          - button "Rename Done": Done
+        - text: 5 5 tasks in Done
+        - button "Done status options"
+        - button "Add a task to Done"
+        - button "Finished work stays visible."
+        - separator "Resize Done column"
+        - list "Done tasks":
+          - listitem:
+            - article "Open day, nine couples through, Done":
+              - checkbox "Reopen this task" [checked]
+              - button "Open day, nine couples through"
+              - button "Task actions"
+              - text: Venue
+          - listitem:
+            - article "Deposit invoice settled, Mara & Finn, Done":
+              - checkbox "Reopen this task" [checked]
+              - button "Deposit invoice settled, Mara & Finn"
+              - button "Task actions"
+              - text: Mara & Finn
+          - listitem:
+            - article "Clear Sunday 11am late checkout with housekeeping, Done":
+              - checkbox "Reopen this task" [checked]
+              - button "Clear Sunday 11am late checkout with housekeeping"
+              - button "Task actions"
+              - text: Mara & Finn
+          - listitem:
+            - article "Chase linen order, now shipping Tuesday, Done":
+              - checkbox "Reopen this task" [checked]
+              - button "Chase linen order, now shipping Tuesday"
+              - button "Task actions"
+              - text: Venue
+          - listitem:
+            - article "Send registrar paperwork two weeks before the date, Done":
+              - checkbox "Reopen this task" [checked]
+              - button "Send registrar paperwork two weeks before the date"
+              - button "Task actions"
+              - text: Mara & Finn
+          - listitem:
+            - button "Add task"
+  - text: Ready
+- status
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

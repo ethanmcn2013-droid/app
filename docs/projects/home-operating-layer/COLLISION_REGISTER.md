@@ -18,6 +18,21 @@ path or branch listed as FOREIGN until its owning lane has landed on `origin/mai
 | `_wt-wp2-platform` | `lane/wp2-project-platform` | `c598bd0` + 2 dirty | 2026-08-12 20:04 | **LIVE and uncommitted.** Actively authoring `src/lib/projects/`. |
 | `_wt-design-audit` | `agent/header-planning-noun` | `0f67dd9` | 2026-08-12 18:59 | Landed as #124 (= our base). Treat as recently active; do not reuse. |
 
+### 1b. Two further live sessions opened 2026-08-12 ~20:50
+
+Both were raised by this programme as out-of-scope defects and are now being fixed
+independently. Their paths become foreign-owned for the duration.
+
+| Session | Owns (do not write) | Why it collides |
+|---|---|---|
+| `task_73a84b31` — daily-digest cross-tenant fix | `src/server/db/daily-digest.ts`, `src/server/tenant-scope-rules.mjs`, `src/app/app/inbox/page.tsx`, `src/app/api/cron/digest/route.ts`, `src/server/cross-tenant-*.test.*` | `/app/inbox` is the legacy Inbox this programme migrates. Their fix must land first. |
+| `task_1bf52417` — Home `/waitlist` access-gate fix | **`src/app/app/home/page.tsx`**, `src/app/app/home/briefing/page.tsx`, `src/app/app/notes/page.tsx`, `src/app/app/timeline/page.tsx`, `src/server/require-app-access.ts`, `src/server/app-access.ts`, `src/app/app/layout.tsx` | **Highest-risk overlap in the programme.** `home/page.tsx` and the `/app` layout are exactly what Wave 4 restructures. |
+
+**Consequence for Wave 4.** The Home route family cannot be authored until
+`task_1bf52417` lands on `origin/main`. Wave 4 then builds on their corrected gate rather
+than reintroducing the narrow one. This is a sequencing constraint, not a blocker — Waves 1
+to 3 write contracts, fixtures and lab code only, none of which touch those files.
+
 All other `_wt-*` worktrees were last touched on or before 2026-08-06 and are treated as
 dormant history. They are still never reused as a base — this programme branches only
 from a proven `origin/main` SHA.

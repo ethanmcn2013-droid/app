@@ -1,0 +1,90 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects": Search Ctrl K
+  - button "Add task C"
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Tasks Tasks · current":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Timeline Open Timeline":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- navigation "Tasks navigation":
+  - button "Projects" [expanded]
+  - button "Collapse Tasks navigation"
+  - navigation "Shortcuts":
+    - link "Home":
+      - /url: /app/home
+    - link "Inbox 8 open":
+      - /url: /app/inbox
+      - text: Inbox 8
+    - link "My work":
+      - /url: /app/my-tasks
+  - navigation "Project folders":
+    - heading "Project folders" [level=2]
+    - list:
+      - listitem:
+        - button "The Orchard, events 13 tasks"
+        - button "Project options for The Orchard, events"
+      - listitem:
+        - button "Add project"
+  - separator "Resize Projects sidebar"
+- main:
+  - article:
+    - heading "The Orchard, events" [level=1]
+    - paragraph: Run Mara & Finn's wedding from one clear venue workspace, with every supplier, date, and decision accounted for.
+    - button "On track"
+    - button "3 Oct 2026"
+    - paragraph: Program Wedding season · 3 Oct 2026
+    - region "Task progress":
+      - text: Progress 40% 4 of 10 tasks
+      - progressbar "4 of 10 tasks complete"
+      - term: Overdue
+      - definition: "1"
+      - term: No date
+      - definition: "2"
+      - paragraph: Progress is computed from tasks. Status is what the owner declares.
+    - region "Team":
+      - text: Team
+      - list:
+        - listitem: Orla Owner orla@theorchard.example
+      - link "Invite a team member":
+        - /url: /app/settings
+    - region "Milestones":
+      - text: Milestones
+      - list:
+        - listitem:
+          - link "Menu tasting at The Orchard":
+            - /url: /app/tasks?task=demo-milestone-1
+          - text: 1 Aug 2026
+        - listitem:
+          - link "Wedding day":
+            - /url: /app/tasks?task=demo-milestone-2
+          - text: 3 Oct 2026
+    - region "Recent activity":
+      - text: Recent activity
+      - list:
+        - listitem:
+          - paragraph: A workspace invite was accepted.
+          - text: 2d ago
+- status
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

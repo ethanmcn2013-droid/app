@@ -99,8 +99,18 @@ try {
       await mkdir(dir, { recursive: true });
       const key = `${slug}@${vpName}`;
       try {
-        const res = await page.goto(BASE + route, { waitUntil: "networkidle", timeout: 30000 });
-        await page.waitForTimeout(600);
+        // domcontentloaded, then *try* for networkidle. The Tasks-runtime routes
+        // (/app/inbox, /app/my-tasks, /app/project, /app/tasks) never reach network
+        // idle — they hold an open connection — so waiting on it times them out.
+        // That is itself recorded, in reachedNetworkIdle.
+        const res = await page.goto(BASE + route, { waitUntil: "domcontentloaded", timeout: 30000 });
+        let reachedNetworkIdle = true;
+        try {
+          await page.waitForLoadState("networkidle", { timeout: 6000 });
+        } catch {
+          reachedNetworkIdle = false;
+        }
+        await page.waitForTimeout(1200);
         await page.screenshot({ path: path.join(dir, `${slug}.png`), fullPage: true });
         const aria = await page.locator("body").ariaSnapshot();
         await writeFile(path.join(dir, `${slug}.aria.txt`), aria, "utf8");
@@ -109,6 +119,7 @@ try {
           route, note, viewport: `${width}x${height}`,
           status: res?.status() ?? null,
           finalUrl: page.url().replace(BASE, ""),
+          reachedNetworkIdle,
           ...audit,
           consoleErrors: consoleErrors.splice(0),
         };

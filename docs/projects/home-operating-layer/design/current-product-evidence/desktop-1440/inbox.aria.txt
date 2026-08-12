@@ -1,0 +1,110 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects": Search Ctrl K
+  - button "Add task C"
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Tasks Tasks · current":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Timeline Open Timeline":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- navigation "Tasks navigation":
+  - button "Projects" [expanded]
+  - button "Collapse Tasks navigation"
+  - navigation "Shortcuts":
+    - link "Home":
+      - /url: /app/home
+    - link "Inbox 8 open":
+      - /url: /app/inbox
+      - text: Inbox 8
+    - link "My work":
+      - /url: /app/my-tasks
+  - navigation "Project folders":
+    - heading "Project folders" [level=2]
+    - list:
+      - listitem:
+        - button "The Orchard, events 13 tasks"
+        - button "Project options for The Orchard, events"
+      - listitem:
+        - button "Add project"
+  - separator "Resize Projects sidebar"
+- main:
+  - heading "Inbox" [level=1]
+  - button "More actions":
+    - img
+  - text: Morning, Orla. One task is due today.
+  - note:
+    - paragraph: Milestones appear here at 100, 250, 500 and 1000 completed tasks.
+    - button "Dismiss tip"
+  - text: What’s stuck
+  - heading "1 thing wants a nudge." [level=2]
+  - paragraph: Idle work, past-due dates, tasks that are free to move. Dismiss anything you don’t need.
+  - list:
+    - listitem:
+      - img
+      - button "Order tonic + the good olives Slipped by 2 days. Today works.":
+        - text: Order tonic + the good olives
+        - paragraph: Slipped by 2 days. Today works.
+      - button "Dismiss nudge":
+        - img
+  - text: Daily digest
+  - heading "Good morning, Orla." [level=2]
+  - button "Copy share-card link for this week": Share this week
+  - button "Copy this week as Slack-ready text": Copy as Slack
+  - paragraph: Your one summary for the day. We don’t send anything else unless someone tags you directly.
+  - text: Closed yesterday 5
+  - list:
+    - listitem:
+      - button "Orla Open day, nine couples through":
+        - img "Orla": OR
+        - text: Open day, nine couples through
+    - listitem:
+      - button "Orla Deposit invoice settled, Mara & Finn":
+        - img "Orla": OR
+        - text: Deposit invoice settled, Mara & Finn
+    - listitem:
+      - button "Orla Clear Sunday 11am late checkout with housekeeping":
+        - img "Orla": OR
+        - text: Clear Sunday 11am late checkout with housekeeping
+    - listitem:
+      - button "Orla Chase linen order, now shipping Tuesday":
+        - img "Orla": OR
+        - text: Chase linen order, now shipping Tuesday
+    - listitem:
+      - button "Orla Send registrar paperwork two weeks before the date":
+        - img "Orla": OR
+        - text: Send registrar paperwork two weeks before the date
+  - text: Due today 1
+  - list:
+    - listitem:
+      - button "Orla Build the Saturday run-sheet Today":
+        - img "Orla": OR
+        - text: Build the Saturday run-sheet Today
+  - text: Direct alerts
+  - heading "Inbox zero. Quiet here on purpose." [level=2]
+  - paragraph: We only insert here for direct @mentions and blocks. Lane moves, status flips, simple edits, none of it. Read once, move on.
+  - img
+  - text: Nothing for you right now.
+  - paragraph: That’s by design, we don’t ping you every time a card moves. Get back to work.
+- status
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

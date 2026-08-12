@@ -1,6 +1,6 @@
 {
   "base": "http://localhost:3212",
-  "capturedAt": "2026-08-12T19:34:02.935Z",
+  "capturedAt": "2026-08-12T20:11:40.632Z",
   "routes": {
     "home@desktop-1440": {
       "route": "/app/home",
@@ -8,6 +8,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/app/home",
+      "reachedNetworkIdle": true,
       "title": "Home · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -65,6 +66,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/app/home/briefing",
+      "reachedNetworkIdle": true,
       "title": "Briefing · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -131,12 +133,206 @@
     "inbox@desktop-1440": {
       "route": "/app/inbox",
       "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/inbox",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 2,
+          "text": "Project folders"
+        },
+        {
+          "level": 1,
+          "text": "Inbox"
+        },
+        {
+          "level": 2,
+          "text": "1 thing wants a nudge."
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 2,
+          "text": "Inbox zero. Quiet here on purpose."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Tasks navigation",
+          "links": 3
+        },
+        {
+          "name": "Shortcuts",
+          "links": 3
+        },
+        {
+          "name": "Project folders",
+          "links": 0
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 3,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Inbox8",
+          "href": "/app/inbox"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
     },
     "my-tasks@desktop-1440": {
       "route": "/app/my-tasks",
       "note": "Legacy My Tasks / My Week — Tasks-only execution view",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/my-tasks",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 2,
+          "text": "Project folders"
+        },
+        {
+          "level": 1,
+          "text": "My work"
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 3,
+          "text": "Today"
+        },
+        {
+          "level": 3,
+          "text": "Waiting on you"
+        },
+        {
+          "level": 3,
+          "text": "Done this week"
+        },
+        {
+          "level": 3,
+          "text": "What’s stuck"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Tasks navigation",
+          "links": 3
+        },
+        {
+          "name": "Shortcuts",
+          "links": 3
+        },
+        {
+          "name": "Project folders",
+          "links": 0
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 4,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "My work",
+          "href": "/app/my-tasks"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
     },
     "your-work@desktop-1440": {
       "route": "/app/your-work",
@@ -144,6 +340,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/app/your-work",
+      "reachedNetworkIdle": true,
       "title": "Your work · Tasks",
       "mainCount": 0,
       "h1Count": 0,
@@ -179,7 +376,81 @@
     "project@desktop-1440": {
       "route": "/app/project",
       "note": "Active-project overview — orphaned from shell nav",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/project",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 2,
+          "text": "Project folders"
+        },
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Tasks navigation",
+          "links": 3
+        },
+        {
+          "name": "Shortcuts",
+          "links": 3
+        },
+        {
+          "name": "Project folders",
+          "links": 0
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Task progress"
+        },
+        {
+          "tag": "section",
+          "name": "Team"
+        },
+        {
+          "tag": "section",
+          "name": "Milestones"
+        },
+        {
+          "tag": "section",
+          "name": "Recent activity"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
     },
     "notes@desktop-1440": {
       "route": "/app/notes",
@@ -187,6 +458,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/app/notes",
+      "reachedNetworkIdle": true,
       "title": "Notes · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -256,7 +528,139 @@
     "tasks@desktop-1440": {
       "route": "/app/tasks",
       "note": "Product: Tasks",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/tasks",
+      "reachedNetworkIdle": false,
+      "title": "Board · Tasks · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 2,
+          "text": "Project folders"
+        },
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        },
+        {
+          "level": 2,
+          "text": "To do"
+        },
+        {
+          "level": 2,
+          "text": "In progress"
+        },
+        {
+          "level": 2,
+          "text": "Review"
+        },
+        {
+          "level": 2,
+          "text": "Waiting"
+        },
+        {
+          "level": 2,
+          "text": "Done"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Tasks navigation",
+          "links": 3
+        },
+        {
+          "name": "Shortcuts",
+          "links": 3
+        },
+        {
+          "name": "Project folders",
+          "links": 0
+        },
+        {
+          "name": "Project views",
+          "links": 4
+        },
+        {
+          "name": "Go to board lane",
+          "links": 0
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": "Project progress"
+        },
+        {
+          "tag": "section",
+          "name": "board view"
+        },
+        {
+          "tag": "div",
+          "name": "Board lanes"
+        },
+        {
+          "tag": "section",
+          "name": "To do"
+        },
+        {
+          "tag": "section",
+          "name": "In progress"
+        },
+        {
+          "tag": "section",
+          "name": "Review"
+        },
+        {
+          "tag": "section",
+          "name": "Waiting"
+        },
+        {
+          "tag": "section",
+          "name": "Done"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "The Orchard, events13 tasks",
+          "href": null
+        },
+        {
+          "value": "page",
+          "text": "Board",
+          "href": "/app/tasks"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
     },
     "timeline@desktop-1440": {
       "route": "/app/timeline",
@@ -264,6 +668,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/app/timeline/mara-finn",
+      "reachedNetworkIdle": true,
       "title": "mara-finn · Timeline · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -340,6 +745,7 @@
       "viewport": "1440x960",
       "status": 200,
       "finalUrl": "/settings/profile",
+      "reachedNetworkIdle": true,
       "title": "Settings · Tasks",
       "mainCount": 1,
       "h1Count": 1,
@@ -385,6 +791,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/app/home",
+      "reachedNetworkIdle": true,
       "title": "Home · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -442,6 +849,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/app/home/briefing",
+      "reachedNetworkIdle": true,
       "title": "Briefing · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -508,12 +916,164 @@
     "inbox@mobile-390": {
       "route": "/app/inbox",
       "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/inbox",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Inbox"
+        },
+        {
+          "level": 2,
+          "text": "1 thing wants a nudge."
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 2,
+          "text": "Inbox zero. Quiet here on purpose."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 3,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
     },
     "my-tasks@mobile-390": {
       "route": "/app/my-tasks",
       "note": "Legacy My Tasks / My Week — Tasks-only execution view",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/my-tasks",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "My work"
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 3,
+          "text": "Today"
+        },
+        {
+          "level": 3,
+          "text": "Waiting on you"
+        },
+        {
+          "level": 3,
+          "text": "Done this week"
+        },
+        {
+          "level": 3,
+          "text": "What’s stuck"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 4,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
     },
     "your-work@mobile-390": {
       "route": "/app/your-work",
@@ -521,6 +1081,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/app/your-work",
+      "reachedNetworkIdle": true,
       "title": "Your work · Tasks",
       "mainCount": 0,
       "h1Count": 0,
@@ -556,7 +1117,65 @@
     "project@mobile-390": {
       "route": "/app/project",
       "note": "Active-project overview — orphaned from shell nav",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/project",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Task progress"
+        },
+        {
+          "tag": "section",
+          "name": "Team"
+        },
+        {
+          "tag": "section",
+          "name": "Milestones"
+        },
+        {
+          "tag": "section",
+          "name": "Recent activity"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
     },
     "notes@mobile-390": {
       "route": "/app/notes",
@@ -564,6 +1183,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/app/notes",
+      "reachedNetworkIdle": true,
       "title": "Notes · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -628,7 +1248,118 @@
     "tasks@mobile-390": {
       "route": "/app/tasks",
       "note": "Product: Tasks",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/tasks",
+      "reachedNetworkIdle": false,
+      "title": "Board · Tasks · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        },
+        {
+          "level": 2,
+          "text": "To do"
+        },
+        {
+          "level": 2,
+          "text": "In progress"
+        },
+        {
+          "level": 2,
+          "text": "Review"
+        },
+        {
+          "level": 2,
+          "text": "Waiting"
+        },
+        {
+          "level": 2,
+          "text": "Done"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Project views",
+          "links": 4
+        },
+        {
+          "name": "Go to board lane",
+          "links": 0
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": "Project progress"
+        },
+        {
+          "tag": "section",
+          "name": "board view"
+        },
+        {
+          "tag": "div",
+          "name": "Board lanes"
+        },
+        {
+          "tag": "section",
+          "name": "To do"
+        },
+        {
+          "tag": "section",
+          "name": "In progress"
+        },
+        {
+          "tag": "section",
+          "name": "Review"
+        },
+        {
+          "tag": "section",
+          "name": "Waiting"
+        },
+        {
+          "tag": "section",
+          "name": "Done"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Board",
+          "href": "/app/tasks"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
     },
     "timeline@mobile-390": {
       "route": "/app/timeline",
@@ -636,6 +1367,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/app/timeline/mara-finn",
+      "reachedNetworkIdle": true,
       "title": "mara-finn · Timeline · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -712,6 +1444,7 @@
       "viewport": "390x844",
       "status": 200,
       "finalUrl": "/settings/profile",
+      "reachedNetworkIdle": true,
       "title": "Settings · Tasks",
       "mainCount": 1,
       "h1Count": 1,
@@ -757,6 +1490,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/app/home",
+      "reachedNetworkIdle": true,
       "title": "Home · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -814,6 +1548,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/app/home/briefing",
+      "reachedNetworkIdle": true,
       "title": "Briefing · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -880,12 +1615,164 @@
     "inbox@narrow-320": {
       "route": "/app/inbox",
       "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/inbox",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Inbox"
+        },
+        {
+          "level": 2,
+          "text": "1 thing wants a nudge."
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 2,
+          "text": "Inbox zero. Quiet here on purpose."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 3,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
     },
     "my-tasks@narrow-320": {
       "route": "/app/my-tasks",
       "note": "Legacy My Tasks / My Week — Tasks-only execution view",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/my-tasks",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "My work"
+        },
+        {
+          "level": 2,
+          "text": "Good morning, Orla."
+        },
+        {
+          "level": 3,
+          "text": "Today"
+        },
+        {
+          "level": 3,
+          "text": "Waiting on you"
+        },
+        {
+          "level": 3,
+          "text": "Done this week"
+        },
+        {
+          "level": 3,
+          "text": "What’s stuck"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 4,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
     },
     "your-work@narrow-320": {
       "route": "/app/your-work",
@@ -893,6 +1780,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/app/your-work",
+      "reachedNetworkIdle": true,
       "title": "Your work · Tasks",
       "mainCount": 0,
       "h1Count": 0,
@@ -928,7 +1816,65 @@
     "project@narrow-320": {
       "route": "/app/project",
       "note": "Active-project overview — orphaned from shell nav",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/project",
+      "reachedNetworkIdle": false,
+      "title": "Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Task progress"
+        },
+        {
+          "tag": "section",
+          "name": "Team"
+        },
+        {
+          "tag": "section",
+          "name": "Milestones"
+        },
+        {
+          "tag": "section",
+          "name": "Recent activity"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
     },
     "notes@narrow-320": {
       "route": "/app/notes",
@@ -936,6 +1882,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/app/notes",
+      "reachedNetworkIdle": true,
       "title": "Notes · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -1000,7 +1947,118 @@
     "tasks@narrow-320": {
       "route": "/app/tasks",
       "note": "Product: Tasks",
-      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/tasks",
+      "reachedNetworkIdle": false,
+      "title": "Board · Tasks · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "The Orchard, events"
+        },
+        {
+          "level": 2,
+          "text": "To do"
+        },
+        {
+          "level": 2,
+          "text": "In progress"
+        },
+        {
+          "level": 2,
+          "text": "Review"
+        },
+        {
+          "level": 2,
+          "text": "Waiting"
+        },
+        {
+          "level": 2,
+          "text": "Done"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products and Tasks views",
+          "links": 4
+        },
+        {
+          "name": "Project views",
+          "links": 4
+        },
+        {
+          "name": "Go to board lane",
+          "links": 0
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        },
+        {
+          "tag": "section",
+          "name": "Project progress"
+        },
+        {
+          "tag": "section",
+          "name": "board view"
+        },
+        {
+          "tag": "div",
+          "name": "Board lanes"
+        },
+        {
+          "tag": "section",
+          "name": "To do"
+        },
+        {
+          "tag": "section",
+          "name": "In progress"
+        },
+        {
+          "tag": "section",
+          "name": "Review"
+        },
+        {
+          "tag": "section",
+          "name": "Waiting"
+        },
+        {
+          "tag": "section",
+          "name": "Done"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Board",
+          "href": "/app/tasks"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
     },
     "timeline@narrow-320": {
       "route": "/app/timeline",
@@ -1008,6 +2066,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/app/timeline/mara-finn",
+      "reachedNetworkIdle": true,
       "title": "mara-finn · Timeline · Signal Studio",
       "mainCount": 1,
       "h1Count": 1,
@@ -1084,6 +2143,7 @@
       "viewport": "320x568",
       "status": 200,
       "finalUrl": "/settings/profile",
+      "reachedNetworkIdle": true,
       "title": "Settings · Tasks",
       "mainCount": 1,
       "h1Count": 1,
