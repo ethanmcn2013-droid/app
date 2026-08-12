@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "signal-home-lab-capture/1",
+  "$comment": "The Home operating-layer evidence harness contract. Sibling of experience/browser-contract.json, NOT a replacement: that file governs the Tasks critical-experience suite and is owned elsewhere. Every viewport, variant, browser and plan the Home lab is captured under is declared here, so no size, theme or motion preference is hardcoded in a config, a spec or a script. Changing a number here changes the evidence, and that is the point: it shows up as a diff.",
+
+  "determinism": {
+    "locale": "en-GB",
+    "timezoneId": "Europe/London",
+    "deviceScaleFactor": 1,
+    "freezeClock": true,
+    "clockSource": "the scenario's own asOfIso, read from src/lib/home-layer/fixtures (scenario.asOfIso). NEVER a literal in this file — dst_boundary deliberately runs at a different instant from the other twelve, so one shared constant would be a lie for that world.",
+    "screenshot": {
+      "fullPage": true,
+      "animations": "disabled",
+      "caret": "hide",
+      "scale": "css"
+    },
+    "maskSelectors": ["[data-capture-mask]"],
+    "$maskComment": "Nothing is masked by default. A mask hides a difference, so every selector added here needs a reason recorded beside it in the lead's report — a masked region cannot fail a review it was hidden from."
+  },
+
+  "viewports": [
+    { "name": "wide", "width": 1440, "height": 960, "tier": "required", "registryBreakpoint": "wide" },
+    { "name": "desktop", "width": 1280, "height": 900, "tier": "required", "registryBreakpoint": "desktop" },
+    { "name": "tablet", "width": 768, "height": 1024, "tier": "required", "registryBreakpoint": "tablet" },
+    { "name": "mobile", "width": 390, "height": 844, "tier": "required", "registryBreakpoint": "mobile" },
+    { "name": "mobile-small", "width": 375, "height": 812, "tier": "required", "registryBreakpoint": null },
+    { "name": "mobile-landscape", "width": 812, "height": 375, "tier": "required", "registryBreakpoint": null },
+    { "name": "narrow", "width": 320, "height": 568, "tier": "required", "registryBreakpoint": null },
+    { "name": "narrow-landscape", "width": 568, "height": 320, "tier": "required", "registryBreakpoint": null },
+    { "name": "laptop", "width": 1024, "height": 768, "tier": "brief-extra", "registryBreakpoint": null },
+    { "name": "wide-tall", "width": 1440, "height": 1024, "tier": "brief-extra", "registryBreakpoint": null }
+  ],
+  "$viewportComment": "The eight `required` sizes are the harness brief's list, and the first four carry the exact widths and heights experience/registry.json declares as breakpoints, so a Home capture and a registry breakpoint are the same pixel. The two `brief-extra` sizes are named in design/LAB_BRIEF.md's inspection list but are not required by the harness; they are declared rather than dropped so `--viewports all` can reach them without anyone editing code.",
+
+  "anchorViewports": ["wide", "mobile"],
+
+  "variants": [
+    {
+      "name": "anchor",
+      "colorScheme": "light",
+      "reducedMotion": "no-preference",
+      "forcedColors": "none",
+      "browsers": ["chromium", "firefox", "webkit"]
+    },
+    {
+      "name": "dark",
+      "colorScheme": "dark",
+      "reducedMotion": "no-preference",
+      "forcedColors": "none",
+      "browsers": ["chromium", "firefox", "webkit"]
+    },
+    {
+      "name": "reduced-motion",
+      "colorScheme": "light",
+      "reducedMotion": "reduce",
+      "forcedColors": "none",
+      "browsers": ["chromium", "firefox", "webkit"]
+    },
+    {
+      "name": "forced-colors",
+      "colorScheme": "light",
+      "reducedMotion": "no-preference",
+      "forcedColors": "active",
+      "browsers": ["chromium", "firefox"],
+      "unsupportedBrowsers": {
+        "webkit": "Playwright does not implement forcedColors emulation on WebKit. Recorded here rather than silently skipped: the forced-colours evidence set is Chromium and Firefox only, and any claim that Home works in forced colours on Safari is unproven by this harness."
+      }
+    }
+  ],
+  "$variantComment": "`anchor` runs at reducedMotion: no-preference, which deliberately differs from experience/browser-contract.json (that file pins `reduce` for the whole Tasks suite). Reason: if the baseline already suppressed motion, the reduced-motion variant would render an identical screen and the comparison would prove nothing while looking green. Determinism is recovered at capture time instead — animations are disabled by the screenshot call, not by the user preference.",
+
+  "browsers": [
+    { "name": "chromium", "engine": "chromium", "channel": null, "role": "capture+behaviour" },
+    { "name": "firefox", "engine": "firefox", "channel": null, "role": "behaviour" },
+    { "name": "webkit", "engine": "webkit", "channel": null, "role": "behaviour" }
+  ],
+  "$browserComment": "Bundled engines, no `channel`. experience/playwright.config.ts uses channel `chrome` off CI; this harness does not, because a reviewer's locally installed Chrome version is not a fixed input and these captures are compared across days.",
+
+  "plans": {
+    "smoke": {
+      "purpose": "Is the harness alive and is the lab open. Twenty captures, under a minute.",
+      "candidates": "all",
+      "modes": "all",
+      "scenarios": ["owner_signature"],
+      "viewports": ["wide"],
+      "variants": ["anchor"],
+      "browsers": ["chromium"]
+    },
+    "full": {
+      "purpose": "Every world once. All four candidates x five modes x thirteen scenarios at the anchor viewport and variant.",
+      "candidates": "all",
+      "modes": "all",
+      "scenarios": "all",
+      "viewports": ["wide"],
+      "variants": ["anchor"],
+      "browsers": ["chromium"]
+    },
+    "responsive": {
+      "purpose": "The eight required viewports across the worlds that break layouts: the signature day, no projects at all, a permission-limited guest, a dead provider, and eighteen projects.",
+      "candidates": "all",
+      "modes": "all",
+      "scenarios": ["owner_signature", "new_user", "guest_limited", "provider_failure", "scale"],
+      "viewports": "required",
+      "variants": ["anchor"],
+      "browsers": ["chromium"]
+    },
+    "variants": {
+      "purpose": "Dark, reduced motion and forced colours at the two anchor viewports, on a busy world and a quiet one.",
+      "candidates": "all",
+      "modes": "all",
+      "scenarios": ["owner_signature", "owner_quiet"],
+      "viewports": "anchor",
+      "variants": ["dark", "reduced-motion", "forced-colors"],
+      "browsers": ["chromium"]
+    },
+    "cross-browser": {
+      "purpose": "Firefox and WebKit behavioural coverage. Screenshots are captured but are not comparison baselines: engine text rendering differs and a pixel diff between engines is not a defect.",
+      "candidates": "all",
+      "modes": "all",
+      "scenarios": ["owner_signature", "scale"],
+      "viewports": "anchor",
+      "variants": ["anchor"],
+      "browsers": ["firefox", "webkit"]
+    },
+    "council": {
+      "purpose": "Everything above, for the ten-director review.",
+      "composeOf": ["full", "responsive", "variants", "cross-browser"]
+    }
+  },
+
+  "invariants": {
+    "settleMs": 1200,
+    "networkIdleTimeoutMs": 6000,
+    "navigationTimeoutMs": 30000,
+    "busySampleGapMs": 1500,
+    "focusSweepLimit": 14,
+    "focusSettleMs": 350,
+    "$focusSettleComment": "Past the brief's 300ms cap on routine motion. A control that is off screen the instant it takes focus is re-measured after this wait; only one still off screen afterwards is a finding. Without it, every skip link mid-slide would read as a failure.",
+    "overflowTolerancePx": 1,
+    "overflowExemptSelector": "[data-allow-overflow-x], [data-capture-overflow='allowed']",
+    "busySelector": "[aria-busy='true'], [role='progressbar']:not([aria-valuenow]), [data-loading='true'], [data-state='loading'], [data-skeleton], .animate-spin, .animate-pulse",
+    "nestedInteractiveSelector": "a[href], [role='link'][href]",
+    "nestedInteractiveChildSelector": "a[href], button, input, select, textarea, [role='button'], [role='link'], [role='checkbox'], [role='menuitem'], [contenteditable='true'], [tabindex]:not([tabindex='-1'])",
+    "focusableSelector": "a[href], button:not([disabled]), input:not([disabled]):not([type='hidden']), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex='-1']), [contenteditable='true']",
+    "hydrationErrorPattern": "hydrat|did not match|Text content does not match|Minified React error #(418|419|421|422|423|425)",
+    "consoleErrorAllowlist": [],
+    "$allowlistComment": "Empty, and it starts empty on purpose. An entry is an object with `pattern`, `reason`, `owner` and `expiresAt` — the same shape experience/registry.json requires of an intentional exception — because a console error waved through without a named owner and an expiry is a defect that has been renamed rather than fixed."
+  },
+
+  "axe": {
+    "tags": ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"],
+    "disableRules": [],
+    "failOn": ["violations"],
+    "$comment": "Incomplete results are recorded in full and never counted as passes. An axe `incomplete` is a question the scanner could not answer, and treating it as a pass is exactly the false-clear this programme forbids."
+  },
+
+  "paths": {
+    "outputRoot": "experience/home-layer/output",
+    "captureRoot": "experience/home-layer/output/captures",
+    "indexFile": "experience/home-layer/output/captures/index.json",
+    "preflightFile": "experience/home-layer/output/preflight.json",
+    "playwrightResults": "experience/home-layer/output/playwright-results",
+    "playwrightReport": "experience/home-layer/output/playwright-report",
+    "fixtureManifest": "experience/home-operating-layer/fixtures/manifest.json"
+  },
+
+  "server": {
+    "defaultBaseUrl": "http://localhost:3212",
+    "envVar": "HOME_LAB_BASE_URL",
+    "startsItsOwnServer": false,
+    "$comment": "This harness never builds or starts a server. experience/playwright.config.ts runs `next build && next start`; that takes minutes and, more importantly, a build cannot open this lab on its own — the lab is refused in demo and review access mode by design (contracts/LAB_ISOLATION.md §3). The harness attaches to a server somebody else configured correctly, and preflight says plainly which of the three states it found."
+  }
+}
