@@ -112,15 +112,15 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled || isStreaming}
-        aria-label="Draft with AI"
-        title="Draft with AI"
+        aria-label="Draft a reply"
+        title="Draft a reply"
         className="group inline-flex min-h-[44px] items-center gap-1 rounded-full border border-line-soft bg-white px-3 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-quiet transition-all duration-200 hover:border-brand/40 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:opacity-40 sm:min-h-7 sm:px-2.5"
         style={{
           transitionTimingFunction: "var(--ease-out-expo)",
         }}
       >
         <SparkleIcon spinning={isStreaming} />
-        <span>{isStreaming ? "Drafting" : "Draft with AI"}</span>
+        <span>{isStreaming ? "Drafting" : "Draft a reply"}</span>
       </button>
 
       <AnimatePresence>
@@ -131,7 +131,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 ? { opacity: 0 }
                 : { opacity: 0, y: 6, scale: 0.98 }
             }
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={
               reduce
                 ? { opacity: 0 }
@@ -153,7 +153,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 }}
               />
               <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-quiet">
-                Draft with AI
+                Draft a reply
               </span>
             </div>
             <p className="mb-3 text-[12px] leading-[1.5] text-ink-soft">
