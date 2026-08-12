@@ -58,3 +58,22 @@ instead of a contract's guess** — which was the whole point of registering
 
 All four are read-only checks against the merged base, and all four belong in the Wave 4
 pre-flight, not in a contract document. None blocks Waves 2 or 3.
+
+## Pre-flight run — 2026-08-12 22:3x, against `c592e83`
+
+Rather than defer them, all four were checked. Three of the four are **still open on current
+main**, so the contract assertions stand as written.
+
+| # | Claim | Verdict at `c592e83` |
+|---|---|---|
+| 1 | `LEGACY_WORKSPACE_ID` removed from Home-reachable paths (D-H03) | **STILL TRUE, unresolved.** `src/server/auth.ts:179` still ends `getActiveWorkspace()` with `return LEGACY_WORKSPACE_ID;`. ADR 0001 §1 describes it as "Removed" in the present tense; it is not. Remains a Home precondition. |
+| 2 | Active-Project cookie cleared or actor-bound on sign-out (D-H09/D-H10) | **STILL TRUE, unresolved — and now sharper.** `clearActiveProjectCookie()` was added at `active-project-cookie.ts:85` and is correct, but `grep -rn` finds **zero callers**. `activeProjectCookieOptions()` still returns `path: "/"` with a 30-day `maxAge` and no actor binding. The capability was built and never wired. |
+| 3 | Five-writer cookie divergence resolved (D-H12) | **STILL TRUE, unresolved.** The cookie is still written from `cross-workspace.ts`, `planning.ts`, `settings.ts`, `templates.ts` and `auth.ts`, with the canonical helper and `resolve.ts` added *alongside* them rather than replacing them. |
+| 4 | Subordinate membership seams route through the new catalog (D-H02) | **Not established.** `src/server/projects/catalog.ts` exists; whether the Timeline raw-SQL, Timeline owner-only, signal mirror and Notes HMAC seams now defer to it was not traced. Carried forward. |
+
+Items 1–3 were reported to the owning session rather than filed as competing work, since that
+programme is active in exactly those files and item 2 is a gap in code it shipped hours ago.
+
+**Effect on this programme:** none of the four blocks Waves 2 or 3. All four become Wave 4
+entry conditions, and D-H03 in particular is a gate: Home must not be reachable while
+`getActiveWorkspace()` can still substitute a legacy Project.
