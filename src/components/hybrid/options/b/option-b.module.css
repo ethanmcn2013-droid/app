@@ -366,13 +366,19 @@ p.editable { min-height: 24px; padding: 4px 0; }
 /* Chrome yields before identity: on phones the trigger keeps its icon
    and badge but gives up its text, so the project's own name — the one
    string the owner typed — is the last thing in the band to truncate. */
-/* The badge's noun, in the band's own sans — shown only where the
-   trigger's label has collapsed and a bare figure would be a number with
-   nothing to count. */
-.planningUndated { display: none; font-size: 12px; font-weight: 500; }
+/* The badge's noun, in the band's own sans. Shown at EVERY width, not
+   just where the label collapses: a bare "5" beside three time words
+   (Planning, Schedule, Calendar) was the band's most prominent
+   unexplained number, and the noun is what tells a stranger this control
+   is a different kind of thing from the view tabs — none of which ever
+   carry a count. */
+.planningUndated {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 11px;
+  margin-left: 4px;
+}
 @media (max-width: 767px) {
   .planningLabel { display: none; }
-  .planningUndated { display: inline; }
 }
 
 .roomViewBar {

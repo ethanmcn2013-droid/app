@@ -257,21 +257,22 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
               >
                 <Icon name="panel" size={15} />
                 <span className={briefStyles.planningLabel}>Planning</span>
-                {/* On phones the label collapses and the badge says what
-                    it counts — a bare "5" beside a panel glyph that
-                    near-duplicates the nav trigger's was the band's most
-                    prominent unexplained number exactly where tooltips
-                    don't exist. */}
+                {/* The noun rides at every width, not just where the
+                    label collapses. "Planning" sits in a band that also
+                    says Schedule and Calendar, and a bare figure beside
+                    three time words told a stranger nothing; the count's
+                    noun is what marks this control as a different kind
+                    of thing from the view tabs, none of which ever carry
+                    a number. The word stays outside the mono badge. */}
                 {unscheduledCount > 0 ? (
-                  <>
-                    <strong aria-hidden="true">{unscheduledCount}</strong>
-                    {/* The noun sits OUTSIDE the badge: the badge is the
-                        module's mono numeral slot, and setting a word in
-                        monospace breaks the band's own numeral rule. */}
-                    <span aria-hidden="true" className={briefStyles.planningUndated}>
-                      undated
-                    </span>
-                  </>
+                  <strong aria-hidden="true">
+                    {unscheduledCount}
+                    {/* One chip, two voices: the figure keeps the badge's
+                        mono numeral slot, the noun takes the band's sans.
+                        Splitting them into two objects put a pill between
+                        a number and the word it counts. */}
+                    <span className={briefStyles.planningUndated}>undated</span>
+                  </strong>
                 ) : null}
               </button>
               </Hint>
