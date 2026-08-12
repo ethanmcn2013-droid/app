@@ -11,7 +11,11 @@ import {
 } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
 import {
   SEED_COMMENT_BODIES,
   SEED_TASKS,
@@ -46,11 +50,68 @@ function pick<T>(arr: T[], seed: number): T {
   return arr[Math.abs(seed) % arr.length];
 }
 
+/**
+ * Resolve and prove the Project a seed operation will act on.
+ *
+ * ── Why this file gets the strictest treatment in WP3 ──────────────────────
+ *
+ * Two of the three writes below were `db.delete(tasks).where(eq(
+ * tasks.workspaceId, ws))` with `ws` coming straight from
+ * `getActiveWorkspace()`. A destructive bulk delete keyed solely by a cookie,
+ * with two silent fallbacks behind it — first membership, then
+ * `LEGACY_WORKSPACE_ID`, a real workspace holding real tasks that the caller
+ * has proved no membership of (DECISIONS D-005). A caller with no membership
+ * at all could empty `ws-legacy`.
+ *
+ * Three changes close that:
+ *
+ *  1. `getActiveWorkspaceOrNull()` — the cookie can no longer decay into
+ *     `LEGACY_WORKSPACE_ID`. No Project means no Project, and the action
+ *     refuses instead of finding one;
+ *  2. an optional explicit `projectId`, so a caller that knows its Project
+ *     says so rather than hoping the cookie agrees;
+ *  3. an explicit capability proof before the delete, never a widened `WHERE`.
+ *
+ * The capability is deliberately `manageProject` for the two destructive
+ * paths, not bare membership. The shipped Danger Zone already tells the user
+ * "Only the owner can do this" and disables the controls
+ * (`settings/sections/danger.tsx:99-113`) — but that gate lives entirely in
+ * the client, and ADR 0001 §9 is explicit that authorizing in the UI and
+ * trusting the action is not authorization. This moves the gate the product
+ * already claims to have onto the server. It also bounds the blast radius of
+ * the ambient accessor's remaining weakness: its first-membership fallback is
+ * an unordered `.limit(1)`, so a cookieless caller in several Projects
+ * resolves to an arbitrary one, and an arbitrary Project the caller merely
+ * belongs to can no longer be wiped.
+ */
+async function resolveSeedProject(
+  projectId: string | undefined,
+  capability: ProjectCapabilityKey,
+): Promise<string> {
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: projectId ?? ambient,
+    capability,
+    actorUserId: me,
+  });
+  if (!grant.ok) {
+    // One neutral message for every refusal. "No such Project", "not a
+    // member" and "not the owner" must not be tellable apart by a caller
+    // probing this action — an existence leak is a privacy defect
+    // (ADR 0001 §4).
+    throw new Error("That project isn’t available.");
+  }
+  return grant.projectId;
+}
+
 /** Truncate the workspace's tasks (cascades to comments + activities
  *  via FK). Resets `workspaces.activeDomain` to null but leaves the
  *  workspace row itself + members + entitlements intact. */
-export async function clearAllTasksAction(): Promise<Task[]> {
-  const ws = await getActiveWorkspace();
+export async function clearAllTasksAction(projectId?: string): Promise<Task[]> {
+  const ws = await resolveSeedProject(projectId, "manageProject");
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));
   await db
     .update(workspaces)
@@ -65,8 +126,12 @@ export async function clearAllTasksAction(): Promise<Task[]> {
  *  on /welcome when the user wants the empty state instead of a pack.
  *  Sets the workspace's activeDomain to a sentinel so isFirstRun()
  *  returns false. */
-export async function markFirstRunCompleteAction(): Promise<void> {
-  const ws = await getActiveWorkspace();
+export async function markFirstRunCompleteAction(
+  projectId?: string,
+): Promise<void> {
+  // Writes a sentinel and destroys nothing, so ordinary edit rights are the
+  // honest requirement here — not the owner gate the two destructive paths get.
+  const ws = await resolveSeedProject(projectId, "createOrEditTasks");
   // Sentinel "marketing", a chosen-but-empty domain. Welcome page
   // stops intercepting; the next render shows an empty board.
   await db
@@ -79,12 +144,15 @@ export async function markFirstRunCompleteAction(): Promise<void> {
 /** Wipe the current workspace's tasks and re-seed with a domain-
  *  flavored starter pack. Workspace-scoped so a re-seed in one
  *  workspace doesn't touch siblings. */
-export async function seedDomainAction(domain: DomainId): Promise<Task[]> {
+export async function seedDomainAction(
+  domain: DomainId,
+  projectId?: string,
+): Promise<Task[]> {
   if (!DOMAIN_IDS.has(domain)) {
     throw new Error(`Unknown domain: ${domain}`);
   }
   const pack = DOMAINS[domain];
-  const ws = await getActiveWorkspace();
+  const ws = await resolveSeedProject(projectId, "manageProject");
 
   // Wipe this workspace's data only.
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));
