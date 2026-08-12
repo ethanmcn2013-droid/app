@@ -1,9 +1,20 @@
 import { getTasks, getWorkspaceName } from "@/server/db/queries";
-import { getActiveWorkspace } from "@/server/auth";
 import { PrintTimeline } from "@/components/app/print/print-timeline";
+import {
+  gatePrintProject,
+  PrintRefusal,
+  type PrintSearchParams,
+} from "../print-project";
 
-export default async function PrintTimelinePage() {
-  const ws = await getActiveWorkspace();
+export default async function PrintTimelinePage({
+  searchParams,
+}: {
+  searchParams: PrintSearchParams;
+}) {
+  const gate = await gatePrintProject("/print/timeline", searchParams);
+  if (gate.kind === "refused") return <PrintRefusal />;
+  const ws = gate.workspaceId;
+
   const [tasks, workspaceName] = await Promise.all([
     getTasks(ws),
     getWorkspaceName(ws),
