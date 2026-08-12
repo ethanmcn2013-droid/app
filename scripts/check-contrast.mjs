@@ -390,6 +390,22 @@ async function auditSurface(browser, url, colorScheme) {
     await page.waitForTimeout(1500);
     await page.waitForLoadState("load");
     await page.waitForTimeout(500);
+    // Then wait for MOTION to finish, not just for time to pass. Since wave 7
+    // a surface arrives on an opacity settle and the Timeline artifact plays
+    // an entrance, and a colour read taken mid-animation is a reading of a
+    // half-faded element against a half-faded ground: the sweep measured 17
+    // nodes and two false failures on the surface it caught mid-entrance, and
+    // 78 nodes and none on the same surface a moment later. Contrast is a
+    // property of the settled state, so the gate now waits for the document to
+    // stop moving. Capped, because a page is allowed to hold one perpetual
+    // mark and the gate must not hang waiting for it to stop.
+    await page
+      .waitForFunction(
+        () => document.getAnimations().every((a) => a.playState !== "running"),
+        null,
+        { timeout: 5_000 },
+      )
+      .catch(() => {});
 
     const read = async () => ({
       appliedTheme: await page.evaluate(
