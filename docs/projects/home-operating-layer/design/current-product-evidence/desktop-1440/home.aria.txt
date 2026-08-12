@@ -1,0 +1,54 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Home":
+    - /url: /app/home
+    - text: home
+  - button "Search Signal Studio": Search Ctrl K
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes
+    - link "Tasks Open Tasks":
+      - /url: /app/tasks
+    - link "Timeline Open Timeline":
+      - /url: /app/timeline
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- main:
+  - paragraph: THURSDAY 16 JULY
+  - heading "Good morning." [level=1]
+  - paragraph: The Orchard, events
+  - region "Today’s Signal":
+    - heading "Today’s Signal" [level=2]
+    - list:
+      - listitem:
+        - link "Order tonic + the good olives Two days past its date. Tasks · The Orchard, events · Mara & Finn · overdue":
+          - /url: /app/task/demo-t-06
+      - listitem:
+        - link "Build the Saturday run-sheet Due today. Tasks · The Orchard, events · Mara & Finn · today":
+          - /url: /app/task/demo-t-05
+      - listitem:
+        - link "Menu tasting at The Orchard Nothing has moved on it for fifteen days. Tasks · The Orchard, events · Mara & Finn · this week":
+          - /url: /app/task/demo-task-menu-tasting
+    - link "Open full briefing":
+      - /url: /app/home/briefing
+  - region "Needs review":
+    - heading "Needs review" [level=2]
+    - list:
+      - listitem:
+        - link "Approve the final seating plan Tasks · The Orchard, events · Mara & Finn in review":
+          - /url: /app/task/demo-t-07
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

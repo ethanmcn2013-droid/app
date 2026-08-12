@@ -3,13 +3,22 @@
   "openedAt": "2026-08-12",
   "lead": "claude-code",
   "canonicalBase": {
-    "sha": "a849fc40e46787a39e499fc94b171a5dfb898821",
+    "sha": "78021c5",
     "ref": "origin/main",
-    "subject": "the Planning count carries its noun (#124)",
-    "committedAt": "2026-08-12T19:28:30+01:00",
-    "provenTo": "fetched from origin at 2026-08-12T20:17Z",
+    "subject": "Wave 0: freeze the Project contract, and record what the audits found (#125)",
+    "provenTo": "fetched from origin at 2026-08-12T20:45Z",
     "worktree": "_wt-home-layer",
-    "branch": "feat/home-operating-layer"
+    "branch": "feat/home-operating-layer",
+    "driftCheckpoint": {
+      "previousBase": "a849fc40e46787a39e499fc94b171a5dfb898821",
+      "movedAt": "2026-08-12T20:45Z",
+      "cause": "PR #125 (Project Truth Wave 0) merged while this programme's Wave 0 audits were running",
+      "delta": "9 files, 1371 insertions: docs/adr/0001-canonical-project-identity.md, docs/wave/**, scripts/wave-baseline.mjs, .github/workflows/design-quality.yml",
+      "srcFilesTouched": 0,
+      "activeWritersAtCheckpoint": 0,
+      "resolution": "Lead-owned rebase of feat/home-operating-layer onto 78021c5. Clean, no conflicts. No agent branch was rebased.",
+      "evidenceImpact": "Baseline receipt was taken at a849fc4. The delta touches zero src/ files and no package.json, lockfile, test or build input, so the code-level baseline results carry forward. Recorded as inherited-with-justification, not re-measured. The full gate is re-run at the Wave 1 boundary."
+    }
   },
   "activeWave": 0,
   "waves": {

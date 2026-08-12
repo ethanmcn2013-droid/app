@@ -1,0 +1,32 @@
+- banner:
+  - navigation "Signal Studio products":
+    - link "Signal Studio":
+      - /url: https://signalstudio.ie
+      - text: signal studio
+    - link "home":
+      - /url: https://app.signalstudio.ie/app/home?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "notes":
+      - /url: https://app.signalstudio.ie/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - text: tasks
+    - link "timeline":
+      - /url: https://app.signalstudio.ie/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - text: Settings
+  - link "Back to workspace":
+    - /url: /app/tasks
+- complementary:
+  - link "Profile":
+    - /url: /settings/profile
+  - link "What we send you":
+    - /url: /settings/notifications
+  - link "Your plan":
+    - /url: /settings/plan
+- main:
+  - status: Review preview, settings are read-only.
+  - heading "Profile" [level=1]
+  - paragraph: The you that everyone you collaborate with sees.
+  - paragraph: Orla
+  - paragraph: orla@theorchard.example, review identity
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

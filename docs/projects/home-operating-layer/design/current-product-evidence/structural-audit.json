@@ -1,0 +1,1127 @@
+{
+  "base": "http://localhost:3212",
+  "capturedAt": "2026-08-12T19:34:02.935Z",
+  "routes": {
+    "home@desktop-1440": {
+      "route": "/app/home",
+      "note": "Today — the current authenticated front door",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/home",
+      "title": "Home · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Good morning."
+        },
+        {
+          "level": 2,
+          "text": "Today’s Signal"
+        },
+        {
+          "level": 2,
+          "text": "Needs review"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Today’s Signal"
+        },
+        {
+          "tag": "section",
+          "name": "Needs review"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
+    },
+    "home-briefing@desktop-1440": {
+      "route": "/app/home/briefing",
+      "note": "Full Briefing — progressive depth from Home",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/home/briefing",
+      "title": "Briefing · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Two things calling, and one quieter signal below."
+        },
+        {
+          "level": 2,
+          "text": "Now"
+        },
+        {
+          "level": 3,
+          "text": "Order tonic + the good olives"
+        },
+        {
+          "level": 3,
+          "text": "Build the Saturday run-sheet"
+        },
+        {
+          "level": 2,
+          "text": "Next"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Now"
+        },
+        {
+          "tag": "section",
+          "name": "Next"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
+    },
+    "inbox@desktop-1440": {
+      "route": "/app/inbox",
+      "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "my-tasks@desktop-1440": {
+      "route": "/app/my-tasks",
+      "note": "Legacy My Tasks / My Week — Tasks-only execution view",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "your-work@desktop-1440": {
+      "route": "/app/your-work",
+      "note": "Planning administration — NOT personal work",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/your-work",
+      "title": "Your work · Tasks",
+      "mainCount": 0,
+      "h1Count": 0,
+      "headings": [
+        {
+          "level": 2,
+          "text": "The workspace took a wrong turn."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": [
+        "%o\n\n%s Error: Failed query: select \"id\", \"name\", \"context_type\", COALESCE(\"start_date\", date(\"created_at\", 'unixepoch')), COALESCE(\"end_date\", date(COALESCE(\"start_date\", date(\"created_at\", 'unixepoch"
+      ]
+    },
+    "project@desktop-1440": {
+      "route": "/app/project",
+      "note": "Active-project overview — orphaned from shell nav",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "notes@desktop-1440": {
+      "route": "/app/notes",
+      "note": "Product: Notes",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/notes",
+      "title": "Notes · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Notes notebook"
+        },
+        {
+          "level": 2,
+          "text": "Notebook"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Notes views",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Notebook"
+        },
+        {
+          "tag": "section",
+          "name": "Selected note"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Notebook14",
+          "href": "/app/notes"
+        },
+        {
+          "value": "true",
+          "text": "WrittenSaturday wedding, Mara & Finn.Cer",
+          "href": null
+        },
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
+    },
+    "tasks@desktop-1440": {
+      "route": "/app/tasks",
+      "note": "Product: Tasks",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "timeline@desktop-1440": {
+      "route": "/app/timeline",
+      "note": "Product: Timeline",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/app/timeline/mara-finn",
+      "title": "mara-finn · Timeline · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Mara & Finn"
+        },
+        {
+          "level": 2,
+          "text": "Wedding timeline"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Project views",
+          "links": 2
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Wedding timeline"
+        },
+        {
+          "tag": "section",
+          "name": "Menu tasting at The Orchard"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline/mara-finn"
+        },
+        {
+          "value": "step",
+          "text": "Our next milestoneMenu tasting at The Or",
+          "href": null
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
+    },
+    "settings-profile@desktop-1440": {
+      "route": "/settings/profile",
+      "note": "Profile — identity and account only",
+      "viewport": "1440x960",
+      "status": 200,
+      "finalUrl": "/settings/profile",
+      "title": "Settings · Tasks",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Profile"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "tasks·",
+          "href": null
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "consoleErrors": []
+    },
+    "home@mobile-390": {
+      "route": "/app/home",
+      "note": "Today — the current authenticated front door",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/home",
+      "title": "Home · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Good morning."
+        },
+        {
+          "level": 2,
+          "text": "Today’s Signal"
+        },
+        {
+          "level": 2,
+          "text": "Needs review"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Today’s Signal"
+        },
+        {
+          "tag": "section",
+          "name": "Needs review"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
+    },
+    "home-briefing@mobile-390": {
+      "route": "/app/home/briefing",
+      "note": "Full Briefing — progressive depth from Home",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/home/briefing",
+      "title": "Briefing · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Two things calling, and one quieter signal below."
+        },
+        {
+          "level": 2,
+          "text": "Now"
+        },
+        {
+          "level": 3,
+          "text": "Order tonic + the good olives"
+        },
+        {
+          "level": 3,
+          "text": "Build the Saturday run-sheet"
+        },
+        {
+          "level": 2,
+          "text": "Next"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Now"
+        },
+        {
+          "tag": "section",
+          "name": "Next"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
+    },
+    "inbox@mobile-390": {
+      "route": "/app/inbox",
+      "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "my-tasks@mobile-390": {
+      "route": "/app/my-tasks",
+      "note": "Legacy My Tasks / My Week — Tasks-only execution view",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "your-work@mobile-390": {
+      "route": "/app/your-work",
+      "note": "Planning administration — NOT personal work",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/your-work",
+      "title": "Your work · Tasks",
+      "mainCount": 0,
+      "h1Count": 0,
+      "headings": [
+        {
+          "level": 2,
+          "text": "The workspace took a wrong turn."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": [
+        "%o\n\n%s Error: Failed query: select \"id\", \"name\", \"context_type\", COALESCE(\"start_date\", date(\"created_at\", 'unixepoch')), COALESCE(\"end_date\", date(COALESCE(\"start_date\", date(\"created_at\", 'unixepoch"
+      ]
+    },
+    "project@mobile-390": {
+      "route": "/app/project",
+      "note": "Active-project overview — orphaned from shell nav",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "notes@mobile-390": {
+      "route": "/app/notes",
+      "note": "Product: Notes",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/notes",
+      "title": "Notes · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Notes notebook"
+        },
+        {
+          "level": 2,
+          "text": "Notebook"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Notes views",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Notebook"
+        },
+        {
+          "tag": "section",
+          "name": "Selected note"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Notebook14",
+          "href": "/app/notes"
+        },
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
+    },
+    "tasks@mobile-390": {
+      "route": "/app/tasks",
+      "note": "Product: Tasks",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "timeline@mobile-390": {
+      "route": "/app/timeline",
+      "note": "Product: Timeline",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/app/timeline/mara-finn",
+      "title": "mara-finn · Timeline · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Mara & Finn"
+        },
+        {
+          "level": 2,
+          "text": "Wedding timeline"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Project views",
+          "links": 2
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Wedding timeline"
+        },
+        {
+          "tag": "section",
+          "name": "Menu tasting at The Orchard"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline/mara-finn"
+        },
+        {
+          "value": "step",
+          "text": "Our next milestoneMenu tasting at The Or",
+          "href": null
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
+    },
+    "settings-profile@mobile-390": {
+      "route": "/settings/profile",
+      "note": "Profile — identity and account only",
+      "viewport": "390x844",
+      "status": 200,
+      "finalUrl": "/settings/profile",
+      "title": "Settings · Tasks",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Profile"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "tasks·",
+          "href": null
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 390,
+      "clientWidth": 390,
+      "consoleErrors": []
+    },
+    "home@narrow-320": {
+      "route": "/app/home",
+      "note": "Today — the current authenticated front door",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/home",
+      "title": "Home · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Good morning."
+        },
+        {
+          "level": 2,
+          "text": "Today’s Signal"
+        },
+        {
+          "level": 2,
+          "text": "Needs review"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Today’s Signal"
+        },
+        {
+          "tag": "section",
+          "name": "Needs review"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
+    },
+    "home-briefing@narrow-320": {
+      "route": "/app/home/briefing",
+      "note": "Full Briefing — progressive depth from Home",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/home/briefing",
+      "title": "Briefing · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Two things calling, and one quieter signal below."
+        },
+        {
+          "level": 2,
+          "text": "Now"
+        },
+        {
+          "level": 3,
+          "text": "Order tonic + the good olives"
+        },
+        {
+          "level": 3,
+          "text": "Build the Saturday run-sheet"
+        },
+        {
+          "level": 2,
+          "text": "Next"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Now"
+        },
+        {
+          "tag": "section",
+          "name": "Next"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Home",
+          "href": "/app/home"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
+    },
+    "inbox@narrow-320": {
+      "route": "/app/inbox",
+      "note": "Legacy Inbox — Tasks-owned, four jobs in one surface",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/inbox\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "my-tasks@narrow-320": {
+      "route": "/app/my-tasks",
+      "note": "Legacy My Tasks / My Week — Tasks-only execution view",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/my-tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "your-work@narrow-320": {
+      "route": "/app/your-work",
+      "note": "Planning administration — NOT personal work",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/your-work",
+      "title": "Your work · Tasks",
+      "mainCount": 0,
+      "h1Count": 0,
+      "headings": [
+        {
+          "level": 2,
+          "text": "The workspace took a wrong turn."
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Tasks",
+          "href": "/app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": [
+        "%o\n\n%s Error: Failed query: select \"id\", \"name\", \"context_type\", COALESCE(\"start_date\", date(\"created_at\", 'unixepoch')), COALESCE(\"end_date\", date(COALESCE(\"start_date\", date(\"created_at\", 'unixepoch"
+      ]
+    },
+    "project@narrow-320": {
+      "route": "/app/project",
+      "note": "Active-project overview — orphaned from shell nav",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/project\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "notes@narrow-320": {
+      "route": "/app/notes",
+      "note": "Product: Notes",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/notes",
+      "title": "Notes · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Notes notebook"
+        },
+        {
+          "level": 2,
+          "text": "Notebook"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Notes views",
+          "links": 3
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Notebook"
+        },
+        {
+          "tag": "section",
+          "name": "Selected note"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Notebook14",
+          "href": "/app/notes"
+        },
+        {
+          "value": "page",
+          "text": "Notes",
+          "href": "/app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
+    },
+    "tasks@narrow-320": {
+      "route": "/app/tasks",
+      "note": "Product: Tasks",
+      "error": "TimeoutError: page.goto: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3212/app/tasks\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    "timeline@narrow-320": {
+      "route": "/app/timeline",
+      "note": "Product: Timeline",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/app/timeline/mara-finn",
+      "title": "mara-finn · Timeline · Signal Studio",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Mara & Finn"
+        },
+        {
+          "level": 2,
+          "text": "Wedding timeline"
+        },
+        {
+          "level": 3,
+          "text": "Menu tasting at The Orchard"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Products",
+          "links": 3
+        },
+        {
+          "name": "Project views",
+          "links": 2
+        },
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        }
+      ],
+      "unnamedRegions": 0,
+      "regions": [
+        {
+          "tag": "section",
+          "name": "Wedding timeline"
+        },
+        {
+          "tag": "section",
+          "name": "Menu tasting at The Orchard"
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline/mara-finn"
+        },
+        {
+          "value": "step",
+          "text": "Our next milestoneMenu tasting at The Or",
+          "href": null
+        },
+        {
+          "value": "page",
+          "text": "Timeline",
+          "href": "/app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period"
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
+    },
+    "settings-profile@narrow-320": {
+      "route": "/settings/profile",
+      "note": "Profile — identity and account only",
+      "viewport": "320x568",
+      "status": 200,
+      "finalUrl": "/settings/profile",
+      "title": "Settings · Tasks",
+      "mainCount": 1,
+      "h1Count": 1,
+      "headings": [
+        {
+          "level": 1,
+          "text": "Profile"
+        }
+      ],
+      "navigations": [
+        {
+          "name": "Signal Studio products",
+          "links": 4
+        },
+        {
+          "name": null,
+          "links": 3
+        }
+      ],
+      "unnamedRegions": 1,
+      "regions": [
+        {
+          "tag": "section",
+          "name": null
+        }
+      ],
+      "ariaCurrent": [
+        {
+          "value": "page",
+          "text": "tasks·",
+          "href": null
+        }
+      ],
+      "nestedInteractiveInsideLink": 0,
+      "horizontalOverflow": false,
+      "scrollWidth": 320,
+      "clientWidth": 320,
+      "consoleErrors": []
+    }
+  }
+}

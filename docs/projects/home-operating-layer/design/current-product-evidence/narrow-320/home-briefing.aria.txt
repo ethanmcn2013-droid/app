@@ -1,0 +1,57 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Home":
+    - /url: /app/home
+    - text: home
+  - button "Search Signal Studio"
+  - group: DO
+- main:
+  - article:
+    - paragraph: Today’s Signal
+    - paragraph: Thursday 09:00 · The Orchard, events
+    - heading "Two things calling, and one quieter signal below." [level=1]
+    - img "8 items read. 4 crossed a rule. 3 shown here. 4 cleared."
+    - paragraph: 8 read · 4 flagged · 3 shown
+    - region "Now":
+      - heading "Now" [level=2]
+      - list:
+        - listitem:
+          - heading "Order tonic + the good olives" [level=3]
+          - paragraph: Two days past its date.
+          - paragraph: from Tasks · The Orchard, events · Mara & Finn
+          - button "Why this"
+          - button "Review in Tasks"
+          - status
+        - listitem:
+          - heading "Build the Saturday run-sheet" [level=3]
+          - paragraph: Due today.
+          - paragraph: from Tasks · The Orchard, events · Mara & Finn
+          - button "Why this"
+          - button "Review in Tasks"
+          - status
+    - region "Next":
+      - heading "Next" [level=2]
+      - list:
+        - listitem:
+          - heading "Menu tasting at The Orchard" [level=3]
+          - paragraph: Nothing has moved on it for fifteen days.
+          - paragraph: from Tasks · The Orchard, events · Mara & Finn
+          - button "Why this"
+          - button "Review in Tasks"
+          - status
+    - paragraph: That’s the read. Dates came first, then the quiet ones.
+    - paragraph: 4 cleared
+- navigation "Signal Studio products":
+  - link "Home":
+    - /url: /app/home
+  - link "Notes":
+    - /url: /app/notes
+  - link "Tasks":
+    - /url: /app/tasks
+  - link "Timeline":
+    - /url: /app/timeline
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

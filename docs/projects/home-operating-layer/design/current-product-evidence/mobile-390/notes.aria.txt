@@ -1,0 +1,106 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Notes":
+    - /url: /app/notes
+    - text: notes
+  - button "Search Signal Studio"
+  - group: DO
+- main:
+  - heading "Notes notebook" [level=1]
+  - navigation "Notes views":
+    - link "Notebook":
+      - /url: /app/notes
+    - link "Review":
+      - /url: /app/notes?view=review
+    - link "In Tasks":
+      - /url: /app/notes?view=sent
+  - button "Private to you"
+  - button "Notes options"
+  - text: Write a note
+  - textbox "Write a note":
+    - /placeholder: Write the thought before it disappears…
+  - button "Type" [pressed]
+  - button "Voice"
+  - button "Photo"
+  - button "Save note" [disabled]
+  - text: Search notebook
+  - searchbox "Search notebook"
+  - text: Show
+  - combobox "Show":
+    - option "All notes" [selected]
+    - option "To review"
+    - option "Written"
+    - option "Spoken"
+    - option "From a photo"
+  - text: Order
+  - region "Notebook":
+    - heading "Notebook" [level=2]
+    - text: 14 notes
+    - list:
+      - listitem:
+        - button "Written Saturday wedding, Mara & Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday. 35 minutes ago In Tasks"
+      - listitem:
+        - button "Written Mara & Finn’s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes. 2 hours ago In Tasks"
+      - listitem:
+        - button "Spoken Ask the venue whether the ballroom can be accessed from 8am on the Saturday. If not we lose the whole morning setup and the florist has to come back twice. 3 hours ago To review"
+        - 'button "Keep: Ask the venue whether the ballroom can be accessed from 8am on the Saturday."': Keep
+        - 'button "Turn into task: Ask the venue whether the ballroom can be accessed from 8am on the Saturday."': Turn into task
+        - 'button "Delete: Ask the venue whether the ballroom can be accessed from 8am on the Saturday."': Delete
+      - listitem:
+        - 'button "Written Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind… People love the backstage angle. 5 hours ago To review"'
+        - 'button "Keep: Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind…"': Keep
+        - 'button "Turn into task: Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind…"': Turn into task
+        - 'button "Delete: Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind…"': Delete
+      - listitem:
+        - 'button "From a photo Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand… 6 hours ago To review"'
+        - 'button "Keep: Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand…"': Keep
+        - 'button "Turn into task: Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand…"': Turn into task
+        - 'button "Delete: Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand…"': Delete
+      - listitem:
+        - 'button "Written Course reading for Thursday: chapters 4–5 on cash-flow forecasting. Bring the worked example, the lecturer always opens with it. 9 hours ago To review"'
+        - 'button "Keep: Course reading for Thursday: chapters 4–5 on cash-flow forecasting."': Keep
+        - 'button "Turn into task: Course reading for Thursday: chapters 4–5 on cash-flow forecasting."': Turn into task
+        - 'button "Delete: Course reading for Thursday: chapters 4–5 on cash-flow forecasting."': Delete
+      - listitem:
+        - button "Spoken Student launch pricing needs one simple annual option. Two prices and a discount code is already too many decisions for someone signing up between lectures. Yesterday"
+      - listitem:
+        - button "Written Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely. Sent them the midweek rate. Follow up Friday if no reply. Yesterday To review"
+        - 'button "Keep: Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely."': Keep
+        - 'button "Turn into task: Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely."': Turn into task
+        - 'button "Delete: Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely."': Delete
+      - listitem:
+        - 'button "Written Bar restock: tonic running low, order two extra cases before the weekend. Also the good olives, last delivery was short. Yesterday In Tasks"'
+      - listitem:
+        - 'button "Written Photographer recommendation from the Hendersons: Aoife @ northlight. Natural light, doesn’t herd people. Keep her card for the recommended-suppliers list. 2 days ago"'
+      - listitem:
+        - 'button "Written Small thing but it matters: the welcome sign by the gate is faded. Reprint before the open day, first impression is the whole car-park walk. 2 days ago To review"'
+        - 'button "Keep: Small thing but it matters: the welcome sign by the gate is faded."': Keep
+        - 'button "Turn into task: Small thing but it matters: the welcome sign by the gate is faded."': Turn into task
+        - 'button "Delete: Small thing but it matters: the welcome sign by the gate is faded."': Delete
+      - listitem:
+        - 'button "Written Quote from today that I want to keep: “we don’t want a big production, we just want it to feel… 3 days ago"'
+      - listitem:
+        - button "By email Follow up with the motion designer about the venue film. She needs the final music choice before she can lock the edit, and the cut is due the week after next. 3 days ago To review"
+        - 'button "Keep: Follow up with the motion designer about the venue film."': Keep
+        - 'button "Turn into task: Follow up with the motion designer about the venue film."': Turn into task
+        - 'button "Delete: Follow up with the motion designer about the venue film."': Delete
+      - listitem:
+        - 'button "Written Heating: orchard room takes ~40 min to warm in October. Switch on before guests arrive, not when. Note for the winter brochure couples. 4 days ago To review"'
+        - 'button "Keep: Heating: orchard room takes ~40 min to warm in October."': Keep
+        - 'button "Turn into task: Heating: orchard room takes ~40 min to warm in October."': Turn into task
+        - 'button "Delete: Heating: orchard room takes ~40 min to warm in October."': Delete
+  - status
+- navigation "Signal Studio products":
+  - link "Home":
+    - /url: /app/home?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "Notes":
+    - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "Tasks":
+    - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "Timeline":
+    - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

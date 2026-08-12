@@ -1,0 +1,90 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Timeline":
+    - /url: /app/timeline
+    - text: timeline
+  - button "Search Signal Studio": Search Ctrl K
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Tasks Open Tasks":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Timeline Timeline · current":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- main:
+  - link "The Orchard, events":
+    - /url: /app/timeline
+  - 'button "Current project: Mara & Finn. Switch project."': Mara & Finn
+  - text: Wedding day 3 Oct 79 days to go
+  - paragraph: Live since 15 Jul 2026. Anyone holding the link can read it.
+  - navigation "Project views":
+    - link "Timeline":
+      - /url: /app/timeline/mara-finn
+    - link "Milestones":
+      - /url: /app/timeline/mara-finn?mode=edit
+  - link "Preview":
+    - /url: /app/timeline/mara-finn/preview
+  - button "Share"
+  - article:
+    - link "Skip to timeline":
+      - /url: "#_R_55esneitpqitmlb_-timeline"
+    - paragraph: A shared wedding timeline
+    - heading "Mara & Finn" [level=1]
+    - paragraph: Every decision, visit and small moment on the way to the day.
+    - button "Show milestone completion. Currently showing 79 days remaining. Wedding day, 3 October 2026."
+    - region "Wedding timeline":
+      - heading "Wedding timeline" [level=2]
+      - paragraph: This timeline runs from 2 January 2026 to 3 October 2026. Distance along it is calendar distance. The highlighted point is our next milestone. The Today dash shows the calendar position. Use Left and Right Arrow to move between milestones, Home and End to jump, Enter or Space to select, and Escape to close milestone detail.
+      - group "This timeline runs from 2 January 2026 to 3 October 2026. Distance along it is calendar distance.":
+        - progressbar "Milestone completion"
+        - img "Today, 16 July 2026. Our next milestone is Menu tasting at The Orchard."
+        - list:
+          - listitem:
+            - button "We said yes. Complete. 2 January 2026. Milestone 1 of 9."
+          - listitem:
+            - button "The Orchard reserved. Complete. 18 April 2026. Milestone 2 of 9."
+          - listitem:
+            - button "Menu tasting at The Orchard. Our next milestone. 1 August 2026. Milestone 3 of 9." [expanded] [pressed]
+          - listitem:
+            - button "Send the invitations. Coming up. 8 August 2026. Milestone 4 of 9."
+          - listitem:
+            - button "Final dress fitting. Coming up. 22 August 2026. Milestone 5 of 9."
+          - listitem:
+            - button "Choose the evening music. Coming up. 29 August 2026. Milestone 6 of 9."
+          - listitem:
+            - button "Final guest numbers. Later. 5 September 2026. Milestone 7 of 9."
+          - listitem:
+            - button "Venue walk-through. Later. 19 September 2026. Milestone 8 of 9."
+          - listitem:
+            - button "Wedding day. Later. 3 October 2026. Milestone 9 of 9."
+      - paragraph: Menu tasting at The Orchard selected. Our next milestone.
+      - region "Menu tasting at The Orchard":
+        - paragraph: Our next milestone
+        - heading "Menu tasting at The Orchard" [level=3]
+        - term: Timing
+        - definition:
+          - time: 1 August 2026
+          - text: · in 16 days
+        - term: Place in the plan
+        - definition: Milestone 3 of 9
+    - group: 1 planning decision +
+    - text: Updated 15 Jul 2026
+    - link "Made with Signal Timeline":
+      - /url: https://signalstudio.ie/timeline?src=shared-timeline
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

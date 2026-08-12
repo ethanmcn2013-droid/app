@@ -1,0 +1,20 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects"
+  - button "Add task (C)"
+  - group: DO
+- text: Something snapped
+- heading "The workspace took a wrong turn." [level=2]
+- paragraph: We logged the failure and our team will see it. Try again, or duck back to the home view while we sort it out.
+- paragraph: ref · 404208437
+- button "Try again"
+- link "Back to board":
+  - /url: /app/tasks
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

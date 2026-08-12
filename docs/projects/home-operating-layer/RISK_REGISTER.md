@@ -130,3 +130,104 @@ evidence out of `_wt-design-audit`. Our base is `a849fc4`, 138 commits later.
 **Why it matters.** Its *architecture* conclusions are authoritative and carry forward. Its
 *file:line citations* must be re-derived against our base before any of them is used to
 justify an implementation decision. Wave 0's auditor reports supersede them.
+
+---
+
+## R-H08 · P0 · The 9.5 quality council cannot certify anything, and narrowing it is a founder decision
+
+**Evidence.** `quality-council-gate.json:234` bars automation from awarding taste scores; the
+gate needs 1,352 evidenced human scores plus 4 journey receipts. In CI it runs
+`continue-on-error`. An open founder decision sits at
+`studio/content/hq/operator-todos/rule-on-95-gate-scope.md`.
+
+**Why it matters.** Wave 10 is specified against "the repository's exact measured gate". As
+written that gate cannot return a pass, so Wave 10 cannot complete. **Raising or narrowing
+a threshold to get green is an automatic veto (brief §24)** — so this cannot be solved
+inside the programme.
+
+**Owner.** Ethan. Needed before Wave 10, not at it. Until taken, "certified" is unavailable
+as an outcome and the programme must say so rather than claim it.
+
+---
+
+## R-H09 · P1 · No visual-regression baseline exists
+
+**Evidence.** `toHaveScreenshot` configured but never called; no `experience/baselines/`;
+`approvedBaselineReference: null` on all 78 registry entries; approval declared founder-owned
+(`critical-fixtures.json` `operatorBlocked`).
+
+**Consequence.** Wave 2 must create and get approval for baselines, or no wave can prove it
+did not regress an untouched surface.
+
+---
+
+## R-H10 · P0 · `/lab` has no authentication guard
+
+**Evidence.** `/lab` is outside the Clerk proxy matcher entirely (`src/proxy.ts:280-298`).
+
+**Consequence.** The protected preview the founder pause depends on must be **built** before
+Wave 3 deploys. Currently there is not even authentication, let alone a reviewer allowlist.
+Blocks Gate 3.
+
+---
+
+## R-H11 · P0 · Home cannot mutate outside the active-workspace cookie
+
+**Evidence.** `getActiveWorkspace()` binds tenant from the `tasks_active_ws` cookie across
+**80 call sites in 24 action files**. A mutation targeting a different Project finds no row
+and **silently no-ops** — it does not error.
+
+**Consequence.** Workspace-parameterised actions are a hard prerequisite for My work
+writeback (Wave 7) and every Inbox source action (Wave 6). Silent no-op is the worst possible
+failure mode for a surface whose contract is "never show success before the source confirms".
+Largest hidden cost in the programme.
+
+---
+
+## R-H12 · P1 · Inbox store, approval primitive and analytics history do not exist
+
+**Evidence.** Inbox read state is client-only `localStorage` (`inbox-app.tsx:207-217`);
+`notify()` early-returns without a `taskId` (`src/server/db/notifications.ts:40-47`);
+`notifications.read_at` has no writer. No approval table, column or action anywhere in `src/`.
+`captureWorkspaceSnapshots` has zero callers repo-wide.
+
+**Consequence.** Waves 6 and 8 are **new schema** under expand → migrate → contract, not
+migrations of an existing store. Re-plan those waves accordingly; the brief scoped them as
+migrations.
+
+---
+
+## R-H13 · P1 · Four project identities and five membership seams
+
+**Evidence.** Tasks `workspaces.id`; Timeline `(workspace_slug, slug)`; signal's slugified
+task **tag**; Notes none. Membership resolved by in-process Drizzle, raw libsql SQL, an
+owner-only Timeline table with no member concept, a read-only Tasks mirror, and an HMAC HTTP
+loopback.
+
+**Mitigation.** Adopt Tasks `workspaces.id` as canonical — which the live Project Truth ADR
+concluded independently. Name one canonical membership seam in Wave 1 before any Home
+contract is sealed.
+
+---
+
+## R-H14 · P1 · The Home data store has no production-drift alarm
+
+**Evidence.** `db-migration-drift` covers the Tasks database only. Home's briefing data lives
+in the legacy-named `SIGNAL_*` database, which has no drift alarm and no receipt-backed
+runner (`DEPLOY.md:126-137`).
+
+**Consequence.** A Home data-shape change has no production safety net. Wave 1's persistence
+architecture must either bring that database under the receipt-backed runner or record
+explicitly that it is unprotected.
+
+---
+
+## R-H15 · P2 · Two live production defects found in passing
+
+Confirmed by reading, not runtime-verified. Neither belongs to this programme; both raised as
+separate work so they are not silently absorbed. Detail in `REPOSITORY_TRUTH.md`.
+
+1. Home, Briefing, Notes and Timeline re-run an allowlist-only gate beneath the
+   membership-aware layout gate, bouncing invited and redeemed users to `/waitlist`.
+2. `compileDailyDigest`'s mentions query is unscoped by workspace and reachable from both the
+   Inbox page and the digest email cron.

@@ -1,0 +1,38 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Signal Studio Home":
+    - /url: /app/home
+  - link "Tasks":
+    - /url: /app/tasks
+    - text: tasks
+  - button "Search tasks and projects": Search Ctrl K
+  - button "Add task C"
+- complementary "Signal Studio navigation":
+  - navigation "Products":
+    - link "Notes Open Notes":
+      - /url: /app/notes?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Tasks Tasks · current":
+      - /url: /app/tasks?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+    - link "Timeline Open Timeline":
+      - /url: /app/timeline?sourceProduct=tasks&contextVersion=2&workspaceId=demo-ws&planningPeriodId=demo-planning-period
+  - link "More Signal Studio products (opens in a new tab)":
+    - /url: https://signalstudio.ie
+    - text: More More products · Signal Studio ↗
+  - link "Inbox":
+    - /url: /app/inbox
+    - text: Inbox · daily digest
+  - button "Help and settings"
+  - group: DO
+  - text: Account
+- text: Something snapped
+- heading "The workspace took a wrong turn." [level=2]
+- paragraph: We logged the failure and our team will see it. Try again, or duck back to the home view while we sort it out.
+- paragraph: ref · 404208437
+- button "Try again"
+- link "Back to board":
+  - /url: /app/tasks
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×

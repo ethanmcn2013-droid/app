@@ -1,0 +1,45 @@
+- link "Skip to main content":
+  - /url: "#app-main-content"
+- banner:
+  - link "Home":
+    - /url: /app/home
+    - text: home
+  - button "Search Signal Studio"
+  - group: DO
+- main:
+  - paragraph: THURSDAY 16 JULY
+  - heading "Good morning." [level=1]
+  - paragraph: The Orchard, events
+  - region "Today’s Signal":
+    - heading "Today’s Signal" [level=2]
+    - list:
+      - listitem:
+        - link "Order tonic + the good olives Two days past its date. Tasks · The Orchard, events · Mara & Finn · overdue":
+          - /url: /app/task/demo-t-06
+      - listitem:
+        - link "Build the Saturday run-sheet Due today. Tasks · The Orchard, events · Mara & Finn · today":
+          - /url: /app/task/demo-t-05
+      - listitem:
+        - link "Menu tasting at The Orchard Nothing has moved on it for fifteen days. Tasks · The Orchard, events · Mara & Finn · this week":
+          - /url: /app/task/demo-task-menu-tasting
+    - link "Open full briefing":
+      - /url: /app/home/briefing
+  - region "Needs review":
+    - heading "Needs review" [level=2]
+    - list:
+      - listitem:
+        - link "Approve the final seating plan in review":
+          - /url: /app/task/demo-t-07
+- navigation "Signal Studio products":
+  - link "Home":
+    - /url: /app/home
+  - link "Notes":
+    - /url: /app/notes
+  - link "Tasks":
+    - /url: /app/tasks
+  - link "Timeline":
+    - /url: /app/timeline
+- alert
+- status:
+  - text: In development. You’re seeing it early.
+  - button "Hide development notice": ×
