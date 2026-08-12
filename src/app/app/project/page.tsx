@@ -46,8 +46,8 @@ export const dynamic = "force-dynamic";
  */
 function canonicalProjectUrl(workspaceId: ProjectId): string {
   // The shared contextual-link builder. An earlier draft built this query
-  // locally to avoid the helper's silent fragment drop; #132 fixed the helper,
-  // so there is no longer a reason for this route to have its own builder.
+  // locally to avoid the helper's silent fragment drop; the Wave 2 follow-up
+  // (PR 132) fixed it, so this route has no reason to keep its own builder.
   return withActiveProject(PROJECT_APP_PATH, workspaceId);
 }
 

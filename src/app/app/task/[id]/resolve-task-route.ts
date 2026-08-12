@@ -101,7 +101,7 @@ export async function decideTaskRouteWith(
  * Routed through `withActiveProject`, the shared contextual-link builder, so
  * this route cannot drift from every other in-app link. An earlier draft built
  * the query here directly, to avoid that helper's silent fragment drop; the
- * Wave 2 follow-up (#132) fixed the helper and named WP3 as one of the waves
+ * Wave 2 follow-up (PR 132) fixed the helper and named WP3 as one of the waves
  * that must run its links through it, so the local builder is gone.
  *
  * Following this link must not rewrite the last-active cookie — only an
