@@ -25,11 +25,15 @@ is gone, and robots now disallows everything except the wedding page and the
 embed and published surfaces, because a host that serves no marketing pages
 should not be walking a crawler through them.
 
-Four repairs ride along. Welcome returned a 500 to signed-out visitors, which
-mattered more once it became the only surface sign-up hands off to, and it now
-renders. The root layout declared a canonical URL of app.signalstudio.ie for
-every page that inherited it, which told search engines the wrong home for
-pages that belong to the umbrella; that line is gone. Privacy, terms and
+Four repairs ride along. Welcome was listed as a public route while its first
+act is to read the current user, which throws on a request with no session, so
+every signed-out visit was a guaranteed 500. It needs a session, so it is a
+protected route now and a signed-out visitor is sent to sign-in. That matters
+more than it used to: welcome is the only surface sign-up hands off to once
+the marketing pages are gone. The root layout declared a canonical URL of
+app.signalstudio.ie for every page that inherited it, which told search
+engines the wrong home for pages that belong to the umbrella; that line is
+gone. Privacy, terms and
 security on the sign-in stage and in the Clerk configuration are absolute
 umbrella URLs rather than paths that redirect, because a consent link is the
 one link that must show the reader exactly what they are agreeing to. The
