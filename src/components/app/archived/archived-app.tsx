@@ -25,11 +25,11 @@ export function ArchivedApp({ tasks }: { tasks: Task[] }) {
         await setTaskArchivedAction(task.id, false);
         toast("Task restored", {
           tone: "success",
-          body: "It's back on the board.",
+          body: "It’s back on the board.",
         });
         router.refresh();
       } catch (e) {
-        toast("Couldn't restore", { tone: "error", body: (e as Error).message });
+        toast("Couldn’t restore", { tone: "error", body: (e as Error).message });
       }
     });
   }
@@ -41,7 +41,7 @@ export function ArchivedApp({ tasks }: { tasks: Task[] }) {
         toast("Task deleted", { tone: "success" });
         router.refresh();
       } catch (e) {
-        toast("Couldn't delete", { tone: "error", body: (e as Error).message });
+        toast("Couldn’t delete", { tone: "error", body: (e as Error).message });
       }
     });
   }

@@ -70,7 +70,7 @@ const FAILURE_COPY: Record<
   Exclude<StudentVerifyResult, { ok: true }>["reason"],
   string
 > = {
-  "invalid-email": "That doesn't look like an email. Try again?",
+  "invalid-email": "That doesn’t look like an email. Try again?",
 };
 
 export function StudentsForm() {

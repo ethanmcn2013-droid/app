@@ -59,7 +59,7 @@ export function DangerZone({ email }: { email: string }) {
 }
 
 function humaniseError(message: string | undefined, status: number): string {
-  if (status === 401) return "You're signed out. Sign in again, then retry.";
+  if (status === 401) return "You’re signed out. Sign in again, then retry.";
   if (status === 500)
     return "Something went wrong on our end. Try again in a moment. If it keeps failing, email hello@signalstudio.ie.";
   return message ?? `Delete failed (${status}).`;

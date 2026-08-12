@@ -16,8 +16,8 @@ export function PasswordRow({ user }: { user: UserResource }) {
         label="Password"
         hint={
           has
-            ? "Used when sign-in codes aren't reaching you."
-            : "You don't have a password, you sign in with a code or a connected account. Add one below if you'd like a fallback."
+            ? "Used when sign-in codes aren’t reaching you."
+            : "You don’t have a password, you sign in with a code or a connected account. Add one below if you’d like a fallback."
         }
         control={
           <button
@@ -68,7 +68,7 @@ function PasswordChangeFlow({
       return;
     }
     if (next !== confirm) {
-      setError("The two new passwords don't match");
+      setError("The two new passwords don’t match");
       return;
     }
     setPending(true);
@@ -81,7 +81,7 @@ function PasswordChangeFlow({
       });
       setDone(true);
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't update your password");
+      setError(extractClerkError(e) ?? "Couldn’t update your password");
     } finally {
       setPending(false);
     }

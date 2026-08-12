@@ -122,7 +122,7 @@ export function InboxApp({
           <SectionHead
             eyebrow="Daily digest"
             title={`Good morning, ${displayName}.`}
-            subtitle="Your one summary for the day. We don't send anything else unless someone tags you directly."
+            subtitle="Your one summary for the day. We don’t send anything else unless someone tags you directly."
             action={
               <div className="flex items-center gap-2">
                 {workspaceId && weeklySnapshot ? (
@@ -247,9 +247,9 @@ function NudgesSection({
   return (
     <section>
       <SectionHead
-        eyebrow="What's stuck"
+        eyebrow="What’s stuck"
         title={`${visible.length} ${visible.length === 1 ? "thing wants" : "things want"} a nudge.`}
-        subtitle="Idle work, past-due dates, tasks that are free to move. Dismiss anything you don't need."
+        subtitle="Idle work, past-due dates, tasks that are free to move. Dismiss anything you don’t need."
       />
       <ul className="mt-4 space-y-2">
         <AnimatePresence initial={false}>
@@ -856,7 +856,7 @@ function WeeklyRecapSection({
         writeWeeklyCache({ forDate: today, text: acc });
       } catch (err) {
         console.warn("weekly-recap: stream failed", err);
-        setText("Couldn't write the recap. Try again in a moment.");
+        setText("Couldn’t write the recap. Try again in a moment.");
       }
     });
   }, [isStreaming]);

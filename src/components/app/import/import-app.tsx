@@ -96,7 +96,7 @@ export function ImportApp({ workspaceName }: { workspaceName: string }) {
     async (next: File) => {
       setParseError(null);
       if (!next.name.toLowerCase().endsWith(".csv")) {
-        setParseError("That's not a CSV. We're picky about extensions.");
+        setParseError("That’s not a CSV. We’re picky about extensions.");
         return;
       }
       if (next.size > MAX_BYTES) {
@@ -127,7 +127,7 @@ export function ImportApp({ workspaceName }: { workspaceName: string }) {
         setSkipped(autoSkip);
       } catch (err) {
         const msg =
-          err instanceof Error ? err.message : "Couldn't read that CSV.";
+          err instanceof Error ? err.message : "Couldn’t read that CSV.";
         setParseError(msg);
         setFile(null);
       } finally {

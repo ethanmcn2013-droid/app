@@ -78,7 +78,7 @@ export async function updateWorkspaceAction(input: {
   if (input.name !== undefined) {
     const trimmed = input.name.trim();
     if (!trimmed) {
-      throw new Error("Workspace name can't be empty.");
+      throw new Error("Workspace name can’t be empty.");
     }
     await db
       .update(workspaces)
@@ -341,7 +341,7 @@ export async function inviteMemberByEmailAction(
 }> {
   const trimmed = email.trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
-    throw new Error("That doesn't look like an email.");
+    throw new Error("That doesn’t look like an email.");
   }
 
   // Clamp role server-side; never trust the caller.
@@ -452,7 +452,7 @@ export async function inviteMemberByEmailAction(
     text: `${inviterName} added you to ${workspaceName}. Accept the invite: ${acceptUrl}`,
   });
   if (!result.ok) {
-    throw new Error(result.error ?? "Couldn't send the invite email.");
+    throw new Error(result.error ?? "Couldn’t send the invite email.");
   }
 
   // Update last_sent_at on the pending_invites row (covers both new and resend).
@@ -528,7 +528,7 @@ export async function acceptInviteAction(token: string): Promise<{
     .where(eq(pendingInvites.token, token));
 
   if (!invite) {
-    throw new Error("This invite link doesn't exist.");
+    throw new Error("This invite link doesn’t exist.");
   }
   if (invite.acceptedAt) {
     throw new Error("This invite has already been accepted.");
@@ -550,7 +550,7 @@ export async function acceptInviteAction(token: string): Promise<{
     )?.emailAddress ?? null;
   if (!clerkEmail) {
     throw new Error(
-      "Your account doesn't have a verified email. Complete email verification and try again.",
+      "Your account doesn’t have a verified email. Complete email verification and try again.",
     );
   }
   if (clerkEmail.toLowerCase() !== invite.email.toLowerCase()) {

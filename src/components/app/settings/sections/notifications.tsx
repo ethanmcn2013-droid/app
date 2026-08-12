@@ -18,14 +18,14 @@ const TOGGLES: Array<{
     key: "dailyDigest",
     title: "Daily digest at 9am",
     description:
-      "One plain-English email a day: what closed yesterday, what's due today, who needed you. The default channel.",
+      "One plain-English email a day: what closed yesterday, what’s due today, who needed you. The default channel.",
     defaultsOn: true,
   },
   {
     key: "mentions",
     title: "Mention notifications",
     description:
-      "Direct hits, when someone @-mentions you, or a task you own gets blocked. The only thing we'll buzz you about in real time.",
+      "Direct hits, when someone @-mentions you, or a task you own gets blocked. The only thing we’ll buzz you about in real time.",
     defaultsOn: true,
   },
   {
@@ -39,7 +39,7 @@ const TOGGLES: Array<{
     key: "commentReplies",
     title: "Comment notifications without @-mention",
     description:
-      "Off by default. Flip this on if you want every reply on tasks you've touched, even when nobody tagged you. Most people regret it.",
+      "Off by default. Flip this on if you want every reply on tasks you’ve touched, even when nobody tagged you. Most people regret it.",
     defaultsOn: false,
     warning: "Volume warning",
   },
@@ -62,7 +62,7 @@ export function NotificationsSection({
         await setNotificationPrefAction(key, next);
       } catch (e) {
         setState((s) => ({ ...s, [key]: !next }));
-        toast("Couldn't save preference", {
+        toast("Couldn’t save preference", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -74,8 +74,8 @@ export function NotificationsSection({
     <div>
       <SectionHeader
         eyebrow="Notifications"
-        title="When we're allowed to interrupt"
-        description="The default is restraint: one digest a day, plus direct hits. Everything else is opt-in. We don't want to be that kind of app."
+        title="When we’re allowed to interrupt"
+        description="The default is restraint: one digest a day, plus direct hits. Everything else is opt-in. We don’t want to be that kind of app."
       />
 
       <ul className="space-y-3">

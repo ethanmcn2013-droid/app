@@ -15,7 +15,7 @@ export default async function PlanSettingsPage() {
     return (
       <SettingsSection
         title="Your plan"
-        description="What you're on, when it renews, and where the receipt lives."
+        description="What you’re on, when it renews, and where the receipt lives."
       >
         <PlanView
           summary={{
@@ -41,7 +41,7 @@ export default async function PlanSettingsPage() {
   return (
     <SettingsSection
       title="Your plan"
-      description="What you're on, when it renews, and where the receipt lives."
+      description="What you’re on, when it renews, and where the receipt lives."
     >
       <PlanView summary={summary} />
     </SettingsSection>

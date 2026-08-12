@@ -129,7 +129,7 @@ export async function getBoardName(
  */
 export async function renameBoardAction(name: string): Promise<{ ok: true }> {
   const trimmed = name.trim();
-  if (!trimmed) throw new Error("Board name can't be empty.");
+  if (!trimmed) throw new Error("Board name can’t be empty.");
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
@@ -171,7 +171,7 @@ export async function renameColumnAction(
   name: string,
 ): Promise<{ ok: true }> {
   const trimmed = name.trim();
-  if (!trimmed) throw new Error("Column name can't be empty.");
+  if (!trimmed) throw new Error("Column name can’t be empty.");
   if (isDemoMode()) return { ok: true };
   const ws = await getActiveWorkspace();
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
@@ -327,7 +327,7 @@ export async function addColumnAction(
   opts: AddColumnOptions = {},
 ): Promise<{ ok: true; key: string }> {
   const trimmed = name.trim();
-  if (!trimmed) throw new Error("Column name can't be empty.");
+  if (!trimmed) throw new Error("Column name can’t be empty.");
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
   const color = opts.color && isColumnColorKey(opts.color) ? opts.color : null;
   const description =

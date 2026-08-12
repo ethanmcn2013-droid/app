@@ -183,7 +183,7 @@ export function PageActionsOverflow({
         await doWrite(text);
         toast(label, { tone: "success", body });
       } catch {
-        toast("Couldn't copy", { tone: "error" });
+        toast("Couldn’t copy", { tone: "error" });
       }
       setTimeout(() => {
         setCopying(null);
