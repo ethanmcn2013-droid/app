@@ -34,6 +34,12 @@ join says, so the gate ignores left joins now. Inner joins still count,
 because an inner join to the membership table genuinely does narrow the
 result, and a test holds both halves of that line.
 
+That test needed somewhere to run. The file that proves the tenant gate can
+tell a scoped read from an unscoped one was listed in the test command
+without the flag that runs it, so for as long as it has existed it was
+handed to a different script as an argument and quietly ignored. It runs
+now. It brought 27 tests with it, and they pass.
+
 ## 2026-08-12 · T·143 · tightens · the Planning count says what it counts
 
 **The number beside Planning now names what it is. It reads "5 undated"

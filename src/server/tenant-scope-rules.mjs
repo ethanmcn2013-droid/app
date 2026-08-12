@@ -70,6 +70,13 @@
  * `stripLeftJoins`. `.innerJoin(...)` is deliberately untouched: an inner
  * join to a membership table genuinely does restrict, which is the whole
  * reason `workspaceMembers` is a strong token.
+ *
+ * This is the detector's half of D-018 in `docs/wave/DECISIONS.md`, "the
+ * defect class: authorization expressed as a row filter". D-018 warns that a
+ * permission check living inside a WHERE or a JOIN makes "you may not read
+ * this" and "there is nothing here" the same answer. The join case is worse
+ * than that, because a LEFT join's ON clause is not even a filter — it reads
+ * like proof of scope and restricts nothing at all.
  */
 
 import { readdirSync, statSync, existsSync } from "node:fs";
