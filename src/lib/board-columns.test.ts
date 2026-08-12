@@ -21,7 +21,7 @@ test("no stored config resolves to the five shipped columns", () => {
   );
   assert.deepEqual(
     columns.map((c) => c.name),
-    ["Queued", "In progress", "Review", "Waiting", "Done"],
+    ["To do", "In progress", "Review", "Waiting", "Done"],
   );
   const waiting = columns[3];
   assert.equal(waiting.isSystem, false);

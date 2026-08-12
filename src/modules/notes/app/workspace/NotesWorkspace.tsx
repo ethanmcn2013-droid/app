@@ -758,7 +758,13 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                   goToView(candidate);
                 }}
               >
-                {candidate === "notebook" ? "Notebook" : candidate === "review" ? "Review" : "Sent"}
+                {/* Wave 6: this tab said "Sent" until 2026-08-11. Under a
+                    "Private to you" badge, "Sent" invites exactly the wrong
+                    reading — that something left for someone else. The row
+                    chip already says "In Tasks", so the tab joins the
+                    vocabulary the rows established. The view key and the
+                    ?view=sent URL are unchanged. */}
+                {candidate === "notebook" ? "Notebook" : candidate === "review" ? "Review" : "In Tasks"}
                 {count > 0 ? <span className={styles.viewCount}>{count}</span> : null}
               </a>
             );
@@ -1533,13 +1539,14 @@ function ReviewView({
   );
 }
 
-/* ── Sent ──────────────────────────────────────────────────────────────── */
+/* ── In Tasks ──────────────────────────────────────────────────────────── */
 
 /**
- * Sent is the same list-and-detail shape as the notebook, on purpose: it is
- * the same notes, seen through what became of them. The list carries the
- * task wording, because that is what a person is looking for here; the
- * detail carries the note that produced it, unchanged.
+ * "In Tasks" (the tab said "Sent" until wave 6) is the same list-and-detail
+ * shape as the notebook, on purpose: it is the same notes, seen through what
+ * became of them. The list carries the task wording, because that is what a
+ * person is looking for here; the detail carries the note that produced it,
+ * unchanged. The component, the view key and the URL still say `sent`.
  */
 function SentView({
   notes,
@@ -1565,7 +1572,7 @@ function SentView({
   if (!notes.length) {
     return (
       <div className={styles.emptyCentred}>
-        <p className={styles.emptyTitle}>Nothing sent yet</p>
+        <p className={styles.emptyTitle}>No notes in Tasks yet</p>
         <p className={styles.emptyBody}>
           Notes you turn into tasks will stay available here, with the task they created.
         </p>
@@ -1623,7 +1630,7 @@ function SentView({
         </ul>
       </section>
 
-      <section className={styles.detailPane} aria-label="Sent note">
+      <section className={styles.detailPane} aria-label="Note and its task">
         {selected ? (
           <>
             {/* The same header object as the notebook's, wrapper and all.
@@ -1640,7 +1647,7 @@ function SentView({
                     onClick={() => onSelect(null)}
                   >
                     <BackIcon />
-                    Sent
+                    In Tasks
                   </button>
                   <SourceIcon source={noteSource(selected.source)} />
                   <span>{SOURCE_LABELS[noteSource(selected.source)]}</span>

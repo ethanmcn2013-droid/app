@@ -1466,7 +1466,7 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
  */
 function emptyLaneLine(status: string, label: string): string {
   switch (status) {
-    case "todo": return "Nothing queued";
+    case "todo": return "Nothing to start yet";
     case "doing": return "Nothing in motion";
     case "review": return "Nothing waiting on a check";
     case "waiting": return "Nothing held up";
@@ -1720,7 +1720,7 @@ function LaneHeader({
   const otherColumns = columns.filter((c) => c.key !== column.key);
   const [deleteDest, setDeleteDest] = useState(otherColumns[0]?.key ?? "");
   // Named so the keyboard move's accessible name can say where the column
-  // actually lands ("before Queued"), not just which way it goes.
+  // actually lands ("before To do"), not just which way it goes.
   const leftNeighbor = columnIndex > 0 ? columns[columnIndex - 1] : undefined;
   const rightNeighbor = columnIndex < columns.length - 1 ? columns[columnIndex + 1] : undefined;
   // The drag handle switches off while a field in the header is open. A

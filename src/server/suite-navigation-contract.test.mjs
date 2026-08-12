@@ -499,7 +499,7 @@ test("the deterministic cross-suite fixture keeps one workspace, project, and mi
   );
   assert.match(
     notesDemo,
-    /body: `\$\{REVIEW_PRIMARY_PROJECT\.name\}'s menu tasting at The Orchard is booked for 1 August\. Confirm the final dietary list before the venue team locks the service notes\.`/,
+    /body: `\$\{REVIEW_PRIMARY_PROJECT\.name\}’s menu tasting at The Orchard is booked for 1 August\. Confirm the final dietary list before the venue team locks the service notes\.`/,
   );
   assert.match(notesDemo, /promotedTaskId: REVIEW_MENU_MILESTONE\.sourceId/);
   assert.match(reviewFixture, /id: "demo-ws"/);
@@ -530,7 +530,7 @@ test("the deterministic cross-suite fixture keeps one workspace, project, and mi
   );
   assert.equal(
     crossSuiteJourney.fixtureContext.sourceNote.body,
-    "Mara & Finn's menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.",
+    "Mara & Finn’s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.",
   );
 
   const [association] =

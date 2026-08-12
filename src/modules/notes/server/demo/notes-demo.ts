@@ -56,14 +56,15 @@ const ACTIVE: Seed[] = [
   },
   {
     id: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
-    // The typewriter apostrophe here is the one straight mark left in the
-    // seeded notebook, and it is deliberate: this exact string is pinned in
-    // three places outside this module — a source regex and a fixture
-    // assertion in src/server/suite-navigation-contract.test.mjs, and
+    // The apostrophe here is curled, and it must stay curled: it is the
+    // last straight mark that was left in the seeded notebook (fixed in
+    // wave 6). This exact string is pinned in three places outside this
+    // module — a source regex and a fixture assertion in
+    // src/server/suite-navigation-contract.test.mjs, and
     // experience/cross-suite-journey.json, whose SHA is sealed into the
-    // quality-council receipts. Curling it here alone breaks the cross-suite
-    // journey contract. It moves when those three move together.
-    body: `${REVIEW_PRIMARY_PROJECT.name}'s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.`,
+    // quality-council receipts. Changing it here alone breaks the
+    // cross-suite journey contract. It moves when those three move together.
+    body: `${REVIEW_PRIMARY_PROJECT.name}’s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.`,
     ago: 2 * HOUR,
     extractBody: REVIEW_MENU_MILESTONE.title,
     promotedTaskId: REVIEW_MENU_MILESTONE.sourceId,

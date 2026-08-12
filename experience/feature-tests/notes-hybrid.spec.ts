@@ -10,7 +10,7 @@ import {
 /**
  * Signal Notes — the workspace.
  *
- * Three views (Notebook, Review, Sent) inside the module canvas, no floating
+ * Three views (Notebook, Review, In Tasks) inside the module canvas, no floating
  * card, one composer with three ways in. Every selector here is derived from
  * the render tree in src/modules/notes/app/workspace, and prefers the role
  * and the name a person would use over an id invented for a test.
@@ -64,7 +64,7 @@ async function openNotes(
   return workspace;
 }
 
-function viewTab(page: Page, name: "Notebook" | "Review" | "Sent"): Locator {
+function viewTab(page: Page, name: "Notebook" | "Review" | "In Tasks"): Locator {
   return page
     .getByRole("navigation", { name: "Notes views" })
     .getByRole("link", { name });
@@ -156,7 +156,7 @@ test("the workspace is the page itself, not a card floating on it", async ({
   expect(structure?.canvasBackground).toBe("rgb(255, 255, 255)");
 });
 
-test("Notebook, Review and Sent are links that write themselves into the URL", async ({
+test("Notebook, Review and In Tasks are links that write themselves into the URL", async ({
   page,
 }) => {
   await openNotes(page);
@@ -169,7 +169,7 @@ test("Notebook, Review and Sent are links that write themselves into the URL", a
     "aria-current",
     "page",
   );
-  await expect(viewTab(page, "Sent")).not.toHaveAttribute(
+  await expect(viewTab(page, "In Tasks")).not.toHaveAttribute(
     "aria-current",
     "page",
   );
@@ -186,7 +186,7 @@ test("Notebook, Review and Sent are links that write themselves into the URL", a
     await page.locator(ROW).count(),
   );
 
-  // Sent is not smuggled into the Notebook view.
+  // In Tasks is not smuggled into the Notebook view.
   const sentHeading = page.getByRole("heading", {
     name: "Notes you turned into tasks",
   });
@@ -197,9 +197,11 @@ test("Notebook, Review and Sent are links that write themselves into the URL", a
   await expect(viewTab(page, "Review")).toHaveAttribute("aria-current", "page");
   await expect(page.locator(REVIEW_CARD)).toHaveCount(1);
 
-  await viewTab(page, "Sent").click();
+  // The tab reads "In Tasks" since wave 6; the URL still says view=sent,
+  // because the view key is a route contract and was not renamed.
+  await viewTab(page, "In Tasks").click();
   await expect(page).toHaveURL(/[?&]view=sent(&|$)/);
-  await expect(viewTab(page, "Sent")).toHaveAttribute("aria-current", "page");
+  await expect(viewTab(page, "In Tasks")).toHaveAttribute("aria-current", "page");
   await expect(sentHeading).toHaveCount(1);
 
   await viewTab(page, "Notebook").click();
@@ -485,12 +487,12 @@ test("every review gesture has a button a thumb can hit", async ({ page }) => {
   }
 });
 
-test("Sent carries the task wording, the note behind it, and the way back", async ({
+test("In Tasks carries the task wording, the note behind it, and the way back", async ({
   page,
 }) => {
   await openNotes(page, { view: "sent" });
 
-  const detail = page.getByRole("region", { name: "Sent note" });
+  const detail = page.getByRole("region", { name: "Note and its task" });
   await expect(detail.getByText("What the task says")).toBeVisible();
   await expect(
     detail.getByText("Confirm marquee sides with hire company before Thursday"),
@@ -537,7 +539,7 @@ test("the empty states are quiet", async ({ page }) => {
   ).toBeVisible();
 
   await openNotes(page, { fixture: "empty", view: "sent" });
-  const nothingSent = page.getByText("Nothing sent yet");
+  const nothingSent = page.getByText("No notes in Tasks yet");
   await expect(nothingSent).toBeVisible();
   const fontSize = await nothingSent.evaluate((element) =>
     Number.parseFloat(getComputedStyle(element).fontSize),
