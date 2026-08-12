@@ -432,3 +432,70 @@ exposure, not merely a bug.
 
 **Reachability unverified** — needs production data: how many `workspaces` rows have
 `owner_user_id IS NULL`, and how many owners have `users.clerk_id IS NULL`.
+
+---
+
+## D-022 · The Tasks runtime must move from the layout into the pages
+
+*(Numbered 022 because the WP2 follow-up lane holds D-020 and D-021 in flight.)*
+
+**Surfaced by WP3-B as a blocker it correctly refused to work around.**
+
+`/app/tasks?workspaceId=B` **cannot render B's board** while `TasksRuntimeShell` is fetched
+in a layout. It is mounted from nine `layout.tsx` files, and Next 16 does not give layouts
+the URL:
+
+- Next's own type generator declares `PageProps` **with** `searchParams` and `LayoutProps`
+  **without** it (`next-types-plugin/index.js:128-136`).
+- The bundled docs state the intent — reading the current URL from a Server Component is
+  unsupported *"to support layout state being preserved across page navigations"*
+  (`use-pathname.md:38`).
+- `unstable_rootParams` was removed in 16.
+
+**A header workaround is worse than unavailable.** Layouts are not re-rendered when only the
+query string changes, so a header-derived Project would go stale on an A→B switch and label
+the board with the Project it no longer showed — the precise inequality ADR §2 calls a
+release blocker.
+
+**Interim behaviour, and it is deliberate.** Where the URL names an authorized Project that
+disagrees with what the layout resolved, `/app/tasks` **withholds the board and states the
+disagreement**. Showing A's data under a URL saying B is the failure this programme exists
+to eliminate; showing nothing is honest.
+
+**Decision.** Move the Tasks runtime out of `layout.tsx` and into the page boundaries, as
+plan §3.4 already requires: *"load the membership-filtered Project Catalog and exact Project
+in each page/server route boundary under route-specific Suspense/loading."* The plan said
+pages; the code has layouts. Assigned to **WP6**, which owns Tasks routes and shared chrome,
+and it is a **precondition** for WP6's selector — a Project control that cannot change the
+board it sits above is not a Project control.
+
+Until it lands, the WP3-B allowlist entry for `tasks-runtime-shell.tsx` remains conditional:
+it is allowlisted as a route fallback, not as a resolver.
+
+---
+
+## D-023 · `getActiveWorkspace()`'s ordering changes at WP3 integration, not in a lane
+
+The WP2 follow-up made `getActiveWorkspaceOrNull()` deterministic — its first-membership
+fallback now orders by `position, name, id` through one shared implementation that the
+catalog listing, the resolver's `first-active` default, and the accessor all call. Three
+accessors disagreeing about "first" means a user whose bare entry lands in one Project
+while the chooser highlights another has been told two different things about where they are.
+
+**`getActiveWorkspace()` was deliberately left unordered**, and the lane was right not to
+touch it: giving an arbitrary answer a *different* arbitrary answer moves which Project an
+existing multi-membership user lands on at bare entry. That is a live behaviour change
+outside the flag, in an accessor with ~30 remaining call sites.
+
+**Consequence, which is real:** until WP3 completes, a multi-membership user can get one
+Project on a migrated surface and another on an unmigrated one.
+
+**Decision.** The `ORDER BY` lands in the **WP3 integration commit**, made by the
+integration owner rather than by any lane — it spans WP2-owned (`auth.ts`) and WP3-owned
+files, and its blast radius is only assessable once both lanes' call-site migrations are
+visible together. It ships with a test pinning determinism across repeated calls, and with
+the two accessors verified to agree.
+
+**Not a licence to relax anything.** Determinism is not authorization. WP3's `manageProject`
+bound on the two destructive `seed.ts` paths stays exactly as it is — a stable guess is
+still a guess.
