@@ -79,8 +79,19 @@ test("the update path diffs against a pre-read rather than trusting the patch", 
 });
 
 test("the six write paths that needed a subject resolve one without a serial round-trip", () => {
+  // WP3 renegotiation (ADR 0001 §9). The property this guards is that identity
+  // and Project are resolved *concurrently* — a write path must not pay two
+  // serial round-trips to emit one instrumentation event. That property is
+  // unchanged. Two surface details did change: the ambient accessor is now
+  // `getActiveWorkspaceOrNull()`, which fails closed instead of decaying to
+  // LEGACY_WORKSPACE_ID (D-005), and the call no longer fits on one line.
+  //
+  // The old pattern pinned the exact single-line spelling, so it would have
+  // gone red on a reformat that changed nothing. This one spans lines and
+  // names the accessor that actually resolves the tenant. The count floor is
+  // unchanged at 4; there are 9 today.
   const promiseAll = tasks.match(
-    /Promise\.all\(\[getCurrentUser\(\), getActiveWorkspace\(\)\]\)/g,
+    /Promise\.all\(\[\s*getCurrentUser\(\),\s*getActiveWorkspaceOrNull\(\),?\s*\]\)/g,
   );
   assert.ok(promiseAll && promiseAll.length >= 4, "expected the Promise.all shape");
 });

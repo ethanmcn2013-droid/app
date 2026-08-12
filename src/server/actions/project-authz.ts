@@ -6,12 +6,11 @@ import "server-only";
  * ADR 0001 §9 permits exactly two shapes, and this module is the proof
  * behind both:
  *
- *  - **create/list** — `authorizeProjectScope()`. The action accepts a branded
- *    `ProjectId` and this freshly validates the required capability. When no
- *    explicit Project is supplied the ambient value is resolved through the
- *    fail-closed accessor and then put through the *same* proof, so the cookie
- *    is a hint about *which* Project, never evidence that the caller may write
- *    to it;
+ *  - **create/list** — `authorizeProjectCandidate()`. The action offers a
+ *    candidate: a branded `ProjectId` when it has one, otherwise whatever the
+ *    fail-closed accessor returned. Either way the candidate goes through the
+ *    *same* proof, so the cookie is a hint about *which* Project and never
+ *    evidence that the caller may write to it;
  *  - **object operation** — `authorizeStoredProject()`. The action reads its
  *    target by primary key, derives the Project stored *on the object*, and
  *    verifies capability against that. The ambient cookie is not an input to
@@ -47,7 +46,7 @@ import "server-only";
  * ── Ambient resolution, and the sharp edge on it ───────────────────────────
  *
  * `getActiveWorkspaceOrNull()` is the Wave 2 fail-closed drop-in: same cookie,
- * same first-membership fallback, and where `getActiveWorkspace()` hands back
+ * same first-membership fallback, and where the unguarded accessor hands back
  * `LEGACY_WORKSPACE_ID` — a real workspace holding real tasks that the caller
  * has proved no membership of (DECISIONS D-005) — it returns `null`.
  * Migrating to it closes D-005 at every call site in this lane.
@@ -224,7 +223,7 @@ export async function authorizeProjectCandidate(input: {
   archivePolicy?: ArchivePolicy;
 }): Promise<ProjectAuthorization> {
   // A missing candidate is a refusal, never a prompt to go looking for one.
-  // This is the D-005 site: `getActiveWorkspace()` answers `LEGACY_WORKSPACE_ID`
+  // This is the D-005 site: the unguarded accessor answers `LEGACY_WORKSPACE_ID`
   // where the fail-closed accessor answers `null`, and `null` must stay a "no".
   if (input.candidateProjectId === null || input.candidateProjectId === undefined) {
     return { ok: false, reason: "no-active-project" };

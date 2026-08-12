@@ -56,9 +56,9 @@ function pick<T>(arr: T[], seed: number): T {
  * ── Why this file gets the strictest treatment in WP3 ──────────────────────
  *
  * Two of the three writes below were `db.delete(tasks).where(eq(
- * tasks.workspaceId, ws))` with `ws` coming straight from
- * `getActiveWorkspace()`. A destructive bulk delete keyed solely by a cookie,
- * with two silent fallbacks behind it — first membership, then
+ * tasks.workspaceId, ws))` with `ws` coming straight from the unguarded
+ * ambient accessor. A destructive bulk delete keyed solely by a cookie, with
+ * two silent fallbacks behind it — first membership, then
  * `LEGACY_WORKSPACE_ID`, a real workspace holding real tasks that the caller
  * has proved no membership of (DECISIONS D-005). A caller with no membership
  * at all could empty `ws-legacy`.
