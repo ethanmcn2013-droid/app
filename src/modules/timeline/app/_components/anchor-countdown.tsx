@@ -28,6 +28,30 @@ import {
  * plan does not nag about a date it has already met.
  */
 
+/**
+ * The house middot, between two facts on one line.
+ *
+ * It was --ink-ghost, which is a HAIRLINE value: 1.48:1 on paper and 1.83:1
+ * on the dark canvas, against the 4.5:1 AA asks of anything drawn as a glyph.
+ * The repo's own contrast gate failed this element, twice per run, in both
+ * themes. aria-hidden keeps it out of the accessible name — it is punctuation,
+ * not content — but hiding a glyph from a screen reader does not make it
+ * decorative to the eye that has to read past it, and the gate is right to
+ * measure it as text.
+ *
+ * It takes the ink of the line it punctuates rather than a step of its own:
+ * --x-ink-quiet, 7.73:1 on paper and 9.94:1 in dark, which is also the
+ * contract this repo set for its own 12–13px metadata. A separator quiet
+ * enough to fail the floor is a separator nobody can see.
+ */
+function Separator() {
+  return (
+    <span aria-hidden style={{ color: "var(--x-ink-quiet, var(--ink-faint))" }}>
+      ·
+    </span>
+  );
+}
+
 const SHORT_MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -99,17 +123,13 @@ export function AnchorChip({
       >
         {anchor.title}
       </span>
-      <span aria-hidden style={{ color: "var(--ink-ghost)" }}>
-        ·
-      </span>
+      <Separator />
       <span style={{ fontVariantNumeric: "tabular-nums" }}>
         {formatDay(anchor.targetDate, now)}
       </span>
       {phrase ? (
         <>
-          <span aria-hidden style={{ color: "var(--ink-ghost)" }}>
-            ·
-          </span>
+          <Separator />
           <span
             style={{
               fontVariantNumeric: "tabular-nums",

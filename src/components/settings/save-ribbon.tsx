@@ -34,7 +34,7 @@ export function SaveRibbon({
                 : "bg-rose-50 text-rose-700")
             }
           >
-            {status === "saved" ? "Saved" : (error ?? "Couldn't save")}
+            {status === "saved" ? "Saved" : (error ?? "Couldn’t save")}
           </motion.div>
         ) : null}
       </AnimatePresence>

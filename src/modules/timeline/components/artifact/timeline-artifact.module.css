@@ -46,12 +46,30 @@
   margin-inline: auto;
   overflow: clip;
   padding: 0 var(--x-timeline-gutter) max(var(--space-7), env(safe-area-inset-bottom));
+  /* This stylesheet has two mounts, and only one of them may go dark.
+     PUBLIC: /s/[token] renders SharedTimelineArtifact for a guest who never
+     signed in. That document never renders the app layout, so it carries no
+     data-theme and no resolver script — but a guest on a dark phone would
+     still get UA-darkened form controls and scrollbars, which is what "only
+     light" refuses. The published artifact is a keepsake; it looks the same
+     for everyone the couple sends it to.
+     OWNER: the same component inside /app/timeline (the plan page and the
+     audience preview) is one surface among three, and it follows the app.
+     Hence the attribute-scoped override below rather than "light dark",
+     which would hand the public page's appearance back to the guest's OS. */
   color-scheme: only light;
   container-name: timeline-artifact;
   container-type: inline-size;
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans);
+}
+
+/* The owner's copy, inside the app, follows the app's resolved theme. Only
+   an /app document ever carries the attribute, so the published artifact at
+   /s/[token] can never match this rule. */
+:global([data-theme="dark"]) .artifact {
+  color-scheme: dark;
 }
 
 .screenReaderOnly,
@@ -165,7 +183,7 @@ button.timeLens:active {
 .timeLens:focus-visible,
 .milestoneButton:focus-visible,
 .decisions summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -563,11 +581,18 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 /* The house separator is a middot. A slash was the one punctuation mark in
-   the hero that belonged to no other surface in the suite. */
+   the hero that belonged to no other surface in the suite.
+
+   No colour of its own. It used to override to --ink-ghost, a hairline value
+   that measures 1.48:1 on paper and 1.83:1 on the dark canvas — sub-AA in
+   both themes, and invisible to the contrast gate because generated content
+   is not a DOM text node (the gate's own header names that blind spot). The
+   same defect, in the same glyph, as the anchor chip's separator. Inheriting
+   .metricDate's --x-timeline-quiet puts it at 7.73:1 / 9.94:1 and lets the
+   date line be one colour. */
 .metricDate time::before {
   content: "·";
   margin-inline-end: var(--space-2);
-  color: var(--ink-ghost);
 }
 
 .journey {
@@ -1033,7 +1058,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .milestone[data-state="current"] .milestoneLabel > span {
-  color: var(--accent);
+  color: var(--x-accent-ink);
   font-weight: var(--weight-medium);
 }
 
@@ -1496,7 +1521,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .footerLink:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 

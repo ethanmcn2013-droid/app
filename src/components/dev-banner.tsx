@@ -13,8 +13,10 @@ import { useHydrated } from "@/lib/use-hydrated";
  * pill, bottom-centre, dismissible for the session. Reads as designed, not
  * bolted on.
  *
- * Copy is configurable via NEXT_PUBLIC_DEV_BANNER_TEXT; default mirrors the
- * suite line "In development, private preview with staged access."
+ * Copy is configurable via NEXT_PUBLIC_DEV_BANNER_TEXT; the default says the
+ * same thing the old suite line said ("private preview with staged access")
+ * in the words the reader would use. It is the first copy every preview user
+ * meets and it sits on every screenshot, so it speaks like the product.
  *
  * At mobile widths the app docks a product rail at the foot of the viewport,
  * so the pill measures that rail (marked `data-signal-bottom-nav`) and lifts
@@ -99,7 +101,7 @@ export function DevBanner() {
 
   const text =
     process.env.NEXT_PUBLIC_DEV_BANNER_TEXT ??
-    "In development, private preview with staged access.";
+    "In development. You’re seeing it early.";
 
   return (
     <div

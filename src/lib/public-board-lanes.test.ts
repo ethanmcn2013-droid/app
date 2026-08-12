@@ -23,9 +23,9 @@ test("no config: guests see the shipped five columns, operator names included", 
   );
   assert.deepEqual(
     columns.map((column) => column.name),
-    ["Queued", "In progress", "Review", "Waiting", "Done"],
+    ["To do", "In progress", "Review", "Waiting", "Done"],
   );
-  // Working states carry a tint; the resting states — Queued (T·132: a
+  // Working states carry a tint; the resting states — To do (T·132: a
   // backlog is not an alarm) and Waiting — are neutral by default, and a
   // null accent is a first-class value guests must render.
   assert.ok(columns[1].accent);
@@ -48,10 +48,23 @@ test("a workspace config drives guest columns: rename, order, custom", () => {
     },
     [],
   );
+  // `todo` is absent from `system`, so it takes the current default —
+  // this is the default-vs-stored boundary the wave-6 rename rests on.
   assert.deepEqual(
     columns.map((column) => column.name),
-    ["In progress", "Paid", "Queued", "Review", "Handed over"],
+    ["In progress", "Paid", "To do", "Review", "Handed over"],
   );
+});
+
+test("a workspace that renamed the first lane keeps its own name", () => {
+  // The rename changed a DEFAULT, never stored data. A workspace whose
+  // owner typed a name into config.system.todo still reads that name, so
+  // nothing needed a migration.
+  const columns = publicBoardColumns(
+    { ...emptyConfig(), system: { todo: "Queued" } },
+    [],
+  );
+  assert.equal(columns[0].name, "Queued");
 });
 
 test("an orphaned key still present in data renders as a neutral column, never drops", () => {

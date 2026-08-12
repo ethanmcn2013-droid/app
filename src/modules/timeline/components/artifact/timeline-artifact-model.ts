@@ -1033,10 +1033,15 @@ export function artifactTitleLength(label: string): TimelineTitleLength {
 
 /**
  * What a mark's status line says. Two of these are derived — the milestone a
- * plan is standing on, and the same one running late — and the rest are the
- * milestone's own stored state. Every word comes from the module's one
- * vocabulary, so the rail cannot call a state "Coming up" while the screen
- * that set it called the same state something else.
+ * plan is standing on, and the same one running late — and both take the
+ * rail's own words, "Our next milestone". The rest are the milestone's own
+ * stored state, so a milestone somebody flagged `next` reads "Coming up".
+ *
+ * Those two were one word until recently, and a mark could be flagged "Next"
+ * three flags away from the one the rail announced as next. Every label here
+ * comes from the module's one vocabulary, which is what keeps them apart now:
+ * the milestone the rail derives and the milestone the owner flagged are
+ * usually not the same milestone, and they no longer answer to the same name.
  */
 export function timelinePointStatus(point: TimelineArtifactPoint): string {
   if (point.state === "complete") return MILESTONE_STATE_LABELS.covered;

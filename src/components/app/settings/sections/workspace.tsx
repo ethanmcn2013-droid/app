@@ -126,7 +126,7 @@ export function WorkspaceSection({
         await updateWorkspaceAction({ name: trimmed });
         toast("Workspace renamed", { tone: "success" });
       } catch (e) {
-        toast("Couldn't save", { tone: "error", body: (e as Error).message });
+        toast("Couldn’t save", { tone: "error", body: (e as Error).message });
         setName(workspace.name);
       }
     });
@@ -154,7 +154,7 @@ export function WorkspaceSection({
           },
         );
       } catch (e) {
-        toast("Couldn't update", {
+        toast("Couldn’t update", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -524,7 +524,7 @@ function PublishBlock({
           body: "Anyone with the link can read it. Search engines are asked not to list it.",
         });
       } catch (e) {
-        toast("Couldn't publish", {
+        toast("Couldn’t publish", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -541,7 +541,7 @@ function PublishBlock({
           body: "The public link returns 404 again.",
         });
       } catch (e) {
-        toast("Couldn't unpublish", {
+        toast("Couldn’t unpublish", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -556,7 +556,7 @@ function PublishBlock({
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      toast("Couldn't copy", { tone: "error" });
+      toast("Couldn’t copy", { tone: "error" });
     }
   }
 

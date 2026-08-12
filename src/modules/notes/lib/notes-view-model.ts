@@ -252,10 +252,12 @@ export function countViews(notes: readonly PresentableNote[]): NotesCounts {
   return { notebook, review, sent };
 }
 
-/** "10 notes", "1 note", "4 to review", "3 sent" — the label describes the view. */
+/** "10 notes", "1 note", "4 to review", "3 in Tasks" — the label describes
+ *  the view. The `sent` key is the internal view id; the words follow the
+ *  tab, which reads "In Tasks" since wave 6. */
 export function countLabel(view: NotesView, count: number): string {
   if (view === "review") return `${count} to review`;
-  if (view === "sent") return count === 1 ? "1 sent" : `${count} sent`;
+  if (view === "sent") return `${count} in Tasks`;
   return count === 1 ? "1 note" : `${count} notes`;
 }
 

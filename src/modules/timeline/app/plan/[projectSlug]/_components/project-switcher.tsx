@@ -143,7 +143,7 @@ export function ProjectSwitcher({
         aria-label={`Current project: ${active.name}. Switch project.`}
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleTriggerKeyDown}
-        className="inline-flex min-h-[44px] max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-white px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] max-w-[min(72vw,360px)] items-center gap-2 rounded-lg border border-line-soft bg-bg-elevated px-3 text-left text-[13px] font-medium text-ink shadow-sm transition-colors hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         <span className="truncate">{active.name}</span>
         <svg
@@ -167,7 +167,7 @@ export function ProjectSwitcher({
           role="menu"
           aria-label="Timeline projects"
           onKeyDown={handleMenuKeyDown}
-          className="tl-menu-in absolute left-0 z-40 mt-2 max-h-[min(360px,60vh)] min-w-[min(320px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_18px_50px_-22px_rgba(20,21,26,0.45)]"
+          className="tl-menu-in absolute left-0 z-40 mt-2 max-h-[min(360px,60vh)] min-w-[min(320px,calc(100vw-3rem))] overflow-y-auto rounded-xl border border-line-soft bg-bg-elevated p-1.5 shadow-[0_18px_50px_-22px_rgba(20,21,26,0.45)]"
         >
           {options.map((option, index) => {
             const isCurrent = option.slug === active.slug;

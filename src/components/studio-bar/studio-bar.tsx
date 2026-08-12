@@ -253,7 +253,7 @@ export function StudioBar() {
             aria-keyshortcuts="c"
             title="Add task (C)"
             onClick={() => window.dispatchEvent(new CustomEvent(STUDIO_CREATE_EVENT))}
-            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg border border-[var(--x-studio-ink-strong)] bg-[var(--x-studio-ink-strong)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-chrome)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-white hover:bg-white active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] disabled:opacity-60 md:h-[34px] md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
+            className="flex h-[44px] min-w-[44px] flex-none items-center justify-center gap-2 rounded-lg border border-[var(--x-studio-capsule-edge)] bg-[var(--x-studio-capsule)] px-2.5 text-[13px] font-semibold text-[var(--x-studio-capsule-ink)] outline-none transition-[background-color,border-color,transform] duration-150 hover:border-[var(--x-studio-capsule-hover)] hover:bg-[var(--x-studio-capsule-hover)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)] disabled:opacity-60 md:h-[34px] md:min-w-0 md:px-3 md:pointer-coarse:h-[44px] md:pointer-coarse:min-w-[44px]"
           >
             <svg
               aria-hidden="true"
@@ -269,7 +269,7 @@ export function StudioBar() {
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             <span className="hidden sm:block">Add task</span>
-            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-zinc-600 lg:flex">
+            <kbd className="hidden h-[17px] items-center rounded border border-black/[0.12] bg-black/[0.04] px-[5px] font-mono text-[10px] font-medium text-[var(--x-studio-capsule-keycap)] lg:flex">
               C
             </kbd>
           </button>

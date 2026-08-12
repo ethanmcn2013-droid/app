@@ -27,7 +27,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
         ),
       );
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't load your sessions");
+      setError(extractClerkError(e) ?? "Couldn’t load your sessions");
     } finally {
       setPending(false);
     }
@@ -43,7 +43,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
       await s.revoke();
       await load();
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't sign that device out");
+      setError(extractClerkError(e) ?? "Couldn’t sign that device out");
     }
   }
 
@@ -51,7 +51,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
     if (!sessions || !currentSession) return;
     if (
       !confirm(
-        "Sign out every other device? You'll stay signed in here.",
+        "Sign out every other device? You’ll stay signed in here.",
       )
     ) {
       return;
@@ -65,7 +65,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
       );
       await load();
     } catch (e) {
-      setError(extractClerkError(e) ?? "Couldn't sign other devices out");
+      setError(extractClerkError(e) ?? "Couldn’t sign other devices out");
     } finally {
       setPending(false);
     }
@@ -76,7 +76,7 @@ export function SessionsRow({ user }: { user: UserResource }) {
   return (
     <SettingsRow
       label="Active sessions"
-      hint="Devices where you're signed in. Sign out anything you don't recognise."
+      hint="Devices where you’re signed in. Sign out anything you don’t recognise."
       control={
         <div className="flex w-full flex-col gap-2">
           {sessions === null ? (

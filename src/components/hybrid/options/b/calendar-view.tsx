@@ -296,7 +296,7 @@ function CalendarSubscribeButton() {
   const onSubscribe = useCallback(() => {
     if (!ws) return;
     const url = `${window.location.origin.replace(/^https?/, "webcal")}/api/calendar/${ws.id}`;
-    const finish = () => toast("Link copied", { tone: "success", body: "Paste into Calendar's 'Add subscription' dialog." });
+    const finish = () => toast("Link copied", { tone: "success", body: "Paste it into your calendar app, where it asks to add a subscription." });
     const fallbackCopy = () => {
       try {
         const ta = document.createElement("textarea");
@@ -309,7 +309,7 @@ function CalendarSubscribeButton() {
         document.body.removeChild(ta);
         finish();
       } catch {
-        toast("Couldn't copy the link", { tone: "warn" });
+        toast("Couldn’t copy the link", { tone: "warn" });
       }
     };
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(finish, fallbackCopy);

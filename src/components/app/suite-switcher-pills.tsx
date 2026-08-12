@@ -91,8 +91,12 @@ function suiteJump(url: string) {
   }
   const overlay = document.createElement("div");
   overlay.setAttribute("aria-hidden", "true");
+  // The curtain is the destination's own paper, not a white one. This is the
+  // second copy of suiteJump — suite-launcher.tsx has the same function and
+  // was tokenized when dark shipped; this one was missed, so a product switch
+  // from a settings page flashed a full-screen white field over a dark app.
   overlay.style.cssText =
-    "position:fixed;inset:0;z-index:2147483647;background:#ffffff;opacity:0;" +
+    "position:fixed;inset:0;z-index:2147483647;background:var(--paper,var(--bg));opacity:0;" +
     "transition:opacity 260ms cubic-bezier(.32,0,.67,1);display:flex;" +
     "align-items:center;justify-content:center;pointer-events:none";
   const dot = document.createElement("div");

@@ -125,7 +125,7 @@ export default async function TimelineProjectPreviewPage({
             </Link>
             <Link
               href={backHref}
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-white px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+              className="inline-flex min-h-[44px] items-center rounded-lg border border-line-soft bg-bg-elevated px-4 text-sm font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
             >
               Back to {project.name}
             </Link>
@@ -150,7 +150,7 @@ export default async function TimelineProjectPreviewPage({
       : publication.state;
 
   return (
-    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
+    <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-paper">
       {/* The only owner element on this route, and it says so. Everything
           below the rule is the guest's page. */}
       <div className="border-b border-line-soft bg-bg-sunken">

@@ -39,7 +39,6 @@ import { getProjectsTreeData } from "@/server/actions/projects-tree";
 import { getRoomBriefData } from "@/server/actions/room";
 import { getTagDefs } from "@/server/actions/tags";
 import { db } from "@/server/db";
-import { getUserPreferences } from "@/server/db/preferences";
 import {
   getActiveDomain,
   getTasks,
@@ -83,7 +82,6 @@ export async function TasksRuntimeShell({
     columnConfig,
     tagDefs,
     members,
-    userPreferences,
   ] = await Promise.all([
     getTasks(workspaceId),
     getActiveDomain(workspaceId),
@@ -127,9 +125,11 @@ export async function TasksRuntimeShell({
     getColumnConfig(workspaceId),
     getTagDefs(workspaceId),
     getWorkspaceMemberMeta(workspaceId),
-    isDemoMode()
-      ? Promise.resolve(null)
-      : getCurrentUser().then((userId) => getUserPreferences(userId)),
+    // The theme preference used to be read here, for a data-theme attribute
+    // this shell hung on a display:contents wrapper. The app layout owns the
+    // resolved theme now (src/app/app/theme-runtime.tsx) — one read for all
+    // three products instead of one read on the Tasks path only, and Notes
+    // and Timeline stop being the products where the switch did not reach.
   ]);
 
   const workspaceSlug = workspace?.slug ?? workspaceId;
@@ -142,14 +142,8 @@ export async function TasksRuntimeShell({
     primaryUseCase: workspace?.primaryUseCase,
     activeDomain: domain,
   });
-  const themeMode = userPreferences?.themeMode ?? "system";
-
   return (
-    <div
-      className="contents"
-      data-theme={themeMode}
-      style={{ colorScheme: "light" }}
-    >
+    <>
       <CurrentUserProvider user={currentUser}>
         <DomainProvider
           domain={domain}
@@ -202,6 +196,6 @@ export async function TasksRuntimeShell({
           </TasksProvider>
         </DomainProvider>
       </CurrentUserProvider>
-    </div>
+    </>
   );
 }

@@ -114,7 +114,7 @@
 .navPlanningPeriod > small { color: var(--x-task-text-muted); display: block; font-size: 11px; margin-top: 2px; }
 .navPlanningPeriod > div { align-items: center; display: flex; gap: 5px; margin-top: 10px; }
 .navPlanningPeriod > div i { background: var(--x-task-accent); border-radius: 50%; height: 6px; width: 6px; }
-.navPlanningPeriod > div span { color: var(--x-task-accent); font-size: 11px; font-weight: 600; }
+.navPlanningPeriod > div span { color: var(--x-accent-ink); font-size: 11px; font-weight: 600; }
 
 .navPlanningPeriod > a {
   align-items: center;
@@ -201,7 +201,7 @@
 .workspaceIdentity > p:first-child strong { color: var(--x-task-text-secondary); }
 .workspaceIdentity > div { align-items: center; display: flex; gap: 9px; min-width: 0; }
 .workspaceIdentity h1 { font-size: 20px; letter-spacing: -.035em; line-height: 1.1; margin: 0; white-space: nowrap; }
-.workspacePurpose { background: var(--x-task-accent-soft); border-radius: 4px; color: var(--x-task-accent); font-size: 11px; font-weight: 600; padding: 3px 5px; white-space: nowrap; }
+.workspacePurpose { background: var(--x-task-accent-soft); border-radius: 4px; color: var(--x-accent-ink); font-size: 11px; font-weight: 600; padding: 3px 5px; white-space: nowrap; }
 .workspaceBrief { color: var(--x-task-text-secondary); font-size: 11px; line-height: 1.35; margin: 5px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .workspaceFacts { display: grid; gap: 0; grid-template-columns: repeat(5, minmax(48px, 1fr)); margin: 4px 0 0; min-width: 0; }
@@ -275,7 +275,7 @@
 }
 
 .commandButton > span { background: var(--x-task-hover); border-radius: 3px; font-size: 11px; padding: 1px 3px; }
-.commandButton[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); color: var(--x-task-accent); }
+.commandButton[aria-pressed="true"] { background: var(--x-task-selected); border-color: color-mix(in srgb, var(--x-task-accent) 30%, var(--x-task-border)); color: var(--x-accent-ink); }
 .commandButton:disabled { background: var(--x-task-hover); color: var(--x-task-text-muted); cursor: not-allowed; opacity: .55; }
 .newTaskButton { background: var(--x-task-text); border-color: var(--x-task-text); color: var(--x-task-raised); font-weight: 600; }
 .newTaskButton:disabled { cursor: not-allowed; opacity: .42; }
@@ -467,7 +467,7 @@ thead .listTitleCell { z-index: 14; }
 .timelineDateHeader > div { align-items: center; border-right: 1px solid var(--x-task-border); display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .timelineDateHeader > div span { color: var(--x-task-text-muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .timelineDateHeader > div strong { font-size: 11px; margin-top: 2px; }
-.timelineDateHeader > div[data-today] { background: var(--x-task-accent-soft); color: var(--x-task-accent); }
+.timelineDateHeader > div[data-today] { background: var(--x-task-accent-soft); color: var(--x-accent-ink); }
 .timelineTaskPane { align-items: center; display: grid; gap: 7px; grid-template-columns: 15px minmax(0, 1fr); height: 52px; padding: 0 9px; }
 .timelineTaskPane > div { display: flex; flex-direction: column; min-width: 0; }
 .timelineTaskPane > div > button { font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -476,7 +476,7 @@ thead .listTitleCell { z-index: 14; }
 .timelineGrid > span:not(.timelineTodayLine):not(.timelineDropGuide) { border-bottom: 1px solid var(--x-task-border); border-right: 1px solid var(--x-task-border); min-width: 0; }
 .timelineGrid > span[data-weekend] { background: color-mix(in srgb, var(--x-task-canvas) 45%, var(--x-task-raised)); }
 .timelineTodayLine { border-left: 1px solid var(--x-task-accent); bottom: 0; pointer-events: none; position: absolute; top: 0; z-index: 3; }
-.timelineTodayLine b { background: var(--x-task-accent); border-radius: 3px; color: var(--x-task-raised); font-size: 11px; font-style: normal; left: -13px; padding: 2px 4px; position: absolute; top: 2px; }
+.timelineTodayLine b { background: var(--x-task-accent); border-radius: 3px; color: var(--x-on-accent); font-size: 11px; font-style: normal; left: -13px; padding: 2px 4px; position: absolute; top: 2px; }
 .timelineDropGuide { background: color-mix(in srgb, var(--x-task-accent) 10%, transparent); border: 1px solid color-mix(in srgb, var(--x-task-accent) 42%, transparent); bottom: 1px; pointer-events: none; position: absolute; top: 1px; z-index: 5; }
 .timelineDropGuide b { background: var(--x-task-text); border-radius: 3px; color: var(--x-task-raised); font-size: 11px; left: 2px; padding: 2px 4px; position: absolute; top: 2px; white-space: nowrap; }
 .timelineRange { align-items: stretch; background: color-mix(in srgb, var(--x-task-accent) 12%, var(--x-task-raised)); border: 1px solid color-mix(in srgb, var(--x-task-accent) 34%, var(--x-task-border)); border-radius: 5px; display: flex; height: 28px; overflow: hidden; position: absolute; top: 11px; z-index: 6; }
@@ -519,7 +519,7 @@ thead .listTitleCell { z-index: 14; }
 .calendarTable[data-display="week"] td { height: 430px; }
 .calendarTable td[data-outside] { background: color-mix(in srgb, var(--x-task-canvas) 50%, var(--x-task-raised)); }
 .calendarTable td[data-selected-day] { box-shadow: inset 0 0 0 2px var(--x-task-focus); }
-.calendarTable td[data-today] .calendarDateButton { background: var(--x-task-accent); color: var(--x-task-raised); }
+.calendarTable td[data-today] .calendarDateButton { background: var(--x-task-accent); color: var(--x-on-accent); }
 .calendarTable td[data-drop-target],
 .calendarAgenda li[data-drop-target] { background: var(--x-task-accent-soft); box-shadow: inset 0 0 0 2px var(--x-task-accent); }
 .calendarDateButton { align-items: center; background: transparent; border: 0; border-radius: 4px; color: var(--x-task-text-secondary); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 4px; height: 20px; justify-content: center; min-width: 20px; padding: 0 4px; }
@@ -544,7 +544,7 @@ thead .listTitleCell { z-index: 14; }
 .calendarRangeHandle { background: transparent; border: 0; bottom: 0; cursor: ew-resize; padding: 0; position: absolute; right: 0; top: 0; width: 24px; }
 .calendarRangeHandle::after { background: var(--x-task-accent); border-radius: 1px; bottom: 5px; content: ""; position: absolute; right: 2px; top: 5px; width: 3px; }
 .calendarRangeHandle:disabled { cursor: not-allowed; opacity: .4; }
-.calendarOverflowButton { align-items: center; background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; display: flex; font: inherit; font-size: 11px; font-weight: 600; margin-top: 2px; min-height: 24px; padding: 0 2px; }
+.calendarOverflowButton { align-items: center; background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; display: flex; font: inherit; font-size: 11px; font-weight: 600; margin-top: 2px; min-height: 24px; padding: 0 2px; }
 .calendarCellAdd { align-items: center; background: transparent; border: 0; color: var(--x-task-text-muted); cursor: pointer; display: flex; font: inherit; font-size: 11px; gap: 3px; margin-top: 2px; min-height: 24px; opacity: 0; padding: 0 2px; }
 .calendarTable td:hover .calendarCellAdd,
 .calendarCellAdd:focus-visible { opacity: 1; }
@@ -655,18 +655,18 @@ thead .listTitleCell { z-index: 14; }
 .railTabs button:hover { color: var(--x-task-text); }
 .railTabs button[aria-selected="true"] { background: var(--x-task-raised); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent), 0 0 0 1px var(--x-task-border); color: var(--x-task-text); font-weight: 600; }
 .railTabs em { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; font-style: normal; font-variant-numeric: tabular-nums; }
-.railTabs button[aria-selected="true"] em { color: var(--x-task-accent); }
+.railTabs button[aria-selected="true"] em { color: var(--x-accent-ink); }
 
 /* Undo strip: the receipt for a scheduling act, with the way back. */
 .railUndo { align-items: center; background: var(--x-task-selected); border-radius: 8px; color: var(--x-task-text-secondary); display: flex; flex: none; font-size: 11px; gap: 10px; justify-content: space-between; line-height: 1.35; margin: 10px 16px 0; padding: 7px 10px; }
-.railUndo button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: none; font: inherit; font-size: 11px; font-weight: 600; padding: 2px; position: relative; }
+.railUndo button { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; flex: none; font: inherit; font-size: 11px; font-weight: 600; padding: 2px; position: relative; }
 .railUndo button::after { content: ""; inset: -4px 0; position: absolute; }
 .railUndo button:hover { text-decoration: underline; }
 
 .unscheduledSection { display: flex; flex-direction: column; min-height: 0; padding: 12px 16px 16px; }
 .unscheduledSection > header { align-items: baseline; display: flex; flex: none; gap: 10px; justify-content: space-between; }
 .unscheduledSection > header small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.45; }
-.unscheduledSection > header > button { background: transparent; border: 0; color: var(--x-task-accent); cursor: pointer; flex: none; font: inherit; font-size: 11px; font-weight: 500; padding: 0; position: relative; }
+.unscheduledSection > header > button { background: transparent; border: 0; color: var(--x-accent-ink); cursor: pointer; flex: none; font: inherit; font-size: 11px; font-weight: 500; padding: 0; position: relative; }
 /* Select all / Clear selection is 50px wide but ~17px tall — the invisible
    hit-area technique again, vertical only, since width already clears 24px. */
 .unscheduledSection > header > button::after { content: ""; inset: -5px 0; position: absolute; }
@@ -766,7 +766,7 @@ thead .listTitleCell { z-index: 14; }
    ::after hit-area expansion here too — see the unscheduled-list title
    button above for why padding cancelled by negative margin is the fix. */
 .railMilestones li > button { background: transparent; border: 0; color: var(--x-task-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 500; margin: -4px 0; min-width: 0; overflow: hidden; padding: 4px 0; text-align: left; text-overflow: ellipsis; transition: color var(--motion-fast) var(--ease-out); white-space: nowrap; }
-.railMilestones li > button:hover { color: var(--x-task-accent); }
+.railMilestones li > button:hover { color: var(--x-accent-ink); }
 .railMilestones li > button[data-completed] { color: var(--x-task-text-muted); }
 .railMilestones > p { color: var(--x-task-text-muted); font-size: 12px; line-height: 1.45; margin: 4px 0 0; }
 .railMilestones > small { color: var(--x-task-text-muted); display: block; font-size: 11px; line-height: 1.4; margin-top: 9px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

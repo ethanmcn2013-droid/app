@@ -20,6 +20,25 @@ import type { MetadataRoute } from "next";
  * share_target preserved verbatim, this is the Web Share API target
  * that lets users share text/URLs into Tasks from any other Android
  * app via the system share sheet.
+ *
+ * THEME, and the one place the app cannot follow you. A web app manifest
+ * carries exactly one background_color and one theme_color; the spec has no
+ * media-conditional form, and Next has nothing to add to a file the OS reads
+ * once at install time. So these are single values chosen on purpose:
+ *
+ *   theme_color      the L-frame charcoal. The Studio Bar is this colour in
+ *                    BOTH themes, so the installed title bar sits flush
+ *                    against the app's own top edge for every user — where
+ *                    white was right for none of the dark ones.
+ *   background_color the splash field, held at white. It paints for the
+ *                    fraction of a second before the document does, and it
+ *                    cannot know which theme the document will resolve to.
+ *                    Light is the default mode and the majority case; a dark
+ *                    user sees a brief light splash. The alternative trades
+ *                    that for a dark flash in front of every light user.
+ *
+ * The in-document theme-color meta (src/app/app/layout.tsx) does carry both
+ * themes; this file is the platform limit, not a missed remap.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -32,7 +51,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#ffffff",
-    theme_color: "#ffffff",
+    theme_color: "#17171a",
     lang: "en-IE",
     dir: "ltr",
     categories: ["productivity", "business"],

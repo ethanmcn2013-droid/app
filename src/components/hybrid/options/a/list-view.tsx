@@ -50,6 +50,16 @@ type ListGroup = {
   addStatus: TaskStatus;
 };
 
+/**
+ * `${n} thing${n === 1 ? "" : "s"}`, the shape the board already writes by
+ * hand and TaskSignals writes through a `counted` of its own. That one is
+ * private to task-ui, so the ratio sentence under a collapsed row mirrors it
+ * here rather than widening an export for a single call site.
+ */
+function counted(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 /** Priority choices, in the order the product states them everywhere else. */
 const PRIORITY_OPTIONS = TASK_PRIORITIES.map((priority) => ({
   value: priority as string,
@@ -312,7 +322,7 @@ export function ListView({
                         {group === "status" ? <span className={styles.statusPip} data-accent={groupAccent ? "" : undefined} /> : null}
                         {taskGroup.label}
                       </button>
-                      <span>{taskGroup.tasks.length} tasks</span>
+                      <span>{taskGroup.tasks.length} task{taskGroup.tasks.length === 1 ? "" : "s"}</span>
                       <span>{complete}/{taskGroup.tasks.length || 0} done</span>
                       {store.readOnly ? null : <button onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>}
                     </div>
@@ -382,7 +392,7 @@ export function ListView({
                             /* The top-level fetch hydrates counts, not titles;
                                blank rows read as breakage, a ratio reads true. */
                             <p aria-label={`Subtasks for ${task.title}`}>
-                              {task.subtasks.filter((subtask) => subtask.completed).length} of {task.subtasks.length} subtasks complete. Open the task to see them.
+                              {`${task.subtasks.filter((subtask) => subtask.completed).length} of ${counted(task.subtasks.length, "subtask")} complete. Open the task to see them.`}
                             </p>
                           )}
                         </td>

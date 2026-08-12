@@ -34,7 +34,7 @@ const DESTINATIONS: readonly SuiteDestination[] = Object.freeze([
   {
     id: "tasks",
     name: "Tasks",
-    promise: "Move the work from queued to done.",
+    promise: "Move the work from start to finish.",
     searchTerms: "work project board list calendar task execute",
   },
   {

@@ -8,7 +8,8 @@ import type { AudienceItemState, AudienceKind } from "./audience-timeline";
  * "Complete / Now / Next / Later / Not going ahead", the publish step offered
  * "Covered / Now / Next / Later / Cancelled", the published payload carried a
  * fourth copy of the second set, and the artifact's rail spoke a fifth
- * ("Coming up"). An owner could set a milestone to "Not going ahead" in one
+ * ("Coming up", now this file's word for the `next` state and no longer the
+ * rail's). An owner could set a milestone to "Not going ahead" in one
  * screen, see it as "Cancelled" in the next, and hand a guest a page that said
  * something else again. Nothing was out of sync technically; the product was
  * simply speaking about itself in more than one language.
@@ -32,11 +33,20 @@ import type { AudienceItemState, AudienceKind } from "./audience-timeline";
  * and this module is imported by client components.
  */
 
-/** The five states a shared milestone can be in, in the reader's words. */
+/**
+ * The five states a shared milestone can be in, in the reader's words.
+ *
+ * `next` reads "Coming up" rather than "Next" because the rail below it says
+ * "Our next milestone" about a milestone it derives, and the two rendered
+ * three flags apart on the same axis: one milestone was flagged "Next" while
+ * a different one was announced as the next milestone. A guest could not tell
+ * which was which. The stored state is still `next` and the two words now
+ * name two different things out loud, which is what they always were.
+ */
 export const MILESTONE_STATE_LABELS: Readonly<Record<AudienceItemState, string>> = {
   covered: "Complete",
   now: "Happening now",
-  next: "Next",
+  next: "Coming up",
   later: "Later",
   cancelled: "Not going ahead",
 };

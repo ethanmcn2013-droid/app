@@ -109,7 +109,7 @@ function PaidView({
       const { url } = await createBillingPortalSessionAction();
       window.location.href = url;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't open billing");
+      setError(e instanceof Error ? e.message : "Couldn’t open billing");
       setPending(false);
     }
   }

@@ -94,7 +94,7 @@ const REVIEW_PILE: string[] = [
 ];
 
 const DOING_EMPTY: string[] = [
-  "{todo} queued, nothing in progress. Start one.",
+  "{todo} to do, nothing in progress. Start one.",
   "Nothing in flight. Pick one and begin.",
   "{todo} ready to go. One at a time works.",
 ];

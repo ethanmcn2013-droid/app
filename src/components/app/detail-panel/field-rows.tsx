@@ -594,7 +594,7 @@ const RECURRENCE_OPTIONS: Array<{
   label: string;
   value: RecurrenceSpec | null;
 }> = [
-  { label: "Doesn't repeat", value: null },
+  { label: "Doesn’t repeat", value: null },
   { label: "Every Monday", value: { kind: "weekly", weekday: 1 } },
   { label: "Every Tuesday", value: { kind: "weekly", weekday: 2 } },
   { label: "Every Wednesday", value: { kind: "weekly", weekday: 3 } },
@@ -611,7 +611,7 @@ const RECURRENCE_OPTIONS: Array<{
 export function RecurrenceRow({ task }: { task: Task }) {
   const { updateTask } = useTasksDispatch();
   const current = task.recurrence;
-  const summary = current ? formatRecurrenceLabel(current) : "Doesn't repeat";
+  const summary = current ? formatRecurrenceLabel(current) : "Doesn’t repeat";
 
   return (
     <Popover

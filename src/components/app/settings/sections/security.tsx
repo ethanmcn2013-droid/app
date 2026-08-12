@@ -182,7 +182,7 @@ function ActiveSessionsBlock({
         toast("Signed out of that session", { tone: "success" });
       } catch (e) {
         setSessions(snapshot);
-        toast("Couldn't sign out", {
+        toast("Couldn’t sign out", {
           tone: "error",
           body: (e as Error).message,
         });
@@ -210,7 +210,7 @@ function ActiveSessionsBlock({
         }
       } catch (e) {
         setSessions(snapshot);
-        toast("Couldn't sign out", {
+        toast("Couldn’t sign out", {
           tone: "error",
           body: (e as Error).message,
         });

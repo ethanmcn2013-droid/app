@@ -26,7 +26,7 @@ export function OAuthRow({ user }: { user: UserResource }) {
         redirectUrl: `${window.location.origin}/settings/profile`,
       });
     } catch (e) {
-      setError(extractClerkError(e) ?? `Couldn't connect ${p.label}`);
+      setError(extractClerkError(e) ?? `Couldn’t connect ${p.label}`);
       setPending(null);
     }
   }
@@ -44,7 +44,7 @@ export function OAuthRow({ user }: { user: UserResource }) {
       const account = accounts.find((a) => a.id === accountId);
       await account?.destroy();
     } catch (e) {
-      setError(extractClerkError(e) ?? `Couldn't disconnect ${label}`);
+      setError(extractClerkError(e) ?? `Couldn’t disconnect ${label}`);
     } finally {
       setPending(null);
     }
@@ -55,8 +55,8 @@ export function OAuthRow({ user }: { user: UserResource }) {
       label="Connected accounts"
       hint={
         accounts.length === 0
-          ? "None yet. Connect an enabled sign-in method if you'd rather not type passwords."
-          : "Sign-in shortcuts. Disconnect any you don't use."
+          ? "None yet. Connect an enabled sign-in method if you’d rather not type passwords."
+          : "Sign-in shortcuts. Disconnect any you don’t use."
       }
       control={
         <div className="flex w-full flex-col gap-2">

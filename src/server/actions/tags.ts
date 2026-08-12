@@ -83,7 +83,7 @@ export async function addTagAction(
   color: ColumnColorKey = "neutral",
 ): Promise<{ ok: true; tag: TagDef }> {
   const trimmed = name.trim().slice(0, MAX_TAG_LEN);
-  if (!trimmed) throw new Error("Tag name can't be empty.");
+  if (!trimmed) throw new Error("Tag name can’t be empty.");
   const chosen: ColumnColorKey = isColumnColorKey(color) ? color : "neutral";
   if (isDemoMode()) return { ok: true, tag: { name: trimmed, color: chosen } };
 

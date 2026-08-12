@@ -12,10 +12,10 @@ import {
 
 const CADENCE: DailySignalCadence[] = ["off", "weekdays", "daily"];
 const SUMMARY: WeeklySummary[] = ["off", "mondays"];
-// D-013: dark is designed-not-shipped. Only system and light are
-// selectable. This allow-list is the server-side enforcement boundary;
-// a crafted payload with "dark" is silently dropped.
-const THEME: ThemeMode[] = ["system", "light"];
+// D-013: dark ships for the signed-in app (2026-08-11). This allow-list
+// stays the server-side enforcement boundary — anything outside these
+// three is silently dropped rather than written.
+const THEME: ThemeMode[] = ["system", "light", "dark"];
 
 export async function updateUserPreferencesAction(
   raw: UserPreferencesPatch,
