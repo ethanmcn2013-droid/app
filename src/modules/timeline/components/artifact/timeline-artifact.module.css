@@ -581,11 +581,18 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 /* The house separator is a middot. A slash was the one punctuation mark in
-   the hero that belonged to no other surface in the suite. */
+   the hero that belonged to no other surface in the suite.
+
+   No colour of its own. It used to override to --ink-ghost, a hairline value
+   that measures 1.48:1 on paper and 1.83:1 on the dark canvas — sub-AA in
+   both themes, and invisible to the contrast gate because generated content
+   is not a DOM text node (the gate's own header names that blind spot). The
+   same defect, in the same glyph, as the anchor chip's separator. Inheriting
+   .metricDate's --x-timeline-quiet puts it at 7.73:1 / 9.94:1 and lets the
+   date line be one colour. */
 .metricDate time::before {
   content: "·";
   margin-inline-end: var(--space-2);
-  color: var(--ink-ghost);
 }
 
 .journey {
