@@ -133,6 +133,66 @@ test("a strong token inside a join is accepted", () => {
   assert.equal(read.scoped, true);
 });
 
+test("a strong token inside a LEFT join is not accepted", () => {
+  /**
+   * The real false negative, pinned as source. This is `compileDailyDigest`
+   * as it stood until 2026-08-12: it read every tenant's activities with no
+   * workspace predicate, and the gate passed it on the `userId` in the left
+   * join's ON clause. The digest is an outbound email path, so what the gate
+   * waved through was another tenant's comment snippet in a user's inbox and
+   * in their mail.
+   *
+   * An inner join can restrict; a LEFT join cannot, because every row of the
+   * left table survives it whatever the ON clause says. Same statement, same
+   * strong token, opposite answer — which is the whole distinction.
+   */
+  const left = classify(`
+    const rows = await db
+      .select({ id: activities.id })
+      .from(activities)
+      .leftJoin(users, eq(activities.userId, users.id))
+      .where(eq(activities.kind, "commentAdd"));
+  `);
+  assert.ok(left, "the detector did not recognise this as a governed read at all");
+  assert.equal(
+    left.scoped,
+    false,
+    "a LEFT join's ON clause was accepted as tenant scope. It restricts " +
+      "nothing — every row of the left table survives it — so this read " +
+      "returns every tenant's activities.",
+  );
+
+  const inner = classify(`
+    const rows = await db
+      .select({ id: activities.id })
+      .from(activities)
+      .innerJoin(users, eq(activities.userId, users.id))
+      .where(eq(activities.kind, "commentAdd"));
+  `);
+  assert.equal(
+    inner.scoped,
+    true,
+    "tightening LEFT joins must not also disqualify INNER joins, which do " +
+      "restrict — the membership-join case above depends on it.",
+  );
+});
+
+test("a left join does not swallow the predicate that follows it", () => {
+  // stripLeftJoins scans balanced parens. If it over-consumed it would eat
+  // the `.where(...)` behind the join and report a properly scoped read as
+  // a violation — a false positive that would get the rule reverted.
+  const read = classify(`
+    const rows = await db
+      .select({ id: activities.id, name: users.name })
+      .from(activities)
+      .leftJoin(users, eq(activities.userId, users.id))
+      .where(byWorkspace(activities.workspaceId, ws, eq(activities.kind, "commentAdd")));
+  `);
+  assert.ok(read);
+  assert.equal(read.scoped, true, "a genuinely scoped read was rejected");
+  assert.equal(read.evidence, "workspaceId");
+});
+
 test("the by-authorized-id model is accepted inside .where", () => {
   // This codebase's documented model: a server action resolves the
   // validated workspace through the auth choke points, then reads by an id
