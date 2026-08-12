@@ -364,3 +364,45 @@ Every option here is a settings change with a one-step reverse.
 | A bypass token (C or D) | Rotate or delete the secret. |
 
 No migration, no schema, no data. The programme's rollback register is unaffected.
+
+---
+
+## Verified against the live Vercel account — 2026-08-12, by the lead
+
+Answering the memo's open questions with facts rather than assumptions.
+
+| Fact | Value |
+|---|---|
+| Team | `ethanmcn2013-1730's projects` (`team_veMY72ml10cAawsR0CjN9k5y`) |
+| App project | `app` (`prj_C4rdqkS6wh9z4V0lku3tuphcNlkN`) |
+| Password protection | **off** |
+| Vercel Authentication (`ssoProtection`) | **off** |
+| Trusted IPs | **off** |
+
+So option A+B requires *enabling* Vercel Authentication, which is currently disabled entirely.
+
+### Why the lead did not enable it
+
+Two reasons, and the second is the binding one.
+
+1. Changing deployment protection is an account-settings change. Standing approval to proceed
+   with the programme is not approval to alter account configuration.
+2. **It would hit the other live sessions.** Vercel Authentication is configured per project, and
+   the natural setting covers *all* preview deployments of `app`. Several other sessions are
+   opening PRs against this same project right now (#126, #130, #132 at the time of writing).
+   Turning it on would silently put an auth wall in front of every one of their preview links.
+   That is precisely the cross-session impact this programme is under instruction to avoid.
+
+### The decision Ethan actually has
+
+- **Enable Vercel Authentication on `app` previews.** Closes `R-H10`'s open item by exercising
+  the real Clerk path, and is the only option that does. Cost: every other session's preview link
+  starts requiring a Vercel login until it is turned off again.
+- **Use a scoped alternative** — options C or D in the memo, an application bypass token or a
+  Vercel bypass secret. Roughly five minutes, no effect on other sessions, but leaves the real
+  Clerk path unproven and therefore leaves `R-H10` open into Wave 10.
+- **Run the founder pause locally** — option E. Zero blast radius, no deployment at all, but Ethan
+  reviews on the lead's machine rather than a shareable link, and it proves nothing about Clerk.
+
+Recommendation stands at A+B, but **timed**: enable it when the other sessions' PRs have merged,
+not while three of them are in flight.
