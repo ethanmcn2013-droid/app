@@ -539,7 +539,20 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     settingsPage,
     /Review preview, settings are read-only\./,
   );
-  assert.match(settingsPage, /<div inert aria-disabled="true">/);
+  // The read-only boundary moved INSIDE SettingsApp (wave 7.3): inert around
+  // the whole app killed the section navigation with the forms, leaving eight
+  // sections unreachable. The demo page now declares readOnly and the app
+  // applies inert to the section content only — so the guard pins both
+  // halves: the page passes the flag, and the app turns the flag into inert.
+  assert.match(settingsPage, /<SettingsApp[\s\S]{0,40}readOnly/);
+  const settingsApp = readFileSync(
+    join(serverDir, "..", "components", "app", "settings", "settings-app.tsx"),
+    "utf8",
+  );
+  assert.match(
+    settingsApp,
+    /<div inert=\{readOnly \|\| undefined\} aria-disabled=\{readOnly \|\| undefined\}>/,
+  );
 
   const calendarBody = calendarRoute.slice(
     calendarRoute.indexOf("export async function GET"),
