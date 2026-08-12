@@ -1,4 +1,4 @@
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import { SignalNotificationsPage } from "@/modules/signal";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +8,6 @@ export const metadata = {
 };
 
 export default async function BriefingNotificationsRoute() {
-  await requireAppAccess();
+  await requireAppAccessTasks();
   return <SignalNotificationsPage />;
 }

@@ -1,4 +1,4 @@
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import TimelineArtifactStudioPage, {
   metadata,
 } from "@/modules/timeline/app/audience/[publicationId]/page";
@@ -10,6 +10,6 @@ export default async function TimelineArtifactStudioRoute(props: {
   params: Promise<{ publicationId: string }>;
   searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
 }) {
-  await requireAppAccess();
+  await requireAppAccessTasks();
   return <TimelineArtifactStudioPage {...props} />;
 }

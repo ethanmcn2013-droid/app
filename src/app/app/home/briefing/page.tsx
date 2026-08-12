@@ -1,4 +1,4 @@
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import { SignalBriefPage } from "@/modules/signal";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +14,6 @@ export default async function BriefingPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAppAccess();
+  await requireAppAccessTasks();
   return <SignalBriefPage searchParams={searchParams} />;
 }

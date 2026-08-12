@@ -360,7 +360,11 @@ questions. Recorded here so they are not silently reopened.
   `src/app/s/**`, which exists precisely so the bearer-link artifact renders
   without authenticated chrome. The chrome-free public surface therefore stays
   where it is.
-- Every module `page.tsx` must call `requireAppAccess()`.
+- Every module `page.tsx` must call `requireAppAccessTasks()` from
+  `@/server/app-access`, never the allowlist-only `requireAppAccess()`. A page
+  gate that is narrower than the /app layout gate bounces invited and redeemed
+  users to `/waitlist`; `check-module-boundaries.mjs` rule 3 and
+  `src/server/app-gate-parity.test.mjs` both reject it.
 - `check-first-contact-language.mjs` bans jargon in rendered copy on a
   shrink-only baseline. New copy must be plain.
 - `ds:check` and `check:contrast` are real gates but do **not** run under

@@ -18,8 +18,10 @@
  *        - src/modules/timeline → only src/app/app/timeline/** or src/modules/timeline/**
  *        - src/modules/signal  → only src/app/app/signal/** or src/modules/signal/**
  *
- *   3. Route gate presence. Each of the three module pages must contain a
- *      literal call to requireAppAccess() for defence-in-depth (AD-005).
+ *   3. Route gate presence and parity. Every module page must contain a
+ *      literal call to requireAppAccessTasks() for defence-in-depth (AD-005),
+ *      and must NOT call the allowlist-only requireAppAccess(). The page gate
+ *      has to be the same gate the /app layout runs, or wider — never narrower.
  *
  * This is a static import-string check: it reads source files and matches
  * import/from strings. It does not run TypeScript or follow re-exports.
@@ -54,7 +56,7 @@ function walk(dir) {
 
 /**
  * Strip line and block comments so commented-out code can neither trip the
- * import rules nor satisfy the requireAppAccess assertion (gate-hardening,
+ * import rules nor satisfy the access-gate assertion (gate-hardening,
  * Phase 2 Opus review MAJOR-1).
  */
 function stripComments(source) {
@@ -241,7 +243,7 @@ for (const mod of MODULES) {
   }
 }
 
-/* ── Rule 3: requireAppAccess() present in each module page ─────────── */
+/* ── Rule 3: the membership-aware gate is present in each module page ── */
 
 // EVERY page.tsx under a module's route segment must gate access — not just
 // the top-level page (Phase 5 Opus review MINOR-1: sub-routes like
@@ -249,6 +251,15 @@ for (const mod of MODULES) {
 // "home" joined at the consolidation (D2); "signal" stays listed while its
 // legacy redirect pages exist — a redirect page still gates before it
 // forwards (AD-005 applies to every /app entry, redirects included).
+//
+// The gate demanded here is requireAppAccessTasks() from "@/server/app-access",
+// NOT the allowlist-only requireAppAccess(). Until 2026-08-12 this rule demanded
+// the narrow one, which is how the defect was manufactured and then held in
+// place: the /app layout was widened to admit invited and redeemed users, but
+// this gate compelled every page beneath it to re-run the allowlist-only check
+// and bounce those same users to /waitlist. Defence in depth requires the inner
+// gate to be no STRICTER than the outer one; a narrower inner gate is not
+// redundancy, it is a second, contradictory policy.
 const MODULE_SEGMENTS = ["notes", "timeline", "signal", "home"];
 
 const modulePages = [];
@@ -268,13 +279,31 @@ for (const segment of MODULE_SEGMENTS) {
 
 for (const [, pagePath] of modulePages) {
   const source = stripComments(readFileSync(pagePath, "utf8"));
-  const hasImport = /from\s+["']@\/server\/require-app-access["']/.test(source);
-  const hasCall = /(?:^|[^.\w])(?:await\s+)?requireAppAccess\s*\(/.test(source);
+  const hasImport = /from\s+["']@\/server\/app-access["']/.test(source);
+  const hasCall = /(?:^|[^.\w])(?:await\s+)?requireAppAccessTasks\s*\(/.test(
+    source,
+  );
   if (!hasImport || !hasCall) {
     failures.push(
-      `[rule-3] ${rel(pagePath)} must import requireAppAccess ` +
-        `from "@/server/require-app-access" and call it (comments do not count) ` +
+      `[rule-3] ${rel(pagePath)} must import requireAppAccessTasks ` +
+        `from "@/server/app-access" and call it (comments do not count) ` +
         `(AD-005 defence-in-depth).`,
+    );
+  }
+
+  // The narrow gate is banned outright on these pages. `requireAppAccessTasks`
+  // shares the prefix, so the negative lookahead is what makes this a check on
+  // the allowlist-only function rather than on both of them.
+  const hasNarrowGate =
+    /(?:^|[^.\w])(?:await\s+)?requireAppAccess(?!Tasks)\s*\(/.test(source) ||
+    /from\s+["']@\/server\/require-app-access["']/.test(source);
+  if (hasNarrowGate) {
+    failures.push(
+      `[rule-3] ${rel(pagePath)} calls the allowlist-only requireAppAccess(). ` +
+        `A page gate must never be stricter than the /app layout gate — this is ` +
+        `the exact wiring that bounced invited and redeemed users to /waitlist ` +
+        `off Home, the Full Briefing, Notes and Timeline. Use ` +
+        `requireAppAccessTasks() from "@/server/app-access".`,
     );
   }
 }

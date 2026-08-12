@@ -4,6 +4,52 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·145 · corrects · the front door lets in the people it invited
+
+**An invited collaborator or a sponsored couple can now reach Home, the Full
+Briefing, Notes and Timeline. For the last three weeks they could open Tasks
+and nothing else. Every other signed-in surface sent them to the waiting
+list, after the invite that brought them there had already been spent.**
+
+The app has one access boundary, on the /app layout. It was widened on 21 July
+to admit two kinds of person the allowlist does not name: someone who accepted
+a workspace invite, and someone who redeemed a sponsored code. Both are given
+a membership row on the way in, and the layout reads it.
+
+Thirteen pages underneath then re-ran an older, narrower check that reads the
+allowlist and nothing else. The layout let the person in and the page turned
+them around, and because the page runs last, the page won. This was not a
+subtle interaction: it was two access policies disagreeing, with the stricter
+one nested inside the wider one.
+
+Those pages now run the same check the layout runs. The second check is what
+it was always meant to be, a repeat of the first rather than a stricter
+second opinion.
+
+Two guards make this class of mistake fail loudly now. The module-boundary
+gate used to require the narrow check on every module page, which is how the
+divergence was both created and then held in place; it now requires the wide
+one and rejects the narrow one by name. A new test walks the whole /app tree
+and fails if any file there reaches for the allowlist-only check under any
+name, including behind a rename.
+
+Worth recording is why this lasted three weeks. The founder is on the
+allowlist, so both checks admit the founder, and no amount of using the
+product would have shown it. It is reproduced now by a test that signs in as
+a non-allowlisted account holding a real membership row, runs both checks
+against a real database, and asserts where each one lands.
+
+Honest edges. Access is unchanged for everyone else, and that was asserted
+rather than assumed: a stranger with no membership row still goes to the
+waiting list, and signed out still means out. The proof is at the level of
+the gates, not of a real second account signing in to production, which needs
+a Clerk identity this repo cannot create for itself. A non-allowlisted member
+now costs one extra indexed membership lookup per page render, which is the
+price of keeping the page check rather than deleting it. And the wide check is
+still named `requireAppAccessTasks`, from when this repo was only Tasks, which
+reads wrongly now that it gates the whole suite; the guards above deliberately
+do not depend on anyone reading that name correctly.
+
 ## 2026-08-12 · T·144 · tightens · the daily digest reads your workspace, and only yours
 
 **Your morning digest showed you the mentions from your workspace. To find

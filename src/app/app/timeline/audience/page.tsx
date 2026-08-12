@@ -1,4 +1,4 @@
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import AudiencePage from "@/modules/timeline/app/audience/page";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +11,6 @@ export default async function AudienceRoute(props: {
     project?: string;
   }>;
 }) {
-  await requireAppAccess();
+  await requireAppAccessTasks();
   return <AudiencePage {...props} />;
 }

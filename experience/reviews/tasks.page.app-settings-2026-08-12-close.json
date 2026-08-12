@@ -6,11 +6,11 @@
   "reviewedAt": "2026-08-12",
   "reviewer": "Claude Fable 5 closing coordinator",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-30e8c5bb34a80380efd6268f-b97c9c6edc96a2c5.json",
-    "attestationSha256": "0299cf700ca1d9de6e144b9784fccb02b314bc58e72bb4280e3ed4402862a27f",
-    "runId": "tasks-playwright-30e8c5bb34a80380efd6268f",
-    "canonicalEvidenceSha256": "30e8c5bb34a80380efd6268f725e9682de2efc5887bbcda6ec1f3f1b80989d5f",
-    "rawArtifactSha256": "b97c9c6edc96a2c5af3ba4c1569c5d8546d453c2956906fe1433435671ca42f4",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-1f32ae3a93f0b6599fe93b65-94642426317167b4.json",
+    "attestationSha256": "94c281d17f4c1cdd1ece1038d6ed46249fb3601003ac3f57e463d7954d4009b5",
+    "runId": "tasks-playwright-1f32ae3a93f0b6599fe93b65",
+    "canonicalEvidenceSha256": "1f32ae3a93f0b6599fe93b65a523a300115027458fc597c4db5f803fda662295",
+    "rawArtifactSha256": "94642426317167b4954b38f32eb6f0802799328b1d90c39cc4af010c7793c1a9",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "front door lands on Home",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "The demo read-only boundary moved inside the settings app, around the section content only, so the nine-section navigation and the theme control stay usable in review mode.",
+  "reviewedChange": "Rebound to the gate-parity evidence run. Every /app page moved from the allowlist-only requireAppAccess() to the membership-aware requireAppAccessTasks(), so critical-fixtures.json changed and every receipt bound to the previous attestation via fixtureManifestSha256 went stale. This entry's own source is unchanged.",
   "decision": "approve"
 }

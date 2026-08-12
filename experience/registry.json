@@ -2287,7 +2287,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "827580f74018b68a"
+      "materialityHash": "72678cac7eb0d1c9"
     },
     {
       "id": "tasks.page.app-signal-onboarding",
@@ -2333,7 +2333,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8a8464b6bd1c1af0"
+      "materialityHash": "dadba836d5e7d2b8"
     },
     {
       "id": "tasks.page.app-signal-settings-notifications",
@@ -2377,7 +2377,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b9d4534ca90d6702"
+      "materialityHash": "f4753d16267efa39"
     },
     {
       "id": "tasks.page.app-notes",
@@ -2424,7 +2424,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "47d0ce89760e81ee"
+      "materialityHash": "c33603f1754c1ce3"
     },
     {
       "id": "tasks.state.app-notes-loading",
@@ -2557,7 +2557,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "5e4b8a328d0df141"
+      "materialityHash": "5264a5e8162f0d4e"
     },
     {
       "id": "tasks.page.app-timeline-by-project-slug",
@@ -2604,7 +2604,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "021c36852b11ea55"
+      "materialityHash": "424e44acd0724d2d"
     },
     {
       "id": "tasks.page.app-timeline-by-project-slug-preview",
@@ -2656,7 +2656,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6d2e4c87ca3109fb"
+      "materialityHash": "de1f96c4f8e9ee09"
     },
     {
       "id": "tasks.state.app-timeline-by-project-slug-loading",
@@ -2787,7 +2787,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "193de4597b1c5b9e"
+      "materialityHash": "cc2922b46e575b51"
     },
     {
       "id": "tasks.page.app-timeline-audience-by-publication-id",
@@ -2839,7 +2839,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "76e7e22e7dba2f0c"
+      "materialityHash": "a68a0886d8d028ad"
     },
     {
       "id": "tasks.page.s-by-token",
@@ -3070,7 +3070,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "756ff772168e21cf"
+      "materialityHash": "939b28828e36486f"
     },
     {
       "id": "tasks.page.app-home-briefing",
@@ -3114,7 +3114,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "3c4b3edab7226e25"
+      "materialityHash": "1db016eb2770107a"
     },
     {
       "id": "tasks.page.app-home-briefing-onboarding",
@@ -3160,7 +3160,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "96ca62eb0ae859ef"
+      "materialityHash": "ec1621e9729adbcd"
     },
     {
       "id": "tasks.page.app-home-briefing-settings-notifications",
@@ -3204,7 +3204,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "2a868aa4fac3031c"
+      "materialityHash": "5b7bfa490d36d806"
     },
     {
       "id": "tasks.state.app-home-loading",

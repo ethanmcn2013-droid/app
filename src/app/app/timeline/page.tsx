@@ -1,5 +1,5 @@
 import "@/modules/timeline/timeline.css";
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import { TimelineHome } from "@/modules/timeline";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +10,6 @@ export default async function TimelinePage({
 }: {
   searchParams: Promise<{ workspaceId?: string; planningPeriodId?: string }>;
 }) {
-  await requireAppAccess();
+  await requireAppAccessTasks();
   return <TimelineHome searchParams={searchParams} />;
 }
