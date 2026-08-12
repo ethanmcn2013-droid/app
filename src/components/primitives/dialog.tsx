@@ -3,6 +3,8 @@
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { EASE_OUT_EXPO } from "@/lib/motion";
+import { EASE_OUT_TOKEN } from "./anchored-layer";
 
 const FOCUSABLE =
   'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
@@ -107,7 +109,7 @@ export function Dialog({
             transition={
               reduce || instant
                 ? { duration: 0 }
-                : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
+                : { duration: 0.2, ease: EASE_OUT_EXPO }
             }
             onClick={onClose}
             className="fixed inset-0 z-[90]"
@@ -133,7 +135,7 @@ export function Dialog({
                   ? { duration: instant ? 0 : 0.12 }
                   : {
                       duration: 0.2,
-                      ease: [0.23, 1, 0.32, 1],
+                      ease: EASE_OUT_TOKEN,
                     }
               }
               onClick={(e) => e.stopPropagation()}

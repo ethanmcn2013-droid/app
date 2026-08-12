@@ -2,7 +2,11 @@
  * context-actions.module.css — Signal grammar for the ContextActions primitive.
  *
  * Tokens: --x-task-* CSS custom properties from the existing hybrid CSS layer.
- * Animation: 120ms opacity + scale-98 enter; respects prefers-reduced-motion.
+ * Animation: the contract's anchored-layer primitive — origin-aware scale from
+ * 0.98 plus opacity, --motion-fast in, faster out, opacity only under reduced
+ * motion. This is the CSS half of src/components/primitives/anchored-layer.ts;
+ * the two carry the same numbers so a Radix menu and a motion/react popover are
+ * one gesture.
  * Destructive items: rose tone via --x-task-danger.
  */
 
@@ -24,11 +28,19 @@
 }
 
 .content[data-state="open"] {
-  animation: contentIn 140ms var(--ease-out);
+  animation: contentIn var(--motion-fast) var(--ease-out);
 }
 
+/* Faster out than in — 100ms has no token of its own; it is the anchored
+   layer's exit, mirrored in anchored-layer.ts as ANCHORED_OUT. */
 .content[data-state="closed"] {
   animation: contentOut 100ms var(--ease-out) forwards;
+}
+
+/* Escape is a keyboard command: the layer is gone, not leaving. With no
+   animation to wait on, Radix unmounts the node in the same frame. */
+.content[data-state="closed"][data-dismiss="keyboard"] {
+  animation: none;
 }
 
 @keyframes contentIn {

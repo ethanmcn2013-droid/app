@@ -208,6 +208,46 @@ needs a decision about what the rail carries instead. That is a design
 direction call, not an implementation detail, so it is recorded here rather
 than guessed at.
 
+## F1 anchored layers — wave 7
+
+**Verdict: animate — contract anchored-layer primitive, wave 7.** No external
+reference was needed: `docs/design/TASKS_DELIGHT_MOTION_CONTRACT.md` already
+names the primitive ("origin-aware scale from 0.98 plus opacity; 140ms in,
+faster out; opacity-only reduced"), so F1 inherits the contract rather than an
+operator-supplied component. Escape adds one rule the contract implies but the
+family had not been asked before: **a keyboard dismissal is a cut, not an
+animation** — the same clause that forbids animated keyboard commands.
+
+One gesture, two implementations, deliberately kept to the same numbers:
+`src/components/primitives/anchored-layer.ts` (motion/react) and
+`src/components/primitives/context-actions.module.css` (Radix, CSS). Values:
+in `--motion-fast` / `--ease-out` from scale 0.98; out 100ms to scale 0.99;
+reduced motion opacity only; Escape 0ms.
+
+| Member | Site | State after wave 7 |
+|---|---|---|
+| B1 | Workspace ••• menu (project options) | **Not this builder's file** — `src/components/studio-bar/projects-sidebar.tsx:266`. Already has a near-family entrance (scale 0.985, 140ms) but off-contract on three counts: 0.985 not 0.98, the exit runs as slow as the entrance, Escape animates, and the ease is a hardcoded `[0.23, 1, 0.32, 1]`. Left untouched. |
+| B2 | Card ••• actions dropdown + right-click menu | **Done.** Radix content, `context-actions.module.css`. Verified live: `contentIn / 0.14s / cubic-bezier(0.23, 1, 0.32, 1)`, transform-origin resolved from Radix to the trigger corner; reduced motion runs `contentFadeIn`, transform stays `none`; Escape unmounts in ≤0.1ms. |
+| B3 | Fields panel (toolbar) | **Not found.** `fieldsOpen` / `setFieldsOpen` still exist in `src/components/app/room/room-tools-context.tsx:65` but nothing consumes them — the control is not mounted in the product. Nothing to animate until it returns. |
+| P1 | Due-date calendar popover | **Done** (shared `detail-panel/popover.tsx`). |
+| P2 | Priority picker popover | **Done** (shared popover). |
+| P3 | Status (lane) picker popover | **Done** (shared popover). |
+| P5 | Repeats picker | **Done** (shared popover). |
+| P6 | Make-copies popover | **Done** (shared popover) — and it gained a `side` prop, because it renders upward and was scaling from a corner it never touched. Its origin is now bottom-right, on the trigger. |
+| T1 | Timeline project switcher (plan header) | **Not this builder's file** — `src/modules/timeline/app/plan/[projectSlug]/_components/project-switcher.tsx:167`. Still a plain `role="menu"` with no entrance at all. |
+
+**One member added to the family, not in the original nine:** the board's lane
+••• menu (`option-a.module.css .laneMenu`, the status-options menu on every
+column header) is the same class of layer and was appearing instantly. Given
+the same entrance. Recorded here per this file's own rule that noticed sites
+get catalogued rather than animated ad hoc.
+
+Also carried the same treatment: P4 (assignee picker) rides the shared popover,
+so it inherited the entrance without being an F1 member.
+
+Verified in demo mode at 1440×900, both `prefers-reduced-motion` states, on
+every member above that lives in a file this builder owns.
+
 ## Review checklist (when the catalog closes)
 
 1. **Open.** Operator supplies reference components per family — nine
