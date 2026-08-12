@@ -119,7 +119,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "03d2eb5aa09d172f"
+      "materialityHash": "df52e34b9d56e3b8"
     },
     {
       "id": "tasks.page.app-tasks-calendar",
@@ -218,7 +218,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "2197b50963bdcfd6"
+      "materialityHash": "599d90047350611f"
     },
     {
       "id": "tasks.page.app-inbox",
@@ -269,7 +269,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "c4f897dcd789f7e3"
+      "materialityHash": "7b9d84dba9b26208"
     },
     {
       "id": "tasks.page.app-tasks-list",
