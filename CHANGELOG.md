@@ -4,6 +4,34 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·140 · tightens · the project header says what it means
+
+**The two rows above your board — the project name and the view tabs — went
+through a three-round quality panel and came back a different instrument. The
+count that says how far you are now marks the moment you finish something, and
+when the last overdue task clears, the header says so.**
+
+The title sits on the type ramp instead of a hand-set size, so it presides over
+the row it names. Both rows end on one line; they used to miss by ten pixels on
+every desktop. The tool called View is called Display, because four view tabs
+share that row and one word cannot mean two things. The sort mode called
+Schedule is called Due date, for the same reason. The overdue count looks like
+the control it always was, and when the work it points at is filtered out of
+sight it shows you that work instead of doing nothing.
+
+Editing the project name behaves. Typing over the placeholder no longer leaves
+grey ghost text sitting in front of your words, and a rename that fails to save
+keeps what you typed and says so, rather than quietly reverting to the old name
+seconds later. The filter and sort panels close when you click away, when you
+press Escape, and when you tab out of them.
+
+On a phone the whole band works: every control is a real touch target, the
+project name keeps its letters, and the Planning badge spells out what it is
+counting. In dark mode the three actions on the right finally read as one set.
+
+The panel did not reach its 9.5 bar. What stands between the header and that
+grade is written down, and most of it is naming, not craft.
+
 ## 2026-08-12 · T·139 · cuts · the app stops being a second marketing site
 
 **Every marketing page this host served is gone. Pricing, about, press,

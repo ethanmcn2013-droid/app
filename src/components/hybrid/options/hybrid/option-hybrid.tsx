@@ -14,7 +14,9 @@ import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-
 import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
 import { activeUnscheduledTasks } from "../../planning";
-import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT } from "@/components/app/tasks-nav-state";
+import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT, useNavPanelHidden } from "@/components/app/tasks-nav-state";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { Hint } from "@/components/primitives/hint";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -99,22 +101,20 @@ function usePlanningOpen() {
   return [open, toggle] as const;
 }
 
-// T·97 heritage: arbitrary-variant overrides that repaint the wrapped
-// production Share/overflow trigger buttons in the band's ghost register.
-// Targets `> div > button` so only the trigger is restyled, never the
-// popover/menu buttons inside it.
-const bandButtonWrap =
-  "[&>div>button]:!h-[30px] [&>div>button]:!min-h-[30px] [&>div>button]:!rounded-md " +
-  "[&>div>button]:!border-0 [&>div>button]:!bg-transparent " +
-  "[&>div>button]:!text-[var(--x-task-text-secondary)] " +
-  "[&>div>button]:!text-[12px] [&>div>button]:!font-medium " +
-  "[&>div>button]:!px-2.5 [&>div>button]:!gap-1.5 " +
-  "hover:[&>div>button]:!text-[var(--x-task-text)] " +
-  "hover:[&>div>button]:!bg-[var(--x-task-hover)]";
+// Share and the overflow carry the band's ghost register natively, via
+// their own `variant="band"` prop. The T·97 !important Tailwind costume
+// and the .bandActionButton descendant override that replaced it are both
+// gone: a register reaching into a component from outside loses to that
+// component's own theme rules (it did, in dark), and the styling belongs
+// where the markup is.
 
 export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
   const store = useLabStore();
   const calendar = useCalendarFrame();
+  // With the projects rail hidden the brief's nav trigger renders, and at
+  // ≥768px the content gutter widens so the trigger hangs in it and the
+  // title keeps the one content grid line (option-a.module.css).
+  const navHidden = useNavPanelHidden();
   const [columns, setColumns] = useState<ListColumn[]>(() => INITIAL_LIST_COLUMNS.map((column) => ({ ...column })));
   const [planningOpen, togglePlanning] = usePlanningOpen();
   const planningCollapsed = !planningOpen;
@@ -205,7 +205,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
 
   return (
     <WorkspaceBoardColumnsProvider>
-    <div className={styles.optionA} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
+    <div className={styles.optionA} data-nav-hidden={navHidden || undefined} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
       <section className={styles.workspaceShell}>
         {/* Project-level actions live on the project band, not the view
             toolbar: sharing and printing concern the project, and the
@@ -213,26 +213,74 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
         <WorkspaceBrief
           actions={
             <>
-              <span className={`hidden lg:inline-flex ${bandButtonWrap}`}>
-                <ShareButton view={shareView} />
+              {/* md, not lg: sharing is the growth loop and the tablet row
+                  has visible room — it kept retreating to the overflow a
+                  full breakpoint early. (It still lives in the … menu below
+                  md, and redundantly between md and lg — the menu section is
+                  a shared production block gated at lg.) */}
+              <span className="hidden md:inline-flex">
+                <ShareButton variant="band" view={shareView} />
               </span>
+              <Hint
+                align="end"
+                text={
+                  unscheduledCount > 0
+                    ? `${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date yet`
+                    : "Dates, milestones and what still needs scheduling"
+                }
+              >
               <button
                 aria-controls="c-planning-rail"
                 aria-expanded={!planningCollapsed}
+                // The visible text hides on phones (chrome yields before the
+                // title truncates), so the accessible name is carried here
+                // and stays whole at every width.
+                aria-label={
+                  unscheduledCount > 0
+                    ? `Planning · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
+                    : "Planning"
+                }
                 className={briefStyles.planningTrigger}
                 onClick={openPlanningExclusive}
-                title={planningCollapsed ? "Open the planning drawer" : "Close the planning drawer"}
+                // The badge is the band's most prominent unexplained number:
+                // a sighted user got only "Open the planning drawer", which
+                // explains the verb, never the 5. The tooltip now names what
+                // the count counts. Middot, never an em dash (BRAND.md).
+                title={
+                  planningCollapsed
+                    ? unscheduledCount > 0
+                      ? `Open the planning drawer · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
+                      : "Open the planning drawer"
+                    : "Close the planning drawer"
+                }
                 type="button"
               >
                 <Icon name="panel" size={15} />
-                Planning
-                {unscheduledCount > 0 ? <strong>{unscheduledCount}<span className={styles.srOnly}> unscheduled tasks</span></strong> : null}
+                <span className={briefStyles.planningLabel}>Planning</span>
+                {/* On phones the label collapses and the badge says what
+                    it counts — a bare "5" beside a panel glyph that
+                    near-duplicates the nav trigger's was the band's most
+                    prominent unexplained number exactly where tooltips
+                    don't exist. */}
+                {unscheduledCount > 0 ? (
+                  <>
+                    <strong aria-hidden="true">{unscheduledCount}</strong>
+                    {/* The noun sits OUTSIDE the badge: the badge is the
+                        module's mono numeral slot, and setting a word in
+                        monospace breaks the band's own numeral rule. */}
+                    <span aria-hidden="true" className={briefStyles.planningUndated}>
+                      undated
+                    </span>
+                  </>
+                ) : null}
               </button>
-              <span className={`inline-flex ${bandButtonWrap}`}>
+              </Hint>
+              <span className="inline-flex">
                 <PageActionsOverflow
                   printPath={`/print/${route.view}`}
                   shareView={shareView}
                   showShare
+                  variant="band"
                 />
               </span>
             </>
@@ -240,8 +288,15 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
           tasks={wholeProject}
         />
         <div className={styles.viewBar}>
-          <div className={styles.tabsScroll}><ViewTabs onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
-          <div aria-label="View controls" className={styles.functionalTools} role="toolbar">
+          {/* Canonical hrefs make the tabs real links — middle-click and
+              copy-link-address work, and the anchors pick up the designed
+              28px/underline tab spec instead of the button fallback. A
+              plain click still routes client-side through onRouteChange. */}
+          <div className={styles.tabsScroll}><ViewTabs hrefFor={(view) => TASKS_VIEW_PATHS[view]} onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
+          {/* group, not toolbar: three tab stops need no roving-tabindex
+              contract, and role="toolbar" promises arrow-key navigation
+              this row does not implement. */}
+          <div aria-label="View controls" className={styles.functionalTools} role="group">
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
           </div>
         </div>

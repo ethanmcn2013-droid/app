@@ -38,15 +38,18 @@
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
   flex: 0 0 auto;
-  gap: 18px;
+  gap: var(--space-4);
   min-height: 54px;
   min-width: 0;
   /* The project name sits on the interior's ONE content grid line — the
      same x as the first view tab, the first lane's label and the first
      card's left edge. It used to be 20px against the lane band's 296 and
      the card's 308, so nothing in the header agreed with anything below
-     it. Fallback for the standalone lab mount, which has no .optionA. */
-  padding: 6px 14px 6px var(--x-board-gutter, 16px);
+     it. Fallback for the standalone lab mount, which has no .optionA.
+     The RIGHT edge follows the same rule as the left: the last control's
+     8px inner padding is paid out of an 8px trailing pad, so the … glyph
+     and row 2's View label end on one 16px-inset ink line. */
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--x-board-gutter, 16px);
 }
 
 .workspaceIdentity { align-items: baseline; display: flex; flex: 1 1 auto; gap: 12px; min-width: 0; }
@@ -59,22 +62,37 @@
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
-  height: 30px;
+  /* 28px: one control height across the whole band (tabs, tools, and
+     every row-1 control) — the 30/28 split was a 2px seam. */
+  height: 28px;
   justify-content: center;
   margin-right: -4px;
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
-  width: 30px;
+  width: 28px;
 }
 .navTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.workspaceIdentity h1 { flex: 0 1 auto; font-size: 17px; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; margin: 0; max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: 12px; line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ≥768px the trigger leaves the flow and hangs in the widened gutter
+   (option-a bumps --x-board-gutter to 58px while the rail is hidden), so
+   the title stays on the ONE content grid line the tabs and lanes sit
+   on. On phones it stays in-flow — the mobile block's own padding rules
+   compose that row. */
+@media (min-width: 768px) {
+  .workspaceBrief { position: relative; }
+  .navTrigger { left: 12px; margin-right: 0; position: absolute; top: 50%; transform: translateY(-50%); }
+}
+/* The flagship line takes the ramp's heading step — size, leading and
+   tracking as one decision (the rule the calendar h2 already follows).
+   The hand-set 17px/-0.025em it replaces existed on no ramp, and left a
+   single weak 1.42× step between the title and the 12px receipts. */
+.workspaceIdentity h1 { flex: 0 1 auto; font-size: var(--text-heading); font-weight: 600; letter-spacing: var(--tracking-heading); line-height: var(--leading-heading); margin: 0; max-width: 64ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workspaceIdentity > p { color: var(--x-task-text-secondary); flex: 0 1 auto; font-size: var(--text-caption); line-height: 1.4; margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /*
   Inline-editable heading + supporting line (T·114). A heading that grows a
   full inset box on hover reads as a text input in costume, so editability is
   signalled by the caret plus a hairline under the baseline. Focus keeps a
   real ring — that one has to be unmistakable, and it must clear contrast.
 */
-.editable { border-radius: 0; cursor: text; margin-inline: 0; outline: none; padding: 2px 0; transition: box-shadow .14s ease, color .14s ease; }
+.editable { border-radius: 0; cursor: text; margin-inline: 0; outline: none; padding: 2px 0; transition: box-shadow var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out); }
 .editable:hover { box-shadow: inset 0 -1px 0 0 var(--x-task-border-strong); }
 .editable:focus-visible { background: transparent; box-shadow: inset 0 -2px 0 0 var(--x-task-focus); }
 /*
@@ -85,53 +103,226 @@
 .editable[data-empty]::before { color: var(--x-task-text-muted); content: attr(data-placeholder); pointer-events: none; transition: color var(--motion-instant) var(--ease-out); }
 p.editable[data-empty]:hover::before,
 p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
+/* Emptiness now tracks the live text (onInput), so the ghost vanishes at
+   the first keystroke — it never coexists with the user's words. While
+   the empty field holds focus the invitation dims to a whisper. */
 .editable[data-empty]:focus::before { opacity: .55; }
-.workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: 7px 14px; margin-top: 13px; }
+/* The interactive description line must clear the 24px target floor
+   (it measured 96×21) — and an UNWRITTEN description is not permanent
+   chrome. For every project whose owner never writes one (most), a
+   resting "+ Add description" read as an unfinished form beside the
+   title, so the invitation appears when the band is engaged — hover,
+   keyboard focus, or while editing — and leaves no trace otherwise.
+   The element stays in the DOM throughout: screen readers and tab
+   order are unaffected. */
+p.editable { min-height: 24px; padding: 4px 0; }
+/* max-width 0, not opacity alone: an invisible ghost that keeps its
+   ~96px box makes the OWNER'S TITLE truncate to fund an element nobody
+   can see — the exact inversion of the "identity truncates last" rule.
+   At rest the empty invitation holds no width; hover/focus opens it. */
+.workspaceIdentity p.editable[data-empty] {
+  max-width: 0;
+  opacity: 0;
+  padding-inline: 0;
+  transition: max-width var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+.workspaceBrief:hover .workspaceIdentity p.editable[data-empty],
+.workspaceIdentity p.editable[data-empty]:focus,
+.workspaceIdentity p.editable[data-empty]:focus-visible { max-width: 24ch; opacity: 1; }
+/* Coarse pointers have no hover: the invitation rests visible where it
+   fits (tablet and up) — a hover-gated control a touch user can never
+   reveal is a capability deleted, not demoted. */
+@media (pointer: coarse) and (min-width: 768px) {
+  .workspaceIdentity p.editable[data-empty] { max-width: 24ch; opacity: 1; }
+}
+/* Quiet resting signal that the title is editable. Zero width at rest so
+   it never displaces the name or the description beside it. */
+.titleAffordance {
+  color: var(--x-task-text-muted);
+  flex: 0 0 auto;
+  margin-left: -6px;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+  width: 0;
+}
+.workspaceBrief:hover .titleAffordance,
+.workspaceIdentity:focus-within .titleAffordance { margin-left: 0; opacity: 1; width: 13px; }
+@media (pointer: coarse) {
+  /* No hover to reveal it, and a phone band has no room to spend on a
+     decorative glyph — touch discovers the title by tapping it. */
+  .titleAffordance { display: none; }
+}
+
+.workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); }
 .workspaceMeta span { position: relative; }
 .workspaceMeta span + span::before { background: var(--x-task-border-strong); content: ""; height: 10px; left: -7px; position: absolute; top: 1px; width: 1px; }
 
 /* Progress: one quiet cluster. The bar carries the proportion, the
    sentence carries the numbers, red appears only for genuinely overdue
    work. The sync whisper fades in beside it while a change saves. */
-.briefProgress { align-items: center; display: flex; flex: 0 0 auto; gap: 12px; }
+.briefProgress { align-items: center; display: flex; flex: 0 0 auto; gap: 12px; position: relative; }
+/* Out of flow on purpose. As a flex sibling its text width was added to
+   the band on every autosave, dragging the receipts sentence sideways
+   and pushing the project title's ellipsis on and off twice per save. */
 .syncState {
   color: var(--x-task-text-muted);
-  font-size: 11px;
+  font-size: var(--text-caption);
+  /* Out of flow, in the empty run to the LEFT of the receipts — the same
+     place it always appeared, minus the layout cost. Row 1 is 53px tall,
+     so there is no room above or below; sideways is the only direction
+     that does not collide with the app bar. */
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  /* 500, not 400: the whisper is the band's one "we have your back"
+     moment and at regular weight it was nearly subliminal. Still quiet —
+     weight, not size or motion. */
+  font-weight: 500;
   opacity: 0;
   transition: color var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
   white-space: nowrap;
 }
 .syncState[data-state="pending"],
 .syncState[data-state="saved"],
+.syncState[data-state="cleared"],
 .syncState[data-state="error"] { opacity: 1; }
 .syncState[data-state="saved"] { color: var(--x-task-success); }
 .syncState[data-state="error"] { color: var(--x-task-danger); }
-.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: 12px; gap: 12px; margin: 0; }
-.briefFacts strong { color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+/* S10 — the band's one positive register. Until this, a project going
+   perfectly rendered identically to one in trouble minus the red: the
+   only conditional colour in the band was danger. Transient, success
+   ink, and it never persists — an earned note, not a status light.
+   It carries a check so it cannot be mistaken for the autosave "Saved"
+   that shares this slot and this ink: one is an acknowledgement, the
+   other is the only congratulation the band ever offers. */
+.syncState[data-state="cleared"] { color: var(--x-task-success); font-weight: 600; }
+.syncState[data-state="cleared"]::before { content: "✓ "; }
+/* Numeral voice, stated as a rule so it stops reading as accident:
+   PROSE sentences set their figures in the sans with tabular-nums (this
+   receipts line); ISOLATED counts — badges, lane counts, the Planning
+   pill — are Geist Mono. A mono "5" inside "5 of 13 complete" would
+   break the sentence to match a badge. */
+.briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: var(--text-caption); gap: 12px; line-height: 1.4; margin: 0; }
+.briefFacts strong { border-radius: 4px; color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 600; margin: 0 -4px; padding: 0 4px; white-space: nowrap; }
+/* S9 — the completion receipt. The count is the band's emotional centre
+   and it used to update in silence. One accent-tint pass in the
+   calendar's shipped placement-receipt grammar (280ms, --ease-out),
+   fired only when the number goes UP. */
+.briefFacts strong[data-advanced] { animation: brief-progress-receipt 280ms var(--ease-out) both; }
+@keyframes brief-progress-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 22%, transparent); }
+  100% { background: transparent; }
+}
 .briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .briefFacts b { color: var(--x-task-danger); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 /* The board's most urgent signal was an inert <b>. It is a control now:
-   it goes to the work it is counting. */
+   it goes to the work it is counting — and it must LOOK like one at
+   rest. Bare red text was indistinguishable from a static label, so the
+   best interaction in the header was invisible; the soft danger pill is
+   the same grammar the Planning count already wears. 28px, not 24: the
+   old height sat exactly on the target floor with zero margin. */
 .briefOverdue {
-  background: transparent;
+  background: color-mix(in srgb, var(--x-task-danger) 7%, transparent);
   border: 0;
-  border-radius: 6px;
+  border-radius: 999px;
   color: var(--x-task-danger);
   cursor: pointer;
   font: inherit;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  margin: -3px -6px;
-  min-height: 24px;
-  padding: 0 6px;
+  /* -6px, not -8px: pulling the full padding back left the wash 4px from
+     its quiet neighbours against 8px internal padding — the sentence's
+     one loud word sat shoulder-to-shoulder. */
+  margin: -5px -6px;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  transition: background var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }
-.briefOverdue:hover { background: color-mix(in srgb, var(--x-task-danger) 8%, transparent); }
-.briefPeriod { color: var(--x-task-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.briefOverdue:hover { background: color-mix(in srgb, var(--x-task-danger) 14%, transparent); }
+/* A button now: tap swaps the clause for its referent, so the season
+   fact is no longer hover-locked away from touch and keyboard users. */
+.briefPeriod {
+  background: transparent;
+  border: 0;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  margin: -5px 0;
+  min-height: 28px;
+  padding: 0;
+  position: relative;
+  transition: color var(--motion-instant) var(--ease-out);
+  white-space: nowrap;
+}
+.briefPeriod:hover { color: var(--x-task-text-secondary); }
+/* The referent opens in its own layer under the fact — swapping it into
+   the sentence reflowed the whole receipts row (and live-truncated the
+   title) on every tap. */
+.briefPeriodDetail {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  box-shadow: var(--x-task-shadow);
+  color: var(--x-task-text-secondary);
+  font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  padding: 5px 10px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  white-space: nowrap;
+  z-index: 60;
+}
 
 /* Project-level actions: Share, Planning, overflow — one ghost register. */
 .briefActions { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; }
-.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 6px; width: 1px; }
+/* No leading margin: the band's 16px flex gap already pays the left
+   side, and the ghost buttons to the right carry 8px of invisible
+   padding before their ink — 16 vs 3+2+8 puts the hairline optically
+   centred between the receipts' ink and the actions' ink. */
+/* The band's 16px flex gap pays the left side and the ghost buttons'
+   8px inner padding pays most of the right, so the hairline needs a
+   negative left pull to sit optically centred between the two runs of
+   ink rather than 16-vs-5. */
+.briefDivider { background: var(--x-task-border); flex: 0 0 1px; height: 16px; margin: 0 3px 0 -6px; width: 1px; }
+
+/* Touch floor. Row 2's view tabs already bump to 44px on coarse
+   pointers; row 1's controls sat at 24–30px on the same phones. The
+   visual sizes stay — the hit areas grow invisibly to ≥44px. */
+@media (pointer: coarse) {
+  .navTrigger,
+  .planningTrigger,
+  .briefOverdue,
+  .briefPeriod,
+  .workspaceIdentity h1.editable,
+  .workspaceIdentity p.editable,
+  /* Attribute, not a class reaching into the component: the band variant
+     publishes [data-band-action], and the touch floor for the whole band
+     stays in one block. */
+  .briefActions [data-band-action] { position: relative; }
+  .navTrigger::after,
+  .planningTrigger::after,
+  .briefOverdue::after,
+  .briefPeriod::after,
+  .workspaceIdentity h1.editable::after,
+  .workspaceIdentity p.editable::after,
+  .briefActions [data-band-action]::after { content: ""; position: absolute; }
+  .navTrigger::after { inset: -8px; }
+  .planningTrigger::after { inset: -8px 0; }
+  /* Square icon triggers need width as well as height — the "..." was
+     the one band control still under the floor on a phone. */
+  .briefActions [data-band-action] { inset: auto; }
+  .briefActions [data-band-action]::after { inset: -8px -6px; }
+  .briefOverdue::after { inset: -8px -2px; }
+  .briefPeriod::after { inset: -8px 0; }
+  /* The two contenteditables were the band's only controls outside the
+     44px floor. */
+  .workspaceIdentity h1.editable::after { inset: -7px 0; }
+  .workspaceIdentity p.editable::after { inset: -10px 0; }
+}
 .planningTrigger {
   align-items: center;
   background: transparent;
@@ -144,12 +335,20 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
   font-size: 12px;
   font-weight: 500;
   gap: 6px;
-  height: 30px;
-  padding: 0 9px;
+  /* One chrome height across the whole band, and it is a ratified step:
+     --space-7 is 32px, which is also what Tailwind's h-7 resolves to in
+     this repo (docs/SPACING_SCALE_COLLISION.md). The 28px it replaces
+     was on no scale and left row 2 with two control heights. */
+  height: var(--space-7);
+  padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }
 .planningTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+/* Share and the overflow no longer need a descendant override here: they
+   carry the band's ghost register natively through `variant="band"` on
+   their own components, so nothing in this module reaches across a
+   component boundary to repaint them. */
 .planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 .planningTrigger strong {
   background: var(--x-task-hover);
@@ -164,6 +363,17 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
   text-align: center;
 }
 .planningTrigger[aria-expanded="true"] strong { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); color: var(--x-accent-ink); }
+/* Chrome yields before identity: on phones the trigger keeps its icon
+   and badge but gives up its text, so the project's own name — the one
+   string the owner typed — is the last thing in the band to truncate. */
+/* The badge's noun, in the band's own sans — shown only where the
+   trigger's label has collapsed and a bare figure would be a number with
+   nothing to count. */
+.planningUndated { display: none; font-size: 12px; font-weight: 500; }
+@media (max-width: 767px) {
+  .planningLabel { display: none; }
+  .planningUndated { display: inline; }
+}
 
 .roomViewBar {
   align-items: center;
@@ -604,15 +814,33 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
   .roomViewBar > div:last-of-type { margin-left: auto; }
 }
 
-/* Narrow desktop: the description yields first when width gets tight. */
-@media (max-width: 1160px) {
-  .workspaceIdentity > p { display: none; }
+/* Phones: the unwritten-description invitation yields when width gets
+   genuinely tight — but a description the owner actually WROTE stays
+   readable (truncated) at every width; it used to vanish below 1160px
+   with no way to read or edit it. The receipts are one clause shorter
+   now, so tablet keeps the invitation too. */
+/* Phones: the empty invitation is not resting chrome (the phone header
+   budget is the reason this band exists in its current form), but it is
+   not deleted either — touching the title reveals it on its own line,
+   so writing a description is reachable on touch instead of being a
+   desktop-only capability. A description already written always shows. */
+@media (max-width: 767px) {
+  .workspaceIdentity { flex-wrap: wrap; }
+  .workspaceIdentity p.editable[data-empty] { display: none; }
+  .workspaceIdentity:focus-within p.editable[data-empty] {
+    display: block;
+    flex: 1 1 100%;
+    max-width: none;
+    opacity: 1;
+  }
 }
 @media (max-width: 900px) {
-  /* The phone keeps the sentence and drops only the season detail. How
-     the project is going is not desktop-only information. */
-  .briefPeriod { display: none; }
-  .briefFacts { font-size: 11px; gap: 8px; }
+  /* The phone keeps the whole sentence, season included — the period
+     line is one clause now, and "how far through the season we are" is
+     not desktop-only information. Without it the small-screen band's
+     only expressive color was danger red. The size STAYS on the caption
+     step: 11px sentence-case sans is a ramp step that does not exist. */
+  .briefFacts { gap: 8px; }
 }
 
 @media (max-width: 1060px) {
@@ -656,8 +884,16 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
   .selectedAgendaList li[data-recently-placed] article,
   .selectedAgendaList li[data-recently-updated] article,
   .agendaLedger li[data-recently-placed],
-  .agendaLedger li[data-recently-updated] { animation: none; }
+  .agendaLedger li[data-recently-updated],
+  /* S9's receipt is motion, so it yields — but S10's "Nothing overdue"
+     is a WORD, not an animation, and stays: reduced motion asks for less
+     movement, not less meaning. */
+  .briefFacts strong[data-advanced] { animation: none; }
   .calendarTaskWrap { transition: none; }
+  .editable,
+  .workspaceIdentity p.editable[data-empty],
+  .titleAffordance,
+  .syncState { transition: none; }
   :where(.optionB) button:active:not(:disabled) { transform: none; }
 }
 
@@ -679,11 +915,28 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
     padding: 10px 12px;
   }
 
-  .workspaceIdentity { flex: 1 1 100%; }
-  .workspaceIdentity h1 { font-size: 17px; max-width: none; }
+  /* Two rows, both meaningful: [trigger · title · actions] over
+     [receipts]. The old flex-basis 100% identity wrapped the nav trigger
+     onto an orphan line above the title (a three-storey stack whose top
+     floor was one lone 15px glyph); giving the receipts the second row
+     instead keeps the title readable at full width. */
+  .workspaceIdentity { flex: 1 1 0; min-width: 0; }
+  .workspaceIdentity h1 { max-width: none; }
+  /* The owner's name outranks a one-line rule: on a phone it may take
+     two lines (clamped) rather than lose letters to the badge that now
+     says what it counts. */
+  .workspaceIdentity h1 {
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    display: -webkit-box;
+    white-space: normal;
+  }
 
-  .briefProgress { gap: 10px; }
-  .briefFacts span { display: none; }
+  /* On a phone the nav trigger sits inline before the title, so the
+     band's grid line IS the title's x (50px: 12 pad + 32 trigger - 4
+     margin + 8 gap + 2 ink bearing). The receipts line up under it —
+     28 margin + the 10px flex gap the empty sync span still pays. */
+  .briefProgress { flex: 1 1 100%; gap: 10px; margin-left: 28px; order: 10; }
   .briefActions { margin-left: auto; }
 
   .calendarView {
@@ -849,14 +1102,3 @@ p.editable[data-empty]:focus-visible::before { color: var(--x-accent-ink); }
   .calendarDayListRow li > button { min-height: 44px; }
 }
 
-/* Phone chrome budget: before this block the brief spent ~46% of the
-   first screen before any work appeared. On a phone it keeps the name,
-   the description line, and the progress readout; the money line and
-   milestones stay desktop/panel surfaces. */
-@media (max-width: 767px) {
-  .workspaceBrief,
-  .workspaceBrief[data-milestones="on"] { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px 16px 11px; }
-  .workspaceMilestones { display: none; }
-  .progressFacts[aria-label="Budget coverage"] { display: none; }
-  .workspaceProgress { border-left: 0; gap: 5px; padding-left: 0; }
-}

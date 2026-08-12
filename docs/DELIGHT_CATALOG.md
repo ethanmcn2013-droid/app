@@ -1,6 +1,9 @@
 # Delight Catalog — Tasks
 
-**Status: catalogued and grouped. Awaiting references. Do not implement.**
+**Status: catalogued and grouped. Awaiting references. Do not implement,
+except where an entry carries an explicit founder verdict** (S9 and S10
+carry one, given 2026-08-12 after the project-header panel review; both
+are shipped and their treatments are recorded in the table below).
 
 The operator's direction (2026-07-28): before building any more micro-interactions,
 catalog every site in the product where one belongs. The operator is sourcing
@@ -132,6 +135,8 @@ drifted from the code (420ms/240ms were never what production ran).
 | S6 | Toasts | Existing toast primitive | Recheck register |
 | S7 | Saved-view bar appear | Instant | |
 | S8 | Inbox/updates list rows | Instant | |
+| S9 | Project-band progress count ("5 of 13 complete") on completion | **ANIMATE — shipped 2026-08-12** | Founder verdict 2026-08-12: animate, restrained. Fires only when `completed` increases (never on mount, filter change, or a decrease); one 280ms accent-tint pass in SG-calendar's shipped placement-receipt grammar; `prefers-reduced-motion` removes it. `.briefFacts strong[data-advanced]`, driven by `useProgressReceipt` in workspace-brief.tsx. |
+| S10 | Project-band earned success note (last overdue clears) | **ANIMATE — shipped 2026-08-12** | Founder verdict 2026-08-12: animate, restrained. "Nothing overdue" speaks once in `--x-task-success` from the existing syncState whisper slot when overdue falls to zero, then leaves; never a persistent green. Reduced motion keeps the words (it is type, not movement). This is the band's only positive register — before it, danger red was the sole conditional colour. |
 
 ## Catalog — list / schedule / calendar views
 

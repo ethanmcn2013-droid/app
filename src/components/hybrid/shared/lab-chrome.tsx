@@ -54,13 +54,13 @@ export function ViewTabs({ route, onRouteChange, hrefFor, className = "" }: { ro
               ref={current ? (activeRef as Ref<HTMLAnchorElement>) : undefined}
               title={VIEW_PURPOSES[view]}
             >
-              <Icon name={view} size={15} />{VIEW_LABELS[view]}
+              <Icon name={view} size={15} /><span data-text={VIEW_LABELS[view]}>{VIEW_LABELS[view]}</span>
             </a>
           );
         }
         return (
           <button aria-current={current ? "page" : undefined} key={view} onClick={() => onRouteChange({ view })} ref={current ? (activeRef as Ref<HTMLButtonElement>) : undefined} title={VIEW_PURPOSES[view]} type="button">
-            <Icon name={view} size={15} />{VIEW_LABELS[view]}
+            <Icon name={view} size={15} /><span data-text={VIEW_LABELS[view]}>{VIEW_LABELS[view]}</span>
           </button>
         );
       })}
