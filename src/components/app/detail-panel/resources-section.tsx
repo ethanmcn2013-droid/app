@@ -138,7 +138,7 @@ export function ResourcesSection({ task }: { task: Task }) {
                   )
                 : cur,
             );
-            toast(`Couldn't attach ${file.name}`, {
+            toast(`Couldn’t attach ${file.name}`, {
               tone: "error",
               body:
                 err instanceof Error
@@ -166,7 +166,7 @@ export function ResourcesSection({ task }: { task: Task }) {
         setLinkInput("");
       } catch (err) {
         console.warn("resources: add link failed", err);
-        toast("Couldn't add link", {
+        toast("Couldn’t add link", {
           tone: "error",
           body:
             err instanceof Error ? err.message : "The link could not be added.",
@@ -198,7 +198,7 @@ export function ResourcesSection({ task }: { task: Task }) {
             next.splice(Math.max(0, priorIndex), 0, row);
             return next;
           });
-          toast(`Couldn't remove ${row.title}`, { tone: "error" });
+          toast(`Couldn’t remove ${row.title}`, { tone: "error" });
         }
       });
     },

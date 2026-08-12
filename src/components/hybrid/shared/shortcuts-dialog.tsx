@@ -39,13 +39,13 @@ const PER_VIEW: Record<LabView, ShortcutRow[]> = {
     { keys: ["Alt", "Arrows"], does: "Move a card, or resize a column" },
     { keys: ["Space"], does: "Select a card" },
     { keys: ["F2"], does: "Edit the title" },
-    { keys: ["Shift", "F10"], does: "Open the card's actions" },
+    { keys: ["Shift", "F10"], does: "Open the card’s actions" },
   ],
   list: [
     { keys: ["Up", "Down"], does: "Move between rows" },
     { keys: ["Space"], does: "Select a row" },
     { keys: ["F2"], does: "Edit the title" },
-    { keys: ["Shift", "F10"], does: "Open the row's actions" },
+    { keys: ["Shift", "F10"], does: "Open the row’s actions" },
   ],
   timeline: [
     { keys: ["Alt", "Left or Right"], does: "Move a task one day" },
