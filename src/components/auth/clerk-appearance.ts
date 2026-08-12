@@ -58,8 +58,15 @@ export const signalClerkAppearance: ClerkAppearance = {
     socialButtonsPlacement: "top",
     socialButtonsVariant: "blockButton",
     // The stage's own footer carries these, at the bottom of the page.
-    privacyPageUrl: "/privacy",
-    termsPageUrl: "/terms",
+    //
+    // Absolute umbrella URLs, written out rather than composed from an
+    // origin constant. This host stopped serving the legal pages in the
+    // 2026-08-12 estate consolidation, and a consent link is the one link
+    // that must never travel through a redirect or resolve against an
+    // environment variable: the person clicking it is agreeing to what it
+    // shows them.
+    privacyPageUrl: "https://signalstudio.ie/privacy",
+    termsPageUrl: "https://signalstudio.ie/terms",
     shimmer: false,
   },
   /**

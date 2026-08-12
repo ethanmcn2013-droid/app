@@ -45,11 +45,22 @@ const STATIONS: readonly {
   { name: "signal", left: "var(--x-signal-x)", resting: true },
 ];
 
+/**
+ * Absolute umbrella URLs, written out rather than composed from an origin
+ * constant. This host stopped serving the legal pages in the 2026-08-12
+ * estate consolidation, and a consent link is the one link that must never
+ * travel through a redirect or resolve against an environment variable: the
+ * person clicking it is agreeing to what it shows them. They open in a new
+ * tab so reading the terms does not discard a half-filled sign-in form.
+ *
+ * Status left with the same cut. It had no home to redirect to, and pointing
+ * a status link at a marketing homepage tells somebody who is mid sign-in
+ * failure the opposite of what they came to find out.
+ */
 const FOOTER_LINKS = [
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-  { href: "/security", label: "Security" },
-  { href: "/status", label: "Status" },
+  { href: "https://signalstudio.ie/privacy", label: "Privacy" },
+  { href: "https://signalstudio.ie/terms", label: "Terms" },
+  { href: "https://signalstudio.ie/security", label: "Security" },
 ] as const;
 
 export function AuthStage({
@@ -121,9 +132,15 @@ export function AuthStage({
 
         <nav className={styles.footer} aria-label="Company">
           {FOOTER_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} className={styles.footerLink}>
+            <a
+              key={link.href}
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.footerLink}
+            >
               {link.label}
-            </Link>
+            </a>
           ))}
           <span className={styles.footerNote}>Signal Studio · Ireland</span>
         </nav>
