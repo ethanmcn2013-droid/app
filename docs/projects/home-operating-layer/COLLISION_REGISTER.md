@@ -33,6 +33,18 @@ independently. Their paths become foreign-owned for the duration.
 than reintroducing the narrow one. This is a sequencing constraint, not a blocker — Waves 1
 to 3 write contracts, fixtures and lab code only, none of which touch those files.
 
+### 1c. Open PRs at 2026-08-12 21:20 — three lanes contending on `package.json`
+
+| PR | Branch | State | Owns | Effect on us |
+|---|---|---|---|---|
+| **#129** | `lane/wp0-truth-fixtures` | MERGEABLE | `src/lib/project-truth-fixture.ts`, `experience/feature-tests/project-switch-journeys.spec.ts`, `experience/project-switch.playwright.config.ts` | **Direct Wave 2 overlap.** A multi-Project fixture universe plus Playwright journeys — the same shape as our Wave 2, one wave earlier. Coordination message sent: theirs is canonical for Project identity and multi-Project shape; our Home scenario layer builds **on top of** it, not beside it. |
+| **#128** | `fix/digest-workspace-scope` | MERGEABLE | `src/server/db/daily-digest.ts`, new `src/server/db/digest-mentions.ts`, `src/server/tenant-scope-rules.mjs` + test, `CHANGELOG.md` | Our Wave 0 finding, being fixed. Also tightens the detector rule that missed it. Unblocks nothing of ours; do not touch those files. |
+| **#126** | `lane/wp1-timeline-safety` | **CONFLICTING** | `src/modules/timeline/**`, `src/modules/notes/server/tasks-personalization.*`, `src/server/suite-context-contract.test.mjs`, `src/server/operational-log-contract.test.mjs` | Theirs to resolve. Confirms those paths stay foreign for now. |
+
+**`package.json` is being edited by #126, #128 and #129 simultaneously.** It is the
+integration-junction file this register already flags. This programme must not add a script to
+it without checking the merge order first, and never concurrently.
+
 All other `_wt-*` worktrees were last touched on or before 2026-08-06 and are treated as
 dormant history. They are still never reused as a base — this programme branches only
 from a proven `origin/main` SHA.
@@ -72,6 +84,18 @@ that actually lands on `origin/main` via PR #125 — never by cherry-picking eit
 and never by merging `feat/project-truth-wave` wholesale.
 
 ## 4. Standing rules for every agent in this programme
+
+0. **Never `cd` into a forbidden checkout, not even for a read-only command.** The shell's
+   working directory **persists between tool calls**. A `cd .../app` for one `gh pr list`
+   left the next `git add` pointing at the dirty root. It failed harmlessly — a
+   non-matching pathspec stages nothing — but the only thing standing between that and a
+   write was luck. Use `git -C <path>` and `gh -R <repo>` instead of `cd`, always. If a
+   `cd` is unavoidable, `cd` back in the same command.
+
+   *Verification after that near-miss:* the dirty root is byte-identical to the 20:17 cut —
+   `main @438b572`, porcelain count still exactly 170, no programme path staged, and
+   `.git/index` last written **2026-08-04 10:15**, eight days before this session opened.
+   The 41 staged files there are pre-existing and belong to someone else's work.
 
 1. Read-only outside `_wt-home-layer`. No exceptions.
 2. No state-mutating git command anywhere: no `checkout`, `switch`, `stash`, `reset`,
