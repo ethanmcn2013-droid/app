@@ -1,0 +1,2 @@
+$ node scripts/check-tap-target-scale.mjs
+[tap-target-scale] ok — no index-11 sizing utilities in product code (1 known-outstanding across 1 file(s), 1 allowed chrome-scale container height(s)).

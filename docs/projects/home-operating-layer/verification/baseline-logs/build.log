@@ -1,0 +1,139 @@
+$ next build
+▲ Next.js 16.2.4 (Turbopack)
+- Experiments (use with caution):
+  · optimizePackageImports
+  · serverActions
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./next.config.ts
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./next.config.ts
+    ./src/server/account-erasure.ts
+    ./src/server/account-unified-erasure.ts
+    ./src/server/account.ts
+    ./src/app/api/account/export/route.ts
+
+
+✓ Compiled successfully in 19.2s
+  Running TypeScript ...
+  Finished TypeScript in 33.4s ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/29) ...
+  Generating static pages using 11 workers (7/29) 
+  Generating static pages using 11 workers (14/29) 
+  Generating static pages using 11 workers (21/29) 
+✓ Generating static pages using 11 workers (29/29) in 1205ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /api/account/delete
+├ ƒ /api/account/export
+├ ƒ /api/analytics/capture
+├ ƒ /api/attachments/[id]
+├ ƒ /api/calendar/[workspaceId]
+├ ƒ /api/checkout
+├ ƒ /api/cron/digest
+├ ƒ /api/cron/outbox
+├ ƒ /api/cron/weekly-digest
+├ ƒ /api/csp-report
+├ ƒ /api/events
+├ ƒ /api/health/digest
+├ ƒ /api/internal/partner-stats
+├ ƒ /api/internal/reconcile-entitlements
+├ ƒ /api/internal/workspace-personalization
+├ ƒ /api/internal/workspaces
+├ ƒ /api/notes-extract
+├ ƒ /api/notes-extract/v2
+├ ƒ /api/suite-context
+├ ƒ /api/webhooks/clerk
+├ ƒ /api/webhooks/stripe
+├ ƒ /app
+├ ƒ /app/archived
+├ ƒ /app/home
+├ ƒ /app/home/briefing
+├ ƒ /app/home/briefing/onboarding
+├ ƒ /app/home/briefing/settings/notifications
+├ ƒ /app/import
+├ ƒ /app/inbox
+├ ƒ /app/my-tasks
+├ ƒ /app/notes
+├ ƒ /app/project
+├ ƒ /app/settings
+├ ƒ /app/signal
+├ ƒ /app/signal/onboarding
+├ ƒ /app/signal/settings/notifications
+├ ƒ /app/task/[id]
+├ ƒ /app/tasks
+├ ƒ /app/tasks/calendar
+├ ƒ /app/tasks/list
+├ ƒ /app/tasks/timeline
+├ ƒ /app/timeline
+├ ƒ /app/timeline/[projectSlug]
+├ ƒ /app/timeline/[projectSlug]/preview
+├ ƒ /app/timeline/audience
+├ ƒ /app/timeline/audience/[publicationId]
+├ ƒ /app/your-work
+├ ○ /apple-icon
+├ ƒ /embed.js
+├ ƒ /embed/[slug]
+├ ○ /icon
+├ ○ /icon1
+├ ƒ /invite/[token]
+├ ƒ /lab/timeline-a
+├ ƒ /lab/timeline-b
+├ ƒ /lab/timeline-w
+├ ƒ /lab/welcome-a
+├ ƒ /lab/welcome-b
+├ ƒ /lab/welcome-w
+├ ○ /manifest.webmanifest
+├ ○ /opengraph-image
+├ ƒ /p/[slug]
+├ ƒ /p/-/opengraph-image
+├ ƒ /print/board
+├ ƒ /print/calendar
+├ ƒ /print/list
+├ ƒ /print/timeline
+├ ƒ /redeem/[code]
+├ ○ /robots.txt
+├ ƒ /s/[token]
+├ ƒ /s/-/opengraph-image
+├ ƒ /s/[token]/view
+├ ƒ /settings
+├ ƒ /settings/notifications
+├ ƒ /settings/plan
+├ ƒ /settings/profile
+├ ƒ /share-card/-/opengraph-image
+├ ƒ /share-target
+├ ƒ /share/[token]
+├ ƒ /sign-in/[[...sign-in]]
+├ ƒ /sign-up/[[...sign-up]]
+├ ○ /social/bluesky-banner/opengraph-image
+├ ○ /social/bluesky-pinned/opengraph-image
+├ ○ /social/reddit-ads-wedding/opengraph-image
+├ ○ /social/x-banner/opengraph-image
+├ ○ /social/x-pinned/opengraph-image
+├ ƒ /the-wedding
+├ ƒ /waitlist
+├ ƒ /welcome
+└ ƒ /welcome/plan
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

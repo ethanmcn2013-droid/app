@@ -1,0 +1,63 @@
+$ node scripts/check-contrast.mjs
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/tasks  [emulated light, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/tasks
+Call log:
+[2m  - navigating to "http://localhost:3499/app/tasks", waiting until "load"[22m
+
+
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/tasks  [emulated dark, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/tasks
+Call log:
+[2m  - navigating to "http://localhost:3499/app/tasks", waiting until "load"[22m
+
+
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/notes  [emulated light, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/notes
+Call log:
+[2m  - navigating to "http://localhost:3499/app/notes", waiting until "load"[22m
+
+
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/notes  [emulated dark, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/notes
+Call log:
+[2m  - navigating to "http://localhost:3499/app/notes", waiting until "load"[22m
+
+
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/timeline  [emulated light, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/timeline
+Call log:
+[2m  - navigating to "http://localhost:3499/app/timeline", waiting until "load"[22m
+
+
+────────────────────────────────────────────────────────────────
+Contrast gate — http://localhost:3499/app/timeline  [emulated dark, document data-theme="(unreached)"]
+  measured after redirect: about:blank
+ERROR — surface could not be measured: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3499/app/timeline
+Call log:
+[2m  - navigating to "http://localhost:3499/app/timeline", waiting until "load"[22m
+
+
+════════════════════════════════════════════════════════════════
+Per-surface-per-theme summary
+
+SURFACE                EMULATED  DATA-THEME   NODES  FAIL  UNPARSEABLE  VERDICT
+─────────────────────  ────────  ───────────  ─────  ────  ───────────  ───────
+/app/tasks → blank     light     (unreached)  0      —     —            ERROR
+/app/tasks → blank     dark      (unreached)  0      —     —            ERROR
+/app/notes → blank     light     (unreached)  0      —     —            ERROR
+/app/notes → blank     dark      (unreached)  0      —     —            ERROR
+/app/timeline → blank  light     (unreached)  0      —     —            ERROR
+/app/timeline → blank  dark      (unreached)  0      —     —            ERROR
+
+0 contrast failure(s), 0 unparseable colour(s), 6 unmeasurable surface(s) across 6 surface/theme combination(s). Threshold: 4.5:1 normal text / 3:1 large text (>=24px any weight, >=18.66px bold).
+[ELIFECYCLE] Command failed with exit code 1.

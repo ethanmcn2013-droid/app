@@ -1,0 +1,2 @@
+$ node scripts/check-first-contact-language.mjs
+first-contact:language: clean — 335 files scanned, 7 baselined occurrence(s) unchanged.

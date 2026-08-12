@@ -1,0 +1,2 @@
+$ node scripts/check-suite-switcher-contract.mjs
+[suite-switcher-contract] ok

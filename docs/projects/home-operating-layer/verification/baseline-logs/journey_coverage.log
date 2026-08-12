@@ -1,0 +1,13 @@
+$ node scripts/check-journey-coverage.mjs
+sponsored journey coverage · app · manifest v1
+
+  couple_redeems                    covered                 3 test file(s)
+  couple_workspace_is_private       covered                 5 test file(s)
+  couple_plans                      covered                 4 test file(s)
+  couple_publishes                  covered                 4 test file(s)
+  venue_reads_metrics               covered                 1 test file(s)
+  couple_leaves                     covered                 2 test file(s)
+  browser_responsive_device         UNCOVERED (declared)    There is no end-to-end browser test of the sponsored journey. Playwright exists in this repository and runs under `pnpm experience:test`, but that suite covers the experience-quality fixtures, not the venue-to-couple path, and it is not part of `pnpm test`. Nothing anywhere drives redeem to plan to publish in a browser, and nothing tests a device profile or a throttled connection. Every segment above is proven at the module and query level only.
+  attribution_is_correct            UNCOVERED (declared)    R-029, open: every adoption definition counts workspaces, but the attribution join runs on a subject id. One person with two workspaces and one workspace with two owners break the count in opposite directions, and the Tasks call site passes a different subject id from the other three products. A test written today would pin the wrong behaviour in place.
+
+journey-coverage: ok · 6 covered, 2 declared uncovered

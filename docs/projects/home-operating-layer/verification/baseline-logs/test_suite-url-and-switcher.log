@@ -1,0 +1,95 @@
+$ node --import tsx --test src/lib/access-mode.test.ts src/lib/product-urls.test.ts src/lib/auth/social-providers.test.ts src/modules/timeline/lib/project-switcher-model.test.ts && node --test src/server/suite-context-contract.test.mjs src/server/suite-navigation-contract.test.mjs src/components/hybrid/board-pass3-contract.test.mjs
+✔ production deployment cannot activate demo or review mode (4.2479ms)
+✔ preview deployment resolves demo identically on server and browser (2.6032ms)
+✔ unclassified production build fails closed (2.6132ms)
+✔ preview build with no explicit mode defaults to review (2.667ms)
+✔ production build with no explicit mode stays production (3.0065ms)
+✔ local non-production build is development (2.7788ms)
+▶ enabledSocialProviders
+  ✔ offers only the provider enabled in the production baseline (2.1774ms)
+  ✔ accepts an explicit Clerk-aligned provider list (0.4253ms)
+  ✔ ignores unsupported and duplicate strategies (0.2439ms)
+✔ enabledSocialProviders (4.3884ms)
+▶ Signal Studio URL contract
+  ✔ keeps one marketing origin and four path-based product homes (2.3579ms)
+  ✔ keeps one app origin and product-named module paths (0.2964ms)
+  ✔ keeps Tasks views below Tasks and reserves /app/timeline for Timeline (0.3881ms)
+  ✔ derives the active product without treating Tasks views as products (0.2996ms)
+  ✔ carries allowlisted suite context on same-app relative links (0.4169ms)
+  ✔ reserves product subdomains for narrow public surfaces (0.1929ms)
+  ✔ redirects legacy Tasks app paths to the one app origin (1.6577ms)
+  ✔ keeps every legacy product entry on one canonical destination (1.2452ms)
+✔ Signal Studio URL contract (8.8327ms)
+▶ Timeline project switcher model
+  ✔ preserves validated workspace and planning-period context (1.2209ms)
+  ✔ does not carry an orphaned planning-period id (0.2277ms)
+  ✔ keeps the owner's edit mode when switching projects (0.2169ms)
+  ✔ exposes projects from the authorised workspace only (1.2312ms)
+✔ Timeline project switcher model (4.4476ms)
+ℹ tests 21
+ℹ suites 3
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 611.9992
+✔ one canonical Done green feeds header, dot, and completion control (2.5347ms)
+✔ a lane header is ink and a count — colour is one pip, not a band (1.4271ms)
+✔ one content grid line: title, tabs, lane labels and card edges agree (0.8718ms)
+✔ lane pitch is equal — an empty status is still a column (0.4638ms)
+✔ one task-title role covers all four views (0.8986ms)
+✔ every lane is a composite widget, not forty tab stops (1.0169ms)
+✔ each lane keeps its own way in — a scroll region is never a dead end (0.5023ms)
+✔ the shell is a product switcher with a command trigger, not a place list (1.2255ms)
+✔ the main header states the project alone — the parent crumb is gone (0.2207ms)
+✔ Planning is time, scheduling and milestones — never money (0.3459ms)
+✔ the planning drawer docks wherever it fits, and is modal when it cannot (0.2078ms)
+✔ add status is an end-cap action, not a reserved pseudo-lane (0.3975ms)
+✔ the shell carries one brand object — the wordmark's indigo stop (0.2702ms)
+✔ board cards and both working columns expose direct resizing (0.5355ms)
+✔ cards drop priority on finished work and noise-free avatars (0.2749ms)
+✔ five statuses fit a 1440 canvas, and residual overflow is authored (0.2509ms)
+✔ the type ramp is a ramp: three weights, no half-step sizes (1.9166ms)
+✔ a card has one left edge, and says its title once (0.2656ms)
+✔ finishing work is witnessed, reversible, and announced (0.5748ms)
+✔ an empty status says something true, and overdue is a control (0.2763ms)
+✔ scenario E: suite links carry only allowlisted context hints (1.5478ms)
+✔ incoming workspace hint is membership and period validated before cookie write (0.3792ms)
+✔ workspace-only suite hints are membership checked and project hints remain navigation-only (0.3031ms)
+✔ review Timeline accepts the canonical Tasks context only inside the demo boundary (0.3588ms)
+✔ Tasks view changes can emit only canonical Tasks destinations (2.1959ms)
+✔ Tasks calls its local time view Schedule, reserving Timeline for the product (0.2312ms)
+✔ Tasks owns the same product-specific document title as its siblings (0.1403ms)
+✔ the rail derives ownership and carries allowlisted context hints (1.1453ms)
+✔ search is a compact command trigger beside Add task, not a resident field (0.4475ms)
+✔ suite context subscribes before its first storage read (0.2073ms)
+✔ the Studio Bar keeps module identity when Tasks chrome data is absent (0.2717ms)
+✔ every non-Tasks command event has one shared suite owner (0.174ms)
+✔ Tasks retains exactly one task-palette event owner (0.2752ms)
+✔ Tasks chrome metadata is cleared before another product can inherit it (0.3529ms)
+✔ Tasks chrome publishes the authorised workspace name, not a domain example (0.3089ms)
+✔ mobile suite nav exposes Home-first canonical destinations (0.4041ms)
+✔ mobile Tasks has one persistent product spine and one keyboard-complete views menu (0.4679ms)
+✔ the mobile Tasks account escape hatch preserves suite context (0.1681ms)
+✔ milestone task detail opens Timeline inside the contextual unified app (0.2282ms)
+✔ the Tasks command palette jumps within the unified contextual app (0.2633ms)
+✔ both command layers expose a valid modal combobox lifecycle (0.4558ms)
+✔ Calendar overflow and the task inspector keep accessible focus and names (0.239ms)
+✔ Tasks mobile CSS contains dense canvases and preserves 44px primary targets (0.5076ms)
+✔ the shared app frame starts with one stable skip-link destination (0.2618ms)
+✔ Notes leaves command-K to the suite and exposes slash for local find (0.254ms)
+✔ Notes opens a task through the approved focus route, never a hostname (0.5368ms)
+✔ canonical module identity stays visible in the mobile Studio Bar (0.3113ms)
+✔ the Notes workspace is the only notebook, and the legacy send seam stays flagged (0.2211ms)
+✔ the Tasks room tells the same Mara and Finn venue story as Timeline (0.1442ms)
+✔ the deterministic cross-suite fixture keeps one workspace, project, and milestone identity (0.2465ms)
+✔ the cross-suite evidence contract separates read-only traversal from hashed mutation proof (0.2823ms)
+ℹ tests 51
+ℹ suites 0
+ℹ pass 51
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 151.7902

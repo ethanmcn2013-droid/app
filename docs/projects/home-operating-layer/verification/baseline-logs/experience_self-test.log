@@ -1,0 +1,7 @@
+$ node scripts/experience/validate.mjs --self-test && node scripts/experience/critical-fixtures.mjs --self-test && node scripts/experience/review-materiality.mjs --self-test && node scripts/experience/attest-playwright.mjs --self-test && node scripts/experience/quality-council.mjs --self-test && node --import tsx scripts/experience/runtime-policy.self-test.ts
+experience:self-test: pass - line-ending hashes match; unregistered route, stale evidence waiver, and inexact receipt were rejected
+experience:critical-fixtures:self-test: pass - mapped-only writes, source literals, rendered states, and browser-project parity are enforced
+experience:review-materiality:self-test: pass - exact JSON receipt, attestation link, raw digest, and target isolation enforced
+experience:attest:self-test: pass - raw digest is exact; canonical identity is reproducible; receipt linkage rejects tampering
+experience:council:self-test: pass - exact 50/52 passes; 49/52, fractional scores, missing journey evidence, stale source, and tampered evidence fail
+experience:runtime-policy:self-test: pass - only a marked realtime teardown, an exact qualified-view POST 204 abort, and a cancelled same-origin build asset are benign

@@ -1,0 +1,27 @@
+{
+  "baseSha": "a849fc40e46787a39e499fc94b171a5dfb898821",
+  "startedAt": "2026-08-12T19:20:54Z",
+  "node": "v24.14.1",
+  "pnpm": "11.9.0",
+  "commands": [
+    {"command": "db:contract", "exitCode": 0, "durationSeconds": 3, "log": "baseline-logs/db_contract.log"},
+    {"command": "typecheck", "exitCode": 0, "durationSeconds": 24, "log": "baseline-logs/typecheck.log"},
+    {"command": "lint", "exitCode": 0, "durationSeconds": 40, "log": "baseline-logs/lint.log"},
+    {"command": "ds:check", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/ds_check.log"},
+    {"command": "first-contact:language", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/first-contact_language.log"},
+    {"command": "check:suite-switcher", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/check_suite-switcher.log"},
+    {"command": "check:loading", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/check_loading.log"},
+    {"command": "check:tap-targets", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/check_tap-targets.log"},
+    {"command": "check:contrast", "exitCode": 1, "durationSeconds": 17, "log": "baseline-logs/check_contrast.log"},
+    {"command": "journey:coverage", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/journey_coverage.log"},
+    {"command": "perf:budgets", "exitCode": 3, "durationSeconds": 1, "log": "baseline-logs/perf_budgets.log"},
+    {"command": "test:signal-ledger", "exitCode": 0, "durationSeconds": 2, "log": "baseline-logs/test_signal-ledger.log"},
+    {"command": "test:suite-url-and-switcher", "exitCode": 0, "durationSeconds": 2, "log": "baseline-logs/test_suite-url-and-switcher.log"},
+    {"command": "test", "exitCode": 0, "durationSeconds": 47, "log": "baseline-logs/test.log"},
+    {"command": "experience:self-test", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/experience_self-test.log"},
+    {"command": "experience:fixtures", "exitCode": 1, "durationSeconds": 2, "log": "baseline-logs/experience_fixtures.log"},
+    {"command": "experience:validate", "exitCode": 0, "durationSeconds": 1, "log": "baseline-logs/experience_validate.log"},
+    {"command": "build", "exitCode": 0, "durationSeconds": 61, "log": "baseline-logs/build.log"}
+  ],
+  "finishedAt": "2026-08-12T19:24:23Z"
+}

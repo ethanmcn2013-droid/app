@@ -1,0 +1,69 @@
+$ node --import tsx --test src/modules/signal/lib/analytics/ledger-contract.test.ts src/modules/signal/lib/analytics/ledger-adapters.test.ts src/modules/signal/lib/analytics/rules-safety.test.ts src/modules/signal/lib/analytics/scope.test.ts src/modules/signal/server/analytics/origin-policy.test.ts src/modules/signal/server/analytics/pagination.test.ts
+▶ legacy Signal ledger adapter
+  ✔ groups exact same-title signals in the same authorized scope (5.5327ms)
+  ✔ does not merge matching prose across different workspaces (0.2606ms)
+  ✔ does not merge a shared title whose observations differ (0.2223ms)
+  ✔ carries the engine's read count into the accounting (0.4879ms)
+  ✔ states the denominator on a clear day instead of asserting it (0.4166ms)
+  ✔ never calls an empty page an all-clear when something crossed (0.5343ms)
+  ✔ signs off with the same sentence the briefing voice uses (0.4461ms)
+  ✔ never signs off with an order the page does not carry out (1.5327ms)
+  ✔ does not serialize the legacy reader id or hidden focus projection (0.6025ms)
+  ✔ never exposes a single legacy task id in its action URL (0.4369ms)
+  ✔ maps only the opaque entry id back to an authorized Tasks receipt (0.9749ms)
+  ✔ refuses to deep-link a task outside the rebuilt authorized scope (0.3116ms)
+✔ legacy Signal ledger adapter (13.7068ms)
+▶ progressive Signal ledger adapter
+  ✔ keeps source records behind Evidence and emits only aggregate receipts (30.7064ms)
+  ✔ counts the heading in words and closes with the briefing voice (1.5537ms)
+  ✔ withholds the accounting when no provider reported a record count (0.7144ms)
+  ✔ sums the provider record counts on a complete read (0.6728ms)
+  ✔ drops the updated segment rather than composing a placeholder (0.3238ms)
+  ✔ never offers to send the reader to the page they are on (0.5054ms)
+✔ progressive Signal ledger adapter (34.942ms)
+▶ the accounting never calls held-back work clear
+  ✔ subtracts everything that crossed a rule, not just what is shown (9.0874ms)
+  ✔ closes the arithmetic in front of the reader (2.9573ms)
+  ✔ counts what is shown in items, not in rows (0.4625ms)
+  ✔ falls back to the candidate count when no pre-cap total is given (0.4142ms)
+  ✔ withholds the accounting rather than guessing a denominator (0.4408ms)
+  ✔ never reports a negative cleared count (0.3878ms)
+✔ the accounting never calls held-back work clear (21.3548ms)
+▶ Signal ledger presentation contract
+  ✔ emits only the versioned allowlisted shape and opaque ids (1.2368ms)
+  ✔ enforces the briefing-wide maximum of three entries (0.703ms)
+  ✔ never turns partial or unavailable coverage into a healthy empty day (0.6999ms)
+  ✔ states the coverage state instead of defending the engine (0.6249ms)
+  ✔ keeps the coverage note free of the straight apostrophe (0.3319ms)
+  ✔ preserves the healthy empty state only with complete coverage (0.1964ms)
+  ✔ allows only canonical product routes on the configured app origin (0.413ms)
+  ✔ drops an unsafe primary action and uses an allowlisted fallback (0.5684ms)
+  ✔ keeps source identifiers out of client action URLs (0.5769ms)
+  ✔ drops an unsafe evidence link instead of serializing it (0.2837ms)
+✔ Signal ledger presentation contract (6.4205ms)
+▶ progressive Signal safety invariants
+  ✔ selects no more than three grounded observations with useful actions (44.1743ms)
+  ✔ combines the signature cross-product issue before ranking (3.2561ms)
+  ✔ does not manufacture concern on a healthy complete day (3.3906ms)
+  ✔ never emits the healthy all-clear after a provider failure (2.5681ms)
+  ✔ keeps observation identifiers stable for identical evidence (4.9303ms)
+  ✔ rejects candidates with no evidence or no primary action (3.027ms)
+  ✔ cannot be configured above the three-observation product cap (5.8625ms)
+✔ progressive Signal safety invariants (68.8999ms)
+✔ status filters consistently constrain linked records, projects, and events (39.2344ms)
+✔ owner filters remove unrelated project rows and contributing events (0.8974ms)
+✔ Signal action context accepts only bounded hints from a Signal route (0.5284ms)
+✔ preference origin policy accepts the same origin (85.0577ms)
+✔ preference origin policy rejects missing, malformed, and cross-site origins (5.1122ms)
+✔ preference origin policy honors the first trusted proxy host and protocol (0.7224ms)
+✔ evidence pagination does not mutate or reuse the selected view page (6.1387ms)
+✔ evidence pagination fails safely for an invalid page (0.314ms)
+✔ evidence pagination retrieves records beyond the first 100 (0.5725ms)
+ℹ tests 50
+ℹ suites 5
+ℹ pass 50
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1183.9067

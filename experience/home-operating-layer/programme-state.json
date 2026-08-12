@@ -1,0 +1,96 @@
+{
+  "programme": "home-operating-layer",
+  "openedAt": "2026-08-12",
+  "lead": "claude-code",
+  "canonicalBase": {
+    "sha": "a849fc40e46787a39e499fc94b171a5dfb898821",
+    "ref": "origin/main",
+    "subject": "the Planning count carries its noun (#124)",
+    "committedAt": "2026-08-12T19:28:30+01:00",
+    "provenTo": "fetched from origin at 2026-08-12T20:17Z",
+    "worktree": "_wt-home-layer",
+    "branch": "feat/home-operating-layer"
+  },
+  "activeWave": 0,
+  "waves": {
+    "0": { "title": "Current truth, collision map, clean base", "status": "implementing" },
+    "1": { "title": "Domain, authorization, content-ownership, experience contracts", "status": "not_started" },
+    "2": { "title": "Deterministic fixture universe and evidence harness", "status": "not_started" },
+    "3": { "title": "Four-direction isolated design lab", "status": "not_started" },
+    "4": { "title": "Shared Home boundary", "status": "not_started" },
+    "5": { "title": "Today and Full briefing", "status": "not_started" },
+    "6": { "title": "Canonical Inbox", "status": "not_started" },
+    "7": { "title": "Honest My work", "status": "not_started" },
+    "8": { "title": "Signal Analytics inside Home", "status": "not_started" },
+    "9": { "title": "Convergence, de-duplication, compatibility, delight", "status": "not_started" },
+    "10": { "title": "Exact-SHA adversarial verification and production council", "status": "not_started" },
+    "11": { "title": "Protected release and staged rollout", "status": "not_started" }
+  },
+  "writeBoundaries": {
+    "note": "Only the lead writes this file and requirements.json. A writer is registered here with its branch, base SHA and exact write set BEFORE it is spawned. Overlapping active write sets are rejected.",
+    "activeWriters": []
+  },
+  "foreignOwned": {
+    "note": "Paths owned by live sessions outside this programme. Read-only until the owning lane merges to origin/main. Full detail in docs/projects/home-operating-layer/COLLISION_REGISTER.md.",
+    "lanes": [
+      {
+        "branch": "feat/project-truth-wave",
+        "worktree": "_wt-project-truth",
+        "head": "d4d9295",
+        "pr": 125,
+        "paths": [
+          "docs/adr/0001-canonical-project-identity.md",
+          "docs/wave/**",
+          "scripts/wave-baseline.mjs",
+          ".github/workflows/design-quality.yml"
+        ]
+      },
+      {
+        "branch": "lane/wp1-timeline-safety",
+        "worktree": "_wt-wp1-safety",
+        "head": "9aae0ae",
+        "basedOnStaleWp0Sha": "9880694",
+        "paths": [
+          "src/modules/timeline/**",
+          "src/modules/notes/server/tasks-personalization.ts",
+          "src/modules/notes/server/tasks-personalization.test.ts",
+          "src/server/suite-context-contract.test.mjs",
+          "src/server/operational-log-contract.test.mjs",
+          "package.json"
+        ]
+      },
+      {
+        "branch": "lane/wp2-project-platform",
+        "worktree": "_wt-wp2-platform",
+        "head": "c598bd0",
+        "uncommitted": true,
+        "paths": ["src/lib/projects/**", "src/lib/product-urls.ts"]
+      }
+    ],
+    "forbiddenCheckouts": [
+      "C:/Users/ethan/signal-studio-workspace/app",
+      "C:/Users/ethan/signal-studio-workspace/_wt-project-truth",
+      "C:/Users/ethan/signal-studio-workspace/_wt-wp1-safety",
+      "C:/Users/ethan/signal-studio-workspace/_wt-wp2-platform"
+    ]
+  },
+  "flags": {
+    "note": "None created yet. Wave 4 seals the flag matrix. All default-off, server-side, fail-closed.",
+    "planned": [
+      "HOME_OPERATING_LAYER_ENABLED",
+      "SIGNAL_HOME_ANALYTICS_ENABLED",
+      "SIGNAL_ANALYTICS_JOBS_ENABLED",
+      "HOME_MUTATIONS_ENABLED",
+      "HOME_REVIEW_LAB_ENABLED"
+    ]
+  },
+  "founderPause": {
+    "gate": "wave-3-visual-selection",
+    "status": "not_reached",
+    "options": ["Editorial", "Rail", "Index", "Desk", "Riff <named direction>"]
+  },
+  "evidenceValidity": {
+    "note": "Evidence is valid only for its recorded source SHA, tree hash, fixture hash, contract version and dependency versions. Any material change returns affected requirements to candidate and invalidates prior evidence.",
+    "records": []
+  }
+}

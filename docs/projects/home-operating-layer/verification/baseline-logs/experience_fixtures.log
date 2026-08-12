@@ -1,0 +1,3 @@
+$ node scripts/experience/critical-fixtures.mjs
+experience:critical-fixtures: registry coverage or materiality hashes are stale; run with --write
+[ELIFECYCLE] Command failed with exit code 1.

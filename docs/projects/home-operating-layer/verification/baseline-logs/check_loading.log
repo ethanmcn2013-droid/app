@@ -1,0 +1,2 @@
+$ node scripts/check-loading-contract.mjs
+[loading-contract] ok (tasks)

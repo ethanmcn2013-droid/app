@@ -1,0 +1,30 @@
+$ node scripts/check-migration-contract.mjs && node --test scripts/db/migration-ledger.test.mjs
+migration-contract: ok (28 SQL files, 28 receipts, baseline 0014_current_schema_baseline)
+✔ authoritative ledger registers every SQL file with receipt and journal parity (20.6618ms)
+✔ an unregistered SQL file fails the contract (52.0681ms)
+✔ a modified SQL file fails the content-addressed contract (39.4059ms)
+✔ a registered but unreceipted migration fails the contract (41.5798ms)
+✔ a modified receipt fails its content-addressed ledger binding (40.5289ms)
+✔ a modified snapshot fails its content-addressed ledger binding (47.7107ms)
+✔ journal omission fails even when the SQL and receipt exist (55.2856ms)
+✔ fresh databases apply the canonical baseline plus forwards and rerun as a no-op (193.1623ms)
+✔ a non-empty database without an exact ledger refuses migration execution (16.6321ms)
+✔ database ledger hash drift fails closed (109.8575ms)
+✔ schema drift fails both migration no-op and current status (123.8273ms)
+✔ applied forward migration drift fails both migration no-op and current status (135.3022ms)
+✔ migration-time backfill proofs do not become false production drift alarms (157.1079ms)
+✔ same-name wrong-definition source-note index fails semantic proofs (124.0583ms)
+✔ same-name inert parent guards fail both trigger-definition proofs (134.8512ms)
+✔ remote databases cannot bypass receipt safety with a local label or environment typo (30.337ms)
+✔ production execution receipt is bound to target, environment, ledger, and pending hashes (149.3043ms)
+✔ failed postconditions roll back both SQL and ledger row (118.2128ms)
+✔ receipt-backed adoption verifies target, shape, proofs, and is idempotent (132.2547ms)
+✔ adoption receipt for another database fails before writing metadata (24.0089ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2029.2879

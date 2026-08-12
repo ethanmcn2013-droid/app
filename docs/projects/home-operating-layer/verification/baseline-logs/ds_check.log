@@ -1,0 +1,2 @@
+$ node scripts/ds/ds-check.mjs
+ds-check: clean — no drift.

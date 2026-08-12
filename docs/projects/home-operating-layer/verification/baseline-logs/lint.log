@@ -1,0 +1,86 @@
+$ eslint
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\experience\timeline-qa\timeline-visual-qa.spec.ts
+  32:58  warning  'TimelineQaState' is defined but never used     @typescript-eslint/no-unused-vars
+  33:38  warning  'TimelineQaViewport' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\components\app\detail-panel\field-rows.tsx
+  344:9  warning  'nameFor' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\components\hybrid\hybrid-workspace.tsx
+  131:5  warning  React Hook useCallback has a missing dependency: 'setDensity'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\components\hybrid\options\a\quiet-command-components.tsx
+  29:9   warning  'restoreFocus' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  42:19  warning  'viaKeyboard' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\components\welcome\welcome-picker.tsx
+  6:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\lib\account\instrumentation\event-schema.test.ts
+  84:20  warning  '_drop' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\lib\account\instrumentation\sink.ts
+  23:26  warning  '_event' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\lib\exports.ts
+  1:15  warning  'LaneId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\modules\notes\app\page.tsx
+  155:53  warning  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\modules\notes\app\page.tsx:155:53
+  153 |     // Capture once on the server so SSR and hydration share the same relative
+  154 |     // time boundary even when a note is exactly one minute/hour/day old.
+> 155 |     referenceTime: demoMode ? DEMO_REFERENCE_TIME : Date.now(),
+      |                                                     ^^^^^^^^^^ Cannot call impure function
+  156 |     // Browser recovery contains private writing. Namespace it with a stable,
+  157 |     // opaque account scope so signing out and into another account in the
+  158 |     // same tab can never adopt the previous creator's draft or queue  react-hooks/purity
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\modules\signal\signal-public-url-contract.test.ts
+  3:37  warning  'statSync' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\modules\timeline\server\actions\timeline-revalidation-contracts.ts
+  48:42  warning  '_workspaceSlug' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\server\account-unified-erasure.test.ts
+   58:24  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+   60:27  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+   61:25  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+   97:26  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  101:29  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  102:27  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  129:26  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  134:29  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  138:27  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  139:28  warning  '_tokens' is defined but never used  @typescript-eslint/no-unused-vars
+  160:26  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  163:29  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  164:27  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  165:28  warning  '_tokens' is defined but never used  @typescript-eslint/no-unused-vars
+  212:26  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  217:29  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+  218:27  warning  '_id' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\server\account-unified-export.test.ts
+   63:23  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+   64:26  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+   65:24  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  142:27  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  146:30  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  147:28  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  165:27  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  166:30  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  169:28  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  205:27  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  206:30  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+  207:28  warning  '_id' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\ethan\signal-studio-workspace\_wt-home-layer\src\server\db\queries.ts
+  20:3  warning  'shareLinks' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 43 problems (0 errors, 43 warnings)
+

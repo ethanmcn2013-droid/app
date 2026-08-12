@@ -1,0 +1,3 @@
+$ node scripts/check-performance-budgets.mjs
+performance-budgets: no production build found (.next/build-manifest.json). Run `pnpm build` first. Refusing to report a measurement of zero.
+[ELIFECYCLE] Command failed with exit code 3.
