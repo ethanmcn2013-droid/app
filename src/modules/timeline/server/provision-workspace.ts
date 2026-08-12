@@ -1,6 +1,10 @@
 import "server-only";
 
-import { decideTimelineAdoption } from "@/modules/timeline/lib/adopt-timeline";
+import {
+  decideTimelineAdoption,
+  type OwnerReconciliationReason,
+  type TimelineAdoptionCandidate,
+} from "@/modules/timeline/lib/adopt-timeline";
 import { deriveTimelineWorkspaceSlug } from "@/modules/timeline/lib/provision-slug";
 import {
   bindProjectToTasksWorkspace,
@@ -12,7 +16,11 @@ import {
   getWorkspacesForUser,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { connectSuiteWorkspace } from "@/modules/timeline/server/audience-timeline";
-import { getPrimaryTasksWorkspaceForUser } from "@/modules/timeline/server/sync/tasks-workspace-context";
+import {
+  getPrimaryTasksWorkspaceForUser,
+  getSoleOwnedTasksWorkspaceIdForUser,
+  type CurrentTasksWorkspaceContext,
+} from "@/modules/timeline/server/sync/tasks-workspace-context";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
 
 /**
@@ -81,7 +89,27 @@ export async function ensureTimelineWorkspaceForUser(
 ): Promise<Workspace | null> {
   const tasksWorkspace = await getPrimaryTasksWorkspaceForUser(userId);
   if (!tasksWorkspace) return null;
+  return provisionTimelineForTasksWorkspace(userId, tasksWorkspace);
+}
 
+/**
+ * Create the Timeline of ONE EXACT Tasks Project.
+ *
+ * This is `ensureTimelineWorkspaceForUser` with the guessing removed. The old
+ * function resolved *which Project to provision against* by asking for the
+ * user's primary one; this takes the Project as an argument, so a request
+ * naming Project B can only ever create Project B's Timeline. WP1 keeps
+ * provisioning (it is the fix to a real dead end) and takes away its ability
+ * to choose a Project — docs/wave/DECISIONS.md D-002.
+ *
+ * Idempotent: an existing exact binding is returned rather than duplicated, and
+ * a lost creation race surfaces as the insert throwing on the primary key
+ * rather than as a silent overwrite.
+ */
+export async function provisionTimelineForTasksWorkspace(
+  userId: string,
+  tasksWorkspace: Readonly<{ workspaceId: string; slug: string; name: string }>,
+): Promise<Workspace | null> {
   const existing = await getWorkspaceForSuiteIdForUser(
     tasksWorkspace.workspaceId,
     userId,
@@ -125,62 +153,237 @@ export async function ensureTimelineWorkspaceForUser(
 }
 
 /**
- * Bind the owner's existing Timeline to a Tasks workspace they are already
- * proved to be a member of, and return it.
+ * The valid outcomes of resolving one exact Tasks Project to its Timeline.
+ *
+ * ADR 0001 §6 fixes this list, and the omission is the point:
+ * **"open another Timeline" is not a valid outcome.**
+ */
+export type CanonicalTimelineResolution =
+  /** This Timeline is bound to exactly the Project that was asked for. */
+  | Readonly<{
+      kind: "exact";
+      workspace: Workspace;
+      provenance: "binding" | "legacy_exact";
+    }>
+  /** No Timeline existed for this Project and one was created for it. */
+  | Readonly<{ kind: "provisioned"; workspace: Workspace }>
+  /** The evidence does not prove a single answer. The owner chooses; we do not.
+   *  `workspace` is deliberately absent — there is nothing safe to show. */
+  | Readonly<{
+      kind: "owner-reconciliation-required";
+      reason: OwnerReconciliationReason | "claimed-elsewhere";
+      candidateSlugs: readonly string[];
+    }>
+  /** The Tasks Project is archived. It accepts no new association, so an
+   *  already-bound Timeline is returned read-only and nothing else is. */
+  | Readonly<{ kind: "archived"; workspace: Workspace | null }>
+  /** Membership was not proved for this exact Project. */
+  | Readonly<{ kind: "denied" }>
+  /** A read or write failed. Never a substitute, never a silent empty. */
+  | Readonly<{ kind: "failed"; code: string }>;
+
+/**
+ * Resolve the Timeline of ONE EXACT Tasks Project (plan §6.4,
+ * `resolveCanonicalTimeline`).
  *
  * ── WHY THIS EXISTS ────────────────────────────────────────────────────
  * `createWorkspaceAction` (server/actions/workspaces.ts) creates a Timeline
  * without a `suiteWorkspaceId`, because `createWorkspace` defaults it to null
- * and only the provisioning path above passes one. Such a Timeline is
+ * and only the provisioning path above passes one. Such a Timeline used to be
  * reachable as "the owner's first workspace" and by nothing else, so the
  * moment the product rail appended a `?workspaceId=` routing hint to the URL,
  * `resolveTimelineContext` found no row and the owner met "That workspace is
  * not available." — with their own Timeline sitting right there. Visiting
- * Tasks was what broke Timeline.
+ * Tasks was what broke Timeline. That dead end is still closed: a linkage gap
+ * still resolves rather than refusing.
  *
- * The repair is written to the row rather than re-derived per request, so the
- * dead end closes permanently on the first visit after deploy. That makes this
- * a write during a read, which is the same bargain
- * `ensureTimelineWorkspaceForUser` already makes directly above, and it is
- * idempotent: once linked, this function is never reached again.
+ * ── WHAT WP1 TOOK AWAY ─────────────────────────────────────────────────
+ * The predecessor of this function, `adoptTimelineForSuiteWorkspace`, closed
+ * the dead end by *opening the owner's first Timeline* whenever the evidence
+ * was thin — including when it was thin because the requested Project simply
+ * was not theirs. A request for Project B returned Timeline A. The repair is
+ * not to remove the closing of the dead end but to remove the substitution:
+ * every write below is keyed to `requestedTasksWorkspaceId`, and where the
+ * evidence runs out the owner is asked instead of guessed at
+ * (docs/wave/DECISIONS.md D-002).
  *
- * ── WHAT IT REFUSES TO GUESS ───────────────────────────────────────────
- * The choice itself lives in `decideTimelineAdoption` (lib/adopt-timeline.ts),
- * pure and tested there: only a single unambiguous unlinked Timeline is
- * adopted, and anything else is opened without a write. Authorization is not
- * this function's job — callers must have proved Tasks membership first.
+ * ── AUTHORIZATION ──────────────────────────────────────────────────────
+ * Membership is not re-litigated here, it is *required to reach here*: the
+ * proved Tasks context is a parameter, so there is no ordering to get wrong
+ * and no way to call this without having already proved membership of the
+ * exact Project being resolved. The `workspaceId` mismatch check below refuses
+ * a proof issued for some other Project.
  */
-export async function adoptTimelineForSuiteWorkspace(
-  userId: string,
-  suiteWorkspaceId: string,
-): Promise<Workspace | null> {
-  const owned = await getWorkspacesForUser(userId);
-  const decision = decideTimelineAdoption(owned);
-  if (decision.kind === "provision") {
-    return ensureTimelineWorkspaceForUser(userId);
+export async function resolveCanonicalTimeline(
+  actorUserId: string,
+  requestedTasksWorkspaceId: string,
+  provedTasksMembership: CurrentTasksWorkspaceContext,
+): Promise<CanonicalTimelineResolution> {
+  const requested = requestedTasksWorkspaceId.trim();
+  if (!requested || provedTasksMembership.workspaceId !== requested) {
+    return { kind: "denied" };
+  }
+  const archived = provedTasksMembership.archivedAt !== null;
+
+  let owned: Workspace[];
+  try {
+    owned = await getWorkspacesForUser(actorUserId);
+  } catch {
+    return { kind: "failed", code: "timeline_workspace_read_failed" };
   }
 
-  const chosen = owned.find((workspace) => workspace.slug === decision.slug);
-  if (!chosen) return null;
-  if (decision.kind === "open") return chosen;
-  const adoptable = chosen;
+  // The hot path: an exact binding already exists. Answer it without reading
+  // anything else, so the common request costs exactly what it did before.
+  const bound = owned.find(
+    (workspace) => workspace.suiteWorkspaceId === requested,
+  );
+  if (bound) {
+    return archived
+      ? { kind: "archived", workspace: bound }
+      : { kind: "exact", workspace: bound, provenance: "binding" };
+  }
+
+  // An archived Project accepts no new association: no adoption, no
+  // provisioning, no binding write. ADR 0001 §5.
+  if (archived) return { kind: "archived", workspace: null };
+
+  let evidence: readonly TimelineAdoptionCandidate[];
+  let soleOwnedTasksWorkspaceId: string | null;
+  try {
+    [evidence, soleOwnedTasksWorkspaceId] = await Promise.all([
+      collectAdoptionEvidence(owned),
+      getSoleOwnedTasksWorkspaceIdForUser(actorUserId),
+    ]);
+  } catch {
+    return { kind: "failed", code: "timeline_evidence_read_failed" };
+  }
+
+  const decision = decideTimelineAdoption({
+    requestedTasksWorkspaceId: requested,
+    owned: evidence,
+    soleOwnedTasksWorkspaceId,
+  });
+
+  if (decision.kind === "owner-reconciliation-required") {
+    return {
+      kind: "owner-reconciliation-required",
+      reason: decision.reason,
+      candidateSlugs: decision.candidates,
+    };
+  }
+
+  if (decision.kind === "provision") {
+    // Owner-only. A collaborator's first visit must not mint the owner's
+    // Timeline under the visitor's identity; that needs owner identity
+    // resolution, which is WP4 (plan §6.4 step 9).
+    if (provedTasksMembership.role !== "owner") {
+      return {
+        kind: "owner-reconciliation-required",
+        reason: "unproven-timeline-present",
+        candidateSlugs: [],
+      };
+    }
+    try {
+      const created = await provisionTimelineForTasksWorkspace(actorUserId, {
+        workspaceId: requested,
+        slug: provedTasksMembership.slug,
+        name: provedTasksMembership.name,
+      });
+      if (!created) return { kind: "failed", code: "timeline_provision_failed" };
+      return { kind: "provisioned", workspace: created };
+    } catch {
+      // A lost uniqueness race is not a licence to open something else. Re-read
+      // the committed winner; if it is not ours, the owner reconciles.
+      const winner = await getWorkspaceForSuiteIdForUser(requested, actorUserId);
+      if (winner) {
+        return { kind: "exact", workspace: winner, provenance: "binding" };
+      }
+      return { kind: "failed", code: "timeline_provision_failed" };
+    }
+  }
+
+  // decision.kind === "exact" | "adopt". "exact" cannot occur here (an exact
+  // binding was answered above), so this is the legacy-evidence adoption.
+  const adoptable = owned.find(
+    (workspace) => workspace.slug === decision.slug,
+  );
+  if (!adoptable) return { kind: "failed", code: "timeline_candidate_missing" };
+  if (decision.kind === "exact") {
+    return { kind: "exact", workspace: adoptable, provenance: "binding" };
+  }
 
   try {
     const linked = await connectSuiteWorkspace(
       adoptable.slug,
-      userId,
-      suiteWorkspaceId,
+      actorUserId,
+      requested,
     );
-    if (!linked) return adoptable;
+    if (!linked) {
+      return {
+        kind: "owner-reconciliation-required",
+        reason: "claimed-elsewhere",
+        candidateSlugs: [adoptable.slug],
+      };
+    }
   } catch {
     // uq_workspaces_suite_workspace_id: another Timeline already claims this
-    // suite id. Opening the owner's Timeline is still the right answer; the
-    // existing link simply stays where it is.
-    return adoptable;
+    // Project. The old code answered that by opening the owner's Timeline
+    // anyway — the exact substitution WP1 exists to remove. Re-read the
+    // committed winner and, failing that, hand the choice to the owner.
+    const winner = await getWorkspaceForSuiteIdForUser(requested, actorUserId);
+    if (winner) {
+      return { kind: "exact", workspace: winner, provenance: "binding" };
+    }
+    return {
+      kind: "owner-reconciliation-required",
+      reason: "claimed-elsewhere",
+      candidateSlugs: [adoptable.slug],
+    };
   }
 
-  await ensureBoundProject(adoptable.slug, suiteWorkspaceId);
-  return { ...adoptable, suiteWorkspaceId };
+  await ensureBoundProject(adoptable.slug, requested);
+  return {
+    kind: "exact",
+    workspace: { ...adoptable, suiteWorkspaceId: requested },
+    provenance: "legacy_exact",
+  };
+}
+
+/**
+ * Read the legacy binding evidence each unbound Timeline carries.
+ *
+ * Only unbound Timelines are inspected: one that already names a Project is
+ * that Project's, whatever its children say, and it is never a candidate for
+ * another. Bound Timelines therefore cost no query at all, which keeps this
+ * off the hot path entirely.
+ */
+async function collectAdoptionEvidence(
+  owned: readonly Workspace[],
+): Promise<readonly TimelineAdoptionCandidate[]> {
+  return Promise.all(
+    owned.map(async (workspace) => {
+      if (workspace.suiteWorkspaceId) {
+        return {
+          slug: workspace.slug,
+          suiteWorkspaceId: workspace.suiteWorkspaceId,
+          boundTasksWorkspaceIds: [],
+        };
+      }
+      const projects = await getProjectsForWorkspace(workspace.slug);
+      const boundTasksWorkspaceIds = [
+        ...new Set(
+          projects
+            .map((project) => project.sourceTasksWorkspaceId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+      return {
+        slug: workspace.slug,
+        suiteWorkspaceId: null,
+        boundTasksWorkspaceIds,
+      };
+    }),
+  );
 }
 
 /** The one project a provisioned Timeline opens on. */

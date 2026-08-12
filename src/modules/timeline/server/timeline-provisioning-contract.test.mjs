@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 
 /**
- * Production blocker 2, pinned.
+ * Production blocker 2, pinned — and, since WP1, the P0 it grew into.
  *
  * This test asserts against SOURCE TEXT on purpose, and the reason is the same
  * one `src/server/app-gate-contract.test.mjs` gives for the /app gate: the
@@ -17,6 +17,27 @@ import { readFileSync } from "node:fs";
  * fixture exists in this repo today. That gap is stated in the evidence
  * document rather than papered over with a test that proves less than it looks
  * like it proves.
+ *
+ * ── WHAT WP1 RENEGOTIATED, AND WHY IT IS NOT A WEAKENING ───────────────────
+ * Three of the assertions below (1, 2, 4) used to pin the *shape* of the fix
+ * to blocker 2: `ensureTimelineWorkspaceForUser(` is called,
+ * `adoptTimelineForSuiteWorkspace(` is called, and
+ * `if (workspaces[0]) return workspaces[0];` remains. That shape carried a P0:
+ * both fallbacks answered a request naming Tasks Project B with the owner's
+ * first Timeline, which may be Project A's. ADR 0001 §6 removes that outcome
+ * from the vocabulary — "open another Timeline is not a valid outcome" — and
+ * docs/wave/DECISIONS.md D-002 orders these three rewritten to the replacement
+ * invariant rather than deleted:
+ *
+ *   provisioning is RETAINED, because it is what closes the dead end, but it is
+ *   keyed to the EXACT requested Project, and it does not run on every read.
+ *
+ * Each rewritten assertion below therefore still refuses the original
+ * incident — a Timeline that cannot exist, and a linkage gap answered as an
+ * access failure — and additionally refuses the substitution the old shape
+ * permitted. Assertion 3, the membership boundary, is a genuine security
+ * invariant and is preserved verbatim apart from the name of the callee it
+ * orders against.
  */
 
 const AUTH = "src/modules/timeline/server/auth.ts";
@@ -35,7 +56,11 @@ function stripComments(source) {
     .replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
-test("getCurrentWorkspace actually calls the provisioning path", () => {
+test("provisioning is still wired, and is keyed to the requested Project", () => {
+  // ORIGINAL INVARIANT, UNCHANGED: a correct provisioning function that nothing
+  // calls is exactly how blocker 2 existed in the first place. It must still be
+  // reachable from the Timeline auth module, or a couple's Timeline cannot
+  // exist and `/app/timeline` is a permanent empty state again.
   const source = stripComments(read(AUTH));
   assert.match(
     source,
@@ -53,16 +78,36 @@ test("getCurrentWorkspace actually calls the provisioning path", () => {
     /import\s*\{[^}]*\bensureTimelineWorkspaceForUser\b[^}]*\}\s*from\s*["'][^"']*provision-workspace["']/,
     "the provisioning import was removed from the Timeline auth module",
   );
+
+  // ADDED BY WP1: when a Project IS named, resolution goes through the exact
+  // resolver, never through a function that picks a Project for itself.
+  assert.match(
+    source,
+    /import\s*\{[^}]*\bresolveCanonicalTimeline\b[^}]*\}\s*from\s*["'][^"']*provision-workspace["']/,
+    "the Timeline auth module must resolve a requested Project through " +
+      "resolveCanonicalTimeline (ADR 0001 §6).",
+  );
+
+  // And the provisioner it calls must take the Project as an argument. A
+  // provisioner that resolves its own target is one that can resolve a
+  // different one than the caller asked for — the P0 in one line.
+  const provision = stripComments(read(PROVISION));
+  assert.match(
+    provision,
+    /export async function provisionTimelineForTasksWorkspace\(\s*userId: string,\s*tasksWorkspace: [^)]*workspaceId: string/,
+    "the exact provisioner must accept the Tasks Project it is provisioning " +
+      "for. Deriving it internally is how a request for B provisioned A.",
+  );
 });
 
 test("a missing suite link is not treated as an access failure", () => {
   const source = stripComments(read(AUTH));
 
-  // The regression: `if (!workspace || !current) return null;` collapsed two
-  // unrelated states into one refusal. A Timeline created in-app carries no
-  // suiteWorkspaceId, so every routing hint in the URL resolved to nothing and
-  // the owner met "That workspace is not available." looking at their own
-  // Timeline. Membership must be the only thing that can refuse.
+  // ORIGINAL INVARIANT, UNCHANGED: `if (!workspace || !current) return null;`
+  // collapsed two unrelated states into one refusal. A Timeline created in-app
+  // carries no suiteWorkspaceId, so every routing hint in the URL resolved to
+  // nothing and the owner met "That workspace is not available." looking at
+  // their own Timeline. Membership must be the only thing that can refuse.
   assert.doesNotMatch(
     source,
     /if\s*\(\s*!\s*workspace\s*\|\|\s*!\s*current\s*\)\s*return\s+null;/,
@@ -70,24 +115,63 @@ test("a missing suite link is not treated as an access failure", () => {
       "linked to the requested Tasks workspace. That is a linkage gap, not an " +
       "access failure, and conflating them is what broke Timeline in production.",
   );
+
+  // REWRITTEN TARGET: the gap is still closed on the read, but by the exact
+  // resolver rather than by `adoptTimelineForSuiteWorkspace`, whose repair for
+  // thin evidence was to open the owner's first Timeline — Project A's plan
+  // for a request naming Project B.
   assert.match(
     source,
+    /resolveCanonicalTimeline\s*\(/,
+    "resolveTimelineContext no longer closes the linkage gap when the suite " +
+      "link is missing, so the dead end is back.",
+  );
+  assert.doesNotMatch(
+    source,
     /adoptTimelineForSuiteWorkspace\s*\(/,
-    "resolveTimelineContext no longer adopts the owner's Timeline when the " +
-      "suite link is missing, so the dead end is back.",
+    "adoptTimelineForSuiteWorkspace substituted the owner's first Timeline " +
+      "for the requested Project. It must not return.",
+  );
+
+  // The resolver's vocabulary is the ADR's, and `open` is not in it.
+  const provision = stripComments(read(PROVISION));
+  for (const outcome of [
+    "exact",
+    "provisioned",
+    "owner-reconciliation-required",
+    "archived",
+    "denied",
+    "failed",
+  ]) {
+    assert.ok(
+      provision.includes(`kind: "${outcome}"`),
+      `resolveCanonicalTimeline must be able to answer "${outcome}" ` +
+        "(ADR 0001 §6 fixes the outcome list).",
+    );
+  }
+  assert.ok(
+    !/kind:\s*"open"/.test(provision),
+    'the outcome "open another Timeline" is not valid and must not return.',
   );
 });
 
 test("proved Tasks membership remains the only authorization boundary", () => {
   const source = stripComments(read(AUTH));
 
-  // Adoption must never become a way to reach a workspace the caller cannot
-  // prove membership of. The refusal has to happen before it.
+  // PRESERVED VERBATIM (D-002 item 3). This is a security invariant, not a
+  // defect pin: resolution must never become a way to reach a workspace the
+  // caller cannot prove membership of. The refusal has to happen before it.
+  // The only edit is the name of the callee it orders against, because
+  // `adoptTimelineForSuiteWorkspace` was renamed to `resolveCanonicalTimeline`.
   const refusal = source.indexOf("if (!current) return null;");
-  const adoption = source.indexOf("adoptTimelineForSuiteWorkspace(");
+  const adoption = source.indexOf("resolveCanonicalTimeline(");
   assert.ok(
     refusal !== -1,
     "the membership refusal in resolveTimelineContext was removed or reworded",
+  );
+  assert.ok(
+    adoption !== -1,
+    "resolveTimelineContext no longer calls the canonical resolver",
   );
   assert.ok(
     refusal < adoption,
@@ -95,15 +179,77 @@ test("proved Tasks membership remains the only authorization boundary", () => {
       "workspace, or a URL naming someone else's workspace could bind and open " +
       "the caller's Timeline against it.",
   );
+
+  // Belt to that brace, and stronger than source order: the resolver takes the
+  // proved Tasks context as a parameter, so there is no way to call it without
+  // having proved membership first, and it refuses a proof issued for a
+  // different Project.
+  const provision = stripComments(read(PROVISION));
+  assert.match(
+    provision,
+    /export async function resolveCanonicalTimeline\([\s\S]*?provedTasksMembership: CurrentTasksWorkspaceContext,\s*\)/,
+    "resolveCanonicalTimeline must require the proved Tasks membership as an " +
+      "argument, so membership cannot be skipped by call ordering.",
+  );
+  assert.match(
+    provision,
+    /provedTasksMembership\.workspaceId !== requested[\s\S]{0,80}return \{ kind: "denied" \}/,
+    "resolveCanonicalTimeline must refuse a membership proof issued for a " +
+      "different Tasks Project.",
+  );
 });
 
-test("the provisioning path is only taken when the user has no workspace", () => {
+test("provisioning does not run on every read", () => {
+  // REWRITTEN TARGET. This used to pin `if (workspaces[0]) return workspaces[0];`
+  // — which kept provisioning off the hot path, but did so by returning the
+  // owner's FIRST Timeline, the substitution ADR 0001 §6 forbids. The concern
+  // that assertion protected is real and is re-pinned here without the guess:
+  // a cross-database write must not sit on every Timeline page render.
   const source = stripComments(read(AUTH));
   assert.match(
     source,
-    /if\s*\(\s*workspaces\[0\]\s*\)\s*return\s+workspaces\[0\];/,
-    "provisioning must remain the fallback branch. Running it on every read " +
-      "would put a cross-database write on every Timeline page render.",
+    /if\s*\(\s*workspaces\.length\s*===\s*0\s*\)\s*return\s+ensureTimelineWorkspaceForUser\(userId\);/,
+    "the no-context path must reach provisioning only when the owner has no " +
+      "Timeline at all. Running it on every read would put a cross-database " +
+      "write on every Timeline page render.",
+  );
+  assert.match(
+    source,
+    /if\s*\(\s*workspaces\.length\s*===\s*1\s*\)\s*return\s+workspaces\[0\]!;/,
+    "one Timeline and no Project named must still resolve on a single query.",
+  );
+  // And the substitution the old shape allowed must not come back: `first` is
+  // reachable only on the bare-entry path, never once a Project was requested.
+  const requestedBranch = source.slice(
+    source.indexOf("if (requestedSuiteWorkspaceId)"),
+    source.indexOf("const workspaces = await getWorkspacesForUser(userId);"),
+  );
+  assert.ok(
+    requestedBranch.length > 0,
+    "getCurrentWorkspace no longer separates the requested and bare paths",
+  );
+  assert.ok(
+    !/workspaces\[0\]/.test(requestedBranch),
+    "a request naming a Tasks Project must never resolve to workspaces[0].",
+  );
+});
+
+test("provisioning is owner-only and never runs for an archived Project", () => {
+  // Two refusals that did not exist before WP1 and that provisioning-by-exact-
+  // Project makes reachable: a collaborator's first visit must not mint the
+  // owner's Timeline under the visitor's identity (plan §6.4 step 9), and an
+  // archived Project accepts no new association (ADR 0001 §5).
+  const source = stripComments(read(PROVISION));
+  assert.match(
+    source,
+    /provedTasksMembership\.role !== "owner"/,
+    "the exact provisioner must refuse a non-owner",
+  );
+  assert.match(
+    source,
+    /if \(archived\) return \{ kind: "archived", workspace: null \};/,
+    "an archived Tasks Project must not have a Timeline created, adopted or " +
+      "bound for it",
   );
 });
 

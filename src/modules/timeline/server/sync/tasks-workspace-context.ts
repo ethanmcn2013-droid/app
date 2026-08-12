@@ -6,6 +6,18 @@ import { isAuthError } from "./tasks-milestone-source";
 export type CurrentTasksWorkspaceContext = Readonly<{
   workspaceId: string;
   planningPeriodId: string | null;
+  /** The Tasks Project's own slug and name, so a Timeline provisioned for this
+   *  exact Project can be named after it without a second lookup that could
+   *  resolve a different Project. */
+  slug: string;
+  name: string;
+  /** The caller's role in this exact Project. Provisioning is owner-only; a
+   *  collaborator's first visit must not create the owner's Timeline for them
+   *  (plan §6.4 step 9 — that path needs owner identity, which is WP4). */
+  role: string;
+  /** Set when the Tasks Project is archived. Archived Projects accept no new
+   *  association, so no Timeline is created, adopted or bound for one. */
+  archivedAt: number | null;
 }>;
 
 /**
@@ -90,6 +102,56 @@ export async function getPrimaryTasksWorkspaceForUser(
   }
 }
 
+/**
+ * The actor's only owned Tasks Project, when they own exactly one.
+ *
+ * Returns null when they own none or more than one — deliberately, because the
+ * single caller (`decideTimelineAdoption`) uses this as a UNIQUENESS PROOF and
+ * nothing else. With one owned Project and one unclaimed Timeline there is
+ * exactly one possible pairing; with two of either, binding them would be a
+ * guess, and a wrong Timeline↔Project join is silent, durable and harder to
+ * notice than the dead end it replaced.
+ *
+ * `LIMIT 2` on purpose: we need to know whether a second row exists, never
+ * which one it is.
+ *
+ * Fails closed. Missing configuration or any error returns null, which reads as
+ * "not proved" and routes the owner to an explicit choice rather than a guess.
+ */
+export async function getSoleOwnedTasksWorkspaceIdForUser(
+  clerkId: string,
+): Promise<string | null> {
+  const url = process.env.TASKS_DATABASE_URL;
+  const authToken = process.env.TASKS_AUTH_TOKEN;
+  if (!url || !authToken || !clerkId.trim()) return null;
+
+  const client = createClient({ url, authToken });
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT w.id AS workspace_id
+        FROM users u
+        INNER JOIN workspace_members wm ON wm.user_id = u.id
+        INNER JOIN workspaces w ON w.id = wm.workspace_id
+        WHERE u.clerk_id = ?
+          AND wm.role = 'owner'
+          AND w.archived_at IS NULL
+        LIMIT 2
+      `,
+      args: [clerkId],
+    });
+    if (result.rows.length !== 1) return null;
+    return String(result.rows[0]!.workspace_id);
+  } catch (error) {
+    if (!isAuthError(error)) {
+      console.error("[tasks-workspace-context] sole-owned lookup failed");
+    }
+    return null;
+  } finally {
+    client.close();
+  }
+}
+
 export async function getCurrentTasksWorkspaceContext(
   clerkId: string,
   workspaceId: string,
@@ -102,7 +164,13 @@ export async function getCurrentTasksWorkspaceContext(
   try {
     const result = await client.execute({
       sql: `
-        SELECT w.id AS workspace_id, w.planning_period_id AS planning_period_id
+        SELECT
+          w.id                 AS workspace_id,
+          w.planning_period_id AS planning_period_id,
+          w.slug               AS slug,
+          w.name               AS name,
+          w.archived_at        AS archived_at,
+          wm.role              AS role
         FROM users u
         INNER JOIN workspace_members wm ON wm.user_id = u.id
         INNER JOIN workspaces w ON w.id = wm.workspace_id
@@ -117,6 +185,10 @@ export async function getCurrentTasksWorkspaceContext(
       workspaceId: String(row.workspace_id),
       planningPeriodId:
         row.planning_period_id == null ? null : String(row.planning_period_id),
+      slug: row.slug == null ? "" : String(row.slug),
+      name: row.name == null ? "" : String(row.name),
+      role: row.role == null ? "" : String(row.role),
+      archivedAt: row.archived_at == null ? null : Number(row.archived_at),
     };
   } catch (error) {
     // Do not fall back to a first workspace when current membership cannot be
