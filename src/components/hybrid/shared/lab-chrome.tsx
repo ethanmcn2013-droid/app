@@ -30,7 +30,16 @@ export function ViewTabs({ route, onRouteChange, hrefFor, className = "" }: { ro
   // load clipped mid-word off the right edge — pull it into view once.
   const activeRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // scrollIntoView on a fresh load also moved FOCUS context: the browser
+    // treated the scrolled-to tab as the sequential-navigation start, so the
+    // first Tab landed mid-document past the skip link and forty-four
+    // controls (WCAG 2.4.1). Scroll the ROW, and only when it genuinely
+    // overflows — a desktop tab strip that fits needs nothing.
+    const el = activeRef.current;
+    const row = el?.parentElement;
+    if (!el || !row) return;
+    if (row.scrollWidth <= row.clientWidth) return;
+    row.scrollLeft = el.offsetLeft - (row.clientWidth - el.offsetWidth) / 2;
   }, [route.view]);
   return (
     <nav aria-label="Project views" className={`${styles.viewTabs} ${className}`}>

@@ -192,7 +192,7 @@ export function DraftReplyButton({ taskId, onDraft, disabled }: Props) {
                 disabled={isStreaming}
                 className="inline-flex min-h-[44px] items-center gap-1 rounded-lg bg-ink px-3 text-[12px] font-medium text-white transition-opacity duration-200 hover:opacity-90 disabled:opacity-40"
               >
-                {isStreaming ? "Drafting…" : "Send to AI and draft"}
+                {isStreaming ? "Drafting…" : "Send and draft"}
               </button>
             </div>
           </motion.div>

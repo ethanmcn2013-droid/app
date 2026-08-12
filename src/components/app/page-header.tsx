@@ -210,7 +210,12 @@ export function PageActionsOverflow({
       "md",
       formatTasksAsMarkdown(
         state.tasks,
-        pack.workspaceTitle,
+        // The name the operator can see, not the raw workspace title: the
+        // header and the sidebar resolve boardName first, and an export
+        // headlined with a name the user has never seen reads as someone
+        // else's file. Same expression the header title uses at its own
+        // scope above.
+        pack.boardName ?? shortenTitle(pack.workspaceTitle),
         publicBoardColumns(columnConfig, state.tasks),
       ),
       "Markdown copied",

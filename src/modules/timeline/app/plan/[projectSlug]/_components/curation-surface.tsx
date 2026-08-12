@@ -35,6 +35,8 @@ import {
   milestoneCountPhrase,
 } from "@/modules/timeline/lib/vocabulary";
 import type { AudienceItemState } from "@/modules/timeline/server/db/timeline-schema";
+import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 import styles from "./curation-surface.module.css";
 
 function laneForAudienceState(
@@ -471,7 +473,14 @@ function NodeCard({
     node.audienceState === "covered" ||
     node.audienceState === "cancelled";
   const hasTiming = Boolean(node.targetDate);
-  const [attentionNow] = useState(Date.now);
+  // The suite's one clock. The reader artifact and the Tasks board read the
+  // pinned review frame; this surface read the wall clock and called two
+  // future milestones "Overdue" one tab from where they read "Coming up".
+  const [attentionNow] = useState(() =>
+    isDemoMode()
+      ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso).getTime()
+      : Date.now(),
+  );
 
   // Tier 3 attention signal, surface drift at edit time (R·22). Calendar-day
   // anchored, so server-render and client-hydration agree within a calendar

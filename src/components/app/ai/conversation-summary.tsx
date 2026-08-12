@@ -80,7 +80,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                   }}
                 />
                 <span className="text-[13px] font-medium text-ink-soft group-hover:text-ink">
-                  Summarize with AI
+                  Summarise this thread
                 </span>
               </span>
               <span className="text-[11px] uppercase tracking-[0.12em] text-ink-faint group-hover:text-brand">
@@ -117,7 +117,7 @@ export function ConversationSummary({ taskId, eligible }: Props) {
                 }}
                 className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-3 text-[12px] font-medium text-white hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
               >
-                Send to AI and summarize
+                Send and summarise
               </button>
             </div>
           </motion.div>

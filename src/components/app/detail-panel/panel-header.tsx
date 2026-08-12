@@ -5,6 +5,8 @@ import type { Task } from "@/lib/data";
 import { useTasksDispatch } from "@/lib/tasks/tasks-context";
 import { formatRelativeTime } from "@/lib/utils";
 import { useHydrated } from "@/lib/use-hydrated";
+import { isDemoMode } from "@/lib/access-mode";
+import { PINNED_REVIEW_CALENDAR_FRAME } from "@/lib/calendar-frame";
 
 export function PanelHeader({
   task,
@@ -49,6 +51,18 @@ export function PanelHeader({
 // Named exports for TaskDetail header composition (premium-p1).
 // Behaviour is unchanged; adding `export` makes each chip importable directly.
 
+/**
+ * The clock the stamp measures against. The review workspace lives on one
+ * pinned calendar; a stamp that reads the wall clock instead says
+ * "edited 28 Jul" in a workspace whose today is 16 July, and Home disagrees
+ * with it from the next screen. Real accounts keep the real clock.
+ */
+function stampNow(): number {
+  return isDemoMode()
+    ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso).getTime()
+    : Date.now();
+}
+
 export function EditedStamp({ updatedAt }: { updatedAt: Date }) {
   // Defer rendering until after hydration: relative time + locale-
   // formatted tooltip both differ between server and client (server
@@ -60,10 +74,10 @@ export function EditedStamp({ updatedAt }: { updatedAt: Date }) {
   useEffect(() => {
     const revealAt = updatedAt.getTime() + 5000;
     const revealTimer = window.setTimeout(
-      () => setNow(Date.now()),
-      Math.max(0, revealAt - Date.now()),
+      () => setNow(stampNow()),
+      Math.max(0, revealAt - stampNow()),
     );
-    const clock = window.setInterval(() => setNow(Date.now()), 60_000);
+    const clock = window.setInterval(() => setNow(stampNow()), 60_000);
     return () => {
       window.clearTimeout(revealTimer);
       window.clearInterval(clock);
@@ -82,9 +96,9 @@ export function EditedStamp({ updatedAt }: { updatedAt: Date }) {
       <span className="text-ink-faint">·</span>
       <span
         className="select-none text-[11px] tabular-nums text-ink-quiet"
-        title={updatedAt.toLocaleString("en-US")}
+        title={updatedAt.toLocaleString("en-IE")}
       >
-        edited {formatRelativeTime(updatedAt)}
+        edited {formatRelativeTime(updatedAt, now)}
       </span>
     </>
   );

@@ -20,11 +20,11 @@ describe("Wave 3 interface contracts", () => {
   it("requires an explicit, informed action before either Tasks AI request", () => {
     const draft = source("src", "components", "app", "ai", "draft-reply-button.tsx");
     const summary = source("src", "components", "app", "ai", "conversation-summary.tsx");
-    assert.ok(draft.indexOf("Sends this task&apos;s title") < draft.indexOf("Send to AI and draft"));
+    assert.ok(draft.indexOf("Sends this task&apos;s title") < draft.indexOf("Send and draft"));
     assert.match(draft, /to Anthropic/);
     assert.match(draft, /Nothing is posted until you/);
     assert.match(summary, /onClick=\{\(\) => setConfirming\(true\)\}/);
-    assert.ok(summary.indexOf("Sends this task&apos;s title") < summary.indexOf("Send to AI and summarize"));
+    assert.ok(summary.indexOf("Sends this task&apos;s title") < summary.indexOf("Send and summarise"));
   });
 
   it("keeps 320px Notes descendants and forced-colour sharing focus inside the usable viewport", () => {
