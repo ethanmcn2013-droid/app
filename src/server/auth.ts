@@ -166,13 +166,20 @@ export async function getActiveWorkspace(): Promise<string> {
     if (match) return cookieValue;
   }
 
-  // Fall back to the user's first membership.
-  const [first] = await db
-    .select({ workspaceId: workspaceMembers.workspaceId })
-    .from(workspaceMembers)
-    .where(eq(workspaceMembers.userId, me))
-    .limit(1);
-  if (first) return first.workspaceId;
+  // Fall back to the user's first membership — and "first" now means the same
+  // thing here as it does in the Project catalog and in the resolver's
+  // `first-active` default, because all three call one implementation
+  // (DECISIONS D-023). Before this, the fallback was an unordered `.limit(1)`:
+  // a multi-membership user's bare entry landed in a planner-chosen Project
+  // while the chooser highlighted a different one, which is two answers to
+  // "where am I?".
+  //
+  // This is a determinism fix, not an authorization fix. The result is still an
+  // ambient guess and still proves nothing — which is why the destructive
+  // paths in `seed.ts` require `manageProject` rather than bare membership, and
+  // why that bound does not relax now that the guess is stable.
+  const first = await firstMembershipByCatalogOrder(db, me);
+  if (first) return first;
 
   // Legacy fallback for dev runs where the user isn't in any
   // workspace yet (typically only the very first request before

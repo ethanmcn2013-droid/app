@@ -78,8 +78,16 @@ test("getActiveWorkspaceOrNull returns null where getActiveWorkspace returns ws-
       "several of them use the resolved id as a write destination rather than " +
       "a filter (D-005).",
   );
+  // Re-anchored at WP3 integration. This asserted the exact spelling
+  // `return first ? first.workspaceId : null`, which the D-023 ordering fix
+  // replaced with a call to a helper that is itself typed `Promise<string |
+  // null>`. The property never changed; only the spelling did. That is the
+  // sixth guard in this wave to rot the same way, so it is now anchored on the
+  // property — the function's last resort is a nullable resolution, and it
+  // never invents an id — rather than on how that resolution is written.
+  const lastResort = failClosed.slice(failClosed.lastIndexOf("return"));
   assert.ok(
-    /return\s+first\s*\?\s*first\.workspaceId\s*:\s*null/.test(failClosed),
+    /firstMembershipByCatalogOrder\(|:\s*null|return\s+null/.test(lastResort),
     "getActiveWorkspaceOrNull must end by returning null when the caller has " +
       "no membership at all.",
   );
@@ -102,30 +110,54 @@ test("getActiveWorkspaceOrNull still validates cookie membership before honourin
 });
 
 /**
- * The known-weak edge, recorded rather than asserted away.
+ * Renegotiated at WP3 integration (DECISIONS D-023), not deleted.
  *
- * The first-membership fallback is an unordered `.limit(1)`, so a caller with
- * no valid cookie and several Projects resolves to whichever row libSQL
- * returns first. That is tolerable for a scoped read and is NOT tolerable as
- * the sole input to a destructive bulk operation, which is why the two bulk
- * deletes in `seed.ts` require `manageProject` rather than bare membership.
- * The ordering itself has to be fixed in `auth.ts`, which this lane does not
- * own. This test pins the shape so the fix is visible when it lands.
+ * This guard used to assert the opposite — that the first-membership fallback
+ * was an unordered `.limit(1)` — as a deliberate tripwire, so the fix would be
+ * visible the moment it landed. It landed: both accessors now resolve "first"
+ * through `firstMembershipByCatalogOrder`, the single implementation the
+ * Project catalog and the resolver's `first-active` default also use. Three
+ * accessors disagreeing about "first" meant a bare entry could land in one
+ * Project while the chooser highlighted another.
+ *
+ * The tripwire's second question was whether `seed.ts` still needs
+ * `manageProject` now the guess is stable. **It does, and that is asserted
+ * below rather than left to judgement.** Determinism is not authorization: a
+ * stable guess is still a guess, and it is still not an acceptable sole input
+ * to a destructive bulk delete.
  */
-test("the first-membership fallback is still unordered (known, bounded, recorded)", () => {
-  const body = exportedBody(authSrc, "getActiveWorkspaceOrNull");
-  const fallback = body.slice(body.lastIndexOf("const [first]"));
-  assert.ok(
-    fallback.includes(".limit(1)"),
-    "the first-membership fallback moved — re-read it before trusting this note",
-  );
-  assert.ok(
-    !fallback.includes("orderBy"),
-    "getActiveWorkspaceOrNull's first-membership fallback has gained an " +
-      "ORDER BY. That is the fix WP3a asked for: update this guard to assert " +
-      "the ordering, and revisit whether seed.ts still needs manageProject to " +
-      "bound an arbitrary guess.",
-  );
+test("both ambient accessors resolve first-membership through one ordered implementation", () => {
+  for (const fn of ["getActiveWorkspace", "getActiveWorkspaceOrNull"]) {
+    const body = exportedBody(authSrc, fn);
+    assert.ok(
+      body.includes("firstMembershipByCatalogOrder("),
+      `${fn} no longer resolves its first-membership fallback through ` +
+        "firstMembershipByCatalogOrder. Two accessors answering \"first\" " +
+        "differently is the defect D-023 closed — re-read it before changing this.",
+    );
+    assert.ok(
+      !/\.from\(workspaceMembers\)[\s\S]{0,200}\.limit\(1\)/.test(
+        body.slice(body.indexOf("firstMembershipByCatalogOrder(")),
+      ),
+      `${fn} has grown a second, hand-rolled membership fallback after the ` +
+        "shared one. That is how the accessors diverged in the first place.",
+    );
+  }
+});
+
+test("a stable guess is still a guess: seed.ts's destructive paths keep manageProject", () => {
+  // D-023 explicitly refuses to relax this because the ordering landed.
+  const seedSrc = readFileSync(join(actionsDir, "seed.ts"), "utf8");
+  const destructive = ["clearAllTasksAction", "seedDomainAction"];
+  for (const fn of destructive) {
+    const body = exportedBody(seedSrc, fn);
+    assert.ok(
+      body.includes("manageProject"),
+      `${fn} deletes every task in a Project. It must prove manageProject, ` +
+        "not bare membership — an ordered ambient fallback is deterministic, " +
+        "not authorized (DECISIONS D-023).",
+    );
+  }
 });
 
 // ── 2. The seam ─────────────────────────────────────────────────────────────
