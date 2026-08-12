@@ -95,6 +95,16 @@ export const HOME_APP_PATH = "/app/home";
 export const HOME_APP_URL = `${APP_ORIGIN}${HOME_APP_PATH}`;
 export const BRIEFING_APP_PATH = `${HOME_APP_PATH}/briefing`;
 
+/**
+ * Project Overview and Your Work. Both routes already exist
+ * (`src/app/app/project`, `src/app/app/your-work`); neither had a typed
+ * constant, so callers wrote the literal. Named here because the Active
+ * Project destination allowlist must be built from typed constants — an enum
+ * of hand-written paths is an enum that can drift from the router.
+ */
+export const PROJECT_APP_PATH = "/app/project";
+export const YOUR_WORK_APP_PATH = "/app/your-work";
+
 /** The authenticated suite surfaces the shell can mark as current. */
 export type SuiteSurfaceId = "home" | ProductId;
 

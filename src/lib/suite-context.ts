@@ -11,6 +11,27 @@ export function isSuiteContextId(value: unknown): value is string {
   return typeof value === "string" && CONTEXT_ID.test(value);
 }
 
+/**
+ * The V2 context vocabulary this module emits.
+ *
+ * Named here, beside the emitter, so the V3 canonicaliser
+ * (`src/lib/projects/project-url.ts`) strips exactly what this function writes
+ * and cannot drift from it. ADR 0001 §8 keeps `withSuiteContext` in place for
+ * at least two stable releases: V2 links already in the wild — and in Signal's
+ * inbound normalizer below — must keep resolving while V3 rolls out.
+ *
+ * `scripts/check-suite-switcher-contract.mjs:122-129` pins `sourceProduct` in
+ * this file. That pin is correct and is left untouched: the emitter is retained
+ * on purpose, and deleting a guard to make a V3 build green would remove the
+ * protection at exactly the moment it starts mattering.
+ */
+export const SUITE_CONTEXT_V2_PARAMS = [
+  "sourceProduct",
+  "contextVersion",
+  "planningPeriodId",
+  "projectId",
+] as const;
+
 /** Context IDs are navigation hints. Consumers must still authorize them. */
 export function withSuiteContext(
   appUrl: string,
