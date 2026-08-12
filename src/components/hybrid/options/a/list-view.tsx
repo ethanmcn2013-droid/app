@@ -322,7 +322,7 @@ export function ListView({
                         {group === "status" ? <span className={styles.statusPip} data-accent={groupAccent ? "" : undefined} /> : null}
                         {taskGroup.label}
                       </button>
-                      <span>{taskGroup.tasks.length} tasks</span>
+                      <span>{taskGroup.tasks.length} task{taskGroup.tasks.length === 1 ? "" : "s"}</span>
                       <span>{complete}/{taskGroup.tasks.length || 0} done</span>
                       {store.readOnly ? null : <button onClick={() => store.addTask(taskGroup.addStatus)} type="button"><Icon name="add" size={13} />Add task</button>}
                     </div>

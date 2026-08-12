@@ -1176,8 +1176,8 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
             ...(laneWidth ? { "--lane-width": `${laneWidth}px` } : {}),
           } as React.CSSProperties;
           const countLabel = limit !== undefined
-            ? `${laneTasks.length} of ${limit} tasks in ${label}`
-            : `${laneTasks.length} tasks in ${label}`;
+            ? `${laneTasks.length} of ${limit} task${limit === 1 ? "" : "s"} in ${label}`
+            : `${laneTasks.length} task${laneTasks.length === 1 ? "" : "s"} in ${label}`;
 
           if (isCollapsed) {
             return (
