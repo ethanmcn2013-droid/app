@@ -144,7 +144,9 @@ test("an explicitly requested archived Project opens read-only, not unavailable"
   assert(result.state.kind === "archived");
   assert.equal(result.state.project.id, "ws-archived");
   assert.equal(result.state.project.capabilities.createOrEditTasks, false);
-  assert.equal(result.state.project.capabilities.publishOrRevokeTimeline, false);
+  // Archive disables new publishing and leaves revocation reachable (ADR §5).
+  assert.equal(result.state.project.capabilities.publishTimeline, false);
+  assert.equal(result.state.project.capabilities.revokeTimeline, true);
   assert.equal(result.state.project.capabilities.open, true);
 });
 

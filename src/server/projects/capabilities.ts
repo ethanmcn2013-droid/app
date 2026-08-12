@@ -43,7 +43,8 @@ const NONE: ProjectCapabilities = Object.freeze({
   manageProject: false,
   moveIntoPlanningPeriod: false,
   curatePrimaryTimeline: false,
-  publishOrRevokeTimeline: false,
+  publishTimeline: false,
+  revokeTimeline: false,
   deleteOrTransferOwnership: false,
 });
 
@@ -79,6 +80,14 @@ export function projectCapabilities(input: {
       // Restore is the one management action an archived Project still needs;
       // it is the inverse of archive, and plan §5 lists them as one capability.
       manageProject: manages,
+      // Archive disables NEW publishing and leaves revocation reachable
+      // (ADR 0001 §5; plan §9.2 makes always-reachable revocation a security
+      // property). Withdrawing revoke here would mean an owner who archives a
+      // Project to put it away loses the one control that takes its live
+      // bearer link down — the archived Projects are the ones most likely to
+      // have a link nobody is watching.
+      publishTimeline: false,
+      revokeTimeline: manages,
       deleteOrTransferOwnership: isPrimaryOwner,
     });
   }
@@ -90,7 +99,8 @@ export function projectCapabilities(input: {
     manageProject: manages,
     moveIntoPlanningPeriod: isPrimaryOwner || (isCoOwner && ownsPlanningPeriod),
     curatePrimaryTimeline: manages,
-    publishOrRevokeTimeline: manages,
+    publishTimeline: manages,
+    revokeTimeline: manages,
     deleteOrTransferOwnership: isPrimaryOwner,
   });
 }
