@@ -90,6 +90,13 @@
      dead and is consolidated away (2026-08-05 board pass 2). */
   --lane-doing-ink: #b05814;
 
+  /* ── Quiet ink (--x- extension) — the register's small type, at a
+     contrast the system's --ink-faint (#71717a, 4.83:1) never held.
+     Contrast contract on paper: --x-ink-quiet ≥7:1 for 12–13px metadata
+     and captions, --x-ink-quiet-soft ≥5.9:1 for 14px and up. */
+  --x-ink-quiet:      #52525b; /* 7.73:1 on --paper · 7.41:1 on --paper-soft */
+  --x-ink-quiet-soft: #5f5f68; /* 6.32:1 on --paper · 6.05:1 on --paper-soft */
+
   /* ── Studio Bar chrome (T·94) — the charcoal L-frame. The greys are
      the canonical rail icon-system values (60px rail · 34×34 r10 tiles);
      indigo rides the system ramp; the capsule + strong ink reuse zinc. */
@@ -480,6 +487,34 @@ body::after { content: none; }
   20%           { transform: translateY(-0.38em) scale(1); }
   40%           { transform: translateY(-0.38em) scale(1.12); }
   50%           { transform: translateY(-0.38em) scale(1); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   Studio Bar wordmark — the same mark grammar inside the app
+   chrome (BRAND.md §4: the dot is the brand). The product word
+   and its terminal dot are ONE authored object, so the dot rides
+   the word as a pseudo-element: it cannot be dropped from a
+   mobile branch, and it cannot drift into a bare dot sitting far
+   to the left of the word — both of which the chrome shipped.
+   Geometry is .tasks-dot's (0.32em, raised 0.38em, 0.12em off
+   the last letter); the colour is the chrome ramp's indigo,
+   which reads on charcoal where --brand does not. Static on
+   purpose: the per-product gesture (§4 pulse / caret / sweep) is
+   a motion decision and the delight catalog owns it.
+   ──────────────────────────────────────────────────────────── */
+.studio-wordmark::after {
+  content: "";
+  display: inline-block;
+  width: 0.32em;
+  height: 0.32em;
+  /* px ceiling: the same pre-hydration guard as .tasks-dot, at the
+     10px wordmark ceiling the loading system names below. */
+  max-width: 10px;
+  max-height: 10px;
+  background-color: var(--x-studio-accent);
+  border-radius: 50%;
+  margin-left: 0.12em;
+  transform: translateY(-0.38em);
 }
 
 /* ────────────────────────────────────────────────────────────

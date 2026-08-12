@@ -9,6 +9,7 @@ import {
   SharePanel,
   type SharePublicationSummary,
 } from "@/modules/timeline/app/plan/[projectSlug]/_components/share-panel";
+import { VisibilityLine } from "@/modules/timeline/app/plan/[projectSlug]/_components/visibility-line";
 import { TimelineArtifact } from "@/modules/timeline/components/artifact";
 import { ownerProjectToTimelineDto } from "@/modules/timeline/lib/owner-artifact";
 import { isDemoMode } from "@/lib/access-mode";
@@ -136,6 +137,16 @@ export default async function TimelineProjectPage({
           .map((item) => item.title),
       }
     : null;
+  // The same publication the header metadata, Preview and Share all mean,
+  // narrowed to the four facts the visibility line is allowed to speak from.
+  const visibility = latestPublication
+    ? {
+        state: latestPublication.state,
+        activeShareCount: latestPublication.activeShareCount,
+        publishedAt: latestPublication.publishedAt,
+        timezone: latestPublication.timezone,
+      }
+    : null;
   const content = TimelineProjectContent({
     mode,
     project,
@@ -150,29 +161,34 @@ export default async function TimelineProjectPage({
     <div data-timeline-module className="flex min-h-full w-full flex-1 flex-col bg-white">
       <header className="relative z-30 border-b border-line-soft bg-white">
         <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            {/* Parent context, then the project itself. No wordmark here: the
-                Studio Bar above already carries `timeline.` and it already
-                links to Timeline home (studio-bar.tsx, activeModuleIdentity),
-                so a second one is duplicated chrome, not context. What stood
-                here was dead text reading "Project timeline". */}
-            <Link
-              href={buildTimelineProjectHref(null, queryContext)}
-              className="hidden min-h-[44px] max-w-[18ch] shrink-0 items-center truncate rounded-md px-1 text-[13px] text-ink-quiet transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
-            >
-              {workspace.name}
-            </Link>
-            <span aria-hidden className="hidden h-3.5 w-px bg-ink-ghost lg:block" />
-            <ProjectSwitcher
-              currentProject={{ slug: project.slug, name: project.name }}
-              projects={projectOptions}
-              context={queryContext}
-            />
-            {/* The countdown is the plan's pulse — phone owners deserve it
-                too. Only the smallest headers go without. */}
-            <span className="hidden min-w-0 sm:inline-flex">
-              <AnchorChip milestones={projectNodes} now={now.getTime()} />
-            </span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              {/* Parent context, then the project itself. No wordmark here: the
+                  Studio Bar above already carries `timeline.` and it already
+                  links to Timeline home (studio-bar.tsx, activeModuleIdentity),
+                  so a second one is duplicated chrome, not context. What stood
+                  here was dead text reading "Project timeline". */}
+              <Link
+                href={buildTimelineProjectHref(null, queryContext)}
+                className="hidden min-h-[44px] max-w-[18ch] shrink-0 items-center truncate rounded-md px-1 text-[13px] text-ink-quiet transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent lg:inline-flex"
+              >
+                {workspace.name}
+              </Link>
+              <span aria-hidden className="hidden h-3.5 w-px bg-ink-ghost lg:block" />
+              <ProjectSwitcher
+                currentProject={{ slug: project.slug, name: project.name }}
+                projects={projectOptions}
+                context={queryContext}
+              />
+              {/* The countdown is the plan's pulse — phone owners deserve it
+                  too. Only the smallest headers go without. */}
+              <span className="hidden min-w-0 sm:inline-flex">
+                <AnchorChip milestones={projectNodes} now={now.getTime()} />
+              </span>
+            </div>
+            {/* Who can see this page, before the owner types a word into it.
+                Preview and Share stood in this header explaining neither. */}
+            <VisibilityLine publication={visibility} />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -230,7 +246,12 @@ function TimelineProjectContent({
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="mb-7 border-b border-line-soft pb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-accent-hover">
+          {/* Sentence case, no tracking: the artifact below this header
+              retired the uppercase-tracked eyebrow for its own kicker a wave
+              ago, on the grounds that it reads as a system label above a name
+              rather than as the first thing a person is told. Same decision,
+              same reason, owner side. */}
+          <p className="text-[13px] font-medium text-accent-hover">
             Private owner edit
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-ink">
@@ -263,7 +284,7 @@ function TimelineProjectContent({
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8">
         <section className="w-full rounded-2xl border border-dashed border-line-soft bg-bg-sunken p-7 text-center sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.13em] text-accent-hover">
+          <p className="text-[13px] font-medium text-accent-hover">
             {project.name}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-ink">

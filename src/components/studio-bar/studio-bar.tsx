@@ -43,6 +43,7 @@ import {
   type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
+import { RailIcon } from "./rail-icons";
 import {
   STUDIO_CREATE_EVENT,
   STUDIO_PALETTE_EVENT,
@@ -56,7 +57,17 @@ import {
 /* The standalone dot cell retired 2026-08-05 (board pass 3): the brand
    dot now lives INSIDE the wordmark — `tasks.` — one authored object.
    Home keeps its rail tile (consolidation D4's real affordance), so the
-   duplicate mark carried no unique function. */
+   duplicate mark carried no unique function.
+
+   That decision was only half-built until the wave-5 pass: the wordmark
+   shipped with no dot at all while the 60px origin cell kept drawing a
+   bare indigo circle, so the brand read as a loose dot floating far to
+   the left of the word on desktop, and as an unmarked word on mobile.
+   The dot is back inside the wordmark (.studio-wordmark in globals.css,
+   the .tasks-dot grammar of BRAND.md §4), on both breakpoints, and the
+   origin cell now draws the Home glyph it actually links to — the rail
+   icon whose own Signal Point is the dot, so exactly one indigo dot is
+   on screen and it belongs to the word. */
 
 /**
  * Module identity for the 248px cell: the wordmark follows the ACTIVE module
@@ -84,22 +95,22 @@ function activeModuleIdentity(pathname: string): { word: string; home: string; l
 }
 
 /**
- * The suite's one boundary mark. It occupies the rail's 60px origin cell
- * and returns to Home; the product wordmark begins in the next cell, aligned
- * to the Projects sidebar below.
+ * The rail's 60px origin cell: the Home destination, sitting directly above
+ * the product rail it shares a column with. It draws the rail's own Home
+ * glyph — the front door, with the Signal Point inside it — rather than a
+ * bare indigo circle, which at this size read as a brand mark that had come
+ * loose from the wordmark beside it. Function unchanged: one tap, Home.
+ * The suite's brand dot lives in the wordmark in the next cell.
  */
 function MarkCell() {
   return (
     <div className="hidden h-full w-[60px] flex-none items-center justify-center md:flex">
       <a
         aria-label="Signal Studio Home"
-        className="group flex h-[44px] w-[44px] items-center justify-center rounded-lg outline-none transition-colors hover:bg-white/[0.05] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)]"
+        className="flex h-[44px] w-[44px] items-center justify-center rounded-lg text-[var(--x-studio-ink-soft)] outline-none transition-colors hover:bg-white/[0.05] hover:text-[var(--x-studio-ink)] focus-visible:ring-2 focus-visible:ring-[var(--x-studio-focus)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--x-studio-chrome)]"
         href={HOME_APP_PATH}
       >
-        <span
-          aria-hidden="true"
-          className="h-[11px] w-[11px] rounded-full bg-[var(--x-studio-accent)] transition-transform duration-150 group-active:scale-90"
-        />
+        <RailIcon name="home" size={18} />
       </a>
     </div>
   );
@@ -111,6 +122,11 @@ function MarkCell() {
  * active module's home (no dropdown behaviour, no chevron); the edition
  * label renders only when the account carries a named edition (bound to
  * real entitlement data — see editionLabel()), otherwise the slot is empty.
+ *
+ * The word and its terminal indigo dot are one object: `.studio-wordmark`
+ * (globals.css) draws the dot as the word's own ::after, so the mark cannot
+ * come apart the way a sibling element can, and the link keeps a single
+ * accessible name — the module label, never "tasks dot".
  */
 function IdentityCell({ edition }: { edition: string | null }) {
   const pathname = usePathname();
@@ -123,7 +139,7 @@ function IdentityCell({ edition }: { edition: string | null }) {
         className="inline-flex min-h-[44px] flex-none select-none items-center rounded text-[22px] font-semibold lowercase leading-none text-[var(--x-studio-ink-strong)] outline-none transition-colors hover:text-white focus-visible:text-white md:min-h-0 md:text-[27px] md:pointer-coarse:min-h-[44px]"
         style={{ letterSpacing: "-0.045em" }}
       >
-        {identity.word}
+        <span className="studio-wordmark">{identity.word}</span>
       </a>
       {edition ? (
         <span

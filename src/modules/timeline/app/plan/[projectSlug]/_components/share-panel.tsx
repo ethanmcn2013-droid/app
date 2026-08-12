@@ -147,12 +147,19 @@ export function SharePanel({
 
   return (
     <>
+      {/* The one primary on this screen, in the register's own primary form:
+          a solid indigo pill. It was a solid BLACK rounded rectangle, which
+          made it the heaviest object in a header that also held a grey chip,
+          a borderless link and an outlined button — four treatments, no
+          hierarchy, and the suite's single accent nowhere in sight. Sharing
+          is the act this page builds toward, so it is the one thing here that
+          gets to be indigo. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="inline-flex min-h-[44px] items-center rounded-lg bg-ink px-4 text-[13px] font-medium text-white transition-colors hover:bg-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        className="inline-flex min-h-[44px] items-center rounded-full bg-accent px-5 text-[13px] font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
       >
         Share
       </button>

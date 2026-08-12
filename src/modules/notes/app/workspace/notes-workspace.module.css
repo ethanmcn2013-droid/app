@@ -7,18 +7,35 @@
  * grey was an application frame drawn inside an application, and it cost the
  * notebook the width it needed.
  *
- * Type ramp, four weights are not needed and three are used: 400 for
- * everything read, 500 for anything that names or labels, 600 for the two
- * headings that exist. Sizes are 12 / 13 / 14 / 15 / 16 / 17 / 20 and nothing
- * between them, with one stated exception: keyboard caps are set at
- * --text-label, the design system's own 11px mono step, because that is what
- * a keycap is. Reading sizes carry --x-lead-read, interface sizes carry
- * --x-lead-ui, and the two caps carry --x-lead-tight.
+ * Type is the design system's own reading steps and nothing between them:
+ * 12 / 13 / 15 / 17 / 20, which are --text-caption, --text-body-sm,
+ * --text-body, --text-body-lg and --text-heading. There is no 14 and no 16
+ * here; both were a private ramp this sheet used to carry and the system
+ * excludes. Keyboard caps are set at --text-label, the 11px mono step,
+ * because that is what a keycap is. Three weights: 400 for everything read,
+ * 500 for anything that names or labels, 600 for a heading.
+ *
+ * The three objects that carry the product are separated by a real step
+ * rather than by a pixel. The list index reads at 15; the capture field and
+ * the reading pane both read at 17, deliberately the same step, because what
+ * you write here is what you will read here. Reading sizes carry
+ * --x-lead-read, interface sizes --x-lead-ui, and the caps --x-lead-tight.
+ *
+ * One stated exception to the ramp: text fields drop to 16px below 600px.
+ * That is the iOS zoom floor, not a type size. Under 16px Safari zooms the
+ * page the moment a field takes focus and the notebook jumps.
+ *
+ * One column, not three strata. --x-notes-capture is the width the composer,
+ * the toolbar's controls and the note itself all end on, so the capture
+ * surface, the retrieval surface and the reading surface are one column with
+ * one right edge. The band hairlines still run edge to edge: the frame is
+ * the app's, the column is the notebook's.
  *
  * Tokens are the vendored design system's own names, with one stated
- * exception: five semantic values (danger, warning, raised, done,
- * done-strong) exist only in the Tasks --x-* layer, so they are aliased once
- * at .root rather than referenced inline. Notes adds no palette of its own.
+ * exception: six semantic values (danger, warning, raised, done,
+ * done-strong, quiet) exist only in the --x-* extension layer, so they are
+ * aliased once at .root rather than referenced inline. Notes adds no palette
+ * of its own.
  */
 
 .root {
@@ -31,10 +48,24 @@
   --x-notes-raised: var(--x-task-raised);
   --x-notes-done: var(--x-status-done);
   --x-notes-done-strong: var(--x-status-done-hover);
+  /* Quiet ink for the 12-13px register: timestamps, counts, excerpts, the
+     standing privacy label. --ink-faint clears 4.5:1 by a hair at those sizes
+     and reads thin. --x-ink-quiet is the shared metadata ink; --ink-600 is
+     the same value under its burn-down name and keeps this sheet correct on
+     its own until the token lands. */
+  --x-notes-quiet: var(--x-ink-quiet, var(--ink-600));
 
   --x-notes-list: 384px;
   --x-notes-gutter: clamp(20px, 2.4vw, 32px);
-  --x-notes-measure: 68ch;
+  /* The reading measure, in true characters rather than in zero-widths. A ch
+     is the advance of "0", which in Geist is about a third wider than the
+     average letter, so the old 68ch set roughly 90 characters a line, well
+     past the 66 a reader tracks comfortably. 50ch lands at about 66. */
+  --x-notes-measure: 50ch;
+  /* The one column. The composer starts at the gutter and the note starts a
+     list-width plus a gutter in, so this is the width that puts their right
+     edges on the same vertical. */
+  --x-notes-capture: calc(var(--x-notes-list) + var(--x-notes-measure));
 
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -130,7 +161,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
@@ -144,8 +175,9 @@
   background: var(--paper-deep);
 }
 
-/* --ink-faint clears 4.5:1 on paper and misses it on --paper-deep, which is
-   the hover ground for every control in this header. Step up on hover. */
+/* Quiet ink clears 4.5:1 on paper with room to spare and still loses a little
+   on --paper-deep, which is the hover ground for every control in this
+   header. Step up on hover. */
 .viewTab:hover .viewCount,
 .menuItem:hover .menuHint {
   color: var(--ink-soft);
@@ -160,17 +192,22 @@
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .viewTab[aria-current="page"] .viewCount {
   color: var(--accent);
 }
 
+/* The header's utilities end on the column, not on the frame. A percentage
+   margin here resolves against the header's own content box, so this is the
+   slack between the column and the far edge, and it collapses to nothing the
+   moment the viewport is narrower than the column. */
 .headerRight {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-inline-end: max(0px, calc(100% - var(--x-notes-capture)));
 }
 
 /* ── Privacy indicator and its popover ────────────────────────────────── */
@@ -184,7 +221,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
   transition: color var(--motion-instant) var(--ease-out),
@@ -199,17 +236,22 @@
 
 .privacy svg {
   flex: none;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .privacyText {
   white-space: nowrap;
 }
 
+/* Hung off the column's right edge, the same vertical the control that opens
+   it now sits on. */
 .popover {
   position: absolute;
   z-index: 40;
-  inset-inline-end: var(--x-notes-gutter);
+  inset-inline-end: max(
+    var(--x-notes-gutter),
+    calc(100% - var(--x-notes-gutter) - var(--x-notes-capture))
+  );
   inset-block-start: 44px;
   inline-size: min(380px, calc(100vw - 32px));
   padding: var(--space-5);
@@ -256,7 +298,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   transition: color var(--motion-instant) var(--ease-out),
     background-color var(--motion-instant) var(--ease-out);
 }
@@ -270,7 +312,10 @@
 .menu {
   position: absolute;
   z-index: 40;
-  inset-inline-end: var(--x-notes-gutter);
+  inset-inline-end: max(
+    var(--x-notes-gutter),
+    calc(100% - var(--x-notes-gutter) - var(--x-notes-capture))
+  );
   inset-block-start: 44px;
   inline-size: min(320px, calc(100vw - 32px));
   padding: var(--space-2);
@@ -303,13 +348,13 @@
 }
 
 .menuHint {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
 }
 
 .menuNote {
   padding: var(--space-2) 10px var(--space-3);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   line-height: var(--x-lead-read);
 }
@@ -346,9 +391,13 @@
   border-block-end: 1px solid var(--hairline);
 }
 
+/* Capped to the column. Full-bleed, one line of placeholder was drawn across
+   1348px of paper, which reads as a page that has not finished loading rather
+   than as a place to write. Its right edge now lands on the note's. */
 .composer {
   position: relative;
   display: grid;
+  max-inline-size: var(--x-notes-capture);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-lg);
   background: var(--paper);
@@ -369,6 +418,7 @@
 .photoDisclosure {
   display: grid;
   gap: 3px;
+  max-inline-size: var(--x-notes-measure);
   margin: 0 12px 10px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--hairline));
@@ -385,6 +435,9 @@
   font-weight: 600;
 }
 
+/* The reading step, not a step below it. What is typed here is read back at
+   17 in the pane on the right; setting capture smaller than reading made the
+   composer look like a search box. */
 .composerField {
   display: block;
   inline-size: 100%;
@@ -393,14 +446,14 @@
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 17px;
   line-height: var(--x-lead-read);
   resize: none;
   overflow-y: auto;
 }
 
 .composerField::placeholder {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .composerField:focus-visible {
@@ -431,7 +484,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
@@ -467,7 +520,7 @@
 }
 
 .counter {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
@@ -501,10 +554,14 @@
   background: var(--accent-hover);
 }
 
+/* Save note sits disabled for as long as the field is empty, which is most of
+   the time, so this is a resting state and not an edge case. --ink-faint put
+   the label at 4.63:1 on --paper-soft. The hairline, the flat fill and the
+   missing keycap carry "not yet"; the label stays readable. */
 .primaryButton:disabled {
   border-color: var(--hairline);
   background: var(--paper-soft);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .keycap {
@@ -548,7 +605,7 @@
 }
 
 .quietButton:disabled {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .dangerButton {
@@ -566,7 +623,7 @@
   align-items: center;
   gap: 7px;
   padding: 8px 12px 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -584,7 +641,7 @@
 .captureStage {
   display: grid;
   gap: var(--space-4);
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .consentHeading {
@@ -607,14 +664,15 @@
 .consentTitle {
   margin: 0;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   line-height: var(--x-lead-tight);
+  letter-spacing: -0.01em;
 }
 
 .consentSummary {
   margin: 3px 0 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -649,7 +707,7 @@
 }
 
 .recordLabel {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -697,6 +755,7 @@
 
 .transcript {
   max-block-size: 132px;
+  max-inline-size: var(--x-notes-measure);
   overflow-y: auto;
   color: var(--ink-soft);
   font-size: 15px;
@@ -704,12 +763,13 @@
 }
 
 .transcriptEmpty {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .captureDisclosure {
   margin: 0;
-  color: var(--ink-faint);
+  max-inline-size: var(--x-notes-measure);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   line-height: var(--x-lead-read);
 }
@@ -786,7 +846,7 @@
   padding: var(--space-8) var(--space-4);
   border: 1px dashed var(--ink-ghost);
   border-radius: var(--radius-md);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
   text-align: center;
@@ -805,10 +865,20 @@
   display: none;
 }
 
+/* Why a capture route is not open, said out loud.
+   Both of these used to live in a title attribute on a disabled button, which
+   is a tooltip nobody on a phone, a keyboard or a screen reader ever sees. The
+   line is on the page and the button points at it with aria-describedby. */
+.composerNotes {
+  display: grid;
+  gap: 2px;
+  max-inline-size: var(--x-notes-capture);
+  padding-block-start: 8px;
+}
+
 .composerNote {
   margin: 0;
-  padding: 8px 12px 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
 }
@@ -831,7 +901,7 @@
 }
 
 .extractHint {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
 }
@@ -885,7 +955,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .removeButton:hover {
@@ -914,7 +984,7 @@
   min-inline-size: 0;
   max-inline-size: 340px;
   padding-inline-start: 2px;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .searchInput {
@@ -924,12 +994,12 @@
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   line-height: var(--x-lead-ui);
 }
 
 .searchInput::placeholder {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 /* The field itself takes the ring: the container border is 2.2:1 against
@@ -948,16 +1018,18 @@
   padding: 1px 5px;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-sm);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-family: var(--font-mono);
   font-size: var(--text-label);
   line-height: var(--x-lead-tight);
 }
 
+/* Ends on the column, with the composer above it and the note beside it. */
 .toolbarRight {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin-inline-end: max(0px, calc(100% - var(--x-notes-capture)));
 }
 
 .sortSelect {
@@ -970,7 +1042,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -999,14 +1071,21 @@
   overflow: hidden;
 }
 
+/* The left half of one seam. This row and .detailHeader are the same object
+   seen either side of the divider, so they are the same height, the same
+   step, the same leading and the same vertical centring, and the hairline
+   under them is one rule that crosses the divider rather than two that stop
+   at it. Before this they sat 6px apart on the page. */
 .listMeta {
   display: flex;
+  min-block-size: 52px;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: 12px var(--space-5) 8px;
-  color: var(--ink-faint);
-  font-size: 12px;
+  padding-inline: var(--x-notes-gutter);
+  border-block-end: 1px solid var(--hairline-soft);
+  color: var(--x-notes-quiet);
+  font-size: 13px;
   font-variant-numeric: tabular-nums;
   line-height: var(--x-lead-ui);
 }
@@ -1015,18 +1094,21 @@
   display: block;
   min-block-size: 0;
   margin: 0;
-  padding: 0 0 var(--space-8);
+  padding: var(--space-2) 0 var(--space-8);
   overflow-y: auto;
   list-style: none;
 }
 
+/* One gutter for the whole workspace. The rows used to sit on --space-5 while
+   every band above them sat on --x-notes-gutter, so the list's text and the
+   composer's edge were 12px out of line at desk width. */
 .row {
   position: relative;
   display: grid;
   inline-size: 100%;
   grid-template-columns: 18px minmax(0, 1fr);
   gap: 10px;
-  padding: 12px var(--space-5) 12px calc(var(--space-5) - 2px);
+  padding: 12px var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) - 2px);
   border: 0;
   border-inline-start: 2px solid transparent;
   background: transparent;
@@ -1046,7 +1128,7 @@
   display: grid;
   place-items: center;
   block-size: 20px;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
 }
 
 .row[aria-current="true"] .rowIcon {
@@ -1080,7 +1162,7 @@
 .rowTitle {
   overflow: hidden;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
   display: -webkit-box;
@@ -1090,7 +1172,7 @@
 
 .rowPreview {
   overflow: hidden;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
   display: -webkit-box;
@@ -1100,27 +1182,45 @@
 
 .rowMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-block-start: 3px;
-  color: var(--ink-faint);
+  gap: 6px 8px;
+  margin-block-start: 4px;
+  color: var(--x-notes-quiet);
   font-size: 12px;
   line-height: var(--x-lead-ui);
 }
 
+/* One chip, one anatomy. "In Tasks" carried an icon and a colour, "To review"
+   carried a colour and nothing else, and the two sat in the same slot looking
+   like different kinds of thing. They are the same kind of thing: a fact
+   about this note. Shape, height, step and weight are fixed here; the colour
+   is the only thing that changes, and the colour is the meaning. */
 .rowFlag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  color: var(--ink-faint);
+  min-block-size: 18px;
+  padding-inline: 6px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  color: var(--x-notes-quiet);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: var(--x-lead-flush);
+  white-space: nowrap;
 }
 
+/* The strong green, not the plain one. A chip sits on a 10% wash of its own
+   colour, and --x-status-done on that wash is 4.02:1 at 12px, which axe
+   catches and a reader feels. The hover-weight green clears 5.4:1. */
 .rowFlag[data-tone="sent"] {
-  color: var(--x-status-done);
+  color: var(--x-notes-done-strong);
 }
 
+/* --status-blocked is 3.81:1 on paper, which is a fail at 12px. The Notes
+   danger alias is the same red mixed into ink and clears 6:1. */
 .rowFlag[data-tone="attention"] {
-  color: var(--status-blocked);
+  color: var(--x-notes-danger);
 }
 
 .rowFlag[data-tone="review"] {
@@ -1133,14 +1233,34 @@
   color: var(--ink);
 }
 
+/* Anything hung under a row starts where the row's words start: the gutter,
+   the 18px source icon and the 10px that separates them. */
 .rowRetry {
   display: flex;
-  padding: 0 var(--space-5) 12px 42px;
+  padding: 0 var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) + 28px);
+}
+
+/* The decision, on the note it is about.
+   Keep it, make it a task, let it go — the three verbs the Review tab has
+   always carried, on every row that is still waiting for one of them. Same
+   handlers, same buttons, one step quieter so eight of these in a list read
+   as a notebook rather than as a form. */
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 var(--x-notes-gutter) 12px calc(var(--x-notes-gutter) + 28px);
+}
+
+.rowActions .quietButton,
+.rowActions .dangerButton {
+  min-block-size: 30px;
+  padding-inline: 9px;
 }
 
 .rowSeparator {
   block-size: 1px;
-  margin-inline: var(--space-5);
+  margin-inline: var(--x-notes-gutter);
   background: var(--hairline-soft);
 }
 
@@ -1161,17 +1281,20 @@
   border-block-end: 1px solid var(--hairline-soft);
 }
 
-/* The header shares the note's own column. Anchored to the pane instead, its
-   left edge drifted 350px away from the note's at 1920 and the pane had
-   three unrelated verticals. */
+/* The header shares the note's own column, and the column starts at the
+   pane's gutter rather than floating in the middle of it. Centred, the note
+   and its header drifted with the width of the window and a short note left
+   two equal remainders either side of itself; anchored, the leftover is one
+   margin on the right, which is what a page has. */
 .detailHeaderInner {
   display: flex;
+  flex-wrap: wrap;
   inline-size: 100%;
   max-inline-size: var(--x-notes-measure);
-  margin-inline: auto;
+  margin-inline-end: auto;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-2) var(--space-4);
 }
 
 .detailMeta {
@@ -1179,7 +1302,7 @@
   align-items: center;
   gap: 8px;
   min-inline-size: 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -1196,12 +1319,19 @@
   overflow-y: auto;
 }
 
+/* Full height on purpose. A three-line note used to leave the record of when
+   it was captured floating a third of the way down an otherwise empty pane,
+   which reads as a page that stopped rather than one that ended. The note
+   starts at the top, the record sits at the foot, and the space between them
+   is the margin of a short page. */
 .detailInner {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-5);
   inline-size: 100%;
   max-inline-size: var(--x-notes-measure);
-  margin-inline: auto;
+  min-block-size: 100%;
+  margin-inline-end: auto;
 }
 
 .detailField {
@@ -1225,11 +1355,12 @@
 .detailFooter {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: baseline;
   gap: var(--space-3) var(--space-5);
+  margin-block-start: auto;
   padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--hairline-soft);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   line-height: var(--x-lead-ui);
 }
@@ -1255,9 +1386,15 @@
   min-inline-size: 0;
 }
 
+/* The one place the note-to-task relationship is stated. There used to be
+   two: an Open task button in the top-right of the header and this line at
+   the bottom-left of the note, opposite corners of the same pane saying the
+   same thing. The header keeps the verb that is still available (Turn into
+   task); once it has been used, the record lives here, with the wording that
+   actually crossed. */
 .taskReceipt {
   flex: 1 1 100%;
-  align-items: flex-start;
+  align-items: baseline;
 }
 
 .taskReceipt dd {
@@ -1312,7 +1449,7 @@
 
 .emptyBody {
   margin: 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
 }
@@ -1332,7 +1469,7 @@
   gap: var(--space-4);
   padding: 14px var(--x-notes-gutter);
   border-block-end: 1px solid var(--hairline);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   line-height: var(--x-lead-ui);
@@ -1380,9 +1517,10 @@
 
 .reviewMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  color: var(--ink-faint);
+  gap: 6px 8px;
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-ui);
 }
@@ -1464,7 +1602,7 @@
 
 .dialogLede {
   margin: 0 0 var(--space-5);
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
 }
@@ -1506,7 +1644,7 @@ textarea.fieldControl {
 }
 
 .fieldHint {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   line-height: var(--x-lead-ui);
 }
@@ -1540,14 +1678,14 @@ textarea.fieldControl {
 .panelTitle {
   margin: 0;
   color: var(--ink);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
 }
 
 .panelBody {
   margin: 0;
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 13px;
   line-height: var(--x-lead-read);
 }
@@ -1579,7 +1717,7 @@ textarea.fieldControl {
 }
 
 .conflictLabel {
-  color: var(--ink-faint);
+  color: var(--x-notes-quiet);
   font-size: 12px;
   font-weight: 500;
 }
@@ -1681,6 +1819,12 @@ textarea.fieldControl {
     display: none;
   }
 
+  /* One pane at a time means there is no list beside the note to align to, so
+     the column is the width of the screen. */
+  .root {
+    --x-notes-capture: 100%;
+  }
+
   .split {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1773,6 +1917,7 @@ textarea.fieldControl {
   .headerRight {
     flex: none;
     gap: 0;
+    margin-inline-end: 0;
   }
 
   .privacy,
@@ -1785,6 +1930,8 @@ textarea.fieldControl {
   }
 
 
+  /* 16px is the iOS zoom floor, not a step on the ramp. Below it Safari
+     zooms the whole page the moment the field takes focus. */
   .composerField {
     min-block-size: 48px;
     font-size: 16px;
@@ -1813,9 +1960,25 @@ textarea.fieldControl {
     padding-inline: 4px;
   }
 
+  .rowActions .quietButton,
+  .rowActions .dangerButton {
+    min-block-size: 44px;
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Save note takes the row it is on. Pushed to the right of a full-width
+     row of capture chips it left a dead L-shaped gap beside itself, which
+     read as a control that had come loose rather than as the end of the
+     composer. */
   .composerRight {
-    justify-content: flex-end;
+    justify-content: space-between;
     min-inline-size: 0;
+  }
+
+  .composerRight .primaryButton {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 
   .toolbar {
@@ -1825,7 +1988,10 @@ textarea.fieldControl {
     padding-inline: 12px;
   }
 
-  .toolbarRight { min-inline-size: 0; }
+  .toolbarRight {
+    min-inline-size: 0;
+    margin-inline-end: 0;
+  }
 
   .select {
     max-inline-size: 104px;
@@ -1874,6 +2040,7 @@ textarea.fieldControl {
     max-inline-size: none;
   }
 
+  /* The iOS zoom floor again, for the same reason. */
   .detailField {
     font-size: 16px;
   }
@@ -1892,7 +2059,7 @@ textarea.fieldControl {
   }
 
   .reviewBody {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .reviewActions .quietButton,
@@ -1935,6 +2102,7 @@ textarea.fieldControl {
   .headerRight {
     flex: none;
     gap: 0;
+    margin-inline-end: 0;
   }
 
   .privacy,
@@ -1972,7 +2140,7 @@ textarea.fieldControl {
   }
 
   .composerRight {
-    justify-content: flex-end;
+    justify-content: space-between;
     min-inline-size: 0;
   }
 

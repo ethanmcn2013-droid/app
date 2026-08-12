@@ -88,19 +88,28 @@
   border-style: dashed;
 }
 
+/* ── One metadata voice, on both sides of the publish boundary ──────────────
+   The artifact this surface authors abolished the mono-caps register in its
+   own metadata a wave ago (see the note in timeline-artifact.module.css):
+   dates, status lines and captions are Geist sans in the reading range,
+   sentence case, no tracking, and mono is kept only for the share link,
+   which is a string to be copied character by character.
+   The owner's chrome above it kept speaking the old dialect — 11px mono caps
+   for lane names, counts, timing states, drift notes and the toolbar
+   heading — so an owner switching between Timeline and Milestones crossed a
+   typographic border inside one product. Same decision, applied here: sans
+   at the caption step, sentence case, tabular numerals wherever numbers have
+   to line up, which is a feature of the sans face and not a second font. */
 .laneLabel {
   color: var(--x-lane-ink);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.005em;
 }
 
 .laneCount {
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  color: var(--x-ink-quiet, var(--ink-faint));
+  font-size: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
 
@@ -159,16 +168,14 @@
   outline-offset: 2px;
 }
 
-/* The per-milestone counterpart: the fact, in the same mono register the
+/* The per-milestone counterpart: the fact, in the same caption register the
    date field uses, sitting immediately before the field it describes. */
 
 .timingMissing {
   display: inline-flex;
   align-items: center;
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: 0.02em;
+  color: var(--x-ink-quiet, var(--ink-faint));
+  font-size: var(--text-caption);
 }
 
 /* ── List frame ─────────────────────────────────────────────────────────── */
@@ -316,10 +323,8 @@
 
 .driftNote {
   margin: var(--space-1) 0 0;
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: 0.02em;
+  color: var(--x-ink-quiet, var(--ink-faint));
+  font-size: var(--text-caption);
 }
 
 /* Attention pill — the board's calm amber, readable this time. */
@@ -333,11 +338,8 @@
   padding: 2px var(--space-2);
   background: var(--x-timeline-attention-soft);
   color: var(--x-timeline-attention);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  font-size: var(--text-caption);
   font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
 }
 
 .attentionPill::before {
@@ -453,8 +455,11 @@
   padding: 0 var(--space-6) 0 var(--space-2);
   background: transparent;
   color: var(--ink-soft);
-  font-family: var(--font-mono);
+  /* Tabular numerals, not a second font. A date field needs its digits to
+     line up between rows; that is a numeric feature of the sans face, and it
+     was the only argument mono had here. */
   font-size: var(--text-caption);
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
 
@@ -462,10 +467,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: 0.02em;
+  color: var(--x-ink-quiet, var(--ink-faint));
+  font-size: var(--text-caption);
 }
 
 /* Row-level error + retry. */
@@ -549,12 +552,10 @@
 
 .toolbarHeading {
   margin: 0;
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
+  color: var(--ink-soft);
+  font-size: var(--text-caption);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  letter-spacing: -0.005em;
 }
 
 .savedTick,
@@ -848,8 +849,7 @@
 }
 
 .hiddenCount {
-  color: var(--ink-faint);
-  font-family: var(--font-mono);
+  color: var(--x-ink-quiet, var(--ink-faint));
   font-weight: var(--weight-regular);
   font-variant-numeric: tabular-nums;
 }

@@ -184,15 +184,94 @@ test("the marks are never moved to make room for their own labels", () => {
 
 test("the month names a guest reads clear AA, and the axis says what it spans", () => {
   // --ink-ghost is 1.48:1 on paper. The month names were set in it at 10px on
-  // the only page an audience ever sees.
+  // the only page an audience ever sees. --ink-faint took them to 4.83:1,
+  // which passed by a third of a point; both the hairline and the name now
+  // take --x-timeline-quiet, the module's alias for the suite's 12-13px
+  // metadata ink at roughly 7:1. The pin moves with the fix and the floor
+  // only rises: --ink-ghost stays banned outright, and the alias itself is
+  // asserted to fall back to --ink-faint rather than to anything lighter, so
+  // the worst case this file can render is the value it used to.
   const tick = styles.slice(styles.indexOf(".monthTick {"), styles.indexOf(".todayMarker"));
   assert.doesNotMatch(tick, /var\(--ink-ghost\)/);
-  assert.match(tick, /background: var\(--ink-faint\)/);
-  assert.match(tick, /color: var\(--ink-faint\)/);
+  assert.doesNotMatch(tick, /var\(--ink-faint\)/);
+  assert.match(tick, /background: var\(--x-timeline-quiet\)/);
+  assert.match(tick, /color: var\(--x-timeline-quiet\)/);
+  assert.match(
+    styles,
+    /--x-timeline-quiet:\s*var\(--x-ink-quiet,\s*var\(--ink-faint\)\);/,
+  );
+  // A mark and a boundary cannot share a pixel column: a milestone dated the
+  // first of the month had its dot drawn straight through the tick naming
+  // that month, and the tick is the one carrying decoration.
+  assert.match(artifact, /markCollisionGap/);
+  assert.match(artifact, /markLabelGap/);
+  assert.match(styles, /\.monthTick\[data-collides="true"\]::before/);
   // The ticks are aria-hidden decoration, so the span they describe is stated
   // in words instead of being available only to people who can see it.
   assert.match(artifact, /timelineAxisDescription/);
   assert.match(artifact, /aria-roledescription="timeline axis"/);
+});
+
+test("a crowded span names itself instead of going silent", () => {
+  // The density rule's second half. Where no title fits, the run of marks
+  // carries one caption saying how many it holds — so a cluster is never a
+  // row of anonymous dots that a low-vision viewer has to probe one at a
+  // time. It is a count, never a borrowed title: the model builds the label
+  // from the run's length and nothing else.
+  assert.match(artifact, /labelClusters\(model\.points, persistentLabels\)/);
+  assert.match(artifact, /styles\.cluster\b/);
+  assert.match(styles, /\.cluster::before/);
+  assert.match(styles, /\.cluster > span/);
+  // Real labels are rendered after the clusters, so a title always paints
+  // over a count and never the other way round.
+  assert.ok(
+    artifact.indexOf("styles.clusters") < artifact.indexOf("styles.milestones"),
+    "cluster captions must be rendered before the milestone labels that outrank them",
+  );
+  // The stacked axis and paper both show every label, so there is nothing
+  // left to cluster on either.
+  const vertical = styles.slice(
+    styles.indexOf("@container timeline-artifact (max-width: 620px)"),
+  );
+  assert.match(vertical, /\.clusters\s*\{\s*display:\s*none;/);
+  assert.match(
+    styles.slice(styles.indexOf("@media print")),
+    /\.clusters,\s+\.startCap/,
+  );
+});
+
+test("the hero states its three facts as one stat unit", () => {
+  // Countdown, completion and the day itself used to be three ungrouped
+  // blocks with no shared container, the date floating clear of the pair
+  // above it because the reserved metric box top-set its face and left the
+  // slack underneath. A hairline opens the block, the face is bottom-set so
+  // the count closes it, and one rhythm runs between the metadata lines.
+  const lens = styles.match(/(?:^|\s)\.timeLens \{([^}]*)\}/)[1];
+  assert.match(lens, /border-block-start:\s*1px solid var\(--hairline\);/);
+  assert.match(styles, /\.metricMotion\s*\{[^}]*align-content:\s*end;/);
+  for (const selector of [".metricReceipt", ".metricDate"]) {
+    // Both selectors also appear in the grouped tabular-numerals rule, so the
+    // check is "one of this selector's own blocks carries the rhythm", not
+    // "the first block that mentions it does".
+    const blocks = [
+      ...styles.matchAll(new RegExp(`(?:^|[\\r\\n])\\${selector} \\{([^}]*)\\}`, "g")),
+    ].map((match) => match[1]);
+    assert.ok(blocks.length > 0, `${selector} must have a rule of its own`);
+    assert.ok(
+      blocks.some((rule) => /margin-block-start:\s*var\(--space-2\);/.test(rule)),
+      `${selector} must sit on the stat unit's own rhythm`,
+    );
+  }
+  // The narrow tier runs one column against one edge. It used to mix three
+  // alignment logics across four lines.
+  const narrow = styles.slice(
+    styles.indexOf("@container timeline-artifact (max-width: 620px)"),
+    styles.indexOf("@container timeline-artifact (max-width: 390px)"),
+  );
+  assert.match(narrow, /\.timeLens\s*\{[\s\S]*?justify-items:\s*start;/);
+  assert.doesNotMatch(narrow, /justify-self:\s*end;/);
+  // And the metric's tracking is capped at the design system's display cap.
+  assert.match(styles, /--x-artifact-metric-tracking:\s*-0\.04em;/);
 });
 
 test("choosing a milestone does not look identical to pointing at one", () => {

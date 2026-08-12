@@ -56,6 +56,13 @@ const ACTIVE: Seed[] = [
   },
   {
     id: REVIEW_SUITE_FIXTURE.journey.sourceNoteId,
+    // The typewriter apostrophe here is the one straight mark left in the
+    // seeded notebook, and it is deliberate: this exact string is pinned in
+    // three places outside this module — a source regex and a fixture
+    // assertion in src/server/suite-navigation-contract.test.mjs, and
+    // experience/cross-suite-journey.json, whose SHA is sealed into the
+    // quality-council receipts. Curling it here alone breaks the cross-suite
+    // journey contract. It moves when those three move together.
     body: `${REVIEW_PRIMARY_PROJECT.name}'s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.`,
     ago: 2 * HOUR,
     extractBody: REVIEW_MENU_MILESTONE.title,
@@ -179,7 +186,7 @@ const ARCHIVED: Seed[] = [
   },
   {
     id: "demo_n_a3",
-    body: "Registrar confirmed she can do 2pm but wants the final paperwork a fortnight out. Don't leave it late this time.",
+    body: "Registrar confirmed she can do 2pm but wants the final paperwork a fortnight out. Don’t leave it late this time.",
     ago: 4 * DAY,
     extractBody: "Send registrar paperwork two weeks before the date",
     promotedTaskId: "demo_task_registrar",

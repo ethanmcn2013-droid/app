@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import dynamic from "next/dynamic";
 import { WorkspaceBoardColumnsProvider } from "../../columns-context";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { TasksOptionProps } from "../../option-contract";
@@ -9,10 +10,6 @@ import { ViewTabs } from "../../shared/lab-chrome";
 import { Icon } from "../../shared/icons";
 import { PlanningRail } from "../c/planning-rail";
 import { WorkspaceBrief } from "../b/workspace-brief";
-import { CalendarView as BCalendarView } from "../b/calendar-view";
-import { BoardView } from "../a/board-view";
-import { ListView } from "../a/list-view";
-import { TimelineView } from "../a/timeline-view";
 import { INITIAL_LIST_COLUMNS, projectTasks, type ListColumn } from "../a/quiet-command-model";
 import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks, type ViewToolPanel } from "../../view-tools";
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
@@ -28,6 +25,26 @@ import { usePersonalization } from "@/lib/domain-context";
 import type { CalendarDate } from "../../types";
 import briefStyles from "../b/option-b.module.css";
 import styles from "../a/option-a.module.css";
+
+/**
+ * The four views are four chunks, not one.
+ *
+ * Every Tasks route statically imported all four, so a reader who only ever
+ * opens the board still downloaded, parsed and shipped the list table, the
+ * schedule chart and the calendar grid — board-view alone is a 2,132-line
+ * client component. Each route renders exactly one of these, so splitting
+ * them means each route now carries only the view it actually paints.
+ *
+ * SSR stays ON (the default): the point is the client bundle, and turning
+ * prerendering off would trade a real first paint for a spinner. `loading`
+ * is deliberately null — the route's own loading.tsx already reserves this
+ * region, and a second placeholder inside the first is one more thing
+ * flashing on a fast connection.
+ */
+const BoardView = dynamic(() => import("../a/board-view").then((m) => m.BoardView));
+const ListView = dynamic(() => import("../a/list-view").then((m) => m.ListView));
+const TimelineView = dynamic(() => import("../a/timeline-view").then((m) => m.TimelineView));
+const BCalendarView = dynamic(() => import("../b/calendar-view").then((m) => m.CalendarView));
 
 /** Drawer visibility is a view preference, like folded lanes — one key.
  *  Same external-store shape as useCollapsedLanes (board-view.tsx): the

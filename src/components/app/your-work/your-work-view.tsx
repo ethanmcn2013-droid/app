@@ -209,28 +209,56 @@ function PeriodSection({
                   maxLength={100}
                   className="min-h-10 w-full rounded-lg border border-line-soft bg-bg px-3 outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20"
                 />
+                {/*
+                  These two stay native date inputs on purpose, but they no
+                  longer read as raw browser controls: each carries a real
+                  label AND the value it currently holds in plain English
+                  ("Starts · 1 September 2026"), so the field says what it
+                  means before you decode dd/mm/yyyy, and the house control
+                  chrome (36px, r-md, hairline, indigo focus ring) matches
+                  the rest of the sheet.
+
+                  A house date PICKER is not built here: there is no such
+                  primitive in this repo, and a hand-rolled calendar grid is
+                  a real keyboard-and-locale surface, not a styling pass.
+                  The native control is the accessible, locale-correct,
+                  mobile-correct thing until that primitive exists.
+                */}
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="grid gap-1 text-[11px] text-ink-quiet">
-                    Starts
+                  <label className="grid gap-1 text-[12px] text-ink-quiet">
+                    <span>
+                      Starts
+                      <span className="ml-1 text-ink-soft">· {formatPeriodDate(period.startDate)}</span>
+                    </span>
                     <input
                       name="startDate"
                       type="date"
                       required
                       defaultValue={period.startDate}
-                      className="min-h-10 rounded-lg border border-line-soft bg-bg px-2 text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                      className="min-h-9 rounded-md border border-line-soft bg-bg px-2 text-[13px] text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20"
                     />
                   </label>
-                  <label className="grid gap-1 text-[11px] text-ink-quiet">
-                    Ends
+                  <label className="grid gap-1 text-[12px] text-ink-quiet">
+                    <span>
+                      Ends
+                      <span className="ml-1 text-ink-soft">· {formatPeriodDate(period.endDate)}</span>
+                    </span>
                     <input
                       name="endDate"
                       type="date"
                       required
                       defaultValue={period.endDate}
-                      className="min-h-10 rounded-lg border border-line-soft bg-bg px-2 text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand/20"
+                      className="min-h-9 rounded-md border border-line-soft bg-bg px-2 text-[13px] text-ink outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20"
                     />
                   </label>
                 </div>
+                {/* Left as-is deliberately. Every primary on this surface is
+                    a solid BLACK pill, which contradicts DESIGN.md §6
+                    (primary = solid indigo) — but that is one coherent sweep
+                    of five buttons across Your work, not a defect of this
+                    form, and changing one of the five would leave the sheet
+                    speaking two grammars instead of one wrong one. Raised in
+                    the wave-5 report. */}
                 <button
                   type="submit"
                   disabled={pending}
@@ -317,6 +345,22 @@ function PeriodSection({
       ) : null}
     </section>
   );
+}
+
+/**
+ * The plain-English reading of a stored ISO date, for the label above a
+ * native date input. A `type="date"` field renders its value in the
+ * browser's own dd/mm/yyyy shorthand, which is the one thing on this sheet
+ * nobody chose; stating the date in words above it means the field can be
+ * read before it is decoded. Falls back to the raw value rather than
+ * throwing on a malformed stored date.
+ */
+function formatPeriodDate(value: string): string {
+  try {
+    return formatCalendarDate(value as CalendarDate, "en-IE");
+  } catch {
+    return value;
+  }
 }
 
 function PeriodTime({ period }: { period: YourWorkPeriod }) {

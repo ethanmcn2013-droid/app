@@ -15,9 +15,9 @@ import { COLUMN_COLORS, laneAccentStyle } from "@/lib/board-colors";
 import { useBoardColumns } from "../../columns-context";
 import { TaskContextMenu, useTaskContextMenu } from "../../shared/task-context-menu";
 import { Icon } from "../../shared/icons";
+import { FieldMenu } from "../../shared/field-menu";
 import {
   AvatarStack,
-  PriorityMark,
   ScheduleText,
   TaskCompletion,
   TaskOpenButton,
@@ -49,6 +49,12 @@ type ListGroup = {
   tasks: LabTask[];
   addStatus: TaskStatus;
 };
+
+/** Priority choices, in the order the product states them everywhere else. */
+const PRIORITY_OPTIONS = TASK_PRIORITIES.map((priority) => ({
+  value: priority as string,
+  label: PRIORITY_LABELS[priority],
+}));
 
 function updateColumn(columns: ListColumn[], id: ListColumnId, fields: Partial<ListColumn>): ListColumn[] {
   return columns.map((column) => column.id === id ? { ...column, ...fields } : column);
@@ -109,6 +115,10 @@ export function ListView({
   const visibleColumns = columns.filter((column) => column.visible);
   const orderedIds = tasks.map((task) => task.id);
   const groups = useMemo(() => groupsFor(tasks, group, boardColumns), [boardColumns, group, tasks]);
+  const statusOptions = useMemo(
+    () => boardColumns.map((column) => ({ value: column.key, label: column.name })),
+    [boardColumns],
+  );
   const allSelected = orderedIds.length > 0 && orderedIds.every((id) => store.selectedIds.includes(id));
 
   const toggleGroup = (key: string) => {
@@ -183,24 +193,29 @@ export function ListView({
 
   const renderCell = (task: LabTask, column: ListColumn) => {
     if (column.id === "status") {
+      // House menu, not a native select — same registry-driven dropdown the
+      // card ••• menu uses, so a row and a card offer the same object.
       return (
-        <select aria-label={`Status for ${task.title}`} disabled={store.readOnly} onChange={(event) => store.moveStatus(task.id, event.target.value)} value={task.status}>
-          {boardColumns.map((column) => <option key={column.key} value={column.key}>{column.name}</option>)}
-        </select>
+        <FieldMenu
+          disabled={store.readOnly}
+          label={`Status for ${task.title}`}
+          onChange={(value) => store.moveStatus(task.id, value)}
+          options={statusOptions}
+          value={task.status}
+        />
       );
     }
     if (column.id === "assignees") return <AssigneeCell task={task} />;
     if (column.id === "schedule") return <ScheduleText task={task} />;
     if (column.id === "priority") {
       return (
-        <select
-          aria-label={`Priority for ${task.title}`}
+        <FieldMenu
           disabled={store.readOnly}
-          onChange={(event) => store.updatePriority(task.id, event.target.value as TaskPriority)}
+          label={`Priority for ${task.title}`}
+          onChange={(value) => store.updatePriority(task.id, value as TaskPriority)}
+          options={PRIORITY_OPTIONS}
           value={task.priority}
-        >
-          {TASK_PRIORITIES.map((priority) => <option key={priority} value={priority}>{PRIORITY_LABELS[priority]}</option>)}
-        </select>
+        />
       );
     }
     if (column.id === "estimate") return task.estimate ? <span className={styles.monoValue}>{task.estimate}</span> : <span className={styles.absentValue}><span aria-hidden="true">—</span><span className={styles.srOnly}>No estimate</span></span>;
@@ -330,15 +345,28 @@ export function ListView({
                     >
                       {visibleColumns.map((column) => column.id === "title" ? (
                         <th data-column="title" key={column.id} scope="row" style={columnSizing(column)}>
+                          {/*
+                            Two affordances left of a title, not four. The
+                            square selects, the circle finishes — two
+                            different verbs, two different shapes. The
+                            priority dot left with the row entirely (the
+                            Priority column already says the word, and a
+                            colour-only repeat of it in front of the title
+                            was the third thing to decode before reading
+                            the task). The subtask disclosure moved AFTER
+                            the stack it discloses, where it stops being
+                            part of the walk to the title.
+                          */}
                           <div className={styles.titleCell}>
-                            {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : <span className={styles.expandSpacer} />}
-                            <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                            <span className={styles.rowSelect}>
+                              <TaskSelection disabled={store.readOnly} orderedIds={orderedIds} task={task} />
+                            </span>
                             <TaskCompletion task={task} />
-                            <PriorityMark task={task} />
                             <div className={styles.titleStack}>
                               {store.editing?.taskId === task.id && store.editing.field === "title" ? <InlineTaskTitle className={styles.listTitleEdit} task={task} /> : <TaskOpenButton className={styles.listTitle} task={task}>{task.title}</TaskOpenButton>}
                               {task.description ? <span className={styles.listDescription}>{task.description}</span> : null}
                             </div>
+                            {task.subtasks.length ? <button aria-expanded={isExpanded} aria-label={`${isExpanded ? "Collapse" : "Expand"} subtasks for ${task.title}`} className={styles.expandButton} onClick={() => toggleExpanded(task.id)} type="button"><Icon name={isExpanded ? "chevron-down" : "chevron-right"} size={13} /></button> : null}
                           </div>
                         </th>
                       ) : <td data-column={column.id} key={column.id} style={columnSizing(column)}>{renderCell(task, column)}</td>)}

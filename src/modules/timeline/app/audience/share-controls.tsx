@@ -114,8 +114,11 @@ export function ShareReceipt({ state }: { state: AudienceActionState }) {
       className="tl-rise-in mt-3 rounded-lg border border-line-soft bg-white p-3"
       style={{ boxShadow: "inset 2px 0 0 var(--accent)" }}
     >
+      {/* Sans, sentence case: this is a label, not a string to be copied.
+          The field below it keeps mono, which is the module's one remaining
+          use for it — a URL is read character by character. */}
       <p
-        className="font-mono text-[11px] font-medium uppercase tracking-[0.08em]"
+        className="text-[12px] font-medium"
         style={{ color: "var(--accent-hover)" }}
       >
         Your link

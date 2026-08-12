@@ -78,6 +78,13 @@ export type AudienceOwnerPublication = Readonly<{
   timezone: string;
   state: "draft" | "published" | "unpublished";
   lastUpdatedAt: Date;
+  /**
+   * When this publication was last put live, or null if it never has been.
+   * Distinct from `lastUpdatedAt`, which moves whenever anything about the
+   * publication changes — the owner's visibility line says "live since", and
+   * that sentence needs the date it went live, not the date it was touched.
+   */
+  publishedAt: Date | null;
   qualifiedViewCount: number;
   lastQualifiedViewAt: Date | null;
   activeShareCount: number;
@@ -105,6 +112,7 @@ const DEMO_OWNER_PUBLICATION: AudienceOwnerPublication = {
   timezone: "Europe/Dublin",
   state: "published",
   lastUpdatedAt: new Date(DEMO_AUDIENCE_DTO.lastUpdatedAt),
+  publishedAt: new Date(DEMO_AUDIENCE_DTO.lastUpdatedAt),
   qualifiedViewCount: 0,
   lastQualifiedViewAt: null,
   activeShareCount: 1,
@@ -373,6 +381,7 @@ export async function getOwnerAudiencePublications(
       primaryDate: timelinePublications.primaryDate,
       state: timelinePublications.state,
       lastUpdatedAt: timelinePublications.lastUpdatedAt,
+      publishedAt: timelinePublications.publishedAt,
       qualifiedViewCount: timelinePublications.qualifiedViewCount,
       lastQualifiedViewAt: timelinePublications.lastQualifiedViewAt,
     })

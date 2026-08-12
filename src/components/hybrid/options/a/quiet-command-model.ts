@@ -23,13 +23,28 @@ export type ListColumn = {
   minWidth: number;
 };
 
+/**
+ * The default column set has to FIT.
+ *
+ * The Tasks canvas at a 1440 viewport is ~1144px (60px suite rail + the
+ * projects panel). The previous defaults summed to 1018px before the
+ * sticky 360px title column, which put the sixth column off the right edge
+ * at any real width and the fifth off it the moment the planning drawer
+ * docked — a header that reads "Estimate" over nothing is the tell people
+ * actually notice. These sum to 920px, so the whole default set is on
+ * screen at 1440 with room to spare, and every column keeps a min-width
+ * wide enough for its own header word.
+ *
+ * The Fields panel still governs the rest; nothing was hidden to make the
+ * arithmetic work.
+ */
 export const INITIAL_LIST_COLUMNS: ListColumn[] = [
-  { id: "title", label: "Task", visible: true, width: 360, minWidth: 260 },
-  { id: "status", label: "Status", visible: true, width: 132, minWidth: 112 },
-  { id: "assignees", label: "Owner", visible: true, width: 180, minWidth: 112 },
-  { id: "schedule", label: "Dates", visible: true, width: 154, minWidth: 126 },
-  { id: "priority", label: "Priority", visible: true, width: 104, minWidth: 88 },
-  { id: "estimate", label: "Estimate", visible: true, width: 88, minWidth: 76 },
+  { id: "title", label: "Task", visible: true, width: 300, minWidth: 240 },
+  { id: "status", label: "Status", visible: true, width: 124, minWidth: 108 },
+  { id: "assignees", label: "Owner", visible: true, width: 164, minWidth: 112 },
+  { id: "schedule", label: "Dates", visible: true, width: 148, minWidth: 126 },
+  { id: "priority", label: "Priority", visible: true, width: 100, minWidth: 88 },
+  { id: "estimate", label: "Estimate", visible: true, width: 84, minWidth: 76 },
   { id: "progress", label: "Subtasks", visible: false, width: 110, minWidth: 92 },
   { id: "activity", label: "Activity", visible: false, width: 118, minWidth: 96 },
 ];

@@ -100,8 +100,21 @@ export function HybridWorkspace({ view, people, labels }: HybridWorkspaceProps) 
       ),
     [people, memberMeta],
   );
-  setRuntimeLabels(resolvedLabels);
-  setRuntimePeople(resolvedPeople);
+  // Module-safe initializer, not a bare render-phase mutation. Card, row
+  // and chip render read these registries SYNCHRONOUSLY (labelById /
+  // personById), so the install has to land before children render — an
+  // effect would paint one frame of unresolved avatars and stale chips,
+  // and module state is not reactive, so nothing would re-render to fix
+  // it. What made the old call unsafe was that it cleared and rebuilt two
+  // Maps on every render, including renders React abandons and the
+  // duplicate render Strict Mode performs. The setters are idempotent now
+  // (fixtures.ts compares field by field before touching anything) and the
+  // memo keys the call to the rosters themselves, so this runs when the
+  // roster actually changes and never otherwise.
+  useMemo(() => {
+    setRuntimeLabels(resolvedLabels);
+    setRuntimePeople(resolvedPeople);
+  }, [resolvedLabels, resolvedPeople]);
 
   const route = useMemo<LabRouteState>(
     () => ({ option: "hybrid", view, dataset: "normal", density, mode: "default", task: null }),

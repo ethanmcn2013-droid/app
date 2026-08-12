@@ -63,6 +63,64 @@ function clampLaneWidth(value: number): number {
   return Math.min(LANE_MAX_WIDTH, Math.max(LANE_MIN_WIDTH, Math.round(value)));
 }
 
+/**
+ * ── Every lane is a composite widget ─────────────────────────────────────
+ *
+ * It used to be forty-odd Tab stops for thirteen cards: every card was
+ * `tabIndex={0}` and carried three more tabbables inside it (the completion
+ * box, the title button, the ••• trigger), and each lane put four chrome
+ * controls in front of its first card. Reaching the third card meant
+ * eleven presses of things nobody was trying to press.
+ *
+ * The model is the one grids and toolbars use everywhere:
+ *
+ *   Tab      moves between COLUMNS — one stop each — and out of the track.
+ *   Arrows   walk within and across lanes, skipping folded ones.
+ *   Enter    opens the focused task (or the focused lane's menu).
+ *   The rest of a card's actions are reached FROM the card: F2 renames,
+ *   Space selects, Alt+arrows move it, Shift+F10 opens its full action
+ *   menu (the same registry the ••• button drives).
+ *
+ * Every lane exposes three kinds of stop, addressed by row:
+ *   -1        the lane's own menu trigger — rename, description, limit,
+ *             colour, collapse, move, add status, delete all live behind
+ *             it, so one item covers the whole header. Alt+arrows resize
+ *             the column from here, which is why the resize handle no
+ *             longer needs a Tab stop of its own.
+ *   0 … n-1   the cards.
+ *   n         the lane's "Add task" row (writable workspaces only).
+ *
+ * ── Why the roving target is PER LANE, not per board ─────────────────────
+ *
+ * The first cut of this gave the whole board a single roving item, which
+ * read as the tidiest possible answer and was an accessibility regression:
+ * each `.laneList` is its own scroll container (`overflow-y: auto`), and a
+ * scroll region with no tabbable content is unreachable by keyboard — axe
+ * `scrollable-region-focusable`, WCAG 2.1.1. At 375px the lists genuinely
+ * overflow, so four of five lanes became scrollable dead ends. One tab stop
+ * for the board is the wrong granularity: the board has five independent
+ * scroll regions, so it needs five ways in.
+ *
+ * Two invariants hold this together, and both are computed on every render
+ * rather than trusted from state:
+ *
+ *   1. Each lane has EXACTLY ONE stop. `rovingRowFor` clamps the stored
+ *      intent onto a row that exists right now, so a deleted card, a folded
+ *      lane or a filter that emptied a column can never strand a lane.
+ *   2. Each lane's scroll region is reachable. The default row is a card
+ *      (or the add row), both of which live INSIDE the `<ul>`; and on the
+ *      one path where a lane's stop sits in its header instead, the labelled
+ *      `<ul>` takes `tabIndex={0}` itself so the region keeps a way in.
+ *
+ * No viewport branching anywhere in here — the resolver is pure and runs
+ * identically on the server and the client, so there is nothing for
+ * hydration to disagree about.
+ */
+const LANE_HEADER_ROW = -1;
+
+type BoardFocus = { lane: string; row: number };
+
+
 // The board's "today" comes from the server calendar frame, never the
 // browser clock (see lib/calendar-frame.ts). Reading the wall clock here made
 // the Today/Tomorrow presets disagree with the same card's own due label,
@@ -668,6 +726,42 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     .filter((task) => task.status === key)
     .sort((a, b) => a.order - b.order);
 
+  // ── roving focus ────────────────────────────────────────────────────────
+  const [focusItem, setFocusItem] = useState<BoardFocus | null>(null);
+
+  /**
+   * The single row that is THIS lane's Tab stop, clamped onto an item that
+   * exists right now rather than trusted from state.
+   *
+   * `max` is the lane's last addressable row: its add row when the
+   * workspace is writable, its last card when it is not — which also makes
+   * an empty read-only lane resolve to its header (-1), the one case where
+   * nothing inside the list can hold focus.
+   *
+   * The default deliberately prefers a row INSIDE the `<ul>` (the first
+   * card, or the add row in an empty lane) so the lane's scroll region
+   * carries its own way in without the list having to become a tab stop.
+   */
+  const rovingRowFor = (laneKey: string): number => {
+    const count = tasksInLane(laneKey).length;
+    const max = store.readOnly ? count - 1 : count;
+    const wanted = focusItem?.lane === laneKey ? focusItem.row : (count > 0 ? 0 : max);
+    return Math.max(LANE_HEADER_ROW, Math.min(max, wanted));
+  };
+  const isRoving = (lane: string, row: number) => rovingRowFor(lane) === row;
+
+  /** Move the walk to a lane/row and put real DOM focus there. */
+  const focusBoardItem = useCallback((lane: string, row: number) => {
+    setFocusItem({ lane, row });
+    window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(
+          `[data-board-lane="${CSS.escape(lane)}"][data-board-row="${row}"]`,
+        )
+        ?.focus();
+    });
+  }, []);
+
   /**
    * Walk to the next column that is actually on screen.
    *
@@ -813,16 +907,94 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
     }
     if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       event.preventDefault();
-      const next = laneTasks[event.key === "ArrowUp" ? laneIndex - 1 : laneIndex + 1];
+      // The walk does not stop at the first and last card any more: up from
+      // the top card reaches the lane's own menu, down from the bottom one
+      // reaches its add row. Both are items in the same composite, so the
+      // whole lane is one continuous run of arrow presses.
+      const nextRow = event.key === "ArrowUp" ? laneIndex - 1 : laneIndex + 1;
+      const lastRow = store.readOnly ? laneTasks.length - 1 : laneTasks.length;
+      if (nextRow < LANE_HEADER_ROW || nextRow > lastRow) return;
+      setFocusItem({ lane: task.status, row: nextRow });
+      const next = laneTasks[nextRow];
       if (next) focusTask(next.id);
+      else focusBoardItem(task.status, nextRow);
       return;
     }
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       const targetStatus = nextVisibleStatus(task.status, event.key === "ArrowLeft" ? -1 : 1);
+      if (targetStatus === task.status) return;
       const targetLane = tasksInLane(targetStatus);
-      const target = targetLane[Math.min(laneIndex, Math.max(0, targetLane.length - 1))];
+      // Land on the same row where one exists, and on the lane's own menu
+      // where it does not — never silently nowhere.
+      const row = targetLane.length === 0 ? LANE_HEADER_ROW : Math.min(laneIndex, targetLane.length - 1);
+      setFocusItem({ lane: targetStatus, row });
+      const target = targetLane[row];
       if (target) focusTask(target.id);
+      else focusBoardItem(targetStatus, row);
+    }
+  };
+
+  /**
+   * Keys on a lane's menu trigger — the single stop that stands for the
+   * whole header. Down enters the lane, left/right walks the headers, and
+   * Alt+arrows resize the column, which is the capability the resize handle
+   * used to spend a Tab stop on.
+   */
+  const keyLane = (event: KeyboardEvent<HTMLElement>, status: string) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+      event.preventDefault();
+      updateLaneWidth(
+        status,
+        (laneWidthsRef.current[status] ?? LANE_DEFAULT_WIDTH) + (event.key === "ArrowRight" ? 16 : -16),
+        true,
+      );
+      return;
+    }
+    if (event.altKey && event.key === "Home") {
+      event.preventDefault();
+      resetLaneWidth(status);
+      return;
+    }
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      const laneTasks = tasksInLane(status);
+      if (laneTasks.length > 0) {
+        setFocusItem({ lane: status, row: 0 });
+        focusTask(laneTasks[0].id);
+      } else if (!store.readOnly) {
+        focusBoardItem(status, 0);
+      }
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const target = nextVisibleStatus(status as TaskStatus, event.key === "ArrowLeft" ? -1 : 1);
+      if (target !== status) focusBoardItem(target, LANE_HEADER_ROW);
+    }
+  };
+
+  /** Keys on a lane's add row — the bottom stop of every writable lane. */
+  const keyAddRow = (event: KeyboardEvent<HTMLElement>, status: string) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      const laneTasks = tasksInLane(status);
+      if (laneTasks.length > 0) {
+        setFocusItem({ lane: status, row: laneTasks.length - 1 });
+        focusTask(laneTasks[laneTasks.length - 1].id);
+      } else {
+        focusBoardItem(status, LANE_HEADER_ROW);
+      }
+      return;
+    }
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const target = nextVisibleStatus(status as TaskStatus, event.key === "ArrowLeft" ? -1 : 1);
+      if (target === status) return;
+      const targetTasks = tasksInLane(target);
+      focusBoardItem(target, store.readOnly ? LANE_HEADER_ROW : targetTasks.length);
     }
   };
 
@@ -1075,11 +1247,14 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 onCollapse={() => toggleCollapsed(status)}
                 onColumnDragEnd={() => setColumnDrag(null)}
                 onColumnDragStart={() => setColumnDrag({ key: column.key, overIndex: columnIndex })}
+                onMenuFocus={() => setFocusItem({ lane: status, row: LANE_HEADER_ROW })}
+                onMenuKeyDown={(event) => keyLane(event, status)}
                 onOptimisticConfigChange={setOptimisticConfig}
                 onRequestAddAfter={() => setAddingAt(columnIndex + 1)}
                 onStartCompose={() => setComposing(status)}
                 overLimit={overLimit}
                 readOnly={store.readOnly}
+                rovingTabIndex={isRoving(status, LANE_HEADER_ROW) ? 0 : -1}
                 showDescription={showDescriptions}
               />
               <button
@@ -1090,6 +1265,12 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 aria-valuenow={laneWidth ?? Math.round(LANE_DEFAULT_WIDTH)}
                 className={styles.laneResizer}
                 onDoubleClick={() => resetLaneWidth(status)}
+                /* Out of the Tab walk: a drag handle that cost a stop per
+                   lane put five presses of furniture in front of the work.
+                   Keyboard resizing did not go with it — Alt+arrows on the
+                   lane's own menu trigger do the same job (keyLane above),
+                   and this handler still runs for anyone who clicks it. */
+                tabIndex={-1}
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
                   event.preventDefault();
@@ -1102,6 +1283,20 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 title="Drag to resize. Double-click to reset."
                 type="button"
               />
+              {/*
+                The lane's scroll region. It is its own `overflow-y: auto`
+                container, and at phone widths it genuinely overflows, so it
+                has to be reachable by keyboard on its own terms (WCAG
+                2.1.1 / axe scrollable-region-focusable). Almost always it
+                already is: the lane's one Tab stop is a card or the add
+                row, both of which live in here. The exception is a lane
+                whose stop has moved up into its header — and an empty
+                read-only lane, which has no card and no add row at all. In
+                those cases the list itself takes the stop. It carries a
+                real name ("Done tasks"), so a focused scroll region
+                announces what it is rather than reading as a bare box, and
+                ArrowDown walks straight into the cards.
+              */}
               <ul
                 aria-label={`${label} tasks`}
                 className={styles.laneList}
@@ -1110,6 +1305,23 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   event.preventDefault();
                   store.setDrag({ ...store.drag, overStatus: status, overIndex: laneTasks.length });
                 }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+                  // Down enters the lane, up steps back to its menu. Anything
+                  // else — including the arrow keys when the lane is empty —
+                  // is left to the browser so the region still scrolls.
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    focusBoardItem(status, LANE_HEADER_ROW);
+                    return;
+                  }
+                  if (laneTasks.length === 0) return;
+                  event.preventDefault();
+                  setFocusItem({ lane: status, row: 0 });
+                  focusTask(laneTasks[0].id);
+                }}
+                tabIndex={rovingRowFor(status) < 0 ? 0 : -1}
                 onDrop={(event) => dropTask(event, status, laneTasks.length)}
               >
                 {laneTasks.map((task, index) => (
@@ -1124,7 +1336,9 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                     keyboardMove={keyboardMove}
                     laneTasks={laneTasks}
                     onCardClick={cardClick}
+                    onCardFocus={() => setFocusItem({ lane: status, row: index })}
                     reduceMotion={Boolean(reduceMotion)}
+                    rovingTabIndex={isRoving(status, index) ? 0 : -1}
                     status={status}
                     store={store}
                     task={task}
@@ -1153,7 +1367,20 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                       onDismiss={() => setComposing(null)}
                     />
                   ) : (
-                    store.readOnly ? null : <button className={styles.laneAdd} onClick={() => setComposing(status)} type="button"><Icon name="add" size={14} />Add task</button>
+                    store.readOnly ? null : (
+                      <button
+                        className={styles.laneAdd}
+                        data-board-lane={status}
+                        data-board-row={laneTasks.length}
+                        onClick={() => setComposing(status)}
+                        onFocus={() => setFocusItem({ lane: status, row: laneTasks.length })}
+                        onKeyDown={(event) => keyAddRow(event, status)}
+                        tabIndex={isRoving(status, laneTasks.length) ? 0 : -1}
+                        type="button"
+                      >
+                        <Icon name="add" size={14} />Add task
+                      </button>
+                    )
                   )}
                 </li>
               </ul>
@@ -1261,6 +1488,8 @@ function BoardCard({
   hideAvatars,
   keyCard,
   onCardClick,
+  onCardFocus,
+  rovingTabIndex,
   dropTask,
 }: {
   task: LabTask;
@@ -1275,6 +1504,9 @@ function BoardCard({
   hideAvatars: boolean;
   keyCard: (event: KeyboardEvent<HTMLElement>, task: LabTask, laneTasks: LabTask[], laneIndex: number) => void;
   onCardClick: (event: MouseEvent<HTMLElement>, task: LabTask) => void;
+  onCardFocus: () => void;
+  /** 0 on the one card that is the board's current Tab stop, -1 on the rest. */
+  rovingTabIndex: number;
   dropTask: (event: DragEvent, status: TaskStatus, index: number) => void;
 }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -1335,6 +1567,8 @@ function BoardCard({
             data-overdue={isTaskOverdue(task, calendarToday) ? "true" : undefined}
             data-recently-placed={store.recentlyPlacedId === task.id || undefined}
             data-recently-updated={store.recentlyUpdatedId === task.id || undefined}
+            data-board-lane={status}
+            data-board-row={index}
             data-selected={store.selectedIds.includes(task.id) || undefined}
             data-task-id={task.id}
             draggable={!store.readOnly}
@@ -1356,30 +1590,38 @@ function BoardCard({
             onFocus={(event) => {
               store.setActive(task.id);
               store.setPreview(task.id);
+              onCardFocus();
               event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
             }}
             onKeyDown={(event) => keyCard(event, task, laneTasks, index)}
             onMouseEnter={() => store.setPreview(task.id)}
             onMouseLeave={() => { if (store.previewId === task.id) store.setPreview(null); }}
-            tabIndex={0}
+            tabIndex={rovingTabIndex}
           >
             {/* Head row: the completion control sits on the title's first
                 line — a card with only a title is exactly one line tall.
                 The ••• trigger floats over the top-right corner on
                 hover/focus so it costs no permanent row. */}
+            {/* The card's own controls are reached FROM the card, not by
+                tabbing past it: Enter opens, F2 renames, Space selects,
+                Shift+F10 (or right-click) opens the full action menu that
+                carries Mark done and everything else. All three stay
+                clickable and stay in the accessibility tree — they simply
+                stop costing three Tab stops each, thirteen times over. */}
             <div className={styles.cardHead}>
-              <TaskCompletion disabled={store.readOnly} task={task} />
+              <TaskCompletion disabled={store.readOnly} tabIndex={-1} task={task} />
               <div className={styles.cardBody}>
                 {store.editing?.taskId === task.id && store.editing.field === "title" ? (
                   <InlineTaskTitle className={styles.boardTitleEdit} task={task} />
                 ) : (
-                  <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} task={task}>{task.title}</TaskOpenButton>
+                  <TaskOpenButton className={styles.boardTitle} onDoubleClick={() => { if (!store.readOnly) store.setEditing(task.id, "title"); }} tabIndex={-1} task={task}>{task.title}</TaskOpenButton>
                 )}
             <ActionsDropdown
               items={actions}
               trigger={<Icon name="more" size={15} />}
               triggerLabel="Task actions"
               triggerClassName={styles.cardMenuTrigger}
+              triggerTabIndex={-1}
             />
                 {hasLabels ? <div className={styles.cardLabels}><LabelList task={task} /></div> : null}
             {/* One meta row, one rhythm: priority word and date sentence
@@ -1433,10 +1675,13 @@ function LaneHeader({
   onAnnounce,
   onColumnDragEnd,
   onColumnDragStart,
+  onMenuFocus,
+  onMenuKeyDown,
   onOptimisticConfigChange,
   onRequestAddAfter,
   onStartCompose,
   onCollapse,
+  rovingTabIndex,
   showDescription,
 }: {
   column: BoardColumn;
@@ -1452,10 +1697,14 @@ function LaneHeader({
   onAnnounce: (message: string) => void;
   onColumnDragEnd: () => void;
   onColumnDragStart: () => void;
+  /** The menu trigger is the lane's single stop in the board's walk. */
+  onMenuFocus: () => void;
+  onMenuKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   onOptimisticConfigChange: (config: ColumnConfig | null) => void;
   onRequestAddAfter: () => void;
   onStartCompose: () => void;
   onCollapse: () => void;
+  rovingTabIndex: number;
   showDescription: boolean;
 }) {
   const [, startTransition] = useTransition();
@@ -1663,6 +1912,9 @@ function LaneHeader({
               className={styles.laneRenameButton}
               disabled={readOnly}
               onClick={() => { setDraft(column.name); setEditing(true); }}
+              /* Reached from the lane's menu ("Rename") rather than by
+                 tabbing through every column name on the way to the work. */
+              tabIndex={-1}
               title="Rename status"
               type="button"
             >
@@ -1676,12 +1928,22 @@ function LaneHeader({
           {column.limit !== undefined ? `${count}/${column.limit}` : count}<span className={styles.srOnly}> {countLabel}</span>
         </span>
         <div className={styles.laneMenuWrap} ref={menuRef}>
+          {/* The lane's ONE stop in the board's walk. Everything the header
+              can do lives behind it — rename, description, limit, colour,
+              collapse, move, add status, delete — so the other three
+              controls in this header stop costing Tab presses. Alt+arrows
+              here resize the column (keyLane in BoardView). */}
           <button
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             aria-label={`${column.name} status options`}
             className={styles.laneIconButton}
+            data-board-lane={column.key}
+            data-board-row={-1}
             onClick={() => setMenuOpen((value) => !value)}
+            onFocus={onMenuFocus}
+            onKeyDown={onMenuKeyDown}
+            tabIndex={rovingTabIndex}
             type="button"
           >
             <Icon name="more" size={14} />
@@ -1769,6 +2031,9 @@ function LaneHeader({
           className={styles.laneIconButton}
           disabled={readOnly}
           onClick={onStartCompose}
+          /* The lane's own "Add task" row at the bottom of the walk is the
+             keyboard path; this is the pointer's shortcut to the same act. */
+          tabIndex={-1}
           title={`Add a task to ${column.name}`}
           type="button"
         >
@@ -1809,7 +2074,12 @@ function LaneHeader({
           value={limitDraft}
         />
       ) : column.description && showDescription ? (
-        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit status description" type="button">
+        /* Also out of the walk. This is the lane's subtitle: it reads as
+           prose, it edits on click, and as a tab stop it put a fifth piece
+           of column furniture in front of every lane's first card — the
+           exact tax the composite model exists to remove. "Edit
+           description" is in the lane menu, one stop away. */
+        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} tabIndex={-1} title="Edit status description" type="button">
           {column.description}
         </button>
       ) : null}
