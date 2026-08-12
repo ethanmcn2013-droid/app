@@ -135,6 +135,24 @@ p.editable { min-height: 24px; padding: 4px 0; }
 @media (pointer: coarse) and (min-width: 768px) {
   .workspaceIdentity p.editable[data-empty] { max-width: 24ch; opacity: 1; }
 }
+/* Quiet resting signal that the title is editable. Zero width at rest so
+   it never displaces the name or the description beside it. */
+.titleAffordance {
+  color: var(--x-task-text-muted);
+  flex: 0 0 auto;
+  margin-left: -6px;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+  width: 0;
+}
+.workspaceBrief:hover .titleAffordance,
+.workspaceIdentity:focus-within .titleAffordance { margin-left: 0; opacity: 1; width: 13px; }
+@media (pointer: coarse) {
+  /* No hover to reveal it, and a phone band has no room to spend on a
+     decorative glyph — touch discovers the title by tapping it. */
+  .titleAffordance { display: none; }
+}
+
 .workspaceMeta { align-items: center; color: var(--x-task-text-muted); display: flex; flex-wrap: wrap; font-size: 11px; gap: var(--space-2) var(--space-4); margin-top: var(--space-3); }
 .workspaceMeta span { position: relative; }
 .workspaceMeta span + span::before { background: var(--x-task-border-strong); content: ""; height: 10px; left: -7px; position: absolute; top: 1px; width: 1px; }
@@ -156,16 +174,31 @@ p.editable { min-height: 24px; padding: 4px 0; }
 }
 .syncState[data-state="pending"],
 .syncState[data-state="saved"],
+.syncState[data-state="cleared"],
 .syncState[data-state="error"] { opacity: 1; }
 .syncState[data-state="saved"] { color: var(--x-task-success); }
 .syncState[data-state="error"] { color: var(--x-task-danger); }
+/* S10 — the band's one positive register. Until this, a project going
+   perfectly rendered identically to one in trouble minus the red: the
+   only conditional colour in the band was danger. Transient, success
+   ink, and it never persists — an earned note, not a status light. */
+.syncState[data-state="cleared"] { color: var(--x-task-success); }
 /* Numeral voice, stated as a rule so it stops reading as accident:
    PROSE sentences set their figures in the sans with tabular-nums (this
    receipts line); ISOLATED counts — badges, lane counts, the Planning
    pill — are Geist Mono. A mono "5" inside "5 of 13 complete" would
    break the sentence to match a badge. */
 .briefFacts { align-items: baseline; color: var(--x-task-text-secondary); display: flex; font-size: var(--text-caption); gap: 12px; line-height: 1.4; margin: 0; }
-.briefFacts strong { color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.briefFacts strong { border-radius: 4px; color: var(--x-task-text); font-variant-numeric: tabular-nums; font-weight: 600; margin: 0 -4px; padding: 0 4px; white-space: nowrap; }
+/* S9 — the completion receipt. The count is the band's emotional centre
+   and it used to update in silence. One accent-tint pass in the
+   calendar's shipped placement-receipt grammar (280ms, --ease-out),
+   fired only when the number goes UP. */
+.briefFacts strong[data-advanced] { animation: brief-progress-receipt 280ms var(--ease-out) both; }
+@keyframes brief-progress-receipt {
+  0% { background: color-mix(in srgb, var(--x-task-accent) 14%, transparent); }
+  100% { background: transparent; }
+}
 .briefFacts span { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .briefFacts b { color: var(--x-task-danger); font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
 /* The board's most urgent signal was an inert <b>. It is a control now:
@@ -247,17 +280,20 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .briefPeriod,
   .workspaceIdentity h1.editable,
   .workspaceIdentity p.editable,
-  .bandActionButton > div > button { position: relative; }
+  /* Attribute, not a class reaching into the component: the band variant
+     publishes [data-band-action], and the touch floor for the whole band
+     stays in one block. */
+  .briefActions [data-band-action] { position: relative; }
   .navTrigger::after,
   .planningTrigger::after,
   .briefOverdue::after,
   .briefPeriod::after,
   .workspaceIdentity h1.editable::after,
   .workspaceIdentity p.editable::after,
-  .bandActionButton > div > button::after { content: ""; position: absolute; }
+  .briefActions [data-band-action]::after { content: ""; position: absolute; }
   .navTrigger::after { inset: -8px; }
   .planningTrigger::after,
-  .bandActionButton > div > button::after { inset: -8px 0; }
+  .briefActions [data-band-action]::after { inset: -8px 0; }
   .briefOverdue::after { inset: -8px -2px; }
   .briefPeriod::after { inset: -8px 0; }
   /* The two contenteditables were the band's only controls outside the
@@ -283,32 +319,10 @@ p.editable { min-height: 24px; padding: 4px 0; }
   white-space: nowrap;
 }
 .planningTrigger:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-/* The wrapped production Share/overflow triggers, painted into the same
-   ghost register as .planningTrigger from this module — replacing the
-   T·97 string of !important Tailwind arbitrary variants, which was a
-   second styling dialect one ShareButton refactor away from silently
-   dropping Share out of the register. Targets `> div > button` so only
-   the trigger is restyled, never the popover/menu buttons inside it. */
-/* Class doubled on purpose: (0,2,2) so the ghost register also outranks
-   the dark-scheme utility patches in globals.css ([data-theme="dark"]
-   .text-brand / .bg-white, both (0,2,0)) — without it Share turned
-   accent-indigo and the overflow grew a raised box in dark, splitting
-   one action cluster into three dialects. */
-.bandActionButton.bandActionButton > div > button {
-  background: transparent;
-  border: 0;
-  border-radius: 6px;
-  color: var(--x-task-text-secondary);
-  font-size: 12px;
-  font-weight: 500;
-  gap: 6px;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 var(--space-2);
-  transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
-}
-.bandActionButton.bandActionButton > div > button:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.bandActionButton.bandActionButton > div > button[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
+/* Share and the overflow no longer need a descendant override here: they
+   carry the band's ghost register natively through `variant="band"` on
+   their own components, so nothing in this module reaches across a
+   component boundary to repaint them. */
 .planningTrigger[aria-expanded="true"] { background: var(--x-task-selected); color: var(--x-accent-ink); }
 .planningTrigger strong {
   background: var(--x-task-hover);
@@ -829,8 +843,13 @@ p.editable { min-height: 24px; padding: 4px 0; }
   .selectedAgendaList li[data-recently-placed] article,
   .selectedAgendaList li[data-recently-updated] article,
   .agendaLedger li[data-recently-placed],
-  .agendaLedger li[data-recently-updated] { animation: none; }
+  .agendaLedger li[data-recently-updated],
+  /* S9's receipt is motion, so it yields — but S10's "Nothing overdue"
+     is a WORD, not an animation, and stays: reduced motion asks for less
+     movement, not less meaning. */
+  .briefFacts strong[data-advanced] { animation: none; }
   .calendarTaskWrap { transition: none; }
+  .editable { transition: none; }
   :where(.optionB) button:active:not(:disabled) { transform: none; }
 }
 

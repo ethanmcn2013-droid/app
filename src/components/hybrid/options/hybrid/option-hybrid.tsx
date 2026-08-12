@@ -16,6 +16,7 @@ import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
 import { activeUnscheduledTasks } from "../../planning";
 import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT, useNavPanelHidden } from "@/components/app/tasks-nav-state";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { Hint } from "@/components/primitives/hint";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -100,12 +101,12 @@ function usePlanningOpen() {
   return [open, toggle] as const;
 }
 
-// The wrapped production Share/overflow triggers wear the band's ghost
-// register through one module class (.bandActionButton) instead of the
-// T·97 string of !important Tailwind arbitrary variants — one dialect for
-// one action cluster, and a ShareButton refactor can no longer silently
-// drop Share out of the register. Targets `> div > button` so only the
-// trigger is restyled, never the popover/menu buttons inside it.
+// Share and the overflow carry the band's ghost register natively, via
+// their own `variant="band"` prop. The T·97 !important Tailwind costume
+// and the .bandActionButton descendant override that replaced it are both
+// gone: a register reaching into a component from outside loses to that
+// component's own theme rules (it did, in dark), and the styling belongs
+// where the markup is.
 
 export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
   const store = useLabStore();
@@ -217,9 +218,17 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
                   full breakpoint early. (It still lives in the … menu below
                   md, and redundantly between md and lg — the menu section is
                   a shared production block gated at lg.) */}
-              <span className={`hidden md:inline-flex ${briefStyles.bandActionButton}`}>
-                <ShareButton view={shareView} />
+              <span className="hidden md:inline-flex">
+                <ShareButton variant="band" view={shareView} />
               </span>
+              <Hint
+                align="end"
+                text={
+                  unscheduledCount > 0
+                    ? `${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date yet`
+                    : "Dates, milestones and what still needs scheduling"
+                }
+              >
               <button
                 aria-controls="c-planning-rail"
                 aria-expanded={!planningCollapsed}
@@ -260,11 +269,13 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
                   </strong>
                 ) : null}
               </button>
-              <span className={`inline-flex ${briefStyles.bandActionButton}`}>
+              </Hint>
+              <span className="inline-flex">
                 <PageActionsOverflow
                   printPath={`/print/${route.view}`}
                   shareView={shareView}
                   showShare
+                  variant="band"
                 />
               </span>
             </>

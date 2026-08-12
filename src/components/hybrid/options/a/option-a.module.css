@@ -1290,18 +1290,21 @@
     padding: 0;
   }
 
+  /* One left edge on the phone too: the tab TEXT lands under the project
+     title (12px band pad + the tab's own 10px inner padding paid back),
+     instead of the tab row starting on its own third edge. */
   .tabsScroll {
     border-bottom: 1px solid var(--x-task-border);
     min-width: 0;
     overflow-x: auto;
-    padding: 3px 6px;
+    padding: 3px 6px 3px 2px;
   }
 
   .functionalTools {
     margin-left: 0;
     min-width: 0;
     overflow-x: auto;
-    padding: 4px 6px;
+    padding: 4px 6px 4px 4px;
   }
 
   .functionalTools > button,

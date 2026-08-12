@@ -20,6 +20,7 @@ import {
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
 import { useRoomTools } from "@/components/app/room/room-tools-context";
+import { Hint } from "@/components/primitives/hint";
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
@@ -207,6 +208,48 @@ function PeriodFact({ label, detail }: { label: string; detail: string }) {
   );
 }
 
+/**
+ * The band's two earned moments (DELIGHT_CATALOG S9 · S10, founder
+ * verdict 2026-08-12: animate, restrained).
+ *
+ * S9 — `advanced`: the completed count went UP. The receipts figure takes
+ * a single accent-tint pass, the calendar's shipped placement-receipt
+ * grammar, so finishing work anywhere lands as felt progress here.
+ * S10 — `cleared`: the last overdue task just went away. The whisper slot
+ * says so once, in success ink. Both are transient and never fire on
+ * mount, on a filter change, or when the number moves the wrong way —
+ * a receipt for work you did, not a status light.
+ */
+function useProgressReceipt(completed: number, overdue: number) {
+  const previous = useRef<{ completed: number; overdue: number } | null>(null);
+  const [advanced, setAdvanced] = useState(false);
+  const [cleared, setCleared] = useState(false);
+
+  useEffect(() => {
+    const before = previous.current;
+    previous.current = { completed, overdue };
+    // First render establishes the baseline: arriving at a board with
+    // work already done is not an event.
+    if (!before) return;
+    if (completed > before.completed) setAdvanced(true);
+    if (overdue === 0 && before.overdue > 0) setCleared(true);
+  }, [completed, overdue]);
+
+  useEffect(() => {
+    if (!advanced) return;
+    const timer = window.setTimeout(() => setAdvanced(false), 320);
+    return () => window.clearTimeout(timer);
+  }, [advanced]);
+
+  useEffect(() => {
+    if (!cleared) return;
+    const timer = window.setTimeout(() => setCleared(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [cleared]);
+
+  return { advanced, cleared };
+}
+
 export function WorkspaceBrief({
   tasks,
   actions,
@@ -240,6 +283,7 @@ export function WorkspaceBrief({
     ? `${tasks.length} of ${store.tasks.length} tasks in the current view`
     : null;
   const [syncState, setSyncState] = useState<"idle" | "pending" | "saved" | "error">("idle");
+  const { advanced, cleared } = useProgressReceipt(completed, overdue);
 
   useEffect(() => {
     const pending = new Set<string>();
@@ -329,6 +373,26 @@ export function WorkspaceBrief({
           tag="h1"
           value={workspaceName}
         />
+        {/* Editability had no resting signal: the caret and the hover
+            hairline only answer someone already pointing at the title.
+            A quiet pencil fades in whenever the band is engaged — the
+            prior art this band inherited from the room brief. Decorative:
+            the h1 is already the control. */}
+        <svg
+          aria-hidden="true"
+          className={styles.titleAffordance}
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.9"
+          viewBox="0 0 24 24"
+          width="13"
+        >
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
         <EditableText
           ariaLabel="Project description"
           onCommit={setProjectDescriptionAction}
@@ -344,32 +408,47 @@ export function WorkspaceBrief({
         replaces was decoration at reading distance.
       */}
       <section aria-label="Project progress" className={styles.briefProgress}>
-        <span aria-live="polite" className={styles.syncState} data-state={syncState} role="status">
-          {syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
+        {/* One whisper slot, two speakers: the save state, and — when the
+            last overdue task clears — the band's single earned note. The
+            clearance outranks a "Saved" that is about to fade anyway. */}
+        <span
+          aria-live="polite"
+          className={styles.syncState}
+          data-state={cleared ? "cleared" : syncState}
+          role="status"
+        >
+          {cleared
+            ? "Nothing overdue"
+            : syncState === "pending" ? "Saving…" : syncState === "saved" ? "Saved" : syncState === "error" ? "Not saved" : ""}
         </span>
         <p className={styles.briefFacts} title={filteredNote ?? undefined}>
-          <strong>{completed} of {store.tasks.length} complete</strong>
+          <strong data-advanced={advanced || undefined}>{completed} of {store.tasks.length} complete</strong>
           {overdue > 0 ? (
-            <button
-              className={styles.briefOverdue}
-              onClick={() => {
-                const first = document.querySelector<HTMLElement>("[data-overdue='true']");
-                if (first) {
-                  first.scrollIntoView({ block: "center", inline: "center" });
-                  first.focus({ preventScroll: true });
-                  return;
-                }
-                // The count reads the whole project; the view may be filtered
-                // (or not mark overdue in its DOM). A click that does nothing
-                // is a broken promise — fall back to showing the overdue work
-                // through the filter that already exists.
-                setDue("overdue");
-              }}
-              title="Go to the first overdue task"
-              type="button"
-            >
-              {overdue} overdue
-            </button>
+            // "Show overdue work", not "go to the first overdue task": the
+            // control does one of two things depending on what is on
+            // screen, and a hint that names only the happy path is a
+            // promise the fallback breaks.
+            <Hint text="Show the overdue work">
+              <button
+                className={styles.briefOverdue}
+                onClick={() => {
+                  const first = document.querySelector<HTMLElement>("[data-overdue='true']");
+                  if (first) {
+                    first.scrollIntoView({ block: "center", inline: "center" });
+                    first.focus({ preventScroll: true });
+                    return;
+                  }
+                  // The count reads the whole project; the view may be filtered
+                  // (or not mark overdue in its DOM). A click that does nothing
+                  // is a broken promise — fall back to showing the overdue work
+                  // through the filter that already exists.
+                  setDue("overdue");
+                }}
+                type="button"
+              >
+                {overdue} overdue
+              </button>
+            </Hint>
           ) : null}
           {periodProgress ? (
             <PeriodFact detail={periodProgress.detail} label={periodProgress.label} />

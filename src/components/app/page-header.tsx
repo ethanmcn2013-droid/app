@@ -146,9 +146,11 @@ export function PageActionsOverflow({
   showShare,
   shareView,
   printPath,
+  variant = "bordered",
 }: {
   onSearch?: () => void;
   showShare: boolean;
+  variant?: "bordered" | "band";
   shareView: ShareView;
   printPath: string;
 }) {
@@ -252,7 +254,17 @@ export function PageActionsOverflow({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+        data-band-action={variant === "band" ? "" : undefined}
+        /* "band": the project header's ghost register, where this sits as
+           one of three sibling actions. Carried natively rather than as a
+           descendant override from the band's stylesheet — that costume
+           lost to the dark-theme .bg-white patch and grew a raised box in
+           dark only. */
+        className={
+          variant === "band"
+            ? "inline-flex h-7 w-8 items-center justify-center rounded-md border-0 bg-transparent text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]"
+            : "inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
+        }
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="5" cy="12" r="1.6" />

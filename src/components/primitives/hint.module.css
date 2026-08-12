@@ -1,0 +1,58 @@
+/* Hint — hover AND keyboard-focus description bubble. See hint.tsx. */
+
+.hintWrap {
+  display: inline-flex;
+  position: relative;
+}
+
+.hintTarget {
+  display: inline-flex;
+  min-width: 0;
+}
+
+.hintBubble {
+  background: var(--x-task-overlay);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  box-shadow: var(--x-task-shadow);
+  color: var(--x-task-text-secondary);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  left: 50%;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  padding: 5px 9px;
+  position: absolute;
+  top: calc(100% + 7px);
+  transform: translateX(-50%);
+  transition: opacity var(--motion-fast) var(--ease-out), visibility var(--motion-fast);
+  /* visibility, not opacity alone: an opacity-0 bubble is still a
+     rendered text node — it takes hit-tests, and a contrast gate reads
+     it as 1:1 white-on-white (ours did). Hidden means hidden. The
+     description survives for assistive technology because a node
+     directly referenced by aria-describedby is exposed even when
+     hidden (AccName §4). */
+  visibility: hidden;
+  white-space: nowrap;
+  z-index: 70;
+}
+
+.hintWrap[data-align="start"] .hintBubble { left: 0; transform: none; }
+.hintWrap[data-align="end"] .hintBubble { left: auto; right: 0; transform: none; }
+
+/* :focus-within is the whole point — the description has to arrive for a
+   keyboard user, not only under a cursor. */
+.hintWrap:hover .hintBubble,
+.hintWrap:focus-within .hintBubble { opacity: 1; visibility: visible; }
+
+/* Coarse pointers have no hover and a sticky :focus after tap, which
+   would leave a bubble parked over the board. Touch carries its meaning
+   in visible text instead (see hint.tsx). */
+@media (pointer: coarse) {
+  .hintBubble { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hintBubble { transition: none; }
+}
