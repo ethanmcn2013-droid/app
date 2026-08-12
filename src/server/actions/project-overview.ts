@@ -27,7 +27,31 @@ import {
   workspaces,
   planningPeriods,
 } from "@/server/db/schema";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
+
+/**
+ * The Project this action acts on — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 import { getTasks } from "@/server/db/queries";
 import { isDemoMode } from "@/lib/access-mode";
 import { getBoardName } from "@/server/actions/board";
@@ -236,7 +260,10 @@ export async function getProjectOverviewData(): Promise<ProjectOverviewData> {
     };
   }
 
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const [me, ws] = await Promise.all([
+    getCurrentUser(),
+    provedProject(await getActiveWorkspaceOrNull(), "open"),
+  ]);
 
   // Workspace row + planning period in one read.
   const [wsRow] = await db
@@ -436,7 +463,10 @@ export async function setProjectStatusAction(
   if (status !== null && parseStatus(status) === null) {
     throw new Error("Unknown project status.");
   }
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const [me, ws] = await Promise.all([
+    getCurrentUser(),
+    provedProject(await getActiveWorkspaceOrNull(), "createOrEditTasks"),
+  ]);
   await requireOwnerOrMember(ws, me);
 
   const key = statusKey(ws);
@@ -466,7 +496,10 @@ export async function setProjectTargetDateAction(
   if (isoDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
     throw new Error("Target date must be a YYYY-MM-DD date.");
   }
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const [me, ws] = await Promise.all([
+    getCurrentUser(),
+    provedProject(await getActiveWorkspaceOrNull(), "createOrEditTasks"),
+  ]);
   await requireOwnerOrMember(ws, me);
 
   const key = targetDateKey(ws);

@@ -12,9 +12,10 @@ import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
-  getActiveWorkspace,
+  getActiveWorkspaceOrNull,
   getCurrentUser,
 } from "@/server/auth";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import {
   type LaneId,
   type Task,
@@ -42,7 +43,16 @@ export async function applyTemplateAction(
   templateId: string,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  // A template drops a whole set of tasks into a Project, so the destination
+  // is the resolved id itself rather than a filter. Proved before anything is
+  // applied.
+  const ambient = await getActiveWorkspaceOrNull();
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: ambient,
+    capability: "createOrEditTasks",
+  });
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  const ws = grant.projectId;
   await applyTemplateToWorkspace(templateId, ws);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });

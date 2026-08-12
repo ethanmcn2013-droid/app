@@ -3,7 +3,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { entitlements } from "@/server/db/schema";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import {
   MissingStripePriceError,
   priceIdFor,
@@ -69,7 +70,19 @@ export async function createCheckoutSessionAction(
     return { url: `${siteUrl()}/app/tasks?checkout=review&tier=${tier}` };
   }
   const me = await getCurrentUser();
-  const ws = await getActiveWorkspace();
+  // The entitlement this checkout grants is scoped to a Project, so the
+  // Project has to be proved before Stripe is told which one to bill for.
+  // Previously an ambient cookie chose it, and its LEGACY_WORKSPACE_ID
+  // fallback could have attached a paid entitlement to a workspace the caller
+  // had proved no membership of (D-005).
+  const ambient = await getActiveWorkspaceOrNull();
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: ambient,
+    capability: "createOrEditTasks",
+    actorUserId: me,
+  });
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  const ws = grant.projectId;
 
   // Studio is the only tier that's user-level rather than workspace-
   // level. Carry NULL through metadata + grant so downstream code

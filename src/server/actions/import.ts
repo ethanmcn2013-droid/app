@@ -7,7 +7,11 @@ import { nextTaskSeq } from "@/server/db/task-seq";
 import { tasks, workspaces } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
 import type { LaneId, Priority } from "@/lib/data";
 import { LANE_ORDER } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
@@ -15,6 +19,28 @@ import {
   DEMO_WORKSPACE_ID,
   DEMO_WORKSPACE_NAME,
 } from "@/server/demo/tasks-demo";
+
+
+/**
+ * The Project this action writes into — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership before
+ * anything is written. An explicit id may be supplied by a caller that knows
+ * its Project; naming one is not a privilege, since it is proved the same way.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
 
 /**
  * Server-side import target, the wire shape sent from the wizard.
@@ -102,9 +128,12 @@ export async function importCsvAction(
   if (!Array.isArray(inputs) || inputs.length === 0) {
     return {
       inserted: 0,
+      // A zero-row import writes nothing; this id only labels the no-op and
+      // no caller reads it. It is still resolved fail-closed rather than left
+      // as a seam that quietly answers LEGACY_WORKSPACE_ID.
       workspaceId: isDemoMode()
         ? DEMO_WORKSPACE_ID
-        : await getActiveWorkspace(),
+        : ((await getActiveWorkspaceOrNull()) ?? ""),
     };
   }
   if (inputs.length > MAX_ROWS) {
@@ -115,7 +144,7 @@ export async function importCsvAction(
   if (isDemoMode()) {
     return { inserted: inputs.length, workspaceId: DEMO_WORKSPACE_ID };
   }
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
 
   // Pre-compute starting positions per lane; we increment in-memory as we
   // walk the batch so every inserted row gets a strictly-greater position
@@ -182,7 +211,7 @@ export async function importCsvAction(
 /** Read-only, the import wizard's confirm step labels the CTA with this. */
 export async function getActiveWorkspaceNameAction(): Promise<string> {
   if (isDemoMode()) return DEMO_WORKSPACE_NAME;
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull(), "open");
   const [row] = await db
     .select({ name: workspaces.name })
     .from(workspaces)

@@ -15,7 +15,32 @@ import { revalidatePath } from "next/cache";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { meta, planningPeriods, users, workspaces } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
+
+/**
+ * The Project this action acts on — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership before
+ * anything is read or written.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 import { getAccessMode, isDemoMode } from "@/lib/access-mode";
 import {
   createCalendarFrame,
@@ -81,7 +106,10 @@ export async function getRoomBriefData(): Promise<RoomBriefData> {
     };
   }
 
-  const workspaceId = await getActiveWorkspace();
+  const workspaceId = await provedProject(
+    await getActiveWorkspaceOrNull(),
+    "open",
+  );
 
   const [ws] = await db
     .select({
@@ -174,7 +202,10 @@ export async function setWorkspacePurposeAction(
   purpose: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  // board.ts's shape again: the purpose is a `meta` row keyed
+  // `room:{workspaceId}:purpose`, so the resolved id is the destination rather
+  // than a predicate that could merely match nothing.
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
   const clamped = purpose.trim().slice(0, MAX_PURPOSE_LEN);
   const key = purposeKey(ws);
   await db.run(sql`

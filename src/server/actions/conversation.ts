@@ -7,7 +7,8 @@ import {
   getTaskConversation,
   type ConversationItem,
 } from "@/server/db/queries";
-import { getActiveWorkspace } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 
 /**
@@ -20,7 +21,13 @@ export async function getTaskConversationAction(
   taskId: string,
 ): Promise<ConversationItem[]> {
   if (isDemoMode()) return [];
-  const ws = await getActiveWorkspace();
+  // The task's own Project is proved openable, rather than compared against
+  // the cookie — so a conversation the caller may genuinely read stops coming
+  // back as an empty array whenever the two disagree.
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me, "open");
+  if (!scope.ok) return [];
+  const ws = scope.ws;
   const [row] = await db
     .select({ id: tasks.id })
     .from(tasks)

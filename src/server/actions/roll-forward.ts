@@ -5,7 +5,32 @@ import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
+
+/**
+ * The Project this action acts on — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership before
+ * anything is read or written.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 
 /**
  * End-of-day "Roll forward" action.
@@ -29,7 +54,10 @@ export async function rollForwardIncompleteAction(): Promise<{
   ok: true;
   rolled: number;
 }> {
-  const ws = await getActiveWorkspace();
+  // A bulk reschedule across a whole Project, in one transaction. The cookie
+  // was its only input, so a wrong or guessed Project moved every overdue due
+  // date in it. Proved before the sweep, never inside its WHERE.
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
 
   // Boundaries in server-local time.
   const now = new Date();
@@ -129,7 +157,7 @@ export async function rollForwardIncompleteAction(): Promise<{
  * actually move.
  */
 export async function getOverdueTodayCount(): Promise<number> {
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull(), "open");
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
