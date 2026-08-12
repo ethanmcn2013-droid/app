@@ -7,6 +7,7 @@ import {
   PLANNING_PERIOD_GROUP_PREFIX,
   SHARED_GROUP_ID,
   buildProjectCatalog,
+  firstMembershipByCatalogOrder,
   listProjectCatalogPage,
   listProjectCatalogRows,
   type ProjectCatalogRow,
@@ -502,4 +503,74 @@ test("hitting the row cap is surfaced, not swallowed", async () => {
   // The flag is what a chooser needs in order to say "showing the first N"
   // instead of quietly presenting a planner-dependent subset as the whole list.
   assert.equal(buildProjectCatalog([], "me", { truncated: true }).truncated, true);
+});
+
+/**
+ * The ambient fallback in `getActiveWorkspaceOrNull` was a bare `.limit(1)`
+ * with no ORDER BY, so a cookieless caller with several memberships resolved
+ * to a planner-dependent Project. Same class as the catalog query's missing
+ * ORDER BY; it survived because it was written as a drop-in with no callers,
+ * and WP3 has since adopted it across 65 migrated sites.
+ */
+test("the first-membership fallback is deterministic across repeated calls", async () => {
+  const { client, db } = await freshMemoryDb();
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials) VALUES ('me', 'clerk-me', 'black', 'ME');
+  `);
+  // Inserted in an order that is neither the position order nor the name order,
+  // so a query relying on insertion order would answer "ws-late".
+  const inserts = [
+    ["ws-late", "Zulu", 500],
+    ["ws-b", "Bravo", 1000],
+    ["ws-a", "Alpha", 1000],
+    ["ws-c", "Charlie", 250],
+  ] as const;
+  for (const [id, name, position] of inserts) {
+    await client.execute({
+      sql: `INSERT INTO workspaces (id, slug, name, owner_user_id, context_type, position)
+            VALUES (?, ?, ?, 'me', 'project', ?)`,
+      args: [id, id, name, position],
+    });
+    await client.execute({
+      sql: `INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, 'me', 'owner')`,
+      args: [id],
+    });
+  }
+
+  const answers = new Set<string | null>();
+  for (let call = 0; call < 8; call += 1) {
+    answers.add(await firstMembershipByCatalogOrder(db, "me"));
+  }
+  assert.equal(answers.size, 1, "repeated calls must agree");
+  assert.equal([...answers][0], "ws-c", "lowest position wins");
+
+  // And it must be the same Project the catalog lists first, so bare entry and
+  // the chooser cannot tell the user two different things about where they are.
+  const catalog = buildProjectCatalog(await listProjectCatalogRows(db, "me"), "me");
+  assert.equal(String(catalog.allProjects[0].id), [...answers][0]);
+});
+
+test("the fallback breaks position ties by name, then by id", async () => {
+  const { client, db } = await freshMemoryDb();
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials) VALUES ('me', 'clerk-me', 'black', 'ME');
+    INSERT INTO workspaces (id, slug, name, owner_user_id, context_type, position) VALUES
+      ('ws-z', 'z', 'Same name', 'me', 'project', 1000),
+      ('ws-a', 'a', 'Same name', 'me', 'project', 1000);
+    INSERT INTO workspace_members (workspace_id, user_id, role) VALUES
+      ('ws-z', 'me', 'owner'),
+      ('ws-a', 'me', 'owner');
+  `);
+  assert.equal(await firstMembershipByCatalogOrder(db, "me"), "ws-a");
+});
+
+test("a caller with no membership gets null, not a guess", async () => {
+  const { client, db } = await freshMemoryDb();
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials) VALUES ('nobody', 'clerk-nobody', 'red', 'NB');
+    INSERT INTO workspaces (id, slug, name, owner_user_id, context_type, position)
+      VALUES ('ws-legacy', 'legacy', 'Legacy workspace', 'nobody', 'project', 1000);
+  `);
+  // Owning the workspaces row is not membership of it.
+  assert.equal(await firstMembershipByCatalogOrder(db, "nobody"), null);
 });

@@ -503,15 +503,23 @@ sixth writer, or a changed attribute, fails the build. The unified
 
 **Interface requests, not WP2 edits** (all five files are other lanes'):
 
-1. `cross-workspace.ts:193` — set `httpOnly: true` and `secure` in production.
-   A workspace preference readable by page script is the weakest link in the
+1. ~~`cross-workspace.ts:193` — set `httpOnly: true` and `secure` in
+   production.~~ **Accepted by the WP3 actions lane**; lands with WP3. A
+   workspace preference readable by page script was the weakest link in the
    set.
-2. `settings.ts:614` — add `httpOnly` and `secure`.
-3. `templates.ts:136` — add the 30-day `maxAge` its four siblings all carry.
+2. `settings.ts:614` — add `httpOnly` and `secure`. **Still outstanding.**
+3. ~~`templates.ts:136` — add the 30-day `maxAge` its four siblings all
+   carry.~~ **Accepted by WP3**; lands with WP3. It should gain `secure` too,
+   which is **still outstanding**.
 4. `suite-context/route.ts` — stop writing the cookie on a contextual link, or
    ratify that inbound suite links count as explicit selection. This is the
-   ADR contradiction and it needs a decision, not a patch.
+   ADR contradiction and it needs a decision, not a patch. **Still open.**
 5. All five — migrate to `writeActiveProjectCookie` once WP3/WP6 owns them.
+
+The allowlist in `active-project-contract.test.mjs` names the two incoming
+changes and their new pinned values, so the build failure that follows the WP3
+merge is self-explanatory. Re-pin them; do not widen the assertion to accept
+either shape.
 
 **Consequence.** WP6 must not claim "one writer, one set of attributes" for the
 last-active preference until items 1–5 land. WP2's writer is single; the cookie

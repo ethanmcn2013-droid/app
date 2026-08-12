@@ -97,9 +97,26 @@ test("the unified cookie name is spelled in exactly one module", () => {
  * None of the five are in WP2's ownership, so this guard does not fix them —
  * it makes them impossible to change or multiply silently, and it dates the
  * list so a later reader can see it was known rather than missed. Recorded as
- * D-018; interface requests are with the owning lanes.
+ * D-021; interface requests are with the owning lanes.
  *
- * Recorded 2026-08-12 against `0238144`. The list may only shrink.
+ * Recorded 2026-08-12 against `0238144`, re-verified against `7ed2ed7`. The
+ * list may only shrink, and an entry may only be re-pinned with a reason.
+ *
+ * ── Incoming, from the WP3 actions lane ────────────────────────────────────
+ *
+ * Two of these entries are expected to change when WP3 merges, both at the
+ * integration owner's request and both in the direction this guard exists to
+ * push. They are named here so the failure that follows the merge is
+ * self-explanatory and nobody is tempted to relax the allowlist to get green:
+ *
+ *   - `cross-workspace.ts` — `httpOnly: false` → `true`, and `secure` added.
+ *     New pin: ["httpOnly", "maxAge", "path", "sameSite", "secure"].
+ *   - `templates.ts` — the 30-day `maxAge` added.
+ *     New pin: ["httpOnly", "maxAge", "path", "sameSite"], and it should gain
+ *     `secure` too — that one is still outstanding.
+ *
+ * Re-pin them in the same commit that merges WP3, with this note updated to
+ * say the fix landed. Do not widen the assertion to accept either shape.
  */
 const LEGACY_COOKIE_WRITERS = {
   // The inbound suite-link handler. `src/app/app/page.tsx` redirects into it,
@@ -107,12 +124,13 @@ const LEGACY_COOKIE_WRITERS = {
   // contradiction of ADR 0001 §4 "only an explicit Project selection does".
   "src/app/api/suite-context/route.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   // httpOnly: false — the workspace preference is readable by any script on
-  // the page, and carries no `secure` either.
+  // the page, and carries no `secure` either. WP3 fixes both; see above.
   "src/server/actions/cross-workspace.ts": ["httpOnly", "maxAge", "path", "sameSite"],
   "src/server/actions/planning.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
-  // No httpOnly and no secure.
+  // No httpOnly and no secure. Still outstanding.
   "src/server/actions/settings.ts": ["maxAge", "path", "sameSite"],
-  // No maxAge: a session cookie where every sibling writes 30 days.
+  // No maxAge: a session cookie where every sibling writes 30 days. WP3 adds it;
+  // `secure` is still outstanding.
   "src/server/actions/templates.ts": ["httpOnly", "path", "sameSite"],
 };
 
@@ -133,7 +151,7 @@ test("every legacy active-workspace cookie writer is enumerated and pinned", () 
   assert.deepEqual(
     Object.keys(found).sort(),
     Object.keys(LEGACY_COOKIE_WRITERS).sort(),
-    "a legacy active-workspace cookie writer was added or removed; update D-018 with it",
+    "a legacy active-workspace cookie writer was added or removed; update D-021 with it",
   );
   for (const [file, attributes] of Object.entries(LEGACY_COOKIE_WRITERS)) {
     assert.deepEqual(

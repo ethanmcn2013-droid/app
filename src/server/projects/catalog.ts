@@ -518,6 +518,34 @@ export async function listProjectCatalogRows(
   return (await listProjectCatalogPage(database, actorUserId)).rows;
 }
 
+/**
+ * The caller's first Project by catalog order, or `null`.
+ *
+ * The single source of the "first accessible Project" ordering, so the three
+ * places that need one cannot disagree: the catalog's own listing, the
+ * resolver's `first-active` bare-entry default, and `getActiveWorkspaceOrNull`
+ * in `src/server/auth.ts`. A user whose bare entry lands in one Project while
+ * the chooser highlights another has been told two different things about
+ * where they are.
+ *
+ * Membership-first and ordered. It does not filter archived rows: `auth.ts`
+ * has never done so and this is a determinism fix, not a behaviour change.
+ * Callers that need an active Project — the resolver does — filter after.
+ */
+export async function firstMembershipByCatalogOrder(
+  database: CatalogQueryExecutor,
+  actorUserId: string,
+): Promise<string | null> {
+  const [first] = await database
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
+    .where(eq(workspaceMembers.userId, actorUserId))
+    .orderBy(asc(workspaces.position), asc(workspaces.name), asc(workspaces.id))
+    .limit(1);
+  return first ? first.workspaceId : null;
+}
+
 export async function listProjectCatalogPage(
   database: CatalogQueryExecutor,
   actorUserId: string,
