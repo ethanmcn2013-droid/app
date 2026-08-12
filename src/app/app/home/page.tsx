@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
-import { requireAppAccess } from "@/server/require-app-access";
+import { requireAppAccessTasks } from "@/server/app-access";
 import { requireSignalUser } from "@/modules/signal/home";
 import { HomeNewUser, HomeView } from "@/components/app/home/home-view";
 import { loadHomeData } from "./home-data";
@@ -14,7 +14,7 @@ export const metadata = { title: "Home · Signal Studio" };
  * Briefing sits one level deeper at /app/home/briefing.
  */
 export default async function HomePage() {
-  await requireAppAccess();
+  await requireAppAccessTasks();
 
   const demo = isDemoMode();
   const userId = demo ? null : await requireSignalUser();

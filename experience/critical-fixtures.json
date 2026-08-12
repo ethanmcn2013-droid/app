@@ -1046,8 +1046,8 @@
           "contains": "force-dynamic"
         },
         {
-          "label": "requireAppAccess gate",
-          "contains": "requireAppAccess"
+          "label": "requireAppAccessTasks gate",
+          "contains": "requireAppAccessTasks"
         },
         {
           "label": "Timeline curation module boundary",
@@ -1055,7 +1055,7 @@
         },
         {
           "label": "defence-in-depth call",
-          "contains": "await requireAppAccess()"
+          "contains": "await requireAppAccessTasks()"
         }
       ],
       "remainingStates": [
@@ -1077,8 +1077,8 @@
           "contains": "force-dynamic"
         },
         {
-          "label": "requireAppAccess gate",
-          "contains": "requireAppAccess"
+          "label": "requireAppAccessTasks gate",
+          "contains": "requireAppAccessTasks"
         },
         {
           "label": "Timeline preview module boundary",
@@ -1086,7 +1086,7 @@
         },
         {
           "label": "defence-in-depth call",
-          "contains": "await requireAppAccess()"
+          "contains": "await requireAppAccessTasks()"
         }
       ],
       "remainingStates": [
@@ -1108,8 +1108,8 @@
           "contains": "force-dynamic"
         },
         {
-          "label": "requireAppAccess gate",
-          "contains": "requireAppAccess"
+          "label": "requireAppAccessTasks gate",
+          "contains": "requireAppAccessTasks"
         },
         {
           "label": "audience manager module boundary",
