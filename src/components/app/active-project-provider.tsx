@@ -60,20 +60,18 @@ import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
 import { parseProjectId } from "@/lib/projects/project-ref";
 import { PROJECT_URL_PARAM, type ProjectDestination } from "@/lib/projects/project-url";
 import {
-  decideSnapshotCommit,
-  projectChrome,
+  chromeFor,
+  initialActiveProjectState,
+  reduceActiveProject,
   routeKey,
+  type ActiveProjectPending,
   type ChromeProjection,
   type LiveTransition,
   type RouteSnapshot,
 } from "@/lib/projects/route-snapshot";
 import { switchActiveProjectAction } from "@/server/actions/active-project";
 
-export type ActiveProjectPending = Readonly<{
-  projectId: ProjectId;
-  /** Shown on the trigger: `Opening 2024 school year…`. */
-  label: string;
-}>;
+export type { ActiveProjectPending };
 
 export type ActiveProjectContextValue = Readonly<{
   /** False when `SIGNAL_ACTIVE_PROJECT_V3_ENABLED` is off. */
@@ -100,54 +98,6 @@ const ActiveProjectContext = createContext<ActiveProjectContextValue | null>(nul
 
 export function useActiveProject(): ActiveProjectContextValue | null {
   return useContext(ActiveProjectContext);
-}
-
-type ProviderState = Readonly<{
-  live: LiveTransition;
-  committed: RouteSnapshot | null;
-  /** True until the first client-side route change on this document. */
-  coldEntry: boolean;
-  pending: ActiveProjectPending | null;
-  lastError: string | null;
-}>;
-
-type ProviderAction =
-  | { type: "route"; routeKey: string }
-  | { type: "snapshot"; snapshot: RouteSnapshot }
-  | { type: "select-started"; pending: ActiveProjectPending }
-  | { type: "select-failed"; message: string };
-
-function reduce(state: ProviderState, action: ProviderAction): ProviderState {
-  switch (action.type) {
-    case "route": {
-      if (state.live.routeKey === action.routeKey && state.live.epoch > 0) {
-        return state;
-      }
-      return {
-        ...state,
-        live: { routeKey: action.routeKey, epoch: state.live.epoch + 1 },
-        // The first route publish is the entry document itself; anything after
-        // it is a client transition, and the cold-entry rule stops applying.
-        coldEntry: state.live.epoch === 0 ? state.coldEntry : false,
-      };
-    }
-    case "snapshot": {
-      const decision = decideSnapshotCommit(action.snapshot, state.live, state.committed);
-      if (!decision.commit) return state;
-      return {
-        ...state,
-        committed: action.snapshot,
-        pending:
-          state.pending && state.pending.projectId === action.snapshot.project.id
-            ? null
-            : state.pending,
-      };
-    }
-    case "select-started":
-      return { ...state, pending: action.pending, lastError: null };
-    case "select-failed":
-      return { ...state, pending: null, lastError: action.message };
-  }
 }
 
 /**
@@ -199,13 +149,11 @@ export function ActiveProjectProvider({
     [bootstrapProjectId],
   );
 
-  const [state, dispatch] = useReducer(reduce, {
-    live: { routeKey: routeKey("", null), epoch: 0 },
-    committed: null,
-    coldEntry: true,
-    pending: null,
-    lastError: null,
-  });
+  const [state, dispatch] = useReducer(
+    reduceActiveProject,
+    undefined,
+    initialActiveProjectState,
+  );
 
   const [, startTransition] = useTransition();
 
@@ -279,14 +227,8 @@ export function ActiveProjectProvider({
   );
 
   const chrome = useMemo(
-    () =>
-      projectChrome({
-        live: state.live,
-        committed: state.committed,
-        bootstrapProjectId: bootstrap,
-        coldEntry: state.coldEntry,
-      }),
-    [state.live, state.committed, state.coldEntry, bootstrap],
+    () => chromeFor(state, bootstrap),
+    [state, bootstrap],
   );
 
   const value = useMemo<ActiveProjectContextValue>(

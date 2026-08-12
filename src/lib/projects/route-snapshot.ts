@@ -20,7 +20,7 @@
  * whether the chrome may show a Project name is small enough to test directly.
  */
 
-import type { ProjectSummary } from "@/lib/projects/project-ref";
+import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
 
 /**
  * Normalized identity of a route for snapshot matching: the pathname plus the
@@ -48,6 +48,67 @@ export type LiveTransition = Readonly<{
 export type SnapshotDecision =
   | Readonly<{ commit: true }>
   | Readonly<{ commit: false; reason: "route-key-mismatch" | "stale-epoch" | "future-epoch" | "revision-regression" }>;
+
+/**
+ * The epoch a payload carries when nobody supplied one, and the payload's
+ * route is not the live route. Any value below the live epoch is refused; this
+ * one is chosen so the refusal is unambiguous in a log.
+ */
+export const UNSTAMPED_EPOCH = -1;
+
+/**
+ * Decide what epoch a published snapshot carries.
+ *
+ * ── The limit of a client-minted epoch, stated plainly ─────────────────────
+ *
+ * Next.js gives the client no way to stamp an RSC request, so a Server
+ * Component cannot tell the client which transition its payload belongs to.
+ * When `suppliedEpoch` is absent this function therefore derives the stamp
+ * from the live transition, and the epoch check in `decideSnapshotCommit`
+ * degenerates to a tautology: it passes whenever the route key matches.
+ *
+ * **So with no supplied epoch the effective guard is route key plus the
+ * revision floor, not route key plus epoch.** A genuinely late A1 payload
+ * rendering while A2 is live is indistinguishable from A2's own payload, and
+ * will commit. The revision floor is what actually stops it doing damage: a
+ * stale rename, archive or capability set carries an older `revision` and is
+ * refused. That is the acknowledged residual, not a solved problem.
+ *
+ * The epoch is still real, and `decideSnapshotCommit` still enforces it, for
+ * the case that matters and is achievable: a caller that *does* know when its
+ * transition began passes `suppliedEpoch` and gets the full guard.
+ *
+ * ── Why derived and not captured at mount ──────────────────────────────────
+ *
+ * The first version captured the live epoch once, in a lazy `useState`
+ * initializer. That was wrong twice over:
+ *
+ *  - **same-path switches never committed.** Tasks A → Tasks B is a
+ *    search-param-only navigation; Next does not remount the route segment, so
+ *    the initializer never re-ran. The stamp stayed at A's epoch while the
+ *    bridge drove the live epoch forward, and B's *correct* snapshot was
+ *    refused as `stale-epoch` for ever, leaving the chrome pinned on inert A.
+ *    That is the canonical A → B journey, broken;
+ *  - **cold entry raced.** The initializer runs during render; the bridge
+ *    publishes the live route from an effect, which runs afterwards. The first
+ *    payload stamped 0 against a live epoch about to become 1, was refused,
+ *    and — because its effect dependencies never changed again — was never
+ *    republished. The chrome never left the skeleton.
+ *
+ * Deriving fixes both by construction: the stamp is recomputed on every render
+ * from the live transition, so it follows a search-param-only navigation and
+ * it catches up the moment the bridge publishes.
+ */
+export function stampSnapshotEpoch(input: {
+  suppliedEpoch?: number;
+  payloadRouteKey: string;
+  live: LiveTransition;
+}): number {
+  if (typeof input.suppliedEpoch === "number") return input.suppliedEpoch;
+  return input.live.routeKey === input.payloadRouteKey
+    ? input.live.epoch
+    : UNSTAMPED_EPOCH;
+}
 
 /**
  * The commit rule. Both the route key and the epoch must match the live
@@ -128,4 +189,94 @@ export function projectChrome(input: {
   }
 
   return { kind: "skeleton" };
+}
+
+/**
+ * ── The provider's state machine ───────────────────────────────────────────
+ *
+ * Lives here, beside the commit rule, rather than inside the client component,
+ * so it can be driven directly. The first version's epoch defect survived
+ * review because every epoch test hand-built its inputs; a test that drives
+ * mount → route change → publish through the real reducer would have caught it
+ * in one assertion. This is that seam.
+ */
+
+export type ActiveProjectPending = Readonly<{
+  projectId: ProjectId;
+  /** Shown on the trigger: `Opening 2024 school year…`. */
+  label: string;
+}>;
+
+export type ActiveProjectState = Readonly<{
+  live: LiveTransition;
+  committed: RouteSnapshot | null;
+  /** True until the first client-side route change on this document. */
+  coldEntry: boolean;
+  pending: ActiveProjectPending | null;
+  lastError: string | null;
+}>;
+
+export type ActiveProjectEvent =
+  | Readonly<{ type: "route"; routeKey: string }>
+  | Readonly<{ type: "snapshot"; snapshot: RouteSnapshot }>
+  | Readonly<{ type: "select-started"; pending: ActiveProjectPending }>
+  | Readonly<{ type: "select-failed"; message: string }>;
+
+export function initialActiveProjectState(): ActiveProjectState {
+  return {
+    live: { routeKey: routeKey("", null), epoch: 0 },
+    committed: null,
+    coldEntry: true,
+    pending: null,
+    lastError: null,
+  };
+}
+
+export function reduceActiveProject(
+  state: ActiveProjectState,
+  event: ActiveProjectEvent,
+): ActiveProjectState {
+  switch (event.type) {
+    case "route": {
+      if (state.live.routeKey === event.routeKey && state.live.epoch > 0) {
+        return state;
+      }
+      return {
+        ...state,
+        live: { routeKey: event.routeKey, epoch: state.live.epoch + 1 },
+        // The first route publish is the entry document itself; anything after
+        // it is a client transition, and the cold-entry rule stops applying.
+        coldEntry: state.live.epoch === 0 ? state.coldEntry : false,
+      };
+    }
+    case "snapshot": {
+      const decision = decideSnapshotCommit(event.snapshot, state.live, state.committed);
+      if (!decision.commit) return state;
+      return {
+        ...state,
+        committed: event.snapshot,
+        pending:
+          state.pending && state.pending.projectId === event.snapshot.project.id
+            ? null
+            : state.pending,
+      };
+    }
+    case "select-started":
+      return { ...state, pending: event.pending, lastError: null };
+    case "select-failed":
+      return { ...state, pending: null, lastError: event.message };
+  }
+}
+
+/** What the chrome would paint for a given state. */
+export function chromeFor(
+  state: ActiveProjectState,
+  bootstrapProjectId: string | null,
+): ChromeProjection {
+  return projectChrome({
+    live: state.live,
+    committed: state.committed,
+    bootstrapProjectId,
+    coldEntry: state.coldEntry,
+  });
 }
