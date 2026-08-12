@@ -23,99 +23,108 @@
  * one calm line appears, "Opening the workspace", with role="status"
  * aria-live="polite". The decorative wordmark stays aria-hidden; the
  * status line is the only announced content.
+ *
+ * Hand-off (wave 7): the boundary no longer ends on a cut. ArrivalSettle
+ * rides beside the loader and gives the surface that replaces it one
+ * whole-surface opacity settle — see arrival-settle.tsx. This is the /app
+ * boundary, so every product's cold entry inherits it.
  */
+import { ArrivalSettle } from "@/components/system/arrival-settle";
 import { LongWaitStatus } from "@/components/system/long-wait-status";
 
 export default function TasksLoading() {
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        display: "flex",
-        flexDirection: "column",
-        gap: 18,
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--paper, #ffffff)",
-        zIndex: 9999,
-      }}
-    >
-      <span
-        aria-hidden
+    <>
+      <ArrivalSettle />
+      <div
         style={{
-          fontFamily:
-            'var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
-          fontWeight: 600,
-          fontSize: 36,
-          letterSpacing: "-0.04em",
-          lineHeight: 0.96,
-          color: "var(--ink, #14151a)",
-          display: "inline-flex",
-          alignItems: "baseline",
-          whiteSpace: "nowrap",
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--paper, #ffffff)",
+          zIndex: 9999,
         }}
       >
-        {["t", "a", "s", "k", "s"].map((c, i) => (
-          <span
-            key={i}
-            style={{
-              display: "inline-block",
-              animation: `signal-letter-rise 280ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both`,
-            }}
-          >
-            {c}
-          </span>
-        ))}
         <span
+          aria-hidden
           style={{
-            // 10px hard px, boundary-dot authority (DESIGN.md §13.3).
-            display: "inline-block",
-            width: 10,
-            height: 10,
-            maxWidth: 10,
-            maxHeight: 10,
-            borderRadius: "50%",
-            background: "var(--indigo, #4f46e5)",
-            marginLeft: 6,
-            transform: "translateY(-2px)",
-            flexShrink: 0,
-            animation:
-              "signal-dot-land 360ms cubic-bezier(0.34,1.56,0.64,1) 360ms both, signal-tasks-pulse 2.6s ease-in-out 800ms infinite",
+            fontFamily:
+              'var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif',
+            fontWeight: 600,
+            fontSize: 36,
+            letterSpacing: "-0.04em",
+            lineHeight: 0.96,
+            color: "var(--ink, #14151a)",
+            display: "inline-flex",
+            alignItems: "baseline",
+            whiteSpace: "nowrap",
           }}
-        />
-      </span>
-      <LongWaitStatus line="Opening the workspace" />
-      <style>{`
-        @keyframes signal-letter-rise {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes signal-dot-land {
-          0%   { opacity: 0; transform: translateY(-2px) scale(0.4); }
-          60%  { opacity: 1; transform: translateY(-2px) scale(1.18); }
-          100% { opacity: 1; transform: translateY(-2px) scale(1); }
-        }
-        @keyframes signal-tasks-pulse {
-          0%, 30%, 100% { transform: translateY(-2px) scale(1); }
-          10%           { transform: translateY(-2px) scale(1.22); }
-          20%           { transform: translateY(-2px) scale(1); }
-          40%           { transform: translateY(-2px) scale(1.12); }
-          50%           { transform: translateY(-2px) scale(1); }
-        }
-        @media (prefers-reduced-motion: reduce) {
+        >
+          {["t", "a", "s", "k", "s"].map((c, i) => (
+            <span
+              key={i}
+              style={{
+                display: "inline-block",
+                animation: `signal-letter-rise 280ms cubic-bezier(0.16,1,0.3,1) ${i * 60}ms both`,
+              }}
+            >
+              {c}
+            </span>
+          ))}
+          <span
+            style={{
+              // 10px hard px, boundary-dot authority (DESIGN.md §13.3).
+              display: "inline-block",
+              width: 10,
+              height: 10,
+              maxWidth: 10,
+              maxHeight: 10,
+              borderRadius: "50%",
+              background: "var(--indigo, #4f46e5)",
+              marginLeft: 6,
+              transform: "translateY(-2px)",
+              flexShrink: 0,
+              animation:
+                "signal-dot-land 360ms cubic-bezier(0.34,1.56,0.64,1) 360ms both, signal-tasks-pulse 2.6s ease-in-out 800ms infinite",
+            }}
+          />
+        </span>
+        <LongWaitStatus line="Opening the workspace" />
+        <style>{`
           @keyframes signal-letter-rise {
-            from { opacity: 1; transform: none; }
-            to   { opacity: 1; transform: none; }
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
           }
           @keyframes signal-dot-land {
-            from, to { opacity: 1; transform: translateY(-2px) scale(1); }
+            0%   { opacity: 0; transform: translateY(-2px) scale(0.4); }
+            60%  { opacity: 1; transform: translateY(-2px) scale(1.18); }
+            100% { opacity: 1; transform: translateY(-2px) scale(1); }
           }
           @keyframes signal-tasks-pulse {
-            from, to { transform: translateY(-2px) scale(1); }
+            0%, 30%, 100% { transform: translateY(-2px) scale(1); }
+            10%           { transform: translateY(-2px) scale(1.22); }
+            20%           { transform: translateY(-2px) scale(1); }
+            40%           { transform: translateY(-2px) scale(1.12); }
+            50%           { transform: translateY(-2px) scale(1); }
           }
-        }
-      `}</style>
-    </div>
+          @media (prefers-reduced-motion: reduce) {
+            @keyframes signal-letter-rise {
+              from { opacity: 1; transform: none; }
+              to   { opacity: 1; transform: none; }
+            }
+            @keyframes signal-dot-land {
+              from, to { opacity: 1; transform: translateY(-2px) scale(1); }
+            }
+            @keyframes signal-tasks-pulse {
+              from, to { transform: translateY(-2px) scale(1); }
+            }
+          }
+        `}</style>
+      </div>
+    </>
   );
 }

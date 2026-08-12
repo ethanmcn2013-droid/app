@@ -89,6 +89,42 @@ type ClusterStyle = CSSProperties & {
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
 
 /**
+ * The entrance, once per session.
+ *
+ * The load choreography — the header rise, the 400ms rail draw, the point
+ * cascade, the marker drop — is the best motion in the app, and it replayed
+ * in full on every single arrival at the surface. The sixth visit got the
+ * same 600ms performance as the first, including the visit that is just a
+ * viewer pressing Back (wave-6 panel, Motion seat). A first impression that
+ * happens six times is not a first impression; it is an interruption between
+ * the viewer and a page they have already read.
+ *
+ * So the choreography is unchanged and simply learns when it has been seen.
+ * One sessionStorage key, written the first time an artifact renders in the
+ * tab: after that every arrival — forward, backward, reload, another
+ * timeline, another window in the same tab — lands in the final state
+ * instantly. A new tab is a new session and gets the performance again,
+ * which is the honest reading of "first visit".
+ *
+ * WHY AN INLINE SCRIPT. The animations are CSS with `backwards` fill and no
+ * opacity:0 in the HTML, which is what lets the public share render visible
+ * without JavaScript at all. They therefore start the moment the stylesheet
+ * lands — long before React hydrates. An effect could only ever arrive
+ * mid-performance and cut it, which is worse than the replay. A script
+ * beside the markup runs during parse, before the artifact's own subtree has
+ * finished arriving, so the skip is a state the surface is BORN in rather
+ * than a state it is snapped into. No-JS viewers lose nothing: the guard can
+ * only ever remove motion, never add it, so its absence is the full
+ * choreography.
+ *
+ * Reduced motion is untouched by any of this — the module's
+ * prefers-reduced-motion block still suppresses the whole entrance outright,
+ * seen or unseen.
+ */
+const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
+const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
+
+/**
  * Motion's media-query hook can know the browser preference on the first
  * client render while the server cannot. Gate that value behind React's
  * hydration snapshot so SSR and the first hydration pass always choose the
@@ -1191,6 +1227,9 @@ export function TimelineArtifact({
       data-axis={model.axis.mode}
       data-title-length={artifactTitleLength(timeline.label)}
     >
+      {/* Sets data-entrance="seen" on this article when the tab has already
+          watched the entrance once. See ENTRANCE_GUARD above. */}
+      <script dangerouslySetInnerHTML={{ __html: ENTRANCE_GUARD }} />
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
         {showProductHeader ? (

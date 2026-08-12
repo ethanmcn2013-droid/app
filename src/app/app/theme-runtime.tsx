@@ -43,8 +43,24 @@ import { getUserPreferences } from "@/server/db/preferences";
  * frame is charcoal in both themes, which is why that is a settle and not a
  * flash.
  *
- * No library, no store, no CSS-in-JS: ~230 bytes of inline script, and the
- * preference itself rides the existing user_preferences write path.
+ * HOW IT MOVES. A theme change is a change of material, not a change of
+ * state, and it used to be neither: flipping data-theme left the canvas, the
+ * lanes and the cards snapping instantly while the handful of elements that
+ * happened to declare a colour transition lagged 150ms behind them (wave-6
+ * panel, Motion seat — "an accidental snap"). The resolver now owns that
+ * frame. Whenever it changes data-theme on a LIVE document it adds
+ * `theme-resolving` to <html> for the length of one brief resolve and takes
+ * it off again; globals.css turns that class into a scoped colour transition
+ * — background-color, color, border-color, fill, and nothing else — so the
+ * whole document crosses together and then the class is gone. It is never
+ * added on the first paint (there is no previous theme to leave), never on
+ * the streamed correction that lands while the document is still parsing,
+ * and never under prefers-reduced-motion.
+ *
+ * No library, no store, no CSS-in-JS: 577 bytes of inline script (measured,
+ * not estimated — the "~230 bytes" this comment used to claim twice was never
+ * true of the 306 bytes it shipped), and the preference itself rides the
+ * existing user_preferences write path.
  */
 
 // Kept as one line each — these are inlined into the document verbatim.
@@ -54,7 +70,13 @@ import { getUserPreferences } from "@/server/db/preferences";
 // inline script is unreachable by every other kind of test in this repo: it is
 // not a module, it never runs in a test renderer, and a source-text assertion
 // on a minified one-liner proves the characters, not the resolution table.
-export const RESOLVER = `(function(){var e=document.documentElement,q=matchMedia("(prefers-color-scheme:dark)"),a=function(){var m=e.getAttribute("data-theme-mode")||"system";e.setAttribute("data-theme",m==="dark"||(m!=="light"&&q.matches)?"dark":"light")};a();q.addEventListener("change",a);addEventListener("signal:theme",a)})();`;
+//
+// Reading the one-liner: `n` is what the theme resolves to now, `p` is what it
+// said before. Equal means nothing to do. A `p` that exists, on a document
+// past parsing, with motion allowed, is the one case that gets the transition
+// class — and the timer that removes it is cleared first, so a viewer flipping
+// the control twice in a second cannot strand the class on the document.
+export const RESOLVER = `(function(){var e=document.documentElement,q=matchMedia("(prefers-color-scheme:dark)"),r=matchMedia("(prefers-reduced-motion:reduce)"),t,a=function(){var m=e.getAttribute("data-theme-mode")||"system",n=m==="dark"||(m!=="light"&&q.matches)?"dark":"light",p=e.getAttribute("data-theme");if(p===n)return;if(p&&document.readyState!=="loading"&&!r.matches){e.classList.add("theme-resolving");clearTimeout(t);t=setTimeout(function(){e.classList.remove("theme-resolving")},200)}e.setAttribute("data-theme",n)};a();q.addEventListener("change",a);addEventListener("signal:theme",a)})();`;
 
 export const applyMode = (mode: "light" | "dark") =>
   `document.documentElement.setAttribute("data-theme-mode","${mode}");dispatchEvent(new Event("signal:theme"));`;

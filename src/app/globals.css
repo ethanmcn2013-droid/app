@@ -1547,3 +1547,39 @@ body::after { content: none; }
 @page {
   margin: 18mm 16mm;
 }
+
+/* ════════════════════════════════════════════════════════════
+   THEME RESOLVE — the switching frame                wave 7 · M3
+
+   Owned by src/app/app/theme-runtime.tsx. The resolver adds
+   .theme-resolving to <html> only when data-theme CHANGES on a live
+   document — a settings flip, or the OS crossing sundown under a
+   "system" user — and removes it 200ms later. It is never present on
+   the first paint, never on the streamed preference correction, and
+   never under reduced motion.
+
+   Before this, a flip was an accidental snap: five elements in the
+   whole document happened to declare a colour transition and lagged
+   150ms behind a canvas that changed instantly (wave-6 panel, Motion
+   seat). The fix is not to give every element a permanent transition —
+   that is the transition-all storm the contract forbids, and it would
+   animate colour on hover, on selection, on every state change in the
+   app. It is to lend the whole document one, for the length of the
+   change, and take it back.
+
+   Four properties, named: the ones a theme actually moves. No opacity,
+   no transform, no layout, no "all". --motion-fast (140ms) is the
+   ratified token nearest this movement: brief enough that the flip
+   still reads as a decision the interface made instantly, long enough
+   that the document crosses as one material instead of snapping.
+   ════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-resolving,
+  html.theme-resolving *,
+  html.theme-resolving *::before,
+  html.theme-resolving *::after {
+    transition-property: background-color, border-color, color, fill;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--ease-out);
+  }
+}

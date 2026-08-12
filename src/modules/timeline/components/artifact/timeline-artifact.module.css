@@ -2034,6 +2034,28 @@ button.timeLens:focus-visible .metricAlternate {
   }
 }
 
+/* ── The entrance, once it has been seen ───────────────────────────────────
+   Every animation named here is a LOAD animation — the rise, the two rail
+   draws, the point cascade, the tick and marker drops, the cluster. They are
+   listed one by one rather than swept up with a wildcard because the
+   artifact's other motion is response, not arrival: the TimeLens flip, the
+   point's focus ring, the detail crossfade all still answer a viewer's input
+   on a surface they have already seen, and a rule that killed those would
+   turn "you have been here" into "this page is dead".
+
+   data-entrance="seen" is written by the guard in timeline-artifact.tsx from
+   one sessionStorage key. Placed after every rule it overrides and before the
+   reduced-motion block, which stays the final authority. */
+.artifact[data-entrance="seen"] .headerCopy,
+.artifact[data-entrance="seen"] .completedRail,
+.artifact[data-entrance="seen"] .completedRailVertical,
+.artifact[data-entrance="seen"] .monthTick,
+.artifact[data-entrance="seen"] .todayMarker,
+.artifact[data-entrance="seen"] .point,
+.artifact[data-entrance="seen"] .cluster {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .productMeta button,
   .metricAlternate,

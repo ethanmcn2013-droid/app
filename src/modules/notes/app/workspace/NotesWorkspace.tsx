@@ -57,6 +57,7 @@ import {
 import type { TasksWorkspaceDestination } from "@/modules/notes/server/tasks-personalization";
 import { Composer } from "@/modules/notes/app/workspace/Composer";
 import { useNotebook } from "@/modules/notes/app/workspace/use-notebook";
+import { BEAT_HOLD_MS, useNoteMotion } from "@/modules/notes/app/workspace/use-note-motion";
 import {
   AlertIcon,
   BackIcon,
@@ -184,6 +185,9 @@ const NoteRow = memo(function NoteRow({
   selected,
   state,
   canSendToTasks,
+  arriving,
+  departing,
+  promoted,
   onSelect,
   onRetry,
   onKeep,
@@ -197,6 +201,12 @@ const NoteRow = memo(function NoteRow({
   selected: boolean;
   state: string | undefined;
   canSendToTasks: boolean;
+  /** This note appeared after the page did: one placement receipt, once. */
+  arriving: boolean;
+  /** The note has left the notebook; the row is closing the gap behind it. */
+  departing: boolean;
+  /** The promotion resolved in this session, so the chip fades up in place. */
+  promoted: boolean;
   onSelect: (id: string) => void;
   onRetry: (id: string) => void;
   onKeep: (note: NoteRead) => void | Promise<void>;
@@ -211,96 +221,138 @@ const NoteRow = memo(function NoteRow({
   // The decision belongs on the note it is about. A note that has not reached
   // the server yet cannot be decided about, so the strip waits for the save.
   const awaitingDecision = needsReview(note) && !state;
+
+  /**
+   * The decision strip, and how it leaves.
+   *
+   * Keep leaves the note in the notebook and Delete takes it away, so the two
+   * cannot animate the same object — but they can animate the same way, and
+   * they do: this strip closes over exactly the movement a deleted row uses.
+   * Held open one beat past the decision so there is something to close.
+   * Mounted already open, so nothing here fires on page load.
+   */
+  const [decision, setDecision] = useState<"open" | "leaving" | "closed">(
+    awaitingDecision ? "open" : "closed",
+  );
+  if (awaitingDecision && decision !== "open") setDecision("open");
+  if (!awaitingDecision && decision === "open") setDecision("leaving");
+  useEffect(() => {
+    if (decision !== "leaving") return;
+    const handle = window.setTimeout(() => setDecision("closed"), BEAT_HOLD_MS);
+    return () => window.clearTimeout(handle);
+  }, [decision]);
+
   return (
-    <li>
-      {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
-      <button
-        type="button"
-        className={styles.row}
-        data-note-row=""
-        data-note-id={note.id}
-        aria-current={selected ? "true" : undefined}
-        onClick={() => onSelect(note.id)}
-      >
-        <span className={styles.rowIcon}>
-          <SourceIcon source={source} />
-          <span className={styles.srOnly}>{SOURCE_LABELS[source]}</span>
-        </span>
-        <span className={styles.rowBody}>
-          <span className={styles.rowTitle}>
-            <Highlighted text={presentation.title} query={query} />
+    <li
+      className={styles.rowShell}
+      data-arriving={arriving ? "" : undefined}
+      data-departing={departing ? "" : undefined}
+      inert={departing || undefined}
+    >
+      <div className={styles.rowShellInner}>
+        {index > 0 ? <div className={styles.rowSeparator} aria-hidden="true" /> : null}
+        <button
+          type="button"
+          className={styles.row}
+          // A row on its way out is not a row anyone can walk to with J/K, and
+          // it is not one the count should include either.
+          data-note-row={departing ? undefined : ""}
+          data-note-id={departing ? undefined : note.id}
+          aria-current={selected ? "true" : undefined}
+          onClick={() => onSelect(note.id)}
+        >
+          <span className={styles.rowIcon}>
+            <SourceIcon source={source} />
+            <span className={styles.srOnly}>{SOURCE_LABELS[source]}</span>
           </span>
-          {snippet ? (
-            <span className={styles.rowPreview}>
-              <Highlighted text={snippet} query={query} />
+          <span className={styles.rowBody}>
+            <span className={styles.rowTitle}>
+              <Highlighted text={presentation.title} query={query} />
             </span>
-          ) : null}
-          <span className={styles.rowMeta}>
-            <span>{friendlyDate(note.createdAt, now)}</span>
-            {isSent(note) ? (
-              <span className={styles.rowFlag} data-tone="sent">
-                In Tasks
+            {snippet ? (
+              <span className={styles.rowPreview}>
+                <Highlighted text={snippet} query={query} />
               </span>
             ) : null}
-            {needsReview(note) ? (
-              <span className={styles.rowFlag} data-tone="review">
-                To review
-              </span>
-            ) : null}
-            {state === "pending" ? <span className={styles.rowFlag}>Saving</span> : null}
-            {state === "offline" ? (
-              <span className={styles.rowFlag}>Waiting to save</span>
-            ) : null}
-            {state === "failed" ? (
-              <span className={styles.rowFlag} data-tone="attention">
-                <AlertIcon />
-                Not saved
-              </span>
-            ) : null}
+            <span className={styles.rowMeta}>
+              <span>{friendlyDate(note.createdAt, now)}</span>
+              {isSent(note) ? (
+                <span
+                  className={styles.rowFlag}
+                  data-tone="sent"
+                  data-resolved={promoted ? "" : undefined}
+                >
+                  In Tasks
+                </span>
+              ) : null}
+              {needsReview(note) ? (
+                <span className={styles.rowFlag} data-tone="review">
+                  To review
+                </span>
+              ) : null}
+              {state === "pending" ? <span className={styles.rowFlag}>Saving</span> : null}
+              {state === "offline" ? (
+                <span className={styles.rowFlag}>Waiting to save</span>
+              ) : null}
+              {state === "failed" ? (
+                <span className={styles.rowFlag} data-tone="attention">
+                  <AlertIcon />
+                  Not saved
+                </span>
+              ) : null}
+            </span>
           </span>
-        </span>
-      </button>
-      {state === "failed" ? (
-        <div className={styles.rowRetry}>
-          <button
-            type="button"
-            className={styles.quietButton}
-            onClick={() => void onRetry(note.id)}
+        </button>
+        {state === "failed" ? (
+          <div className={styles.rowRetry}>
+            <button
+              type="button"
+              className={styles.quietButton}
+              onClick={() => void onRetry(note.id)}
+            >
+              Try saving again
+            </button>
+          </div>
+        ) : null}
+        {decision !== "closed" ? (
+          <div
+            className={styles.rowDecision}
+            data-departing={decision === "leaving" ? "" : undefined}
+            inert={decision === "leaving" || undefined}
           >
-            Try saving again
-          </button>
-        </div>
-      ) : null}
-      {awaitingDecision ? (
-        <div className={styles.rowActions}>
-          <button
-            type="button"
-            className={styles.quietButton}
-            aria-label={`Keep: ${presentation.title}`}
-            onClick={() => void onKeep(note)}
-          >
-            <CheckIcon />
-            Keep
-          </button>
-          <button
-            type="button"
-            className={styles.quietButton}
-            aria-label={`Turn into task: ${presentation.title}`}
-            disabled={!canSendToTasks}
-            onClick={() => onTurnIntoTask(note)}
-          >
-            Turn into task
-          </button>
-          <button
-            type="button"
-            className={styles.dangerButton}
-            aria-label={`Delete: ${presentation.title}`}
-            onClick={() => onDelete(note)}
-          >
-            Delete
-          </button>
-        </div>
-      ) : null}
+            <div className={styles.rowDecisionInner}>
+              <div className={styles.rowActions}>
+                <button
+                  type="button"
+                  className={styles.quietButton}
+                  aria-label={`Keep: ${presentation.title}`}
+                  onClick={() => void onKeep(note)}
+                >
+                  <CheckIcon />
+                  Keep
+                </button>
+                <button
+                  type="button"
+                  className={styles.quietButton}
+                  aria-label={`Turn into task: ${presentation.title}`}
+                  disabled={!canSendToTasks}
+                  onClick={() => onTurnIntoTask(note)}
+                >
+                  Turn into task
+                </button>
+                <button
+                  type="button"
+                  className={styles.dangerButton}
+                  aria-label={`Delete: ${presentation.title}`}
+                  onClick={() => onDelete(note)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </li>
   );
 });
@@ -365,6 +417,10 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   // on 500 rows re-deriving themselves.
   const deferredQuery = useDeferredValue(notebook.query);
   const allNotes = notebook.notes as PresentableNote[];
+  // Which notes are mid-beat: arriving in their slot, leaving it, or resolving
+  // into "In Tasks". Reads the whole notebook, not the filtered list, so a
+  // change of filter is never mistaken for a note arriving.
+  const motion = useNoteMotion(notebook.notes);
   // A note still on its way to the server is not yet a note the account has.
   // Counting it made the badge disagree with the database.
   const counts = useMemo(
@@ -421,12 +477,25 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
 
   // ── Notebook list ───────────────────────────────────────────────────
 
-  const notebookNotes = useMemo(() => {
+  /**
+   * What the list draws, and what the notebook actually holds.
+   *
+   * They differ for one beat. A note that has just been deleted keeps its row
+   * for --motion-base so the row can close the gap behind itself, so it is
+   * filtered and sorted with everything else and lands back in its own slot
+   * rather than being pinned somewhere convenient. Counts, the default
+   * selection and the keyboard walk read the second list, which never carries
+   * a row that is on its way out.
+   */
+  const notebookRows = useMemo(() => {
     const source = deferredQuery.trim()
       ? (notebook.searchResults as PresentableNote[])
       : allNotes;
+    const withDepartures = motion.departing.length
+      ? [...source, ...(motion.departing as PresentableNote[])]
+      : source;
     return sortNotes(
-      source.filter(
+      withDepartures.filter(
         (note) =>
           !isArchived(note) &&
           matchesFilter(note, filter) &&
@@ -434,7 +503,15 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
       ),
       sort,
     );
-  }, [allNotes, deferredQuery, filter, notebook.searchResults, sort]);
+  }, [allNotes, deferredQuery, filter, motion.departing, notebook.searchResults, sort]);
+
+  const notebookNotes = useMemo(
+    () =>
+      motion.departing.length
+        ? notebookRows.filter((note) => !motion.isDeparting(note.id))
+        : notebookRows,
+    [motion, notebookRows],
+  );
 
   const sentNotes = useMemo(
     () =>
@@ -482,7 +559,12 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   // the editor yet, so the loaded marker must also start empty. Treating the
   // URL id as already loaded produced a blank reading surface on direct links.
   const [loadedNoteId, setLoadedNoteId] = useState<string | null>(null);
+  // Counts swaps, not opens. The reading pane settles into a note it has been
+  // handed in place of another one; it does not animate the note the page
+  // arrived with, because that would be a page-load animation.
+  const [paneSwaps, setPaneSwaps] = useState(0);
   if (loadedNoteId !== (selectedNote?.id ?? null)) {
+    if (loadedNoteId !== null && selectedNote) setPaneSwaps((count) => count + 1);
     setLoadedNoteId(selectedNote?.id ?? null);
     notebook.applyOpenNote(selectedNote);
   }
@@ -986,9 +1068,9 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                     <span>Showing what is loaded</span>
                   ) : null}
                 </div>
-                {notebookNotes.length ? (
+                {notebookRows.length ? (
                   <ul className={styles.list} ref={listRef}>
-                    {notebookNotes.map((note, index) => (
+                    {notebookRows.map((note, index) => (
                       <NoteRow
                         key={note.id}
                         note={note}
@@ -998,6 +1080,9 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                         selected={note.id === effectiveSelectedId}
                         state={notebook.mutationStates[note.id]}
                         canSendToTasks={workspaces.length > 0}
+                        arriving={motion.isArriving(note.id)}
+                        departing={motion.isDeparting(note.id)}
+                        promoted={motion.isPromoted(note.id)}
                         onSelect={selectNote}
                         onRetry={notebook.retryCapture}
                         onKeep={notebook.keepInNotes}
@@ -1040,6 +1125,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                       selectNote(null);
                     }}
                     canSendToTasks={workspaces.length > 0}
+                    settle={paneSwaps > 0}
                   />
                 ) : (
                   <div className={styles.emptyCentred}>
@@ -1072,6 +1158,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
             canSkip={reviewQueue.length > 1}
             onOpenNotebook={() => goToView("notebook")}
             canSendToTasks={workspaces.length > 0}
+            settle={reviewedThisSession > 0 || reviewIndex > 0}
           />
         ) : null}
 
@@ -1147,6 +1234,7 @@ function NoteDetail({
   onTurnIntoTask,
   onDelete,
   canSendToTasks,
+  settle,
 }: {
   note: NoteRead;
   notebook: ReturnType<typeof useNotebook>;
@@ -1156,7 +1244,10 @@ function NoteDetail({
   onTurnIntoTask: () => void;
   onDelete: () => void;
   canSendToTasks: boolean;
+  /** This pane has held a different note already, so this one is a swap. */
+  settle: boolean;
 }) {
+  const swap = settle ? ` ${styles.swapSettle}` : "";
   // Keyed by note id so opening a different note closes the confirmation
   // without an effect that fires a frame late.
   const [confirmFor, setConfirmFor] = useState<string | null>(null);
@@ -1177,8 +1268,11 @@ function NoteDetail({
 
   return (
     <>
+      {/* Keyed on the note, so choosing a different one is a swap this pane
+          settles into rather than a substitution nobody sees happen. Not keyed
+          on the body: typing must never re-run it. */}
       <div className={styles.detailHeader}>
-        <div className={styles.detailHeaderInner}>
+        <div className={`${styles.detailHeaderInner}${swap}`} key={note.id}>
         <div className={styles.detailMeta}>
           <button
             type="button"
@@ -1245,7 +1339,7 @@ function NoteDetail({
       </div>
 
       <div className={styles.detailScroll}>
-        <div className={styles.detailInner}>
+        <div className={`${styles.detailInner}${swap}`} key={note.id}>
           {confirmDelete ? (
             <div className={styles.panel} role="group" aria-label="Delete this note">
               <p className={styles.panelTitle}>Delete this note?</p>
@@ -1382,12 +1476,15 @@ function ReviewView({
   canSkip,
   onOpenNotebook,
   canSendToTasks,
+  settle,
 }: {
   note: NoteRead | null;
   queueLength: number;
   done: number;
   total: number;
   now: number;
+  /** The queue has already moved once, so this card is a swap, not a load. */
+  settle: boolean;
   onKeep: (note: NoteRead) => void | Promise<void>;
   onDelete: (note: NoteRead) => void;
   onTurnIntoTask: (note: NoteRead) => void;
@@ -1454,8 +1551,12 @@ function ReviewView({
         ) : null}
       </div>
       <div className={styles.reviewStage}>
+        {/* Keyed on the note: Keep, Delete and Turn into task all resolve the
+            same way here — this note's card gives way to the next one's, and
+            the queue count above it is what says which decision was made. */}
         <article
-          className={styles.reviewCard}
+          key={note.id}
+          className={`${styles.reviewCard}${settle ? ` ${styles.swapSettle}` : ""}`}
           data-review-card=""
           data-swipe={swipeIntent ?? undefined}
           style={

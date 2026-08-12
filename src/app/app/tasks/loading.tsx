@@ -16,7 +16,14 @@
  * column headers. Reserving the chrome that is about to reappear in the
  * same place is the correct direction to be wrong in — the surface settles
  * into the tracing rather than replacing it.
+ *
+ * Hand-off (wave 7): ArrivalSettle rides beside the tracing and gives the
+ * view that replaces it one whole-surface opacity settle, so "settles into
+ * the tracing" is now literally what happens rather than a description of a
+ * cut. See src/components/system/arrival-settle.tsx.
  */
+import { ArrivalSettle } from "@/components/system/arrival-settle";
+
 export default function TasksLoading() {
   const bar = (width: string, height = 12) => (
     <span
@@ -59,48 +66,51 @@ export default function TasksLoading() {
   );
 
   return (
-    <div
-      role="status"
-      aria-label="Opening this view"
-      style={{
-        display: "flex",
-        flex: "1 1 auto",
-        flexDirection: "column",
-        minHeight: 0,
-        background: "var(--paper)",
-      }}
-    >
+    <>
+      <ArrivalSettle />
       <div
+        role="status"
+        aria-label="Opening this view"
         style={{
           display: "flex",
-          alignItems: "center",
-          gap: 16,
-          minHeight: 54,
-          padding: "6px 14px 6px 16px",
-          borderBottom: "1px solid var(--hairline, rgba(17,17,17,0.10))",
+          flex: "1 1 auto",
+          flexDirection: "column",
+          minHeight: 0,
+          background: "var(--paper)",
         }}
       >
-        {bar("16ch", 16)}
-        {bar("11ch", 10)}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            minHeight: 54,
+            padding: "6px 14px 6px 16px",
+            borderBottom: "1px solid var(--hairline, rgba(17,17,17,0.10))",
+          }}
+        >
+          {bar("16ch", 16)}
+          {bar("11ch", 10)}
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            minHeight: 42,
+            padding: "0 10px 0 16px",
+            borderBottom: "1px solid var(--hairline, rgba(17,17,17,0.10))",
+          }}
+        >
+          {bar("5ch", 10)}
+          {bar("4ch", 10)}
+          {bar("7ch", 10)}
+          {bar("7ch", 10)}
+        </div>
+        <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0, paddingTop: 12, paddingLeft: 4 }}>
+          {["a", "b", "c", "d"].map(lane)}
+        </div>
       </div>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          minHeight: 42,
-          padding: "0 10px 0 16px",
-          borderBottom: "1px solid var(--hairline, rgba(17,17,17,0.10))",
-        }}
-      >
-        {bar("5ch", 10)}
-        {bar("4ch", 10)}
-        {bar("7ch", 10)}
-        {bar("7ch", 10)}
-      </div>
-      <div style={{ display: "flex", flex: "1 1 auto", minHeight: 0, paddingTop: 12, paddingLeft: 4 }}>
-        {["a", "b", "c", "d"].map(lane)}
-      </div>
-    </div>
+    </>
   );
 }
