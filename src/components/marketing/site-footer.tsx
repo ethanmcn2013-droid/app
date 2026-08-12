@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/brand/wordmark";
-import {
-  IOS_APP_URL,
-  PRODUCT_MARKETING_URLS,
-  STUDIO_URL,
-} from "@/lib/product-urls";
+import { PRODUCT_MARKETING_URLS, STUDIO_URL } from "@/lib/product-urls";
 
 type FooterLink = {
   href: string;

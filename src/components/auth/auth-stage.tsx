@@ -18,7 +18,10 @@
  *   handoff, MFA, rate limit) is Clerk's rather than a reimplementation.
  *
  *   The QR. Bottom right, on the stage grid, directly beneath the signal
- *   station. It points at the iOS page, which states the app is in build.
+ *   station. It points at the umbrella site. It pointed at the iOS page
+ *   until the 2026-08-12 estate consolidation retired that page; scan and
+ *   click now land in the same place, and the matrix is regenerated to
+ *   match rather than left encoding a redirect.
  *
  * Everything is a semantic token, so light and dark are the same markup.
  * Server component: no state, no effects, no client bundle.
@@ -26,7 +29,7 @@
 
 import Link from "next/link";
 import { SignalQr } from "@/components/brand/signal-qr";
-import { IOS_APP_URL } from "@/lib/product-urls";
+import { STUDIO_URL } from "@/lib/product-urls";
 import { createAccountCta, isPreLaunch } from "@/lib/launch";
 import styles from "./auth-stage.module.css";
 
@@ -101,7 +104,7 @@ export function AuthStage({
         </section>
 
         <a
-          href={IOS_APP_URL}
+          href={STUDIO_URL}
           className={styles.qrCard}
           target="_blank"
           rel="noreferrer"

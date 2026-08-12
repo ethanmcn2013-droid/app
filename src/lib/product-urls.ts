@@ -75,8 +75,12 @@ export const STUDIO_URL = STUDIO_ORIGIN;
  * link out rather than to a local path that now 308s.
  */
 export const PRICING_URL = `${STUDIO_ORIGIN}/pricing`;
-export const IOS_APP_URL =
-  process.env.NEXT_PUBLIC_IOS_APP_URL ?? `${STUDIO_ORIGIN}/ios`;
+/**
+ * `IOS_APP_URL` was retired in the 2026-08-12 estate consolidation. The
+ * umbrella stopped serving `/ios`, so every caller now links the umbrella
+ * root (`STUDIO_URL`) rather than a path that 308s. Reinstate a typed
+ * constant here when the iPhone app has a real destination.
+ */
 export const CONTACT_EMAIL = "hello@signalstudio.ie";
 export const APP_DOMAIN = new URL(APP_ORIGIN).hostname;
 export const TASKS_PUBLIC_DOMAIN = new URL(TASKS_PUBLIC_ORIGIN).hostname;
