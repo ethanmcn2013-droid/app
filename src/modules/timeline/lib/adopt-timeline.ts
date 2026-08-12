@@ -44,6 +44,13 @@ export type TimelineAdoptionEvidence = Readonly<{
    * otherwise. This is a uniqueness proof, not a preference: with one Tasks
    * Project and one unclaimed Timeline there is exactly one possible pairing,
    * so binding them is arithmetic. With two of either it would be a guess.
+   *
+   * Ratified as a forced pairing rather than an inference in
+   * docs/wave/DECISIONS.md D-017. Its premise is that the actor owns exactly
+   * ONE Tasks Project, so the count behind it must include archived and
+   * otherwise-invisible siblings — see
+   * `getSoleOwnedTasksWorkspaceIdForUser`, where filtering them out once made
+   * this proof claim more than it could support.
    */
   soleOwnedTasksWorkspaceId: string | null;
 }>;
