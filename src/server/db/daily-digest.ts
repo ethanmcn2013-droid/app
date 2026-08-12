@@ -1,10 +1,11 @@
 import "server-only";
-import { and, desc, eq, getTableColumns, gte, like, lte } from "drizzle-orm";
+import { desc, eq, gte, like, lte } from "drizzle-orm";
 import { db } from "./index";
-import { activities, tasks, users } from "./schema";
+import { tasks } from "./schema";
+import { byWorkspace } from "./tenant";
+import { collectMentions, type DigestMention } from "./digest-mentions";
 import { rowToTask } from "./row-mappers";
 import type { Task, UserId } from "@/lib/data";
-import { USERS } from "@/lib/data";
 import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
 
 export type DailyDigest = {
@@ -16,14 +17,7 @@ export type DailyDigest = {
   /** Tasks where the user is an assignee with `dueAt` in the next 24h. */
   dueToday: Task[];
   /** Mentions targeting the user in the previous 24h. Body snippets. */
-  mentions: Array<{
-    snippet: string;
-    from: UserId;
-    fromName: string;
-    taskId: string;
-    taskTitle: string;
-    createdAt: Date;
-  }>;
+  mentions: DigestMention[];
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -48,13 +42,15 @@ export async function compileDailyDigest(
 
   // Tasks completed (lane=done) and updated within the past 24h —
   // scoped to the active workspace so the digest doesn't bleed across
-  // tenants.
+  // tenants. Through `byWorkspace` so an empty `ws` throws rather than
+  // degrading into an unscoped read (see `db/tenant.ts`).
   const completedRows = await db
     .select()
     .from(tasks)
     .where(
-      and(
-        eq(tasks.workspaceId, ws),
+      byWorkspace(
+        tasks.workspaceId,
+        ws,
         eq(tasks.lane, "done"),
         gte(tasks.updatedAt, dayStart),
       ),
@@ -71,8 +67,9 @@ export async function compileDailyDigest(
     .select()
     .from(tasks)
     .where(
-      and(
-        eq(tasks.workspaceId, ws),
+      byWorkspace(
+        tasks.workspaceId,
+        ws,
         like(tasks.assignees, userToken),
         gte(tasks.dueAt, now),
         lte(tasks.dueAt, dayEnd),
@@ -85,44 +82,14 @@ export async function compileDailyDigest(
   );
 
   // Mentions in last 24h via the activities log (commentAdd payload's
-  // snippet contains @user references; the comments table itself is
-  // searched for the actual @-mention bodies).
-  const mentionRows = await db
-    .select({
-      ...getTableColumns(activities),
-      authorName: users.name,
-    })
-    .from(activities)
-    .leftJoin(users, eq(activities.userId, users.id))
-    .where(
-      and(
-        eq(activities.kind, "commentAdd"),
-        gte(activities.createdAt, dayStart),
-      ),
-    )
-    .orderBy(desc(activities.createdAt))
-    .limit(50);
-
-  const mentions: DailyDigest["mentions"] = [];
-  for (const a of mentionRows) {
-    const payload = a.payload as { snippet?: string };
-    const snippet = payload.snippet ?? "";
-    if (!snippet) continue;
-    const tag = `@${user}`;
-    if (!snippet.toLowerCase().includes(tag.toLowerCase())) continue;
-    const [t] = await db
-      .select({ title: tasks.title })
-      .from(tasks)
-      .where(eq(tasks.id, a.taskId));
-    mentions.push({
-      snippet,
-      from: a.userId as UserId,
-      fromName: a.authorName ?? USERS[a.userId as UserId]?.name ?? a.userId,
-      taskId: a.taskId,
-      taskTitle: t?.title ?? "(deleted task)",
-      createdAt: a.createdAt,
-    });
-  }
+  // snippet carries the @user reference). Tenant-scoped, and the row
+  // limit is applied after that scope rather than across every tenant —
+  // see `digest-mentions.ts` for what that read used to do.
+  const mentions = await collectMentions(db, {
+    workspaceId: ws,
+    userId: user,
+    since: dayStart,
+  });
 
   return {
     forDate: now.toISOString().slice(0, 10),

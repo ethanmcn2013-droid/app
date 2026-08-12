@@ -4,6 +4,42 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·144 · tightens · the daily digest reads your workspace, and only yours
+
+**Your morning digest showed you the mentions from your workspace. To find
+them it was reading every workspace in the product.** The query that gathers
+your mentions filtered on the kind of comment and on the last 24 hours, and
+never on your workspace. A comment written somewhere else could reach your
+inbox, and reach the digest email, if it happened to name you.
+
+The same fault dropped mentions that were genuinely yours. The query took the
+50 most recent comments across the whole product, then checked which of them
+were addressed to you. On a quiet day you saw everything. On a day when other
+people were busier, your own mentions fell off the end and the digest went out
+without them. That half needed no attacker and no coincidence. It was wrong
+every day, in proportion to how well the product sold.
+
+Both are fixed in one place. The mention query now filters by workspace, and
+looks for your name in the database rather than after the fact, so the row
+limit applies to your mentions in your workspace instead of to everybody's.
+The follow-up that turns a mention into a task title is scoped the same way,
+so a title from another workspace cannot ride along with a snippet.
+
+The check that should have caught this now catches it. The tenant gate reads
+the code and demands a workspace filter on every read of workspace data. It
+had been passing this one. The query joins the people table to get the
+author's name, and the gate counted the user id inside that join as proof.
+A left join proves nothing. Every row on the left survives it whatever the
+join says, so the gate ignores left joins now. Inner joins still count,
+because an inner join to the membership table genuinely does narrow the
+result, and a test holds both halves of that line.
+
+That test needed somewhere to run. The file that proves the tenant gate can
+tell a scoped read from an unscoped one was listed in the test command
+without the flag that runs it, so for as long as it has existed it was
+handed to a different script as an argument and quietly ignored. It runs
+now. It brought 27 tests with it, and they pass.
+
 ## 2026-08-12 · T·143 · tightens · the Planning count says what it counts
 
 **The number beside Planning now names what it is. It reads "5 undated"

@@ -46,6 +46,37 @@
  *   by-authorized-id model: a server action resolves the validated tenant
  *   through the auth choke points, then reads by an id it has already
  *   authorised. In a join ON clause they express nothing.
+ *
+ * ── The second false negative, closed 2026-08-12 ────────────────────────
+ *
+ * Splitting the token list by strength was not enough, because a STRONG
+ * token in a LEFT join's ON clause still counted. `compileDailyDigest`
+ * read every tenant's `activities` with no workspace predicate at all:
+ *
+ *     db.select({ ...getTableColumns(activities), authorName: users.name })
+ *       .from(activities)
+ *       .leftJoin(users, eq(activities.userId, users.id))
+ *       .where(and(eq(activities.kind, "commentAdd"), gte(...)))
+ *
+ * and this gate reported `scoped: true, evidence: "userId"` — the `userId`
+ * being the join's ON clause and nothing else. Verified by running
+ * `classifyRead` over the real file on 2026-08-12, before the fix.
+ *
+ * The rule that closes it is a fact about SQL rather than a heuristic: a
+ * LEFT join cannot restrict. Every row of the left table survives it
+ * whatever the ON clause says, so a tenant column appearing ONLY inside
+ * `.leftJoin(...)` is evidence of a relationship and of nothing else. Left
+ * joins are therefore stripped before any token search — see
+ * `stripLeftJoins`. `.innerJoin(...)` is deliberately untouched: an inner
+ * join to a membership table genuinely does restrict, which is the whole
+ * reason `workspaceMembers` is a strong token.
+ *
+ * This is the detector's half of D-018 in `docs/wave/DECISIONS.md`, "the
+ * defect class: authorization expressed as a row filter". D-018 warns that a
+ * permission check living inside a WHERE or a JOIN makes "you may not read
+ * this" and "there is nothing here" the same answer. The join case is worse
+ * than that, because a LEFT join's ON clause is not even a filter — it reads
+ * like proof of scope and restricts nothing at all.
  */
 
 import { readdirSync, statSync, existsSync } from "node:fs";
@@ -229,6 +260,41 @@ export function statements(src) {
 }
 
 /**
+ * Remove every `.leftJoin(...)` argument region from a drizzle chain.
+ *
+ * A LEFT join preserves every row of the left table regardless of its ON
+ * clause, so nothing inside one can be evidence of tenant scope — for
+ * strong tokens as much as weak ones. See the header for the read this
+ * closes.
+ *
+ * Scans balanced parentheses. String literals containing an unbalanced
+ * paren would confuse it, in which case the scan consumes to the end of
+ * the statement and the read is reported UNSCOPED. That is the safe
+ * direction for a security gate: a confused detector raises a violation a
+ * human then reads, rather than passing a query nobody looked at.
+ */
+export function stripLeftJoins(chain) {
+  const marker = ".leftJoin(";
+  let out = "";
+  let i = 0;
+  for (;;) {
+    const at = chain.indexOf(marker, i);
+    if (at === -1) return out + chain.slice(i);
+    out += chain.slice(i, at);
+    let depth = 0;
+    let j = at + marker.length - 1;
+    for (; j < chain.length; j++) {
+      if (chain[j] === "(") depth++;
+      else if (chain[j] === ")" && --depth === 0) {
+        j++;
+        break;
+      }
+    }
+    i = j;
+  }
+}
+
+/**
  * Classify one coarse statement against one surface.
  *
  * Returns `null` when the statement is not a governed read at all.
@@ -253,15 +319,20 @@ export function classifyRead(stmt, surface) {
   // that merely returns `tasks.id` can't masquerade as scoped.
   const afterFrom = stmt.slice(stmt.indexOf(".from("));
 
+  // A LEFT join can never restrict, so it is removed before anything is
+  // counted as evidence. What remains is the part of the chain that can
+  // actually narrow the result set.
+  const restricting = stripLeftJoins(afterFrom);
+
   // Weak tokens count only inside the predicate. A join's ON clause is a
   // relationship, not a restriction — see the header for the verified
-  // false negative this closes.
-  const whereAt = afterFrom.indexOf(".where(");
-  const whereClause = whereAt === -1 ? "" : afterFrom.slice(whereAt);
+  // false negatives this closes.
+  const whereAt = restricting.indexOf(".where(");
+  const whereClause = whereAt === -1 ? "" : restricting.slice(whereAt);
 
   let evidence = null;
   for (const token of STRONG_SCOPE_TOKENS) {
-    if (afterFrom.includes(token)) {
+    if (restricting.includes(token)) {
       evidence = token;
       break;
     }
