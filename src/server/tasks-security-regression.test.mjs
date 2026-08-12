@@ -371,15 +371,20 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     "uploadAttachmentAction",
     "formData.get",
   );
+  // WP3 renegotiation (ADR 0001 §9). Both attachment paths are object
+  // operations now: they derive the parent task's own Project instead of
+  // resolving one ambiently, so `scopeForTask` is the tenant-resolution
+  // boundary. The invariant is unchanged — demo/review must exit before the
+  // action resolves a tenant, and it still does.
   assertDemoGuardBefore(
     attachmentActions,
     "deleteAttachmentAction",
-    "getActiveWorkspace",
+    "scopeForTask",
   );
   assertDemoGuardBefore(
     attachmentActions,
     "listAttachmentsForTaskAction",
-    "getActiveWorkspace",
+    "scopeForTask",
   );
   assertDemoGuardBefore(
     crossWorkspaceActions,
@@ -414,9 +419,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(commentActions, "addCommentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). removeCommentAction is an object
+  // operation: it proves the parent task's own Project rather than resolving
+  // one ambiently, so `scopeForTask` is the tenant-resolution boundary. The
+  // author match (`comments.userId === me`) is unchanged and still precedes
+  // the delete — this guard's other seven boundaries pin that ordering.
   for (const boundary of [
     "getCurrentUser",
-    "getActiveWorkspace",
+    "scopeForTask",
     ".select(",
     ".delete(",
     "touchTask",
@@ -426,8 +436,11 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(commentActions, "removeCommentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). duplicateTaskAction derives the source
+  // task's own Project; the cross-Project refusal it already carried is now an
+  // assertion against the proved id rather than against the cookie.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "db.select",
     "db.transaction",
     "recordActivity",
@@ -436,8 +449,11 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(duplicateTaskActions, "duplicateTaskAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). setParentAction derives the reparented
+  // task's own Project; the same-Project invariant it protects is now checked
+  // against the child's real Project instead of the cookie's.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
     "recordActivity",
     "revalidatePath",
@@ -445,14 +461,19 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(setParentActions, "setParentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9), same reasoning: all three resource
+  // paths derive the owning task's Project. removeResourceAction matters most
+  // — it has two destructive branches, and the proof is now a separate
+  // statement ahead of both, so no empty result decides that a delete may
+  // proceed.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
   ]) {
     assertDemoGuardBefore(resourceActions, "listTaskResourcesAction", boundary);
   }
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "getCurrentUser",
     "await db",
     "recordActivity",
@@ -461,9 +482,13 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(resourceActions, "addLinkResourceAction", boundary);
   }
-  assertDemoGuardBefore(resourceActions, "removeResourceAction", "getActiveWorkspace");
+  assertDemoGuardBefore(resourceActions, "removeResourceAction", "scopeForTask");
+  // WP3 renegotiation (ADR 0001 §9). sendNudgeAction derives the nudged
+  // task's own Project. It sends outbound email, so a wrong Project here does
+  // not merely drop a write — the ordering this guard pins matters more, not
+  // less, and it is preserved.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "getCurrentUser",
     "await db",
   ]) {

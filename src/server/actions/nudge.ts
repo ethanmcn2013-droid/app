@@ -9,7 +9,8 @@ import {
   tasks,
   users,
 } from "@/server/db/schema";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { recordActivity } from "@/server/db/activity";
 import { emailConfigured, sendEmail } from "@/server/email";
@@ -94,10 +95,18 @@ export async function sendNudgeAction(taskId: string): Promise<
     return { ok: false, reason: "demo" };
   }
 
-  const ws = await getActiveWorkspace();
   const me = await getCurrentUser();
+  // The task being nudged decides its own Project (ADR 0001 §9, object
+  // operation). A nudge is outbound email, so getting this wrong does not just
+  // drop a write — it either fails to reach a real assignee or reaches one
+  // from the wrong Project.
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) {
+    return { ok: false, reason: "Task not found in active workspace." };
+  }
+  const ws = scope.ws;
 
-  // Load task — workspace-scoped guard.
+  // Load task under the proved Project.
   const [task] = await db
     .select({
       id: tasks.id,
