@@ -108,7 +108,7 @@
 /* No radius here: at (0,2,0) it outranked every component rule and every
    button visibly changed shape the moment it took focus. */
 .root :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -457,7 +457,7 @@
 }
 
 .composerField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -941,7 +941,7 @@
 }
 
 .extractField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -1007,7 +1007,7 @@
 /* The field itself takes the ring: the container border is 2.2:1 against
    paper and is not a focus indicator. */
 .searchInput:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -1350,7 +1350,7 @@
 }
 
 .detailField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 4px;
 }
 

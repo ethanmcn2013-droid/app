@@ -164,7 +164,7 @@
 }
 
 .planNoticeAction:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -401,7 +401,7 @@
 .hiddenSummary:focus-visible,
 .retryButton:focus-visible,
 .textField:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 
@@ -778,7 +778,7 @@
 
 .emptyPrimary:focus-visible,
 .emptySecondary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
 }
 

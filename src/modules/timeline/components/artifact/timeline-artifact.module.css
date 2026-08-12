@@ -183,7 +183,7 @@ button.timeLens:active {
 .timeLens:focus-visible,
 .milestoneButton:focus-visible,
 .decisions summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 
@@ -1514,7 +1514,7 @@ button.timeLens:focus-visible .metricAlternate {
 }
 
 .footerLink:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 3px;
 }
 

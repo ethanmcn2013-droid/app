@@ -112,6 +112,18 @@
      the fill without anyone typing #fff. */
   --x-on-accent: var(--paper);
 
+  /* And the third role the same indigo plays: the FOCUS INDICATOR. A ring
+     is neither text nor a fill — it is a non-text graphic, so its floor is
+     WCAG 1.4.11's 3:1 against whatever it is drawn on, and the surface it
+     is drawn on is whatever the focused control sits on. On white that is
+     --accent's easiest job (6.29:1 on paper, 5.72:1 on the deepest light
+     surface). In dark it was the one accent role the wave never remapped:
+     indigo-600 measures 3.05:1 on the dark canvas, 2.87:1 on --paper-soft
+     and 2.67:1 on --paper-deep — under the floor exactly where cards, the
+     Notes composer and popovers sit. One token, so a ring cannot be
+     spelled --accent by hand again. */
+  --x-accent-focus: var(--accent);
+
   /* ── Quiet ink (--x- extension) — the register's small type, at a
      contrast the system's --ink-faint (#71717a, 4.83:1) never held.
      Contrast contract on paper: --x-ink-quiet ≥7:1 for 12–13px metadata
@@ -374,6 +386,27 @@
      is the same indigo in both themes — so its label only has to stop
      following paper down. The theme's ink reads 5.72:1 on it. */
   --x-on-accent: var(--ink);
+
+  /* ── The accent, as a focus ring ────────────────────────────
+     Measured against the four surfaces a ring is actually drawn
+     on in dark (2:1 is the floor's own failure, 3:1 is WCAG
+     1.4.11 for a non-text indicator):
+
+                     canvas  soft   deep   chrome-raised
+       indigo-600     3.05   2.87   2.67   2.39   ← today, fails
+       indigo-500     4.29   4.05   3.76   3.37
+       indigo-400     6.42   6.06   5.64   5.04   ← chosen
+
+     indigo-500 is what --x-task-focus already resolves to in
+     dark, and it clears the floor — but only by 0.37 on the
+     raised surfaces where the detail panel, the palette and the
+     popovers live, and a ring drawn 2px wide has no room to lose
+     any of it to a shadow. indigo-400 is the step this wave
+     already ratified for the accent-as-a-colour role
+     (--x-accent-ink), so the ring and the link now agree, and it
+     holds ≥5:1 on every surface in the app including the raised
+     chrome. */
+  --x-accent-focus: var(--indigo-400);
 
   /* ── Elevation inverts ──────────────────────────────────────
      On white the ramp runs DOWN from the canvas: a sunken track
@@ -852,9 +885,13 @@ body::after { content: none; }
 }
 /* Suite-wide indigo focus ring. scroll-margin-top ensures sticky app
    headers (h=57px nav + ~60px page header ≈ 120px) never obscure a
-   focused element — WCAG 2.4.11 (Focus Appearance). */
+   focused element — WCAG 2.4.11 (Focus Appearance). The colour is
+   --x-accent-focus, not the indigo literal: the ring is the accent
+   spent as an INDICATOR, and that role needs its own value in dark
+   (see the token's note above). In light it is the same indigo-600
+   this rule always drew. */
 :focus-visible {
-  outline: 2px solid var(--indigo-600);
+  outline: 2px solid var(--x-accent-focus);
   outline-offset: 2px;
   border-radius: 6px;
   scroll-margin-top: 128px;
