@@ -4,6 +4,26 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·142 · corrects · the closing review's findings, closed
+
+**A five-seat closing review read the shipped product against its own claims,
+and what it found wrong is fixed.** Entering a product no longer trips a
+hydration mismatch: the arrival settle marked the surface in a way React
+checks at hydration, and every product surface logged an error for it — five
+errors, now zero, with the mechanism moved where the check cannot see it.
+
+Notes fills the screen it is given. Its column stopped at a fixed measure
+while the frame's rules ran to the true edge, leaving a third of a wide
+screen as dead paper crossed by hairlines. The column is capped and centred
+now, so a wide screen gets two even margins and every rule ends where the
+content does.
+
+The task conversation's draft control said "Draft with AI", which names the
+machinery instead of the job; it says "Draft a reply" now, and the
+disclosure beneath it still tells the whole truth about what is sent and to
+whom. Two menus that moved MORE for people who asked for reduced motion —
+the same guard missing in the same way — move for nobody now.
+
 ## 2026-08-12 · T·141 · moves · the app arrives, and Notes finally moves
 
 **Every menu, picker and popover in the app now enters the same way, Notes
