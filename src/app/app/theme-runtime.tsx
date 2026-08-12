@@ -48,9 +48,15 @@ import { getUserPreferences } from "@/server/db/preferences";
  */
 
 // Kept as one line each — these are inlined into the document verbatim.
-const RESOLVER = `(function(){var e=document.documentElement,q=matchMedia("(prefers-color-scheme:dark)"),a=function(){var m=e.getAttribute("data-theme-mode")||"system";e.setAttribute("data-theme",m==="dark"||(m!=="light"&&q.matches)?"dark":"light")};a();q.addEventListener("change",a);addEventListener("signal:theme",a)})();`;
+//
+// Exported so src/app/app/theme-resolver.test.ts can execute the exact string
+// this file ships against a DOM stub, rather than a re-typed copy of it. An
+// inline script is unreachable by every other kind of test in this repo: it is
+// not a module, it never runs in a test renderer, and a source-text assertion
+// on a minified one-liner proves the characters, not the resolution table.
+export const RESOLVER = `(function(){var e=document.documentElement,q=matchMedia("(prefers-color-scheme:dark)"),a=function(){var m=e.getAttribute("data-theme-mode")||"system";e.setAttribute("data-theme",m==="dark"||(m!=="light"&&q.matches)?"dark":"light")};a();q.addEventListener("change",a);addEventListener("signal:theme",a)})();`;
 
-const applyMode = (mode: "light" | "dark") =>
+export const applyMode = (mode: "light" | "dark") =>
   `document.documentElement.setAttribute("data-theme-mode","${mode}");dispatchEvent(new Event("signal:theme"));`;
 
 /**
