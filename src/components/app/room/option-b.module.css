@@ -110,6 +110,52 @@
 .roomSortOptions strong { font-size: 12px; font-weight: 620; }
 .roomSortOptions small { color: var(--x-task-text-muted); font-size: 11px; line-height: 1.4; margin-top: 2px; }
 
+/* Saved views: the list and name field used to be inline styles carrying
+   a 9px font that exists on no ramp — panel furniture styles from the
+   same module as the panel. */
+.savedViewsList { border-top: 1px solid var(--x-task-border); display: grid; gap: 2px; list-style: none; margin: 12px 0 0; padding: 10px 0 0; }
+.savedViewsList > li { align-items: center; display: flex; gap: 6px; }
+.savedViewOpen {
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  color: var(--x-task-text);
+  cursor: pointer;
+  flex: 1;
+  font: inherit;
+  font-size: 12px;
+  overflow: hidden;
+  padding: 5px 2px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.savedViewOpen:hover { color: var(--x-accent-ink); }
+.savedViewOpen small { color: var(--x-task-text-muted); font-size: 11px; margin-left: 6px; }
+.savedViewDelete {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--x-task-text-muted);
+  cursor: pointer;
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  width: 24px;
+}
+.savedViewDelete:hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.savedViewNameInput {
+  background: var(--x-task-raised);
+  border: 1px solid var(--x-task-border);
+  border-radius: 6px;
+  color: var(--x-task-text);
+  font: inherit;
+  font-size: 12px;
+  min-height: 30px;
+  padding: 0 8px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .roomToolPanel { animation: none; }
 }

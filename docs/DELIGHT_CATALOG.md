@@ -132,6 +132,8 @@ drifted from the code (420ms/240ms were never what production ran).
 | S6 | Toasts | Existing toast primitive | Recheck register |
 | S7 | Saved-view bar appear | Instant | |
 | S8 | Inbox/updates list rows | Instant | |
+| S9 | Project-band progress count ("5 of 13 complete") on completion | Updates silently | Added 2026-08-12, header panel review. The band's one right moment: when `completed` increments, a ~280ms accent-tint fade on the `<strong>` (calendar receipt grammar, option-b.module.css keyframes) would make finishing work land as felt progress. Emotional-resonance seat's best-single-change. |
+| S10 | Project-band earned success note (last overdue clears / all complete) | No positive register — danger red is the band's only conditional color | Added 2026-08-12, header panel review. Candidate: transient `--x-task-success` note in the existing syncState whisper slot; quiet, momentary, never persistent green. |
 
 ## Catalog — list / schedule / calendar views
 

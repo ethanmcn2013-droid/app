@@ -90,6 +90,13 @@
    so "current view" is never colour-only either way. */
 .viewTabs button[aria-current="page"],
 .viewTabs a[aria-current="page"] { background: var(--x-task-selected); color: var(--x-task-text); font-weight: 600; }
+/* The underline was inset "so it never shifts layout" — but the weight
+   change in the same rule shifted it anyway: bolding a 400-weight label
+   widens it and nudges every tab to its right. Each label reserves its
+   600-weight width with a hidden bold twin, so switching views moves
+   nothing. */
+.viewTabs :is(button, a) span[data-text] { align-items: flex-start; display: inline-flex; flex-direction: column; }
+.viewTabs :is(button, a) span[data-text]::after { content: attr(data-text); font-weight: 600; height: 0; overflow: hidden; pointer-events: none; visibility: hidden; }
 
 .viewTools { align-items: center; display: flex; gap: 4px; min-width: 0; }
 .viewTools > button,

@@ -99,14 +99,17 @@
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
   flex: 0 0 var(--a-viewbar-height);
-  gap: 14px;
+  gap: var(--space-4);
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   /* The tab's own 10px inner padding is paid out of the bar's leading pad
      so the first tab's TEXT — not its hover box — lands on the content
-     grid line the title and the first card sit on. */
-  padding: 0 10px 0 calc(var(--x-board-gutter) - 10px);
+     grid line the title and the first card sit on. The trailing pad obeys
+     the same rule against the last tool's 8px padding, so the View label
+     ends on the same 16px-inset ink line as row 1's … glyph — the right
+     rail used to miss by ~10px at every desktop width. */
+  padding: 0 var(--space-2) 0 calc(var(--x-board-gutter) - 10px);
   scrollbar-width: thin;
 }
 
@@ -118,7 +121,11 @@
    I" is carried three ways and never by colour alone. */
 .tabsScroll { flex: 0 0 auto; }
 .tabsScroll nav { gap: 1px; }
-.tabsScroll nav a {
+/* :is(a, button): the hybrid mount passes canonical hrefs so these render
+   as anchors, but the spec must hold for the lab's button branch too —
+   these rules silently stopped applying once, and the tabs shipped 34px
+   tall with no active underline from the generic fallback. */
+.tabsScroll nav :is(a, button) {
   border-radius: 6px;
   color: var(--x-task-text-secondary);
   font-size: 12px;
@@ -126,14 +133,14 @@
   min-height: 28px;
   padding: 0 10px;
 }
-.tabsScroll nav a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.tabsScroll nav a[aria-current="page"] {
+.tabsScroll nav :is(a, button):hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.tabsScroll nav :is(a, button)[aria-current="page"] {
   background: var(--x-task-selected);
   box-shadow: inset 0 -2px 0 0 var(--x-task-accent);
   color: var(--x-task-text);
   font-weight: 600;
 }
-.tabsScroll nav a[aria-current="page"] svg { color: var(--x-accent-ink); }
+.tabsScroll nav :is(a, button)[aria-current="page"] svg { color: var(--x-accent-ink); }
 
 /* The working controls are ghosts: no boxes at rest, presence on touch. */
 .functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
@@ -151,7 +158,7 @@
   font-weight: 500;
   gap: 6px;
   height: 30px;
-  padding: 0 9px;
+  padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }

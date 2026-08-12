@@ -15,6 +15,7 @@ import { ActiveFilterChips, ViewToolButtons, ViewToolPanels, useVisibleLabTasks,
 import { ShortcutsDialog } from "../../shared/shortcuts-dialog";
 import { activeUnscheduledTasks } from "../../planning";
 import { CLOSE_NAV_DRAWER_EVENT, CLOSE_PLANNING_EVENT } from "@/components/app/tasks-nav-state";
+import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
 import { ShareButton } from "@/components/app/share/share-button";
 import { PageActionsOverflow } from "@/components/app/page-header";
 import type { ShareView } from "@/server/actions/share";
@@ -99,18 +100,12 @@ function usePlanningOpen() {
   return [open, toggle] as const;
 }
 
-// T·97 heritage: arbitrary-variant overrides that repaint the wrapped
-// production Share/overflow trigger buttons in the band's ghost register.
-// Targets `> div > button` so only the trigger is restyled, never the
-// popover/menu buttons inside it.
-const bandButtonWrap =
-  "[&>div>button]:!h-[30px] [&>div>button]:!min-h-[30px] [&>div>button]:!rounded-md " +
-  "[&>div>button]:!border-0 [&>div>button]:!bg-transparent " +
-  "[&>div>button]:!text-[var(--x-task-text-secondary)] " +
-  "[&>div>button]:!text-[12px] [&>div>button]:!font-medium " +
-  "[&>div>button]:!px-2.5 [&>div>button]:!gap-1.5 " +
-  "hover:[&>div>button]:!text-[var(--x-task-text)] " +
-  "hover:[&>div>button]:!bg-[var(--x-task-hover)]";
+// The wrapped production Share/overflow triggers wear the band's ghost
+// register through one module class (.bandActionButton) instead of the
+// T·97 string of !important Tailwind arbitrary variants — one dialect for
+// one action cluster, and a ShareButton refactor can no longer silently
+// drop Share out of the register. Targets `> div > button` so only the
+// trigger is restyled, never the popover/menu buttons inside it.
 
 export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
   const store = useLabStore();
@@ -213,7 +208,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
         <WorkspaceBrief
           actions={
             <>
-              <span className={`hidden lg:inline-flex ${bandButtonWrap}`}>
+              <span className={`hidden lg:inline-flex ${briefStyles.bandActionButton}`}>
                 <ShareButton view={shareView} />
               </span>
               <button
@@ -221,14 +216,24 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
                 aria-expanded={!planningCollapsed}
                 className={briefStyles.planningTrigger}
                 onClick={openPlanningExclusive}
-                title={planningCollapsed ? "Open the planning drawer" : "Close the planning drawer"}
+                // The badge is the band's most prominent unexplained number:
+                // a sighted user got only "Open the planning drawer", which
+                // explains the verb, never the 5. The tooltip now names what
+                // the count counts.
+                title={
+                  planningCollapsed
+                    ? unscheduledCount > 0
+                      ? `Open the planning drawer — ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
+                      : "Open the planning drawer"
+                    : "Close the planning drawer"
+                }
                 type="button"
               >
                 <Icon name="panel" size={15} />
                 Planning
                 {unscheduledCount > 0 ? <strong>{unscheduledCount}<span className={styles.srOnly}> unscheduled tasks</span></strong> : null}
               </button>
-              <span className={`inline-flex ${bandButtonWrap}`}>
+              <span className={`inline-flex ${briefStyles.bandActionButton}`}>
                 <PageActionsOverflow
                   printPath={`/print/${route.view}`}
                   shareView={shareView}
@@ -240,7 +245,11 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
           tasks={wholeProject}
         />
         <div className={styles.viewBar}>
-          <div className={styles.tabsScroll}><ViewTabs onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
+          {/* Canonical hrefs make the tabs real links — middle-click and
+              copy-link-address work, and the anchors pick up the designed
+              28px/underline tab spec instead of the button fallback. A
+              plain click still routes client-side through onRouteChange. */}
+          <div className={styles.tabsScroll}><ViewTabs hrefFor={(view) => TASKS_VIEW_PATHS[view]} onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
           <div aria-label="View controls" className={styles.functionalTools} role="toolbar">
             <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
           </div>

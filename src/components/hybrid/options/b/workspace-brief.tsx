@@ -17,8 +17,10 @@ import { renameBoardAction } from "@/server/actions/board";
 import { setProjectDescriptionAction } from "@/server/actions/settings";
 import {
   TASKS_SYNC_EVENT,
+  beginTaskSync,
   type TaskSyncEventDetail,
 } from "@/lib/tasks/delight-events";
+import { useRoomTools } from "@/components/app/room/room-tools-context";
 import { isTaskOverdue } from "../../dates";
 import { useLabStore } from "../../store";
 import type { LabTask } from "../../types";
@@ -78,16 +80,33 @@ function EditableText({
     // Reflect the normalised value immediately; the server action revalidates
     // the layout and the effect above reconciles if the server disagrees.
     el.textContent = next;
+    syncEmpty();
     if (next === shown) return;
+    // The band's own edits report through the same Saving…/Saved whisper as
+    // task mutations — the status line sits 20px away and used to imply
+    // coverage it didn't have. On failure the user's text STAYS (the whisper
+    // and toast say it wasn't saved); snapping their words back to the old
+    // value read as the product losing the edit without a word.
+    const settle = beginTaskSync();
     startTransition(async () => {
       try {
         await onCommit(next);
-      } catch {
-        // Put the stored value back rather than leaving the surface showing
-        // text that was never saved.
-        if (ref.current) ref.current.textContent = shown;
+        settle();
+      } catch (error) {
+        settle(error ?? new Error("commit failed"));
       }
     });
+  };
+
+  // Emptiness must track the LIVE text, not the committed value: with
+  // data-empty derived only from `shown`, the placeholder ghost sat at 55%
+  // opacity in front of the user's own words until blur.
+  const syncEmpty = () => {
+    const el = ref.current;
+    if (!el) return;
+    const empty = (el.textContent ?? "").trim().length === 0;
+    if (empty) el.setAttribute("data-empty", "");
+    else el.removeAttribute("data-empty");
   };
 
   // aria-allowed-role fix (Phase 9): heading elements (h1–h6) prohibit
@@ -102,6 +121,7 @@ function EditableText({
       data-placeholder={placeholder}
       data-empty={shown.length === 0 ? "" : undefined}
       onBlur={commit}
+      onInput={syncEmpty}
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
@@ -109,6 +129,7 @@ function EditableText({
         } else if (event.key === "Escape") {
           // Escape abandons the edit: restore the stored value, then leave.
           event.currentTarget.textContent = shown;
+          syncEmpty();
           event.currentTarget.blur();
         }
       }}
@@ -135,6 +156,7 @@ export function WorkspaceBrief({
   const store = useLabStore();
   const calendar = useCalendarFrame();
   const domain = useDomain();
+  const { setDue } = useRoomTools();
   const workspaceName = domain.boardName ?? shortenWorkspaceTitle(domain.workspaceTitle);
 
   // T·114: rescue any pre-migration brief text still sitting in this browser's
@@ -190,7 +212,11 @@ export function WorkspaceBrief({
 
   /* How far through the season this project is — the one line that is
      about this venue's year rather than about task management. It was
-     only readable with the Planning drawer open. */
+     only readable with the Planning drawer open. Said once: "Day 11 of
+     97" and "86 days left" are the same fact twice, and two clauses read
+     as telemetry where one reads as a pulse. The arithmetic and the
+     period's end date move to the tooltip, which also answers days of
+     WHAT — the line used to have no referent at all. */
   const periodProgress = (() => {
     const period = calendar.planningPeriod;
     if (!period?.startDate || !period.endDate) return null;
@@ -202,7 +228,15 @@ export function WorkspaceBrief({
     const total = end - start + 1;
     const elapsed = Math.min(Math.max(today - start + 1, 1), total);
     const left = Math.max(end - today, 0);
-    return `Day ${elapsed} of ${total} · ${left} ${left === 1 ? "day" : "days"} left`;
+    const ends = new Date(`${period.endDate}T00:00:00Z`).toLocaleDateString("en-IE", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+    return {
+      label: `Day ${elapsed} of ${total}`,
+      detail: `Your planning period ends ${ends} — ${left} ${left === 1 ? "day" : "days"} left`,
+    };
   })();
   const navHidden = useNavPanelHidden();
 
@@ -217,7 +251,7 @@ export function WorkspaceBrief({
           title="Open Tasks navigation"
           type="button"
         >
-          <Icon name="panel" size={15} />
+          <Icon name="panel-left" size={15} />
         </button>
       ) : null}
       <div className={styles.workspaceIdentity}>
@@ -253,8 +287,16 @@ export function WorkspaceBrief({
               className={styles.briefOverdue}
               onClick={() => {
                 const first = document.querySelector<HTMLElement>("[data-overdue='true']");
-                first?.scrollIntoView({ block: "center", inline: "center" });
-                first?.focus({ preventScroll: true });
+                if (first) {
+                  first.scrollIntoView({ block: "center", inline: "center" });
+                  first.focus({ preventScroll: true });
+                  return;
+                }
+                // The count reads the whole project; the view may be filtered
+                // (or not mark overdue in its DOM). A click that does nothing
+                // is a broken promise — fall back to showing the overdue work
+                // through the filter that already exists.
+                setDue("overdue");
               }}
               title="Go to the first overdue task"
               type="button"
@@ -262,7 +304,11 @@ export function WorkspaceBrief({
               {overdue} overdue
             </button>
           ) : null}
-          {periodProgress ? <span className={styles.briefPeriod}>{periodProgress}</span> : null}
+          {periodProgress ? (
+            <span className={styles.briefPeriod} title={periodProgress.detail}>
+              {periodProgress.label}
+            </span>
+          ) : null}
         </p>
       </section>
       {actions ? (
