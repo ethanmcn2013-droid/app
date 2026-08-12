@@ -59,7 +59,19 @@ export type ProjectCapabilities = Readonly<{
   manageProject: boolean;
   moveIntoPlanningPeriod: boolean;
   curatePrimaryTimeline: boolean;
-  publishOrRevokeTimeline: boolean;
+  /**
+   * Publishing and revoking are **separate capabilities**, not one.
+   *
+   * ADR 0001 §5: on an archived Project "existing bearer links remain
+   * manageable and revocable; new publishing is disabled", and plan §9.2 makes
+   * always-reachable revocation a security property. A single
+   * `publishOrRevokeTimeline` flag forced them to move together, so WP6 would
+   * have rendered its menus from this matrix and hidden Revoke on exactly the
+   * Projects most likely to need it — an owner who archives a Project to put
+   * it away loses the control that takes the live link down.
+   */
+  publishTimeline: boolean;
+  revokeTimeline: boolean;
   deleteOrTransferOwnership: boolean;
 }>;
 

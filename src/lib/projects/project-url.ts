@@ -213,10 +213,16 @@ export function withActiveProject(appPath: string, projectId: ProjectId): string
   if (!appPath.startsWith("/")) {
     throw new Error("withActiveProject expects an in-app path.");
   }
-  const [pathname, rawQuery = ""] = splitPath(appPath);
+  const [pathname, rawQuery = "", hash] = splitPath(appPath);
   const params = new URLSearchParams(rawQuery);
   params.set(PROJECT_URL_PARAM, projectId);
-  return `${pathname}?${params.toString()}`;
+  // The fragment rides along. This is *the* contextual-link builder — WP3, WP6
+  // and WP9 will run every in-app link through it — and the first version
+  // dropped the hash silently, so `#milestones` on a Timeline deep link, or
+  // any in-page anchor, would have quietly stopped working the moment a link
+  // gained a Project. `canonicaliseProjectUrl` already preserved it; these two
+  // must not disagree about what an in-app URL is made of.
+  return `${pathname}?${params.toString()}${hash ?? ""}`;
 }
 
 function splitPath(appPath: string): [string, string?, string?] {

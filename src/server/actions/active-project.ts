@@ -108,11 +108,18 @@ export async function switchActiveProjectAction(
     // flow. The switch rejects it and never writes it to the cookie.
     if (row.archivedAt !== null) return { ok: false, reason: "archived" };
 
-    // 4. Cookie only after validation.
-    await writeActiveProjectCookie(projectId);
-
-    // 5. Destination from the enum.
+    // 5. Destination from the enum — built BEFORE the cookie is written.
+    //
+    // The order matters and was wrong. Writing the cookie first meant a throw
+    // inside `buildProjectUrl` left the browser holding a cookie that names B
+    // while the caller was told the switch failed and was still in A: the next
+    // bare entry would silently land in a Project the user believes they never
+    // opened. Plan §3.5 step 8 forbids exactly that — "failure before
+    // validation/redirect commits no B URL or cookie".
     target = buildProjectUrl(destination, projectId);
+
+    // 4. Cookie last, after every check and every fallible computation.
+    await writeActiveProjectCookie(projectId);
   } catch {
     // 8. Nothing committed. A remains active and the caller shows
     //    "Couldn't open <B>. You're still in <A>."

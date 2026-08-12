@@ -171,6 +171,25 @@ test("withActiveProject appends the one canonical parameter and replaces a stale
   assert.throws(() => withActiveProject("https://app.signalstudio.ie/app/tasks", A));
 });
 
+test("withActiveProject keeps the fragment, and agrees with the canonicaliser", () => {
+  // This is *the* contextual-link builder: WP3, WP6 and WP9 run every in-app
+  // link through it. Dropping the hash would have silently broken every
+  // in-page anchor the moment a link gained a Project.
+  assert.equal(
+    withActiveProject("/app/timeline/our-day?mode=edit#milestones", A),
+    "/app/timeline/our-day?mode=edit&workspaceId=ws-a#milestones",
+  );
+  assert.equal(
+    withActiveProject("/app/tasks#board", A),
+    "/app/tasks?workspaceId=ws-a#board",
+  );
+
+  // The two builders must not disagree about what an in-app URL is made of.
+  const built = withActiveProject("/app/notes?view=review#note-3", A);
+  assert.equal(canonicaliseProjectUrl(built).url, built);
+  assert.equal(canonicaliseProjectUrl(built).changed, false);
+});
+
 test("parseProjectId refuses the shapes a Project id can never have", () => {
   assert.equal(parseProjectId(undefined), null);
   assert.equal(parseProjectId(null), null);

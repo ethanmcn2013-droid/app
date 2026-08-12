@@ -8,6 +8,7 @@ import type { UserId } from "@/lib/data";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { isDemoMode } from "@/lib/access-mode";
+import { firstMembershipByCatalogOrder } from "@/server/projects/catalog";
 import { DEMO_USER_ID, DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 
 /**
@@ -199,6 +200,29 @@ export async function getActiveWorkspace(): Promise<string> {
  * never returns a workspace id without proof; this function exists so a WP3
  * migration has a drop-in that fails closed, and so the regression test has
  * something to pin.
+ *
+ * ── The fallback is ordered ────────────────────────────────────────────────
+ *
+ * The first version's fallback was a bare `.limit(1)` with no `ORDER BY`, so a
+ * cookieless caller who belongs to several Projects resolved to an arbitrary
+ * one and the choice was planner-dependent — the same defect class as the
+ * catalog query's missing `ORDER BY`, and it survived for the same reason:
+ * it was written as a drop-in with no callers, and an unordered read looks
+ * harmless until something depends on it. WP3 has since adopted this across
+ * 65 migrated sites.
+ *
+ * `ORDER BY position, name, id` matches `compareProjects` in
+ * `src/server/projects/catalog.ts`, so the Project this returns is the same
+ * one the catalog would list first and the resolver would pick for
+ * `first-active`. Three accessors agreeing on "first" is the point: a user
+ * whose bare entry lands in one Project and whose chooser highlights another
+ * has been told two different things about where they are.
+ *
+ * This is a determinism fix, not an authorization fix. It is still an ambient
+ * guess, and it is still not a sufficient basis for a destructive operation —
+ * WP3 bounds its two bulk paths (`seed.ts` clear/re-seed) on `manageProject`
+ * rather than bare membership, and that requirement does not relax because the
+ * guess became stable.
  */
 export async function getActiveWorkspaceOrNull(): Promise<string | null> {
   if (isDemoMode()) return DEMO_WORKSPACE_ID;
@@ -221,13 +245,9 @@ export async function getActiveWorkspaceOrNull(): Promise<string | null> {
     if (match) return cookieValue;
   }
 
-  const [first] = await db
-    .select({ workspaceId: workspaceMembers.workspaceId })
-    .from(workspaceMembers)
-    .where(eq(workspaceMembers.userId, me))
-    .limit(1);
-
-  return first ? first.workspaceId : null;
+  // One implementation of "first Project", shared with the catalog and the
+  // resolver, so the three cannot drift apart.
+  return firstMembershipByCatalogOrder(db, me);
 }
 
 /** List workspaces the current user is a member of. Used by the

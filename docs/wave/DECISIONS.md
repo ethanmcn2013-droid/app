@@ -432,3 +432,95 @@ exposure, not merely a bug.
 
 **Reachability unverified** — needs production data: how many `workspaces` rows have
 `owner_user_id IS NULL`, and how many owners have `users.clerk_id IS NULL`.
+---
+
+## D-020 · The Active Project destination allowlist includes `your-work`
+
+**Decision.** `switchActiveProjectAction`'s enum (plan §3.5 step 5) carries six
+surfaces, not the five the plan lists: `tasks`, `timeline`, `notes`, `project`,
+`home`, and **`your-work`**.
+
+**Evidence.** `src/app/api/suite-context/route.ts:23,54` builds
+`new URL("/app/your-work", request.url)` as its *only* destination, and
+`src/app/app/page.tsx:29` redirects into that route. Every inbound suite
+context link in production therefore lands on `/app/your-work`. The route
+exists (`src/app/app/your-work/`) and is absent from the plan's enum.
+
+**Reasoning.** An allowlist that cannot express the one destination production
+actually uses is an allowlist that will be worked around. Adding it costs
+nothing — it is a fixed path, built from a typed constant
+(`YOUR_WORK_APP_PATH`), and carries only `workspaceId`.
+
+**Consequence.** `/app/your-work` also keeps its local `projectId` parameter
+through V3 canonicalisation, alone among the surfaces. That parameter is a
+local filter over the caller's own catalog, not a suite identity; D-010 renames
+the concept to Label/Workstream in WP9, and dropping it before then would
+silently change what that page shows. Recorded here rather than left in a code
+comment, per D-007's rule that renegotiations are recorded, never silent.
+
+---
+
+## D-021 · The legacy cookie has five writers, and one of them is a contextual link
+
+**Status: an accepted, bounded contradiction with ADR 0001 §4. Not resolved.**
+
+**The ADR says** (§4): "Following a contextual link does **not** rewrite the
+cookie. Only an explicit Project selection does." It also says (§4 step 3) that
+the resolver must "validate the legacy `tasks_active_ws` cookie during
+migration."
+
+**The repository says** those two cannot both be true today.
+`src/app/api/suite-context/route.ts:60` is the inbound contextual-link handler
+— `src/app/app/page.tsx:29` redirects into it — and it writes
+`tasks_active_ws`. So while the resolver honours that cookie, following a
+contextual link *does* change the future bare-entry preference.
+
+`tasks_active_ws` has **five writers with four different attribute sets**:
+
+| Writer | Attributes | Note |
+|---|---|---|
+| `src/app/api/suite-context/route.ts:60` | httpOnly, secure, maxAge, path, sameSite | the contextual-link handler |
+| `src/server/actions/cross-workspace.ts:193` | **httpOnly: false**, maxAge, path, sameSite | readable by any script on the page; no `secure` |
+| `src/server/actions/planning.ts:1252` | httpOnly, secure, maxAge, path, sameSite | |
+| `src/server/actions/settings.ts:614` | maxAge, path, sameSite | **no httpOnly, no secure** |
+| `src/server/actions/templates.ts:136` | httpOnly, path, sameSite | **no maxAge** — a session cookie |
+
+**Decision.** Keep the legacy read, and pin the writers.
+
+Dropping the legacy read would strand every existing user's last-active
+preference at cutover, and the ADR mandates it during migration. Its blast
+radius is bounded and small: the legacy cookie can only influence a
+**bare-entry default**, never a rendered page, never a link, and never a
+mutation — every one of those requires an explicit `workspaceId`, and the
+resolver refuses to substitute. The worst case is that a user who followed a
+contextual link to B, then later opened `/app` bare, lands in B rather than in
+their last explicit choice.
+
+`src/server/projects/active-project-contract.test.mjs` now enumerates all five
+writers against a dated allowlist and pins their exact attribute sets, so a
+sixth writer, or a changed attribute, fails the build. The unified
+`signal_active_project` name is pinned to a single module for the same reason.
+
+**Interface requests, not WP2 edits** (all five files are other lanes'):
+
+1. ~~`cross-workspace.ts:193` — set `httpOnly: true` and `secure` in
+   production.~~ **Accepted by the WP3 actions lane**; lands with WP3. A
+   workspace preference readable by page script was the weakest link in the
+   set.
+2. `settings.ts:614` — add `httpOnly` and `secure`. **Still outstanding.**
+3. ~~`templates.ts:136` — add the 30-day `maxAge` its four siblings all
+   carry.~~ **Accepted by WP3**; lands with WP3. It should gain `secure` too,
+   which is **still outstanding**.
+4. `suite-context/route.ts` — stop writing the cookie on a contextual link, or
+   ratify that inbound suite links count as explicit selection. This is the
+   ADR contradiction and it needs a decision, not a patch. **Still open.**
+5. All five — migrate to `writeActiveProjectCookie` once WP3/WP6 owns them.
+
+The allowlist in `active-project-contract.test.mjs` names the two incoming
+changes and their new pinned values, so the build failure that follows the WP3
+merge is self-explanatory. Re-pin them; do not widen the assertion to accept
+either shape.
+
+**Consequence.** WP6 must not claim "one writer, one set of attributes" for the
+last-active preference until items 1–5 land. WP2's writer is single; the cookie
+the resolver reads is not.

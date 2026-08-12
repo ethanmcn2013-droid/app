@@ -104,10 +104,42 @@ test("archiving narrows capabilities and never widens them", () => {
     }
     // Archive prohibits new association and outward publishing.
     assert.equal(archived.createOrEditTasks, false);
-    assert.equal(archived.publishOrRevokeTimeline, false);
+    assert.equal(archived.publishTimeline, false);
     assert.equal(archived.moveIntoPlanningPeriod, false);
     // It stays openable and readable.
     assert.equal(archived.open, true);
     assert.equal(archived.viewPrivateTimeline, true);
   }
+});
+
+/**
+ * Publish and revoke are separate capabilities, and this is the assertion that
+ * justifies the split.
+ *
+ * The first version returned one `publishOrRevokeTimeline` flag, false when
+ * archived. ADR 0001 §5 says the opposite for half of it — "existing bearer
+ * links remain manageable and revocable; new publishing is disabled" — and
+ * plan §9.2 makes always-reachable revocation a security property. WP6 renders
+ * its menus from this matrix, so the single flag would have hidden Revoke on
+ * exactly the Projects most likely to have a live link nobody is watching:
+ * the ones their owner archived and stopped thinking about.
+ */
+test("an archived Project can still revoke a live bearer link, but not publish a new one", () => {
+  for (const role of ["primary-owner", "owner"] as const) {
+    const archived = projectCapabilities({
+      role,
+      archived: true,
+      ownsPlanningPeriod: true,
+    });
+    assert.equal(archived.publishTimeline, false, `${role} may not publish`);
+    assert.equal(archived.revokeTimeline, true, `${role} must keep revoke`);
+  }
+  // A member never had either.
+  const member = projectCapabilities({
+    role: "member",
+    archived: true,
+    ownsPlanningPeriod: false,
+  });
+  assert.equal(member.publishTimeline, false);
+  assert.equal(member.revokeTimeline, false);
 });
