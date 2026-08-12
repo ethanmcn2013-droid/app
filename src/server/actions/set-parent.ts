@@ -7,7 +7,8 @@ import { tasks } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { demoTasks } from "@/server/demo/tasks-demo";
 import type { Task } from "@/lib/data";
@@ -35,9 +36,20 @@ export async function setParentAction(
   newParentId: string | null,
 ): Promise<{ ok: true; tasks: Task[] } | { ok: false; error: string }> {
   if (isDemoMode()) return { ok: true, tasks: demoTasks() };
-  const ws = await getActiveWorkspace();
+  // ADR 0001 §9, object operation: the task being reparented already belongs
+  // to a Project, and that Project decides. Everything below stays scoped to
+  // the proved id, so the same-Project invariant this action exists to protect
+  // — a child may only be reparented under a top-level task in its own
+  // Project — is now checked against the child's real Project rather than
+  // against whichever one the cookie happened to name.
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) {
+    return { ok: false, error: "setParentAction: task not found in active workspace" };
+  }
+  const ws = scope.ws;
 
-  // Verify the task exists in the caller's workspace and capture its current parent.
+  // Re-read under the proved Project and capture the current parent.
   const [ownedTask] = await db
     .select({ id: tasks.id, parentTaskId: tasks.parentTaskId })
     .from(tasks)

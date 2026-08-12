@@ -8,7 +8,8 @@ import { nextTaskSeq } from "@/server/db/task-seq";
 import { tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 
 /**
@@ -94,10 +95,18 @@ export async function duplicateTaskAction(
   // touch persistence. The board remains the canonical read-only fixture.
   if (isDemoMode()) return { ok: true, created: safeCount };
 
-  // 2. Resolve tenant boundary.
-  const ws = await getActiveWorkspace();
+  // 2. Resolve the boundary from the source task itself (ADR 0001 §9, object
+  //    operation), and prove the capability before anything is copied.
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) {
+    throw new Error("duplicateTaskAction: source task not found");
+  }
+  const ws = scope.ws;
 
-  // 3. Load source row; reject any cross-workspace request.
+  // 3. Load the source row under the proved Project. The cross-Project check
+  //    stays: it is now a same-Project assertion against the id this action
+  //    proved, so a row that moved between the proof and here still refuses.
   const [source] = await db.select().from(tasks).where(eq(tasks.id, taskId));
   if (!source) {
     throw new Error("duplicateTaskAction: source task not found");

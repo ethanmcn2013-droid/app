@@ -8,7 +8,11 @@ import { getCommentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { notify } from "@/server/db/notifications";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import {
+  scopeForTask,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { USERS, type Comment, type UserId } from "@/lib/data";
 import { DEMO_USER_ID } from "@/server/demo/tasks-demo";
@@ -20,12 +24,16 @@ function snippetOf(body: string): string {
 }
 
 /** Touch the parent task's updatedAt so comments count as engagement
- *  and the panel's "edited X ago" stamp reflects activity. */
-async function touchTask(taskId: string) {
+ *  and the panel's "edited X ago" stamp reflects activity.
+ *
+ *  Takes the proved Project so the write carries it too. It previously
+ *  matched on the primary key alone, which was safe only for as long as
+ *  every caller happened to authorize first. */
+async function touchTask(taskId: string, workspaceId: string) {
   await db
     .update(tasks)
     .set({ updatedAt: new Date() })
-    .where(eq(tasks.id, taskId));
+    .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, workspaceId)));
 }
 
 function newCommentId(): string {
@@ -49,21 +57,26 @@ function extractMentions(body: string): UserId[] {
   return Array.from(found);
 }
 
-/** Confirm the calling user is a member of the workspace that owns
- *  this task. Returns the workspace id when allowed, null when the
- *  task doesn't exist OR lives in a workspace the caller isn't in.
- *  Both comment read and write paths route through here, comments
- *  inherit the task's workspace boundary; callers outside that
- *  boundary must not see or write the thread. */
+/** Confirm the calling user may act on the Project that owns this task.
+ *  Returns that Project's id when allowed, null when the task doesn't exist
+ *  OR the caller holds no such capability in its Project. Both comment read
+ *  and write paths route through here: comments inherit the task's Project
+ *  boundary, and callers outside that boundary must not see or write the
+ *  thread.
+ *
+ *  The name is unchanged and so is the contract. What changed is where the
+ *  Project comes from. It used to be the ambient cookie, and the parent-task
+ *  read then AND-ed the two together — so a comment on a task in any Project
+ *  other than the cookie's returned null, and the write above it returned an
+ *  empty array that the composer showed as "posted, then gone". The task's own
+ *  Project decides now (ADR 0001 §9, object operation). */
 async function resolveCallerTaskWorkspace(
   taskId: string,
+  capability: ProjectCapabilityKey,
 ): Promise<string | null> {
-  const ws = await getActiveWorkspace();
-  const [parent] = await db
-    .select({ workspaceId: tasks.workspaceId })
-    .from(tasks)
-    .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, ws)));
-  return parent?.workspaceId ?? null;
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me, capability);
+  return scope.ok ? scope.ws : null;
 }
 
 export async function getCommentsForTaskAction(
@@ -74,7 +87,7 @@ export async function getCommentsForTaskAction(
   // active workspace owns the parent task. Strangers asking for a
   // foreign task id get an empty list, indistinguishable from a task
   // that has no comments yet.
-  const ws = await resolveCallerTaskWorkspace(taskId);
+  const ws = await resolveCallerTaskWorkspace(taskId, "open");
   if (!ws) return [];
   return getCommentsForTask(taskId);
 }
@@ -107,7 +120,10 @@ export async function addCommentAction(
   // caller's active workspace. Without this, any authed user who
   // knows a foreign task id could insert comments into other
   // tenants' threads.
-  const workspaceId = await resolveCallerTaskWorkspace(taskId);
+  const workspaceId = await resolveCallerTaskWorkspace(
+    taskId,
+    "createOrEditTasks",
+  );
   if (!workspaceId) return [];
 
   const commentId = newCommentId();
@@ -119,7 +135,7 @@ export async function addCommentAction(
     body: trimmed,
     createdAt: new Date(),
   });
-  await touchTask(taskId);
+  await touchTask(taskId, workspaceId);
   await recordActivity(taskId, {
     kind: "commentAdd",
     commentId,
@@ -165,25 +181,28 @@ export async function removeCommentAction(
   // workspace join via the parent task closes the cross-tenant hole
   // (you can't delete comments on tasks outside your workspace); the
   // userId match keeps members from deleting each other's comments.
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const me = await getCurrentUser();
 
+  // Authorship first, and by primary key. isolation-ok: no tenant predicate
+  // here on purpose — this read only discovers which task the comment hangs
+  // off, so that the task's own Project can be proved on the next line. The
+  // author match is the caller's own id, so this cannot read a stranger's row.
   const [row] = await db
     .select({ taskId: comments.taskId })
     .from(comments)
-    .innerJoin(tasks, eq(tasks.id, comments.taskId))
-    .where(
-      and(
-        eq(comments.id, commentId),
-        eq(comments.userId, me),
-        eq(tasks.workspaceId, ws),
-      ),
-    );
+    .where(and(eq(comments.id, commentId), eq(comments.userId, me)));
   if (!row) return [];
+
+  // Then the Project proof, against the parent task's stored Project rather
+  // than the cookie's.
+  const scope = await scopeForTask(row.taskId, me);
+  if (!scope.ok) return [];
+  const ws = scope.ws;
 
   await db
     .delete(comments)
     .where(and(eq(comments.id, commentId), eq(comments.userId, me)));
-  await touchTask(row.taskId);
+  await touchTask(row.taskId, ws);
   await recordActivity(row.taskId, {
     kind: "commentRemove",
     commentId,

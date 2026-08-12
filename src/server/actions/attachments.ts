@@ -7,7 +7,8 @@ import { attachments, resources, tasks } from "@/server/db/schema";
 import { getAttachmentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import { getEffectiveTier } from "@/server/db/entitlements";
@@ -159,8 +160,18 @@ export async function uploadAttachmentAction(
     throw new Error("uploadAttachmentAction: empty file");
   }
 
-  const ws = await getActiveWorkspace();
+  // ADR 0001 §9, object operation. The upload names the task it attaches to,
+  // so that task's Project decides — and it must be decided here, before the
+  // quota read, because `ws` is not merely a filter in this function: it is
+  // spliced into the storage key at `buildStorageKey(ws, …)` and written into
+  // the attachment row. A wrong id would file real bytes under another
+  // Project's prefix.
   const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) {
+    throw new Error("uploadAttachmentAction: task not found");
+  }
+  const ws = scope.ws;
 
   // Resolve tier and quota before touching the DB.
   const tier = await getEffectiveTier(me, ws);
@@ -294,23 +305,33 @@ export async function deleteAttachmentAction(
   attachmentId: string,
 ): Promise<void> {
   if (isDemoMode()) return;
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
 
+  // isolation-ok: by primary key and deliberately without a tenant predicate.
+  // This read discovers which Project owns the attachment; it returns nothing
+  // to the caller and authorizes nothing by itself. The proof is the next
+  // statement, and the delete below waits for it.
   const [row] = await db
     .select()
     .from(attachments)
-    .where(
-      and(
-        eq(attachments.id, attachmentId),
-        eq(attachments.workspaceId, ws),
-      ),
-    );
-  if (!row) {
+    .where(eq(attachments.id, attachmentId));
+  if (!row?.workspaceId) {
     // Opacity: don't reveal whether the id exists in another workspace.
     return;
   }
 
-  await db.delete(attachments).where(eq(attachments.id, attachmentId));
+  const scope = await scopeForTask(row.taskId, me);
+  if (!scope.ok) return; // same silence for "not yours" as for "not there"
+  const ws = scope.ws;
+  // Belt and braces: the attachment's own Project must be the one just proved
+  // through its task, or the two rows disagree and nothing is deleted.
+  if (row.workspaceId !== ws) return;
+
+  await db
+    .delete(attachments)
+    .where(
+      and(eq(attachments.id, attachmentId), eq(attachments.workspaceId, ws)),
+    );
 
   await deleteBytes(row.storedPath);
 
@@ -333,7 +354,13 @@ export async function listAttachmentsForTaskAction(
   taskId: string,
 ): Promise<Attachment[]> {
   if (isDemoMode()) return [];
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
+  // The parent task's own Project is proved openable, rather than compared
+  // against the cookie. Same empty array for a foreign id; no longer an empty
+  // array for a task the caller may genuinely read.
+  const scope = await scopeForTask(taskId, me, "open");
+  if (!scope.ok) return [];
+  const ws = scope.ws;
   const [parent] = await db
     .select({ workspaceId: tasks.workspaceId })
     .from(tasks)

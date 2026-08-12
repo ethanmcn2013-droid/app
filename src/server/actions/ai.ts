@@ -18,7 +18,30 @@ import {
   buildWeeklySnapshotFor,
   weeklyDigestNarrationFor,
 } from "@/server/digest-narration";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  scopeForTask,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
+
+/**
+ * The Project this action reads — ADR 0001 §9. Fail-closed and proved, so a
+ * caller who belongs to nothing narrates nothing rather than narrating
+ * LEGACY_WORKSPACE_ID's tasks back to themselves (D-005).
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "open",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 import { allow } from "@/lib/ratelimit";
 import { USERS } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
@@ -98,15 +121,20 @@ export async function draftReplyAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, me, ws] = await Promise.all([
+  const [task, items, me] = await Promise.all([
     getTaskById(taskId),
     getTaskConversation(taskId),
     getCurrentUser(),
-    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard, without this, an authenticated caller could
-  // narrate any task in any workspace by passing its id.
+  // Project guard: without this, an authenticated caller could narrate any
+  // task in any workspace by passing its id. The check is unchanged; what it
+  // compares against is now the task's own proved Project rather than the
+  // ambient cookie, so a task the caller may genuinely read stops answering
+  // "Task not found." whenever the two disagree (ADR 0001 §9).
+  const scope = await scopeForTask(taskId, me, "open");
+  if (!scope.ok) return staticStream("Task not found.");
+  const ws = scope.ws;
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
   }
@@ -173,14 +201,16 @@ export async function summarizeConversationAction(
   const model = getModel();
   if (!model) return staticStream(AI_NOT_CONFIGURED_MESSAGE);
 
-  const [task, items, me, ws] = await Promise.all([
+  const [task, items, me] = await Promise.all([
     getTaskById(taskId),
     getTaskConversation(taskId),
     getCurrentUser(),
-    getActiveWorkspace(),
   ]);
   if (!task) return staticStream("Task not found.");
-  // Workspace guard mirrors draftReplyAction, same vector, same fix.
+  // Project guard mirrors draftReplyAction, same vector, same fix.
+  const scope = await scopeForTask(taskId, me, "open");
+  if (!scope.ok) return staticStream("Task not found.");
+  const ws = scope.ws;
   if (task.workspaceId !== ws) {
     return staticStream("Task not found.");
   }
@@ -248,7 +278,7 @@ export async function summarizeConversationAction(
 export async function weeklyDigestNarrationAction(): Promise<
   ReadableStream<string>
 > {
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
   return weeklyDigestNarrationFor(ws);
 }
 
@@ -264,6 +294,6 @@ export async function isAiConfiguredAction(): Promise<boolean> {
  *  Server-side callers wanting an explicit workspace import
  *  `buildWeeklySnapshotFor` from `@/server/digest-narration` instead. */
 export async function getWeeklySnapshotAction(): Promise<WeeklyDigestSnapshot> {
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
   return buildWeeklySnapshotFor(ws);
 }

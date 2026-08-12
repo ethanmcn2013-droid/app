@@ -12,9 +12,10 @@ import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
-  getActiveWorkspace,
+  getActiveWorkspaceOrNull,
   getCurrentUser,
 } from "@/server/auth";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import {
   type LaneId,
   type Task,
@@ -42,7 +43,16 @@ export async function applyTemplateAction(
   templateId: string,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  // A template drops a whole set of tasks into a Project, so the destination
+  // is the resolved id itself rather than a filter. Proved before anything is
+  // applied.
+  const ambient = await getActiveWorkspaceOrNull();
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: ambient,
+    capability: "createOrEditTasks",
+  });
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  const ws = grant.projectId;
   await applyTemplateToWorkspace(templateId, ws);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
@@ -133,10 +143,17 @@ export async function remixTemplateAction(
 
   // ─── Flip the active-workspace cookie ────────────────────────────
   const c = await cookies();
+  // Attribute parity with the other writers (`planning.ts:1252`,
+  // `api/suite-context/route.ts:60`). This one omitted `maxAge`, so a remix
+  // wrote a *session* cookie where every sibling persists for 30 days: the
+  // user landed in their new Project, closed the browser, and silently lost
+  // it. `secure` in production for the same reason as the others.
   c.set(ACTIVE_WORKSPACE_COOKIE_NAME, workspaceId, {
-    httpOnly: true,
-    sameSite: "lax",
     path: "/",
+    sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 30,
   });
 
   revalidatePath("/app", "layout");

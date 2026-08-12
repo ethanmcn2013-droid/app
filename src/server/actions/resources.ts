@@ -6,7 +6,8 @@ import { db } from "@/server/db";
 import { attachments, resources, tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { deleteBytes } from "@/server/storage";
 
@@ -76,9 +77,16 @@ export async function listTaskResourcesAction(
   taskId: string,
 ): Promise<ResourceRow[]> {
   if (isDemoMode()) return [];
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
 
-  // Workspace guard.
+  // The task's own Project, proved openable (ADR 0001 §9). Previously this
+  // compared the parent's Project against the cookie, so a task the caller may
+  // genuinely read returned an empty list whenever the two disagreed —
+  // indistinguishable from a task with no resources.
+  const scope = await scopeForTask(taskId, me, "open");
+  if (!scope.ok) return [];
+  const ws = scope.ws;
+
   const [parent] = await db
     .select({ workspaceId: tasks.workspaceId })
     .from(tasks)
@@ -152,8 +160,12 @@ export async function addLinkResourceAction(
   title?: string,
 ): Promise<ResourceRow[]> {
   if (isDemoMode()) return [];
-  const ws = await getActiveWorkspace();
   const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) {
+    throw new Error("addLinkResourceAction: task not found");
+  }
+  const ws = scope.ws;
 
   // Validate URL — must be http or https.
   let parsedUrl: URL;
@@ -225,15 +237,50 @@ export async function removeResourceAction(
   resourceId: string,
 ): Promise<void> {
   if (isDemoMode()) return;
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
 
-  // Check if there is a resources row.
+  // Two storage shapes reach this action: a resources row, and an unmirrored
+  // attachment whose id is this one minus its "res-" prefix. Establish which
+  // task owns the target before deciding anything about it — a miss in the
+  // first shape is not yet an answer.
+  //
+  // isolation-ok: this read is by primary key and deliberately carries no
+  // tenant predicate. It discovers the owning task so the task's Project can
+  // be proved below; nothing is returned to the caller and nothing is deleted
+  // on the strength of it.
+  const [resourceCandidate] = await db
+    .select({ taskId: resources.taskId })
+    .from(resources)
+    .where(eq(resources.id, resourceId));
+
+  const backingAttachmentId = resourceId.startsWith("res-")
+    ? resourceId.slice(4)
+    : null;
+  // isolation-ok: same reasoning, for the unmirrored-attachment shape.
+  const [attachmentCandidate] =
+    resourceCandidate || !backingAttachmentId
+      ? []
+      : await db
+          .select({ taskId: attachments.taskId })
+          .from(attachments)
+          .where(eq(attachments.id, backingAttachmentId));
+
+  const owningTaskId =
+    resourceCandidate?.taskId ?? attachmentCandidate?.taskId ?? null;
+  if (!owningTaskId) return;
+
+  // The proof, once, before either branch deletes anything. It is a separate
+  // statement rather than another `AND workspace_id = ?` precisely because
+  // both branches below are destructive and an empty result must never be the
+  // thing that decides one may proceed.
+  const scope = await scopeForTask(owningTaskId, me);
+  if (!scope.ok) return; // same silence for "not yours" as for "not there"
+  const ws = scope.ws;
+
   const [resourceRow] = await db
     .select()
     .from(resources)
-    .where(
-      and(eq(resources.id, resourceId), eq(resources.workspaceId, ws)),
-    );
+    .where(and(eq(resources.id, resourceId), eq(resources.workspaceId, ws)));
 
   if (resourceRow) {
     const taskId = resourceRow.taskId;

@@ -4,7 +4,32 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { shareLinks, users, workspaces } from "@/server/db/schema";
 import { revalidatePath } from "next/cache";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  authorizeStoredProject,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
+
+/**
+ * The Project this action acts on — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 import { sendEmail, shareLinkEmailHtml } from "@/server/email";
 import {
   getShareLinkVisitAnalytics,
@@ -70,7 +95,10 @@ export async function createShareLinkAction(input: {
   label?: string;
 }): Promise<{ token: string }> {
   if (isDemoMode()) return { token: DEMO_SHARE_TOKEN };
-  const ws = await getActiveWorkspace();
+  // The resolved id is written into the link row and becomes what the public
+  // page serves, so it is the destination rather than a filter: a wrong
+  // Project here publishes the wrong Project.
+  const ws = await provedProject(await getActiveWorkspaceOrNull());
   const secret = generateShareSecret();
   const expiresAt =
     input.expiresInDays != null
@@ -111,7 +139,7 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
       },
     ];
   }
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull(), "open");
   const rows = await db
     .select()
     .from(shareLinks)
@@ -142,7 +170,30 @@ export async function listShareLinksAction(): Promise<ShareLinkSummary[]> {
 export async function revokeShareLinkAction(token: string): Promise<void> {
   if (!/^[A-Za-z0-9_-]{8,256}$/.test(token)) return;
   if (isDemoMode()) return;
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
+
+  // Object operation (ADR 0001 §9): the link's own Project decides. Under the
+  // cookie scoping, an owner whose active Project had moved on could not
+  // revoke their own link — the update matched nothing and the action returned
+  // normally, which is the worst possible failure mode for a revocation.
+  //
+  // isolation-ok: read by the link's public id and deliberately without a
+  // tenant predicate; it discovers which Project the link belongs to so that
+  // Project can be proved on the next statement.
+  const [link] = await db
+    .select({ workspaceId: shareLinks.workspaceId })
+    .from(shareLinks)
+    .where(eq(shareLinks.token, token));
+  if (!link?.workspaceId) return;
+
+  const grant = await authorizeStoredProject({
+    storedProjectId: link.workspaceId,
+    capability: "createOrEditTasks",
+    actorUserId: me,
+  });
+  if (!grant.ok) return; // same silence as an unknown token
+  const ws = grant.projectId;
+
   await db
     .update(shareLinks)
     .set({ revokedAt: new Date() })
@@ -217,7 +268,7 @@ export async function listShareLinkAnalyticsAction(): Promise<
       },
     ];
   }
-  const ws = await getActiveWorkspace();
+  const ws = await provedProject(await getActiveWorkspaceOrNull(), "open");
   const rows = await db
     .select({
       token: shareLinks.token,
@@ -278,19 +329,27 @@ export async function emailShareLinkAction(input: {
     return { ok: false, error: "link-not-found" };
   }
 
-  const [me, ws] = await Promise.all([
-    getCurrentUser(),
-    getActiveWorkspace(),
-  ]);
+  const me = await getCurrentUser();
 
-  // Ownership scope: the link was looked up by token alone. Without
-  // this, any authenticated user holding any valid token could send a
-  // branded email of someone else's link to an arbitrary recipient.
-  // Mirror revokeShareLinkAction's token+workspace scoping. Same opaque
-  // error as not-found so existence isn't revealed.
-  if (link.workspaceId !== ws) {
+  // Ownership scope: the link was looked up by token alone. Without this, any
+  // authenticated user holding any valid token could send a branded email of
+  // someone else's link to an arbitrary recipient. The check is the same; what
+  // it compares against changed. It used to be the ambient cookie, so an owner
+  // whose active Project had moved on was refused their own link. The link's
+  // stored Project is proved instead (ADR 0001 §9). Same opaque error either
+  // way, so existence is never revealed.
+  if (!link.workspaceId) {
     return { ok: false, error: "link-not-found" };
   }
+  const grant = await authorizeStoredProject({
+    storedProjectId: link.workspaceId,
+    capability: "createOrEditTasks",
+    actorUserId: me,
+  });
+  if (!grant.ok) {
+    return { ok: false, error: "link-not-found" };
+  }
+  const ws = grant.projectId;
 
   const [meRow] = await db
     // M7: fetch handle + email so the share email never reads "Someone".

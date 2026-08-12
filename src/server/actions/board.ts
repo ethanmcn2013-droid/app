@@ -30,7 +30,11 @@ import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { meta, tasks } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  scopeForTask,
+} from "@/server/actions/project-authz";
 import { LANE_ORDER, type LaneId } from "@/lib/data";
 import {
   isColumnColorKey,
@@ -63,6 +67,38 @@ import { DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
 // (domain-context, board-app) keep working; the canonical model lives in
 // @/lib/board-config for unit-testability.
 export type { ColumnConfig, CustomColumn } from "@/lib/board-config";
+
+// ─── Project resolution ───────────────────────────────────────────────────────
+
+/**
+ * The Project a board-configuration write lands in — ADR 0001 §9, create/list.
+ *
+ * Every mutation in this file writes to `meta` under a key built from a
+ * workspace id: `board:{workspaceId}:name`, `board:{workspaceId}:columns`.
+ * There is no row to derive the Project from and no `WHERE` to get it wrong —
+ * the resolved id *is* the destination, spliced straight into the key. That
+ * makes these the sharpest kind of ambient site: a wrong id does not fail, it
+ * silently reconfigures another Project's board.
+ *
+ * Two changes. The cookie is read through the fail-closed accessor, so it can
+ * no longer decay to `LEGACY_WORKSPACE_ID` and rewrite a workspace the caller
+ * has proved nothing about (D-005). And membership is proved before the key is
+ * built, rather than assumed because a cookie parsed.
+ *
+ * `createOrEditTasks` rather than `manageProject`: renaming a column is
+ * ordinary board work that every member does today, and WP3 is not the place
+ * to introduce a role gate the product has never had.
+ */
+async function provedBoardProject(candidate: string | null): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability: "createOrEditTasks",
+  });
+  // One neutral message for every refusal: "no such Project", "not a member"
+  // and "no Project at all" must not be tellable apart (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
 
@@ -131,7 +167,7 @@ export async function renameBoardAction(name: string): Promise<{ ok: true }> {
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Board name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
   const key = boardNameKey(ws);
   await db.run(sql`
@@ -173,7 +209,7 @@ export async function renameColumnAction(
   const trimmed = name.trim();
   if (!trimmed) throw new Error("Column name can’t be empty.");
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = trimmed.slice(0, MAX_NAME_LEN);
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
@@ -209,7 +245,7 @@ export async function setColumnColorAction(
 ): Promise<{ ok: true }> {
   if (!isColumnColorKey(color)) throw new Error("Unknown column colour.");
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
@@ -234,7 +270,7 @@ export async function setColumnDescriptionAction(
   description: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const clamped = description.trim().slice(0, MAX_DESCRIPTION_LEN);
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
@@ -261,7 +297,7 @@ export async function setColumnLimitAction(
     }
   }
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
   const limits = { ...existing.limits };
@@ -284,7 +320,7 @@ export async function setColumnDoneAction(
   isDone: boolean,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
   const current = new Set(resolveDoneKeys(existing));
@@ -344,7 +380,7 @@ export async function addColumnAction(
   if (isDemoMode()) {
     return { ok: true, key: `col-${slug || "column"}-demo` };
   }
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
 
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
@@ -403,7 +439,7 @@ export async function reorderColumnsAction(
   newOrder: string[],
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   const existing = (await readColumnConfig(ws)) ?? defaultColumnConfig();
 
   const allKeys = new Set([
@@ -472,7 +508,7 @@ export async function deleteColumnAction(
 
   if (isDemoMode()) return { ok: true, tasksReassigned: 0 };
 
-  const ws = await getActiveWorkspace();
+  const ws = await provedBoardProject(await getActiveWorkspaceOrNull());
   // A fresh workspace holds no stored config but still shows the default
   // board, whose Waiting column is deletable like any custom column — so
   // the delete bases on the default config rather than refusing.
@@ -587,14 +623,20 @@ export async function moveTaskToColumnAction(
   columnKey: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  // Object operation, not create/list: the card being dragged already belongs
+  // to a Project, and that Project decides. Scoping this to the cookie is what
+  // made a drag on a stale board return { ok: true } and move nothing.
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return { ok: true }; // neutral: refused and unknown look alike
+  const ws = scope.ws;
   const isSystemLane = (LANE_ORDER as string[]).includes(columnKey);
 
   const [row] = await db
     .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
     .where(and(eq(tasks.id, id), eq(tasks.workspaceId, ws)));
-  if (!row) return { ok: true }; // workspace guard, silent no-op for foreign ids
+  if (!row) return { ok: true }; // re-read under the proved Project
 
   // Done transitions stamp completedAt whichever way the claim moves —
   // a custom "Paid" column that counts as done completes the task the

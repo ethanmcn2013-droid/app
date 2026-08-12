@@ -16,13 +16,32 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { meta } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull } from "@/server/auth";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { isColumnColorKey, type ColumnColorKey } from "@/lib/board-colors";
 import { MAX_TAGS, MAX_TAG_LEN, tagKey, type TagDef } from "@/lib/tags";
 
 function tagsKey(workspaceId: string): string {
   return `board:${workspaceId}:tags`;
+}
+
+/**
+ * The Project a tag-registry write lands in — ADR 0001 §9, create/list.
+ *
+ * Same shape as board.ts: the registry is a `meta` row keyed
+ * `board:{workspaceId}:tags`, so the resolved id is the destination rather
+ * than a predicate that could simply match nothing. Membership is proved
+ * before the key is built, and the cookie can no longer decay into
+ * LEGACY_WORKSPACE_ID and rewrite another workspace's tag list (D-005).
+ */
+async function provedTagProject(candidate: string | null): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability: "createOrEditTasks",
+  });
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
 }
 
 function parseTagDefs(raw: string): TagDef[] {
@@ -87,7 +106,7 @@ export async function addTagAction(
   const chosen: ColumnColorKey = isColumnColorKey(color) ? color : "neutral";
   if (isDemoMode()) return { ok: true, tag: { name: trimmed, color: chosen } };
 
-  const ws = await getActiveWorkspace();
+  const ws = await provedTagProject(await getActiveWorkspaceOrNull());
   const defs = await readTagDefs(ws);
   const existing = defs.find((d) => tagKey(d.name) === tagKey(trimmed));
   if (existing) return { ok: true, tag: existing };
@@ -107,7 +126,7 @@ export async function setTagColorAction(
 ): Promise<{ ok: true }> {
   if (!isColumnColorKey(color)) throw new Error("Unknown tag colour.");
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedTagProject(await getActiveWorkspaceOrNull());
   const defs = await readTagDefs(ws);
   const next = defs.map((d) =>
     tagKey(d.name) === tagKey(name) ? { ...d, color } : d,
@@ -121,7 +140,7 @@ export async function setTagColorAction(
  *  simply renders neutral until redefined), so no task data is mutated. */
 export async function deleteTagAction(name: string): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  const ws = await provedTagProject(await getActiveWorkspaceOrNull());
   const defs = await readTagDefs(ws);
   await writeTagDefs(
     ws,

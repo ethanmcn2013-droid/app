@@ -190,10 +190,17 @@ export async function selectWorkspaceAction(
     );
   if (!membership) return { ok: true };
   const c = await cookies();
+  // Attribute parity with the other writers of this cookie
+  // (`planning.ts:1252`, `api/suite-context/route.ts:60`). This one was
+  // `httpOnly: false` with no `secure`, which made the last-active Project
+  // readable by any page script and sendable over plain HTTP. Nothing on the
+  // client reads it — it exists so the *next* server request resolves into the
+  // chosen Project — so there was never a reason for it to be exposed.
   c.set(ACTIVE_WORKSPACE_COOKIE_NAME, workspaceId, {
     path: "/",
     sameSite: "lax",
-    httpOnly: false,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     // 30 days, matches the lifetime expectations of a "remember
     // which workspace I was in" preference.
     maxAge: 60 * 60 * 24 * 30,

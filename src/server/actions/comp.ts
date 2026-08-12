@@ -4,7 +4,8 @@ import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { compCodes, entitlements } from "@/server/db/schema";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import { callerIsAdmin } from "@/server/admin";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
@@ -292,11 +293,22 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   // is idempotent, the webhook can still fire afterwards and update
   // the row with email / name we don't have here.
   await ensureUserProvisioned(userId);
-  const ws = await getActiveWorkspace();
+  // This action already refused LEGACY_WORKSPACE_ID by name, in production
+  // only, because writing a redeemed entitlement to ws-legacy is an orphan.
+  // The fail-closed accessor makes that structural rather than a named
+  // special case: there is no such value to receive, in any environment. The
+  // explicit check stays below for the same reason it was written — it says
+  // out loud what "still provisioning" means — and the membership proof is
+  // what now stands behind it.
+  const ambient = await getActiveWorkspaceOrNull();
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: ambient,
+    capability: "createOrEditTasks",
+    actorUserId: userId,
+  });
+  if (!grant.ok) return { ok: false, reason: "still-provisioning" };
+  const ws = grant.projectId;
   if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
-    // Defensive: ensureUserProvisioned should have given us a real ws.
-    // If it didn't, something deeper is wrong, surface honestly rather
-    // than write an orphan entitlement to ws-legacy.
     return { ok: false, reason: "still-provisioning" };
   }
 

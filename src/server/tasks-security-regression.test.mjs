@@ -215,7 +215,6 @@ test("public routes use the explicit allowlisted projection", () => {
 test("demo and review actions exit before tenant, database, or disk access", () => {
   for (const name of [
     "getTasksAction",
-    "getSubtasksAction",
     "moveTaskAction",
     "toggleCompleteAction",
     "updateTaskAction",
@@ -226,6 +225,16 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(actions, name, "getActiveWorkspace");
   }
+  // WP3 renegotiation (ADR 0001 §9). This guard's subject is the ORDERING —
+  // demo/review must exit before the action resolves a tenant — and not the
+  // name of the call that does the resolving. `getSubtasksAction` no longer
+  // resolves a tenant ambiently at all: it derives the parent task's own
+  // Project and proves `open` on it, so there is no `getActiveWorkspace*` left
+  // in its body to point at. Pointing the assertion at the call that replaced
+  // it keeps the invariant intact and still fails if the demo guard is moved
+  // below the boundary. Every other action in the list above keeps the
+  // original token, which continues to match `getActiveWorkspaceOrNull`.
+  assertDemoGuardBefore(actions, "getSubtasksAction", "scopeForTask");
   for (const boundary of [
     "getActiveWorkspace",
     "laneStartPositions",
@@ -246,14 +255,27 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     ["addColumnAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["reorderColumnsAction", ["getActiveWorkspace", "readColumnConfig", "writeColumnConfig"]],
     ["deleteColumnAction", ["getActiveWorkspace", "readColumnConfig", "await db", "writeColumnConfig"]],
-    ["moveTaskToColumnAction", ["getActiveWorkspace", "await db", "revalidatePath"]],
+    // WP3 renegotiation (ADR 0001 §9), same reasoning as getSubtasksAction
+    // above: moveTaskToColumnAction is an object operation, so it derives the
+    // dragged card's own Project instead of resolving one ambiently, and has
+    // no `getActiveWorkspace*` left to point at. The ordering invariant — demo
+    // exits before tenant resolution — is unchanged; only the name of the call
+    // that resolves the tenant has. Every other entry in this table is a
+    // create/list site that still resolves ambiently and keeps the old token.
+    ["moveTaskToColumnAction", ["scopeForTask", "await db", "revalidatePath"]],
   ]) {
     for (const boundary of boundaries) {
       assertDemoGuardBefore(boardActions, name, boundary);
     }
   }
+  // WP3 renegotiation (ADR 0001 §9). setTaskTimelineAction is an object
+  // operation and derives the dragged task's own Project, so `scopeForTask`
+  // replaces `getActiveWorkspace` as the tenant-resolution boundary. The
+  // ordering invariant is unchanged. This action was the inventory's clearest
+  // silent-refusal case — it returns { ok: true } unconditionally — so the
+  // ordering matters more here than almost anywhere.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
     "revalidatePath",
     "emitTasksChanged",
@@ -264,19 +286,33 @@ test("demo and review actions exit before tenant, database, or disk access", () 
       boundary,
     );
   }
+  // WP3 renegotiation (ADR 0001 §9). create/list here still resolve a Project
+  // ambiently — they have no object to derive one from — and keep the original
+  // token, which matches getActiveWorkspaceOrNull. revoke and email are object
+  // operations on the link row: they prove the link's own stored Project, so
+  // `authorizeStoredProject` is the boundary. That distinction is the point of
+  // the change. A revocation scoped to the cookie silently failed to revoke
+  // when the caller's active Project had moved on, which is the worst failure
+  // mode a revocation can have.
   for (const [name, boundaries] of [
     ["createShareLinkAction", ["getActiveWorkspace", "db.insert"]],
     ["listShareLinksAction", ["getActiveWorkspace", "await db"]],
-    ["revokeShareLinkAction", ["getActiveWorkspace", "await db", "revalidatePath"]],
+    ["revokeShareLinkAction", ["authorizeStoredProject", "await db", "revalidatePath"]],
     ["bumpShareLinkVisitAction", ["db.run", "recordShareLinkVisit", "revalidatePath"]],
     ["listShareLinkAnalyticsAction", ["getActiveWorkspace", "await db", "getShareLinkVisitAnalytics"]],
-    ["emailShareLinkAction", ["await db", "getCurrentUser", "getActiveWorkspace", "sendEmail"]],
+    ["emailShareLinkAction", ["await db", "getCurrentUser", "authorizeStoredProject", "sendEmail"]],
   ]) {
     for (const boundary of boundaries) {
       assertDemoGuardBefore(shareActions, name, boundary);
     }
   }
-  for (const boundary of ["await getActiveWorkspace()", "await db"]) {
+  // WP3 renegotiation (ADR 0001 §9). The old token pinned the exact call
+  // `await getActiveWorkspace()`, which no longer exists anywhere in this lane
+  // — the ambient value is now read through the fail-closed accessor and put
+  // through a membership proof before it is used. `provedProject` is the call
+  // that resolves the tenant here, so it is what the ordering is asserted
+  // against. The invariant is unchanged.
+  for (const boundary of ["provedProject", "await db"]) {
     assertDemoGuardBefore(
       importActions,
       "getActiveWorkspaceNameAction",
@@ -339,25 +375,33 @@ test("demo and review actions exit before tenant, database, or disk access", () 
     );
   }
 
+  // WP3 renegotiation (ADR 0001 §9). getTaskConversationAction is an object
+  // operation: it proves the task's own Project rather than resolving one
+  // ambiently. Ordering invariant unchanged.
   assertDemoGuardBefore(
     conversationActions,
     "getTaskConversationAction",
-    "getActiveWorkspace",
+    "scopeForTask",
   );
   assertDemoGuardBefore(
     attachmentActions,
     "uploadAttachmentAction",
     "formData.get",
   );
+  // WP3 renegotiation (ADR 0001 §9). Both attachment paths are object
+  // operations now: they derive the parent task's own Project instead of
+  // resolving one ambiently, so `scopeForTask` is the tenant-resolution
+  // boundary. The invariant is unchanged — demo/review must exit before the
+  // action resolves a tenant, and it still does.
   assertDemoGuardBefore(
     attachmentActions,
     "deleteAttachmentAction",
-    "getActiveWorkspace",
+    "scopeForTask",
   );
   assertDemoGuardBefore(
     attachmentActions,
     "listAttachmentsForTaskAction",
-    "getActiveWorkspace",
+    "scopeForTask",
   );
   assertDemoGuardBefore(
     crossWorkspaceActions,
@@ -392,9 +436,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(commentActions, "addCommentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). removeCommentAction is an object
+  // operation: it proves the parent task's own Project rather than resolving
+  // one ambiently, so `scopeForTask` is the tenant-resolution boundary. The
+  // author match (`comments.userId === me`) is unchanged and still precedes
+  // the delete — this guard's other seven boundaries pin that ordering.
   for (const boundary of [
     "getCurrentUser",
-    "getActiveWorkspace",
+    "scopeForTask",
     ".select(",
     ".delete(",
     "touchTask",
@@ -404,8 +453,11 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(commentActions, "removeCommentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). duplicateTaskAction derives the source
+  // task's own Project; the cross-Project refusal it already carried is now an
+  // assertion against the proved id rather than against the cookie.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "db.select",
     "db.transaction",
     "recordActivity",
@@ -414,8 +466,11 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(duplicateTaskActions, "duplicateTaskAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). setParentAction derives the reparented
+  // task's own Project; the same-Project invariant it protects is now checked
+  // against the child's real Project instead of the cookie's.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
     "recordActivity",
     "revalidatePath",
@@ -423,14 +478,19 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(setParentActions, "setParentAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9), same reasoning: all three resource
+  // paths derive the owning task's Project. removeResourceAction matters most
+  // — it has two destructive branches, and the proof is now a separate
+  // statement ahead of both, so no empty result decides that a delete may
+  // proceed.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
   ]) {
     assertDemoGuardBefore(resourceActions, "listTaskResourcesAction", boundary);
   }
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "getCurrentUser",
     "await db",
     "recordActivity",
@@ -439,14 +499,22 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(resourceActions, "addLinkResourceAction", boundary);
   }
-  assertDemoGuardBefore(resourceActions, "removeResourceAction", "getActiveWorkspace");
+  assertDemoGuardBefore(resourceActions, "removeResourceAction", "scopeForTask");
+  // WP3 renegotiation (ADR 0001 §9). sendNudgeAction derives the nudged
+  // task's own Project. It sends outbound email, so a wrong Project here does
+  // not merely drop a write — the ordering this guard pins matters more, not
+  // less, and it is preserved.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "getCurrentUser",
     "await db",
   ]) {
     assertDemoGuardBefore(nudgeActions, "sendNudgeAction", boundary);
   }
+  // WP3 renegotiation (ADR 0001 §9). Both AI narration paths are object
+  // operations: they prove the narrated task's own Project rather than
+  // comparing it against the cookie. Ordering invariant unchanged, and it
+  // matters here — these stream a task's content to a model.
   for (const name of [
     "draftReplyAction",
     "summarizeConversationAction",
@@ -457,7 +525,7 @@ test("demo and review actions exit before tenant, database, or disk access", () 
       "getTaskById",
       "getTaskConversation",
       "getCurrentUser",
-      "getActiveWorkspace",
+      "scopeForTask",
       "allow",
       "streamText",
     ]) {

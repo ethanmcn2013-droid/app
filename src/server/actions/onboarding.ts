@@ -4,7 +4,11 @@ import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { workspaces } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getActiveWorkspaceOrNull } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
 import { TEMPLATES } from "@/lib/templates";
@@ -28,6 +32,27 @@ export type CompleteOnboardingInput = {
  * Complete segmented onboarding, persists segment, seeds workspace,
  * marks first-run complete.
  */
+/**
+ * The Project this action writes into — ADR 0001 §9, create/list.
+ *
+ * Resolved through the fail-closed accessor so the cookie can no longer decay
+ * into LEGACY_WORKSPACE_ID (D-005), then proved against live membership before
+ * anything is written. An explicit id may be supplied by a caller that knows
+ * its Project; naming one is not a privilege, since it is proved the same way.
+ */
+async function provedProject(
+  candidate: string | null | undefined,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<string> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: candidate,
+    capability,
+  });
+  // One neutral message for every refusal (ADR 0001 §4).
+  if (!grant.ok) throw new Error("That project isn’t available.");
+  return grant.projectId;
+}
+
 export async function completeOnboardingAction(
   input: CompleteOnboardingInput,
 ): Promise<void> {
@@ -37,7 +62,7 @@ export async function completeOnboardingAction(
 
   const segment = getSegment(input.primaryUseCase);
   const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
+    provedProject(await getActiveWorkspaceOrNull()),
     getCurrentUser(),
   ]);
   const now = new Date();
@@ -63,7 +88,7 @@ export async function completeOnboardingAction(
     if (templateId) {
       await applyTemplateToWorkspace(templateId, ws);
     } else {
-      await seedDomainAction(segment.domainId);
+      await seedDomainAction(segment.domainId, ws);
     }
 
     await db
@@ -109,7 +134,7 @@ export async function completeOnboardingAction(
 /** Skip onboarding entirely, blank workspace, segment unknown. */
 export async function skipOnboardingAction(): Promise<void> {
   const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
+    provedProject(await getActiveWorkspaceOrNull()),
     getCurrentUser(),
   ]);
   const now = new Date();
@@ -157,7 +182,7 @@ export async function updateSegmentAction(
 
   const segment = getSegment(input.primaryUseCase);
   const [ws, userId] = await Promise.all([
-    getActiveWorkspace(),
+    provedProject(await getActiveWorkspaceOrNull()),
     getCurrentUser(),
   ]);
   const now = new Date();
