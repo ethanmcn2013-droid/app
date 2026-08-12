@@ -53,7 +53,7 @@ export default async function TimelineOwnerHome({
         data-timeline-module
         className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8"
       >
-        <div className="w-full rounded-2xl border border-line-soft bg-white p-7 sm:p-10">
+        <div className="w-full rounded-2xl border border-line-soft bg-bg-elevated p-7 sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">
             Timeline
           </p>
@@ -124,7 +124,7 @@ export default async function TimelineOwnerHome({
       data-timeline-module
       className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8"
     >
-      <section className="w-full rounded-2xl border border-line-soft bg-white p-7 sm:p-10">
+      <section className="w-full rounded-2xl border border-line-soft bg-bg-elevated p-7 sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">
           Timeline
         </p>
@@ -148,7 +148,7 @@ function UnavailableWorkspaceContext() {
       data-timeline-module
       className="mx-auto flex w-full max-w-3xl flex-1 items-center px-5 py-16 sm:px-8"
     >
-      <div className="w-full rounded-2xl border border-line-soft bg-white p-7 sm:p-10">
+      <div className="w-full rounded-2xl border border-line-soft bg-bg-elevated p-7 sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-hover">
           Timeline
         </p>

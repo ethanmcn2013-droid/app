@@ -21,7 +21,26 @@ const OPTIONS: Array<{ value: ThemeMode; label: string; description: string }> =
     label: "Light",
     description: "Always light, regardless of your device setting.",
   },
+  {
+    value: "dark",
+    label: "Dark",
+    description: "Always dark, regardless of your device setting.",
+  },
 ];
+
+/**
+ * Apply the choice to the live document, then let the server catch up.
+ *
+ * The app layout's resolver (src/app/app/theme-runtime.tsx) owns the two
+ * attributes and the prefers-color-scheme listener; this only tells it the
+ * choice changed. Writing data-theme directly here would work until the
+ * user picked System, which has no fixed value — so the control sets the
+ * mode and the resolver decides what that means right now.
+ */
+function applyThemeMode(mode: ThemeMode) {
+  document.documentElement.setAttribute("data-theme-mode", mode);
+  window.dispatchEvent(new Event("signal:theme"));
+}
 
 const PERSONALITY_TOGGLES: Array<{
   key: keyof PersonalityPrefs;
@@ -61,12 +80,18 @@ export function AppearanceSection({
   const [personalityPending, startPersonalityTransition] = useTransition();
 
   function handleChange(next: ThemeMode) {
+    const previous = themeMode;
     setThemeMode(next);
+    // The theme changes under the click, not after the round-trip: this is a
+    // preference about how the app looks, so the app looking that way IS the
+    // confirmation. If the write fails, the paint goes back with the state.
+    applyThemeMode(next);
     startTransition(async () => {
       try {
         await updateUserPreferencesAction({ themeMode: next });
       } catch (e) {
-        setThemeMode(themeMode);
+        setThemeMode(previous);
+        applyThemeMode(previous);
         toast("Could not save preference", {
           tone: "error",
           body: (e as Error).message,
@@ -103,56 +128,64 @@ export function AppearanceSection({
         <SectionHeader
           eyebrow="Appearance"
           title="How the app looks"
-          description="Choose a colour scheme. Dark is designed and will arrive after review."
+          description="Choose a colour scheme. It applies everywhere you are signed in."
         />
 
-        <ul className="space-y-3">
+        {/* One choice among three, so it announces itself as one: a radio
+            group, not three unrelated buttons. The cards are the section's
+            existing grammar — they carry the plain-English line each option
+            needs, which a segmented strip has no room for. */}
+        <div role="radiogroup" aria-label="Colour scheme" className="space-y-3">
           {OPTIONS.map((opt) => {
             const isActive = themeMode === opt.value;
             return (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  onClick={() => handleChange(opt.value)}
-                  disabled={pending}
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                aria-checked={isActive}
+                onClick={() => handleChange(opt.value)}
+                disabled={pending}
+                className={
+                  "flex w-full items-start gap-4 rounded-xl border p-5 text-left transition-colors disabled:opacity-60 " +
+                  (isActive
+                    ? "border-brand/40 bg-brand-soft/30 ring-1 ring-brand/20"
+                    : "border-line-soft bg-bg-elevated hover:border-line")
+                }
+              >
+                {/* Radio indicator */}
+                <span
                   className={
-                    "flex w-full items-start gap-4 rounded-xl border p-5 text-left transition-colors disabled:opacity-60 " +
+                    "mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors " +
                     (isActive
-                      ? "border-brand/40 bg-brand-soft/30 ring-1 ring-brand/20"
-                      : "border-line-soft bg-bg-elevated hover:border-line hover:bg-white")
+                      ? "border-brand bg-brand"
+                      : "border-ink-faint bg-paper")
                   }
+                  aria-hidden
                 >
-                  {/* Radio indicator */}
-                  <span
-                    className={
-                      "mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors " +
-                      (isActive
-                        ? "border-brand bg-brand"
-                        : "border-ink-faint bg-white")
-                    }
-                    aria-hidden
-                  >
-                    {isActive ? (
-                      <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                    ) : null}
-                  </span>
+                  {isActive ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  ) : null}
+                </span>
 
-                  <div className="flex-1">
-                    <div className="text-[14px] font-semibold text-ink">
-                      {opt.label}
-                    </div>
-                    <p className="mt-0.5 text-[12.5px] leading-[1.55] text-ink-soft">
-                      {opt.description}
-                    </p>
+                <div className="flex-1">
+                  <div className="text-[14px] font-semibold text-ink">
+                    {opt.label}
                   </div>
-                </button>
-              </li>
+                  <p className="mt-0.5 text-[12.5px] leading-[1.55] text-ink-soft">
+                    {opt.description}
+                  </p>
+                </div>
+              </button>
             );
           })}
-        </ul>
+        </div>
 
-        <p className="mt-4 text-[11.5px] leading-[1.55] text-ink-faint">
-          Dark is designed and will arrive after review.
+        <p
+          className="mt-4 text-[11.5px] leading-[1.55]"
+          style={{ color: "var(--x-ink-quiet, var(--ink-quiet))" }}
+        >
+          Pages you share by link stay light for whoever opens them.
         </p>
       </div>
 

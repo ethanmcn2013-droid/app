@@ -90,6 +90,28 @@
      dead and is consolidated away (2026-08-05 board pass 2). */
   --lane-doing-ink: #b05814;
 
+  /* ── The accent, as TEXT (--x- extension) ─────────────────────────
+     One indigo cannot be both a fill and a label in two themes. As a
+     fill the accent must stay saturated enough for white to ride it;
+     as text it must clear 4.5:1 against the surface behind it. On
+     white --accent does both (6.29:1 under white, 6.59:1 as text).
+     On the dark canvas it holds the fill and loses the label — 3.04:1,
+     which is what the count pills, the linked-task links and the
+     active view tab were painting. Callsites that spend the accent as
+     a COLOUR use this token; callsites that spend it as a background
+     keep --accent. In light the two are the same value, so nothing
+     about the light surfaces moves. */
+  --x-accent-ink: var(--accent);
+
+  /* And the other half of the same problem: the ink that rides ON an
+     accent fill. Callsites reached for --paper or --x-task-raised so
+     as not to write a literal white — correct on white paper, and
+     exactly wrong in dark, where paper is the deepest surface and a
+     primary button's label turns near-black on indigo (3.05:1). One
+     token, defined per theme, keeps the label on the light side of
+     the fill without anyone typing #fff. */
+  --x-on-accent: var(--paper);
+
   /* ── Quiet ink (--x- extension) — the register's small type, at a
      contrast the system's --ink-faint (#71717a, 4.83:1) never held.
      Contrast contract on paper: --x-ink-quiet ≥7:1 for 12–13px metadata
@@ -291,6 +313,124 @@
 }
 
 /* ────────────────────────────────────────────────────────────
+   Dark · the repo-local half of the switch (D-013 opened
+   2026-08-11 for the signed-in app)
+
+   The system half lives in the vendored src/ds/tokens.css:
+   --paper/--ink/--accent/--hairline/--shadow-* all flip there,
+   and every product surface that spends only those tokens flips
+   with them for free. This block is the remainder: the --x-
+   extensions and the legacy v0.2 aliases above that encode a
+   LIGHT assumption — a literal that only works on white, a wash
+   baked as a pale hex, or an elevation that reads upside-down
+   once paper becomes the deepest surface rather than the
+   brightest.
+
+   Rules kept here, deliberately:
+     · no system token is redefined (ds-check enforces it), only
+       --x- extensions and repo-local aliases;
+     · no raw hex — every value is a var() or a color-mix of one,
+       so the dark palette cannot drift from the light one;
+     · derivations that already mix toward var(--ink) or
+       var(--paper) are ABSENT from this block on purpose. They
+       self-correct: mixing amber toward ink lightens it on dark
+       and darkens it on light, which is the behaviour we want.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  /* The UA half of the switch: form controls, scrollbars, and the
+     canvas behind the document all follow the resolved theme. This
+     is why no component sets a colorScheme style prop. */
+  color-scheme: dark;
+
+  /* ── Quiet ink, dark counterpart ────────────────────────────
+     Light spends two steps DARKER than --ink-faint (4.83:1 on
+     white) because the system's faint ink was never enough for
+     12–13px metadata. Dark inverts the direction, not the
+     intent: --ink-faint arrives at 7.48:1 on the dark paper, so
+     the quiet inks step LIGHTER from there and the ladder
+     ink → ink-soft → quiet → quiet-soft → ink-faint holds in
+     both themes.
+
+     Measured against --paper / --paper-soft in the dark mapping:
+       --x-ink-quiet       9.98:1 · 9.41:1   (zinc-300/400, 50%)
+       --x-ink-quiet-soft  8.67:1 · 8.18:1   (zinc-300/400, 25%)
+     Both clear the ≥6.5:1 floor this wave set for dark, and both
+     sit under --ink-soft (12.3:1) so quiet still reads as quiet.
+     Expressed as mixes of the zinc ramp rather than as literals —
+     the values move if the ramp does. */
+  --x-ink-quiet:      color-mix(in srgb, var(--zinc-300) 50%, var(--zinc-400));
+  --x-ink-quiet-soft: color-mix(in srgb, var(--zinc-300) 25%, var(--zinc-400));
+
+  /* ── The accent, as text ────────────────────────────────────
+     --accent stays indigo-600 in dark because filled buttons
+     still carry white on it. Set as a label on the canvas it
+     measures 3.04:1 — the ratio axe caught on the Notes count
+     pills and the linked-task link. Two steps up the ramp,
+     indigo-400, reads at 6.43:1 on --paper and 5.64:1 on the
+     raised surface, and still reads as THE indigo. */
+  --x-accent-ink: var(--indigo-400);
+
+  /* The accent fill itself does NOT change — a filled primary button
+     is the same indigo in both themes — so its label only has to stop
+     following paper down. The theme's ink reads 5.72:1 on it. */
+  --x-on-accent: var(--ink);
+
+  /* ── Elevation inverts ──────────────────────────────────────
+     On white the ramp runs DOWN from the canvas: a sunken track
+     is --paper-deep, a raised card is --paper, and the canvas
+     sits between them. In dark --paper is the deepest surface
+     the system has, so nothing can sit below the canvas and the
+     whole ramp runs UP instead:
+
+       canvas  --paper       (the deepest surface)
+       sunken  --paper-soft  (one step up)
+       raised  --paper-deep  (two steps up)
+
+     Same three names, same meanings — a sunken track is still
+     below the card that rides it — read in the only direction
+     dark leaves available. This is the inversion the auth stage
+     already writes by hand for its own card; here it is done
+     once, on the aliases every app page spends. */
+  --paper-elev:  var(--paper-deep);
+  --bg-elev:     var(--paper-deep);
+  --bg-elevated: var(--paper-deep);
+  --bg-deep:     var(--paper-soft);
+  --bg-sunken:   var(--paper-soft);
+
+  /* Popovers, the inspector, the palette and the detail panel are
+     the surfaces where "raised" has to survive: on white they lean
+     on a shadow, and a black shadow on a black field says nothing.
+     They take the lift from the surface instead. */
+  --x-task-overlay: var(--paper-deep);
+
+  /* ── Done, canonically, on dark ─────────────────────────────
+     The light-theme green holds 4.58:1 on white and only
+     4.18:1 on the dark paper — a fail, on the one colour in
+     the product that means finished. Dark spends the system
+     emerald instead (--status-done, 7.55:1 on --paper), with
+     the hover and pressed steps going LIGHTER, the way
+     every hover does on a dark surface. */
+  --x-status-done:         var(--status-done);
+  --x-status-done-hover:   color-mix(in srgb, var(--status-done) 82%, var(--ink));
+  --x-status-done-pressed: color-mix(in srgb, var(--status-done) 66%, var(--ink));
+
+  /* ── Status washes ─────────────────────────────────────────
+     --status-flight-bg / --status-blocked-bg are pale hexes: a
+     wash designed to sit under dark ink on white. On a dark
+     board they arrive as two bright blocks. Rebuilt as the same
+     hue mixed into paper, which is the recipe the other washes
+     in this file already use, so they stay washes. */
+  --x-task-waiting-soft:      color-mix(in srgb, var(--status-flight) 22%, var(--paper));
+  --x-task-danger-soft:       color-mix(in srgb, var(--status-blocked) 22%, var(--paper));
+  --x-timeline-alarm-soft:    color-mix(in srgb, var(--status-blocked) 22%, var(--paper));
+
+  /* The one surviving lane ink from the pre-cycle-2 palette is a
+     burnt orange that only works on white. Same recipe as
+     --x-task-warning, so it tracks the amber state. */
+  --lane-doing-ink: color-mix(in srgb, var(--status-flight) 70%, var(--ink));
+}
+
+/* ────────────────────────────────────────────────────────────
    Tailwind theme bindings — exposes the tokens as Tailwind
    utility classes (e.g. `bg-indigo-600`, `text-ink-900`,
    `text-status-done`, `shadow-3`).
@@ -360,6 +500,15 @@
 /* ────────────────────────────────────────────────────────────
    Base
    ──────────────────────────────────────────────────────────── */
+/* Light is the document default everywhere: marketing, the public
+   /s/[token] artifact, the auth stage. Only a document that renders
+   the app layout carries data-theme, and only "dark" moves it (the
+   [data-theme="dark"] block above sets color-scheme: dark). Nothing
+   sets a colorScheme style prop — the attribute is the whole switch. */
+:root {
+  color-scheme: light;
+}
+
 html,
 body {
   background: var(--bg);
@@ -385,6 +534,66 @@ body::after { content: none; }
 ::selection {
   background: var(--indigo-200);
   color: var(--ink-900);
+}
+
+/* ────────────────────────────────────────────────────────────
+   Utility bridge — two Tailwind literals, taught the theme
+
+   BURN-DOWN, not architecture. Two utilities in this codebase
+   name a colour instead of a role, and both are wrong in dark
+   by construction:
+
+     .bg-white        248 callsites. Means "a raised surface",
+                      and says "#ffffff".
+     .bg-ink + .text-white
+                      76 callsites. The inverted button: a fill
+                      of --ink carrying white. In dark --ink IS
+                      near-white, so the label lands on itself
+                      at 1.09:1 — unreadable, and the single
+                      serious contrast failure axe found on the
+                      app chrome.
+
+   The honest fix is at the callsites — bg-bg-elevated for the
+   first, a token pair for the second — but those 324 callsites
+   are spread across files three builders are editing this wave.
+   So the theme teaches the utilities their role here, once, and
+   the callsites migrate in their owners' own time. Both rules
+   are inert in light: --bg-elevated is #ffffff there and the
+   compound rule only matches inside a dark document.
+
+   The translucent variants (bg-white/[0.05] and friends) are
+   deliberately NOT matched — they are overlays on the charcoal
+   chrome, which is the same charcoal in both themes.
+   ──────────────────────────────────────────────────────────── */
+[data-theme="dark"] .bg-white {
+  background-color: var(--bg-elevated);
+}
+
+[data-theme="dark"] .bg-ink.text-white,
+[data-theme="dark"] .bg-ink-soft.text-white {
+  color: var(--paper);
+}
+
+/* The third literal, and the same problem the --x-accent-ink token
+   solves inside the stylesheets: .text-brand and .text-accent paint
+   the accent as a LABEL, and the accent is a fill colour. On dark
+   that is 2.5–3.0:1 — the active product in the mobile nav, the
+   settings eyebrows, the count chips. Only the text utilities are
+   redirected; .bg-brand and .bg-accent keep the indigo they fill
+   with, and their labels ride --x-on-accent. */
+[data-theme="dark"] .text-brand,
+[data-theme="dark"] .text-accent {
+  color: var(--x-accent-ink);
+}
+
+/* The light selection band is a pale indigo carrying near-black ink.
+   On a dark field it is the brightest object on the page, and the
+   thing it highlights stops being the point. Dark inverts the pair:
+   the deep indigo takes the band, the theme's own ink rides it
+   (the theme ink on indigo-800 is about 7.4:1). */
+[data-theme="dark"] ::selection {
+  background: var(--indigo-800);
+  color: var(--ink);
 }
 
 /* No global `a { color: inherit }` — that would shadow Tailwind's

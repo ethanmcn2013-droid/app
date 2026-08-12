@@ -1586,7 +1586,7 @@ export function CurationSurface({
             real one, so this can say where it actually goes. */}
         <Link
           href={shareHref}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-line-soft bg-white px-3 text-xs font-medium text-ink hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-line-soft bg-bg-elevated px-3 text-xs font-medium text-ink hover:border-ink-ghost focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           Pick what to publish
         </Link>
@@ -1648,7 +1648,7 @@ export function CurationSurface({
           <button
             type="button"
             onClick={() => void runAutoSync()}
-            className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-line-soft bg-white px-3 font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-lg border border-line-soft bg-bg-elevated px-3 font-medium text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           >
             Retry sync
           </button>

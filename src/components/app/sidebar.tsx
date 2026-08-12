@@ -249,13 +249,13 @@ function MobileTabBar({ active }: { active: string }) {
       /* Marks this as the rail that owns the foot of the mobile viewport, so
          floating chrome (the dev notice) can measure it and sit clear. */
       data-signal-bottom-nav="tasks"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-white/95 shadow-[0_-16px_34px_-30px_rgba(20,21,26,0.36)] backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line-soft bg-bg-elevated/95 shadow-[0_-16px_34px_-30px_rgba(20,21,26,0.36)] backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {viewsOpen ? (
         <div
           aria-labelledby={triggerId}
-          className="absolute inset-x-2 bottom-full mb-2 max-h-[min(70dvh,430px)] overflow-y-auto rounded-xl border border-line-soft bg-white p-1.5 shadow-[0_22px_50px_-20px_rgba(20,21,26,0.28)]"
+          className="absolute inset-x-2 bottom-full mb-2 max-h-[min(70dvh,430px)] overflow-y-auto rounded-xl border border-line-soft bg-bg-elevated p-1.5 shadow-[0_22px_50px_-20px_rgba(20,21,26,0.28)]"
           id={menuId}
           onKeyDown={onMenuKeyDown}
           role="menu"

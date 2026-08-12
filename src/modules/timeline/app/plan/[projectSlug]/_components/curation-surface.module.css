@@ -531,7 +531,7 @@
 }
 
 .iconButton[data-active="true"] {
-  color: var(--accent);
+  color: var(--x-accent-ink);
 }
 
 /* ── Toolbar ────────────────────────────────────────────────────────────── */

@@ -110,7 +110,7 @@ export function AudienceManager({
   return (
     <div className="space-y-10">
       {!suiteWorkspaceId ? (
-        <section className="rounded-xl border border-line-soft bg-white p-5" aria-labelledby="connect-heading">
+        <section className="rounded-xl border border-line-soft bg-bg-elevated p-5" aria-labelledby="connect-heading">
           <h2 id="connect-heading" className="text-lg font-semibold tracking-tight text-ink">
             Connect the canonical workspace
           </h2>
@@ -163,7 +163,7 @@ export function AudienceManager({
               never appear to viewers.
             </p>
           </div>
-          <form action={createAction} className="mt-5 rounded-xl border border-line-soft bg-white p-5">
+          <form action={createAction} className="mt-5 rounded-xl border border-line-soft bg-bg-elevated p-5">
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             {projectSlug ? (
               <input type="hidden" name="projectSlug" value={projectSlug} />
@@ -278,7 +278,7 @@ export function AudienceManager({
                   : ""
               }`;
               return (
-              <article key={publication.id} className="overflow-hidden rounded-xl border border-line-soft bg-white">
+              <article key={publication.id} className="overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
                 <header className="border-b border-line-soft p-5">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                     <div>
@@ -386,7 +386,7 @@ export function AudienceManager({
                   {/* One visible header row; per-row labels stay for screen
                       readers. Ten stacked label grids read as a form farm —
                       a single ruled list reads as the plan it is. */}
-                  <details className="group rounded-lg border border-line-soft bg-white">
+                  <details className="group rounded-lg border border-line-soft bg-bg-elevated">
                     <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
                       <span>Review copied milestones</span>
                       <span className="font-normal text-ink-quiet">{selectionSummary} · changes stay private until you review them</span>

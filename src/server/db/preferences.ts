@@ -5,9 +5,10 @@ import { userPreferences } from "./schema";
 
 export type DailySignalCadence = "off" | "weekdays" | "daily";
 export type WeeklySummary = "off" | "mondays";
-/** D-013: only system and light are selectable. dark exists in tokens
- *  but is not shipped. The server action enforces this allow-list. */
-export type ThemeMode = "system" | "light";
+/** D-013: all three are selectable. Dark shipped for the signed-in app on
+ *  2026-08-11; the tokens had carried the mapping since 2026-07-02. The
+ *  server action enforces this allow-list. */
+export type ThemeMode = "system" | "light" | "dark";
 
 export type UserPreferences = {
   dailySignalCadence: DailySignalCadence;
@@ -40,7 +41,9 @@ export async function getUserPreferences(
     // Null in DB resolves to "system"; any value outside the allow-list
     // also falls back to "system" (defensive read).
     themeMode:
-      row.themeMode === "light" ? "light" : "system",
+      row.themeMode === "light" || row.themeMode === "dark"
+        ? row.themeMode
+        : "system",
     updatedAt: row.updatedAt,
   };
 }

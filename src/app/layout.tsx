@@ -90,13 +90,26 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      style={{ background: "#fff", colorScheme: "light" }}
+      /* The app's pre-paint script writes data-theme onto this element
+         before hydration, so the server HTML and the client render
+         legitimately differ by that one attribute. Nothing else on
+         <html> is suppressed — lang and className are still diffed. */
+      suppressHydrationWarning
     >
       <head>
         {!bareArtifact ? (
           <GoogleTag enabled={process.env.VERCEL_ENV === "production"} />
         ) : null}
-        <style dangerouslySetInnerHTML={{ __html: "html{background:#fff}" }} />
+        {/* Pre-stylesheet paint guard (RW-5). Two literals on purpose:
+            this rule has to be correct in the window before globals.css
+            has loaded, when var(--paper) does not yet resolve. The dark
+            value mirrors --paper in tokens.css's [data-theme="dark"]
+            block; the attribute only ever appears on an app document. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: 'html{background:#fff}html[data-theme="dark"]{background:#0f0f10}',
+          }}
+        />
         {!bareArtifact ? (
           <>
             <link rel="preconnect" href="https://signalstudio.ie" />
@@ -104,7 +117,11 @@ export default async function RootLayout({
           </>
         ) : null}
       </head>
-      <body className="min-h-full flex flex-col" style={{ background: "#fff" }}>
+      {/* No background style prop: globals.css paints html and body with
+          var(--bg), which resolves to var(--paper) — white on every light
+          document, the dark canvas under data-theme="dark". The literal
+          that used to sit here made the second case unreachable. */}
+      <body className="min-h-full flex flex-col">
         <ProductRuntime demoMode={demoMode}>{children}</ProductRuntime>
       </body>
     </html>

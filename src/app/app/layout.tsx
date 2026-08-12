@@ -9,6 +9,7 @@ import {
 } from "@/components/app/suite-scroll-frame";
 import { SuiteCommandRoot } from "@/components/app/suite-command-root";
 import { SuiteLoading } from "@/components/app/suite-loading";
+import { ThemeRuntime } from "./theme-runtime";
 import { StudioBar } from "@/components/studio-bar/studio-bar";
 import { StudioRail } from "@/components/studio-bar/studio-rail";
 import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-context";
@@ -34,7 +35,10 @@ async function SharedAppGate({ children }: { children: React.ReactNode }) {
 }
 
 const SKIP_LINK_CLASS =
-  "fixed left-3 top-3 z-[200] -translate-y-[calc(100%+1rem)] rounded-md bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white shadow-lg outline-none transition-transform focus:translate-y-0 focus-visible:ring-2 focus-visible:ring-[var(--x-studio-accent)] focus-visible:ring-offset-2";
+  // The label rides an --ink fill, so it takes --paper, not white: in dark
+  // the fill IS near-white, and a white label on it is invisible. The first
+  // control a keyboard user reaches is not a place to get that wrong.
+  "fixed left-3 top-3 z-[200] -translate-y-[calc(100%+1rem)] rounded-md bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-[var(--paper)] shadow-lg outline-none transition-transform focus:translate-y-0 focus-visible:ring-2 focus-visible:ring-[var(--x-studio-accent)] focus-visible:ring-offset-2";
 
 /**
  * Shared Signal Studio application frame.
@@ -62,6 +66,9 @@ export default function AppLayout({
 }) {
   const shell = (
     <StudioChromeProvider>
+      {/* First thing in the /app document body: the theme resolves before the
+          app paints, and only documents that render THIS layout carry it. */}
+      <ThemeRuntime />
       <SuiteScrollFrame>
         <a href="#app-main-content" className={SKIP_LINK_CLASS}>
           Skip to main content
