@@ -2,10 +2,35 @@ import "server-only";
 
 import { createClient } from "@libsql/client";
 import { isAuthError } from "./tasks-milestone-source";
+import {
+  proveTasksProjectOwnership,
+  type TasksProjectOwnership,
+} from "@/modules/timeline/lib/tasks-project-ownership";
 
 export type CurrentTasksWorkspaceContext = Readonly<{
   workspaceId: string;
   planningPeriodId: string | null;
+  /** The Tasks Project's own slug and name, so a Timeline provisioned for this
+   *  exact Project can be named after it without a second lookup that could
+   *  resolve a different Project. */
+  slug: string;
+  name: string;
+  /** The caller's `workspace_members.role` in this exact Project.
+   *
+   *  NOT a statement about who owns the Project. `setMemberRoleAction`
+   *  promotes members to `role: "owner"`, so several people can carry it.
+   *  Use `ownerClerkId` for ownership; this is capability only. */
+  role: string;
+  /** The Clerk subject of the Project's real owner — `workspaces.owner_user_id`
+   *  joined out to that user's immutable subject (plan §6.4 step 9).
+   *
+   *  Null when the Project has no owner row (the column is nullable from the
+   *  legacy backfill). Missing identity must read as missing, so provisioning
+   *  refuses rather than choosing the visitor. */
+  ownerClerkId: string | null;
+  /** Set when the Tasks Project is archived. Archived Projects accept no new
+   *  association, so no Timeline is created, adopted or bound for one. */
+  archivedAt: number | null;
 }>;
 
 /**
@@ -18,6 +43,14 @@ export type PrimaryTasksWorkspace = Readonly<{
   slug: string;
   name: string;
   activeDomain: string | null;
+  /**
+   * Minted here because this query is where the proof is established: it
+   * selects only rows where `w.owner_user_id = u.id` for the requesting
+   * subject, so a returned row IS ownership. Carrying the token out means the
+   * bare-entry provisioning path does not have to re-derive it, and cannot
+   * proceed without it.
+   */
+  ownership: TasksProjectOwnership;
 }>;
 
 /**
@@ -33,6 +66,14 @@ export type PrimaryTasksWorkspace = Readonly<{
  * A sponsored couple always owns their own workspace: `ensureUserProvisioned`
  * inserts the owner row before redemption writes the entitlement
  * (src/server/db/ensure-user.ts).
+ *
+ * `wm.role = 'owner'` is not on its own enough, and WP1 added the second half.
+ * `setMemberRoleAction` promotes members to `role: "owner"`, so a co-owner of
+ * somebody else's Project carries it too — and a promoted co-owner with no
+ * Project of their own would have had this resolve to the SHARED Project and
+ * mint its Timeline under their identity, consuming the unique suite-id index
+ * and locking the real owner out permanently. `w.owner_user_id = u.id` is the
+ * ownership; the role filter stays as the capability check beside it.
  *
  * TIE-BREAK, STATED SO IT IS NOT AN ACCIDENT. A wedding workspace wins over
  * any other, then the oldest owned workspace wins. A couple has exactly one, so
@@ -63,6 +104,7 @@ export async function getPrimaryTasksWorkspaceForUser(
         INNER JOIN workspaces w ON w.id = wm.workspace_id
         WHERE u.clerk_id = ?
           AND wm.role = 'owner'
+          AND w.owner_user_id = u.id
           AND w.archived_at IS NULL
         ORDER BY
           CASE WHEN w.active_domain = 'wedding' THEN 0 ELSE 1 END,
@@ -74,11 +116,21 @@ export async function getPrimaryTasksWorkspaceForUser(
     });
     const row = result.rows[0];
     if (!row) return null;
+    const workspaceId = String(row.workspace_id);
+    const ownership = proveTasksProjectOwnership(clerkId, workspaceId, {
+      kind: "member",
+      // The SQL matched `w.owner_user_id = u.id` for this exact subject, so
+      // the owner subject IS this subject. Nothing is assumed here that the
+      // query did not already prove.
+      context: { workspaceId, ownerClerkId: clerkId },
+    });
+    if (!ownership) return null;
     return {
-      workspaceId: String(row.workspace_id),
+      workspaceId,
       slug: String(row.slug),
       name: String(row.name),
       activeDomain: row.active_domain == null ? null : String(row.active_domain),
+      ownership,
     };
   } catch (error) {
     if (!isAuthError(error)) {
@@ -90,41 +142,155 @@ export async function getPrimaryTasksWorkspaceForUser(
   }
 }
 
-export async function getCurrentTasksWorkspaceContext(
+/**
+ * The actor's only owned Tasks Project, when they own exactly one.
+ *
+ * Returns null when they own none or more than one — deliberately, because the
+ * single caller (`decideTimelineAdoption`) uses this as a UNIQUENESS PROOF and
+ * nothing else. With one owned Project and one unclaimed Timeline there is
+ * exactly one possible pairing; with two of either, binding them would be a
+ * guess, and a wrong Timeline↔Project join is silent, durable and harder to
+ * notice than the dead end it replaced.
+ *
+ * `LIMIT 2` on purpose: we need to know whether a second row exists, never
+ * which one it is.
+ *
+ * ── ARCHIVED SIBLINGS COUNT ────────────────────────────────────────────────
+ * This deliberately does NOT filter on `archived_at`, and that is the whole
+ * proof. It used to, and the pairing argument quietly stopped holding: an owner
+ * with an archived 2024 Project and an active 2026 one counted as "exactly
+ * one", so their one unclaimed in-app Timeline — made for 2024 — was adopted
+ * as the 2026 Project's Timeline. Permanently, because `connectSuiteWorkspace`
+ * then refuses to rebind it.
+ *
+ * An archived Project is still a Project a Timeline could belong to. The
+ * requested Project is already proved non-archived before this is consulted
+ * (`resolveCanonicalTimeline`), so counting archived rows can only ever make
+ * the proof stricter, never let a wrong pairing through.
+ *
+ * Fails closed. Missing configuration or any error returns null, which reads as
+ * "not proved" and routes the owner to an explicit choice rather than a guess.
+ */
+export async function getSoleOwnedTasksWorkspaceIdForUser(
   clerkId: string,
-  workspaceId: string,
-): Promise<CurrentTasksWorkspaceContext | null> {
+): Promise<string | null> {
   const url = process.env.TASKS_DATABASE_URL;
   const authToken = process.env.TASKS_AUTH_TOKEN;
-  if (!url || !authToken || !clerkId.trim() || !workspaceId.trim()) return null;
+  if (!url || !authToken || !clerkId.trim()) return null;
 
   const client = createClient({ url, authToken });
   try {
     const result = await client.execute({
       sql: `
-        SELECT w.id AS workspace_id, w.planning_period_id AS planning_period_id
+        SELECT w.id AS workspace_id
         FROM users u
         INNER JOIN workspace_members wm ON wm.user_id = u.id
         INNER JOIN workspaces w ON w.id = wm.workspace_id
+        WHERE u.clerk_id = ?
+          AND wm.role = 'owner'
+        LIMIT 2
+      `,
+      args: [clerkId],
+    });
+    if (result.rows.length !== 1) return null;
+    return String(result.rows[0]!.workspace_id);
+  } catch (error) {
+    if (!isAuthError(error)) {
+      console.error("[tasks-workspace-context] sole-owned lookup failed");
+    }
+    return null;
+  } finally {
+    client.close();
+  }
+}
+
+/**
+ * What one membership read actually established.
+ *
+ * ── WHY THIS IS NOT `… | null` ─────────────────────────────────────────────
+ * It was, and null meant three unrelated things: the actor is not a member,
+ * the Tasks database could not be reached, and the environment is not
+ * configured. Callers could only treat all three the same way. Refusing a
+ * Timeline page for all three is right; telling a Timeline owner "you no
+ * longer have access to this project", with no way to retry, because Tasks was
+ * mid-migration for ninety seconds is not.
+ *
+ * This is the same confusion as the milestone read's — authorization expressed
+ * as an absence — one layer up. "No row" is an answer. "Could not ask" is not.
+ */
+export type TasksWorkspaceContextResult =
+  /** Membership of this exact Project is proved. */
+  | Readonly<{ kind: "member"; context: CurrentTasksWorkspaceContext }>
+  /** The read succeeded and returned no row: the actor is not a member of that
+   *  Project, or it does not exist. A settled answer — retrying produces the
+   *  same one. */
+  | Readonly<{ kind: "not-a-member" }>
+  /** The question could not be asked. This says NOTHING about membership, and
+   *  a caller must not present it as though it did. */
+  | Readonly<{ kind: "unavailable"; code: string }>;
+
+export async function getCurrentTasksWorkspaceContext(
+  clerkId: string,
+  workspaceId: string,
+): Promise<TasksWorkspaceContextResult> {
+  const url = process.env.TASKS_DATABASE_URL;
+  const authToken = process.env.TASKS_AUTH_TOKEN;
+  if (!url || !authToken) {
+    // Missing configuration is an unanswered question, not a denial.
+    return { kind: "unavailable", code: "tasks_not_configured" };
+  }
+  if (!clerkId.trim() || !workspaceId.trim()) return { kind: "not-a-member" };
+
+  const client = createClient({ url, authToken });
+  try {
+    const result = await client.execute({
+      sql: `
+        SELECT
+          w.id                 AS workspace_id,
+          w.planning_period_id AS planning_period_id,
+          w.slug               AS slug,
+          w.name               AS name,
+          w.archived_at        AS archived_at,
+          wm.role              AS role,
+          ow.clerk_id          AS owner_clerk_id
+        FROM users u
+        INNER JOIN workspace_members wm ON wm.user_id = u.id
+        INNER JOIN workspaces w ON w.id = wm.workspace_id
+        LEFT JOIN users ow ON ow.id = w.owner_user_id
         WHERE u.clerk_id = ? AND w.id = ?
         LIMIT 1
       `,
       args: [clerkId, workspaceId],
     });
     const row = result.rows[0];
-    if (!row) return null;
-    return {
+    if (!row) return { kind: "not-a-member" };
+    const context: CurrentTasksWorkspaceContext = {
       workspaceId: String(row.workspace_id),
       planningPeriodId:
         row.planning_period_id == null ? null : String(row.planning_period_id),
+      slug: row.slug == null ? "" : String(row.slug),
+      name: row.name == null ? "" : String(row.name),
+      role: row.role == null ? "" : String(row.role),
+      // LEFT JOIN: a Project with no owner row yields null, which the resolver
+      // treats as "identity not proved" and refuses to provision against.
+      ownerClerkId: row.owner_clerk_id == null ? null : String(row.owner_clerk_id),
+      archivedAt: row.archived_at == null ? null : Number(row.archived_at),
     };
+    return { kind: "member", context };
   } catch (error) {
     // Do not fall back to a first workspace when current membership cannot be
     // proved. Avoid logging ids; they are private suite routing metadata.
+    //
+    // And do not report this as a denial. A dropped connection, a migration
+    // window and an expired token all land here, and none of them is evidence
+    // that the actor lost access to anything.
     if (!isAuthError(error)) {
       console.error("[tasks-workspace-context] current membership check failed");
     }
-    return null;
+    return {
+      kind: "unavailable",
+      code: isAuthError(error) ? "tasks_read_unauthorized" : "tasks_read_failed",
+    };
   } finally {
     client.close();
   }

@@ -13,6 +13,10 @@ import {
 } from "@/modules/timeline/server/db/timeline-schema";
 import { db } from "@/modules/timeline/server/db/timeline-client";
 import {
+  assertOwnershipCovers,
+  type TasksProjectOwnership,
+} from "@/modules/timeline/lib/tasks-project-ownership";
+import {
   checkRateLimit,
   getClientIp,
   isRedisConfigured,
@@ -131,7 +135,24 @@ export async function connectSuiteWorkspace(
   workspaceSlug: string,
   ownerUserId: string,
   suiteWorkspaceId: string,
+  /**
+   * Proof that `ownerUserId` owns `suiteWorkspaceId` in Signal Tasks.
+   *
+   * Required, with no second form: unlike the child binding, this statement
+   * ESTABLISHES the workspace-level binding, so there is no prior claim for it
+   * to inherit and nothing else in the row to check it against. This is the
+   * statement `connectSuiteWorkspaceAction` reached with membership proved and
+   * ownership unchecked, which let an ordinary member of somebody else's
+   * Project take that Project's one binding (D-018).
+   */
+  ownership: TasksProjectOwnership,
 ): Promise<boolean> {
+  assertOwnershipCovers(
+    ownership,
+    { tasksWorkspaceId: suiteWorkspaceId, ownerUserId },
+    "connectSuiteWorkspace",
+  );
+
   const rows = await db
     .update(workspaces)
     .set({ suiteWorkspaceId, updatedAt: new Date() })

@@ -12,11 +12,14 @@ import {
   demoWorkspace,
   weddingDemoWorkspace,
 } from "@/modules/timeline/lib/roadmap/demo-data";
-import { getWorkspacesForUser, getWorkspaceForSuiteIdForUser } from "@/modules/timeline/server/db/timeline-queries";
-import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
+import { getWorkspacesForUser } from "@/modules/timeline/server/db/timeline-queries";
 import {
-  adoptTimelineForSuiteWorkspace,
+  getCurrentTasksWorkspaceContext,
+  getPrimaryTasksWorkspaceForUser,
+} from "@/modules/timeline/server/sync/tasks-workspace-context";
+import {
   ensureTimelineWorkspaceForUser,
+  resolveCanonicalTimeline,
 } from "@/modules/timeline/server/provision-workspace";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
 import { devFallbackEligible } from "./timeline-auth-policy";
@@ -99,32 +102,68 @@ export type ResolvedTimelineContext = Readonly<{
 }>;
 
 /**
- * Returns the first workspace owned by the current user, provisioning one
- * against their Tasks workspace if they have none.
+ * Resolve the Timeline workspace for a BARE Timeline page load — one that named
+ * no Tasks Project at all.
  *
- * The provisioning branch is production blocker 2 from the E05/E06 audit:
- * nothing in the product ever created a Timeline workspace, so this function
- * returned null forever and `/app/timeline` rendered a permanent empty state.
- * See `ensureTimelineWorkspaceForUser` for when a Timeline is created and why
- * then. It runs only when the user has none, so the normal path is unchanged
- * and costs one query as before.
+ * Nothing has been requested, so nothing can be substituted for. Every caller
+ * uses this as the `??` arm behind `resolveTimelineContext`, which is where a
+ * request that DOES name a Project is resolved; that is the only path allowed
+ * to answer one, and `resolveCanonicalTimeline` is the only thing that answers
+ * it (docs/wave/DECISIONS.md D-002, ADR 0001 §6).
+ *
+ * This used to take an optional `requestedSuiteWorkspaceId` and resolve it
+ * here too. No caller ever passed it, so it was a second, unreachable copy of
+ * the resolution path — and the contract guard that exists to prove membership
+ * is checked before resolution was matching THAT copy instead of the live one,
+ * proving nothing about production. A dead duplicate of a security path is the
+ * same shape as blocker 2 itself: correct code nothing calls. It is gone.
+ *
+ * It stays cheap: the owner's single Timeline is returned on one query.
+ * Provisioning is production blocker 2 from the E05/E06 audit — nothing in the
+ * product ever created a Timeline workspace, so this function returned null
+ * forever and `/app/timeline` rendered a permanent empty state — and it is
+ * still here, but ONLY in the branch where the owner has no Timeline at all. It
+ * is not on every read, and it is keyed to one exact Tasks Project.
  */
 export async function getCurrentWorkspace(
   userId: string,
-  requestedSuiteWorkspaceId?: string,
 ): Promise<Workspace | null> {
   if (isDemoMode()) return demoWorkspace;
-  if (requestedSuiteWorkspaceId) {
-    const [localWorkspace, currentMembership] = await Promise.all([
-      getWorkspaceForSuiteIdForUser(requestedSuiteWorkspaceId, userId),
-      getCurrentTasksWorkspaceContext(userId, requestedSuiteWorkspaceId),
-    ]);
-    if (!localWorkspace || !currentMembership) return null;
-    return localWorkspace;
-  }
+
   const workspaces = await getWorkspacesForUser(userId);
-  if (workspaces[0]) return workspaces[0];
-  return ensureTimelineWorkspaceForUser(userId);
+  if (workspaces.length === 0) return ensureTimelineWorkspaceForUser(userId);
+  if (workspaces.length === 1) return workspaces[0]!;
+
+  // More than one Timeline and no Project named. Prefer the Timeline bound to
+  // the actor's deterministic primary Tasks Project rather than whichever row
+  // sorts first; "first" is not evidence of anything (ADR 0001 §4). The final
+  // fallback is bare-entry only — it is unreachable when a Project WAS
+  // requested, and WP2's route resolver replaces it with a canonical redirect.
+  const primary = await getPrimaryTasksWorkspaceForUser(userId);
+  const boundToPrimary = primary
+    ? workspaces.find(
+        (workspace) => workspace.suiteWorkspaceId === primary.workspaceId,
+      )
+    : undefined;
+  return boundToPrimary ?? workspaces[0]!;
+}
+
+/**
+ * The only two resolutions that may put a Timeline on screen for a request that
+ * named a Project, plus archived, which is read-only and already bound.
+ *
+ * Everything else — reconciliation, denial, failure — resolves to null, which
+ * the callers render as an unavailable state. Collapsing them here is
+ * deliberate: a detailed reason is server-only, because distinguishing
+ * "forbidden" from "missing" to the client is an existence leak (ADR 0001 §4).
+ */
+function canonicalTimelineWorkspace(
+  resolution: Awaited<ReturnType<typeof resolveCanonicalTimeline>>,
+): Workspace | null {
+  if (resolution.kind === "exact") return resolution.workspace;
+  if (resolution.kind === "provisioned") return resolution.workspace;
+  if (resolution.kind === "archived") return resolution.workspace;
+  return null;
 }
 
 /**
@@ -168,10 +207,18 @@ export async function resolveTimelineContext(
     };
   }
 
-  const [linked, current] = await Promise.all([
-    getWorkspaceForSuiteIdForUser(requestedWorkspaceId, userId),
+  // The two reads run together exactly as they did before. Only the membership
+  // read authorizes anything; the Timeline list is the actor's own, keyed to
+  // ownerUserId, and it is passed to the resolver purely to save a round trip.
+  const [membership, ownedWorkspaces] = await Promise.all([
     getCurrentTasksWorkspaceContext(userId, requestedWorkspaceId),
+    getWorkspacesForUser(userId),
   ]);
+  // A Timeline page refuses on both a proved non-membership and an unanswered
+  // question, so the two collapse here — but they collapse at the CALLER, on
+  // this line, where a reader can see it happen. The sync action needs them
+  // apart and keeps them apart.
+  const current = membership.kind === "member" ? membership.context : null;
 
   // Current Tasks membership is the authorization boundary, and the only one.
   // Without it we refuse and never substitute a different workspace: a URL
@@ -185,13 +232,22 @@ export async function resolveTimelineContext(
   }
 
   // Membership is proved, so a missing row is a linkage gap rather than an
-  // access failure, and the two must not share an outcome. Timelines created
-  // in-app carry no suite id, which made every routing hint a dead end; adopt
-  // the owner's Timeline and record the link. See
-  // `adoptTimelineForSuiteWorkspace` for what it declines to guess.
-  const workspace =
-    linked ??
-    (await adoptTimelineForSuiteWorkspace(userId, requestedWorkspaceId));
+  // access failure, and the two must not share an outcome — conflating them is
+  // what put an owner in front of "That workspace is not available." looking at
+  // their own Timeline. `resolveCanonicalTimeline` still closes that gap, by
+  // binding or creating THIS Project's Timeline. What it will not do is open
+  // another Project's; see it for what it declines to guess, and for the
+  // owner-reconciliation-required outcome that replaced the guess.
+  //
+  // The proved context is passed in, so membership cannot be skipped: there is
+  // no way to call the resolver without it.
+  const resolved = await resolveCanonicalTimeline(
+    userId,
+    requestedWorkspaceId,
+    current,
+    { ownedWorkspaces },
+  );
+  const workspace = canonicalTimelineWorkspace(resolved);
   if (!workspace) return null;
   return {
     workspace,

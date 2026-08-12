@@ -1089,14 +1089,28 @@ function ManualAddForm({
  * in Tasks." text with a weighted inline chip + actionable copy + Open Tasks
  * link. Uses paper surface + hairline border + ink-soft text, calm, on-voice.
  */
+/** Ties the disabled Sync button to the one statement of why it is disabled. */
+const SETTLED_REFUSAL_ID = "timeline-sync-settled-refusal";
+
 function SyncButton({
   workspaceSlug,
   projectSlug,
   onSync,
+  settledRefusal,
 }: {
   workspaceSlug: string;
   projectSlug: string;
   onSync: () => void;
+  /**
+   * Set when refreshing from Tasks has already been refused for a reason that
+   * will not change — the Project is archived, or access to it is gone.
+   *
+   * The control is then disabled and describes why, rather than inviting a
+   * press that produces the same sentence a second time at a louder severity.
+   * The refusal is stated once, by the block below this button; repeating it
+   * here would be the same fact twice on one screen.
+   */
+  settledRefusal: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<"zero" | "count" | "error" | null>(null);
@@ -1141,7 +1155,8 @@ function SyncButton({
       <button
         type="button"
         onClick={handleSync}
-        disabled={isPending}
+        disabled={isPending || settledRefusal !== null}
+        aria-describedby={settledRefusal ? SETTLED_REFUSAL_ID : undefined}
         className={`sync-button ${styles.syncButton}`}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1173,8 +1188,11 @@ function SyncButton({
         </span>
       )}
 
-      {/* Error state uses the shared alarm token. */}
-      {result === "error" && (
+      {/* Error state uses the shared alarm token. Suppressed when a settled
+          refusal is already stated below: the button is disabled and described
+          by it, so pressing cannot produce this, and one fact belongs on the
+          screen once. */}
+      {result === "error" && settledRefusal === null && (
         <span role="alert" className={styles.syncError}>{errorMsg}</span>
       )}
     </div>
@@ -1212,10 +1230,14 @@ export function CurationSurface({
   const refreshAfterWrites = useRef(false);
   const [, startTransition] = useTransition();
   // D11 auto-sync: fires once on mount (pull-on-visit). Does NOT publish.
+  // A refusal is not always a failure. `retryable: false` means the answer is
+  // settled — the Project is archived, or access to it is gone — and offering a
+  // Retry that cannot work is worse than offering none, especially to a screen
+  // reader meeting an assertive alert on every single load.
   const [autoSyncState, setAutoSyncState] = useState<
     | { status: "idle" }
     | { status: "syncing" }
-    | { status: "error"; message: string }
+    | { status: "error"; message: string; retryable: boolean }
   >({ status: "idle" });
   const didAutoSync = useRef(false);
   // "Saved" tick DRAG: shows for 1.5s after any successful overlay upsert
@@ -1400,7 +1422,11 @@ export function CurationSurface({
     try {
       const result = await syncMilestonesAction(workspaceSlug, projectSlug);
       if ("error" in result) {
-        setAutoSyncState({ status: "error", message: result.error });
+        setAutoSyncState({
+          status: "error",
+          message: result.error,
+          retryable: result.retryable,
+        });
         return;
       }
       setAutoSyncState({ status: "idle" });
@@ -1412,6 +1438,8 @@ export function CurationSurface({
         status: "error",
         message:
           "Timeline couldn’t refresh milestones from Tasks. Check your connection and try again.",
+        // A thrown request is the network, which is what Retry is for.
+        retryable: true,
       });
     }
   }, [projectSlug, requestRefreshAfterWrite, workspaceSlug]);
@@ -1634,6 +1662,11 @@ export function CurationSurface({
         <SyncButton
           workspaceSlug={workspaceSlug}
           projectSlug={projectSlug}
+          settledRefusal={
+            autoSyncState.status === "error" && !autoSyncState.retryable
+              ? autoSyncState.message
+              : null
+          }
           onSync={() => {
             setAutoSyncState({ status: "idle" });
             refresh();
@@ -1645,7 +1678,7 @@ export function CurationSurface({
         {reorderAnnouncement}
       </p>
 
-      {autoSyncState.status === "error" ? (
+      {autoSyncState.status === "error" && autoSyncState.retryable ? (
         <div
           role="alert"
           className="mb-5 flex flex-col gap-3 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 text-xs text-ink-soft sm:flex-row sm:items-center sm:justify-between"
@@ -1662,6 +1695,23 @@ export function CurationSurface({
             Retry sync
           </button>
         </div>
+      ) : null}
+
+      {/* A settled refusal, stated once for the whole screen.
+          Polite rather than assertive, because nothing has gone wrong and
+          nothing is waiting on the reader; no control of its own, because
+          there is no action that would change it. The Sync button above is
+          disabled and points its accessible description here, so the fact
+          appears once and the control that cannot act on it says so. The plan
+          itself stays fully readable and editable underneath. */}
+      {autoSyncState.status === "error" && !autoSyncState.retryable ? (
+        <p
+          id={SETTLED_REFUSAL_ID}
+          role="status"
+          className="mb-5 rounded-lg border border-line-soft bg-bg-deep px-4 py-3 text-xs leading-5 text-ink-soft"
+        >
+          {autoSyncState.message}
+        </p>
       ) : null}
 
       {/* Empty state, H2: single primary CTA + quiet inline manual-add link.

@@ -21,6 +21,7 @@ import {
   type NodeOverlayInput,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { isValidSlug, slugify } from "@/modules/timeline/lib/reserved-slugs";
+import { planMilestoneReconciliation } from "@/modules/timeline/lib/milestone-reconciliation";
 import { checkRateLimit, getClientIp, type RateLimitResult } from "@/modules/timeline/lib/rate-limit";
 import { getSyncedTemplateRoadmap } from "@/modules/timeline/lib/templates.generated";
 import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
@@ -235,8 +236,28 @@ export async function createProjectAction(
 // ---------------------------------------------------------------------------
 
 export type SyncMilestonesResult =
-  | { ok: true; count: number }
-  | { error: string };
+  | {
+      ok: true;
+      count: number;
+      /** False when the source was truncated, so the caller can say
+       *  "showing the first N" instead of implying the list is whole. */
+      complete: boolean;
+      /** Present when the source was truncated. */
+      totalCount?: number;
+    }
+  | {
+      error: string;
+      /**
+       * Whether pressing Retry could plausibly change the answer.
+       *
+       * A dropped connection is worth retrying. An archived Project, a Project
+       * the actor no longer has access to, or a plan that was never connected
+       * to one are SETTLED — they answer the same way every time, and a button
+       * that cannot work is worse than no button. The surface renders the two
+       * differently, so the decision belongs here, where the reason is known.
+       */
+      retryable: boolean;
+    };
 
 export async function syncMilestonesAction(
   workspaceSlug: string,
@@ -246,29 +267,36 @@ export async function syncMilestonesAction(
   // its real autosync POST lifecycle, but the action returns deterministic
   // fixture evidence before auth, Tasks, or Timeline databases are touched.
   if (isDemoMode()) {
-    return { ok: true, count: demoEffectiveNodes(workspaceSlug).length };
+    return {
+      ok: true,
+      count: demoEffectiveNodes(workspaceSlug).length,
+      complete: true,
+    };
   }
 
   const userId = await requireUser();
 
   const workspace = await getWorkspace(workspaceSlug);
   if (!workspace || workspace.ownerUserId !== userId) {
-    return { error: "Workspace not found." };
+    return { error: "Workspace not found.", retryable: false };
   }
 
   const ownedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (ownedProjects.length === 0) {
-    return { error: "Create a project first." };
+    return { error: "Create a project first.", retryable: false };
   }
 
   const targetProject = ownedProjects.find((project) => project.slug === projectSlug);
-  if (!targetProject) return { error: "Project not found." };
+  if (!targetProject) {
+    return { error: "Project not found.", retryable: false };
+  }
   const canonicalWorkspaceId =
     targetProject.sourceTasksWorkspaceId ?? workspace.suiteWorkspaceId;
   if (!canonicalWorkspaceId) {
     return {
       error:
         "Connect this plan to one canonical Signal Tasks workspace before syncing.",
+      retryable: false,
     };
   }
   if (
@@ -276,44 +304,150 @@ export async function syncMilestonesAction(
     workspace.suiteWorkspaceId &&
     targetProject.sourceTasksWorkspaceId !== workspace.suiteWorkspaceId
   ) {
-    return { error: "This project is connected to a different canonical workspace." };
+    return {
+      error: "This project is connected to a different canonical workspace.",
+      retryable: false,
+    };
   }
 
   // Import lazily to avoid bundling in the non-sync path
   const { makeMilestoneSyncSource } = await import("@/modules/timeline/server/sync/tasks-milestone-source");
-  const source = makeMilestoneSyncSource();
-  if (!source) {
-    return { error: "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN." };
-  }
+  const { getCurrentTasksWorkspaceContext } = await import(
+    "@/modules/timeline/server/sync/tasks-workspace-context"
+  );
 
-  const rawMilestones = await source.getMilestonesForClerkId(
+  // Current Tasks membership of the exact Project being synced, proved BEFORE
+  // anything is read or written.
+  //
+  // Everything above this line authorizes the LOCAL Timeline: `getWorkspace`
+  // plus `ownerUserId !== userId` proves who owns the Timeline row, and says
+  // nothing whatever about whether the actor may still read the Tasks Project
+  // it is bound to. A couple whose Tasks Project was deleted, or a
+  // collaborator who was removed from it, still owned their Timeline and still
+  // reached this code — and the read then returned zero rows, which used to
+  // mean "delete everything". Tasks membership is the authorization boundary
+  // for Tasks data (ADR 0001 §4); local Timeline ownership is not a substitute
+  // for it and never was.
+  const membership = await getCurrentTasksWorkspaceContext(
     userId,
     canonicalWorkspaceId,
   );
 
+  // "Not a member" and "could not ask" are different facts and get different
+  // answers. Collapsing them is what told every Timeline owner they had lost
+  // access to their own project during a ninety-second Tasks migration, with
+  // no way to retry — the same authorization-as-absence confusion this wave
+  // exists to remove, one layer up from the milestone read.
+  if (membership.kind === "unavailable") {
+    return {
+      error: "Tasks could not be reached. Your timeline is unchanged.",
+      retryable: true,
+    };
+  }
+  if (membership.kind === "not-a-member") {
+    return {
+      error:
+        "You no longer have access to the Signal Tasks project this plan is " +
+        "connected to. Milestones will not refresh from Tasks.",
+      retryable: false,
+    };
+  }
+  const tasksContext = membership.context;
+  if (tasksContext.archivedAt !== null) {
+    // An archived Project takes no new Project-scoped writes (ADR 0001 §5),
+    // and reconciliation is a write. Refusing here keeps the archived
+    // Project's timeline exactly as the owner left it.
+    //
+    // The copy says only what is true. Nothing in this module enforces
+    // read-only on the timeline itself: `upsertNodeOverlayAction` and every
+    // other mutation here check local Timeline ownership and nothing else, so
+    // the owner can still edit, reorder, hide, add and publish. Refreshing
+    // from Tasks is the one thing that stops. Enforcing the rest is F6/WP7.
+    return {
+      error:
+        "This Signal Tasks project is archived, so Timeline will not refresh " +
+        "milestones from it.",
+      retryable: false,
+    };
+  }
+
+  const source = makeMilestoneSyncSource();
+  if (!source) {
+    return {
+      error:
+        "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN.",
+      retryable: false,
+    };
+  }
+
+  const snapshot = await source.getMilestonesForClerkId(
+    userId,
+    canonicalWorkspaceId,
+  );
+
+  // What the read proved decides what may be written. A failed, unauthorized
+  // or truncated read preserves the previous snapshot; only a snapshot that
+  // saw the whole Project may delete anything (plan §6.5). The rule itself is
+  // in `planMilestoneReconciliation`, pure and tested there.
+  const plan = planMilestoneReconciliation(snapshot);
+  if (plan.kind === "skip") {
+    // Nothing is written and nothing is deleted. The existing timeline stands
+    // and the owner is told, rather than being shown a successful sync of a
+    // Project that was never read.
+    return {
+      error:
+        plan.reason === "unauthorized"
+          ? "Tasks would not authorise this read. Your timeline is unchanged."
+          : "Tasks could not be reached. Your timeline is unchanged.",
+      // Membership was proved above, so an unauthorized answer here is the
+      // read token or the connection, not the actor. Both are worth retrying.
+      retryable: true,
+    };
+  }
+
   // Persist the provenance mapping before writing synced rows. This turns
   // future publication checks into an exact project-level proof and prevents
   // old mixed-workspace rows from being promoted via a workspace fallback.
+  //
+  // INHERITED, not owner-proved, and the distinction is real. This actor is
+  // authorized as the TIMELINE's owner; after a Signal Tasks ownership
+  // transfer they may no longer own the Project at all, so they cannot mint an
+  // ownership proof and refusing them would break sync for a legitimate owner
+  // of a legitimate timeline. What this write does is propagate a binding the
+  // parent workspace already carries — and `bindProjectToTasksWorkspace`
+  // verifies that itself, in its own database, rather than taking this
+  // caller's word for it. It can never introduce a Project the Timeline was
+  // not already bound to.
   await bindProjectToTasksWorkspace(
     workspaceSlug,
     targetProject.slug,
     canonicalWorkspaceId,
+    { kind: "inherits-workspace-binding" },
   );
 
   // One canonical Tasks workspace maps to this one explicitly selected
   // Timeline project. Never pool every member workspace into a first project.
-  const milestones = rawMilestones.map((m) => ({
+  const milestones = plan.items.map((m) => ({
     ...m,
     workspaceSlug,
     projectSlug: targetProject.slug,
   }));
-  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones);
+  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
+    reconcile: plan.reconcile,
+  });
 
   // Revalidate private draft only, NOT the public URL (D6 two-gate)
   revalidatePath("/app/timeline");
   revalidatePath(`/app/timeline/${targetProject.slug}`);
 
-  return { ok: true, count: milestones.length };
+  return plan.reconcile === "destructive"
+    ? { ok: true, count: milestones.length, complete: true }
+    : {
+        ok: true,
+        count: milestones.length,
+        complete: false,
+        totalCount: snapshot.kind === "partial" ? snapshot.totalCount : undefined,
+      };
 }
 
 // ---------------------------------------------------------------------------

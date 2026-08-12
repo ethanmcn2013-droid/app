@@ -31,6 +31,10 @@ import type {
 } from "./timeline-schema";
 import type { Status } from "./timeline-schema";
 import { isDemoMode } from "@/lib/access-mode";
+import {
+  assertOwnershipCovers,
+  type TasksProjectOwnership,
+} from "@/modules/timeline/lib/tasks-project-ownership";
 import { safeAudienceItemState } from "@/modules/timeline/lib/audience-timeline";
 import {
   demoWorkspace,
@@ -202,6 +206,7 @@ export async function createWorkspace({
   plan = "free",
   templateId = null,
   suiteWorkspaceId = null,
+  ownership,
 }: {
   slug: string;
   name: string;
@@ -215,7 +220,31 @@ export async function createWorkspace({
    *  context from its first read; a Timeline created without one is only
    *  reachable as "the owner's first workspace". */
   suiteWorkspaceId?: string | null;
+  /**
+   * Proof that the actor owns `suiteWorkspaceId`, REQUIRED whenever one is
+   * given (D-018). Creating an unbound Timeline needs no proof — it claims no
+   * Project — but creating one already bound to a Project is a binding write,
+   * and this is one of the three statements that can make it.
+   */
+  ownership?: TasksProjectOwnership;
 }): Promise<Workspace> {
+  // The gate stands at the statement, not in the caller. Three callers have
+  // now had to be fixed one at a time for exactly this reason; a fourth
+  // inherits the refusal instead of inheriting nothing.
+  if (suiteWorkspaceId) {
+    if (!ownership) {
+      throw new TypeError(
+        "createWorkspace: a Timeline bound to a Signal Tasks project requires " +
+          "proved ownership of that project.",
+      );
+    }
+    assertOwnershipCovers(
+      ownership,
+      { tasksWorkspaceId: suiteWorkspaceId, ownerUserId },
+      "createWorkspace",
+    );
+  }
+
   await db.insert(workspaces).values({
     slug,
     name,
@@ -430,11 +459,62 @@ export async function createProject({
 /** Bind a Timeline project to one immutable Tasks workspace after current
  * membership has been verified by the action layer. Existing non-matching
  * mappings are never overwritten. */
+/**
+ * Why this write takes an authority, and why one of the two is not a bypass.
+ *
+ * Binding a child Timeline to a Tasks Project is a binding write, so it needs
+ * the same proof as the other two (D-018). But its callers split into two
+ * genuinely different acts:
+ *
+ *   `project-owner` — ESTABLISHING the binding, from a proved Project owner.
+ *      This is the provisioning and adoption path.
+ *
+ *   `inherits-workspace-binding` — PROPAGATING a binding that already exists,
+ *      from the parent Timeline workspace down to its child. `syncMilestonesAction`
+ *      does this: it is authorized as the Timeline's owner, and after a Tasks
+ *      ownership transfer it may no longer be the Project's owner at all, so it
+ *      cannot mint a proof. Refusing it would break sync for a legitimate owner
+ *      of a legitimate Timeline.
+ *
+ * The second is not an escape hatch, because it is not the caller's word for
+ * anything: this function reads `workspaces.suite_workspace_id` itself and
+ * refuses unless the parent already carries EXACTLY the Project being written.
+ * The parent binding was itself gated by one of the three statements, so this
+ * inherits a proof rather than skipping one, and it can never introduce a
+ * Project the Timeline was not already bound to.
+ */
+export type ProjectBindingAuthority =
+  | Readonly<{ kind: "project-owner"; ownership: TasksProjectOwnership }>
+  | Readonly<{ kind: "inherits-workspace-binding" }>;
+
 export async function bindProjectToTasksWorkspace(
   workspaceSlug: string,
   projectSlug: string,
   sourceTasksWorkspaceId: string,
+  authority: ProjectBindingAuthority,
 ): Promise<void> {
+  if (authority.kind === "project-owner") {
+    assertOwnershipCovers(
+      authority.ownership,
+      { tasksWorkspaceId: sourceTasksWorkspaceId },
+      "bindProjectToTasksWorkspace",
+    );
+  } else {
+    // Prove the inheritance rather than accepting the claim of it.
+    const [parent] = await db
+      .select({ suiteWorkspaceId: workspaces.suiteWorkspaceId })
+      .from(workspaces)
+      .where(eq(workspaces.slug, workspaceSlug))
+      .limit(1);
+    if (!parent) throw new TypeError("Workspace not found");
+    if (parent.suiteWorkspaceId !== sourceTasksWorkspaceId) {
+      throw new TypeError(
+        "bindProjectToTasksWorkspace: this Timeline is not bound to that " +
+          "Signal Tasks project, so a child cannot inherit the binding.",
+      );
+    }
+  }
+
   const [project] = await db
     .select({ sourceTasksWorkspaceId: projects.sourceTasksWorkspaceId })
     .from(projects)
@@ -582,7 +662,7 @@ export async function getLastUpdatedForWorkspace(
 // ---------------------------------------------------------------------------
 
 /**
- * Batched upsert of synced milestone nodes into the tasks table,
+ * Batched upsert of synced milestone nodes into the tasks table, optionally
  * followed by a G2 reconcile pass that deletes stale synced nodes.
  *
  * Reuses the tasks table (same schema, kind='milestone'), the
@@ -602,6 +682,15 @@ export async function getLastUpdatedForWorkspace(
  * When milestones is empty (all un-promoted): all synced nodes for this
  * workspace+project are deleted so no stale nodes remain.
  *
+ * ── WHY `reconcile` MUST BE ASKED FOR (WP1, plan §6.5) ─────────────────────
+ * G2 is right for a real un-promote and catastrophic for a failed read. The
+ * source used to convert every failure to `[]`, and `[]` here means "delete
+ * everything", so an expired token emptied a couple's timeline and reported
+ * success. The destructive pass is therefore opt-in: a caller must be holding
+ * a snapshot that proved it saw the whole Project before it may ask for it.
+ * The default is `preserve` because the safe default is the one you get when
+ * you forget, and the caller who forgets is the one about to delete real work.
+ *
  * Called by sync action + D5 manual-add path (D5 uses non-ms ids, so
  * the reconcile pass never touches D5 manual nodes).
  */
@@ -609,7 +698,9 @@ export async function writeRoadmapNodes(
   workspaceSlug: string,
   projectSlug: string,
   milestones: SyncedMilestone[],
+  options: Readonly<{ reconcile?: "destructive" | "preserve" }> = {},
 ): Promise<void> {
+  const reconcile = options.reconcile ?? "preserve";
   // Step 1, upsert incoming synced nodes (skip when empty, but still run step 2).
   if (milestones.length > 0) {
     await db
@@ -646,6 +737,12 @@ export async function writeRoadmapNodes(
   // (D5, any other non-ms prefix) are never deleted by this pass.
   // The nodeOverlays row is intentionally NOT deleted, orphaned overlays
   // re-activate if the milestone is re-promoted (ARCH_SPEC §1.5).
+  //
+  // Skipped entirely unless the caller proved it saw the whole source. An
+  // upsert-only pass leaves the previous snapshot standing, which is the
+  // correct answer to every failed, truncated or unauthorized read.
+  if (reconcile !== "destructive") return;
+
   const incomingIds = milestones.map((m) => m.id);
   if (incomingIds.length === 0) {
     // All milestones un-promoted, delete every synced node for this project.

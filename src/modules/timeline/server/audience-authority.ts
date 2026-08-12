@@ -39,10 +39,16 @@ export async function requireFreshAudienceMutationAuthority(
     };
   }
 
-  const current = await getCurrentTasksWorkspaceContext(
+  // Fail closed on every non-member answer, including "could not ask". A
+  // publication mutation must not proceed on an unproved membership, so the
+  // three outcomes collapse here deliberately — and, unlike the read paths,
+  // collapsing them costs nothing: this is a write the actor initiated and can
+  // repeat, not a state they are shown on arrival.
+  const membership = await getCurrentTasksWorkspaceContext(
     userId,
     workspace.suiteWorkspaceId,
   );
+  const current = membership.kind === "member" ? membership.context : null;
   if (!current || current.workspaceId !== workspace.suiteWorkspaceId) {
     throw new TypeError(CURRENT_MEMBERSHIP_ERROR);
   }

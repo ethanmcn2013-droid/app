@@ -37,6 +37,85 @@ test("automatic Tasks sync failure remains visible and retryable", () => {
   assert.match(source, /onClick=\{\(\) => void runAutoSync\(\)\}/);
 });
 
+test("a sync refusal that Retry cannot fix offers no Retry", () => {
+  // WP1. Every sync refusal used to render as role="alert" with a Retry
+  // button. Once an archived Project and a revoked Project became refusals
+  // rather than silent successes, their owners met a screen-reader-announced
+  // alert and a button that could never work, on EVERY edit-mode load. An
+  // assertive interruption should mean something has gone wrong and something
+  // can be done about it; neither is true of a settled state.
+  const source = read(
+    "app/plan/[projectSlug]/_components/curation-surface.tsx",
+  );
+
+  // The alert path is now conditional on the refusal being retryable...
+  assert.match(
+    source,
+    /autoSyncState\.status === "error" && autoSyncState\.retryable \? \(/,
+    "the assertive alert and its Retry must be reserved for refusals that " +
+      "retrying could actually change",
+  );
+
+  // ...and the settled path is polite, and carries no control at all.
+  //
+  // Anchored on the ELEMENT, not on the condition. The same condition now also
+  // appears where the Sync button is told it is disabled, earlier in the file,
+  // and an indexOf on the condition sliced that instead — swallowing the alert
+  // block and failing for the wrong reason. A guard that can point at the
+  // wrong code is a guard that can pass for the wrong reason too.
+  const settledStart = source.indexOf("id={SETTLED_REFUSAL_ID}");
+  assert.ok(settledStart !== -1, "the settled refusal statement is missing");
+  const block = source.slice(settledStart);
+  const settled = block.slice(0, block.indexOf("</p>"));
+  assert.match(settled, /role="status"/, "a settled state is polite, not assertive");
+  assert.ok(
+    !/<button/.test(settled),
+    "a settled refusal must not offer a control that cannot change it",
+  );
+  assert.ok(
+    !/role="alert"/.test(settled),
+    "a settled refusal must not interrupt the reader on every load",
+  );
+});
+
+test("a settled refusal is stated once, and the control that cannot act says so", () => {
+  // The refusal block sits directly below the Sync button, and `onSync` only
+  // fires on success, so the block was never cleared. An archived Project's
+  // owner met the settled line, an ENABLED "Sync from Tasks" above it, and —
+  // on pressing it — the identical sentence again as role="alert". The same
+  // fact, twice, at two severities, beside a control the block itself says
+  // cannot help.
+  const source = read(
+    "app/plan/[projectSlug]/_components/curation-surface.tsx",
+  );
+
+  // The button is disabled by the settled refusal, not merely by pending.
+  assert.match(
+    source,
+    /disabled=\{isPending \|\| settledRefusal !== null\}/,
+    "the Sync control must be disabled when refreshing has already been " +
+      "refused for a reason that will not change",
+  );
+  // And it names the reason, rather than being inert without explanation.
+  assert.match(
+    source,
+    /aria-describedby=\{settledRefusal \? SETTLED_REFUSAL_ID : undefined\}/,
+    "a disabled control must say why it is disabled",
+  );
+  assert.match(
+    source,
+    /id=\{SETTLED_REFUSAL_ID\}/,
+    "the settled statement must carry the id the button points at",
+  );
+  // The button's own alert cannot restate what the settled block already says.
+  assert.match(
+    source,
+    /result === "error" && settledRefusal === null &&/,
+    "the manual path must not repeat a settled refusal that is already on " +
+      "screen",
+  );
+});
+
 test("one-time audience link copy has an announced manual recovery path", () => {
   // The share controls were extracted from audience-manager.tsx so the project
   // Share panel and the manager cannot drift apart. The recovery path itself is
