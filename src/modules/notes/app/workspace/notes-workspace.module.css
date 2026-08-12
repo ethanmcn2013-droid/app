@@ -382,6 +382,17 @@
   grid-template-rows: auto auto minmax(0, 1fr);
   min-block-size: 100%;
   overflow: hidden;
+  /* The column is capped and centred, so the space a wide screen adds becomes
+     two even margins instead of one dead band on the right. Uncapped, every
+     piece of content stopped on the capture measure while the composer band,
+     the toolbar rule and the list divider ran on to the true canvas edge —
+     measured 467px of empty paper at 1440 and 911px at 1920, with three
+     full-width hairlines crossing it. The frame was drawing a container the
+     content then refused to fill. Capping here rather than on each band means
+     the rules end exactly where the content does, because they are inside it. */
+  inline-size: 100%;
+  max-inline-size: calc(var(--x-notes-capture) + 2 * var(--x-notes-gutter));
+  margin-inline: auto;
 }
 
 /* ── Composer ─────────────────────────────────────────────────────────── */
