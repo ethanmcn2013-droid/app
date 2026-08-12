@@ -9,9 +9,20 @@ Derived as: 100 raw `getActiveWorkspace()` textual matches − 1 definition (`sr
 − 1 error string (`src/server/db/tenant.ts:37`) − 3 test-guard string literals
 (`src/server/tasks-security-regression.test.mjs:279,494,515`).
 
+> **Correction, 2026-08-12.** This document originally carried a headline of **36**
+> critical sites while its own enumerated list summed to **41**. The enumerated list is
+> authoritative; the headline was wrong. Found by the WP3 actions lane while working the
+> list, verified by recount. `settings.ts` holds **11** critical sites, not 12.
+> Recorded rather than silently corrected, because a safety-critical count that drifted
+> once can drift again, and every earlier report of "36 critical" was understated.
+>
+> A second count in this document is also environment-dependent: Guard A printed **93**
+> lines at `3682bf7` and **99** at `0238144`. Both are correct for their commit. Always
+> re-measure rather than quoting a figure from here.
+
 | Classification | Count | | Risk | Count |
 |---|---:|---|---|---:|
-| `scoped-create` | 30 | | **critical** — cookie is the *sole* write destination | **36** |
+| `scoped-create` | 30 | | **critical** — cookie is the *sole* write destination | **41** |
 | `object-mutation` | 25 | | **high** — wrong-Project read/leak, silent dropped write, or wrong-Project artefact | **40** |
 | `scoped-read` | 27 | | medium | 17 |
 | `export-print` | 6 | | low | 2 |
@@ -39,7 +50,7 @@ other cookie touch in `src/server/**` and `src/app/**` writes or deletes.
 (`:169-174`) → **`ws-legacy`** (`:179`). The latter two are silent guesses; the third hands
 out a workspace with no membership proof (see DECISIONS D-005).
 
-## Critical sites (36) — the cookie is the sole write destination
+## Critical sites (41) — the cookie is the sole write destination
 
 `attachments.ts:162` · `billing.ts:72` · `board.ts:{134,176,212,237,264,287,347,406,475}` ·
 `comments.ts:61` · `comp.ts:295` · `import.ts:118` · `onboarding.ts:{40,112,160}` ·
