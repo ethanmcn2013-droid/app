@@ -165,11 +165,16 @@ p.editable { min-height: 24px; padding: 4px 0; }
    the band on every autosave, dragging the receipts sentence sideways
    and pushing the project title's ellipsis on and off twice per save. */
 .syncState {
-  bottom: calc(100% + 2px);
   color: var(--x-task-text-muted);
   font-size: var(--text-caption);
+  /* Out of flow, in the empty run to the LEFT of the receipts — the same
+     place it always appeared, minus the layout cost. Row 1 is 53px tall,
+     so there is no room above or below; sideways is the only direction
+     that does not collide with the app bar. */
   position: absolute;
-  right: 0;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
   /* 500, not 400: the whisper is the band's one "we have your back"
      moment and at regular weight it was nearly subliminal. Still quiet —
      weight, not size or motion. */
