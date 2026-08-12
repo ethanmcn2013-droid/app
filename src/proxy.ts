@@ -39,7 +39,10 @@ import {
  * Layer 0 M-routes for tasks. Explicit allowlist, never a heuristic.
  * Source of truth: LAYER0_ROUTE_ALLOWLIST.md §tasks.
  */
-const MARKETING_PATHS = new Set(["/", "/features", "/pricing", "/changelog"]);
+// Only `/` remains: /features, /pricing and /changelog now 308 to the
+// umbrella in next.config, which runs before this proxy, so they could
+// never reach the authed-visitor redirect below.
+const MARKETING_PATHS = new Set(["/"]);
 
 /** App entry for tasks. */
 const APP_ENTRY = "/app";
@@ -123,22 +126,19 @@ function productRootRedirect(
   return NextResponse.redirect(destination, isAuthed ? 307 : 308);
 }
 
+// Estate consolidation (2026-08-12): the marketing paths that used to sit
+// here — /about, /pricing, /changelog, /students, /principles, /privacy,
+// /terms, /press, /security, /status, /templates, /templates/*, /for/* —
+// are gone. They 308 to the umbrella from next.config before this proxy
+// runs, so listing them as public served no purpose.
+//
+// /welcome came out too, and that is a fix rather than a cut. It was public
+// while its very first statement is `getCurrentUser()`, which throws outright
+// in production on a request with no session (server/auth.ts). Every
+// unauthenticated visit was a guaranteed 500. It needs a session, so it is
+// protected now and Clerk sends a signed-out visitor to sign-in instead.
 const isPublicRoute = createRouteMatcher([
   "/",
-  "/about",
-  "/pricing",
-  "/changelog",
-  "/students",
-  "/welcome",
-  "/principles",
-  "/privacy",
-  "/terms",
-  "/press",
-  "/security",
-  "/status",
-  "/templates",
-  "/templates/(.*)",
-  "/for/(.*)",
   "/embed/(.*)",
   "/p/(.*)",
   "/share/(.*)",
@@ -278,9 +278,6 @@ export const config = {
   // Layer 2 redirect runs for authed visitors hitting the marketing surface.
   matcher: [
     "/",
-    "/features",
-    "/pricing",
-    "/changelog",
     "/app/:path*",
     "/s/:path*",
     "/the-wedding",

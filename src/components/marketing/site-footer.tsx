@@ -50,35 +50,30 @@ export function SiteFooter() {
           <SocialLinks />
         </div>
 
+        {/*
+          Estate consolidation (2026-08-12). This footer renders on the
+          public /invite/[token] page, so a dead link here is a dead link in
+          front of somebody being invited to a workspace. Templates, Status,
+          About, Principles, the five /for pages and the iOS page were all
+          cut; everything company-facing now points at the umbrella, which
+          is the only host serving marketing pages.
+        */}
         <FooterCol
           heading="Product"
           links={[
             { href: "/#demo", label: "Demo" },
             { href: "/#anatomy", label: "Anatomy" },
             { href: "/app/tasks", label: "Workspace" },
-            { href: "/templates", label: "Templates" },
-            { href: "/status", label: "Status" },
           ]}
         />
         <FooterCol
           heading="Company"
           links={[
-            { href: "https://signalstudio.ie/pricing", label: "Pricing", external: true },
-            { href: "/about", label: "About" },
-            { href: "/principles", label: "Principles" },
-            { href: "https://signalstudio.ie/contact", label: "Contact", external: true },
-            { href: "https://signalstudio.ie/dispatch", label: "Dispatch", external: true },
-          ]}
-        />
-        <FooterCol
-          heading="Resources"
-          links={[
-            { href: "/for/community", label: "For coordinators" },
-            { href: "/for/freelancers", label: "For freelancers" },
-            { href: "/for/small-business", label: "For small business" },
-            { href: "/for/students", label: "For students" },
-            { href: "/for/trades", label: "For trades" },
-            { href: IOS_APP_URL, label: "iOS app", external: true },
+            { href: `${STUDIO_URL}/pricing`, label: "Pricing", external: true },
+            { href: `${STUDIO_URL}/about`, label: "About", external: true },
+            { href: `${STUDIO_URL}/principles`, label: "Principles", external: true },
+            { href: `${STUDIO_URL}/contact`, label: "Contact", external: true },
+            { href: `${STUDIO_URL}/dispatch`, label: "Dispatch", external: true },
           ]}
         />
         <FooterCol

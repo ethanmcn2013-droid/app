@@ -69,6 +69,12 @@ export const TIMELINE_PUBLIC_ORIGIN =
   suiteProducts.timeline.publicOrigin;
 
 export const STUDIO_URL = STUDIO_ORIGIN;
+/**
+ * Pricing lives on the umbrella only. This host stopped serving `/pricing`
+ * in the 2026-08-12 estate consolidation, so in-app upgrade prompts must
+ * link out rather than to a local path that now 308s.
+ */
+export const PRICING_URL = `${STUDIO_ORIGIN}/pricing`;
 export const IOS_APP_URL =
   process.env.NEXT_PUBLIC_IOS_APP_URL ?? `${STUDIO_ORIGIN}/ios`;
 export const CONTACT_EMAIL = "hello@signalstudio.ie";

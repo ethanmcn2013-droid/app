@@ -1,39 +1,38 @@
-import Link from "next/link";
 import type { DomainId } from "@/lib/domains";
+import { PRODUCT_MARKETING_URLS, STUDIO_ORIGIN } from "@/lib/product-urls";
 
 /**
  * The "Made with Tasks" footer, appended after every domain theme on
- * `/p/{slug}`. Closes the SEO ↔ virality loop the sprint set up:
- * every viewer of a published workspace lands on a CTA that points
- * back to the matching `/templates/[slug]`.
+ * `/p/{slug}`.
  *
- * The matching template is picked from a per-domain map. If the
- * workspace doesn't have a domain set, falls back to the gallery.
+ * This is the most-seen public surface the company has: every guest,
+ * supplier and family member a couple shares their plan with lands here.
+ * It used to close an SEO loop by pointing at `/templates/[slug]`, but the
+ * 2026-08-12 estate consolidation retired the public templates browse on
+ * this host. Both links now leave for the umbrella and go straight to
+ * their destination — a published keepsake should never spend a visitor's
+ * click on a redirect.
+ *
+ * The waitlist carries the tracking vocabulary the studio capture records
+ * (source, campaign, audience, artifact), so a signup arriving from a
+ * wedding plan is attributable to the wedding plan.
  */
 
-const DOMAIN_TO_TEMPLATE: Record<DomainId, string> = {
-  wedding: "wedding-3-month-countdown",
-  marketing: "product-launch",
-  freelance: "new-client-onboarding",
-  student: "final-paper-push",
-  // Trades couples cleanly to the new-client-onboarding template —
-  // the pattern is identical (kickoff doc, contract, payment terms,
-  // first invoice) just with different tooling between trades and
-  // freelance dev. A purpose-built "trades-week" template can land
-  // in a future cycle.
-  trades: "new-client-onboarding",
-};
+function waitlistHref(domain: DomainId | null): string {
+  const params = new URLSearchParams({
+    source: "published_workspace",
+    campaign: "keepsake_footer",
+    artifact: "published_footer",
+  });
+  if (domain) params.set("audience", domain);
+  return `${STUDIO_ORIGIN}/waitlist?${params.toString()}`;
+}
 
 export function PublishedFooter({
   domain,
 }: {
   domain: DomainId | null;
 }) {
-  const templateSlug = domain ? DOMAIN_TO_TEMPLATE[domain] : null;
-  const ctaHref = templateSlug
-    ? `/templates/${templateSlug}`
-    : "/templates";
-
   return (
     <footer className="mt-20 border-t border-line-soft/70 bg-bg-elevated/40 px-6 py-10">
       <div className="mx-auto flex w-full max-w-[1080px] flex-col items-start justify-between gap-6 md:flex-row md:items-center">
@@ -51,11 +50,11 @@ export function PublishedFooter({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Link
-            href={ctaHref}
+          <a
+            href={waitlistHref(domain)}
             className="inline-flex items-center gap-1.5 rounded-full border border-line-soft bg-white px-4 py-1.5 text-[12.5px] font-medium text-ink transition-colors hover:border-ink-soft/30"
           >
-            Pick this template
+            Make one like this
             <svg
               width="11"
               height="11"
@@ -68,13 +67,13 @@ export function PublishedFooter({
             >
               <path d="M5 12h14M13 5l7 7-7 7" />
             </svg>
-          </Link>
-          <Link
-            href="/"
+          </a>
+          <a
+            href={PRODUCT_MARKETING_URLS.tasks}
             className="text-[12.5px] text-ink-soft transition-colors hover:text-ink"
           >
             What is Tasks?
-          </Link>
+          </a>
         </div>
       </div>
     </footer>

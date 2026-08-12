@@ -4,7 +4,7 @@ import {
   tierMeetsMinimum,
 } from "@/server/db/entitlements";
 import type { EntitlementTier } from "@/lib/data";
-import Link from "next/link";
+import { PRICING_URL } from "@/lib/product-urls";
 
 /**
  * Server-side gate. Renders `children` when the current user's tier
@@ -40,8 +40,8 @@ export async function RequireTier({
       </div>
       <div className="mt-1 font-medium text-ink">{fallbackTitle}</div>
       <p className="mt-1 leading-[1.5]">{fallbackBody}</p>
-      <Link
-        href="/pricing"
+      <a
+        href={PRICING_URL}
         className="mt-2 inline-flex items-center gap-1 text-[12px] font-medium text-brand transition-opacity hover:opacity-80"
       >
         See pricing
@@ -57,7 +57,7 @@ export async function RequireTier({
         >
           <path d="M5 12h14M13 5l7 7-7 7" />
         </svg>
-      </Link>
+      </a>
     </div>
   );
 }

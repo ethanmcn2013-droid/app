@@ -204,6 +204,65 @@ function retiredMarketingRedirects() {
       source: "/roadmap",
       destination: "https://signalstudio.ie/timeline",
     },
+    // ── Estate consolidation (2026-08-12) ───────────────────────────────
+    // The rest of the marketing surface follows the five above. Everything
+    // here titled itself "Tasks" rather than Signal Studio, and every path
+    // also answered on tasks.signalstudio.ie — productionAppHosts covers
+    // both hosts, which is the point: without these, tasks./templates/*
+    // keeps serving 200s off a hostname we retired.
+    {
+      source: "/students",
+      destination: "https://signalstudio.ie/students",
+    },
+    {
+      source: "/principles",
+      destination: "https://signalstudio.ie/principles",
+    },
+    {
+      source: "/privacy",
+      destination: "https://signalstudio.ie/privacy",
+    },
+    {
+      source: "/terms",
+      destination: "https://signalstudio.ie/terms",
+    },
+    {
+      source: "/security",
+      destination: "https://signalstudio.ie/security",
+    },
+    {
+      source: "/status",
+      destination: "https://signalstudio.ie/",
+    },
+    {
+      source: "/templates",
+      destination: "https://signalstudio.ie/tasks",
+    },
+    // One wildcard for all thirteen slugs. The two slug-rename rules that
+    // used to sit further down (final-paper-sprint, job-application-sprint)
+    // are deleted: they would have chained old slug → new slug → here.
+    {
+      source: "/templates/:path*",
+      destination: "https://signalstudio.ie/tasks",
+    },
+    // Ordered before the /for wildcard — first match wins.
+    {
+      source: "/for/students",
+      destination: "https://signalstudio.ie/students",
+    },
+    {
+      source: "/for/weddings",
+      destination: "https://signalstudio.ie/venues",
+    },
+    {
+      source: "/for/:path*",
+      destination: "https://signalstudio.ie/tasks",
+    },
+    // Exact path only: the functional /embed/[slug] surface is untouched.
+    {
+      source: "/embed/guide",
+      destination: "https://signalstudio.ie/tasks",
+    },
   ] as const;
 
   return productionAppHosts.flatMap((host) =>
@@ -342,8 +401,12 @@ const nextConfig: NextConfig = {
         destination: "/app/signal/:path*",
         permanent: false,
       },
-      { source: "/templates/final-paper-sprint", destination: "/templates/final-paper-push", permanent: true },
-      { source: "/templates/job-application-sprint", destination: "/templates/job-application-push", permanent: true },
+      // The two /templates slug renames (final-paper-sprint,
+      // job-application-sprint) were removed in the 2026-08-12 estate
+      // consolidation. They resolved to sibling template pages that no
+      // longer exist, so leaving them here would have chained old slug →
+      // new slug → the umbrella. The /templates/:path* rule inside
+      // retiredMarketingRedirects() now catches every slug in one hop.
       ...retiredMarketingRedirects(),
     ];
   },

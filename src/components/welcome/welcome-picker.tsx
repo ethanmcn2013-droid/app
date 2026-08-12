@@ -239,27 +239,13 @@ export function WelcomePicker({
             >
               Or skip and start blank
             </button>
-            <span className="text-ink-faint" aria-hidden>
-              ·
-            </span>
-            <Link
-              href="/templates"
-              className="inline-flex items-center gap-1 text-[13px] text-ink-quiet underline-offset-4 transition-colors hover:text-ink-soft hover:underline"
-            >
-              Or pick a template
-              <svg
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M13 5l7 7-7 7" />
-              </svg>
-            </Link>
+            {/*
+              The "Or pick a template" link pointed at /templates, a public
+              browse page cut in the 2026-08-12 estate consolidation. It was
+              always the odd one out here: this picker IS the template
+              chooser, so the link sent someone mid-onboarding out to a
+              marketing page to do the thing already in front of them.
+            */}
           </motion.div>
 
         </div>

@@ -35,7 +35,11 @@ export const metadata: Metadata = {
   description:
     "Notes, tasks, timelines, and the signal that matters in one calm workspace.",
   metadataBase: new URL(APP_ORIGIN),
-  alternates: { canonical: "/" },
+  // No root-level `alternates.canonical`. Next inherits metadata down the
+  // tree, so a canonical here resolved to the bare origin on every page
+  // that did not set its own — all thirteen /templates pages declared
+  // themselves to be https://app.signalstudio.ie, which is why none of
+  // them could rank. Pages that need a canonical set it themselves.
   manifest: "/manifest.webmanifest",
   openGraph: {
     title: "Signal Studio",
