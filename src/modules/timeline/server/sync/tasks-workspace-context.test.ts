@@ -110,6 +110,14 @@ async function addProject(
   }
 }
 
+/** Assert the read proved membership, and hand back the context it proved. */
+async function member(clerkId: string, workspaceId: string) {
+  const result = await getCurrentTasksWorkspaceContext(clerkId, workspaceId);
+  assert.equal(result.kind, "member", `expected membership for ${clerkId}`);
+  if (result.kind !== "member") throw new Error("unreachable");
+  return result.context;
+}
+
 // ── F2 · the uniqueness proof must count every sibling ───────────────────────
 
 test("one owned Project and nothing else is a sole-owned pairing", async (t) => {
@@ -183,23 +191,20 @@ test("the membership context reports the Project's real owner subject", async (t
     members: [[OWNER_TASKS_ID, "owner"], [COOWNER_TASKS_ID, "owner"]],
   });
 
-  const asOwner = await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_shared");
-  const asCoOwner = await getCurrentTasksWorkspaceContext(
-    COOWNER_CLERK,
-    "ws_shared",
-  );
+  const asOwner = await member(OWNER_CLERK, "ws_shared");
+  const asCoOwner = await member(COOWNER_CLERK, "ws_shared");
 
-  assert.equal(asOwner?.ownerClerkId, OWNER_CLERK);
+  assert.equal(asOwner.ownerClerkId, OWNER_CLERK);
   assert.equal(
-    asCoOwner?.ownerClerkId,
+    asCoOwner.ownerClerkId,
     OWNER_CLERK,
     "a promoted co-owner must not read as the Project's owner",
   );
   assert.equal(
-    asCoOwner?.role,
+    asCoOwner.role,
     "owner",
     "their membership role really is owner — which is exactly why the role " +
-      "is the wrong thing to gate provisioning on",
+      "is the wrong thing to gate a write on",
   );
 });
 
@@ -210,12 +215,9 @@ test("a Project with no owner row yields no owner subject", async (t) => {
   t.after(db.close);
   await addProject(db.client, { id: "ws_orphan", ownerTasksId: null });
 
-  const context = await getCurrentTasksWorkspaceContext(
-    OWNER_CLERK,
-    "ws_orphan",
-  );
-  assert.equal(context?.workspaceId, "ws_orphan");
-  assert.equal(context?.ownerClerkId, null);
+  const context = await member(OWNER_CLERK, "ws_orphan");
+  assert.equal(context.workspaceId, "ws_orphan");
+  assert.equal(context.ownerClerkId, null);
 });
 
 test("membership of a different Project never authorizes this one", async (t) => {
@@ -228,7 +230,9 @@ test("membership of a different Project never authorizes this one", async (t) =>
     members: [[COOWNER_TASKS_ID, "owner"]],
   });
 
-  assert.equal(await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_b"), null);
+  assert.deepEqual(await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_b"), {
+    kind: "not-a-member",
+  });
 });
 
 test("an archived Project still resolves, and says so", async (t) => {
@@ -236,6 +240,51 @@ test("an archived Project still resolves, and says so", async (t) => {
   t.after(db.close);
   await addProject(db.client, { id: "ws_old", archivedAt: 1_700_000_000 });
 
-  const context = await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_old");
-  assert.equal(context?.archivedAt, 1_700_000_000);
+  const context = await member(OWNER_CLERK, "ws_old");
+  assert.equal(context.archivedAt, 1_700_000_000);
+});
+
+// ── "no row" and "could not ask" are different facts ─────────────────────────
+
+test("an unreachable Tasks database is unavailable, never a denial", async (t) => {
+  // The regression this pass introduced and then removed. Every failure here
+  // used to collapse to null, and the sync action read null as "you no longer
+  // have access to this project" — told to every Timeline owner in edit mode,
+  // with no Retry, for the length of any Tasks outage or migration window.
+  //
+  // It is the milestone read's defect one layer up: authorization expressed as
+  // an absence. A denial is an answer; an outage is the absence of one.
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, { id: "ws_live" });
+
+  // The schema is gone, so the query throws rather than returning no row.
+  await db.client.executeMultiple("DROP TABLE workspace_members;");
+
+  const result = await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_live");
+  assert.equal(result.kind, "unavailable");
+  assert.notEqual(
+    result.kind,
+    "not-a-member",
+    "an unanswered question must never be reported as a refused one",
+  );
+});
+
+test("missing Tasks configuration is unavailable, never a denial", async (t) => {
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, { id: "ws_live" });
+
+  const url = process.env.TASKS_DATABASE_URL;
+  t.after(() => {
+    process.env.TASKS_DATABASE_URL = url;
+  });
+  delete process.env.TASKS_DATABASE_URL;
+
+  const result = await getCurrentTasksWorkspaceContext(OWNER_CLERK, "ws_live");
+  assert.equal(result.kind, "unavailable");
+  assert.equal(
+    result.kind === "unavailable" ? result.code : null,
+    "tasks_not_configured",
+  );
 });

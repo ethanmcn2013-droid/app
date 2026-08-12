@@ -210,10 +210,15 @@ export async function resolveTimelineContext(
   // The two reads run together exactly as they did before. Only the membership
   // read authorizes anything; the Timeline list is the actor's own, keyed to
   // ownerUserId, and it is passed to the resolver purely to save a round trip.
-  const [current, ownedWorkspaces] = await Promise.all([
+  const [membership, ownedWorkspaces] = await Promise.all([
     getCurrentTasksWorkspaceContext(userId, requestedWorkspaceId),
     getWorkspacesForUser(userId),
   ]);
+  // A Timeline page refuses on both a proved non-membership and an unanswered
+  // question, so the two collapse here — but they collapse at the CALLER, on
+  // this line, where a reader can see it happen. The sync action needs them
+  // apart and keeps them apart.
+  const current = membership.kind === "member" ? membership.context : null;
 
   // Current Tasks membership is the authorization boundary, and the only one.
   // Without it we refuse and never substitute a different workspace: a URL

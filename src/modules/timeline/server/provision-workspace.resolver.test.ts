@@ -178,6 +178,21 @@ async function timelineCount(client: Client): Promise<number> {
   return Number(rows.rows[0]!.n);
 }
 
+/** Unwrap the tagged membership result; every case here is a real member. */
+async function proveMembership(
+  read: typeof import("@/modules/timeline/server/sync/tasks-workspace-context")["getCurrentTasksWorkspaceContext"],
+  clerkId: string,
+  workspaceId: string,
+) {
+  const membership = await read(clerkId, workspaceId);
+  assert.equal(
+    membership.kind,
+    "member",
+    `expected proved membership for ${clerkId}`,
+  );
+  return membership.kind === "member" ? membership.context : null;
+}
+
 async function harness(t: { after: (fn: () => void) => void }) {
   const timeline = createClient({ url: TIMELINE_URL });
   const tasks = createClient({ url: TASKS_URL });
@@ -210,7 +225,11 @@ test("a promoted co-owner cannot adopt their own Timeline onto the owner's Proje
   const h = await harness(t);
   await seedUnclaimedTimeline(h.timeline, "co-owners-own-timeline", COOWNER_CLERK);
 
-  const proved = await h.getCurrentTasksWorkspaceContext(COOWNER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    COOWNER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved, "the co-owner really is a member of this Project");
   assert.equal(proved.role, "owner", "their membership role really is owner");
   assert.equal(
@@ -240,7 +259,11 @@ test("the Project's own owner still adopts their unclaimed Timeline", async (t) 
   const h = await harness(t);
   await seedUnclaimedTimeline(h.timeline, "owners-own-timeline", OWNER_CLERK);
 
-  const proved = await h.getCurrentTasksWorkspaceContext(OWNER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    OWNER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved);
   const resolution = await h.resolveCanonicalTimeline(
     OWNER_CLERK,
@@ -264,7 +287,11 @@ test("an ordinary member cannot adopt onto someone else's Project either", async
   const h = await harness(t);
   await seedUnclaimedTimeline(h.timeline, "members-own-timeline", MEMBER_CLERK);
 
-  const proved = await h.getCurrentTasksWorkspaceContext(MEMBER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    MEMBER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved);
   const resolution = await h.resolveCanonicalTimeline(
     MEMBER_CLERK,
@@ -282,7 +309,11 @@ test("a promoted co-owner with no Timeline cannot provision the owner's either",
   const h = await harness(t);
   const before = await timelineCount(h.timeline);
 
-  const proved = await h.getCurrentTasksWorkspaceContext(COOWNER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    COOWNER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved);
   const resolution = await h.resolveCanonicalTimeline(
     COOWNER_CLERK,
@@ -301,7 +332,11 @@ test("a promoted co-owner with no Timeline cannot provision the owner's either",
 test("the Project's owner with no Timeline is provisioned one", async (t) => {
   const h = await harness(t);
 
-  const proved = await h.getCurrentTasksWorkspaceContext(OWNER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    OWNER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved);
   const resolution = await h.resolveCanonicalTimeline(
     OWNER_CLERK,
@@ -331,7 +366,11 @@ test("a member reads the Project's already-bound Timeline", async (t) => {
     args: [OWNER_CLERK, PROJECT],
   });
 
-  const proved = await h.getCurrentTasksWorkspaceContext(MEMBER_CLERK, PROJECT);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    MEMBER_CLERK,
+    PROJECT,
+  );
   assert.ok(proved);
   const resolution = await h.resolveCanonicalTimeline(
     MEMBER_CLERK,

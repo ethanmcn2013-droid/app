@@ -328,11 +328,23 @@ export async function syncMilestonesAction(
   // mean "delete everything". Tasks membership is the authorization boundary
   // for Tasks data (ADR 0001 §4); local Timeline ownership is not a substitute
   // for it and never was.
-  const tasksContext = await getCurrentTasksWorkspaceContext(
+  const membership = await getCurrentTasksWorkspaceContext(
     userId,
     canonicalWorkspaceId,
   );
-  if (!tasksContext) {
+
+  // "Not a member" and "could not ask" are different facts and get different
+  // answers. Collapsing them is what told every Timeline owner they had lost
+  // access to their own project during a ninety-second Tasks migration, with
+  // no way to retry — the same authorization-as-absence confusion this wave
+  // exists to remove, one layer up from the milestone read.
+  if (membership.kind === "unavailable") {
+    return {
+      error: "Tasks could not be reached. Your timeline is unchanged.",
+      retryable: true,
+    };
+  }
+  if (membership.kind === "not-a-member") {
     return {
       error:
         "You no longer have access to the Signal Tasks project this plan is " +
@@ -340,14 +352,21 @@ export async function syncMilestonesAction(
       retryable: false,
     };
   }
+  const tasksContext = membership.context;
   if (tasksContext.archivedAt !== null) {
-    // An archived Project is read-only for Project-scoped operations
-    // (ADR 0001 §5), and reconciliation is a write. Refusing here keeps the
-    // archived Project's timeline exactly as the owner left it.
+    // An archived Project takes no new Project-scoped writes (ADR 0001 §5),
+    // and reconciliation is a write. Refusing here keeps the archived
+    // Project's timeline exactly as the owner left it.
+    //
+    // The copy says only what is true. Nothing in this module enforces
+    // read-only on the timeline itself: `upsertNodeOverlayAction` and every
+    // other mutation here check local Timeline ownership and nothing else, so
+    // the owner can still edit, reorder, hide, add and publish. Refreshing
+    // from Tasks is the one thing that stops. Enforcing the rest is F6/WP7.
     return {
       error:
-        "This Signal Tasks project is archived, so its timeline is read-only. " +
-        "Milestones will not refresh from Tasks.",
+        "This Signal Tasks project is archived, so Timeline will not refresh " +
+        "milestones from it.",
       retryable: false,
     };
   }

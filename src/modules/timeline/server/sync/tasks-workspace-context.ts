@@ -182,13 +182,42 @@ export async function getSoleOwnedTasksWorkspaceIdForUser(
   }
 }
 
+/**
+ * What one membership read actually established.
+ *
+ * ── WHY THIS IS NOT `… | null` ─────────────────────────────────────────────
+ * It was, and null meant three unrelated things: the actor is not a member,
+ * the Tasks database could not be reached, and the environment is not
+ * configured. Callers could only treat all three the same way. Refusing a
+ * Timeline page for all three is right; telling a Timeline owner "you no
+ * longer have access to this project", with no way to retry, because Tasks was
+ * mid-migration for ninety seconds is not.
+ *
+ * This is the same confusion as the milestone read's — authorization expressed
+ * as an absence — one layer up. "No row" is an answer. "Could not ask" is not.
+ */
+export type TasksWorkspaceContextResult =
+  /** Membership of this exact Project is proved. */
+  | Readonly<{ kind: "member"; context: CurrentTasksWorkspaceContext }>
+  /** The read succeeded and returned no row: the actor is not a member of that
+   *  Project, or it does not exist. A settled answer — retrying produces the
+   *  same one. */
+  | Readonly<{ kind: "not-a-member" }>
+  /** The question could not be asked. This says NOTHING about membership, and
+   *  a caller must not present it as though it did. */
+  | Readonly<{ kind: "unavailable"; code: string }>;
+
 export async function getCurrentTasksWorkspaceContext(
   clerkId: string,
   workspaceId: string,
-): Promise<CurrentTasksWorkspaceContext | null> {
+): Promise<TasksWorkspaceContextResult> {
   const url = process.env.TASKS_DATABASE_URL;
   const authToken = process.env.TASKS_AUTH_TOKEN;
-  if (!url || !authToken || !clerkId.trim() || !workspaceId.trim()) return null;
+  if (!url || !authToken) {
+    // Missing configuration is an unanswered question, not a denial.
+    return { kind: "unavailable", code: "tasks_not_configured" };
+  }
+  if (!clerkId.trim() || !workspaceId.trim()) return { kind: "not-a-member" };
 
   const client = createClient({ url, authToken });
   try {
@@ -212,8 +241,8 @@ export async function getCurrentTasksWorkspaceContext(
       args: [clerkId, workspaceId],
     });
     const row = result.rows[0];
-    if (!row) return null;
-    return {
+    if (!row) return { kind: "not-a-member" };
+    const context: CurrentTasksWorkspaceContext = {
       workspaceId: String(row.workspace_id),
       planningPeriodId:
         row.planning_period_id == null ? null : String(row.planning_period_id),
@@ -225,13 +254,21 @@ export async function getCurrentTasksWorkspaceContext(
       ownerClerkId: row.owner_clerk_id == null ? null : String(row.owner_clerk_id),
       archivedAt: row.archived_at == null ? null : Number(row.archived_at),
     };
+    return { kind: "member", context };
   } catch (error) {
     // Do not fall back to a first workspace when current membership cannot be
     // proved. Avoid logging ids; they are private suite routing metadata.
+    //
+    // And do not report this as a denial. A dropped connection, a migration
+    // window and an expired token all land here, and none of them is evidence
+    // that the actor lost access to anything.
     if (!isAuthError(error)) {
       console.error("[tasks-workspace-context] current membership check failed");
     }
-    return null;
+    return {
+      kind: "unavailable",
+      code: isAuthError(error) ? "tasks_read_unauthorized" : "tasks_read_failed",
+    };
   } finally {
     client.close();
   }

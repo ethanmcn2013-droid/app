@@ -618,13 +618,33 @@ test("the sync action proves Tasks membership before it can delete anything", ()
   );
   assert.match(
     body,
-    /if \(!tasksContext\) \{/,
-    "a missing membership must refuse the sync outright",
+    /if \(membership\.kind === "not-a-member"\) \{/,
+    "a proved non-membership must refuse the sync outright",
   );
   assert.match(
     body,
     /tasksContext\.archivedAt !== null/,
-    "an archived Project is read-only, and reconciliation is a write",
+    "an archived Project takes no Project-scoped writes, and reconciliation " +
+      "is a write",
+  );
+
+  // And the two must be told apart. Collapsing "not a member" with "could not
+  // ask" told every Timeline owner they had lost access to their own Project
+  // for the length of any Tasks outage, with no way to retry.
+  const unavailable = body.indexOf('membership.kind === "unavailable"');
+  const notAMember = body.indexOf('membership.kind === "not-a-member"');
+  assert.ok(
+    unavailable !== -1,
+    "an unreachable Tasks database must have its own branch",
+  );
+  assert.ok(
+    unavailable < notAMember,
+    "the unanswered case must be handled before the settled one",
+  );
+  assert.match(
+    body.slice(unavailable, notAMember),
+    /retryable: true/,
+    "an unreachable Tasks database is worth retrying and must say so",
   );
 });
 

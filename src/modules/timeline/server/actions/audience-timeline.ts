@@ -144,15 +144,43 @@ export async function connectSuiteWorkspaceAction(
         "This Timeline workspace is already connected. Use a reviewed migration to change its canonical identity.",
       );
     }
-    const currentMembership = await getCurrentTasksWorkspaceContext(
+    const membership = await getCurrentTasksWorkspaceContext(
       userId,
       suiteWorkspaceId,
     );
-    if (!currentMembership) {
+    if (membership.kind !== "member") {
       throw new TypeError(
         "Timeline could not confirm your current membership in that Signal Tasks workspace.",
       );
     }
+
+    // ── OWNERSHIP, NOT MEMBERSHIP ──────────────────────────────────────
+    // This is the third way to write a Project↔Timeline binding, alongside
+    // the resolver's provision and adopt paths, and it is the most exposed:
+    // a Server Action is addressable by any authenticated user whatever the
+    // UI renders. It proved membership and stopped, with `ownerClerkId` read
+    // and unused two lines above.
+    //
+    // An ordinary member of somebody else's Project — no promotion needed —
+    // could therefore bind their OWN Timeline to it. Two consequences, and
+    // the second is worse than the first:
+    //
+    //   1. It consumes `uq_workspaces_suite_workspace_id` for that Project,
+    //      so the Project's real owner hits a unique-index violation on their
+    //      first visit and is locked out permanently.
+    //   2. `syncMilestonesAction` then resolves that Project as the canonical
+    //      source for a Timeline the member owns, and pulls the owner's
+    //      milestone titles into it — publishable by the member on a public
+    //      bearer link. Plan §6.6 gives members no publish capability; this
+    //      routed around it entirely.
+    //
+    // Connecting a Project to a Timeline is the Project owner's act.
+    if (membership.context.ownerClerkId !== userId) {
+      throw new TypeError(
+        "Only the owner of that Signal Tasks project can connect it to a Timeline.",
+      );
+    }
+
     const updated = await connectSuiteWorkspace(workspace.slug, userId, suiteWorkspaceId);
     if (!updated) throw new TypeError("Workspace not found");
     revalidatePath("/app/timeline/audience");
