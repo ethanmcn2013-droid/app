@@ -1069,7 +1069,7 @@
           "assertions": [
             {
               "kind": "url",
-              "pathname": "/app/timeline",
+              "pathname": "/app/timeline/mara-finn",
               "proves": [
                 "populated"
               ]
