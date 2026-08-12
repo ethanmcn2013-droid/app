@@ -178,7 +178,7 @@ test("I20 · unavailable coverage yields NO count, not zero", () => {
 
   const display = badgeDisplay(count);
   assert.equal(display.glyph, null, "no glyph, and certainly not a 0");
-  assert.notMatch(display.accessibleName, /\b0\b/);
+  assert.doesNotMatch(display.accessibleName, /\b0\b/);
 });
 
 test("I20 · one unresolvable Project makes the badge partial, never zero", () => {

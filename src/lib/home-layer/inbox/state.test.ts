@@ -39,7 +39,8 @@ function unwrap<T extends { ok: boolean }>(result: T) {
     true,
     `expected ok, got ${JSON.stringify(result)}`,
   );
-  return (result as { ok: true; state: ReturnType<typeof arrival> }).state;
+  return (result as unknown as { ok: true; state: ReturnType<typeof arrival> })
+    .state;
 }
 
 // ── I6 · marking read is an allowlist ───────────────────────────────────────
