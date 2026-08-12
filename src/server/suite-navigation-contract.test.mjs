@@ -153,7 +153,10 @@ test("search is a compact command trigger beside Add task, not a resident field"
   assert.match(studioBar, /data-slot="signal-pulse"/);
   assert.match(studioBar, /aria-keyshortcuts="Control\+K Meta\+K"/);
   assert.match(studioBar, /aria-keyshortcuts="c"/);
-  assert.match(studioBar, /bg-\[var\(--x-studio-ink-strong\)\]/);
+  // The Add-task capsule is a FILL, so it spends the capsule token, not the
+  // strong-ink text value it used to borrow — that borrow is what left dark
+  // with a near-white capsule and nowhere to remap it (wave 6).
+  assert.match(studioBar, /bg-\[var\(--x-studio-capsule\)\]/);
 
   assert.doesNotMatch(studioRail, /aria-label="Search"/);
   assert.doesNotMatch(studioRail, /aria-label="Team"/);

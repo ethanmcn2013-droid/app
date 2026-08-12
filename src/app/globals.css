@@ -137,7 +137,18 @@
   --x-studio-chrome:        #17171a;
   --x-studio-chrome-raised: #26262c;
   --x-studio-accent:        var(--indigo-500);
-  --x-studio-capsule:       var(--zinc-100);
+  /* The capsule — the bar's one filled control (Add task, and the bare "+"
+     it becomes below sm). Four values because a filled control is four
+     decisions, not one: the fill, the fill it hovers to, the edge that
+     separates it from the charcoal, and the ink it carries. They were a
+     single token spent as a fill (--x-studio-ink-strong, which is a TEXT
+     value the wordmark and the rail labels also spend) plus two Tailwind
+     literals, which is why dark had nowhere to remap it. */
+  --x-studio-capsule:        var(--zinc-100);
+  --x-studio-capsule-hover:  var(--ink-0);
+  --x-studio-capsule-edge:   var(--x-studio-capsule);
+  --x-studio-capsule-ink:    var(--x-studio-chrome);
+  --x-studio-capsule-keycap: var(--zinc-600);
   --x-studio-ink-strong:    var(--zinc-100);
   --x-studio-ink:           #f0f0f2;
   --x-studio-ink-mid:       var(--zinc-200);
@@ -407,6 +418,34 @@
      holds ≥5:1 on every surface in the app including the raised
      chrome. */
   --x-accent-focus: var(--indigo-400);
+
+  /* ── The chrome capsule ─────────────────────────────────────
+     The L-frame is the same charcoal in both themes, so almost
+     nothing in it moves. The capsule has to: near-white on
+     charcoal sat harmoniously above a white page and became the
+     single brightest object in the app the moment the page went
+     dark — one control outshouting the accent system it is
+     supposed to belong to.
+
+     Dark spends the accent instead, which is what a primary
+     action is everywhere else in this app. Measured:
+
+       fill    --accent          label 5.72:1  edge-on-charcoal 2.85:1
+       hover   accent+50% lighter label 4.83:1  edge 3.37:1
+       edge    --x-studio-accent               4.00:1
+
+     The fill's own edge does not clear 1.4.11 against the
+     charcoal, so the edge is a separate value one step up the
+     ramp — the chrome's own indigo — rather than the fill
+     repeated. The keycap gives up its quieter step here and
+     takes the label's ink: on a saturated indigo there is no
+     third ink step that still clears 4.5:1 once the capsule
+     hovers. In light it keeps zinc-600 on near-white paper. */
+  --x-studio-capsule:        var(--accent);
+  --x-studio-capsule-hover:  color-mix(in srgb, var(--accent-hover) 50%, var(--accent));
+  --x-studio-capsule-edge:   var(--x-studio-accent);
+  --x-studio-capsule-ink:    var(--x-on-accent);
+  --x-studio-capsule-keycap: var(--x-on-accent);
 
   /* ── Elevation inverts ──────────────────────────────────────
      On white the ramp runs DOWN from the canvas: a sunken track
