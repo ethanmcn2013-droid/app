@@ -3,14 +3,14 @@
   "experienceId": "tasks.page.embed-by-slug",
   "source": "tasks/src/app/embed/[slug]/page.tsx",
   "materialityHash": "d226ac71e96df95f",
-  "reviewedAt": "2026-08-09",
-  "reviewer": "Codex Wave 0 control-plane",
+  "reviewedAt": "2026-08-12",
+  "reviewer": "Claude Fable 5 wave-5 coordinator",
   "playwrightEvidence": {
-    "attestationPath": "experience/evidence-runs/tasks-playwright-e52f11ca5f4fc4db9b24b5e2-a8ab0b2e82dc6c99.json",
-    "attestationSha256": "73a4c5a1634ec52e95154af02bfe078840ba23463c8ebb60b5e6b88908c83f15",
-    "runId": "tasks-playwright-e52f11ca5f4fc4db9b24b5e2",
-    "canonicalEvidenceSha256": "e52f11ca5f4fc4db9b24b5e24741ebf40b7a84985220647df3a82f7dfdd84018",
-    "rawArtifactSha256": "a8ab0b2e82dc6c99054dee7e341843ed5bd2849a4fe8f75198ecb459889db5f6",
+    "attestationPath": "experience/evidence-runs/tasks-playwright-0669c8800ca9fb0062533ba8-82ff42b620b15842.json",
+    "attestationSha256": "454f811a5d562c8bf6f714590f24d421a781c13fcd7592761d4fc119416caf03",
+    "runId": "tasks-playwright-0669c8800ca9fb0062533ba8",
+    "canonicalEvidenceSha256": "0669c8800ca9fb0062533ba87d4c8c4317349ca9e938d8ef9883af90c718ea9b",
+    "rawArtifactSha256": "82ff42b620b15842847e6636d552ba5c30868a8bc5c4625a2c9db83724d9ed7f",
     "artifactPath": "experience/output/critical-evidence.json",
     "fixtureId": "tasks.page.app",
     "caseName": "front door lands on Home",
@@ -21,6 +21,6 @@
       "wide"
     ]
   },
-  "reviewedChange": "Re-attested unchanged source against the 144-case current Home-first evidence contract after the deterministic harness update.",
+  "reviewedChange": "Rebound to the wave-5 evidence run after the owner-timeline fixture moved to the canonical project path.",
   "decision": "approve"
 }
