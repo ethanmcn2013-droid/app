@@ -266,7 +266,13 @@ function ProjectRowMenu({
       <AnimatePresence>
       {open ? (
         <motion.div
-          animate={{ opacity: 1, transform: "scale(1)" }}
+          // All three states are guarded together, and they have to be: an
+          // unguarded `animate` naming a transform target is still a
+          // transform target under reduced motion, and motion/react animates
+          // to it from the element's default — so guarding only `initial`
+          // and `exit` produced scale(0) → scale(1), seventeen times MORE
+          // travel with reduced motion on than with it off.
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, transform: "scale(1)" }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
           role="menu"

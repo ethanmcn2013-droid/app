@@ -59,6 +59,19 @@ import { useLayoutEffect } from "react";
 const SURFACE = "main#app-main-content,[data-product-canvas]";
 /** Tags the settle so a second one can cancel the first. */
 const SETTLE_ID = "surface-arrival";
+/**
+ * One arrival, one settle, however many boundaries announce it.
+ *
+ * Cancelling a running settle is not enough. Nested loading boundaries
+ * unmount at different commits — measured on a Tasks → Notes jump, 311ms
+ * apart — so the first settle had already FINISHED before the second began,
+ * leaving nothing to cancel and showing the viewer the surface fade in,
+ * complete, drop back to 0.6, and fade in again. The element therefore
+ * remembers when it last settled, and a second announcement inside this
+ * window is treated as the same arrival and ignored.
+ */
+const SETTLE_STAMP = "surfaceSettledAt";
+const SETTLE_WINDOW_MS = 400;
 /** Where the surface resolves from. Paper-toned, not a fade-in from nothing. */
 const FROM_OPACITY = 0.6;
 
@@ -77,6 +90,10 @@ function playSurfaceSettle(): void {
   if (window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
   const target = document.querySelector<HTMLElement>(SURFACE);
   if (!target?.animate) return;
+  const last = Number(target.dataset[SETTLE_STAMP] ?? "");
+  const now = performance.now();
+  if (Number.isFinite(last) && last > 0 && now - last < SETTLE_WINDOW_MS) return;
+  target.dataset[SETTLE_STAMP] = String(now);
   const tokens = getComputedStyle(document.documentElement);
   const raw = tokens.getPropertyValue("--motion-fast").trim();
   let duration = parseFloat(raw) || 0;
@@ -104,7 +121,7 @@ function playSurfaceSettle(): void {
  * fallback, which is what makes a childList observation on it the exact
  * signal for "the loader has been replaced".
  */
-const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,p=s&&s.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(s.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
+const ARRIVAL_SETTLE_SCRIPT = `(function(){var s=document.currentScript,p=s&&s.parentNode;if(!p||!window.matchMedia||matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new MutationObserver(function(){if(s.isConnected)return;o.disconnect();var t=document.querySelector("${SURFACE}");if(!t||!t.animate)return;var L=Number(t.dataset.${SETTLE_STAMP}||""),N=performance.now();if(L>0&&N-L<${SETTLE_WINDOW_MS})return;t.dataset.${SETTLE_STAMP}=String(N);var c=getComputedStyle(document.documentElement),v=c.getPropertyValue("--motion-fast").trim(),d=parseFloat(v)||0,e=c.getPropertyValue("--ease-out").trim()||"ease-out";if(d&&v.slice(-2)!=="ms")d*=1000;if(!v)d=140;if(!(d>0))return;t.getAnimations().forEach(function(a){if(a.id==="${SETTLE_ID}")a.cancel()});var a=t.animate([{opacity:${FROM_OPACITY}},{opacity:1}],{duration:d,easing:e});a.id="${SETTLE_ID}"});o.observe(p,{childList:true})})();`;
 
 export function ArrivalSettle() {
   // The cleanup, not the effect: this component only ever exists inside a

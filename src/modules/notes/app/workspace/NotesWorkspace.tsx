@@ -242,8 +242,40 @@ const NoteRow = memo(function NoteRow({
     return () => window.clearTimeout(handle);
   }, [decision]);
 
+  const shellRef = useRef<HTMLLIElement | null>(null);
+
+  /**
+   * Hand focus on before the row is taken away.
+   *
+   * The departure sets `inert` on the strip, and `inert` blurs whatever is
+   * inside it synchronously — which is the Keep or Delete button the person
+   * just pressed. Focus then restarted at the top of the document, putting
+   * the toast's Undo thirty-six tab stops away. So the decision moves focus
+   * itself, to the next row waiting to be decided, in the same gesture: press
+   * Keep and the queue advances under your hands. Only the next and previous
+   * rows are candidates; when this was the last one, the list itself takes
+   * focus so the reader stays where the work was.
+   */
+  const handOffFocus = () => {
+    const shell = shellRef.current;
+    if (!shell || typeof document === "undefined") return;
+    if (!shell.contains(document.activeElement)) return;
+    const control = (sibling: Element | null) =>
+      sibling?.querySelector<HTMLElement>("[data-decision-control]") ?? null;
+    const next = control(shell.nextElementSibling) ?? control(shell.previousElementSibling);
+    if (next) {
+      next.focus();
+      return;
+    }
+    const list = shell.parentElement;
+    if (!list) return;
+    if (!list.hasAttribute("tabindex")) list.setAttribute("tabindex", "-1");
+    list.focus();
+  };
+
   return (
     <li
+      ref={shellRef}
       className={styles.rowShell}
       data-arriving={arriving ? "" : undefined}
       data-departing={departing ? "" : undefined}
@@ -326,7 +358,11 @@ const NoteRow = memo(function NoteRow({
                   type="button"
                   className={styles.quietButton}
                   aria-label={`Keep: ${presentation.title}`}
-                  onClick={() => void onKeep(note)}
+                  data-decision-control
+                  onClick={() => {
+                    handOffFocus();
+                    void onKeep(note);
+                  }}
                 >
                   <CheckIcon />
                   Keep
@@ -336,7 +372,10 @@ const NoteRow = memo(function NoteRow({
                   className={styles.quietButton}
                   aria-label={`Turn into task: ${presentation.title}`}
                   disabled={!canSendToTasks}
-                  onClick={() => onTurnIntoTask(note)}
+                  onClick={() => {
+                    handOffFocus();
+                    onTurnIntoTask(note);
+                  }}
                 >
                   Turn into task
                 </button>
@@ -344,7 +383,10 @@ const NoteRow = memo(function NoteRow({
                   type="button"
                   className={styles.dangerButton}
                   aria-label={`Delete: ${presentation.title}`}
-                  onClick={() => onDelete(note)}
+                  onClick={() => {
+                    handOffFocus();
+                    onDelete(note);
+                  }}
                 >
                   Delete
                 </button>

@@ -3,6 +3,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -122,7 +123,37 @@ const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
  * seen or unseen.
  */
 const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
-const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
+const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;a.setAttribute("data-entrance-guard","1");try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
+
+/**
+ * The same decision, for the path the script cannot reach.
+ *
+ * An inline <script> inside a React component runs only when the HTML is
+ * server-streamed; on a client render React never executes it and says so in
+ * the console. The app's own rail reaches Timeline by client-side navigation,
+ * which is to say the guard was absent on the single most common way in, and
+ * the entrance replayed every time. Both paths now read and write one key,
+ * and this one runs in a layout effect so the attribute is on the article
+ * before the browser paints it.
+ */
+function markEntranceSeen(article: HTMLElement | null): void {
+  if (!article) return;
+  // Exactly one path decides. On a server-streamed document the script has
+  // already run by the time this effect fires, and it leaves its mark; if both
+  // ran, the script would write the session key and this would then read it
+  // back and skip the entrance on the very first visit — the opposite of the
+  // rule. The mark is the handshake.
+  if (article.hasAttribute("data-entrance-guard")) return;
+  try {
+    if (sessionStorage.getItem(ENTRANCE_SESSION_KEY)) {
+      article.setAttribute("data-entrance", "seen");
+    } else {
+      sessionStorage.setItem(ENTRANCE_SESSION_KEY, "1");
+    }
+  } catch {
+    /* Private modes refuse storage; an entrance that replays is not a fault. */
+  }
+}
 
 /**
  * Motion's media-query hook can know the browser preference on the first
@@ -1217,8 +1248,15 @@ export function TimelineArtifact({
   // six lines later.
   const nouns = timelineNouns(timeline.audienceKind);
 
+  // The client-navigation half of the entrance guard. Runs before paint, so a
+  // returning viewer never sees a frame of the choreography they already
+  // watched. See markEntranceSeen.
+  const artifactRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => markEntranceSeen(artifactRef.current), []);
+
   return (
     <article
+      ref={artifactRef}
       className={[styles.artifact, className].filter(Boolean).join(" ")}
       data-timeline-artifact
       data-compact={compact ? "true" : undefined}
