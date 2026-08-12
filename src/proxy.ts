@@ -29,15 +29,21 @@ import {
  * Layer 2, unified ecosystem (DESIGN.md §14):
  * Authed users hitting a marketing (M) route are 307'd to /app so
  * they land in the workspace rather than the marketing site. The
- * exact M set is defined in LAYER0_ROUTE_ALLOWLIST.md §tasks.
+ * exact M set is the `MARKETING_PATHS` constant below, in this file.
+ * Earlier comments here cited a `LAYER0_ROUTE_ALLOWLIST.md` §tasks;
+ * no such file was ever written, in this repo or any other. The
+ * allowlists are inline and there are two of them: `MARKETING_PATHS`
+ * and `isPublicRoute`.
  * Escape hatch: the `signal_preview_public` cookie (value "1") or
  * `?preview=public` query param suppresses the redirect so the
  * operator can demo the public marketing site while signed in.
  */
 
 /**
- * Layer 0 M-routes for tasks. Explicit allowlist, never a heuristic.
- * Source of truth: LAYER0_ROUTE_ALLOWLIST.md §tasks.
+ * Layer 0 M-routes for tasks. Explicit allowlist, never a heuristic, and
+ * this set is the whole of it: the source of truth is the literal below,
+ * not a document. Its sibling is `isPublicRoute`, which decides what a
+ * signed-out visitor may reach. Change either one here and nowhere else.
  */
 // Only `/` remains: /features, /pricing and /changelog now 308 to the
 // umbrella in next.config, which runs before this proxy, so they could
