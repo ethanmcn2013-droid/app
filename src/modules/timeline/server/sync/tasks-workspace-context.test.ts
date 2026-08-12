@@ -29,6 +29,7 @@ import { pathToFileURL } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 import {
   getCurrentTasksWorkspaceContext,
+  getPrimaryTasksWorkspaceForUser,
   getSoleOwnedTasksWorkspaceIdForUser,
 } from "@/modules/timeline/server/sync/tasks-workspace-context";
 
@@ -87,18 +88,20 @@ async function addProject(
     id: string;
     ownerTasksId?: string | null;
     archivedAt?: number | null;
+    activeDomain?: string | null;
     members?: ReadonlyArray<readonly [string, string]>;
   }>,
 ): Promise<void> {
   await client.execute({
     sql: `INSERT INTO workspaces
           (id, slug, name, owner_user_id, planning_period_id, active_domain, archived_at)
-          VALUES (?, ?, ?, ?, NULL, NULL, ?)`,
+          VALUES (?, ?, ?, ?, NULL, ?, ?)`,
     args: [
       options.id,
       options.id.replace(/_/g, "-"),
       `Project ${options.id}`,
       options.ownerTasksId === undefined ? OWNER_TASKS_ID : options.ownerTasksId,
+      options.activeDomain ?? null,
       options.archivedAt ?? null,
     ],
   });
@@ -176,6 +179,88 @@ test("membership of someone else's Project is not ownership of it", async (t) =>
     "ws_mine",
     "a Project the actor is merely a member of is not one of theirs",
   );
+});
+
+// ── The bare-entry provisioning target ───────────────────────────────────────
+//
+// `getPrimaryTasksWorkspaceForUser` decides which Tasks Project a Timeline is
+// created against when nobody named one. It had NO behavioural coverage at all:
+// the two contract guards that named it sliced past its own body and were
+// satisfied by a neighbouring query, so stripping both of its ownership
+// predicates left every test in the repository green.
+
+test("the primary lookup returns the Project the actor actually owns", async (t) => {
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, { id: "ws_mine" });
+
+  const primary = await getPrimaryTasksWorkspaceForUser(OWNER_CLERK);
+  assert.equal(primary?.workspaceId, "ws_mine");
+});
+
+test("a promoted co-owner who owns nothing gets no provisioning target", async (t) => {
+  // The F3 shape on the bare-entry path. `setMemberRoleAction` promotes members
+  // to `workspace_members.role = 'owner'`, so the role filter alone lets a
+  // co-owner of somebody else's Project through. They own no Project of their
+  // own, so their "primary" resolved to the SHARED one — and a bare visit to
+  // /app/timeline would mint that Project's Timeline under THEIR subject,
+  // consuming uq_workspaces_suite_workspace_id and locking the real owner out.
+  //
+  // `AND w.owner_user_id = u.id` is what makes this null. Nothing else in the
+  // repository proves that predicate is there.
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, {
+    id: "ws_theirs",
+    ownerTasksId: OWNER_TASKS_ID,
+    members: [[OWNER_TASKS_ID, "owner"], [COOWNER_TASKS_ID, "owner"]],
+  });
+
+  assert.equal(
+    await getPrimaryTasksWorkspaceForUser(COOWNER_CLERK),
+    null,
+    "an owner membership role in someone else's Project is not a Project to " +
+      "provision a Timeline against",
+  );
+});
+
+test("an ordinary member gets no provisioning target either", async (t) => {
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, {
+    id: "ws_theirs",
+    ownerTasksId: OWNER_TASKS_ID,
+    members: [[OWNER_TASKS_ID, "owner"], [COOWNER_TASKS_ID, "member"]],
+  });
+
+  assert.equal(await getPrimaryTasksWorkspaceForUser(COOWNER_CLERK), null);
+});
+
+test("the primary lookup skips archived Projects and prefers the wedding one", async (t) => {
+  // The documented tie-break, previously unproved: a wedding workspace wins,
+  // then the oldest owned one. Archived Projects are not provisioning targets.
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, { id: "ws_archived", archivedAt: 1_700_000_000 });
+  await addProject(db.client, { id: "ws_general" });
+  await addProject(db.client, { id: "ws_wedding", activeDomain: "wedding" });
+
+  const primary = await getPrimaryTasksWorkspaceForUser(OWNER_CLERK);
+  assert.equal(primary?.workspaceId, "ws_wedding");
+});
+
+test("the primary lookup fails closed with no Tasks configuration", async (t) => {
+  const db = await makeTasksDatabase();
+  t.after(db.close);
+  await addProject(db.client, { id: "ws_mine" });
+
+  const url = process.env.TASKS_DATABASE_URL;
+  t.after(() => {
+    process.env.TASKS_DATABASE_URL = url;
+  });
+  delete process.env.TASKS_DATABASE_URL;
+
+  assert.equal(await getPrimaryTasksWorkspaceForUser(OWNER_CLERK), null);
 });
 
 // ── F3 · Project ownership is not a membership role ──────────────────────────

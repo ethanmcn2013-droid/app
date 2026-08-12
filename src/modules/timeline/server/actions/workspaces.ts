@@ -408,10 +408,21 @@ export async function syncMilestonesAction(
   // Persist the provenance mapping before writing synced rows. This turns
   // future publication checks into an exact project-level proof and prevents
   // old mixed-workspace rows from being promoted via a workspace fallback.
+  //
+  // INHERITED, not owner-proved, and the distinction is real. This actor is
+  // authorized as the TIMELINE's owner; after a Signal Tasks ownership
+  // transfer they may no longer own the Project at all, so they cannot mint an
+  // ownership proof and refusing them would break sync for a legitimate owner
+  // of a legitimate timeline. What this write does is propagate a binding the
+  // parent workspace already carries — and `bindProjectToTasksWorkspace`
+  // verifies that itself, in its own database, rather than taking this
+  // caller's word for it. It can never introduce a Project the Timeline was
+  // not already bound to.
   await bindProjectToTasksWorkspace(
     workspaceSlug,
     targetProject.slug,
     canonicalWorkspaceId,
+    { kind: "inherits-workspace-binding" },
   );
 
   // One canonical Tasks workspace maps to this one explicitly selected

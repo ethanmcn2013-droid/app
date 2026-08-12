@@ -31,6 +31,7 @@ import {
 } from "@/modules/timeline/lib/audience-timeline";
 import { TIMELINE_PUBLIC_ORIGIN } from "@/lib/product-urls";
 import { getCurrentTasksWorkspaceContext } from "@/modules/timeline/server/sync/tasks-workspace-context";
+import { proveTasksProjectOwnership } from "@/modules/timeline/lib/tasks-project-ownership";
 import { withFreshAudienceMutationAuthority } from "@/modules/timeline/server/audience-authority";
 import { isDemoMode } from "@/lib/access-mode";
 
@@ -174,14 +175,27 @@ export async function connectSuiteWorkspaceAction(
     //      bearer link. Plan §6.6 gives members no publish capability; this
     //      routed around it entirely.
     //
-    // Connecting a Project to a Timeline is the Project owner's act.
-    if (membership.context.ownerClerkId !== userId) {
+    // Connecting a Project to a Timeline is the Project owner's act. The check
+    // and the proof are one statement: `connectSuiteWorkspace` re-checks the
+    // token it is handed, so this caller's gate is defence in depth rather than
+    // the only thing standing between a member and the write.
+    const ownership = proveTasksProjectOwnership(
+      userId,
+      suiteWorkspaceId,
+      membership,
+    );
+    if (!ownership) {
       throw new TypeError(
         "Only the owner of that Signal Tasks project can connect it to a Timeline.",
       );
     }
 
-    const updated = await connectSuiteWorkspace(workspace.slug, userId, suiteWorkspaceId);
+    const updated = await connectSuiteWorkspace(
+      workspace.slug,
+      userId,
+      suiteWorkspaceId,
+      ownership,
+    );
     if (!updated) throw new TypeError("Workspace not found");
     revalidatePath("/app/timeline/audience");
     return { status: "success", message: "Canonical workspace connected." };

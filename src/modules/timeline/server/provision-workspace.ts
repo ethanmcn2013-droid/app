@@ -14,6 +14,7 @@ import {
   getWorkspace,
   getWorkspaceForSuiteIdForUser,
   getWorkspacesForUser,
+  type ProjectBindingAuthority,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { connectSuiteWorkspace } from "@/modules/timeline/server/audience-timeline";
 import {
@@ -22,6 +23,10 @@ import {
   type CurrentTasksWorkspaceContext,
 } from "@/modules/timeline/server/sync/tasks-workspace-context";
 import type { Workspace } from "@/modules/timeline/server/db/timeline-schema";
+import {
+  proveTasksProjectOwnership,
+  type TasksProjectOwnership,
+} from "@/modules/timeline/lib/tasks-project-ownership";
 
 /**
  * Give someone who has a Tasks workspace a Timeline workspace to go with it.
@@ -89,7 +94,13 @@ export async function ensureTimelineWorkspaceForUser(
 ): Promise<Workspace | null> {
   const tasksWorkspace = await getPrimaryTasksWorkspaceForUser(userId);
   if (!tasksWorkspace) return null;
-  return provisionTimelineForTasksWorkspace(userId, tasksWorkspace);
+  // The proof rides out of the lookup that established it; this path cannot
+  // provision without one, and cannot invent one.
+  return provisionTimelineForTasksWorkspace(
+    userId,
+    tasksWorkspace,
+    tasksWorkspace.ownership,
+  );
 }
 
 /**
@@ -109,13 +120,19 @@ export async function ensureTimelineWorkspaceForUser(
 export async function provisionTimelineForTasksWorkspace(
   userId: string,
   tasksWorkspace: Readonly<{ workspaceId: string; slug: string; name: string }>,
+  /** Proof that `userId` owns `tasksWorkspace.workspaceId`. The write
+   *  statements re-check it against what they are about to write. */
+  ownership: TasksProjectOwnership,
 ): Promise<Workspace | null> {
   const existing = await getWorkspaceForSuiteIdForUser(
     tasksWorkspace.workspaceId,
     userId,
   );
   if (existing) {
-    await ensureBoundProject(existing.slug, tasksWorkspace.workspaceId);
+    await ensureBoundProject(existing.slug, tasksWorkspace.workspaceId, {
+      kind: "project-owner",
+      ownership,
+    });
     return existing;
   }
 
@@ -145,9 +162,13 @@ export async function provisionTimelineForTasksWorkspace(
     name: tasksWorkspace.name,
     ownerUserId: userId,
     suiteWorkspaceId: tasksWorkspace.workspaceId,
+    ownership,
   });
 
-  await ensureBoundProject(finalSlug, tasksWorkspace.workspaceId);
+  await ensureBoundProject(finalSlug, tasksWorkspace.workspaceId, {
+    kind: "project-owner",
+    ownership,
+  });
 
   return created;
 }
@@ -334,10 +355,21 @@ export async function resolveCanonicalTimeline(
   // Null means the Project has no owner row, which is missing identity rather
   // than permission: plan §6.4 step 9 says refuse and let the owner reconcile.
   // Collaborator-first provisioning needs owner-identity resolution and is WP4.
-  if (
-    provedTasksMembership.ownerClerkId === null ||
-    provedTasksMembership.ownerClerkId !== actorUserId
-  ) {
+  //
+  // The gate and the proof are the same act, so they are one statement: minting
+  // succeeds only when the read proved membership of THIS Project and named
+  // this actor as its owner. The token then travels to the write statements,
+  // which re-check it against what they are about to write — so the refusal
+  // holds even if this branch is later restructured, and a future caller that
+  // skips this line cannot write at all.
+  const ownership = proveTasksProjectOwnership(
+    actorUserId,
+    requested,
+    // The caller has already unwrapped the membership read; re-wrapping it is
+    // the honest way to say "this context came from a proved member".
+    { kind: "member", context: provedTasksMembership },
+  );
+  if (!ownership) {
     return {
       kind: "owner-reconciliation-required",
       reason: "not-project-owner",
@@ -347,11 +379,15 @@ export async function resolveCanonicalTimeline(
 
   if (decision.kind === "provision") {
     try {
-      const created = await provisionTimelineForTasksWorkspace(actorUserId, {
-        workspaceId: requested,
-        slug: provedTasksMembership.slug,
-        name: provedTasksMembership.name,
-      });
+      const created = await provisionTimelineForTasksWorkspace(
+        actorUserId,
+        {
+          workspaceId: requested,
+          slug: provedTasksMembership.slug,
+          name: provedTasksMembership.name,
+        },
+        ownership,
+      );
       if (!created) return { kind: "failed", code: "timeline_provision_failed" };
       return { kind: "provisioned", workspace: created };
     } catch {
@@ -376,6 +412,7 @@ export async function resolveCanonicalTimeline(
       adoptable.slug,
       actorUserId,
       requested,
+      ownership,
     );
     if (!linked) {
       return {
@@ -400,7 +437,10 @@ export async function resolveCanonicalTimeline(
     };
   }
 
-  await ensureBoundProject(adoptable.slug, requested);
+  await ensureBoundProject(adoptable.slug, requested, {
+    kind: "project-owner",
+    ownership,
+  });
   return {
     kind: "exact",
     workspace: { ...adoptable, suiteWorkspaceId: requested },
@@ -463,6 +503,7 @@ const DEFAULT_PROJECT_NAME = "The plan";
 async function ensureBoundProject(
   workspaceSlug: string,
   sourceTasksWorkspaceId: string,
+  authority: ProjectBindingAuthority,
 ): Promise<void> {
   const projects = await getProjectsForWorkspace(workspaceSlug);
   if (projects.length > 0) {
@@ -485,6 +526,7 @@ async function ensureBoundProject(
         workspaceSlug,
         adoptable.slug,
         sourceTasksWorkspaceId,
+        authority,
       );
     }
     return;
@@ -501,5 +543,6 @@ async function ensureBoundProject(
     workspaceSlug,
     DEFAULT_PROJECT_SLUG,
     sourceTasksWorkspaceId,
+    authority,
   );
 }

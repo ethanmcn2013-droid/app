@@ -2,6 +2,10 @@ import "server-only";
 
 import { createClient } from "@libsql/client";
 import { isAuthError } from "./tasks-milestone-source";
+import {
+  proveTasksProjectOwnership,
+  type TasksProjectOwnership,
+} from "@/modules/timeline/lib/tasks-project-ownership";
 
 export type CurrentTasksWorkspaceContext = Readonly<{
   workspaceId: string;
@@ -39,6 +43,14 @@ export type PrimaryTasksWorkspace = Readonly<{
   slug: string;
   name: string;
   activeDomain: string | null;
+  /**
+   * Minted here because this query is where the proof is established: it
+   * selects only rows where `w.owner_user_id = u.id` for the requesting
+   * subject, so a returned row IS ownership. Carrying the token out means the
+   * bare-entry provisioning path does not have to re-derive it, and cannot
+   * proceed without it.
+   */
+  ownership: TasksProjectOwnership;
 }>;
 
 /**
@@ -104,11 +116,21 @@ export async function getPrimaryTasksWorkspaceForUser(
     });
     const row = result.rows[0];
     if (!row) return null;
+    const workspaceId = String(row.workspace_id);
+    const ownership = proveTasksProjectOwnership(clerkId, workspaceId, {
+      kind: "member",
+      // The SQL matched `w.owner_user_id = u.id` for this exact subject, so
+      // the owner subject IS this subject. Nothing is assumed here that the
+      // query did not already prove.
+      context: { workspaceId, ownerClerkId: clerkId },
+    });
+    if (!ownership) return null;
     return {
-      workspaceId: String(row.workspace_id),
+      workspaceId,
       slug: String(row.slug),
       name: String(row.name),
       activeDomain: row.active_domain == null ? null : String(row.active_domain),
+      ownership,
     };
   } catch (error) {
     if (!isAuthError(error)) {

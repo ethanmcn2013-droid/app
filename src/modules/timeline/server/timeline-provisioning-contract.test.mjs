@@ -271,16 +271,25 @@ test("provisioning is owner-only and never runs for an archived Project", () => 
   // therefore passed the gate, minted the Project's Timeline under their own
   // subject, consumed uq_workspaces_suite_workspace_id, and locked the real
   // owner out permanently. The gate is the Project's owner subject.
+  //
+  // RENEGOTIATED (D-018). The gate used to be an inline comparison here, and
+  // this asserted its exact text. The comparison now lives in
+  // `proveTasksProjectOwnership`, which mints a token the write statements
+  // re-check, so the same refusal is made once and enforced three times. The
+  // inline text is gone; the invariant is stronger, and the assertions follow
+  // it rather than its old spelling. The conditions the mint refuses on are
+  // pinned behaviourally in lib/tasks-project-ownership's own coverage and in
+  // db/binding-write-gates.test.ts.
   assert.match(
     source,
-    /provedTasksMembership\.ownerClerkId !== actorUserId/,
-    "the resolver must refuse anyone who is not the Tasks Project's own owner",
+    /const ownership = proveTasksProjectOwnership\(/,
+    "the resolver must mint an ownership proof rather than merely comparing " +
+      "and forgetting: the token is what the write statements re-check",
   );
   assert.match(
     source,
-    /provedTasksMembership\.ownerClerkId === null/,
-    "a Project with no owner row is missing identity, and must refuse rather " +
-      "than choose the visitor",
+    /if \(!ownership\) \{/,
+    "the resolver must refuse when ownership cannot be proved",
   );
   assert.ok(
     !/provedTasksMembership\.role !== "owner"/.test(source),
@@ -298,12 +307,16 @@ test("provisioning is owner-only and never runs for an archived Project", () => 
   // before the adopt path is reached. A guard that passes on the defect it
   // names is worse than no guard, so the claim is structural: the gate must
   // sit ABOVE the branch split, where no branch can bypass it.
-  const gate = source.indexOf("provedTasksMembership.ownerClerkId === null");
+  const gate = source.indexOf("const ownership = proveTasksProjectOwnership(");
   const branchSplit = source.indexOf('if (decision.kind === "provision")');
-  const provisionWrite = source.indexOf(
-    "await provisionTimelineForTasksWorkspace(actorUserId",
+  // Matched by regex, not by a literal argument list: reformatting a call onto
+  // several lines must not silently turn this ordering check into a no-op.
+  // `ensureTimelineWorkspaceForUser` returns its provision call without
+  // `await`, so `await` selects the resolver's own write.
+  const provisionWrite = source.search(
+    /await provisionTimelineForTasksWorkspace\(/,
   );
-  const adoptWrite = source.indexOf("await connectSuiteWorkspace(");
+  const adoptWrite = source.search(/await connectSuiteWorkspace\(/);
   assert.ok(gate !== -1, "the ownership gate was removed");
   assert.ok(
     branchSplit !== -1 && provisionWrite !== -1 && adoptWrite !== -1,
@@ -320,6 +333,38 @@ test("provisioning is owner-only and never runs for an archived Project", () => 
   assert.ok(
     gate < provisionWrite && gate < adoptWrite,
     "the ownership gate must precede both writes",
+  );
+
+  // D-018: the statements themselves refuse, so a FOURTH caller inherits the
+  // gate instead of inheriting nothing. Three callers had to be fixed one at a
+  // time before this was true.
+  const queries = stripComments(
+    read("src/modules/timeline/server/db/timeline-queries.ts"),
+  );
+  const audienceQueries = stripComments(
+    read("src/modules/timeline/server/audience-timeline.ts"),
+  );
+  assert.match(
+    queries,
+    /if \(suiteWorkspaceId\) \{[\s\S]{0,200}?throw new TypeError\(/,
+    "createWorkspace must refuse a suite binding it has no proof for",
+  );
+  assert.match(
+    queries,
+    /assertOwnershipCovers\(/,
+    "createWorkspace and the child binding must re-check the proof they are " +
+      "handed against what they are about to write",
+  );
+  assert.match(
+    queries,
+    /parent\.suiteWorkspaceId !== sourceTasksWorkspaceId/,
+    "the inherited binding authority must verify the parent row itself " +
+      "rather than trusting the caller's claim of inheritance",
+  );
+  assert.match(
+    audienceQueries,
+    /ownership: TasksProjectOwnership,\s*\): Promise<boolean> \{\s*assertOwnershipCovers\(/,
+    "connectSuiteWorkspace must require and re-check an ownership proof",
   );
   assert.match(
     source,
@@ -365,11 +410,27 @@ test("the provisioned project is created unpublished", () => {
   );
 });
 
+/**
+ * Both guards below slice ONE function out of the context module.
+ *
+ * They used to slice to end of file, or to a symbol two functions further on,
+ * so `getSoleOwnedTasksWorkspaceIdForUser`'s query — which legitimately carries
+ * `wm.role = 'owner'` and `u.clerk_id = ?` — satisfied assertions that named
+ * `getPrimaryTasksWorkspaceForUser`. Stripping BOTH ownership predicates from
+ * the function they name left them passing. A guard that reads a neighbour is
+ * not a guard; it is a second copy of somebody else's coverage.
+ */
+function functionBody(source, name) {
+  const start = source.indexOf(`export async function ${name}(`);
+  assert.ok(start !== -1, `${name} was renamed or removed`);
+  const rest = source.slice(start + 1);
+  const next = rest.indexOf("\nexport ");
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
 test("only an owner's workspace can be provisioned against", () => {
   const source = stripComments(read(CONTEXT));
-  const query = source.slice(
-    source.indexOf("getPrimaryTasksWorkspaceForUser"),
-  );
+  const query = functionBody(source, "getPrimaryTasksWorkspaceForUser");
   assert.match(
     query,
     /wm\.role\s*=\s*'owner'/,
@@ -382,12 +443,24 @@ test("only an owner's workspace can be provisioned against", () => {
     /u\.clerk_id\s*=\s*\?/,
     "the lookup must be bound to the current subject",
   );
+  // ADDED (F3). `wm.role = 'owner'` alone is a membership capability, and
+  // `setMemberRoleAction` hands it to promoted co-owners. Without the second
+  // predicate a co-owner who owns no Project of their own resolves the SHARED
+  // Project as their primary and has its Timeline minted under their identity,
+  // consuming uq_workspaces_suite_workspace_id and locking the real owner out.
+  // Nothing pinned this predicate before; behavioural cover is in
+  // sync/tasks-workspace-context.test.ts.
+  assert.match(
+    query,
+    /AND w\.owner_user_id = u\.id/,
+    "the primary-workspace lookup must require the actor to be the Tasks " +
+      "Project's OWNER, not merely to hold an owner membership role in it",
+  );
 });
 
 test("the primary-workspace lookup fails closed", () => {
   const source = stripComments(read(CONTEXT));
-  const fn = source.slice(source.indexOf("getPrimaryTasksWorkspaceForUser"));
-  const body = fn.slice(0, fn.indexOf("export async function getCurrentTasks"));
+  const body = functionBody(source, "getPrimaryTasksWorkspaceForUser");
   assert.match(
     body,
     /if\s*\(!url\s*\|\|\s*!authToken/,
