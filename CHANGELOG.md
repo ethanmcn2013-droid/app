@@ -4,6 +4,19 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·138 · ships · dark mode, and the words your board already uses
+
+**The signed-in app now follows your device's colour scheme, and dark is a
+choice in Settings.** Pick System, Light, or Dark. The app resolves the theme
+before anything paints, so there is no white flash on the way in, and every
+surface reads correctly in both themes, down to the skip link a keyboard user
+reaches first.
+
+The board's first lane is called To do now, because that is what it holds.
+Queued was a word from somewhere else. And in Notes, the tab that said Sent
+says In Tasks: those notes went nowhere, they became tasks, and the tab now
+says so.
+
 ## 2026-08-12 · T·137 · tightens · the three products now share one visual grammar
 
 **A seven-seat design review graded every surface against the 9.5 studio bar,
