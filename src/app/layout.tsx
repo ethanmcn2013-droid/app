@@ -23,11 +23,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin", "latin-ext"],
 });
 
+/**
+ * The document's own paper, as two literals.
+ *
+ * They exist because two consumers cannot read a CSS variable: the
+ * pre-stylesheet paint guard below, which has to be correct in the window
+ * before globals.css resolves var(--paper), and the theme-color meta, which
+ * the browser reads to tint its own chrome. Declared once here so the guard
+ * and the browser chrome cannot drift apart. The dark value mirrors --paper
+ * in the [data-theme="dark"] block of tokens.css.
+ */
+export const PAPER_LIGHT = "#ffffff";
+export const PAPER_DARK = "#0f0f10";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#ffffff",
+  // Light, and only light, at the root: marketing, the public /s/[token]
+  // artifact and the auth stage never carry data-theme, so they are white
+  // documents on every device. Pairing the theme-color to
+  // prefers-color-scheme HERE would put a dark browser bar above a white
+  // marketing page for every visitor whose phone is set to dark. The app
+  // segment carries its own pair — src/app/app/layout.tsx.
+  themeColor: PAPER_LIGHT,
 };
 
 export const metadata: Metadata = {
@@ -102,12 +121,13 @@ export default async function RootLayout({
         ) : null}
         {/* Pre-stylesheet paint guard (RW-5). Two literals on purpose:
             this rule has to be correct in the window before globals.css
-            has loaded, when var(--paper) does not yet resolve. The dark
-            value mirrors --paper in tokens.css's [data-theme="dark"]
-            block; the attribute only ever appears on an app document. */}
+            has loaded, when var(--paper) does not yet resolve. The
+            attribute only ever appears on an app document. */}
         <style
           dangerouslySetInnerHTML={{
-            __html: 'html{background:#fff}html[data-theme="dark"]{background:#0f0f10}',
+            __html:
+              `html{background:${PAPER_LIGHT}}` +
+              `html[data-theme="dark"]{background:${PAPER_DARK}}`,
           }}
         />
         {!bareArtifact ? (
