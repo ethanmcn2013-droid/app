@@ -215,7 +215,6 @@ test("public routes use the explicit allowlisted projection", () => {
 test("demo and review actions exit before tenant, database, or disk access", () => {
   for (const name of [
     "getTasksAction",
-    "getSubtasksAction",
     "moveTaskAction",
     "toggleCompleteAction",
     "updateTaskAction",
@@ -226,6 +225,16 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(actions, name, "getActiveWorkspace");
   }
+  // WP3 renegotiation (ADR 0001 §9). This guard's subject is the ORDERING —
+  // demo/review must exit before the action resolves a tenant — and not the
+  // name of the call that does the resolving. `getSubtasksAction` no longer
+  // resolves a tenant ambiently at all: it derives the parent task's own
+  // Project and proves `open` on it, so there is no `getActiveWorkspace*` left
+  // in its body to point at. Pointing the assertion at the call that replaced
+  // it keeps the invariant intact and still fails if the demo guard is moved
+  // below the boundary. Every other action in the list above keeps the
+  // original token, which continues to match `getActiveWorkspaceOrNull`.
+  assertDemoGuardBefore(actions, "getSubtasksAction", "scopeForTask");
   for (const boundary of [
     "getActiveWorkspace",
     "laneStartPositions",

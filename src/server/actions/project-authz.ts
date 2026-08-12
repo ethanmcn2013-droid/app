@@ -80,6 +80,29 @@ import {
 /** The capability a call site needs. Named, so the requirement is readable. */
 export type ProjectCapabilityKey = keyof ProjectCapabilities;
 
+/**
+ * What to do when the proved Project is archived.
+ *
+ * ADR 0001 §5 says an archived Project is read-only for Project-scoped
+ * operations, and `projectCapabilities()` already encodes that by withholding
+ * `createOrEditTasks`. WP3a nevertheless defaults to **`"defer"`**, and the
+ * reason is a product fact rather than a preference:
+ * `archiveProjectAction()` (`planning.ts:225-240`) does not clear the
+ * active-Project cookie — only `deleteProjectAction` does. A user can archive
+ * the Project they are standing in and keep the board on screen. Turning §5 on
+ * here would leave that board rendered and quietly refusing every gesture,
+ * which is the same "looks fine, changes nothing" failure this work exists to
+ * remove — just with a different cause.
+ *
+ * So archive enforcement is one switch, not fifty call sites: when the chrome
+ * can move a caller off an archived Project and say so, flip these to
+ * `"enforce"`. Until then WP3a changes *which* Project a write lands in and
+ * *whether membership was proved*, and changes nothing about archived
+ * Projects. `ProjectGrant.archived` is reported truthfully throughout, so
+ * nothing downstream has to guess.
+ */
+export type ArchivePolicy = "enforce" | "defer";
+
 export type ProjectGrant = Readonly<{
   ok: true;
   /** Proved. Safe to use as a write destination and as a scope filter. */
@@ -122,6 +145,7 @@ export async function proveProjectCapability(
   actorUserId: string,
   projectId: ProjectId,
   capability: ProjectCapabilityKey,
+  archivePolicy: ArchivePolicy = "defer",
 ): Promise<ProjectAuthorization> {
   const [row] = await db
     .select({
@@ -149,13 +173,21 @@ export async function proveProjectCapability(
     actorUserId,
   });
   const archived = row.archivedAt !== null;
+  const ownsPlanningPeriod = row.planningPeriodOwnerUserId === actorUserId;
+
+  // Reported truthfully, always: downstream should see the real capability set.
   const capabilities = projectCapabilities({
     role,
     archived,
-    ownsPlanningPeriod: row.planningPeriodOwnerUserId === actorUserId,
+    ownsPlanningPeriod,
   });
+  // Gated on, per policy. See ArchivePolicy for why the default defers.
+  const gate =
+    archivePolicy === "enforce"
+      ? capabilities
+      : projectCapabilities({ role, archived: false, ownsPlanningPeriod });
 
-  if (!capabilities[capability]) return { ok: false, reason: "forbidden" };
+  if (!gate[capability]) return { ok: false, reason: "forbidden" };
 
   return { ok: true, projectId, role, capabilities, archived };
 }
@@ -184,6 +216,7 @@ export async function authorizeProjectCandidate(input: {
   capability: ProjectCapabilityKey;
   /** Pass a resolved actor to avoid a second identity round-trip. */
   actorUserId?: string;
+  archivePolicy?: ArchivePolicy;
 }): Promise<ProjectAuthorization> {
   // A missing candidate is a refusal, never a prompt to go looking for one.
   // This is the D-005 site: `getActiveWorkspace()` answers `LEGACY_WORKSPACE_ID`
@@ -195,7 +228,12 @@ export async function authorizeProjectCandidate(input: {
   if (candidate === null) return { ok: false, reason: "malformed-project" };
 
   const actorUserId = input.actorUserId ?? (await getCurrentUser());
-  return proveProjectCapability(actorUserId, candidate, input.capability);
+  return proveProjectCapability(
+    actorUserId,
+    candidate,
+    input.capability,
+    input.archivePolicy,
+  );
 }
 
 /**
@@ -219,6 +257,7 @@ export async function authorizeStoredProject(input: {
   storedProjectId: string;
   capability: ProjectCapabilityKey;
   actorUserId?: string;
+  archivePolicy?: ArchivePolicy;
 }): Promise<ProjectAuthorization> {
   const actorUserId = input.actorUserId ?? (await getCurrentUser());
   if (!isProjectId(input.storedProjectId)) {
@@ -228,6 +267,7 @@ export async function authorizeStoredProject(input: {
     actorUserId,
     input.storedProjectId,
     input.capability,
+    input.archivePolicy,
   );
 }
 

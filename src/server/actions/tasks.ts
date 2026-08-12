@@ -11,7 +11,13 @@ import { activities, attachments, comments, resources, tasks } from "@/server/db
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  authorizeStoredProject,
+  readableProjectOrNull,
+  type ProjectCapabilityKey,
+} from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { maybeAwardCompletionMilestone } from "@/server/milestones";
 import { demoTasks } from "@/server/demo/tasks-demo";
@@ -30,14 +36,73 @@ import {
 } from "@/lib/account/instrumentation/call-site";
 
 /**
+ * The Project a task mutation may act on — ADR 0001 §9, object operation.
+ *
+ * Every mutation in this file used to scope itself with `AND workspace_id =
+ * <ambient cookie>`. That is not a permission check, it is a filter, and the
+ * two behave differently when they disagree: a task belonging to a Project
+ * other than the cookie's produced zero matched rows, the write silently did
+ * nothing, and the action still returned success. Data loss reported as a
+ * save. The common way to reach it is mundane — a second tab switches Project,
+ * the cookie moves, and the board still on screen keeps accepting drags.
+ *
+ * So the object decides. The target is read by primary key, its stored Project
+ * is taken off the row, and capability is proved against *that* Project before
+ * anything is written. The result is that the same gesture now lands where the
+ * user could see it was going to land.
+ *
+ * Two outcomes are kept apart on purpose. "No such task" and "refused" collapse
+ * to the same neutral answer for the caller — telling them apart is an
+ * existence leak — but they must not collapse *inside* the server, because a
+ * refusal that arrives as an empty result is exactly the shape that let an
+ * unauthorized read become an authorized zero in WP1.
+ */
+type TaskScope =
+  | Readonly<{ ok: true; ws: string }>
+  | Readonly<{ ok: false; reason: "no-such-task" | "refused" }>;
+
+async function scopeForTask(
+  taskId: string,
+  actorUserId: string,
+  capability: ProjectCapabilityKey = "createOrEditTasks",
+): Promise<TaskScope> {
+  // isolation-ok: this read is by primary key and deliberately carries no
+  // tenant predicate — it is the step that *discovers* the tenant. Nothing is
+  // returned to the caller from it and nothing is written on the strength of
+  // it; the only field read is the Project id handed to the capability proof
+  // on the next line. Adding `AND workspace_id = <cookie>` here is precisely
+  // the defect being removed.
+  const [target] = await db
+    .select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(eq(tasks.id, taskId));
+  // `tasks.workspace_id` is nullable in the schema. A row that belongs to no
+  // Project belongs to nobody, so there is no membership that could authorize
+  // it — refused, never treated as "any Project will do".
+  if (!target?.workspaceId) return { ok: false, reason: "no-such-task" };
+
+  const grant = await authorizeStoredProject({
+    storedProjectId: target.workspaceId,
+    capability,
+    actorUserId,
+  });
+  return grant.ok
+    ? { ok: true, ws: grant.projectId }
+    : { ok: false, reason: "refused" };
+}
+
+/**
  * Pure read pass-through used by the realtime sync hook to refetch
  * the canonical task list when an SSE "tasks-changed" event arrives.
  * Resolves the active workspace from the session cookie.
  */
 export async function getTasksAction(): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
-  return getTasks(ws);
+  // Fail-closed: a caller who belongs to nothing gets no tasks, where the old
+  // accessor handed back LEGACY_WORKSPACE_ID and this returned its rows (D-005).
+  const ambient = await getActiveWorkspaceOrNull();
+  const ws = await readableProjectOrNull(ambient);
+  return ws ? getTasks(ws) : [];
 }
 
 /**
@@ -45,21 +110,38 @@ export async function getTasksAction(): Promise<Task[]> {
  * SubtasksSection can fetch a parent's children client-side without
  * importing server-only code. Returned rows are ordered oldest-first.
  *
- * Workspace guard: verify the parent task belongs to the caller's
- * active workspace before returning its subtasks. A caller who knows a
- * foreign parentTaskId gets an empty array, not a data leak.
+ * Project guard: the parent's own Project is proved openable to the caller
+ * before its subtasks are returned. A caller who knows a foreign
+ * parentTaskId gets an empty array, not a data leak — and a caller who is
+ * simply looking at a Project other than the cookie's gets their subtasks
+ * rather than a false empty.
  */
 export async function getSubtasksAction(
   parentTaskId: string,
 ): Promise<Task[]> {
   if (isDemoMode()) return [];
-  const ws = await getActiveWorkspace();
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(parentTaskId, me, "open");
+  if (!scope.ok) return [];
+  const ws = scope.ws;
   const [parent] = await db
     .select({ id: tasks.id })
     .from(tasks)
     .where(and(eq(tasks.id, parentTaskId), eq(tasks.workspaceId, ws)));
   if (!parent) return [];
   return getSubtasks(parentTaskId, ws);
+}
+
+/**
+ * What a refused or unknown target returns.
+ *
+ * The caller's own list, never the target's — a refusal must not become a
+ * channel for reading the Project it refused. `Task[]` has no room for "no",
+ * so the honest neutral answer is the list the caller already had.
+ */
+async function neutralTaskList(ambient: string | null): Promise<Task[]> {
+  const ws = await readableProjectOrNull(ambient);
+  return ws ? getTasks(ws) : [];
 }
 
 function nowSeconds(): number {
@@ -110,11 +192,17 @@ export async function moveTaskAction(
   if (!id || !LANE_ORDER.includes(toLane)) return [];
   if (isDemoMode()) return demoTasks();
   // Same Promise.all shape as toggleCompleteAction, so resolving the subject
-  // adds no serial round-trip to a write path.
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
-  // Pre-read prior lane, workspace guard on the read so a caller who
-  // knows a foreign task id gets a silent no-op instead of leaking the
-  // lane value (or worse, re-parking the task).
+  // adds no serial round-trip to a write path. `ambient` is context for the
+  // neutral response only; it is not an input to the authorization decision.
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
+  // Pre-read prior lane under the proved Project, so a row that moved between
+  // the proof and here is refused rather than written blind.
   const [row] = await db
     .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
@@ -156,9 +244,15 @@ export async function moveTaskAction(
 
 export async function toggleCompleteAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
-  // Workspace guard on the read: scope to the caller's workspace so a
-  // foreign task id is a silent no-op rather than a cross-tenant toggle.
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
+  // Re-read under the proved Project: a foreign or moved row is refused here
+  // rather than toggled.
   const [row] = await db
     .select()
     .from(tasks)
@@ -388,10 +482,23 @@ export async function updateTaskAction(
   patch: Partial<Omit<Task, "id">>,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
-  // Resolve the target through the caller's tenant before doing any
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
+  // Resolve the target through the *proved* Project before doing any
   // side-effects. Without this read, a foreign id is a no-op update but
   // still emits activity against the foreign task.
+  //
+  // This read stays even though `scopeForTask` has already touched the row:
+  // it re-reads under the proved scope, so a task that changed Project
+  // between the proof and the write is refused instead of updated, and the
+  // extra columns below are needed anyway. The ordering it pins —
+  // owned row resolved before any activity is emitted — is asserted by
+  // `tasks-security-regression.test.mjs`.
   //
   // The extra columns are for the sponsored-use diff: a patch that rewrites
   // identical values is not a reassignment or a reschedule, and comparing
@@ -519,9 +626,30 @@ export async function addTaskAction(input: {
    *  the top-level views (`getTasks` filters on parent_task_id IS
    *  NULL). One level of nesting only in v1. */
   parentTaskId?: string | null;
+  /**
+   * Optional explicit destination Project (ADR 0001 §9, create/list).
+   * Additive: a caller that knows its Project names it and stops depending on
+   * the cookie; a caller that does not keeps working. Naming one is not a
+   * privilege — it is proved against live membership exactly like the ambient
+   * value, so a Project the caller is not in is refused either way.
+   */
+  projectId?: string;
 }): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const [me, ws] = await Promise.all([getCurrentUser(), getActiveWorkspace()]);
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: input.projectId ?? ambient,
+    capability: "createOrEditTasks",
+    actorUserId: me,
+  });
+  // No proved Project means no destination. The old accessor would have
+  // offered LEGACY_WORKSPACE_ID here and this would have created the task
+  // inside it (D-005).
+  if (!grant.ok) return neutralTaskList(ambient);
+  const ws = grant.projectId;
   const id =
     input.id ??
     `t-${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).slice(0, 8)}`;
@@ -610,9 +738,15 @@ export async function reorderTaskAction(
   }
   if (isDemoMode()) return demoTasks();
 
-  const ws = await getActiveWorkspace();
-  // Workspace guard on the read so a caller with a foreign task id
-  // gets a no-op rather than accidentally moving a cross-tenant row.
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
+  // Re-read under the proved Project so a row that moved between the proof
+  // and the write is refused rather than reordered.
   const [row] = await db
     .select({ lane: tasks.lane, boardColumnKey: tasks.boardColumnKey })
     .from(tasks)
@@ -654,9 +788,18 @@ export async function reorderTaskAction(
 
 export async function removeTaskAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  // Destructive, and it deletes a subtree. The capability proof is explicit
+  // and precedes every read below, so no empty result anywhere in this
+  // function is ever the thing that decides a delete may proceed.
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
 
-  // Workspace guard: confirm the parent belongs to this tenant.
+  // Re-read under the proved Project: confirm the parent is still there.
   const [parent] = await db
     .select({ id: tasks.id })
     .from(tasks)
@@ -734,9 +877,15 @@ export async function setTaskArchivedAction(
   archived: boolean,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
 
-  // Workspace guard: confirm the task belongs to this tenant.
+  // Re-read under the proved Project before the cascade.
   const [ownedTask] = await db
     .select({ id: tasks.id })
     .from(tasks)
@@ -791,7 +940,13 @@ function freshTaskId(): string {
  */
 export async function duplicateTaskAction(id: string): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
 
   const [source] = await db
     .select()
@@ -873,15 +1028,27 @@ export async function duplicateTaskAction(id: string): Promise<Task[]> {
  * visibility (hide toggle), the node is NOT auto-deleted on unset,
  * preventing accidental data loss from an accidental mis-tap.
  *
- * Workspace guard: the update only fires when the row belongs to the
- * caller's active workspace (same pattern as all other task mutations).
+ * Project guard: this was the one task mutation with no pre-read at all — a
+ * bare `UPDATE … WHERE id = ? AND workspace_id = <cookie>`, where the guard
+ * was structural rather than stated. Behaviourally that matched its siblings,
+ * and it shared their defect: a task in a Project other than the cookie's
+ * matched nothing, promoted nothing, and reported success. It now gets the
+ * same explicit treatment as every other mutation here — the target's own
+ * Project is derived and proved before the update, which is also the only way
+ * the caller can be told apart from someone guessing task ids.
  */
 export async function setTaskMilestoneAction(
   id: string,
   isMilestone: boolean,
 ): Promise<Task[]> {
   if (isDemoMode()) return demoTasks();
-  const ws = await getActiveWorkspace();
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const scope = await scopeForTask(id, me);
+  if (!scope.ok) return neutralTaskList(ambient);
+  const ws = scope.ws;
   await db
     .update(tasks)
     .set({ isMilestone, ...bump() })
