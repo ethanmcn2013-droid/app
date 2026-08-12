@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition, type KeyboardEvent } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { updateUserPreferencesAction } from "@/server/actions/preferences";
 import {
@@ -42,6 +42,56 @@ function applyThemeMode(mode: ThemeMode) {
   window.dispatchEvent(new Event("signal:theme"));
 }
 
+/**
+ * The radio-group keyboard contract, as a pure function.
+ *
+ * WAI-ARIA's radio group pattern: the arrows move focus AND selection and
+ * wrap at both ends, Home/End jump to the ends, and Space re-selects
+ * wherever focus already sits. Given the key, the index it was pressed on
+ * and how many radios there are, this returns the index that should become
+ * both focused and checked — or null when the key is none of the group's
+ * business and the browser should keep it (Tab, Enter, Escape, typing).
+ *
+ * It lives here rather than inline in the handler so the contract can be
+ * proven without a browser: see appearance-radiogroup.test.ts.
+ */
+export function radioGroupKeyTarget(
+  key: string,
+  index: number,
+  count: number,
+): number | null {
+  if (count <= 0 || index < 0 || index >= count) return null;
+  switch (key) {
+    case "ArrowDown":
+    case "ArrowRight":
+      return (index + 1) % count;
+    case "ArrowUp":
+    case "ArrowLeft":
+      return (index - 1 + count) % count;
+    case "Home":
+      return 0;
+    case "End":
+      return count - 1;
+    case " ":
+    // "Spacebar" is the legacy KeyboardEvent.key spelling; still emitted by
+    // older engines and cheap to honour.
+    case "Spacebar":
+      return index;
+    default:
+      return null;
+  }
+}
+
+/**
+ * One tab stop for the whole group, not one per radio: the checked option
+ * is the group's entry point, and if somehow nothing is checked the first
+ * option takes the stop. Everything else is reachable by arrow, not by Tab.
+ */
+export function rovingTabIndex(index: number, checkedIndex: number): 0 | -1 {
+  const stop = checkedIndex < 0 ? 0 : checkedIndex;
+  return index === stop ? 0 : -1;
+}
+
 const PERSONALITY_TOGGLES: Array<{
   key: keyof PersonalityPrefs;
   title: string;
@@ -78,8 +128,15 @@ export function AppearanceSection({
     initialPersonalityPrefs,
   );
   const [personalityPending, startPersonalityTransition] = useTransition();
+  const radioRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const checkedIndex = OPTIONS.findIndex((o) => o.value === themeMode);
 
   function handleChange(next: ThemeMode) {
+    // Re-entry guard. The radios are never `disabled` while the write is in
+    // flight — disabling the focused control drops focus to the body and a
+    // keyboard user loses their place mid-interaction — so this, not the
+    // DOM, is what stops a second write landing on top of the first.
+    if (pending) return;
     const previous = themeMode;
     setThemeMode(next);
     // The theme changes under the click, not after the round-trip: this is a
@@ -98,6 +155,21 @@ export function AppearanceSection({
         });
       }
     });
+  }
+
+  function handleRadioKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    const target = radioGroupKeyTarget(event.key, index, OPTIONS.length);
+    if (target === null) return;
+    // Ours now: no page scroll on the arrows or Space, and no second
+    // activation from the button's native Space-to-click.
+    event.preventDefault();
+    // Focus moves even while a write is in flight. The selection may be
+    // refused by the guard above, but the caret is the reader's, not ours.
+    radioRefs.current[target]?.focus();
+    handleChange(OPTIONS[target].value);
   }
 
   function handlePersonalityToggle(key: keyof PersonalityPrefs, next: boolean) {
@@ -134,9 +206,14 @@ export function AppearanceSection({
         {/* One choice among three, so it announces itself as one: a radio
             group, not three unrelated buttons. The cards are the section's
             existing grammar — they carry the plain-English line each option
-            needs, which a segmented strip has no room for. */}
+            needs, which a segmented strip has no room for.
+
+            Announcing the role means owing the keyboard contract that comes
+            with it: one tab stop for the group (the checked card), arrows to
+            move focus and selection, Home/End to the ends, Space to select.
+            The logic is in radioGroupKeyTarget and rovingTabIndex above. */}
         <div role="radiogroup" aria-label="Colour scheme" className="space-y-3">
-          {OPTIONS.map((opt) => {
+          {OPTIONS.map((opt, index) => {
             const isActive = themeMode === opt.value;
             return (
               <button
@@ -144,10 +221,19 @@ export function AppearanceSection({
                 type="button"
                 role="radio"
                 aria-checked={isActive}
+                ref={(node) => {
+                  radioRefs.current[index] = node;
+                }}
+                tabIndex={rovingTabIndex(index, checkedIndex)}
                 onClick={() => handleChange(opt.value)}
-                disabled={pending}
+                onKeyDown={(event) => handleRadioKeyDown(event, index)}
+                // Not `disabled`: a disabled control loses focus to the body
+                // the instant the write starts. This keeps the card focused
+                // and dimmed, and handleChange refuses the re-entry.
+                aria-disabled={pending}
+                data-pending={pending ? "" : undefined}
                 className={
-                  "flex w-full items-start gap-4 rounded-xl border p-5 text-left transition-colors disabled:opacity-60 " +
+                  "flex w-full items-start gap-4 rounded-xl border p-5 text-left transition-colors aria-disabled:cursor-default aria-disabled:opacity-60 " +
                   (isActive
                     ? "border-brand/40 bg-brand-soft/30 ring-1 ring-brand/20"
                     : "border-line-soft bg-bg-elevated hover:border-line")
