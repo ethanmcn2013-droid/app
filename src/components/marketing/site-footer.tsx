@@ -47,12 +47,12 @@ export function SiteFooter() {
         </div>
 
         {/*
-          Estate consolidation (2026-08-12). This footer renders on the
-          public /invite/[token] page, so a dead link here is a dead link in
-          front of somebody being invited to a workspace. Templates, Status,
-          About, Principles, the five /for pages and the iOS page were all
-          cut; everything company-facing now points at the umbrella, which
-          is the only host serving marketing pages.
+          Estate consolidation (2026-08-12). This footer renders on the host
+          root, the embed layout and the public /invite/[token] page, so a
+          dead link here is a dead link in front of somebody being invited to
+          a workspace. Templates, Status, About and Principles were cut from
+          this host; everything company-facing now points at the umbrella,
+          which is the only host serving marketing pages.
         */}
         <FooterCol
           heading="Product"
@@ -73,6 +73,22 @@ export function SiteFooter() {
             // trying to reach a human.
             { href: `${STUDIO_URL}/about#contact`, label: "Contact", external: true },
             { href: `${STUDIO_URL}/dispatch`, label: "Dispatch", external: true },
+          ]}
+        />
+        {/*
+          Resources held the five /for pages and the iOS page. All six were
+          cut, which emptied the column rather than retiring it: the
+          four-column footer is locked in BRAND.md and the chrome contract
+          gates it, because a column quietly disappearing is how a footer
+          drifts. Rebuilt from umbrella pages that survived the cut.
+        */}
+        <FooterCol
+          heading="Resources"
+          links={[
+            { href: `${STUDIO_URL}/students`, label: "Students", external: true },
+            { href: `${STUDIO_URL}/venues`, label: "Venues", external: true },
+            { href: `${STUDIO_URL}/press`, label: "Press", external: true },
+            { href: `${STUDIO_URL}/design`, label: "Design", external: true },
           ]}
         />
         <FooterCol
