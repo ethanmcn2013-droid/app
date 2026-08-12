@@ -559,7 +559,16 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   assert.ok(inboxGuard >= 0, "inbox must explicitly guard demo/review mode");
   for (const boundary of [
     "getCurrentUser()",
-    "getActiveWorkspace()",
+    // WP3 renegotiation, with the invariant intact. This list names the
+    // production boundaries that must sit AFTER the demo guard; the accessor
+    // is one example of such a boundary, not the property being protected.
+    // /app/inbox resolved its Project through `getActiveWorkspace`, whose
+    // third fallback returns LEGACY_WORKSPACE_ID without a membership proof
+    // (DECISIONS D-005). It now uses `requireRouteProjectId()`, which fails
+    // closed. Same position, same ordering requirement, same test — only the
+    // name of the boundary changed. Updated rather than dropped: removing the
+    // entry would have silently stopped checking this page's DB access.
+    "requireRouteProjectId()",
     "getNotificationsForUser(",
     "compileDailyDigest(",
     "buildWeeklySnapshotFor(",
@@ -580,7 +589,10 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   const importGuard = importBody.indexOf("isDemoMode()");
   assert.ok(importGuard >= 0, "import page must explicitly guard demo/review mode");
   for (const boundary of [
-    "getActiveWorkspace()",
+    // Same WP3 renegotiation as the inbox list above. /app/import is the
+    // stronger case: its Project is a WRITE destination, so an unproved one
+    // here is a destination nobody authorized.
+    "requireRouteProjectId()",
     "isFirstRun(",
     "getActiveWorkspaceNameAction()",
   ]) {

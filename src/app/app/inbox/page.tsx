@@ -3,7 +3,8 @@ import {
   getTasks,
 } from "@/server/db/queries";
 import { compileDailyDigest } from "@/server/db/daily-digest";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { requireRouteProjectId } from "@/server/projects/route-authz";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
@@ -82,9 +83,15 @@ export default async function InboxPage() {
     );
   }
 
+  // WP3: was `getActiveWorkspace`, whose third fallback hands back
+  // LEGACY_WORKSPACE_ID — a workspace the caller has proved no membership of
+  // (DECISIONS D-005). `requireRouteProjectId` fails closed instead. No
+  // explicit `workspaceId` parameter here on purpose: this surface renders
+  // inside `TasksRuntimeShell`, whose Project the page cannot influence, so
+  // accepting one would let the URL and the chrome disagree.
   const [me, ws] = await Promise.all([
     getCurrentUser(),
-    getActiveWorkspace(),
+    requireRouteProjectId(),
   ]);
   // Server-fetch in parallel: notifications + digest + the task list
   // we need to compute rules-based nudges from. All three scoped to

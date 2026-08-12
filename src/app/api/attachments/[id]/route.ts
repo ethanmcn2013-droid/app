@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { getAttachmentById } from "@/server/db/queries";
-import { getActiveWorkspace } from "@/server/auth";
+import { authorizeObjectProject } from "@/server/projects/route-authz";
 import { openBlobStream, resolveStoredPath } from "@/server/storage";
 
 // node:fs isn't edge-friendly.
@@ -10,10 +10,23 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Authenticated attachment download. Re-checks workspace membership
- * before streaming so a leaked id from another tenant is invisible:
- * mismatched / unknown / on-disk-missing all return 404 (not 403).
- * Opacity is the right default.
+ * Authenticated attachment download. Proves membership of the attachment's
+ * OWN Project before streaming, so a leaked id from another tenant is
+ * invisible: unauthorized / unknown / on-disk-missing all return 404 (not
+ * 403). Opacity is the right default.
+ *
+ * WP3 defect 4. This used to resolve the ambient cookie and compare
+ * (`att.workspaceId !== ws`). That is not an authorization — it is a row
+ * filter with an extra step, and it refused a caller who is a fully
+ * authorized member of the attachment's Project whenever their cookie
+ * pointed at a different one. Every attachment link in an email, a shared
+ * note, or a second browser tab was subject to it. The Project now comes
+ * from the attachment; the cookie is not consulted.
+ *
+ * An empty read and a failed proof are deliberately different things here.
+ * `getAttachmentById` returning null means the row is genuinely absent;
+ * membership is proved separately, so "not yours" is never inferred from
+ * "nothing came back".
  *
  * Serves both storage backends:
  *  - stored_path starts with http(s) → 302 redirect to the blob URL
@@ -29,9 +42,16 @@ export async function GET(
     return notFound();
   }
 
-  const ws = await getActiveWorkspace();
   const att = await getAttachmentById(id);
-  if (!att || att.workspaceId !== ws) {
+  if (!att) {
+    return notFound();
+  }
+
+  // The proof, on the attachment's own Project, before a single byte is
+  // opened. An archived Project stays readable (ADR 0001 section 5) — archive
+  // prohibits new writes, not retrieval of what is already there.
+  const project = await authorizeObjectProject(att.workspaceId);
+  if (project.kind !== "ready" && project.kind !== "archived") {
     return notFound();
   }
 

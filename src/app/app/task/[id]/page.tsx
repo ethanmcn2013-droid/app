@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
-import { getActiveWorkspace } from "@/server/auth";
 import { getTaskById, getTaskDetail } from "@/server/db/queries";
 import { authorizeObjectProject } from "@/server/projects/route-authz";
-import type { ProjectId } from "@/lib/projects/project-ref";
+import { assertProjectId } from "@/lib/projects/project-ref";
+import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
 import {
   canonicalTaskUrl,
   decideTaskRouteWith,
@@ -19,7 +19,7 @@ async function decide(id: string): Promise<TaskRouteDecision> {
   // (`access-mode.ts` safety invariant), so the in-memory board resolves the
   // task directly, exactly as it did before.
   if (isDemoMode()) {
-    const demoWorkspaceId = (await getActiveWorkspace()) as ProjectId;
+    const demoWorkspaceId = assertProjectId(DEMO_WORKSPACE_ID);
     const result = await getTaskDetail(id, demoWorkspaceId);
     if (!result) return { kind: "not-found" };
     return result.archived

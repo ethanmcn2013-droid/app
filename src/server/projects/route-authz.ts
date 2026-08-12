@@ -40,6 +40,7 @@ import "server-only";
  * returns it, so a route cannot forward it by accident.
  */
 
+import { redirect } from "next/navigation";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   assertProjectId,
@@ -49,7 +50,7 @@ import {
 import { getCurrentUser } from "@/server/auth";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { resolveActiveProjectForRoute } from "@/server/projects/request-scope";
-import { DEMO_WORKSPACE_ID } from "@/server/demo/tasks-demo";
+import { DEMO_WORKSPACE_ID, DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
 
 /**
  * What a route may know. `unavailable` deliberately collapses missing,
@@ -59,6 +60,12 @@ export type RouteProjectDecision =
   | Readonly<{
       kind: "ready";
       workspaceId: ProjectId;
+      /**
+       * The Project's display name. Safe to render: it is only ever populated
+       * on a decision that already carries a fresh membership proof, so it
+       * cannot name a Project the caller has not been authorized for.
+       */
+      name: string;
       /** `url` when the route named it; `fallback` on genuine bare entry. */
       source: "url" | "fallback";
       /**
@@ -68,7 +75,7 @@ export type RouteProjectDecision =
        */
       canonicalRedirectTo: ProjectId | null;
     }>
-  | Readonly<{ kind: "archived"; workspaceId: ProjectId }>
+  | Readonly<{ kind: "archived"; workspaceId: ProjectId; name: string }>
   | Readonly<{ kind: "unavailable" }>
   | Readonly<{ kind: "empty" }>;
 
@@ -81,6 +88,7 @@ function demoDecision(): RouteProjectDecision {
   return {
     kind: "ready",
     workspaceId: assertProjectId(DEMO_WORKSPACE_ID),
+    name: DEMO_WORKSPACE_NAME,
     source: "url",
     canonicalRedirectTo: null,
   };
@@ -94,11 +102,16 @@ function toDecision(
       return {
         kind: "ready",
         workspaceId: resolution.state.project.id,
+        name: resolution.state.project.name,
         source: resolution.state.source,
         canonicalRedirectTo: resolution.redirectTo,
       };
     case "archived":
-      return { kind: "archived", workspaceId: resolution.state.project.id };
+      return {
+        kind: "archived",
+        workspaceId: resolution.state.project.id,
+        name: resolution.state.project.name,
+      };
     case "unavailable":
       return { kind: "unavailable" };
     case "empty":
@@ -135,6 +148,29 @@ export async function resolveProjectForRoute(
 }
 
 /**
+ * Bare-entry Project id for a surface that renders *inside*
+ * `TasksRuntimeShell` and therefore cannot accept an explicit Project of its
+ * own without letting the URL and the chrome disagree.
+ *
+ * The drop-in replacement for `getActiveWorkspace` on those pages: same
+ * cookie, same first-membership fallback, and then it **stops**. Where
+ * `getActiveWorkspace` returns `LEGACY_WORKSPACE_ID` — a real workspace,
+ * holding real tasks, for which the caller has produced no membership proof —
+ * this redirects to the onboarding surface (DECISIONS D-005, ADR 0001 §4
+ * step 4).
+ *
+ * `redirect()` throws Next's control-flow exception, so callers must not wrap
+ * this in a try/catch.
+ */
+export async function requireRouteProjectId(): Promise<ProjectId> {
+  const project = await resolveProjectForRoute(undefined);
+  if (project.kind !== "ready" && project.kind !== "archived") {
+    redirect("/welcome");
+  }
+  return project.workspaceId;
+}
+
+/**
  * ADR 0001 §9, the object-operation pattern: the object carries its own
  * Project, so authorize **that** Project rather than comparing it to an
  * ambient one.
@@ -151,12 +187,22 @@ export async function resolveProjectForRoute(
 export async function authorizeObjectProject(
   storedWorkspaceId: string | null | undefined,
 ): Promise<RouteProjectDecision> {
-  if (isDemoMode()) return demoDecision();
-
   // Shape-gate before the query so a null or malformed stored value can never
   // reach the resolver's implicit branch and be answered with a fallback.
   const projectId = parseProjectId(storedWorkspaceId);
   if (projectId === null) return { kind: "unavailable" };
+
+  // Demo and Review still compare. Returning a bare `ready` here would
+  // authorize an object from *any* Project, because the demo mode has no
+  // membership table to refuse it — a loosening, and the one direction this
+  // wave may never move. The demo workspace is the only authorized Project,
+  // so anything else is unavailable, exactly as the `!== ws` check it
+  // replaces already behaved.
+  if (isDemoMode()) {
+    return projectId === DEMO_WORKSPACE_ID
+      ? demoDecision()
+      : { kind: "unavailable" };
+  }
 
   const actorUserId = await getCurrentUser();
   const decision = toDecision(
