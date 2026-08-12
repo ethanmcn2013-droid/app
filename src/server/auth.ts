@@ -179,6 +179,57 @@ export async function getActiveWorkspace(): Promise<string> {
   return LEGACY_WORKSPACE_ID;
 }
 
+/**
+ * The membership-proved half of `getActiveWorkspace()`.
+ *
+ * Same cookie and same first-membership fallback, and then it stops. Where
+ * `getActiveWorkspace()` returns `LEGACY_WORKSPACE_ID` — a workspace the
+ * caller has produced no membership proof of, which really exists and really
+ * holds tasks — this returns `null`.
+ *
+ * Recorded as DECISIONS D-005 and ADR 0001 §1. Reproduced against a fresh
+ * schema-baseline database: a user in zero workspaces resolves through
+ * `auth.ts:169-179` to `ws-legacy`, and every one of the 95 ambient call sites
+ * can receive it.
+ *
+ * Additive on purpose. `getActiveWorkspace()` is unchanged, because
+ * reclassifying its 95 call sites is WP3 and changing its contract underneath
+ * them would be a behaviour change wearing a safety label. WP2 owns the new
+ * resolver (`src/server/projects/resolve.ts`), which never calls this and
+ * never returns a workspace id without proof; this function exists so a WP3
+ * migration has a drop-in that fails closed, and so the regression test has
+ * something to pin.
+ */
+export async function getActiveWorkspaceOrNull(): Promise<string | null> {
+  if (isDemoMode()) return DEMO_WORKSPACE_ID;
+
+  const me = await getCurrentUser();
+  const c = await cookies();
+  const cookieValue = c.get(ACTIVE_WORKSPACE_COOKIE)?.value;
+
+  if (cookieValue) {
+    const [match] = await db
+      .select({ workspaceId: workspaceMembers.workspaceId })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.userId, me),
+          eq(workspaceMembers.workspaceId, cookieValue),
+        ),
+      )
+      .limit(1);
+    if (match) return cookieValue;
+  }
+
+  const [first] = await db
+    .select({ workspaceId: workspaceMembers.workspaceId })
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.userId, me))
+    .limit(1);
+
+  return first ? first.workspaceId : null;
+}
+
 /** List workspaces the current user is a member of. Used by the
  *  sidebar workspace-switcher popover. */
 export async function listMyWorkspaces(): Promise<
