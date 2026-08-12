@@ -4,6 +4,47 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-12 · T·141 · moves · the app arrives, and Notes finally moves
+
+**Every menu, picker and popover in the app now enters the same way, Notes
+has motion on its own verbs for the first time, and entering a product ends
+on a settle instead of a cut.** Motion here is spent, not sprinkled: one
+contract, one set of curves, and a written verdict for every place a
+movement was added or deliberately withheld.
+
+Nine anchored layers used to appear instantly, out of nowhere. They now grow
+from the control that opened them, briefly, and leave faster than they
+arrive. Dismiss one with Escape and it is simply gone, because a keyboard
+command is an instruction, not a performance.
+
+Notes was the one product that never moved. A saved note appeared, a decided
+row vanished, and a promoted note grew its "In Tasks" chip, all between one
+frame and the next. A saved note now arrives in its place, a decided row
+leaves with the list closing behind it, and a promotion resolves where it
+happened. Keep and Delete move identically: what happened is in the words
+and the state, never in the animation.
+
+Entering a product used to end on a hard cut, the wordmark choreography
+playing and the finished board simply replacing it. The surface now settles
+as it arrives, after the swap has already landed, so the change stays
+immediate and the surface is usable from its first frame. Changing theme was
+the opposite problem: the canvas flipped instantly while a handful of
+elements lagged behind it. The document now crosses together, once, and then
+the transition is taken away again.
+
+The Timeline artifact plays its entrance once a session. Coming back to a
+page you have already seen is not a reason to watch it assemble again.
+
+None of this happens for anyone who asks their device for reduced motion.
+That is not a downgrade path bolted on afterwards; it is the same state
+arriving without travel.
+
+Under it, about twenty-five hardcoded curves and durations became the
+system's own tokens, so the next person to touch this cannot drift from it
+by accident. One instrument changed too: the contrast gate was reading
+colours while the page was still moving, so it now waits for the document to
+settle before it measures.
+
 ## 2026-08-12 · T·140 · tightens · the project header says what it means
 
 **The two rows above your board — the project name and the view tabs — went

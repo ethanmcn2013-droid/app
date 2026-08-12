@@ -13,6 +13,7 @@ import {
 import type { Task } from "@/lib/data";
 import { useCurrentUser } from "@/lib/auth-context";
 import { Avatar } from "@/components/showcase/avatar";
+import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
 import { useToast } from "@/components/primitives/toast";
 import { formatRelativeTime } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -352,7 +353,7 @@ export function ResourcesSection({ task }: { task: Task }) {
             type="button"
             onClick={handleAddLink}
             disabled={linkPending}
-            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-50"
+            className="flex-shrink-0 rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-85 disabled:opacity-50"
           >
             {linkPending ? "Adding…" : "Add"}
           </button>
@@ -446,7 +447,7 @@ function RealResourceRow({
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px)" }}
       animate={{ opacity: 1, transform: "translateY(0)" }}
       exit={{ opacity: 0 }}
-      transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: EASE_OUT_TOKEN }}
       className="group/resource flex items-center gap-2.5 rounded-md px-1.5 py-1.5 transition-colors hover:bg-bg-sunken/60"
     >
       <ResourceGlyph row={row} downloadUrl={downloadUrl} />
@@ -492,7 +493,7 @@ function RealResourceRow({
             onClick={onClick}
             aria-expanded={expanded}
             aria-label={`Remove ${row.title}`}
-            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity hover:bg-bg-sunken hover:text-ink-soft group-hover/resource:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
+            className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:bg-bg-sunken hover:text-ink-soft group-hover/resource:opacity-100 focus-visible:opacity-100 aria-expanded:opacity-100"
           >
             <TrashGlyph />
           </button>
@@ -517,7 +518,7 @@ function RealResourceRow({
                   close();
                   onRemove();
                 }}
-                className="rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity hover:opacity-85"
+                className="rounded-md bg-ink px-2 py-1 text-[12px] font-medium text-white transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-85"
               >
                 Remove
               </button>

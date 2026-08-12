@@ -1617,7 +1617,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6542651ed3b2dab6"
+      "materialityHash": "d7577f3c41b8bb97"
     },
     {
       "id": "tasks.state.root-not-found",
@@ -2463,10 +2463,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "5f25f211184d5c5f"
+      "materialityHash": "3d93f3ec09b418d6"
     },
     {
       "id": "tasks.state.app-notes-error",
@@ -3243,10 +3243,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "43b9c13f874d4f0f"
+      "materialityHash": "5da2df7195754a00"
     },
     {
       "id": "tasks.state.app-home-error",
@@ -3544,10 +3544,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-11",
+      "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "26726b2c64930e58"
+      "materialityHash": "757683270ea80beb"
     },
     {
       "id": "tasks.state.app-tasks-error",
@@ -3629,10 +3629,10 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-11",
+      "lastReviewedAt": "2026-08-12",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ffb26024e2b58eee"
+      "materialityHash": "219d26d1d17daf20"
     }
   ]
 }

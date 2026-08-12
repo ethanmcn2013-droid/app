@@ -26,9 +26,11 @@ import {
   type ReactNode,
   type KeyboardEvent as ReactKeyboardEvent,
   Fragment,
+  useRef,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import { markKeyboardDismiss } from "./anchored-layer";
 import styles from "./context-actions.module.css";
 
 // ─── Action registry types ────────────────────────────────────────────────────
@@ -255,6 +257,7 @@ export type ActionsDropdownProps = {
  * never the only route: callers must also mount `ActionsDropdown`.
  */
 export function ContextActions({ items, target }: ContextActionsProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <ContextMenu.Root>
       {/* asChild attaches the context-menu handling to the single element in
@@ -262,8 +265,13 @@ export function ContextActions({ items, target }: ContextActionsProps) {
       <ContextMenu.Trigger asChild>{target}</ContextMenu.Trigger>
       <ContextMenu.Portal>
         <ContextMenu.Content
+          ref={contentRef}
           className={styles.content}
           collisionPadding={8}
+          // Escape is a command, not a dismissal to be watched: mark the node
+          // so the stylesheet drops its exit animation and Radix unmounts it
+          // on the spot (motion contract — no animated keyboard commands).
+          onEscapeKeyDown={() => markKeyboardDismiss(contentRef.current)}
           onCloseAutoFocus={(event) => {
             // Return focus to the element that received the right-click so
             // keyboard users stay oriented (Radix default; keep it).
@@ -288,6 +296,7 @@ export function ActionsDropdown({
   triggerClassName,
   triggerTabIndex,
 }: ActionsDropdownProps) {
+  const contentRef = useRef<HTMLDivElement>(null);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -310,10 +319,13 @@ export function ActionsDropdown({
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
+          ref={contentRef}
           className={styles.content}
           align="end"
           collisionPadding={8}
           sideOffset={4}
+          // See ContextActions above: Escape cuts, it does not animate out.
+          onEscapeKeyDown={() => markKeyboardDismiss(contentRef.current)}
         >
           {renderDropdownGroups(items)}
         </DropdownMenu.Content>

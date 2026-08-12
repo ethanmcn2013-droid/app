@@ -7,6 +7,8 @@ import { useLabStore } from "../../store";
 import { useCalendarFrame } from "@/components/app/room/room-brief-context";
 import type { CalendarDate, LabTask, TaskStatus } from "../../types";
 import { ActionsDropdown, ContextActions, type ActionItem } from "@/components/primitives/context-actions";
+import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
+import { MOTION_BASE } from "@/lib/motion";
 import {
   COLUMN_COLORS,
   COLUMN_PICKER_ORDER,
@@ -1545,7 +1547,7 @@ function BoardCard({
       layoutId={`tasks-board-${task.id}`}
       transition={reduceMotion || keyboardMove
         ? { duration: 0 }
-        : { layout: { duration: 0.22, ease: [0.23, 1, 0.32, 1] } }}
+        : { layout: { duration: MOTION_BASE, ease: EASE_OUT_TOKEN } }}
     >
       {store.drag?.kind === "board" && store.drag.overStatus === status && store.drag.overIndex === index ? <div aria-hidden="true" className={styles.boardInsertion} /> : null}
       {/*

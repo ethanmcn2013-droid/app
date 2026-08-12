@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
 import { hasOpenLayer } from "@/components/primitives/open-layer";
 
 /**
@@ -107,7 +108,7 @@ export function TaskFocusWindow({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={reduce ? { duration: 0.12 } : { duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+            transition={reduce ? { duration: 0.12 } : { duration: 0.18, ease: EASE_OUT_TOKEN }}
             onClick={onClose}
             className="fixed inset-0 z-[80] bg-ink/[0.28] backdrop-blur-[2px]"
             aria-hidden
@@ -140,9 +141,9 @@ export function TaskFocusWindow({
               animate={reduce ? { opacity: 1 } : { opacity: 1, transform: "translateY(0) scale(1)" }}
               exit={{
                 ...(reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px) scale(0.99)" }),
-                transition: reduce ? { duration: 0.1 } : { duration: 0.16, ease: [0.23, 1, 0.32, 1] },
+                transition: reduce ? { duration: 0.1 } : { duration: 0.16, ease: EASE_OUT_TOKEN },
               }}
-              transition={reduce ? { duration: 0.12 } : { duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              transition={reduce ? { duration: 0.12 } : { duration: 0.2, ease: EASE_OUT_TOKEN }}
               // The panel's base leading. Everything inside inherited 1.5
               // from the document before this, so an uppercase label that
               // can never wrap breathed like a paragraph. `ui` is the

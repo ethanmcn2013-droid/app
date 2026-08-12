@@ -246,7 +246,7 @@ button.timeLens:active {
 
 .headerCopy {
   min-width: 0;
-  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation: timeline-rise 220ms var(--ease-out) backwards;
 }
 
 .heroKicker,
@@ -695,12 +695,12 @@ button.timeLens:focus-visible .metricAlternate {
 .completedRail {
   height: 2px;
   background: var(--ink);
-  animation: timeline-draw-x 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation: timeline-draw-x 400ms var(--ease-out) backwards;
 }
 
 .completedRailVertical {
   display: none;
-  animation: timeline-draw-y 400ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation: timeline-draw-y 400ms var(--ease-out) backwards;
 }
 
 /* ── Cartography ────────────────────────────────────────────────────────────
@@ -723,7 +723,7 @@ button.timeLens:focus-visible .metricAlternate {
   width: 1px;
   height: 0.5rem;
   translate: -50% -50%;
-  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
+  animation: timeline-rise 220ms var(--ease-out) 420ms backwards;
 }
 
 /* The mark is painted by a pseudo-element rather than by the tick's own
@@ -805,7 +805,7 @@ button.timeLens:focus-visible .metricAlternate {
   color: var(--ink-soft);
   pointer-events: none;
   translate: -50% -50%;
-  animation: timeline-drop 220ms cubic-bezier(0.23, 1, 0.32, 1) 220ms backwards;
+  animation: timeline-drop 220ms var(--ease-out) 220ms backwards;
 }
 
 .todayMarker::before {
@@ -888,7 +888,7 @@ button.timeLens:focus-visible .metricAlternate {
   background: var(--paper);
   translate: -50% -50%;
   transition: box-shadow var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
-  animation: timeline-pop 140ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  animation: timeline-pop 140ms var(--ease-out) backwards;
   animation-delay: var(--timeline-point-delay, 0s);
 }
 
@@ -936,8 +936,8 @@ button.timeLens:focus-visible .metricAlternate {
    in one local beat and rests. It never waits after the interface is ready. */
 .milestone[data-state="current"] .point {
   animation:
-    timeline-pop 140ms cubic-bezier(0.23, 1, 0.32, 1) backwards,
-    timeline-target-ring 220ms cubic-bezier(0.23, 1, 0.32, 1) backwards;
+    timeline-pop 140ms var(--ease-out) backwards,
+    timeline-target-ring 220ms var(--ease-out) backwards;
   animation-delay: var(--timeline-point-delay, 0s), 0s;
 }
 
@@ -1180,7 +1180,7 @@ button.timeLens:focus-visible .metricAlternate {
   inset-inline-start: var(--timeline-cluster-start);
   width: calc(var(--timeline-cluster-end) - var(--timeline-cluster-start));
   height: 0;
-  animation: timeline-rise 220ms cubic-bezier(0.23, 1, 0.32, 1) 420ms backwards;
+  animation: timeline-rise 220ms var(--ease-out) 420ms backwards;
 }
 
 .cluster::before {
@@ -2032,6 +2032,28 @@ button.timeLens:focus-visible .metricAlternate {
   .header h1 {
     font-size: clamp(2.85rem, 14.8vw, 3.65rem);
   }
+}
+
+/* ── The entrance, once it has been seen ───────────────────────────────────
+   Every animation named here is a LOAD animation — the rise, the two rail
+   draws, the point cascade, the tick and marker drops, the cluster. They are
+   listed one by one rather than swept up with a wildcard because the
+   artifact's other motion is response, not arrival: the TimeLens flip, the
+   point's focus ring, the detail crossfade all still answer a viewer's input
+   on a surface they have already seen, and a rule that killed those would
+   turn "you have been here" into "this page is dead".
+
+   data-entrance="seen" is written by the guard in timeline-artifact.tsx from
+   one sessionStorage key. Placed after every rule it overrides and before the
+   reduced-motion block, which stays the final authority. */
+.artifact[data-entrance="seen"] .headerCopy,
+.artifact[data-entrance="seen"] .completedRail,
+.artifact[data-entrance="seen"] .completedRailVertical,
+.artifact[data-entrance="seen"] .monthTick,
+.artifact[data-entrance="seen"] .todayMarker,
+.artifact[data-entrance="seen"] .point,
+.artifact[data-entrance="seen"] .cluster {
+  animation: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -599,7 +599,7 @@
 .boardLane[data-collapsed] { flex: 0 0 44px; min-width: 44px; }
 .laneRail {
   align-items: center;
-  animation: lane-content-in 140ms var(--ease-out) 70ms backwards;
+  animation: lane-content-in var(--motion-fast) var(--ease-out) 70ms backwards;
   background: transparent;
   border: 0;
   color: var(--x-task-text-secondary);
@@ -640,7 +640,7 @@
   padding: 10px 12px 11px;
   position: relative;
   transform-origin: center;
-  transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out);
+  transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), background var(--motion-base) var(--ease-out), color var(--motion-base) var(--ease-out), opacity var(--motion-fast) var(--ease-out), transform var(--motion-instant) var(--ease-out);
 }
 /* Hover is a border step, nothing spatial — the motion contract forbids
    hover lift, and a calm surface should not twitch under the pointer. */
@@ -728,7 +728,7 @@
 .cardMetaLeft { align-items: center; display: inline-flex; flex: 1 1 auto; gap: 9px; min-width: 0; }
 .cardMetaRight { align-items: center; display: inline-flex; flex: 0 0 auto; gap: 8px; }
 .cardEstimate { color: var(--x-task-text-muted); font-family: var(--font-geist-mono), monospace; font-size: 11px; }
-.boardInsertion { animation: board-insertion-in 140ms var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
+.boardInsertion { animation: board-insertion-in var(--motion-fast) var(--ease-out) both; background: var(--x-task-accent); border-radius: 2px; height: 2px; margin: -3px 2px 5px; position: relative; transform-origin: left center; }
 .boardInsertion::before { background: var(--x-task-raised); border: 2px solid var(--x-task-accent); border-radius: 50%; content: ""; height: 7px; left: -3px; position: absolute; top: -3px; width: 7px; }
 @keyframes board-insertion-in {
   from { opacity: 0; transform: scaleX(.76); }
@@ -741,7 +741,7 @@
    is the positioning parent) so it never fights that lane's own
    overflow: hidden. */
 .columnInsertion {
-  animation: column-insertion-in 140ms var(--ease-out) both;
+  animation: column-insertion-in var(--motion-fast) var(--ease-out) both;
   background: var(--x-task-accent);
   border-radius: 2px;
   bottom: 6px;
@@ -1040,7 +1040,7 @@
 .timelineGrid span { border-right: 1px solid color-mix(in srgb, var(--x-task-border) 70%, transparent); }
 .timelineGrid span[data-weekend] { background: color-mix(in srgb, var(--x-task-canvas) 48%, transparent); }
 .todayLine { background: var(--x-task-accent); bottom: 0; position: absolute; top: 0; width: 1px; z-index: 2; }
-.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out), transform var(--motion-instant) var(--ease-out); z-index: 3; }
+.timelineRange { align-items: stretch; background: var(--x-task-accent-soft); border: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); border-radius: 4px; display: flex; height: 27px; overflow: hidden; position: absolute; top: 6px; transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out), transform var(--motion-instant) var(--ease-out); z-index: 3; }
 .timelineRange[data-clipped-start] { border-left-style: dashed; border-radius: 0 4px 4px 0; }
 .timelineRange[data-clipped-end] { border-radius: 4px 0 0 4px; border-right-style: dashed; }
 .timelineRangeButton { align-items: center; background: transparent; border: 0; color: var(--x-task-text); cursor: grab; display: flex; flex: 1; font: inherit; gap: 7px; min-width: 0; overflow: hidden; padding: 0 7px; text-align: left; }
@@ -1050,7 +1050,7 @@
 .rangeHandle::after { background: color-mix(in srgb, var(--x-task-accent) 28%, var(--x-task-raised)); border-left: 1px solid color-mix(in srgb, var(--x-task-accent) 32%, var(--x-task-border)); bottom: 0; content: ""; position: absolute; right: 0; top: 0; width: 5px; }
 .rangeHandle:disabled { cursor: not-allowed; opacity: .35; }
 .timelineDue,
-.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity 140ms var(--ease-out); z-index: 3; }
+.timelineMilestone { align-items: center; background: var(--x-task-raised); border: 1px solid var(--x-task-border-strong); border-radius: 4px; color: var(--x-task-text); cursor: grab; display: flex; font: inherit; gap: 5px; height: 27px; max-width: 154px; padding: 0 7px; position: absolute; top: 6px; transform: translateX(-7px); transform-origin: center; transition: border-color var(--motion-fast) var(--ease-out), box-shadow var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out); z-index: 3; }
 .timelineRange[data-inspected],
 .timelineDue[data-inspected],
 .timelineMilestone[data-inspected] { border-color: var(--x-task-accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--x-task-accent) 10%, transparent); }
@@ -1488,6 +1488,28 @@
   top: calc(100% + 4px);
   width: 188px;
   z-index: 30;
+
+  /* The anchored-layer entrance (motion contract), matched to the Radix menus
+     in context-actions.module.css: scale from 0.98 at the trigger's corner,
+     --motion-fast, opacity with it. There is no exit — the menu unmounts on
+     the spot, which is the "faster out" the contract asks for and the cut
+     Escape requires. */
+  animation: lane-menu-in var(--motion-fast) var(--ease-out) both;
+  transform-origin: top right;
+}
+@keyframes lane-menu-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes lane-menu-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* Must sit AFTER .laneMenu, not in the reduced-motion block near the top of
+   this file — that block is declared before .laneMenu and loses the cascade
+   at equal specificity. Reduced motion keeps the arrival, drops the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .laneMenu { animation: lane-menu-fade-in 100ms linear both; }
 }
 .laneMenu > button {
   background: transparent;

@@ -7,12 +7,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  anchoredLayerProps,
+  type AnchoredDismiss,
+} from "@/components/primitives/anchored-layer";
 import { cn } from "@/lib/utils";
 
 export function Popover({
   trigger,
   children,
   align = "start",
+  side = "bottom",
   width = 220,
   className,
   "aria-label": ariaLabel = "Field editor",
@@ -24,6 +29,11 @@ export function Popover({
   }) => ReactNode;
   children: (close: () => void) => ReactNode;
   align?: "start" | "end";
+  /** Which side of the trigger the layer opens on. Positioning stays with the
+   *  caller's className; this only tells the entrance where the trigger is, so
+   *  a popover rendered upward grows from its bottom edge rather than sinking
+   *  away from a corner it never touched. */
+  side?: "bottom" | "top";
   width?: number;
   className?: string;
   /** Accessible label for the dialog. Callers SHOULD provide a specific
@@ -35,6 +45,22 @@ export function Popover({
   const reduceMotion = useReducedMotion();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
+  /**
+   * How this layer is leaving. State rather than a ref, because the exit
+   * variant and AnimatePresence both read it while rendering, and a value
+   * render depends on is state by definition — a ref read during render is
+   * exactly what the compiler rule forbids. Set in the same handler as
+   * `setOpen(false)`, so React batches them and the render that starts the
+   * exit already carries the right value: Escape is a command and cuts
+   * (motion contract: no animated keyboard commands), everything else takes
+   * the short exit.
+   */
+  const [dismiss, setDismiss] = useState<AnchoredDismiss>("pointer");
+
+  function close(reason: AnchoredDismiss = "pointer") {
+    setDismiss(reason);
+    setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -43,11 +69,11 @@ export function Popover({
         !popRef.current?.contains(e.target as Node) &&
         !triggerRef.current?.contains(e.target as Node)
       ) {
-        setOpen(false);
+        close("pointer");
       }
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close("keyboard");
     }
     document.addEventListener("mousedown", onDoc);
     document.addEventListener("keydown", onKey);
@@ -60,28 +86,32 @@ export function Popover({
   return (
     <span className="relative inline-block">
       {trigger({
-        onClick: () => setOpen((v) => !v),
+        onClick: () => {
+          setDismiss("pointer");
+          setOpen((v) => !v);
+        },
         "aria-expanded": open,
         ref: triggerRef,
       })}
-      <AnimatePresence>
+      <AnimatePresence custom={dismiss}>
         {open ? (
           <motion.div
             ref={popRef}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.985)" }}
-            animate={{ opacity: 1, transform: "scale(1)" }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "scale(0.99)" }}
-            transition={{ duration: reduceMotion ? 0.1 : 0.14, ease: [0.23, 1, 0.32, 1] }}
+            {...anchoredLayerProps(reduceMotion, dismiss)}
             className={cn(
               "absolute z-50 mt-1.5 rounded-lg border border-line bg-white p-1 shadow-[0_18px_44px_-16px_rgba(20,21,26,0.22),0_0_0_1px_rgba(20,21,26,0.04)]",
               align === "end" ? "right-0" : "left-0",
               className,
             )}
-            style={{ transformOrigin: align === "end" ? "top right" : "top left", width }}
+            style={{
+              // The anchor: the corner of the layer that touches its trigger.
+              transformOrigin: `${side === "top" ? "bottom" : "top"} ${align === "end" ? "right" : "left"}`,
+              width,
+            }}
             role="dialog"
             aria-label={ariaLabel}
           >
-            {children(() => setOpen(false))}
+            {children(() => close("pointer"))}
           </motion.div>
         ) : null}
       </AnimatePresence>

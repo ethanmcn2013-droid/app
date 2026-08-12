@@ -255,7 +255,7 @@ function SubtaskRow({
         disabled={!openable}
         className={
           isDone
-            ? "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet line-through opacity-60 transition-opacity hover:opacity-80 disabled:cursor-default"
+            ? "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-quiet line-through opacity-60 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:opacity-80 disabled:cursor-default"
             : "min-w-0 flex-1 truncate text-left text-[13px] leading-[var(--x-lead-ui)] text-ink-soft transition-colors hover:text-ink disabled:cursor-default"
         }
       >

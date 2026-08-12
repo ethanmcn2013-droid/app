@@ -23,6 +23,7 @@ import {
   type LaneId,
   type UserId,
 } from "@/lib/data";
+import { EASE_OUT_TOKEN } from "@/components/primitives/anchored-layer";
 import { useCurrentUser } from "@/lib/auth-context";
 import { useWorkspaceMembers } from "@/lib/domain-context";
 import { Avatar } from "@/components/showcase/avatar";
@@ -291,7 +292,7 @@ function CommentRow({
           type="button"
           onClick={onRemove}
           aria-label="Delete comment"
-          className="absolute right-0 top-0.5 inline-flex h-6 w-6 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity duration-150 hover:bg-bg-sunken hover:text-ink-soft group-hover/comment:opacity-100 focus-visible:opacity-100"
+          className="absolute right-0 top-0.5 inline-flex h-6 w-6 items-center justify-center rounded text-ink-faint opacity-0 transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] hover:bg-bg-sunken hover:text-ink-soft group-hover/comment:opacity-100 focus-visible:opacity-100"
         >
           <svg
             width="13"
@@ -322,7 +323,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
       layout="position"
       initial={reduce ? { opacity: 0 } : { opacity: 0, transform: "translateY(2px)" }}
       animate={{ opacity: 1, transform: "translateY(0)" }}
-      transition={{ duration: reduce ? 0.1 : 0.18, ease: [0.23, 1, 0.32, 1] }}
+      transition={{ duration: reduce ? 0.1 : 0.18, ease: EASE_OUT_TOKEN }}
       className="flex items-center gap-2 px-1 text-[12px] leading-[var(--x-lead-read)] text-ink-quiet"
     >
       <span className="block h-px flex-shrink-0" style={{ width: 22 }} aria-hidden>
@@ -544,7 +545,7 @@ function KbdHint({ state }: { state: "empty" | "ready" | "pending" }) {
   return (
     <kbd
       className={
-        "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[11px] tabular-nums transition-opacity " +
+        "inline-flex h-[18px] select-none items-center rounded border border-line-soft bg-white px-1 text-[11px] tabular-nums transition-opacity duration-[var(--motion-fast)] ease-[var(--ease-out)] " +
         (state === "ready"
           ? "text-ink-soft opacity-100"
           : "text-ink-quiet opacity-100")

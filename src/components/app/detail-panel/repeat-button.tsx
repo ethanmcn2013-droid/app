@@ -64,6 +64,7 @@ export function RepeatButton({ task }: { task: Task }) {
       align="end"
       // Footer-anchored: render upward so the popover doesn't clip
       // against the panel's bottom edge (`overflow-hidden` shell).
+      side="top"
       className="!mt-0 bottom-full mb-1.5"
       aria-label="Make copies of this task"
       trigger={({ onClick, ref, "aria-expanded": expanded }) => (

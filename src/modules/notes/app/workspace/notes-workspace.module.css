@@ -550,10 +550,20 @@
   font-size: 13px;
   font-weight: 500;
   line-height: var(--x-lead-ui);
+  transition: background-color var(--motion-instant) var(--ease-out);
 }
 
 .primaryButton:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+/* The press, acknowledged under the finger. Every decision in Notes — save,
+   keep, delete, turn into task — reaches a server or a six-second timer, and
+   until wave 7 none of them moved at all while it did. The ground deepens on
+   the instant token and nothing else happens: no lift, no scale, no travel.
+   Keyboard commands are unaffected; they were already a cut. */
+.primaryButton:active:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 14%, var(--accent-hover));
 }
 
 /* Save note sits disabled for as long as the field is empty, which is most of
@@ -606,6 +616,11 @@
   border-color: var(--ink-ghost);
 }
 
+.quietButton:active:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  border-color: var(--ink-faint);
+}
+
 .quietButton:disabled {
   color: var(--x-notes-quiet);
 }
@@ -618,6 +633,13 @@
 .dangerButton:hover:not(:disabled) {
   background: var(--status-blocked-bg);
   border-color: color-mix(in srgb, var(--status-blocked) 40%, var(--hairline));
+}
+
+/* Delete presses in exactly as far as Keep does. The colour it presses into
+   is the one it already carries at rest. */
+.dangerButton:active:not(:disabled) {
+  background: color-mix(in srgb, var(--status-blocked) 18%, var(--paper));
+  border-color: color-mix(in srgb, var(--status-blocked) 56%, var(--hairline));
 }
 
 .composerStatus {
@@ -1264,6 +1286,135 @@
   block-size: 1px;
   margin-inline: var(--x-notes-gutter);
   background: var(--hairline-soft);
+}
+
+/* ── The capture beats ────────────────────────────────────────────────────
+ *
+ * Wave 7. Until now the product's own verbs happened between one frame and
+ * the next: a saved note appeared, a decided row vanished, a promotion grew
+ * a chip. Four movements, one grammar, and no new values — every duration
+ * here is a semantic token, every curve is --ease-out, and under
+ * prefers-reduced-motion the tokens are already 0ms, so each beat lands on
+ * its end state on the first frame and the state change survives without the
+ * travel. Nothing loops, nothing bounces, nothing fires on page load: the
+ * arrival attribute is only ever set on a note that appeared after the first
+ * paint, which is why this is a placement receipt and not a stagger.
+ */
+
+/* The wrapper a row needs to open and close its own space. Only ever grid
+   while a beat is running: outside one it is an ordinary block, so the row's
+   focus ring is never clipped by a container that exists for 220ms. */
+.rowShell,
+.rowShellInner,
+.rowDecision,
+.rowDecisionInner {
+  display: block;
+}
+
+.rowShell[data-arriving],
+.rowShell[data-departing],
+.rowDecision[data-departing] {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
+/* The element that gets clipped is never the element that carries padding.
+   Under border-box a box cannot be shorter than its own padding, so animating
+   the padded strip directly stopped it 12px above the floor and left a visible
+   ledge where the decision used to be. */
+.rowShell[data-arriving] > .rowShellInner,
+.rowShell[data-departing] > .rowShellInner,
+.rowDecision[data-departing] > .rowDecisionInner {
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+/* A new note resolves in its final slot. The gap it needs opens underneath it
+   over the same 220ms it takes to arrive, so the neighbours settle once. */
+.rowShell[data-arriving] {
+  animation: notesRowArrive var(--motion-base) var(--ease-out) both;
+}
+
+.rowShell[data-arriving] > .rowShellInner {
+  animation: notesRowRise var(--motion-base) var(--ease-out) both;
+}
+
+/* Keep and Delete are the same movement, deliberately. The meaning of a
+   decision lives in its wording and in what is left behind, never in how the
+   pixels leave: a row that reads as flinching away is a row that says the
+   product had an opinion about the choice. */
+.rowShell[data-departing],
+.rowDecision[data-departing] {
+  pointer-events: none;
+  animation: notesRowDepart var(--motion-base) var(--ease-out) both;
+}
+
+@keyframes notesRowArrive {
+  from {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+
+  to {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+}
+
+@keyframes notesRowRise {
+  from {
+    transform: translateY(6px);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+@keyframes notesRowDepart {
+  from {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  to {
+    grid-template-rows: 0fr;
+    opacity: 0;
+  }
+}
+
+/* The promotion, resolving where it happened. "To review" leaves this slot
+   and "In Tasks" takes it, so the chip fades up rather than appearing: no
+   flight to another surface, no receipt animation, no celebration. */
+.rowFlag[data-resolved] {
+  animation: notesChipResolve var(--motion-fast) var(--ease-out) both;
+}
+
+@keyframes notesChipResolve {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* A surface that has been handed different content settles into it. Never
+   from zero: walking the list with J/K swaps this every keystroke, and a
+   crossfade that reaches transparent would strobe rather than read. */
+.swapSettle {
+  animation: notesSwapSettle var(--motion-fast) var(--ease-out) both;
+}
+
+@keyframes notesSwapSettle {
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* ── Detail ───────────────────────────────────────────────────────────── */
@@ -2176,6 +2327,15 @@ textarea.fieldControl {
   }
 
   .level {
+    transform: none !important;
+  }
+
+  /* The capture beats keep their state and lose their travel. The duration
+     rule above already lands every keyframe on its end state in the first
+     frame — a note is simply there, a decided row is simply gone — but the
+     rise is spatial, so it is removed outright rather than run at 0.001ms. */
+  .rowShell[data-arriving] > .rowShellInner {
+    animation: none !important;
     transform: none !important;
   }
 }

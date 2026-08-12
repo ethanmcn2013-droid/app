@@ -3,6 +3,7 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -87,6 +88,72 @@ type ClusterStyle = CSSProperties & {
 };
 
 const METRIC_EASE = [0.23, 1, 0.32, 1] as const;
+
+/**
+ * The entrance, once per session.
+ *
+ * The load choreography — the header rise, the 400ms rail draw, the point
+ * cascade, the marker drop — is the best motion in the app, and it replayed
+ * in full on every single arrival at the surface. The sixth visit got the
+ * same 600ms performance as the first, including the visit that is just a
+ * viewer pressing Back (wave-6 panel, Motion seat). A first impression that
+ * happens six times is not a first impression; it is an interruption between
+ * the viewer and a page they have already read.
+ *
+ * So the choreography is unchanged and simply learns when it has been seen.
+ * One sessionStorage key, written the first time an artifact renders in the
+ * tab: after that every arrival — forward, backward, reload, another
+ * timeline, another window in the same tab — lands in the final state
+ * instantly. A new tab is a new session and gets the performance again,
+ * which is the honest reading of "first visit".
+ *
+ * WHY AN INLINE SCRIPT. The animations are CSS with `backwards` fill and no
+ * opacity:0 in the HTML, which is what lets the public share render visible
+ * without JavaScript at all. They therefore start the moment the stylesheet
+ * lands — long before React hydrates. An effect could only ever arrive
+ * mid-performance and cut it, which is worse than the replay. A script
+ * beside the markup runs during parse, before the artifact's own subtree has
+ * finished arriving, so the skip is a state the surface is BORN in rather
+ * than a state it is snapped into. No-JS viewers lose nothing: the guard can
+ * only ever remove motion, never add it, so its absence is the full
+ * choreography.
+ *
+ * Reduced motion is untouched by any of this — the module's
+ * prefers-reduced-motion block still suppresses the whole entrance outright,
+ * seen or unseen.
+ */
+const ENTRANCE_SESSION_KEY = "signal:timeline-entrance";
+const ENTRANCE_GUARD = `(function(){var s=document.currentScript,a=s&&s.parentElement;if(!a)return;a.setAttribute("data-entrance-guard","1");try{var k="${ENTRANCE_SESSION_KEY}";if(sessionStorage.getItem(k))a.setAttribute("data-entrance","seen");else sessionStorage.setItem(k,"1")}catch(e){}})();`;
+
+/**
+ * The same decision, for the path the script cannot reach.
+ *
+ * An inline <script> inside a React component runs only when the HTML is
+ * server-streamed; on a client render React never executes it and says so in
+ * the console. The app's own rail reaches Timeline by client-side navigation,
+ * which is to say the guard was absent on the single most common way in, and
+ * the entrance replayed every time. Both paths now read and write one key,
+ * and this one runs in a layout effect so the attribute is on the article
+ * before the browser paints it.
+ */
+function markEntranceSeen(article: HTMLElement | null): void {
+  if (!article) return;
+  // Exactly one path decides. On a server-streamed document the script has
+  // already run by the time this effect fires, and it leaves its mark; if both
+  // ran, the script would write the session key and this would then read it
+  // back and skip the entrance on the very first visit — the opposite of the
+  // rule. The mark is the handshake.
+  if (article.hasAttribute("data-entrance-guard")) return;
+  try {
+    if (sessionStorage.getItem(ENTRANCE_SESSION_KEY)) {
+      article.setAttribute("data-entrance", "seen");
+    } else {
+      sessionStorage.setItem(ENTRANCE_SESSION_KEY, "1");
+    }
+  } catch {
+    /* Private modes refuse storage; an entrance that replays is not a fault. */
+  }
+}
 
 /**
  * Motion's media-query hook can know the browser preference on the first
@@ -1181,8 +1248,15 @@ export function TimelineArtifact({
   // six lines later.
   const nouns = timelineNouns(timeline.audienceKind);
 
+  // The client-navigation half of the entrance guard. Runs before paint, so a
+  // returning viewer never sees a frame of the choreography they already
+  // watched. See markEntranceSeen.
+  const artifactRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => markEntranceSeen(artifactRef.current), []);
+
   return (
     <article
+      ref={artifactRef}
       className={[styles.artifact, className].filter(Boolean).join(" ")}
       data-timeline-artifact
       data-compact={compact ? "true" : undefined}
@@ -1191,6 +1265,9 @@ export function TimelineArtifact({
       data-axis={model.axis.mode}
       data-title-length={artifactTitleLength(timeline.label)}
     >
+      {/* Sets data-entrance="seen" on this article when the tab has already
+          watched the entrance once. See ENTRANCE_GUARD above. */}
+      <script dangerouslySetInnerHTML={{ __html: ENTRANCE_GUARD }} />
       <a className={styles.skipLink} href={`#${reactId}-timeline`}>Skip to timeline</a>
       <header className={styles.header}>
         {showProductHeader ? (
