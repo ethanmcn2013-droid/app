@@ -44,7 +44,22 @@ import {
   HOME_FIXTURE_NOW_ISO,
   HOME_FIXTURE_TODAY,
 } from "../fixtures/clock";
-import { TODAY_UNSUPPORTED_KINDS } from "../fixtures/today";
+import {
+  TODAY_UNPROJECTABLE_CANDIDATES,
+  TODAY_UNSUPPORTED_KINDS,
+  type WorkSignal,
+} from "../fixtures/today";
+import {
+  ANALYTICS_ACTIVITY_LOCAL_HOUR,
+  ANALYTICS_COMPLETED_LOCAL_HOUR,
+  ANALYTICS_CREATED_LOCAL_HOUR,
+  ANALYTICS_DEFAULT_CREATED_DAYS_AGO,
+  ANALYTICS_DEFAULT_IDLE_DAYS,
+  ANALYTICS_MIRROR_FACTS,
+  type AnalyticsRow,
+} from "../fixtures/analytics";
+import { HOME_FIXTURE_OTHER_MEMBER, HOME_FIXTURE_OWNER } from "../fixtures/projects";
+import { addDays, instantAtLocalWallTime, ORACLE_ZONE, zonedCalendarDate } from "./oracle-clock";
 import {
   HOME_FIXTURE_SCENARIOS,
   SCENARIO_IDS,
@@ -54,6 +69,99 @@ import {
 import { oracleReadableProjects } from "./scope.oracle";
 import type { OracleCoverageInput } from "./today.oracle";
 import type { OracleDate } from "./oracle-clock";
+
+/**
+ * The Analytics population, recomputed from the world's own source records.
+ *
+ * WHY THIS IS HERE AND NOT AN IMPORT. `analyticsRowsForWorld` is the
+ * derivation under test: it is the answer to "does Analytics count the same
+ * objects Today ranked and My work listed". So the join is applied a second
+ * time here, from the raw records and the authored mirror table, in this
+ * oracle's own date arithmetic. If the fixture ever quietly reintroduces a
+ * private `an-*` population, these two disagree and the suite says so.
+ *
+ * The rule, transcribed: one row per source id; My work wins on `isDone` and
+ * on the due instant because it resolves both through the Project's own
+ * column configuration (ANALYTICS_CLAIM R3); Today supplies the rest; the
+ * Unprojectable record is in every world's read and is excluded from every
+ * Project-scoped count.
+ */
+export function oracleAnalyticsRows(input: {
+  todayCandidates: readonly WorkSignal[];
+  myWorkRows: readonly MyWorkRow[];
+  today: OracleDate;
+}): readonly AnalyticsRow[] {
+  const at = (daysAgo: number, hour: number): string =>
+    instantAtLocalWallTime(addDays(input.today, -daysAgo), hour, 0, ORACLE_ZONE).iso;
+
+  const order: string[] = [];
+  const signals = new Map<string, WorkSignal>();
+  const rows = new Map<string, MyWorkRow>();
+  const note = (taskId: string) => {
+    if (!order.includes(taskId)) order.push(taskId);
+  };
+  for (const signal of input.todayCandidates) {
+    signals.set(signal.ref.id, signal);
+    note(signal.ref.id);
+  }
+  for (const row of input.myWorkRows) {
+    rows.set(row.taskId, row);
+    note(row.taskId);
+  }
+  for (const signal of TODAY_UNPROJECTABLE_CANDIDATES) {
+    if (!signals.has(signal.ref.id) && !rows.has(signal.ref.id)) {
+      signals.set(signal.ref.id, signal);
+      note(signal.ref.id);
+    }
+  }
+
+  return Object.freeze(
+    order.map((taskId) => {
+      const signal = signals.get(taskId) ?? null;
+      const row = rows.get(taskId) ?? null;
+      const facts = ANALYTICS_MIRROR_FACTS[taskId] ?? {};
+      const workspaceId = row?.workspaceId ?? signal?.projectId ?? null;
+      const isDone = row ? row.isDone : signal?.lane === "shipped";
+      const dueAtIso = row ? row.dueAtIso : (signal?.dueAtIso ?? null);
+      const idleDays =
+        facts.idleDaysAgo ?? signal?.idleDays ?? ANALYTICS_DEFAULT_IDLE_DAYS;
+      return Object.freeze({
+        taskId,
+        workspaceId,
+        isDone: Boolean(isDone),
+        createdAtIso: at(
+          facts.createdDaysAgo ?? ANALYTICS_DEFAULT_CREATED_DAYS_AGO,
+          ANALYTICS_CREATED_LOCAL_HOUR,
+        ),
+        completedAtIso: !isDone
+          ? null
+          : (signal?.movedToDoneAtIso ??
+            (facts.completedDaysAgo === undefined
+              ? null
+              : at(facts.completedDaysAgo, 16))),
+        // The oracle's own `YYYY-MM-DD`, cast to the estate's branded calendar
+        // date. The cast is the seam: the VALUE is computed here, from `Intl`,
+        // and never through the helper the fixture uses.
+        dueDate:
+          dueAtIso === null
+            ? null
+            : (zonedCalendarDate(dueAtIso, ORACLE_ZONE) as AnalyticsRow["dueDate"]),
+        assigneeIds: Object.freeze(
+          row
+            ? [...row.assigneeIds]
+            : facts.unowned
+              ? []
+              : signal?.assignedToActor
+                ? [HOME_FIXTURE_OWNER.id]
+                : [HOME_FIXTURE_OTHER_MEMBER.id],
+        ),
+        lastMeaningfulActivityIso: at(idleDays, ANALYTICS_ACTIVITY_LOCAL_HOUR),
+        isSubtask: facts.isSubtask ?? false,
+        unprojectable: workspaceId === null,
+      });
+    }),
+  );
+}
 
 export { SCENARIO_IDS };
 export type { ScenarioId, Scenario };
@@ -80,6 +188,8 @@ export type OracleWorldInputs = Readonly<{
   myWorkRows: readonly MyWorkRow[];
   myWorkFrame: MyWorkTimeFrame;
   myWorkPageSize: number | undefined;
+  /** The world's own Analytics population, rejoined from its source records. */
+  analyticsRows: readonly AnalyticsRow[];
   /** False when there is no Project for a badge to be a count OF. */
   badgeRendered: boolean;
 }>;
@@ -172,15 +282,21 @@ export function oracleWorldInputs(id: ScenarioId): OracleWorldInputs {
   }
 
   const asOfIso = id === "dst_boundary" ? HOME_FIXTURE_DST_NOW_ISO : HOME_FIXTURE_NOW_ISO;
+  const today = (id === "dst_boundary"
+    ? HOME_FIXTURE_DST_TODAY
+    : HOME_FIXTURE_TODAY) as OracleDate;
 
   return Object.freeze({
     id,
     scenario,
-    today: (id === "dst_boundary"
-      ? HOME_FIXTURE_DST_TODAY
-      : HOME_FIXTURE_TODAY) as OracleDate,
+    today,
     asOfIso,
     nowMs: Date.parse(asOfIso),
+    analyticsRows: oracleAnalyticsRows({
+      todayCandidates: scenario.todayCandidates,
+      myWorkRows,
+      today,
+    }),
     readable,
     unresolved,
     coverage: coverageFor(scenario, readable, unresolved),

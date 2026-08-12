@@ -19,9 +19,11 @@ import {
   HOME_FIXTURE_DST_TODAY,
   HOME_FIXTURE_NOW,
   HOME_FIXTURE_NOW_ISO,
+  HOME_FIXTURE_TODAY,
 } from "./clock";
 import {
   ANALYTICS_SIGNATURE_CONTEXT,
+  analyticsRowsForWorld,
   deriveClaims,
   deriveExceptions,
   deriveLedger,
@@ -31,6 +33,7 @@ import {
   SNAPSHOTS_EARNED,
   SNAPSHOTS_SIGNATURE,
   type AnalyticsClaim,
+  type AnalyticsRow,
   type ClaimContext,
 } from "./analytics";
 import {
@@ -78,6 +81,7 @@ import {
 import { rankToday, type TodayResult } from "./derive";
 import {
   TODAY_DST_CANDIDATES,
+  TODAY_GUEST_CANDIDATES,
   TODAY_NEW_USER_CANDIDATES,
   TODAY_QUIET_CANDIDATES,
   TODAY_SIGNATURE_CANDIDATES,
@@ -240,7 +244,7 @@ export const HOME_FIXTURE_SCENARIOS: readonly Scenario[] = Object.freeze([
     projectStates: HOME_PROJECT_STATES_HEALTHY.filter(
       (state) => state.projectId === HOME_FIXTURE_PROJECT_IDS.sineadRuairi,
     ),
-    todayCandidates: [],
+    todayCandidates: TODAY_GUEST_CANDIDATES,
     comparableSnapshots: SNAPSHOTS_AT_BASE,
     asOfIso: HOME_FIXTURE_NOW_ISO,
     mustNeverRender: ["Éabha", "Niamh", "Orla"],
@@ -549,6 +553,12 @@ export type HomeFixtureWorld = Readonly<{
   /** False when there is no Project for the badge to be a count of. */
   badgeRendered: boolean;
   myWork: MyWorkProjection;
+  /**
+   * The Analytics projection of THIS world's own source records. Not a
+   * separate population: every row is one of the records Today ranked or My
+   * work listed, under the same id (charter rule 6).
+   */
+  analyticsRows: readonly AnalyticsRow[];
   claims: readonly AnalyticsClaim[];
   exceptions: ReturnType<typeof deriveExceptions>;
   ledger: ReturnType<typeof deriveLedger>;
@@ -571,17 +581,32 @@ export function homeFixtureWorld(id: ScenarioId): HomeFixtureWorld {
     (projectId) => !unresolvedProjects.includes(projectId),
   );
 
+  /** A world with no Project state has no provider that answered at all. */
+  const providerStatuses = statuses.length > 0 ? statuses : ["unsupported"];
+
   const today = rankToday({
     candidates: world.todayCandidates,
     asOfIso: world.asOfIso,
     today: id === "dst_boundary" ? HOME_FIXTURE_DST_TODAY : undefined,
     coverage: {
-      providerStatuses: statuses.length > 0 ? statuses : ["unsupported"],
+      providerStatuses,
       projectsUnresolved: unresolvedProjects.length,
       unsupportedKinds: TODAY_UNSUPPORTED_KINDS.map((entry) => entry.kind),
       historyIsEmpty: world.comparableSnapshots === 0,
       scopeProjectCount: readableProjects.length,
-      accountingComputable: !statuses.includes("unavailable"),
+      /**
+       * TODAY_RANKING §6, last paragraph, read literally: a term that cannot
+       * be computed "because a provider is `unavailable`, `partial` or
+       * `unsupported`" withholds the WHOLE accounting. A partial provider
+       * answered for part of its scope, so `read` is not a count of the
+       * scope — and a `read` that silently means "some of it" is the exact
+       * false denominator §6 exists to refuse. `stale` is not on that list
+       * and does not withhold: a stale read is complete and old, and §7 asks
+       * for its age in words instead.
+       */
+      accountingComputable: providerStatuses.every(
+        (status) => status === "ready" || status === "stale",
+      ),
     },
   });
 
@@ -605,10 +630,24 @@ export function homeFixtureWorld(id: ScenarioId): HomeFixtureWorld {
     pageSize: id === "scale" ? 25 : undefined,
   });
 
+  /**
+   * ONE population per world, read by all three counting surfaces. Today
+   * ranks it, My work projects the actor's slice of it, and Analytics counts
+   * it — so a reviewer who switches modes stays inside one world instead of
+   * being handed a second, unfalsifiable one.
+   */
+  const analyticsRows = analyticsRowsForWorld({
+    todayCandidates: world.todayCandidates,
+    myWorkRows: data.rows,
+    today: id === "dst_boundary" ? HOME_FIXTURE_DST_TODAY : HOME_FIXTURE_TODAY,
+  });
+
   const claimContext: ClaimContext = Object.freeze({
     ...ANALYTICS_SIGNATURE_CONTEXT,
     readScope: world.readScope,
     projects: readableProjects,
+    asOfIso: world.asOfIso,
+    rows: analyticsRows,
     unresolved: unresolvedProjects.length,
     coverageStatus: statuses.includes("unavailable")
       ? "unavailable"
@@ -632,13 +671,16 @@ export function homeFixtureWorld(id: ScenarioId): HomeFixtureWorld {
     badge,
     badgeRendered: data.badgeRendered,
     myWork,
+    analyticsRows,
     claims: deriveClaims(claimContext),
     exceptions: deriveExceptions(claimContext),
     ledger: deriveLedger({
       projects: world.projects,
       unresolved: unresolvedProjects,
+      rows: analyticsRows,
+      asOfIso: world.asOfIso,
     }),
-    trend: deriveTrend(world.comparableSnapshots),
+    trend: deriveTrend(world.comparableSnapshots, world.asOfIso),
     lens: resolveLens(world.lensProjectId, readableProjects),
   });
 }

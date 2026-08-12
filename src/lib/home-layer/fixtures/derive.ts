@@ -392,10 +392,33 @@ export type TodayAccounting = Readonly<{
 export type QuietCondition =
   | "Q1" | "Q2" | "Q3" | "Q4" | "Q5" | "Q6" | "Q7" | "Q8" | "Q9";
 
+/**
+ * §5 Completeness, per section. A capped view renders "the count it did not
+ * show", and after §5's precedence rule that count has two causes which are
+ * different facts about the same object: the cap displaced it, or a
+ * higher-precedence section is already showing it. Both are held, because
+ * "two more are not shown" and "two more are shown above" are not the same
+ * sentence and a reviewer can tell them apart.
+ */
+export type SectionAccounting = Readonly<{
+  /** Distinct objects this section's pool held, before precedence and cap. */
+  eligible: number;
+  /** Rows rendered here. */
+  shown: number;
+  /** Objects a higher-precedence section rendered. Removed here, never lost. */
+  claimedAbove: number;
+  /** Objects this section's own cap displaced. */
+  cappedOut: number;
+  /** `eligible - shown`. What the section did not show, however it happened. */
+  suppressed: number;
+}>;
+
 export type TodayResult = Readonly<{
   version: string;
   asOfIso: string;
   sections: Readonly<Record<SectionName, readonly RankedRow[]>>;
+  /** §5 — what each section held back, and why. */
+  sectionAccounting: Readonly<Record<SectionName, SectionAccounting>>;
   /** Null whenever ANY term is unknown. Never partially rendered. */
   accounting: TodayAccounting | null;
   quiet: Readonly<{ allowed: boolean; blockedBy: readonly QuietCondition[] }>;
@@ -415,6 +438,14 @@ export type CoverageInput = Readonly<{
   /** Set when a term of the §6 identity could not be computed. Q2. */
   accountingComputable: boolean;
 }>;
+
+const EMPTY_SECTION_ACCOUNTING: SectionAccounting = Object.freeze({
+  eligible: 0,
+  shown: 0,
+  claimedAbove: 0,
+  cappedOut: 0,
+  suppressed: 0,
+});
 
 export function rankToday(input: {
   candidates: readonly WorkSignal[];
@@ -441,47 +472,73 @@ export function rankToday(input: {
   const inMovingWell = new Set<TriggerKind>(["just-shipped", "blocker-cleared"]);
 
   /**
-   * §5 disjointness. A `sourceKey` is claimed by the section that RENDERS it,
-   * not by the pool that considered it. Claiming on consideration would mean
-   * a row displaced by Today's three-cap could never appear in Needs review,
-   * which would report it as `cappedOut` while it sat visible on the page —
-   * §6's identity would then be arithmetically true and factually false.
+   * §5 disjointness AND §5 precedence. A `sourceKey` is claimed by the
+   * section that RENDERS it, not by the pool that considered it. Claiming on
+   * consideration would mean a row displaced by Today's three-cap could never
+   * appear in Needs review, which would report it as `cappedOut` while it sat
+   * visible on the page — §6's identity would then be arithmetically true and
+   * factually false.
+   *
+   * Precedence is the order `take` is CALLED in, and §5 now states it:
+   * Today's signal, then Needs review, then Coming up, then Moving well. A
+   * key a higher section rendered is removed here and counted in this
+   * section's suppressed total, never silently dropped.
    */
   const claimed = new Set<string>();
+  const sectionAccounting: Record<SectionName, SectionAccounting> = {
+    todaysSignal: EMPTY_SECTION_ACCOUNTING,
+    comingUp: EMPTY_SECTION_ACCOUNTING,
+    needsReview: EMPTY_SECTION_ACCOUNTING,
+    movingWell: EMPTY_SECTION_ACCOUNTING,
+  };
   const take = (
     pool: readonly Candidate[],
     section: SectionName,
   ): readonly RankedRow[] => {
     const cap = lift ? Number.POSITIVE_INFINITY : SECTION_LIMITS[section].cap;
     const rows: RankedRow[] = [];
+    const seen = new Set<string>();
+    let eligible = 0;
+    let claimedAbove = 0;
     for (const candidate of pool) {
-      if (rows.length >= cap) break;
       const key = candidate.ref ? sourceKey(candidate.ref) : null;
-      if (key !== null && claimed.has(key)) continue;
+      // One object may reach a pool twice — a `blocked-too-long` row is also
+      // a review-lane row. It is one object, so it counts once.
+      if (key !== null) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+      eligible += 1;
+      if (key !== null && claimed.has(key)) {
+        claimedAbove += 1;
+        continue;
+      }
+      if (rows.length >= cap) continue;
       if (key !== null) claimed.add(key);
       rows.push(Object.freeze({ ...candidate, section }));
     }
+    sectionAccounting[section] = Object.freeze({
+      eligible,
+      shown: rows.length,
+      claimedAbove,
+      cappedOut: eligible - rows.length - claimedAbove,
+      suppressed: eligible - rows.length,
+    });
     return Object.freeze(rows);
   };
 
-  const todaysSignal = take(
-    detected
-      .filter((c) => c.trigger !== null && inSignal.has(c.trigger))
-      .sort(compareCandidates),
-    "todaysSignal",
-  );
+  const signalPool = detected
+    .filter((c) => c.trigger !== null && inSignal.has(c.trigger))
+    .sort(compareCandidates);
 
-  const movingWell = take(
-    detected
-      .filter((c) => c.trigger !== null && inMovingWell.has(c.trigger))
-      .sort((a, b) => {
-        const byRecency =
-          Date.parse(b.recencyIso ?? "1970-01-01T00:00:00.000Z") -
-          Date.parse(a.recencyIso ?? "1970-01-01T00:00:00.000Z");
-        return byRecency !== 0 ? byRecency : compareCandidates(a, b);
-      }),
-    "movingWell",
-  );
+  const movingWellPool = detected
+    .filter((c) => c.trigger !== null && inMovingWell.has(c.trigger))
+    .sort((a, b) => {
+      const byRecency =
+        Date.parse(b.recencyIso ?? "1970-01-01T00:00:00.000Z") -
+        Date.parse(a.recencyIso ?? "1970-01-01T00:00:00.000Z");
+      return byRecency !== 0 ? byRecency : compareCandidates(a, b);
+    });
 
   const flaggedKeys = new Set(
     detected.filter((c) => c.ref).map((c) => sourceKey(c.ref as SourceRef)),
@@ -520,7 +577,6 @@ export function rankToday(input: {
         );
       }),
   ].sort((a, b) => b.idleDays - a.idleDays || compareCandidates(a, b));
-  const needsReview = take(reviewPool, "needsReview");
 
   /**
    * Coming up: dated, open, inside the fourteen-day horizon, crossed no rule.
@@ -553,7 +609,12 @@ export function rankToday(input: {
         Date.parse(a.dueAtIso as string) - Date.parse(b.dueAtIso as string) ||
         compareCandidates(a, b),
     );
+
+  // §5 precedence, in order. The most urgent job wins a contested key.
+  const todaysSignal = take(signalPool, "todaysSignal");
+  const needsReview = take(reviewPool, "needsReview");
   const comingUp = take(comingPool, "comingUp");
+  const movingWell = take(movingWellPool, "movingWell");
 
   const sections = Object.freeze({
     todaysSignal,
@@ -609,6 +670,7 @@ export function rankToday(input: {
     version: HOME_TODAY_RANKING_VERSION,
     asOfIso: input.asOfIso,
     sections,
+    sectionAccounting: Object.freeze(sectionAccounting),
     accounting,
     quiet: Object.freeze({
       allowed: blockedBy.length === 0,

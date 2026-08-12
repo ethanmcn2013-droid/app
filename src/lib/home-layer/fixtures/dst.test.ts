@@ -22,7 +22,7 @@ import {
   projectMyWork,
 } from "./my-work";
 import { HOME_FIXTURE_ORCHARD_PROJECT_IDS } from "./projects";
-import { homeFixtureWorld } from "./scenarios";
+import { homeFixtureWorld, SCENARIO_IDS } from "./scenarios";
 
 function localParts(iso: string) {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -161,8 +161,8 @@ describe("date grouping is calendar arithmetic, not millisecond arithmetic", () 
       .map((entry) => `${entry.row.taskId}:${entry.reason}`)
       .sort();
     assert.deepEqual(reasons, [
-      "home-task-dst-eve:due-today",
-      "home-task-dst-later:beyond-window",
+      "home-task-dst-keys:due-today",
+      "home-task-dst-late:beyond-window",
       "home-task-dst-morning:within-seven-days",
       "home-task-dst-week:within-seven-days",
     ]);
@@ -188,4 +188,99 @@ describe("the dst_boundary scenario reads from its own pinned instant", () => {
         today.accounting.cleared,
     );
   });
+
+  it("publishes an Analytics window on its own day, not on the July one", () => {
+    const world = homeFixtureWorld("dst_boundary");
+    for (const claim of world.claims) {
+      const window = claim.window as { asOf?: string; end?: string };
+      const published = window.asOf ?? window.end;
+      assert.ok(published, `${claim.id} publishes no instant at all`);
+      assert.equal(
+        localParts(published as string).date,
+        "2026-10-24",
+        `${claim.id} publishes a window dated ${published}, which is not this world's day`,
+      );
+    }
+  });
+});
+
+/**
+ * ONE CLOCK PER WORLD. Every instant a scenario publishes has to belong to
+ * that scenario's own `asOf`. A window pinned to a module-level constant is
+ * not a rounding error: it is a claim about a day the reader is not having,
+ * rendered beside a Today and a My work that are on the right one.
+ */
+describe("every scenario publishes times consistent with its own asOf", () => {
+  for (const id of SCENARIO_IDS) {
+    it(`${id} agrees with its own clock, claim by claim`, () => {
+      const world = homeFixtureWorld(id);
+      const asOf = world.scenario.asOfIso;
+
+      assert.equal(world.today.asOfIso, asOf, "Today ranked against another instant");
+
+      for (const claim of world.claims) {
+        const window = claim.window as { asOf?: string; start?: string; end?: string };
+        if (claim.window.kind === "as_of") {
+          assert.equal(
+            window.asOf,
+            asOf,
+            `${claim.id}: window.asOf is ${window.asOf}, the world reads at ${asOf}`,
+          );
+        } else {
+          assert.equal(
+            window.end,
+            asOf,
+            `${claim.id}: window.end is ${window.end}, the world reads at ${asOf}`,
+          );
+          assert.ok(
+            Date.parse(window.start as string) < Date.parse(asOf),
+            `${claim.id}: the window starts after the instant it ends at`,
+          );
+        }
+        assert.equal(
+          claim.times.renderedAt,
+          asOf,
+          `${claim.id}: times.renderedAt belongs to another world`,
+        );
+        assert.ok(
+          Date.parse(claim.times.ingestionAt) <= Date.parse(asOf),
+          `${claim.id}: the source was read after the view composed`,
+        );
+        if (claim.times.eventTime) {
+          assert.ok(
+            Date.parse(claim.times.eventTime.latest) <= Date.parse(asOf),
+            `${claim.id}: an event is dated after the read`,
+          );
+        }
+      }
+
+      // "Not enough history yet" names a date the reader has not reached. A
+      // date already past would be a promise the world has silently broken.
+      if (world.trend.kind === "insufficient-history") {
+        assert.ok(
+          Date.parse(world.trend.earliestPossibleIso) > Date.parse(asOf),
+          `the earliest a trend could exist is ${world.trend.earliestPossibleIso}, already past at ${asOf}`,
+        );
+      } else {
+        for (const point of world.trend.points) {
+          assert.ok(
+            Date.parse(point.capturedAtIso) <= Date.parse(asOf),
+            "a snapshot is captured in this world's future",
+          );
+        }
+      }
+
+      // Every source record the world counts is dated on the world's clock too.
+      for (const row of world.analyticsRows) {
+        assert.ok(
+          Date.parse(row.createdAtIso) < Date.parse(asOf),
+          `${row.taskId} was created after the read`,
+        );
+        assert.ok(
+          Date.parse(row.lastMeaningfulActivityIso) <= Date.parse(asOf),
+          `${row.taskId} was last touched after the read`,
+        );
+      }
+    });
+  }
 });

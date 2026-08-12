@@ -91,7 +91,7 @@ ineligible or unavailable kind renders as**.
 | `note-extract` | **eligible on wiring**, extracts only | Notes provider (`providers/notes.ts:11-18`) | `unsupported` |
 | `decision` | **eligible on wiring** | capability `decision_read` (`contracts.ts:213-224`) | `unsupported` |
 | `follow-up` | **eligible on wiring** | capability `follow_up_read` | `unsupported` |
-| `calendar-event` | **ineligible in v1 — no producer exists** | `WorkRead.events` is hardcoded `[]` (`source.ts:271-273`) | `unsupported`. **Never an empty calendar, never "nothing scheduled", never a blank section.** |
+| `calendar-event` | **eligible — no producer exists in v1** (corrected 2026-08-12; see below) | `WorkRead.events` is hardcoded `[]` (`source.ts:271-273`) | `unsupported`. **Never an empty calendar, never "nothing scheduled", never a blank section.** |
 | `notification` | **ineligible, permanently** | Tasks `notifications` | not rendered here at all — `home.inbox` owns every role for events (`CONTENT_OWNERSHIP.md` §2) |
 | `activity` | **ineligible, permanently** | Tasks `activities` | as above |
 
@@ -105,7 +105,28 @@ Three rules bind this table:
    statement. Zero rows without the statement is prohibited (§7).
 3. **Ineligible events are not "filtered out".** They are a different mode's content. Today
    does not render a count of them, does not summarise them, and does not claim they are
-   clear. It links to the Inbox badge, which is the Inbox's number.
+   clear. It links to the Inbox badge, which is the Inbox's number. This rule is about
+   `notification` and `activity`, the two kinds Inbox owns outright.
+
+**Correction, 2026-08-12 — `calendar-event` is eligible, and the table said otherwise.**
+The `calendar-event` row read "ineligible in v1 — no producer exists" while §9.2 Q7 read
+"any **eligible** `SourceKind` has no producer, which in v1 is always true of
+`calendar-event`". Both could not hold. The table cell was the error, for three reasons
+inside this contract:
+
+1. `TR-7` (§11) decides it explicitly and gives the rationale: *"`calendar-event` is an
+   eligible kind with no producer, and renders `unsupported`"*, because omitting the kind
+   makes "no events" and "we cannot see events" indistinguishable. A sealed decision outranks
+   a table cell.
+2. The same table row's own last column says it renders `unsupported`. Rule 2 above is what
+   produces `unsupported`, and rule 2 applies to **eligible** kinds. Rule 3 — the ineligible
+   path — renders nothing at all. The row contradicted itself.
+3. §10 assertion T11 is *"an eligible kind with no producer renders `unsupported`, never an
+   empty section"*, and `calendar-event` is the only kind it can be about at this base.
+
+Nothing else changes: `calendar-event` still contributes zero rows, still renders
+`unsupported`, and Q7 still fires for every reader in v1, which is `TR-7`'s stated and
+intended consequence rather than a defect to be engineered away.
 
 ### 2.1 Scope
 
@@ -267,6 +288,49 @@ and "This week" came to look like the same broken section.
 Today's signal never also appears in Coming up or Needs review — the incumbent already does
 this with `surfacedIds` (`home-data.ts:135`), and it moves inside the engine so it cannot be
 skipped by a new caller.
+
+### 5.1 Precedence — which section wins a contested key
+
+Disjointness alone does not say **which** section keeps a `sourceKey` that two of them are
+eligible for, and that gap is not theoretical: in the Wave 2 fixture universe three keys are
+eligible for Today's signal and Needs review at once, and the rendered page differs
+depending on which pool is taken first. Decision `TR-8` seals it.
+
+**The section whose job is most urgent wins. Precedence runs:**
+
+```
+Today's signal  >  Needs review  >  Coming up  >  Moving well
+```
+
+*Why this order and not the order the table above happens to list.* Each section is a
+different question asked of the same object, and the order is the order in which those
+questions become urgent to the reader:
+
+1. **Today's signal** holds the six triggers that fired *now*: something is due, overdue,
+   stuck, blocked, crowded or overloaded. §9.2 Q3 already refuses to describe anything that
+   crossed a rule as clear, so a key that crossed a rule renders where the rule is explained.
+2. **Needs review** holds work that has *stopped* and is waiting on the reader's judgement —
+   its own order is `idleDays` descending, which is the contract saying in arithmetic that
+   this section is about things going stale in the reader's hands.
+3. **Coming up** holds work that is dated and crossed *nothing*. It is a forecast, not a
+   request. §4.2 places every dated trigger above every posture trigger for the same reason.
+4. **Moving well** holds `just-shipped` and `blocker-cleared`, the two lowest weights in
+   §4.2 (100 and 450) and the only two that ask nothing of the reader. Good news never
+   displaces a request. §4.2 already says `blocker-cleared` "is never more urgent than
+   something with a date"; this is that sentence applied to sections.
+
+**Three rules bind the precedence.**
+
+| # | Rule |
+|---|---|
+| P1 | A key is claimed by the section that **renders** it, never by a pool that merely considered it. A row displaced by Today's three-cap is still available to Needs review — otherwise §6 would report it as `cappedOut` while it sat visible on the page, an identity that is arithmetically true and factually false. |
+| P2 | A key a higher section rendered is **removed** from every lower section and **counted in that section's suppressed total**. It is never silently dropped. Each section therefore publishes `eligible`, `shown`, `claimedAbove`, `cappedOut` and `suppressed = eligible − shown`, and `suppressed = claimedAbove + cappedOut` holds exactly. |
+| P3 | A row keeps the reason of the rule that fired, wherever it renders. A `blocked-too-long` object rendered in Needs review says it has been blocked; it does not acquire a second, weaker explanation for the same fact (§9.1). |
+
+P2 is what makes §5's Completeness rule survive precedence: "two more are not shown" and
+"two more are shown above" are different sentences, and a reader is owed the one that is
+true. A section that renders nothing because everything it held is on screen above is not an
+empty section, and must never render as one.
 
 **Completeness.** Coming up and Needs review are **capped views, not lists.** Each renders
 the count it did not show and one route onward to `home.my-work`
@@ -604,6 +668,28 @@ see events" indistinguishable, which is precisely the substitution Charter rule 
 Naming the kind and marking it unsupported keeps the gap visible to users and to tests.
 *Consequence:* Q7 fires in v1 for every reader, so the unqualified "nothing today" sentence
 is unavailable until a calendar producer exists. That is the correct outcome, not a bug.
+
+**TR-8 · A contested `sourceKey` goes to the most urgent section, and the sections below it
+count it as suppressed.**
+*Rationale:* §5 sealed disjointness without sealing precedence, so the rendered page depended
+on which pool an implementation happened to take first — a rule nobody had written down, which
+two correct implementations could disagree about while both passing their tests. The order
+`Today's signal > Needs review > Coming up > Moving well` is not new policy: it is the order
+§4.2's own weights and §5's own sort keys already imply, read as a statement about which
+question is most urgent. *Consequence:* §5.1 P1 to P3. A section that shows nothing because a
+higher section is already showing its objects renders its suppressed count and its cause, and
+never renders as empty. The alternative order — the §5 table's own listing, with Coming up
+above Needs review — was rejected because it puts a forecast above a request: work that has
+stopped in the reader's hands would lose its slot to work that is merely dated, which inverts
+the ordering every other part of this contract uses.
+
+**TR-9 · `calendar-event` is eligible; §2's table cell was wrong and is corrected in place.**
+*Rationale:* §2's table and §9.2 Q7 asserted opposite things about the same kind, and a
+contract that contradicts itself cannot bind an implementation. `TR-7` had already decided the
+question with a rationale, the table row's own "renders" column only makes sense under the
+eligible reading, and §10 T11 is written from it. *Consequence:* the cell now reads "eligible
+— no producer exists in v1", the correction is noted inline in §2 rather than applied
+silently, and no behaviour changes: zero rows, `unsupported`, Q7 fires for every v1 reader.
 
 ---
 

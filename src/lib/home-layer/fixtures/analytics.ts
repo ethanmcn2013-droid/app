@@ -10,22 +10,32 @@
  *
  * `value: null` never renders as `0`, a dash, an empty chart or a cleared
  * state. It renders the reason. That is charter rule 11 made mechanical, and
- * it is why every claim below is DERIVED from `ANALYTICS_ROWS` rather than
- * written down.
+ * it is why every claim below is DERIVED from the world's own source records
+ * rather than written down.
  */
 
 import { calendarDaysBetween, type CalendarDate } from "@/lib/planning/dates";
-import { fixtureCalendarDate, HOME_FIXTURE_TODAY, fixtureInstantAt } from "./clock";
+import {
+  fixtureCalendarDate,
+  fixtureInstantAtFrom,
+  HOME_FIXTURE_NOW_ISO,
+  HOME_FIXTURE_TODAY,
+} from "./clock";
 import {
   HOME_FIXTURE_ORCHARD_PROJECT_IDS,
+  HOME_FIXTURE_OTHER_MEMBER,
+  HOME_FIXTURE_OWNER,
   HOME_FIXTURE_PROJECT_IDS,
   homeFixtureProject,
 } from "./projects";
+import { MY_WORK_SIGNATURE_ROWS, type MyWorkRow } from "./my-work";
+import {
+  TODAY_SIGNATURE_CANDIDATES,
+  TODAY_UNPROJECTABLE_CANDIDATES,
+  type WorkSignal,
+} from "./today";
 
 const MF = HOME_FIXTURE_PROJECT_IDS.maraFinn;
-const NC = HOME_FIXTURE_PROJECT_IDS.noraCian;
-const AT = HOME_FIXTURE_PROJECT_IDS.aislingTom;
-const SR = HOME_FIXTURE_PROJECT_IDS.sineadRuairi;
 
 export const SIGNAL_METRIC_VERSION = "signal-analytics-metrics@1.0.0";
 export const SIGNAL_RULE_VERSION = "signal-analytics-rules@1.0.0";
@@ -37,10 +47,17 @@ export const SIGNAL_RULE_VERSION = "signal-analytics-rules@1.0.0";
  * `MyWorkRow`: analytics reads a mirror, and the mirror is missing
  * `board_column_key` at this base — which is the defect that makes
  * `blocked_work` always zero (R2) and why that claim is withheld below.
+ *
+ * A SEPARATE SHAPE IS NOT A SEPARATE POPULATION. Charter rule 6: one
+ * definition everywhere. Every row here is a projection of a source record
+ * Today or My work also reads, and it keeps that record's `taskId`, so a
+ * reviewer who opens a claim can reach the exact row it came from and find it
+ * again in the other two modes.
  */
 export type AnalyticsRow = Readonly<{
   taskId: string;
-  workspaceId: string;
+  /** Null when the source record has no Project (`workspace_id IS NULL`). */
+  workspaceId: string | null;
   isDone: boolean;
   createdAtIso: string;
   /** Set iff the row reached a Done column. Read from a terminal transition. */
@@ -54,65 +71,188 @@ export type AnalyticsRow = Readonly<{
   unprojectable: boolean;
 }>;
 
-function arow(
-  taskId: string,
-  workspaceId: string,
-  fields: Partial<AnalyticsRow>,
-): AnalyticsRow {
-  return Object.freeze({
-    taskId,
-    workspaceId,
-    isDone: fields.isDone ?? false,
-    createdAtIso: fields.createdAtIso ?? fixtureInstantAt(-40, 9),
-    completedAtIso: fields.completedAtIso ?? null,
-    dueDate: fields.dueDate ?? null,
-    assigneeIds: Object.freeze(fields.assigneeIds ?? ["truth-user"]),
-    lastMeaningfulActivityIso:
-      fields.lastMeaningfulActivityIso ?? fixtureInstantAt(-1, 12),
-    isSubtask: fields.isSubtask ?? false,
-    unprojectable: fields.unprojectable ?? false,
-  });
+/**
+ * The attributes only the analytics mirror carries. Everything else on an
+ * `AnalyticsRow` is READ from the source record, so it cannot disagree with
+ * what Today and My work render for the same id.
+ *
+ * These four fields are authored because no other surface carries them: Today
+ * does not say when a task was created, My work does not say whether a done
+ * row has a terminal transition behind it, and neither models a child task.
+ */
+export type AnalyticsMirrorFacts = Readonly<{
+  /** Calendar days before the world's own today. */
+  createdDaysAgo?: number;
+  /** Days since the last activity that was not a superficial metadata edit.
+   *  Absent means: read the source record's own idle count. */
+  idleDaysAgo?: number;
+  /** Only meaningful on a record the source says is done. */
+  completedDaysAgo?: number;
+  /** Nobody is assigned. Legal ONLY where the source record is not assigned
+   *  to the reader either — asserted by the oracle, because "not yours" and
+   *  "nobody's" are different claims and A3 counts the second one. */
+  unowned?: true;
+  /** `parent_task_id is not null`. Analytics excludes children (§6); Today's
+   *  §2.1 candidate set does not, so one record is read by both surfaces and
+   *  counted by one of them. That difference is a rule, not a discrepancy. */
+  isSubtask?: true;
+}>;
+
+/** No source record carries a creation time, so the mirror states a default. */
+export const ANALYTICS_DEFAULT_CREATED_DAYS_AGO = 40;
+/** A responsibility with no ranking record behind it was touched yesterday. */
+export const ANALYTICS_DEFAULT_IDLE_DAYS = 1;
+/**
+ * The local wall hours the two mirror timestamps sit at. Both are EARLY in
+ * the local day, because a row touched today was touched BEFORE the read in
+ * every world here: the owner worlds read at 08:40 local and the clock-change
+ * world at 21:15. Noon would date an item's last activity four hours after
+ * the moment the page was composed, which is a record from the reader's
+ * future rendered as history.
+ */
+export const ANALYTICS_CREATED_LOCAL_HOUR = 6;
+export const ANALYTICS_ACTIVITY_LOCAL_HOUR = 7;
+/**
+ * A completion is stamped at the end of the working day it happened on. Safe
+ * only because no record is authored as completed today: a claim whose event
+ * time lands after its own `renderedAt` fails `dst.test.ts`.
+ */
+export const ANALYTICS_COMPLETED_LOCAL_HOUR = 16;
+
+/**
+ * The authored mirror facts, by the source id they belong to. An id absent
+ * from this table takes the two defaults above and nothing else.
+ */
+export const ANALYTICS_MIRROR_FACTS: Readonly<
+  Record<string, AnalyticsMirrorFacts>
+> = Object.freeze({
+  // Mara & Finn carries the longest history in the story.
+  "home-task-mf-corkage": Object.freeze({ createdDaysAgo: 120 }),
+  // A child task. Today ranks it; Analytics excludes it and counts the
+  // exclusion (§6 `subtask`).
+  "home-task-mf-transport": Object.freeze({ isSubtask: true }),
+  "home-task-mf-guest-book": Object.freeze({ unowned: true }),
+  "home-task-mf-cars": Object.freeze({ createdDaysAgo: 21 }),
+  "home-task-nc-generator": Object.freeze({ createdDaysAgo: 64, unowned: true }),
+  // Signed off in Nora & Cian's own Done column six days ago. My work reads
+  // that column config; Today's four-lane vocabulary does not.
+  "home-task-nc-favours": Object.freeze({ completedDaysAgo: 6 }),
+  "home-task-nc-venue-confirmation": Object.freeze({ idleDaysAgo: 8 }),
+  // Aisling & Tom is the newest Project, so its rows are the youngest.
+  "home-task-at-florist-quote": Object.freeze({ createdDaysAgo: 12, unowned: true }),
+  "home-task-at-running-order": Object.freeze({ createdDaysAgo: 12 }),
+  "home-task-at-hair-trial": Object.freeze({ createdDaysAgo: 12 }),
+  "home-task-at-confetti": Object.freeze({ createdDaysAgo: 10 }),
+  "home-task-at-ceremony-time": Object.freeze({ createdDaysAgo: 9 }),
+  // The clock-change world keeps one unowned row, so A3 is exercised there
+  // too rather than only in the signature world.
+  "home-task-dst-quiet": Object.freeze({ unowned: true }),
+  "home-task-dst-monday": Object.freeze({ createdDaysAgo: 12 }),
+});
+
+const OWNER_ID = HOME_FIXTURE_OWNER.id;
+const OTHER_MEMBER_ID = HOME_FIXTURE_OTHER_MEMBER.id;
+
+/**
+ * The projection, stated once so both this module and the golden oracle can
+ * apply it to the same records.
+ *
+ * Precedence where BOTH surfaces carry the record: My work wins on `isDone`
+ * and on the due instant, because My work resolves both through the Project's
+ * own column configuration (`MY_WORK_PROJECTION.md` §6), which is what
+ * `ANALYTICS_CLAIM.md` R3 requires of every Done read. Today's `lane` is the
+ * ranking engine's four-value vocabulary and is one step further from the
+ * record. Where only Today carries it, Today's values are used.
+ */
+export function analyticsRowsForWorld(input: {
+  todayCandidates: readonly WorkSignal[];
+  myWorkRows: readonly MyWorkRow[];
+  today: CalendarDate;
+}): readonly AnalyticsRow[] {
+  const byId = new Map<
+    string,
+    { signal: WorkSignal | null; row: MyWorkRow | null }
+  >();
+  const seen = (taskId: string) => {
+    const held = byId.get(taskId) ?? { signal: null, row: null };
+    byId.set(taskId, held);
+    return held;
+  };
+  for (const signal of input.todayCandidates) seen(signal.ref.id).signal = signal;
+  for (const row of input.myWorkRows) seen(row.taskId).row = row;
+  // Unprojectable work is in scope of the read in every world, is excluded
+  // from every Project-scoped count, and the exclusion is disclosed
+  // (PROJECT_SCOPE §6, D-H05). It is never folded into a Project to tidy a
+  // number, and it is never quietly missing either.
+  for (const signal of TODAY_UNPROJECTABLE_CANDIDATES) {
+    if (!byId.has(signal.ref.id)) seen(signal.ref.id).signal = signal;
+  }
+
+  const rows: AnalyticsRow[] = [];
+  for (const [taskId, source] of byId) {
+    const facts = ANALYTICS_MIRROR_FACTS[taskId] ?? {};
+    const workspaceId = source.row?.workspaceId ?? source.signal?.projectId ?? null;
+    const isDone = source.row
+      ? source.row.isDone
+      : source.signal?.lane === "shipped";
+    const dueAtIso = source.row ? source.row.dueAtIso : (source.signal?.dueAtIso ?? null);
+    const idleDays =
+      facts.idleDaysAgo ?? source.signal?.idleDays ?? ANALYTICS_DEFAULT_IDLE_DAYS;
+    const completedAtIso = !isDone
+      ? null
+      : (source.signal?.movedToDoneAtIso ??
+        (facts.completedDaysAgo === undefined
+          ? null
+          : fixtureInstantAtFrom(
+              input.today,
+              -facts.completedDaysAgo,
+              ANALYTICS_COMPLETED_LOCAL_HOUR,
+            )));
+    rows.push(
+      Object.freeze({
+        taskId,
+        workspaceId,
+        isDone,
+        createdAtIso: fixtureInstantAtFrom(
+          input.today,
+          -(facts.createdDaysAgo ?? ANALYTICS_DEFAULT_CREATED_DAYS_AGO),
+          ANALYTICS_CREATED_LOCAL_HOUR,
+        ),
+        completedAtIso,
+        dueDate: dueAtIso === null ? null : fixtureCalendarDate(dueAtIso),
+        assigneeIds: Object.freeze(
+          source.row
+            ? [...source.row.assigneeIds]
+            : facts.unowned
+              ? []
+              : source.signal?.assignedToActor
+                ? [OWNER_ID]
+                : [OTHER_MEMBER_ID],
+        ),
+        lastMeaningfulActivityIso: fixtureInstantAtFrom(
+          input.today,
+          -idleDays,
+          ANALYTICS_ACTIVITY_LOCAL_HOUR,
+        ),
+        isSubtask: facts.isSubtask ?? false,
+        unprojectable: workspaceId === null,
+      }),
+    );
+  }
+  return Object.freeze(rows);
 }
 
-const overdue = (days: number) => fixtureCalendarDate(fixtureInstantAt(-days, 12));
-const upcoming = (days: number) => fixtureCalendarDate(fixtureInstantAt(days, 12));
-
-export const ANALYTICS_ROWS: readonly AnalyticsRow[] = Object.freeze([
-  // Mara & Finn — the busiest Project.
-  arow("an-mf-01", MF, { dueDate: overdue(2) }),
-  arow("an-mf-02", MF, { dueDate: upcoming(0) }),
-  arow("an-mf-03", MF, { dueDate: overdue(9), lastMeaningfulActivityIso: fixtureInstantAt(-11, 9) }),
-  arow("an-mf-04", MF, { assigneeIds: [] }),
-  arow("an-mf-05", MF, { assigneeIds: [], dueDate: upcoming(6) }),
-  arow("an-mf-06", MF, { createdAtIso: fixtureInstantAt(-120, 9), lastMeaningfulActivityIso: fixtureInstantAt(-30, 9) }),
-  arow("an-mf-07", MF, { isDone: true, completedAtIso: fixtureInstantAt(-3, 16) }),
-  arow("an-mf-08", MF, { isDone: true, completedAtIso: fixtureInstantAt(-11, 16) }),
-  arow("an-mf-09", MF, { isSubtask: true }),
-  arow("an-mf-10", MF, { unprojectable: true }),
-
-  // Nora & Cian.
-  arow("an-nc-01", NC, { dueDate: overdue(4) }),
-  arow("an-nc-02", NC, { dueDate: upcoming(3) }),
-  arow("an-nc-03", NC, { assigneeIds: [] }),
-  arow("an-nc-04", NC, { createdAtIso: fixtureInstantAt(-64, 9), lastMeaningfulActivityIso: fixtureInstantAt(-22, 9) }),
-  arow("an-nc-05", NC, { isDone: true, completedAtIso: fixtureInstantAt(-6, 16) }),
-  arow("an-nc-06", NC, {}),
-
-  // Aisling & Tom — newest, least history.
-  arow("an-at-01", AT, { createdAtIso: fixtureInstantAt(-12, 9), dueDate: upcoming(9) }),
-  arow("an-at-02", AT, { createdAtIso: fixtureInstantAt(-12, 9) }),
-  arow("an-at-03", AT, { createdAtIso: fixtureInstantAt(-10, 9), assigneeIds: [] }),
-  arow("an-at-04", AT, { createdAtIso: fixtureInstantAt(-9, 9), isDone: true, completedAtIso: fixtureInstantAt(-2, 16) }),
-
-  // Sinéad & Ruairí — the shared Project. It carries real rows so the guest
-  // seat reads a real number. A Project with no fixture rows would render a
-  // zero that means "the fixture is thin", not "there is no work", and that
-  // is exactly the false zero this universe exists to make impossible.
-  arow("an-sr-01", SR, { dueDate: overdue(1) }),
-  arow("an-sr-02", SR, { dueDate: upcoming(4) }),
-  arow("an-sr-03", SR, { assigneeIds: [] }),
-  arow("an-sr-04", SR, { isDone: true, completedAtIso: fixtureInstantAt(-5, 16) }),
-]);
+/**
+ * The canonical story's population: the signature world's own records. Held
+ * as a named constant because the signature world is the one every other
+ * owner world is a variation of.
+ */
+export const ANALYTICS_SIGNATURE_ROWS: readonly AnalyticsRow[] =
+  analyticsRowsForWorld({
+    todayCandidates: TODAY_SIGNATURE_CANDIDATES,
+    myWorkRows: MY_WORK_SIGNATURE_ROWS,
+    today: HOME_FIXTURE_TODAY,
+  });
 
 // ── The claim envelope ──────────────────────────────────────────────────────
 
@@ -213,14 +353,22 @@ export const NO_BASELINE_COPY = "No accepted baseline";
 
 // ── Deriving the seven V1 claims ────────────────────────────────────────────
 
-const AS_OF = "2026-07-16T07:40:00.000Z";
-const INGESTED_AT = "2026-07-16T07:38:00.000Z";
-const RENDERED_AT = "2026-07-16T07:40:00.000Z";
 const STALLED_AFTER_DAYS = 7;
+/** §9: the provider read the source two minutes before the view composed. */
+const INGESTION_LEAD_MS = 120_000;
 
 export type ClaimContext = Readonly<{
   readScope: "current-project" | "planning-period" | "all-projects";
   projects: readonly string[];
+  /**
+   * THE WORLD'S OWN INSTANT. Every window, every one of §9's four times and
+   * every day-count below is computed from it. A claim pinned to a constant
+   * while its world reads on another day publishes a window that belongs to
+   * nobody's clock, which is the defect this parameter exists to prevent.
+   */
+  asOfIso?: string;
+  /** The world's own source records. Defaults to the canonical story's. */
+  rows?: readonly AnalyticsRow[];
   /** Projects the actor is a member of but whose read was refused. */
   unauthorized?: number;
   /** Projects the actor is a member of whose source could not answer. */
@@ -232,6 +380,13 @@ export type ClaimContext = Readonly<{
   /** Comparable daily snapshots available for the one trend. */
   comparableSnapshots?: number;
 }>;
+
+/** The world's instant, its calendar day and its rows, resolved once. */
+const asOfOf = (context: ClaimContext) => context.asOfIso ?? HOME_FIXTURE_NOW_ISO;
+const todayOf = (context: ClaimContext): CalendarDate =>
+  fixtureCalendarDate(asOfOf(context));
+const rowsOf = (context: ClaimContext): readonly AnalyticsRow[] =>
+  context.rows ?? ANALYTICS_SIGNATURE_ROWS;
 
 function permissionOf(context: ClaimContext): ClaimPermission {
   const unauthorized = context.unauthorized ?? 0;
@@ -249,8 +404,9 @@ function permissionOf(context: ClaimContext): ClaimPermission {
 }
 
 function inScope(context: ClaimContext): readonly AnalyticsRow[] {
-  return ANALYTICS_ROWS.filter(
+  return rowsOf(context).filter(
     (row) =>
+      row.workspaceId !== null &&
       context.projects.includes(row.workspaceId) &&
       !row.isSubtask &&
       !row.unprojectable,
@@ -258,12 +414,13 @@ function inScope(context: ClaimContext): readonly AnalyticsRow[] {
 }
 
 function exclusionsFor(context: ClaimContext) {
-  const scoped = ANALYTICS_ROWS.filter((row) =>
-    context.projects.includes(row.workspaceId),
+  const rows = rowsOf(context);
+  const scoped = rows.filter(
+    (row) => row.workspaceId !== null && context.projects.includes(row.workspaceId),
   );
   const excluded: { reason: ExclusionReason; count: number }[] = [];
   const subtasks = scoped.filter((row) => row.isSubtask).length;
-  const unprojectable = ANALYTICS_ROWS.filter((row) => row.unprojectable).length;
+  const unprojectable = rows.filter((row) => row.unprojectable).length;
   if (subtasks > 0) excluded.push({ reason: "subtask", count: subtasks });
   if (unprojectable > 0)
     excluded.push({ reason: "unprojectable_row", count: unprojectable });
@@ -329,7 +486,7 @@ function sourceRevisionOf(rows: readonly AnalyticsRow[]): string {
 const asOfWindow = (context: ClaimContext) =>
   Object.freeze({
     kind: "as_of" as const,
-    asOf: AS_OF,
+    asOf: asOfOf(context),
     preset: "four_weeks",
     timezone: "Europe/London",
     timezoneSource: context.timezoneSource ?? ("user_setting" as const),
@@ -338,9 +495,11 @@ const asOfWindow = (context: ClaimContext) =>
 const times = (context: ClaimContext, eventTime: AnalyticsClaim["times"]["eventTime"]) =>
   Object.freeze({
     eventTime,
-    ingestionAt: context.ingestionAtIso ?? INGESTED_AT,
+    ingestionAt:
+      context.ingestionAtIso ??
+      new Date(Date.parse(asOfOf(context)) - INGESTION_LEAD_MS).toISOString(),
     snapshotAt: null,
-    renderedAt: RENDERED_AT,
+    renderedAt: asOfOf(context),
   });
 
 const NO_HISTORY_NEEDED = Object.freeze({
@@ -362,6 +521,8 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
    * its own absence. `value: null` is the whole mechanism of charter rule 11.
    */
   if (context.projects.length === 0) return unsupportedClaims(context);
+  const asOf = asOfOf(context);
+  const today = todayOf(context);
   const rows = inScope(context);
   const open = rows.filter((row) => !row.isDone);
   const excluded = exclusionsFor(context);
@@ -406,7 +567,7 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
   const overdueOpen = open.filter(
     (row) =>
       row.dueDate !== null &&
-      calendarDaysBetween(HOME_FIXTURE_TODAY, row.dueDate) < 0,
+      calendarDaysBetween(today, row.dueDate) < 0,
   );
   const a2: AnalyticsClaim = Object.freeze({
     ...claimBase("claim-a2-open-overdue", "open_overdue_work", "Open items whose due date has passed.", "reported", context),
@@ -457,12 +618,12 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
     status,
   });
 
-  const windowStart = fixtureInstantAt(-28, 0);
+  const windowStart = fixtureInstantAtFrom(today, -28, 0);
   const completedInWindow = rows.filter(
     (row) =>
       row.completedAtIso !== null &&
       Date.parse(row.completedAtIso) >= Date.parse(windowStart) &&
-      Date.parse(row.completedAtIso) < Date.parse(AS_OF),
+      Date.parse(row.completedAtIso) < Date.parse(asOf),
   );
   const completionTimes = completedInWindow
     .map((row) => row.completedAtIso as string)
@@ -472,7 +633,7 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
     window: Object.freeze({
       kind: "over" as const,
       start: windowStart,
-      end: AS_OF,
+      end: asOf,
       preset: "four_weeks",
       timezone: "Europe/London",
       timezoneSource: context.timezoneSource ?? ("user_setting" as const),
@@ -511,10 +672,7 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
 
   const ages = open
     .map((row) =>
-      calendarDaysBetween(
-        fixtureCalendarDate(row.createdAtIso),
-        HOME_FIXTURE_TODAY,
-      ),
+      calendarDaysBetween(fixtureCalendarDate(row.createdAtIso), today),
     )
     .sort((a, b) => a - b);
   const median =
@@ -551,7 +709,7 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
     (row) =>
       calendarDaysBetween(
         fixtureCalendarDate(row.lastMeaningfulActivityIso),
-        HOME_FIXTURE_TODAY,
+        today,
       ) >= STALLED_AFTER_DAYS,
   );
   const c2: AnalyticsClaim = Object.freeze({
@@ -589,7 +747,7 @@ export function deriveClaims(context: ClaimContext): readonly AnalyticsClaim[] {
     ...claimBase("claim-d1-milestone-risk", "cross_product_milestone_risk", "Milestones due in the next 30 days that have overdue or blocked work connected to them.", "inferred", context),
     window: Object.freeze({
       kind: "as_of" as const,
-      asOf: AS_OF,
+      asOf,
       preset: "four_weeks",
       timezone: "Europe/London",
       timezoneSource: context.timezoneSource ?? ("user_setting" as const),
@@ -748,10 +906,14 @@ export type TrendResult =
  * Every other snapshot metric is a rolling window sharing 27 of its 28 days
  * with its neighbour, or is blocked by a release blocker.
  */
-export function deriveTrend(comparableSnapshots: number): TrendResult {
+export function deriveTrend(
+  comparableSnapshots: number,
+  asOfIso: string = HOME_FIXTURE_NOW_ISO,
+): TrendResult {
+  const today = fixtureCalendarDate(asOfIso);
   if (comparableSnapshots < TREND_MINIMUM_SNAPSHOTS) {
     const missing = TREND_MINIMUM_SNAPSHOTS - comparableSnapshots;
-    const earliest = fixtureInstantAt(missing, 9);
+    const earliest = fixtureInstantAtFrom(today, missing, 9);
     return Object.freeze({
       kind: "insufficient-history",
       comparableSnapshots,
@@ -768,7 +930,7 @@ export function deriveTrend(comparableSnapshots: number): TrendResult {
       Array.from({ length: comparableSnapshots }, (_, index) => {
         const day = index - (comparableSnapshots - 1);
         return Object.freeze({
-          capturedAtIso: fixtureInstantAt(day, 3),
+          capturedAtIso: fixtureInstantAtFrom(today, day, 3),
           // A deterministic, gently falling level series. No noise, because
           // noise in a fixture is indistinguishable from a bug.
           value: 24 - Math.floor(index / 3),
@@ -804,6 +966,12 @@ export const SNAPSHOTS_EARNED = 14;
 export type AnalyticsException = Readonly<{
   id: string;
   workspaceId: string;
+  /**
+   * The source record this exception was read from. The SAME id Today ranks
+   * and My work lists, so the evidence route resolves to a row a reviewer can
+   * open rather than to a population only Analytics can see.
+   */
+  sourceTaskId: string;
   headline: string;
   /** A deterministic next step, labelled as a suggestion, never a should. */
   suggestion: string;
@@ -821,34 +989,38 @@ export const MAX_EXCEPTIONS = 3;
 export function deriveExceptions(
   context: ClaimContext,
 ): readonly AnalyticsException[] {
+  const today = todayOf(context);
+  const isOverdue = (row: AnalyticsRow) =>
+    row.dueDate !== null && calendarDaysBetween(today, row.dueDate) < 0;
   const rows = inScope(context).filter((row) => !row.isDone);
   const candidates = rows
     .filter(
       (row) =>
-        (row.dueDate !== null &&
-          calendarDaysBetween(HOME_FIXTURE_TODAY, row.dueDate) < 0) ||
+        isOverdue(row) ||
         calendarDaysBetween(
           fixtureCalendarDate(row.lastMeaningfulActivityIso),
-          HOME_FIXTURE_TODAY,
+          today,
         ) >= STALLED_AFTER_DAYS,
     )
     .sort((a, b) => a.taskId.localeCompare(b.taskId))
     .slice(0, MAX_EXCEPTIONS);
   return Object.freeze(
-    candidates.map((row, index) =>
-      Object.freeze({
+    candidates.map((row, index) => {
+      // `inScope` admits no unprojectable row, so every exception names a
+      // Project that resolves — and a source id the other two modes carry.
+      const workspaceId = row.workspaceId as string;
+      return Object.freeze({
         id: `exception-${row.taskId}`,
-        workspaceId: row.workspaceId,
-        headline:
-          row.dueDate !== null &&
-          calendarDaysBetween(HOME_FIXTURE_TODAY, row.dueDate) < 0
-            ? `${homeFixtureProject(row.workspaceId).name}: one item is past its due date.`
-            : `${homeFixtureProject(row.workspaceId).name}: one item has had no activity for a week.`,
+        workspaceId,
+        sourceTaskId: row.taskId,
+        headline: isOverdue(row)
+          ? `${homeFixtureProject(workspaceId).name}: one item is past its due date.`
+          : `${homeFixtureProject(workspaceId).name}: one item has had no activity for a week.`,
         suggestion: "Review overdue work.",
         evidenceHref: `/app/home/analytics?claim=exception-${row.taskId}`,
         rank: index + 1,
-      }),
-    ),
+      });
+    }),
   );
 }
 
@@ -873,9 +1045,15 @@ export function deriveLedger(input: {
   projects: readonly string[];
   unresolved?: readonly string[];
   archived?: readonly string[];
+  /** The world's own source records. Defaults to the canonical story's. */
+  rows?: readonly AnalyticsRow[];
+  /** The world's own instant, so "overdue" is overdue on ITS day. */
+  asOfIso?: string;
 }): readonly LedgerRow[] {
   const unresolved = new Set(input.unresolved ?? []);
   const archived = new Set(input.archived ?? []);
+  const population = input.rows ?? ANALYTICS_SIGNATURE_ROWS;
+  const today = fixtureCalendarDate(input.asOfIso ?? HOME_FIXTURE_NOW_ISO);
   return Object.freeze(
     input.projects.map((workspaceId) => {
       if (unresolved.has(workspaceId)) {
@@ -889,7 +1067,7 @@ export function deriveLedger(input: {
           overdue: null,
         });
       }
-      const rows = ANALYTICS_ROWS.filter(
+      const rows = population.filter(
         (row) =>
           row.workspaceId === workspaceId && !row.isSubtask && !row.unprojectable,
       );
@@ -905,8 +1083,7 @@ export function deriveLedger(input: {
         openWork: open.length,
         overdue: open.filter(
           (row) =>
-            row.dueDate !== null &&
-            calendarDaysBetween(HOME_FIXTURE_TODAY, row.dueDate) < 0,
+            row.dueDate !== null && calendarDaysBetween(today, row.dueDate) < 0,
         ).length,
       });
     }),
@@ -936,8 +1113,14 @@ export function receiptFor(
   claim: AnalyticsClaim,
   context: ClaimContext,
 ): ClaimReceipt {
-  const scoped = ANALYTICS_ROWS.filter((row) =>
-    context.projects.includes(row.workspaceId),
+  const rows = rowsOf(context);
+  const scoped = rows.filter(
+    (row) =>
+      // An Unprojectable row belongs to no Project, so it can never be inside
+      // a Project-scoped filter — and §6 rule 2 still requires the read to
+      // name it rather than let it vanish.
+      row.unprojectable ||
+      (row.workspaceId !== null && context.projects.includes(row.workspaceId)),
   );
   return Object.freeze({
     claimId: claim.id,
@@ -968,10 +1151,12 @@ export function receiptFor(
 }
 
 /** Replay: recompute A1 from the receipt alone and compare. */
-export function replayOpenWork(receipt: ClaimReceipt): number {
+export function replayOpenWork(
+  receipt: ClaimReceipt,
+  rows: readonly AnalyticsRow[] = ANALYTICS_SIGNATURE_ROWS,
+): number {
   const included = new Set(receipt.included.map((entry) => entry.id));
-  return ANALYTICS_ROWS.filter((row) => included.has(row.taskId) && !row.isDone)
-    .length;
+  return rows.filter((row) => included.has(row.taskId) && !row.isDone).length;
 }
 
 // ── The Project Lens ────────────────────────────────────────────────────────
@@ -1006,4 +1191,6 @@ export const ANALYTICS_SIGNATURE_CONTEXT: ClaimContext = Object.freeze({
   readScope: "planning-period",
   projects: HOME_FIXTURE_ORCHARD_PROJECT_IDS,
   comparableSnapshots: SNAPSHOTS_SIGNATURE,
+  asOfIso: HOME_FIXTURE_NOW_ISO,
+  rows: ANALYTICS_SIGNATURE_ROWS,
 });

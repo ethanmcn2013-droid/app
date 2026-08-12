@@ -363,7 +363,12 @@ export const MY_WORK_FRAME_DST: MyWorkTimeFrame = Object.freeze({
  * offset-based one does not.
  */
 export const MY_WORK_DST_ROWS: readonly MyWorkRow[] = Object.freeze([
-  row("home-task-dst-eve", MF, "Collect the Orchard keys", {
+  // ONE record, ONE id. This is the same task Today ranks as
+  // `home-task-dst-keys`, with the same Project, title and due instant, so it
+  // carries the same id: a second id for one record is charter rule 6 broken
+  // in the data, and it leaves a reviewer unable to trace the row between the
+  // two modes in the one world where the clock is hardest to read.
+  row("home-task-dst-keys", MF, "Collect the Orchard keys", {
     columnKey: "todo",
     dueAtIso: "2026-10-24T21:30:00.000Z", // 22:30 BST, still today
   }),
@@ -375,7 +380,8 @@ export const MY_WORK_DST_ROWS: readonly MyWorkRow[] = Object.freeze([
     columnKey: "todo",
     dueAtIso: "2026-10-31T12:00:00.000Z", // T+7, the inclusive Next edge
   }),
-  row("home-task-dst-later", AT, "Adare final numbers", {
+  // The same record Today ranks as `home-task-dst-late`. Same id, once.
+  row("home-task-dst-late", AT, "Adare final numbers", {
     columnKey: "todo",
     dueAtIso: "2026-11-01T12:00:00.000Z", // T+8, the first Later day
   }),

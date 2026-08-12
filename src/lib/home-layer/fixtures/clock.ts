@@ -87,7 +87,23 @@ export function fixtureInstantAt(
   localHour: number,
   localMinute = 0,
 ): string {
-  const date = addCalendarDays(HOME_FIXTURE_TODAY, days);
+  return fixtureInstantAtFrom(HOME_FIXTURE_TODAY, days, localHour, localMinute);
+}
+
+/**
+ * The same arithmetic, from a stated base date rather than from the universe's
+ * one July day. A world that reads on its own instant  the `dst_boundary`
+ * world reads on 24 October  has to be able to express "twenty-eight days
+ * before MY today", or every window it publishes belongs to somebody else's
+ * clock. `fixtureInstantAt` is this function with the base pinned.
+ */
+export function fixtureInstantAtFrom(
+  base: CalendarDate,
+  days: number,
+  localHour: number,
+  localMinute = 0,
+): string {
+  const date = addCalendarDays(base, days);
   const [year, month, day] = date.split("-").map(Number);
   // July and October 2026 are both BST (UTC+1); January is GMT. Resolve the
   // offset by probing rather than assuming, so an authored date in either

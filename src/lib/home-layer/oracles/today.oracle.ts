@@ -380,20 +380,52 @@ export type OracleCoverageInput = Readonly<{
   scopeProjectCount: number;
 }>;
 
+/** §5 Completeness, per section: what it held, and what it did not show. */
+export type OracleSectionAccounting = Readonly<{
+  eligible: number;
+  shown: number;
+  claimedAbove: number;
+  cappedOut: number;
+  suppressed: number;
+}>;
+
 export type OracleTodayResult = Readonly<{
   sections: Readonly<Record<OracleSection, readonly OracleRow[]>>;
+  sectionAccounting: Readonly<Record<OracleSection, OracleSectionAccounting>>;
   accounting: OracleAccounting;
   /** Q-conditions that fired, in order. Empty means quiet language is legal. */
   quietBlockedBy: readonly OracleQuiet[];
   /** §6 identity. False is a hard defect, never a rounding matter. */
   balances: boolean;
   /**
-   * True when a `sourceKey` was eligible for two section pools at once. §5
-   * does not state a precedence between Coming up and Needs review, so a
-   * fixture that depends on one is depending on an unspecified rule.
+   * Every `sourceKey` two section pools both wanted, with the section §5's
+   * precedence awards it to. Contested is normal; unresolved is the defect,
+   * so each entry names the winner and the suite asserts the page agrees.
    */
   sectionOrderAmbiguity: readonly string[];
 }>;
+
+/**
+ * §5 precedence, transcribed. "The section whose job is most urgent wins":
+ * something that crossed a rule today outranks something waiting on the
+ * reader's judgement, which outranks something merely dated, which outranks
+ * good news that asks for nothing. A key a higher section renders is removed
+ * from every lower one and counted in that section's suppressed total.
+ */
+export const ORACLE_SECTION_PRECEDENCE: readonly OracleSection[] = Object.freeze([
+  "todaysSignal",
+  "needsReview",
+  "comingUp",
+  "movingWell",
+]);
+
+const EMPTY_SECTION_ACCOUNTING: OracleSectionAccounting = Object.freeze({
+  eligible: 0,
+  shown: 0,
+  claimedAbove: 0,
+  cappedOut: 0,
+  suppressed: 0,
+});
 
 export function oracleRankToday(input: {
   candidates: readonly WorkSignal[];
@@ -477,41 +509,63 @@ export function oracleRankToday(input: {
         (a.key as string).localeCompare(b.key as string),
     );
 
-  // §5 disjointness by `sourceKey`. The contract lists the sections in the
-  // order below; a key claimed by an earlier section is skipped by a later
-  // one. `sectionOrderAmbiguity` records any key that two pools both wanted,
-  // because that would make the rendered page depend on an unstated rule.
+  // §5 disjointness by `sourceKey`, resolved by §5's precedence. Every key two
+  // pools both wanted is recorded WITH the section that wins it, so a page
+  // that awards it elsewhere is a failed assertion rather than a judgement.
+  const pools: Readonly<Record<OracleSection, readonly OracleCandidate[]>> = {
+    todaysSignal: signalPool,
+    comingUp: comingPool,
+    needsReview: reviewPool,
+    movingWell: movingWellPool,
+  };
   const wanted = new Map<string, Set<OracleSection>>();
-  const note = (pool: readonly OracleCandidate[], section: OracleSection) => {
-    for (const candidate of pool) {
+  for (const section of ORACLE_SECTION_PRECEDENCE) {
+    for (const candidate of pools[section]) {
       if (candidate.key === null) continue;
       const held = wanted.get(candidate.key) ?? new Set<OracleSection>();
       held.add(section);
       wanted.set(candidate.key, held);
     }
-  };
-  note(signalPool, "todaysSignal");
-  note(comingPool, "comingUp");
-  note(reviewPool, "needsReview");
-  note(movingWellPool, "movingWell");
+  }
   const sectionOrderAmbiguity = [...wanted.entries()]
     .filter(([, sections]) => sections.size > 1)
-    .map(([key, sections]) => `${key} → ${[...sections].sort().join(" + ")}`)
+    .map(([key, sections]) => {
+      const winner = ORACLE_SECTION_PRECEDENCE.find((section) =>
+        sections.has(section),
+      );
+      return `${key} → ${[...sections].sort().join(" + ")} → ${winner}`;
+    })
     .sort();
 
   const claimed = new Set<string>();
+  const sectionAccounting: Record<OracleSection, OracleSectionAccounting> = {
+    todaysSignal: EMPTY_SECTION_ACCOUNTING,
+    comingUp: EMPTY_SECTION_ACCOUNTING,
+    needsReview: EMPTY_SECTION_ACCOUNTING,
+    movingWell: EMPTY_SECTION_ACCOUNTING,
+  };
   const take = (
     pool: readonly OracleCandidate[],
     section: OracleSection,
   ): readonly OracleRow[] => {
     const cap = lifted ? Number.POSITIVE_INFINITY : ORACLE_SECTION_CAPS[section];
     const rows: OracleRow[] = [];
+    const seen = new Set<string>();
+    let eligible = 0;
+    let claimedAbove = 0;
     for (const candidate of pool) {
-      if (rows.length >= cap) break;
+      // One object, counted once, however many ways it reached this pool.
       if (candidate.key !== null) {
-        if (claimed.has(candidate.key)) continue;
-        claimed.add(candidate.key);
+        if (seen.has(candidate.key)) continue;
+        seen.add(candidate.key);
       }
+      eligible += 1;
+      if (candidate.key !== null && claimed.has(candidate.key)) {
+        claimedAbove += 1;
+        continue;
+      }
+      if (rows.length >= cap) continue;
+      if (candidate.key !== null) claimed.add(candidate.key);
       rows.push(
         Object.freeze({
           section,
@@ -522,14 +576,28 @@ export function oracleRankToday(input: {
         }),
       );
     }
+    sectionAccounting[section] = Object.freeze({
+      eligible,
+      shown: rows.length,
+      claimedAbove,
+      cappedOut: eligible - rows.length - claimedAbove,
+      suppressed: eligible - rows.length,
+    });
     return Object.freeze(rows);
   };
 
+  // Taken in §5 precedence order; rendered in §5 table order.
+  const taken = Object.fromEntries(
+    ORACLE_SECTION_PRECEDENCE.map((section) => [
+      section,
+      take(pools[section], section),
+    ]),
+  ) as Record<OracleSection, readonly OracleRow[]>;
   const sections = Object.freeze({
-    todaysSignal: take(signalPool, "todaysSignal"),
-    comingUp: take(comingPool, "comingUp"),
-    needsReview: take(reviewPool, "needsReview"),
-    movingWell: take(movingWellPool, "movingWell"),
+    todaysSignal: taken.todaysSignal,
+    comingUp: taken.comingUp,
+    needsReview: taken.needsReview,
+    movingWell: taken.movingWell,
   });
 
   // ── §6 the read accounting ───────────────────────────────────────────────
@@ -580,6 +648,7 @@ export function oracleRankToday(input: {
 
   return Object.freeze({
     sections,
+    sectionAccounting: Object.freeze(sectionAccounting),
     accounting,
     quietBlockedBy: Object.freeze(blockedBy),
     balances,

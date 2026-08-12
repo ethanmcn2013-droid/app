@@ -47,10 +47,13 @@ const MF = HOME_FIXTURE_PROJECT_IDS.maraFinn;
 const NC = HOME_FIXTURE_PROJECT_IDS.noraCian;
 const AT = HOME_FIXTURE_PROJECT_IDS.aislingTom;
 
+const SR = HOME_FIXTURE_PROJECT_IDS.sineadRuairi;
+
 const NAME = {
   [MF]: "Mara & Finn",
   [NC]: "Nora & Cian",
   [AT]: "Aisling & Tom",
+  [SR]: "Sinéad & Ruairí",
 } as const;
 
 function task(
@@ -105,11 +108,16 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     dueAtIso: fixtureInstantAt(4, 12),
     idleDays: 1,
   }),
+  // Nobody is assigned to this one. `assignedToActor: false` is the reader's
+  // side of that fact; Analytics A3 counts the other side, and the two may
+  // never disagree — an unowned row the reader is assigned to is a lie in
+  // one of the two modes.
   task("home-task-at-florist-quote", AT, "Chase the Adare florist for a written quote", {
     lane: "next",
     priority: 2,
     dueAtIso: fixtureInstantAt(5, 12),
     idleDays: 3,
+    assignedToActor: false,
   }),
   task("home-task-mf-corkage", MF, "Agree the Orchard corkage rate", {
     lane: "in-flight",
@@ -184,6 +192,7 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
   task("home-task-mf-guest-book", MF, "Choose the Orchard guest book", {
     lane: "next",
     priority: 3,
+    assignedToActor: false,
   }),
   task("home-task-nc-favours", NC, "Decide on Ballyhoura favours", {
     lane: "next",
@@ -201,6 +210,7 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     lane: "next",
     priority: 2,
     idleDays: 2,
+    assignedToActor: false,
   }),
 ]);
 
@@ -298,6 +308,25 @@ export const TODAY_DST_CANDIDATES: readonly WorkSignal[] = Object.freeze([
   task("home-task-dst-quiet", AT, "Confirm the Adare cake", {
     lane: "next",
     priority: 3,
+    assignedToActor: false,
+  }),
+]);
+
+// ── The shared Project, from the guest seat ─────────────────────────────────
+
+/**
+ * `guest_limited` reads ONE Project the actor shares, and it reads the same
+ * record My work lists and Analytics counts, under the same id. An empty
+ * Today for a Project that holds work would publish `read 0` beside an open
+ * count of one, which is the two-worlds defect this universe exists to make
+ * impossible rather than a statement about the guest's day.
+ */
+export const TODAY_GUEST_CANDIDATES: readonly WorkSignal[] = Object.freeze([
+  task("home-task-sr-cars", SR, "Check the Dromoland car list", {
+    lane: "next",
+    priority: 2,
+    dueAtIso: fixtureInstantAt(2, 12),
+    idleDays: 1,
   }),
 ]);
 
@@ -332,8 +361,12 @@ export const TODAY_UNPROJECTABLE_CANDIDATES: readonly WorkSignal[] =
 // ── The kinds with no producer ──────────────────────────────────────────────
 
 /**
- * TODAY_RANKING §2. `calendar-event` is ineligible in V1 because NO PRODUCER
- * EXISTS — `WorkRead.events` is hardcoded `[]`. It renders `unsupported`.
+ * TODAY_RANKING §2, as corrected 2026-08-12 and decided at `TR-7` / `TR-9`.
+ * `calendar-event` is an ELIGIBLE kind with NO PRODUCER in V1 —
+ * `WorkRead.events` is hardcoded `[]` — so it contributes zero rows and a
+ * coverage statement, and it renders `unsupported`. Eligibility is not
+ * availability, and the difference is the whole point: an ineligible kind
+ * renders nothing at all, while this one has to say it cannot see.
  * Never an empty calendar, never "nothing scheduled", never a blank section.
  *
  * This constant is the fixture's way of making that difference testable: a
@@ -368,6 +401,7 @@ export const TODAY_CANDIDATE_SETS = Object.freeze({
   newUser: TODAY_NEW_USER_CANDIDATES,
   doingEmpty: TODAY_DOING_EMPTY_CANDIDATES,
   dst: TODAY_DST_CANDIDATES,
+  guest: TODAY_GUEST_CANDIDATES,
   unprojectable: TODAY_UNPROJECTABLE_CANDIDATES,
 });
 

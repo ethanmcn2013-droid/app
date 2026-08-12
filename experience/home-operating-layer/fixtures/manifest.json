@@ -182,7 +182,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "available",
             "truthClass": "reported"
           },
@@ -194,13 +194,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "available",
             "truthClass": "observed"
           },
@@ -301,25 +301,25 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 4,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 3,
+            "value": 0,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 0,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 0,
             "status": "available",
             "truthClass": "observed"
           },
@@ -331,7 +331,7 @@
           },
           {
             "metric": "stalled_work",
-            "value": 3,
+            "value": 0,
             "status": "available",
             "truthClass": "inferred"
           },
@@ -342,7 +342,7 @@
             "truthClass": "inferred"
           }
         ],
-        "exceptions": 3,
+        "exceptions": 0,
         "ledgerRows": 3,
         "trend": "insufficient-history",
         "lensOpens": false
@@ -386,16 +386,11 @@
           "needsReview": 0,
           "movingWell": 0
         },
-        "accounting": {
-          "read": 0,
-          "shown": 0,
-          "cappedOut": 0,
-          "dismissed": 0,
-          "cleared": 0
-        },
+        "accounting": null,
         "quietAllowed": false,
         "quietBlockedBy": [
           "Q1",
+          "Q2",
           "Q7",
           "Q8",
           "Q9"
@@ -537,13 +532,13 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 5,
+            "value": 6,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 1,
+            "value": 2,
             "status": "available",
             "truthClass": "reported"
           },
@@ -567,7 +562,7 @@
           },
           {
             "metric": "stalled_work",
-            "value": 1,
+            "value": 2,
             "status": "available",
             "truthClass": "inferred"
           },
@@ -578,7 +573,7 @@
             "truthClass": "inferred"
           }
         ],
-        "exceptions": 2,
+        "exceptions": 3,
         "ledgerRows": 1,
         "trend": "insufficient-history",
         "lensOpens": false
@@ -618,20 +613,21 @@
       "today": {
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
-          "todaysSignal": 0,
+          "todaysSignal": 1,
           "comingUp": 0,
           "needsReview": 0,
           "movingWell": 0
         },
         "accounting": {
-          "read": 0,
-          "shown": 0,
+          "read": 1,
+          "shown": 1,
           "cappedOut": 0,
           "dismissed": 0,
           "cleared": 0
         },
         "quietAllowed": false,
         "quietBlockedBy": [
+          "Q3",
           "Q7",
           "Q8"
         ]
@@ -656,25 +652,25 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 3,
+            "value": 1,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 1,
+            "value": 0,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "unowned_work",
-            "value": 1,
+            "value": 0,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 1,
+            "value": 0,
             "status": "available",
             "truthClass": "observed"
           },
@@ -697,7 +693,7 @@
             "truthClass": "inferred"
           }
         ],
-        "exceptions": 1,
+        "exceptions": 0,
         "ledgerRows": 1,
         "trend": "insufficient-history",
         "lensOpens": false
@@ -742,18 +738,12 @@
           "needsReview": 3,
           "movingWell": 2
         },
-        "accounting": {
-          "read": 20,
-          "shown": 7,
-          "cappedOut": 2,
-          "dismissed": 1,
-          "cleared": 10
-        },
+        "accounting": null,
         "quietAllowed": false,
         "quietBlockedBy": [
           "Q1",
+          "Q2",
           "Q3",
-          "Q4",
           "Q5",
           "Q7",
           "Q8"
@@ -779,7 +769,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "partial",
             "truthClass": "reported"
           },
@@ -791,13 +781,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "partial",
             "truthClass": "observed"
           },
@@ -902,7 +892,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "partial",
             "truthClass": "reported"
           },
@@ -914,13 +904,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "partial",
             "truthClass": "observed"
           },
@@ -1020,7 +1010,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "partial",
             "truthClass": "reported"
           },
@@ -1032,13 +1022,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "partial",
             "truthClass": "observed"
           },
@@ -1138,25 +1128,25 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 16,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 3,
+            "value": 2,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 2,
             "status": "partial",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "partial",
             "truthClass": "observed"
           },
@@ -1168,7 +1158,7 @@
           },
           {
             "metric": "stalled_work",
-            "value": 3,
+            "value": 2,
             "status": "partial",
             "truthClass": "inferred"
           },
@@ -1260,7 +1250,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "available",
             "truthClass": "reported"
           },
@@ -1272,13 +1262,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "available",
             "truthClass": "observed"
           },
@@ -1383,7 +1373,7 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 19,
             "status": "available",
             "truthClass": "reported"
           },
@@ -1395,13 +1385,13 @@
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 3,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 2,
             "status": "available",
             "truthClass": "observed"
           },
@@ -1504,25 +1494,25 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 17,
+            "value": 78,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 4,
+            "value": 14,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "unowned_work",
-            "value": 5,
+            "value": 3,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 5,
+            "value": 1,
             "status": "available",
             "truthClass": "observed"
           },
@@ -1534,7 +1524,7 @@
           },
           {
             "metric": "stalled_work",
-            "value": 3,
+            "value": 2,
             "status": "available",
             "truthClass": "inferred"
           },
@@ -1623,25 +1613,25 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 14,
+            "value": 7,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 3,
+            "value": 0,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "unowned_work",
-            "value": 4,
+            "value": 1,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "work_completed",
-            "value": 4,
+            "value": 0,
             "status": "available",
             "truthClass": "observed"
           },
@@ -1653,7 +1643,7 @@
           },
           {
             "metric": "stalled_work",
-            "value": 3,
+            "value": 0,
             "status": "available",
             "truthClass": "inferred"
           },
@@ -1664,7 +1654,7 @@
             "truthClass": "inferred"
           }
         ],
-        "exceptions": 3,
+        "exceptions": 0,
         "ledgerRows": 3,
         "trend": "insufficient-history",
         "lensOpens": false

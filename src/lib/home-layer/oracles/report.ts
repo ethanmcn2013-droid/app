@@ -15,7 +15,6 @@
  */
 
 import { homeFixtureWorld } from "../fixtures/scenarios";
-import { ANALYTICS_ROWS } from "../fixtures/analytics";
 import { MY_WORK_COLUMN_CONFIGS } from "../fixtures/my-work";
 import { oracleBadge } from "./inbox.oracle";
 import { oracleProjectMyWork } from "./my-work.oracle";
@@ -121,7 +120,8 @@ function analyticsLine(id: ScenarioId): string {
     "Europe/London",
   ).iso;
   const oracle = oracleTotals({
-    rows: ANALYTICS_ROWS,
+    // The world's own records, rejoined from its own source population.
+    rows: inputs.analyticsRows,
     projects: inputs.readable,
     today: inputs.today,
     windowStartIso: windowStart,

@@ -25,7 +25,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
-  ANALYTICS_ROWS,
   ANALYTICS_SIGNATURE_CONTEXT,
   PROHIBITED_ANALYTICS_LANGUAGE,
   WITHHELD_CLAIMS,
@@ -40,6 +39,7 @@ import {
 import { HOME_INBOX_SNOOZE_CASES } from "../fixtures/inbox";
 import {
   MY_WORK_COLUMN_CONFIGS,
+  MY_WORK_DST_ROWS,
   MY_WORK_QUIET_ROWS,
   MY_WORK_SCALE_ROWS,
   MY_WORK_SIGNATURE_ROWS,
@@ -61,6 +61,8 @@ import {
   oracleShareIsComputable,
   oracleTotals,
   oracleTrendRendersChart,
+  oracleUnownedContradictions,
+  oracleUntraceableIds,
   oracleValueIsHonest,
   ORACLE_CLAIM_IDS,
   ORACLE_TREND_MINIMUM_SNAPSHOTS,
@@ -106,7 +108,11 @@ import {
   SCENARIO_IDS,
   type ScenarioId,
 } from "./scenario-inputs";
-import { oracleRankToday, type OracleTodayResult } from "./today.oracle";
+import {
+  oracleRankToday,
+  ORACLE_SECTION_PRECEDENCE,
+  type OracleTodayResult,
+} from "./today.oracle";
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -148,7 +154,10 @@ function runMyWork(id: ScenarioId) {
 function runTotals(id: ScenarioId) {
   const inputs = oracleWorldInputs(id);
   return oracleTotals({
-    rows: ANALYTICS_ROWS,
+    // The world's OWN population, rejoined from its own source records by
+    // `oracleAnalyticsRows`. Reading a module-level constant here would let a
+    // second Analytics population back in through the oracle's own door.
+    rows: inputs.analyticsRows,
     projects: inputs.readable,
     today: inputs.today,
     windowStartIso: instantAtLocalWallTime(
@@ -159,6 +168,26 @@ function runTotals(id: ScenarioId) {
     ).iso,
     windowEndIso: inputs.asOfIso,
   });
+}
+
+/**
+ * Every source id this universe holds: the records Today ranks and the
+ * records My work lists, across every world. Rebuilt from the raw record
+ * modules rather than from any derivation, because it is the set an Analytics
+ * id has to land in for a reviewer to be able to reach the row.
+ */
+function sharedSourceIds(): readonly string[] {
+  return [
+    ...Object.values(TODAY_CANDIDATE_SETS)
+      .flat()
+      .map((signal) => signal.ref.id),
+    ...[
+      ...MY_WORK_SIGNATURE_ROWS,
+      ...MY_WORK_QUIET_ROWS,
+      ...MY_WORK_DST_ROWS,
+      ...MY_WORK_SCALE_ROWS,
+    ].map((row) => row.taskId),
+  ];
 }
 
 const sectionSizes = (sections: Record<string, readonly unknown[]>) => ({
@@ -413,11 +442,57 @@ describe("Today oracle · agreement with the fixture derivation", () => {
     }
   });
 
+  it("the accounting is withheld in exactly the worlds §6 withholds it in", () => {
+    const withheld = SCENARIO_IDS.filter(
+      (id) => homeFixtureWorld(id).today.accounting === null,
+    );
+    assert.deepEqual(
+      [...withheld],
+      // §6: a provider that is `unavailable`, `partial` or `unsupported`
+      // withholds the whole accounting. `stale` does not, so stale_data still
+      // renders its identity and states its age instead.
+      ["new_user", "partial_coverage", "permission_changed", "provider_failure"],
+      "the set of worlds that withhold the accounting changed",
+    );
+    for (const id of withheld) {
+      const statuses = oracleWorldInputs(id).coverage.providerStatuses;
+      assert.ok(
+        statuses.some(
+          (status) =>
+            status === "unavailable" ||
+            status === "partial" ||
+            status === "unsupported",
+        ),
+        `${id} withholds the accounting with every provider ready or stale`,
+      );
+      assert.ok(
+        homeFixtureWorld(id).today.quiet.blockedBy.includes("Q2"),
+        `${id} withheld the accounting without naming Q2`,
+      );
+    }
+    for (const id of SCENARIO_IDS) {
+      if (withheld.includes(id)) continue;
+      const statuses = oracleWorldInputs(id).coverage.providerStatuses;
+      assert.deepEqual(
+        statuses.filter(
+          (status) => status !== "ready" && status !== "stale",
+        ),
+        [],
+        `${id} renders an accounting over a provider that could not answer for its scope`,
+      );
+    }
+    assert.ok(
+      runToday("partial_coverage").quietBlockedBy.includes("Q1"),
+      "and no world claims all clear either way",
+    );
+  });
+
   it("every accounting term the fixture publishes agrees, term by term", () => {
     for (const id of SCENARIO_IDS) {
       const oracle = runToday(id);
       const fixture = homeFixtureWorld(id).today;
-      if (fixture.accounting === null) continue; // withheld — see OR-3
+      // Withheld whole, never partially rendered (§6).
+      if (fixture.accounting === null) continue;
       assert.equal(fixture.accounting.read, oracle.accounting.read, `${id}: read`);
       assert.equal(fixture.accounting.shown, oracle.accounting.shown, `${id}: shown`);
       assert.equal(
@@ -436,6 +511,54 @@ describe("Today oracle · agreement with the fixture derivation", () => {
         `${id}: cleared`,
       );
     }
+  });
+
+  it("a contested key goes to the most urgent section, and the others count it", () => {
+    // §5 precedence: Today's signal, Needs review, Coming up, Moving well.
+    assert.deepEqual(
+      [...ORACLE_SECTION_PRECEDENCE],
+      ["todaysSignal", "needsReview", "comingUp", "movingWell"],
+    );
+    const contested = runToday("owner_signature").sectionOrderAmbiguity;
+    assert.deepEqual(
+      [...contested],
+      [
+        "tasks:task:home-task-mf-final-invoice → needsReview + todaysSignal → todaysSignal",
+        "tasks:task:home-task-nc-marquee-lighting → needsReview + todaysSignal → todaysSignal",
+        "tasks:task:home-task-nc-supplier-contract → needsReview + todaysSignal → todaysSignal",
+      ],
+      "the contested set or its resolution changed",
+    );
+    for (const id of SCENARIO_IDS) {
+      const oracle = runToday(id);
+      const fixture = homeFixtureWorld(id).today;
+      for (const section of ORACLE_SECTION_PRECEDENCE) {
+        assert.deepEqual(
+          fixture.sectionAccounting[section],
+          oracle.sectionAccounting[section],
+          `${id}/${section}: what the section held back disagrees`,
+        );
+        const held = oracle.sectionAccounting[section];
+        assert.equal(
+          held.suppressed,
+          held.claimedAbove + held.cappedOut,
+          `${id}/${section}: a suppressed object has no stated cause`,
+        );
+        assert.equal(
+          held.eligible,
+          held.shown + held.suppressed,
+          `${id}/${section}: an eligible object was silently dropped`,
+        );
+      }
+    }
+    // The world that shows it: a collaborator whose two review-lane rows are
+    // both already on screen above. Needs review shows none of them and says
+    // so, instead of dropping them without a number.
+    const collaborator = runToday("collaborator_project");
+    assert.equal(collaborator.sectionAccounting.needsReview.eligible, 2);
+    assert.equal(collaborator.sectionAccounting.needsReview.shown, 0);
+    assert.equal(collaborator.sectionAccounting.needsReview.claimedAbove, 2);
+    assert.equal(collaborator.sectionAccounting.needsReview.cappedOut, 0);
   });
 
   it("quiet is refused in the same worlds, whatever the reason given", () => {
@@ -684,7 +807,7 @@ describe("My work oracle · grouping precedence", () => {
     const edge = groups.next.find((row) => row.key === "tasks:home-task-dst-week");
     assert.ok(edge);
     assert.equal(edge.deltaDays, 7);
-    const beyond = groups.later.find((row) => row.key === "tasks:home-task-dst-later");
+    const beyond = groups.later.find((row) => row.key === "tasks:home-task-dst-late");
     assert.ok(beyond);
     assert.equal(beyond.deltaDays, 8);
   });
@@ -786,9 +909,8 @@ describe("My work oracle · what the row records must not be trusted about", () 
 // ── 5 · Analytics: totals, claims and evidence ──────────────────────────────
 
 describe("Analytics oracle · totals", () => {
-  it("the six countable claims agree with the fixture in the twelve July worlds", () => {
+  it("the six countable claims agree with the fixture in all thirteen worlds", () => {
     for (const id of SCENARIO_IDS) {
-      if (id === "dst_boundary") continue; // pinned as OR-1 below
       const inputs = oracleWorldInputs(id);
       const totals = runTotals(id);
       const claims = homeFixtureWorld(id).claims;
@@ -818,6 +940,117 @@ describe("Analytics oracle · totals", () => {
       );
       assert.equal(valueOf("claim-c2-stalled-work"), totals.stalled, `${id}: C2`);
     }
+  });
+
+  it("every Analytics row resolves to a record the other two modes carry", () => {
+    for (const id of SCENARIO_IDS) {
+      const world = homeFixtureWorld(id);
+      assert.deepEqual(
+        oracleUntraceableIds({
+          analyticsIds: world.analyticsRows.map((row) => row.taskId),
+          sourceIds: sharedSourceIds(),
+        }),
+        [],
+        `${id}: Analytics counts a population Today and My work never touch`,
+      );
+      // And every exception's evidence route lands on one of those records,
+      // which is the whole promise: open a claim, reach the exact row.
+      assert.deepEqual(
+        oracleUntraceableIds({
+          analyticsIds: world.exceptions.map((entry) => entry.sourceTaskId),
+          sourceIds: sharedSourceIds(),
+        }),
+        [],
+        `${id}: an exception's evidence resolves to nothing`,
+      );
+      for (const exception of world.exceptions) {
+        assert.ok(
+          exception.evidenceHref.includes(exception.sourceTaskId),
+          `${id}/${exception.id}: the evidence route does not carry the source id`,
+        );
+      }
+    }
+    // The join is not a coincidence of one world: the signature world's
+    // Analytics population and its Today candidates genuinely overlap.
+    const signature = homeFixtureWorld("owner_signature");
+    const todayIds = new Set(
+      signature.scenario.todayCandidates.map((signal) => signal.ref.id),
+    );
+    const shared = signature.analyticsRows.filter((row) => todayIds.has(row.taskId));
+    assert.equal(shared.length, 20, "every Today candidate is an Analytics row");
+    assert.equal(signature.exceptions.length, 3);
+    assert.deepEqual(
+      signature.exceptions.map((entry) => entry.sourceTaskId),
+      [
+        "home-task-mf-corkage",
+        "home-task-mf-kitchen-numbers",
+        "home-task-nc-marquee-lighting",
+      ],
+      "the three exceptions are three rows a reviewer can open in Today",
+    );
+  });
+
+  it("the population the oracle rejoins is the population the fixture publishes", () => {
+    for (const id of SCENARIO_IDS) {
+      assert.deepEqual(
+        [...homeFixtureWorld(id).analyticsRows],
+        [...oracleWorldInputs(id).analyticsRows],
+        `${id}: the fixture's Analytics population is not the one the join produces`,
+      );
+    }
+  });
+
+  it("an unowned row is never a row the reader is assigned to", () => {
+    for (const id of SCENARIO_IDS) {
+      const inputs = oracleWorldInputs(id);
+      const assignedToActor = new Set(
+        inputs.scenario.todayCandidates
+          .filter((signal) => signal.assignedToActor)
+          .map((signal) => signal.ref.id),
+      );
+      assert.deepEqual(
+        oracleUnownedContradictions(inputs.analyticsRows, assignedToActor),
+        [],
+        `${id}: Analytics says nobody is assigned to a row Today says is yours`,
+      );
+    }
+    // A3 is exercised rather than trivially zero.
+    assert.equal(runTotals("owner_signature").unowned, 3);
+  });
+
+  it("every world publishes the window and the times of its OWN clock", () => {
+    for (const id of SCENARIO_IDS) {
+      const world = homeFixtureWorld(id);
+      const asOf = world.scenario.asOfIso;
+      for (const claim of world.claims) {
+        const window = claim.window as { asOf?: string; end?: string };
+        if (claim.window.kind === "as_of") {
+          assert.equal(window.asOf, asOf, `${id}/${claim.id}: window.asOf`);
+        } else {
+          assert.equal(window.end, asOf, `${id}/${claim.id}: window.end`);
+          assert.ok(
+            Date.parse(claim.window.start as string) < Date.parse(asOf),
+            `${id}/${claim.id}: the window starts after it ends`,
+          );
+        }
+        assert.equal(claim.times.renderedAt, asOf, `${id}/${claim.id}: renderedAt`);
+        assert.ok(
+          Date.parse(claim.times.ingestionAt) <= Date.parse(asOf),
+          `${id}/${claim.id}: the source was read after the view composed`,
+        );
+      }
+      assert.equal(world.today.asOfIso, asOf, `${id}: Today's asOf`);
+      if (world.trend.kind === "insufficient-history") {
+        assert.ok(
+          Date.parse(world.trend.earliestPossibleIso) > Date.parse(asOf),
+          `${id}: the earliest a trend could exist is in this world's past`,
+        );
+      }
+    }
+    // The world that shows it: reading on 24 October, not 16 July.
+    const dst = homeFixtureWorld("dst_boundary");
+    assert.equal(dst.claims[0].window.asOf, "2026-10-24T20:15:00.000Z");
+    assert.equal(dst.claims[0].times.renderedAt, "2026-10-24T20:15:00.000Z");
   });
 
   it("A2 is a subset of A1, and neither exceeds the included population", () => {
@@ -926,13 +1159,14 @@ describe("Analytics oracle · claims and evidence", () => {
     const context: ClaimContext = Object.freeze({
       ...ANALYTICS_SIGNATURE_CONTEXT,
       projects: inputs.readable,
+      rows: inputs.analyticsRows,
     });
     const receipt = receiptFor(claim, context);
-    assert.equal(receipt.included.length, 18);
+    assert.equal(receipt.included.length, 21);
     assert.equal(
       oracleReplayOpenWork(
         receipt.included.map((entry) => entry.id),
-        ANALYTICS_ROWS,
+        inputs.analyticsRows,
       ),
       claim.value,
       "replaying the calculation over the records the receipt names did not reproduce the claim",
@@ -941,6 +1175,20 @@ describe("Analytics oracle · claims and evidence", () => {
       receipt.excluded.length,
       2,
       "the receipt names the subtask and the Unprojectable row it left out",
+    );
+    // §12.1 — a receipt names record IDS, and every one of them is a record
+    // the other two modes carry. A receipt full of ids that resolve nowhere
+    // is not a receipt.
+    assert.deepEqual(
+      oracleUntraceableIds({
+        analyticsIds: [
+          ...receipt.included.map((entry) => entry.id),
+          ...receipt.excluded.map((entry) => entry.id),
+        ],
+        sourceIds: sharedSourceIds(),
+      }),
+      [],
+      "a receipt names a record no source population holds",
     );
   });
 
@@ -1123,37 +1371,16 @@ describe("Scope oracle · revocation", () => {
 // ── 7 · The findings, pinned so they cannot drift ───────────────────────────
 
 describe("Pinned findings", () => {
-  it("OR-1 · Analytics ignores the world's asOf, and only dst_boundary shows it", () => {
-    const finding = findingById("OR-1");
-    assert.equal(finding.severity, "defect");
-    const inputs = oracleWorldInputs("dst_boundary");
-    const claims = homeFixtureWorld("dst_boundary").claims;
-    const window = claims[0].window as { asOf?: string };
-    assert.equal(inputs.asOfIso, "2026-10-24T20:15:00.000Z");
-    assert.equal(
-      window.asOf,
-      "2026-07-16T07:40:00.000Z",
-      "OR-1 is fixed — delete the finding and this assertion",
-    );
-    assert.notEqual(window.asOf, inputs.asOfIso);
-    const totals = runTotals("dst_boundary");
-    const valueOf = (id: string) => claims.find((claim) => claim.id === id)?.value;
-    assert.equal(totals.openOverdue, 7);
-    assert.equal(valueOf("claim-a2-open-overdue"), 3);
-    assert.equal(totals.completedInWindow, 0);
-    assert.equal(valueOf("claim-b1-work-completed"), 4);
-    assert.equal(totals.medianOpenAgeDays, 140);
-    assert.equal(valueOf("claim-c1-open-work-age"), 40);
-    assert.equal(totals.stalled, 14);
-    assert.equal(valueOf("claim-c2-stalled-work"), 3);
-    // A1 has no time term, so it is the one claim that survives the mismatch.
-    assert.equal(totals.openWork, 14);
-    assert.equal(valueOf("claim-a1-open-work"), 14);
-  });
 
   it("OR-2 · a withheld accounting drops Q4 from the stated reasons", () => {
     assert.equal(findingById("OR-2").severity, "contract-gap");
-    for (const id of ["permission_changed", "provider_failure"] as const) {
+    for (const id of [
+      "permission_changed",
+      "provider_failure",
+      // Joined the set when OR-3 closed: withholding on a partial provider is
+      // right, and it costs this world the ability to name cappedOut.
+      "partial_coverage",
+    ] as const) {
       const oracle = runToday(id);
       const fixture = homeFixtureWorld(id).today;
       assert.equal(fixture.accounting, null, `${id}: the accounting is withheld`);
@@ -1165,53 +1392,111 @@ describe("Pinned findings", () => {
     }
     assert.equal(runToday("permission_changed").accounting.cappedOut, 2);
     assert.equal(runToday("provider_failure").accounting.cappedOut, 1);
+    assert.equal(runToday("partial_coverage").accounting.cappedOut, 2);
   });
 
-  it("OR-3 · the accounting is withheld on unavailable only, not on partial", () => {
-    assert.equal(findingById("OR-3").severity, "contract-gap");
-    const withheld = SCENARIO_IDS.filter(
-      (id) => homeFixtureWorld(id).today.accounting === null,
-    );
-    assert.deepEqual(
-      [...withheld],
-      ["permission_changed", "provider_failure"],
-      "the set of worlds that withhold the accounting changed",
-    );
-    const partial = oracleWorldInputs("partial_coverage");
-    assert.ok(
-      partial.coverage.providerStatuses.includes("partial"),
-      "partial_coverage carries a partial provider",
-    );
-    assert.notEqual(
-      homeFixtureWorld("partial_coverage").today.accounting,
-      null,
-      "OR-3 is resolved — delete the finding and this assertion",
-    );
-    assert.ok(
-      runToday("partial_coverage").quietBlockedBy.includes("Q1"),
-      "and no world claims all clear either way",
-    );
-  });
-
-  it("OR-4 · §5 does not state which section wins a contested key", () => {
-    assert.equal(findingById("OR-4").severity, "contract-gap");
-    const result = runToday("owner_signature");
-    assert.deepEqual(
-      [...result.sectionOrderAmbiguity],
+  it("OR-7 · Today and My work read four of the same records differently", () => {
+    assert.equal(findingById("OR-7").severity, "defect");
+    const byId = new Map(
       [
-        "tasks:task:home-task-mf-final-invoice → needsReview + todaysSignal",
-        "tasks:task:home-task-nc-marquee-lighting → needsReview + todaysSignal",
-        "tasks:task:home-task-nc-supplier-contract → needsReview + todaysSignal",
-      ],
-      "the contested set changed",
+        ...MY_WORK_SIGNATURE_ROWS,
+        ...MY_WORK_QUIET_ROWS,
+        ...MY_WORK_DST_ROWS,
+        ...MY_WORK_SCALE_ROWS,
+      ].map((row) => [row.taskId, row] as const),
     );
-    for (const entry of result.sectionOrderAmbiguity) {
-      assert.ok(
-        !entry.includes("comingUp") && !entry.includes("movingWell"),
-        `${entry}: only the Today's signal / Needs review precedence is unstated`,
-      );
+    const shared = Object.values(TODAY_CANDIDATE_SETS)
+      .flat()
+      .filter((signal) => byId.has(signal.ref.id));
+    const disagreements: string[] = [];
+    for (const signal of shared) {
+      const row = byId.get(signal.ref.id);
+      if (!row) continue;
+      const todayDue =
+        signal.dueAtIso === null
+          ? null
+          : zonedCalendarDate(signal.dueAtIso, ORACLE_ZONE);
+      if (todayDue !== row.dueDate) {
+        disagreements.push(`${signal.ref.id}:due:${todayDue}/${row.dueDate}`);
+      }
+      if ((signal.lane === "shipped") !== row.isDone) {
+        disagreements.push(`${signal.ref.id}:done:${signal.lane}/${row.isDone}`);
+      }
+      if (signal.projectId !== row.workspaceId) {
+        disagreements.push(`${signal.ref.id}:project`);
+      }
     }
+    assert.equal(shared.length, 16, "the join between Today and My work moved");
+    assert.deepEqual(
+      disagreements.sort(),
+      [
+        "home-task-at-ceremony-time:due:null/2026-07-21",
+        "home-task-at-running-order:due:2026-07-25/2026-07-24",
+        "home-task-nc-favours:done:next/true",
+        "home-task-nc-marquee-lighting:due:null/2026-07-19",
+      ],
+      "OR-7 changed — either a record was reconciled (narrow it) or one drifted (widen it)",
+    );
+    // Analytics resolves each of these by the stated rule rather than by
+    // accident: My work wins on `isDone` and on the due instant.
+    const rows = new Map(
+      oracleWorldInputs("owner_signature").analyticsRows.map(
+        (row) => [row.taskId, row] as const,
+      ),
+    );
+    assert.equal(rows.get("home-task-nc-favours")?.isDone, true);
+    assert.equal(rows.get("home-task-at-running-order")?.dueDate, "2026-07-24");
   });
+
+  it("OR-8 · two worlds hand Today a candidate set narrower than their own scope", () => {
+    assert.equal(findingById("OR-8").severity, "defect");
+    const scale = runToday("scale");
+    const scaleTotals = runTotals("scale");
+    assert.equal(scale.accounting.read, 20, "Today's read in the scale world");
+    assert.equal(
+      oracleWorldInputs("scale").myWorkRows.length,
+      60,
+      "and My work holds sixty responsibilities in the same world",
+    );
+    assert.equal(scaleTotals.openWork, 78, "and Analytics counts all of them");
+    const signature = runToday("owner_signature");
+    assert.equal(signature.accounting.read, 20);
+    assert.equal(runTotals("owner_signature").includedRows, 21);
+    assert.equal(runTotals("owner_signature").openWork, 19);
+  });
+
+  it("OR-9 · one record still exists twice, under two ids", () => {
+    assert.equal(findingById("OR-9").severity, "defect");
+    const titleKey = (workspaceId: string | null, title: string) =>
+      `${workspaceId}|${title}`;
+    const ids = new Map<string, Set<string>>();
+    for (const signal of Object.values(TODAY_CANDIDATE_SETS).flat()) {
+      const key = titleKey(signal.projectId, signal.title);
+      ids.set(key, (ids.get(key) ?? new Set()).add(signal.ref.id));
+    }
+    for (const row of [
+      ...MY_WORK_SIGNATURE_ROWS,
+      ...MY_WORK_QUIET_ROWS,
+      ...MY_WORK_DST_ROWS,
+      ...MY_WORK_SCALE_ROWS,
+    ]) {
+      const key = titleKey(row.workspaceId, row.title);
+      ids.set(key, (ids.get(key) ?? new Set()).add(row.taskId));
+    }
+    const doubled = [...ids.entries()]
+      .filter(([, held]) => held.size > 1)
+      .map(([key, held]) => `${key.split("|")[1]} → ${[...held].sort().join(", ")}`)
+      .sort();
+    assert.deepEqual(
+      doubled,
+      ["Ballyhoura walk-through → home-task-dst-monday, home-task-dst-week"],
+      "OR-9 changed — a duplicate was merged (narrow it) or a new one appeared (widen it)",
+    );
+    // The visible cost: eight Analytics rows in a world holding seven records.
+    assert.equal(oracleWorldInputs("dst_boundary").analyticsRows.length, 8);
+  });
+
+
 
   it("OR-5 · the scale set clears eight rows and blames arrival for it", () => {
     assert.equal(findingById("OR-5").severity, "defect");
@@ -1237,56 +1522,15 @@ describe("Pinned findings", () => {
     assert.equal(runBadge("scale").count, 42);
   });
 
-  it("OR-6 · Analytics counts a population Today and My work never touch", () => {
-    assert.equal(findingById("OR-6").severity, "defect");
-    const todayIds = new Set(
-      Object.values(TODAY_CANDIDATE_SETS)
-        .flat()
-        .map((signal) => signal.ref.id),
-    );
-    const myWorkIds = new Set(
-      [
-        ...MY_WORK_SIGNATURE_ROWS,
-        ...MY_WORK_QUIET_ROWS,
-        ...MY_WORK_SCALE_ROWS,
-      ].map((row) => row.taskId),
-    );
-    const analyticsIds = new Set(ANALYTICS_ROWS.map((row) => row.taskId));
-    const overlap = (a: Set<string>, b: Set<string>) =>
-      [...a].filter((value) => b.has(value)).length;
-
-    assert.equal(
-      overlap(todayIds, myWorkIds),
-      13,
-      "Today and My work are joined, and that join is what makes them checkable",
-    );
-    assert.equal(
-      overlap(todayIds, analyticsIds),
-      0,
-      "OR-6 is resolved — delete the finding and this assertion",
-    );
-    assert.equal(overlap(myWorkIds, analyticsIds), 0);
-
-    // The visible consequence: one world, one instant, two answers.
-    const quiet = oracleWorldInputs("owner_quiet");
-    assert.equal(runToday("owner_quiet").accounting.read, 4);
-    assert.equal(runTotals("owner_quiet").openWork, 14);
-    assert.deepEqual(
-      [...quiet.readable].sort(),
-      [...oracleWorldInputs("owner_signature").readable].sort(),
-      "and the two worlds read exactly the same Projects",
-    );
-    assert.equal(
-      runTotals("owner_quiet").openWork,
-      runTotals("owner_signature").openWork,
-      "Analytics is invariant between the quiet day and the full day",
-    );
-  });
 
   it("the register holds exactly the findings the suite pins", () => {
     assert.deepEqual(
       ORACLE_FINDINGS.map((finding) => finding.id),
-      ["OR-1", "OR-2", "OR-3", "OR-4", "OR-5", "OR-6"],
+      // OR-1, OR-3, OR-4 and OR-6 were closed in this pass. Their entries are
+      // deleted rather than marked resolved, and each is replaced by a
+      // positive assertion above: the world's own clock, the withholding
+      // rule, the section precedence, and the shared population.
+      ["OR-2", "OR-5", "OR-7", "OR-8", "OR-9"],
     );
     for (const finding of ORACLE_FINDINGS) {
       assert.ok(finding.clause.length > 0, `${finding.id} names no contract clause`);

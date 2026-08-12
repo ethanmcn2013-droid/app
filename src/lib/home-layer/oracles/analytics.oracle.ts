@@ -69,7 +69,9 @@ export function oraclePopulation(
   excludedUnprojectable: number;
 }> {
   const inProjects = new Set(projects);
-  const scoped = rows.filter((row) => inProjects.has(row.workspaceId));
+  const scoped = rows.filter(
+    (row) => row.workspaceId !== null && inProjects.has(row.workspaceId),
+  );
   const included = scoped.filter((row) => !row.isSubtask && !row.unprojectable);
   return Object.freeze({
     scoped: Object.freeze(scoped),
@@ -227,6 +229,46 @@ export function oracleReplayOpenWork(
 ): number {
   const included = new Set(includedIds);
   return rows.filter((row) => included.has(row.taskId) && !row.isDone).length;
+}
+
+/**
+ * CHARTER rule 6, made checkable. Every Analytics row, and every id an
+ * exception's evidence route resolves to, must name a record that exists in
+ * the shared source population — the records Today ranks and My work lists.
+ *
+ * WHY THIS IS THE LOAD-BEARING ASSERTION. The lab's central promise is that a
+ * reviewer can open a claim and reach the exact row it came from. A private
+ * analytics population satisfies every arithmetic check in this file and
+ * breaks that promise completely, because there is nothing to reach. Returns
+ * every id that resolves to nothing, so a failure names the row rather than
+ * reporting a count.
+ */
+export function oracleUntraceableIds(input: {
+  analyticsIds: readonly string[];
+  sourceIds: readonly string[];
+}): readonly string[] {
+  const source = new Set(input.sourceIds);
+  return Object.freeze(
+    input.analyticsIds.filter((id) => !source.has(id)).sort(),
+  );
+}
+
+/**
+ * §6 A3 counts "open items with nobody assigned". A row with no assignee that
+ * the reader IS assigned to would make Today and Analytics disagree about the
+ * same record, so the unowned set and the not-assigned-to-the-reader set are
+ * checked against each other rather than trusted.
+ */
+export function oracleUnownedContradictions(
+  rows: readonly AnalyticsRow[],
+  assignedToActor: ReadonlySet<string>,
+): readonly string[] {
+  return Object.freeze(
+    rows
+      .filter((row) => row.assigneeIds.length === 0 && assignedToActor.has(row.taskId))
+      .map((row) => row.taskId)
+      .sort(),
+  );
 }
 
 /**

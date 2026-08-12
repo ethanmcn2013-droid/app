@@ -25,6 +25,13 @@ import {
 } from "./analytics";
 import { accountingBalances, SECTION_LIMITS } from "./derive";
 import { badgeDisplay } from "./inbox";
+import {
+  MY_WORK_DST_ROWS,
+  MY_WORK_QUIET_ROWS,
+  MY_WORK_SCALE_ROWS,
+  MY_WORK_SIGNATURE_ROWS,
+} from "./my-work";
+import { TODAY_CANDIDATE_SETS } from "./today";
 import { homeFixtureWorld, SCENARIO_IDS, scenario } from "./scenarios";
 import { HOME_FIXTURE_ORCHARD_PROJECT_IDS } from "./projects";
 
@@ -45,6 +52,97 @@ describe("the read accounting balances, or it is withheld whole", () => {
         `${id} accounting does not balance: ${JSON.stringify(today.accounting)}`,
       );
       assert.ok(today.accounting.cappedOut >= 0, `${id} has a negative cappedOut`);
+    });
+  }
+});
+
+describe("nothing a section held is dropped without a number", () => {
+  for (const id of SCENARIO_IDS) {
+    it(`${id}: every section states what it did not show, and why`, () => {
+      const { today } = homeFixtureWorld(id);
+      for (const [section, held] of Object.entries(today.sectionAccounting)) {
+        assert.equal(
+          held.eligible,
+          held.shown + held.suppressed,
+          `${id}/${section}: an eligible object left the section without being counted`,
+        );
+        assert.equal(
+          held.suppressed,
+          held.claimedAbove + held.cappedOut,
+          `${id}/${section}: something is suppressed for a reason the section cannot name`,
+        );
+        assert.ok(
+          held.claimedAbove >= 0 && held.cappedOut >= 0,
+          `${id}/${section}: a negative count`,
+        );
+        assert.equal(
+          held.shown,
+          today.sections[section as keyof typeof today.sections].length,
+          `${id}/${section}: the count disagrees with the rows on screen`,
+        );
+      }
+    });
+  }
+
+  it("a section emptied by precedence is not an empty section", () => {
+    // §5.1 P2. Both of the collaborator's review-lane objects are already on
+    // screen in Today's signal, so Needs review shows none of them and says
+    // exactly that, instead of rendering as though there were none.
+    const held = homeFixtureWorld("collaborator_project").today.sectionAccounting
+      .needsReview;
+    assert.equal(held.eligible, 2);
+    assert.equal(held.shown, 0);
+    assert.equal(held.claimedAbove, 2);
+    assert.equal(held.cappedOut, 0);
+    assert.equal(held.suppressed, 2);
+  });
+
+  it("the three-cap is reported as held back, not as clear", () => {
+    const held = homeFixtureWorld("owner_signature").today.sectionAccounting
+      .todaysSignal;
+    assert.equal(held.eligible, 9);
+    assert.equal(held.shown, 3);
+    assert.equal(held.cappedOut, 6);
+    assert.equal(held.claimedAbove, 0);
+  });
+});
+
+/**
+ * Every source record this universe holds, by id. An Analytics row that is not
+ * in here is a row no reviewer can reach: the claim would be arithmetically
+ * fine and completely unfalsifiable, which is the one failure a review lab
+ * cannot survive.
+ */
+const SHARED_SOURCE_IDS = new Set([
+  ...Object.values(TODAY_CANDIDATE_SETS)
+    .flat()
+    .map((signal) => signal.ref.id),
+  ...[
+    ...MY_WORK_SIGNATURE_ROWS,
+    ...MY_WORK_QUIET_ROWS,
+    ...MY_WORK_DST_ROWS,
+    ...MY_WORK_SCALE_ROWS,
+  ].map((row) => row.taskId),
+]);
+
+describe("an Analytics claim resolves to a row a reviewer can open", () => {
+  for (const id of SCENARIO_IDS) {
+    it(`${id}: every counted record is a record the other modes carry`, () => {
+      const world = homeFixtureWorld(id);
+      const sourceIds = SHARED_SOURCE_IDS;
+      for (const row of world.analyticsRows) {
+        assert.ok(
+          sourceIds.has(row.taskId),
+          `${id}: Analytics counts ${row.taskId}, which no other mode holds`,
+        );
+      }
+      for (const exception of world.exceptions) {
+        assert.ok(
+          sourceIds.has(exception.sourceTaskId),
+          `${id}: an exception points at ${exception.sourceTaskId}, which resolves to nothing`,
+        );
+        assert.ok(exception.evidenceHref.includes(exception.sourceTaskId));
+      }
     });
   }
 });
