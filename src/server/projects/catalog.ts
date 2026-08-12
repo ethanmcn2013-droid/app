@@ -33,7 +33,7 @@ import "server-only";
  * not something a later reader has to re-derive.
  */
 
-import { eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/server/db/schema";
 import { planningPeriods, workspaceMembers, workspaces } from "@/server/db/schema";
@@ -75,8 +75,18 @@ export type ProjectCatalogGroupKind =
 
 export type ProjectCatalogGroup = Readonly<{
   kind: ProjectCatalogGroupKind;
-  /** Period id for `planning-period`; a stable literal for the other three. */
+  /**
+   * Namespaced group id: `period:<planning-period-id>` for a Planning Period,
+   * and a reserved literal for the other three.
+   *
+   * Namespaced because a Planning Period id is user-controlled enough to
+   * collide with a literal: a period whose id was `shared` used to emit a
+   * group with the same id as the `Shared with you` bucket, and a UI keyed on
+   * group id would have merged or dropped one of them.
+   */
   id: string;
+  /** The raw Planning Period id, when this group is one. Never a literal. */
+  planningPeriodId: string | null;
   name: string;
   /** Only ever populated for a Planning Period the caller owns. */
   startDate: string | null;
@@ -97,11 +107,24 @@ export type ProjectCatalog = Readonly<{
    * never offered as a tiebreaker (plan §5).
    */
   ambiguousProjectIds: readonly ProjectId[];
+  /**
+   * True when the caller has more memberships than the query will return.
+   *
+   * Surfaced rather than swallowed: past the row cap, "which Projects you can
+   * see" would otherwise become a silent, planner-dependent subset. Plan §6.5
+   * requires exactly this treatment for the Timeline 200-row cap, and D-016 R10
+   * records the unordered-read class of defect this belongs to.
+   */
+  truncated: boolean;
 }>;
 
+export const PLANNING_PERIOD_GROUP_PREFIX = "period:";
 export const LOOSE_GROUP_ID = "loose";
 export const SHARED_GROUP_ID = "shared";
 export const ARCHIVED_GROUP_ID = "archived";
+
+/** The membership row cap. Exported so the resolver and its tests share it. */
+export const PROJECT_CATALOG_ROW_LIMIT = 2000;
 
 const LOOSE_GROUP_NAME = "Active work";
 const SHARED_GROUP_NAME = "Shared with you";
@@ -113,32 +136,48 @@ type GroupKey =
   | { kind: "shared" }
   | { kind: "archived" };
 
+/**
+ * Assign one group, ownership first and period second.
+ *
+ * Order matters here and the earlier version had it backwards. It asked "does
+ * this row have a period id?" before "is this Project mine?", so a Project the
+ * caller owns whose period row failed to join — a dangling
+ * `planning_period_id` — was filed under `Shared with you` while its own
+ * `role` read `primary-owner`. Dangling rows are not hypothetical: foreign
+ * keys are not enforced per request in this database (see the note at
+ * `src/server/account-erasure.ts:44-48`), which makes the schema's
+ * `ON DELETE SET NULL` decorative rather than load-bearing.
+ *
+ * So: a row only reaches `Shared with you` because the caller is a member, or
+ * because it genuinely sits inside a Planning Period that genuinely belongs to
+ * somebody else. A period id that resolves to nothing tells us nothing, and is
+ * treated as no period at all.
+ */
 function groupKeyOf(row: ProjectCatalogRow, actorUserId: string): GroupKey {
   if (row.archivedAt !== null) return { kind: "archived" };
 
-  const ownsPeriod =
-    row.planningPeriodId !== null &&
-    row.planningPeriodOwnerUserId !== null &&
-    row.planningPeriodOwnerUserId === actorUserId;
-
-  if (ownsPeriod) {
+  if (ownsPeriod(row, actorUserId)) {
     return { kind: "planning-period", periodId: row.planningPeriodId as string };
   }
 
-  // A regular shared member, or any Project sitting inside somebody else's
-  // Planning Period. Note the `planningPeriodId !== null` guard: without it,
-  // a periodless Project the caller owns has `planningPeriodOwnerUserId ===
-  // null`, which is `!== actorUserId`, and lands here. That is defect (1)
-  // described at the top of this file.
-  if (row.membershipRole === "member" || row.planningPeriodId !== null) {
-    return { kind: "shared" };
-  }
+  if (row.membershipRole === "member") return { kind: "shared" };
 
+  // Owner-side. The only remaining way out of the caller's own buckets is a
+  // period that actually joined and is actually somebody else's.
+  const periodJoined = row.planningPeriodOwnerUserId !== null;
+  if (row.planningPeriodId !== null && periodJoined) return { kind: "shared" };
+
+  // Includes the periodless case, which the shipped catalog got wrong: a
+  // periodless Project has `planningPeriodOwnerUserId === null`, which is
+  // `!== actorUserId`, so its `else if` filed every Project the caller owns
+  // under "Shared with you".
   return { kind: "loose" };
 }
 
 function serialiseGroupKey(key: GroupKey): string {
-  return key.kind === "planning-period" ? `period:${key.periodId}` : key.kind;
+  return key.kind === "planning-period"
+    ? `${PLANNING_PERIOD_GROUP_PREFIX}${key.periodId}`
+    : key.kind;
 }
 
 function ownsPeriod(row: ProjectCatalogRow, actorUserId: string): boolean {
@@ -176,13 +215,42 @@ function roleLabel(row: ProjectCatalogRow, actorUserId: string): string {
 }
 
 /**
+ * The caller-visible group a row will appear in, as a label.
+ *
+ * This is the first disambiguation column, and it is deliberately the *group*
+ * rather than the Planning Period name. Using the period name alone left a row
+ * with no owned period holding an empty value, and an empty value used to sink
+ * the whole column — so three Projects called "Fifth year", two in named
+ * periods and one loose, disambiguated to `["2026 school year", "2027 school
+ * year", ""]`, failed the non-empty check at every depth, and all three came
+ * back unselectable. A user looking at that list would have said "the one in
+ * Active work" without hesitating.
+ *
+ * Permission-safe by construction: it is the name of a bucket the caller is
+ * already being shown, never another owner's period name.
+ */
+function groupLabel(row: ProjectCatalogRow, actorUserId: string): string {
+  if (ownsPeriod(row, actorUserId) && row.planningPeriodName) {
+    return row.planningPeriodName;
+  }
+  if (row.membershipRole === "member") return SHARED_GROUP_NAME;
+  const periodJoined = row.planningPeriodOwnerUserId !== null;
+  if (row.planningPeriodId !== null && periodJoined) return SHARED_GROUP_NAME;
+  return LOOSE_GROUP_NAME;
+}
+
+/**
  * Permission-safe disambiguation, plan §5.
  *
- * Escalates through authorized Planning Period → owner/role label → creation
- * month and year, adding one part at a time and stopping as soon as the whole
- * bucket is unique. If the deepest level still collides, the rows are reported
- * as ambiguous and carry no disambiguator: an authorized rename is the fix.
- * Raw or internal ids are never offered, at any level.
+ * Escalates through authorized group → owner/role label → archive state →
+ * creation month and year, and stops as soon as the whole bucket is unique.
+ * If the deepest level still collides, the rows are reported as ambiguous and
+ * carry no disambiguator: an authorized rename is the fix. Raw or internal ids
+ * are never offered, at any level.
+ *
+ * Every column yields a value for every row — no column is ever blank — so a
+ * column is included exactly when it *varies* across the bucket, and excluded
+ * when it would repeat the same word beside every option.
  */
 function assignDisambiguators(
   rows: readonly ProjectCatalogRow[],
@@ -206,33 +274,37 @@ function assignDisambiguators(
     }
 
     /**
-     * Three columns, in escalation order. A column is only *offered* once its
-     * level is reached, and a column whose value is the same for every row in
-     * the bucket is dropped before the label is built — repeating "Yours" on
-     * both of two Projects you own distinguishes nothing and reads as noise.
+     * Four columns, in escalation order, each always populated. A column is
+     * included once its level is reached *and* it varies across the bucket —
+     * repeating "Yours" beside both of two Projects you own distinguishes
+     * nothing and reads as noise.
      */
-    const columns = (row: ProjectCatalogRow): [string, string, string] => [
-      // Level 1 — the authorized Planning Period. Present only when the caller
-      // owns it; a shared member never sees another owner's period name.
-      ownsPeriod(row, actorUserId) && row.planningPeriodName
-        ? row.planningPeriodName
-        : "",
+    const COLUMN_COUNT = 4;
+    const columns = (
+      row: ProjectCatalogRow,
+    ): [string, string, string, string] => [
+      groupLabel(row, actorUserId),
       roleLabel(row, actorUserId),
+      // Archive state earns a level of its own: an owner with a live Project
+      // and its archived predecessor under the same name is the ordinary way
+      // this collision happens, and "Archived" is the word they would use.
+      row.archivedAt !== null ? "Archived" : "Active",
       monthYear(row.createdAt),
     ];
 
     const table = bucket.map(columns);
 
     let resolved = false;
-    for (let depth = 1; depth <= 3 && !resolved; depth += 1) {
-      const useColumn = [0, 1, 2].map((index) => {
+    for (let depth = 1; depth <= COLUMN_COUNT && !resolved; depth += 1) {
+      const useColumn = Array.from({ length: COLUMN_COUNT }, (_, index) => {
         if (index >= depth) return false;
         const values = table.map((columnValues) => columnValues[index]);
-        if (values.some((value) => value === "")) return false;
         return new Set(values).size > 1;
       });
       const candidates = table.map((columnValues) =>
-        columnValues.filter((_, index) => useColumn[index]).join(" · "),
+        columnValues
+          .filter((value, index) => useColumn[index] && value.length > 0)
+          .join(" · "),
       );
       if (
         new Set(candidates).size === bucket.length &&
@@ -327,6 +399,7 @@ function compareGroups(a: ProjectCatalogGroup, b: ProjectCatalogGroup): number {
 export function buildProjectCatalog(
   rows: readonly ProjectCatalogRow[],
   actorUserId: string,
+  options: Readonly<{ truncated?: boolean }> = {},
 ): ProjectCatalog {
   const deduped: ProjectCatalogRow[] = [];
   const seen = new Set<string>();
@@ -359,7 +432,8 @@ export function buildProjectCatalog(
       case "planning-period":
         groups.push({
           kind: "planning-period",
-          id: bucket.key.periodId,
+          id: serialiseGroupKey(bucket.key),
+          planningPeriodId: bucket.key.periodId,
           name: bucket.row.planningPeriodName ?? LOOSE_GROUP_NAME,
           startDate: bucket.row.planningPeriodStartDate,
           endDate: bucket.row.planningPeriodEndDate,
@@ -372,6 +446,7 @@ export function buildProjectCatalog(
         groups.push({
           kind: "loose",
           id: LOOSE_GROUP_ID,
+          planningPeriodId: null,
           name: LOOSE_GROUP_NAME,
           startDate: null,
           endDate: null,
@@ -384,6 +459,7 @@ export function buildProjectCatalog(
         groups.push({
           kind: "shared",
           id: SHARED_GROUP_ID,
+          planningPeriodId: null,
           name: SHARED_GROUP_NAME,
           startDate: null,
           endDate: null,
@@ -396,6 +472,7 @@ export function buildProjectCatalog(
         groups.push({
           kind: "archived",
           id: ARCHIVED_GROUP_ID,
+          planningPeriodId: null,
           name: ARCHIVED_GROUP_NAME,
           startDate: null,
           endDate: null,
@@ -415,6 +492,7 @@ export function buildProjectCatalog(
     ambiguousProjectIds: Object.freeze(
       [...ambiguous].map((id) => assertProjectId(id)),
     ),
+    truncated: options.truncated === true,
   });
 }
 
@@ -424,11 +502,26 @@ export function buildProjectCatalog(
  * currently a member of, and the period is left-joined onto the membership row
  * rather than fetched as a second list that the projection could fall out of
  * sync with.
+ *
+ * **Ordered, and truncation-aware.** The first version had a bare
+ * `.limit(2000)` with no `ORDER BY` — strictly less deterministic than the
+ * `planning/queries.ts` code it replaced, which did order. Past the cap, which
+ * Projects survived was planner-dependent and could differ between two calls
+ * in the same request. The `ORDER BY` matches `compareProjects`, so the SQL
+ * prefix and the projection agree about which rows are "first", and the query
+ * asks for one row more than the cap purely to detect that the cap was hit.
  */
 export async function listProjectCatalogRows(
   database: CatalogQueryExecutor,
   actorUserId: string,
 ): Promise<readonly ProjectCatalogRow[]> {
+  return (await listProjectCatalogPage(database, actorUserId)).rows;
+}
+
+export async function listProjectCatalogPage(
+  database: CatalogQueryExecutor,
+  actorUserId: string,
+): Promise<{ rows: readonly ProjectCatalogRow[]; truncated: boolean }> {
   const rows = await database
     .select({
       id: workspaces.id,
@@ -460,24 +553,33 @@ export async function listProjectCatalogRows(
       eq(planningPeriods.id, workspaces.planningPeriodId),
     )
     .where(eq(workspaceMembers.userId, actorUserId))
-    .limit(2000);
+    // Same key as `compareProjects`, so the rows the cap keeps are the rows the
+    // projection would have put first.
+    .orderBy(asc(workspaces.position), asc(workspaces.name), asc(workspaces.id))
+    .limit(PROJECT_CATALOG_ROW_LIMIT + 1);
 
-  return rows.map((row) => ({
-    id: String(row.id),
-    slug: String(row.slug),
-    name: String(row.name),
-    membershipRole: row.membershipRole === "owner" ? "owner" : "member",
-    workspaceOwnerUserId: row.workspaceOwnerUserId ?? null,
-    planningPeriodId: row.planningPeriodId ?? null,
-    planningPeriodName: row.planningPeriodName ?? null,
-    planningPeriodOwnerUserId: row.planningPeriodOwnerUserId ?? null,
-    planningPeriodStartDate: row.planningPeriodStartDate ?? null,
-    planningPeriodEndDate: row.planningPeriodEndDate ?? null,
-    planningPeriodContextType: row.planningPeriodContextType ?? null,
-    position: Number(row.position),
-    revision: Number(row.revision),
-    archivedAt: row.archivedAt === null ? null : Number(row.archivedAt),
-    createdAt: Number(row.createdAt),
-    activeRootTaskCount: Number(row.activeRootTaskCount),
-  }));
+  const truncated = rows.length > PROJECT_CATALOG_ROW_LIMIT;
+  const page = truncated ? rows.slice(0, PROJECT_CATALOG_ROW_LIMIT) : rows;
+
+  return {
+    truncated,
+    rows: page.map((row) => ({
+      id: String(row.id),
+      slug: String(row.slug),
+      name: String(row.name),
+      membershipRole: row.membershipRole === "owner" ? "owner" : "member",
+      workspaceOwnerUserId: row.workspaceOwnerUserId ?? null,
+      planningPeriodId: row.planningPeriodId ?? null,
+      planningPeriodName: row.planningPeriodName ?? null,
+      planningPeriodOwnerUserId: row.planningPeriodOwnerUserId ?? null,
+      planningPeriodStartDate: row.planningPeriodStartDate ?? null,
+      planningPeriodEndDate: row.planningPeriodEndDate ?? null,
+      planningPeriodContextType: row.planningPeriodContextType ?? null,
+      position: Number(row.position),
+      revision: Number(row.revision),
+      archivedAt: row.archivedAt === null ? null : Number(row.archivedAt),
+      createdAt: Number(row.createdAt),
+      activeRootTaskCount: Number(row.activeRootTaskCount),
+    })),
+  };
 }

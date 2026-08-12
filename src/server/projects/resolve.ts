@@ -35,6 +35,7 @@ import * as schema from "@/server/db/schema";
 import { planningPeriods, workspaceMembers, workspaces } from "@/server/db/schema";
 import {
   parseProjectId,
+  type Brand,
   type ProjectId,
   type ProjectRouteState,
   type ProjectSummary,
@@ -44,13 +45,35 @@ import { buildProjectCatalog, type ProjectCatalogRow } from "@/server/projects/c
 type ResolverQueryExecutor = Pick<LibSQLDatabase<typeof schema>, "select">;
 
 /**
- * Server-side outcome. `state` is the only half that may cross to the client;
- * `reason` and `redirectTo` stay here.
+ * Server-only diagnostics.
+ *
+ * Branded so the compiler, and not a comment, is what stops one of these
+ * reaching a client component: `ProjectRouteState` is serializable and
+ * `ProjectResolutionReason` is not assignable to `string` without a deliberate
+ * `resolutionReasonForLog()` call, which is trivially greppable. `missing`,
+ * `forbidden` and `deleted` already collapse into one code — the split that
+ * would be an existence leak does not exist even here.
  */
-export type ProjectRouteResolution = Readonly<{
-  state: ProjectRouteState;
-  /** Server-only diagnostics. Never serialize this to a client component. */
-  reason:
+export type ProjectResolutionReason = Brand<
+  | "exact"
+  | "exact-archived"
+  | "malformed"
+  | "missing-or-forbidden"
+  | "cookie"
+  | "legacy-cookie"
+  | "first-active"
+  | "no-accessible-project",
+  "ServerOnlyResolutionReason"
+>;
+
+/** The one sanctioned way to turn a reason into something loggable. */
+export function resolutionReasonForLog(reason: ProjectResolutionReason): string {
+  return reason;
+}
+
+/** Internal constructor. Not exported: reasons are minted here or nowhere. */
+function reason(
+  value:
     | "exact"
     | "exact-archived"
     | "malformed"
@@ -58,7 +81,19 @@ export type ProjectRouteResolution = Readonly<{
     | "cookie"
     | "legacy-cookie"
     | "first-active"
-    | "no-accessible-project";
+    | "no-accessible-project",
+): ProjectResolutionReason {
+  return value as ProjectResolutionReason;
+}
+
+/**
+ * Server-side outcome. `state` is the only half that may cross to the client;
+ * `reason` and `redirectTo` stay here.
+ */
+export type ProjectRouteResolution = Readonly<{
+  state: ProjectRouteState;
+  /** Server-only diagnostics. Never serialize this to a client component. */
+  reason: ProjectResolutionReason;
   /**
    * Set only on the implicit branch. The caller replace-redirects to a
    * canonical URL that now carries `workspaceId` (ADR 0001 §4 step 3).
@@ -194,13 +229,13 @@ export async function resolveActiveProjectForRouteWith(
     const requested = parseProjectId(input.requestedWorkspaceId);
     if (requested === null) {
       // Malformed or repeated. Neutral, and emphatically not a substitution.
-      return { state: { kind: "unavailable" }, reason: "malformed", redirectTo: null };
+      return { state: { kind: "unavailable" }, reason: reason("malformed"), redirectTo: null };
     }
     const row = await loadAuthorizedProjectRow(database, actorUserId, requested);
     if (!row) {
       return {
         state: { kind: "unavailable" },
-        reason: "missing-or-forbidden",
+        reason: reason("missing-or-forbidden"),
         redirectTo: null,
       };
     }
@@ -208,20 +243,18 @@ export async function resolveActiveProjectForRouteWith(
     if (project.archivedAt !== null) {
       return {
         state: { kind: "archived", project },
-        reason: "exact-archived",
+        reason: reason("exact-archived"),
         redirectTo: null,
       };
     }
     return {
       state: { kind: "ready", project, source: "url" },
-      reason: "exact",
+      reason: reason("exact"),
       redirectTo: null,
     };
   }
 
   // ── Step 3. No explicit Project. Bare entry only. ────────────────────────
-  const rows = await listRows(database, actorUserId);
-
   const cookieCandidates: Array<{
     value: string | null | undefined;
     reason: "cookie" | "legacy-cookie";
@@ -233,7 +266,13 @@ export async function resolveActiveProjectForRouteWith(
   for (const candidate of cookieCandidates) {
     const parsed = parseProjectId(candidate.value);
     if (parsed === null) continue;
-    const row = rows.find((entry) => entry.id === parsed);
+    // Resolved by an exact, indexed membership lookup rather than by searching
+    // the catalog page. Searching the page made the cookie's fate depend on the
+    // row cap: a caller past the cap whose cookie named a truncated-out Project
+    // fell through to `first-active` — an implicit substitution nobody asked
+    // for, and the same class of defect as D-016 R10. An exact lookup cannot be
+    // truncated.
+    const row = await loadAuthorizedProjectRow(database, actorUserId, parsed);
     // A cookie is a preference, never authority. An unmembered, archived or
     // deleted cookie value is silently skipped rather than honoured or
     // reported — it names no Project the caller may bare-enter.
@@ -241,16 +280,17 @@ export async function resolveActiveProjectForRouteWith(
     const project = summarise(row, actorUserId);
     return {
       state: { kind: "ready", project, source: "fallback" },
-      reason: candidate.reason,
+      reason: reason(candidate.reason),
       redirectTo: project.id,
     };
   }
 
+  const rows = await listRows(database, actorUserId);
   const first = await firstAccessibleActiveProject(database, actorUserId, rows);
   if (first) {
     return {
       state: { kind: "ready", project: first, source: "fallback" },
-      reason: "first-active",
+      reason: reason("first-active"),
       redirectTo: first.id,
     };
   }
@@ -262,7 +302,7 @@ export async function resolveActiveProjectForRouteWith(
   // at all.
   return {
     state: { kind: "empty" },
-    reason: "no-accessible-project",
+    reason: reason("no-accessible-project"),
     redirectTo: null,
   };
 }
