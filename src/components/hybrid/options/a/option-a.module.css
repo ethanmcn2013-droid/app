@@ -99,14 +99,17 @@
   border-bottom: 1px solid var(--x-task-border);
   display: flex;
   flex: 0 0 var(--a-viewbar-height);
-  gap: 14px;
+  gap: var(--space-4);
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   /* The tab's own 10px inner padding is paid out of the bar's leading pad
      so the first tab's TEXT — not its hover box — lands on the content
-     grid line the title and the first card sit on. */
-  padding: 0 10px 0 calc(var(--x-board-gutter) - 10px);
+     grid line the title and the first card sit on. The trailing pad obeys
+     the same rule against the last tool's 8px padding, so the View label
+     ends on the same 16px-inset ink line as row 1's … glyph — the right
+     rail used to miss by ~10px at every desktop width. */
+  padding: 0 var(--space-2) 0 calc(var(--x-board-gutter) - 10px);
   scrollbar-width: thin;
 }
 
@@ -118,22 +121,56 @@
    I" is carried three ways and never by colour alone. */
 .tabsScroll { flex: 0 0 auto; }
 .tabsScroll nav { gap: 1px; }
-.tabsScroll nav a {
+/* With the projects rail hidden, the nav trigger hangs in a widened
+   leading gutter (option-b positions it absolutely at ≥768px), so the
+   project title keeps the ONE content grid line at tablet widths —
+   the in-flow trigger used to push the title ~38px off the line the
+   tabs and lanes sit on. 58 = 16 gutter + 30 trigger + 12 gap. */
+@media (min-width: 768px) {
+  .optionA[data-nav-hidden] { --x-board-gutter: 58px; }
+}
+/* :is(a, button): the hybrid mount passes canonical hrefs so these render
+   as anchors, but the spec must hold for the lab's button branch too —
+   these rules silently stopped applying once, and the tabs shipped 34px
+   tall with no active underline from the generic fallback. */
+.tabsScroll nav :is(a, button) {
   border-radius: 6px;
   color: var(--x-task-text-secondary);
   font-size: 12px;
   font-weight: 500;
-  min-height: 28px;
+  /* --space-7 (32px): one chrome height for the whole band, and the only
+     ratified step near it. 28px was on no scale. */
+  min-height: var(--space-7);
   padding: 0 10px;
 }
-.tabsScroll nav a:hover { background: var(--x-task-hover); color: var(--x-task-text); }
-.tabsScroll nav a[aria-current="page"] {
+.tabsScroll nav :is(a, button):hover { background: var(--x-task-hover); color: var(--x-task-text); }
+.tabsScroll nav :is(a, button)[aria-current="page"] {
   background: var(--x-task-selected);
-  box-shadow: inset 0 -2px 0 0 var(--x-task-accent);
   color: var(--x-task-text);
   font-weight: 600;
 }
-.tabsScroll nav a[aria-current="page"] svg { color: var(--x-accent-ink); }
+/* A real bar, not an inset shadow: the shadow followed the 6px pill
+   radius and visibly curled up both bottom corners at retina. */
+.tabsScroll nav :is(a, button)[aria-current="page"]::after {
+  background: var(--x-task-accent);
+  border-radius: 1px;
+  bottom: 0;
+  content: "";
+  height: 2px;
+  left: 8px;
+  position: absolute;
+  right: 8px;
+}
+.tabsScroll nav :is(a, button)[aria-current="page"] svg { color: var(--x-accent-ink); }
+/* The 28px pin above outranks shared.module.css's generic 44px touch
+   bump, so the floor is restated here at the same specificity — after
+   the pin, so it wins where both apply. */
+@media (max-width: 767px) {
+  .tabsScroll nav :is(a, button) { min-height: 44px; }
+}
+@media (pointer: coarse) {
+  .tabsScroll nav :is(a, button) { min-height: 44px; }
+}
 
 /* The working controls are ghosts: no boxes at rest, presence on touch. */
 .functionalTools { align-items: center; display: flex; flex: 0 0 auto; gap: 2px; margin-left: auto; }
@@ -150,8 +187,11 @@
   font-size: 12px;
   font-weight: 500;
   gap: 6px;
-  height: 30px;
-  padding: 0 9px;
+  /* One control height inside the bar — tools, tabs and row 1's chrome
+     all take --space-7, so the band has a single ratified control step
+     instead of the 28/30/32/40 spread it used to run. */
+  height: var(--space-7);
+  padding: 0 var(--space-2);
   transition: background var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
   white-space: nowrap;
 }
@@ -1253,18 +1293,24 @@
     padding: 0;
   }
 
+  /* One left edge on the phone too: the tab TEXT lands under the project
+     title (12px band pad + the tab's own 10px inner padding paid back),
+     instead of the tab row starting on its own third edge. */
+  /* The tab TEXT lands on the phone band's grid line — the project
+     title's x — instead of starting on an edge of its own. 40 = the
+     title's 50 less the tab's own 10px inner padding. */
   .tabsScroll {
     border-bottom: 1px solid var(--x-task-border);
     min-width: 0;
     overflow-x: auto;
-    padding: 3px 6px;
+    padding: 3px 6px 3px 40px;
   }
 
   .functionalTools {
     margin-left: 0;
     min-width: 0;
     overflow-x: auto;
-    padding: 4px 6px;
+    padding: 4px 6px 4px 4px;
   }
 
   .functionalTools > button,

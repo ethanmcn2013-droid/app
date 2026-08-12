@@ -50,7 +50,34 @@ const MODE_OPTIONS: Array<{
  * options are still there for power users but the default (view, 7 days)
  * covers 90% of sharing intent without any configuration.
  */
-export function ShareButton({ view }: { view: ShareView }) {
+/**
+ * `variant` decides the trigger's register, natively:
+ * - "accent" (default) is the standalone primary — indigo ring and wash.
+ * - "band" is the project header's ghost register, where Share is one of
+ *   three sibling actions that must read as one voice. It used to be a
+ *   descendant CSS override reaching into this component from the band;
+ *   that costume lost to the dark-theme utility patches and painted
+ *   Share indigo in dark only. The register belongs to the component.
+ */
+export type ShareButtonVariant = "accent" | "band";
+
+const SHARE_TRIGGER_CLASS: Record<ShareButtonVariant, string> = {
+  accent:
+    "inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand-soft px-2.5 py-1.5 text-[12px] font-medium text-brand transition-colors hover:border-brand/50 hover:bg-brand-soft",
+  // h-7 is 32px here, not 28: this repo remaps Tailwind's numeric spacing
+  // namespace onto its own --space-* steps (docs/SPACING_SCALE_COLLISION.md).
+  // 32px IS the ratified step, so the whole band's chrome sits on it.
+  band:
+    "inline-flex h-7 items-center gap-1.5 rounded-md border-0 bg-transparent px-2 text-[12px] font-medium text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]",
+};
+
+export function ShareButton({
+  view,
+  variant = "accent",
+}: {
+  view: ShareView;
+  variant?: ShareButtonVariant;
+}) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"new" | "manage">("new");
   const [expiryDays, setExpiryDays] = useState<number | null>(7);
@@ -160,11 +187,17 @@ export function ShareButton({ view }: { view: ShareView }) {
   return (
     <div ref={wrapRef} className="relative">
       {/* Item 6: prominent Share trigger, indigo-accented ring so it
-          reads as the primary collaborative action in the header row. */}
+          reads as the primary collaborative action in the header row —
+          unless the caller asks for the band's ghost register. */}
       <button
         type="button"
+        // Share was the only control in the band's action cluster with no
+        // open state, while both its siblings had one.
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        data-band-action={variant === "band" ? "" : undefined}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand-soft px-2.5 py-1.5 text-[12px] font-medium text-brand transition-colors hover:border-brand/50 hover:bg-brand-soft"
+        className={SHARE_TRIGGER_CLASS[variant]}
       >
         {/* Claude Design icon pack — icon-share (Phase 5). */}
         <svg

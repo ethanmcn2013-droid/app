@@ -68,9 +68,13 @@ test("one content grid line: title, tabs, lane labels and card edges agree", () 
   assert.match(boardCss, /\.boardScroll \{[^}]*padding-left: calc\(var\(--x-board-gutter\) - var\(--x-lane-inset\)\)/s);
   assert.match(boardCss, /\.laneHeader \{[^}]*padding: 0 6px 2px var\(--x-lane-inset\)/s);
   assert.match(boardCss, /\.laneList \{[^}]*padding: 6px var\(--x-lane-inset\) 14px/s);
+  // Header panel review 2026-08-12: the trailing pad became 8px (space-2)
+  // so the right rail obeys the same rule as the left — the last control's
+  // 8px inner padding is paid out of the bar's pad, and row 1's … glyph
+  // and row 2's View label end on one 16px-inset ink line.
   assert.match(
     read("src/components/hybrid/options/b/option-b.module.css"),
-    /\.workspaceBrief \{[^}]*padding: 6px 14px 6px var\(--x-board-gutter, 16px\)/s,
+    /\.workspaceBrief \{[^}]*padding: var\(--space-1\) var\(--space-2\) var\(--space-1\) var\(--x-board-gutter, 16px\)/s,
   );
 });
 

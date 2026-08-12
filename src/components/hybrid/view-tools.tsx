@@ -14,7 +14,7 @@
  * filtered subset).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PRIORITY_LABEL, type Priority } from "@/lib/data";
 import {
   useRoomTools,
@@ -133,16 +133,21 @@ export function ViewToolButtons({
   onToggle: (next: Exclude<ViewToolPanel, null>) => void;
   view: LabView;
 }) {
-  const { activeFilterCount, sort } = useRoomTools();
+  const { activeFilterCount, sort, savedViews } = useRoomTools();
   // When the board is not in its deliberate manual order, the button says
   // what IS ordering it — a sorted board that just says "Sort" hides the
-  // one fact needed to understand the card order.
-  const sortLabel = sort === "date" ? "Sort · Schedule" : sort === "title" ? "Sort · Title" : "Sort";
+  // one fact needed to understand the card order. "Due date", not
+  // "Schedule": a tab named Schedule sits 400px away on the same row, and
+  // a sort mode must not borrow a view's name.
+  const sortLabel = sort === "date" ? "Sort · Due date" : sort === "title" ? "Sort · Title" : "Sort";
   return (
     <>
       <button
+        aria-controls={panel === "filter" ? "tool-panel-filter" : undefined}
         aria-expanded={panel === "filter"}
+        aria-haspopup="dialog"
         data-active={activeFilterCount > 0 || undefined}
+        data-tool-trigger="filter"
         onClick={() => onToggle("filter")}
         title="Filter this view"
         type="button"
@@ -152,8 +157,11 @@ export function ViewToolButtons({
         {activeFilterCount > 0 ? <em aria-label={`${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}`}>{activeFilterCount}</em> : null}
       </button>
       <button
+        aria-controls={panel === "sort" ? "tool-panel-sort" : undefined}
         aria-expanded={panel === "sort"}
+        aria-haspopup="dialog"
         data-active={sort !== "manual" || undefined}
+        data-tool-trigger="sort"
         onClick={() => onToggle("sort")}
         title="Sort this view"
         type="button"
@@ -161,14 +169,22 @@ export function ViewToolButtons({
         <Icon name="sort" size={15} />
         {sortLabel}
       </button>
+      {/* "Display", never "View": four view tabs share this row, and a
+          button called View beside them gave the word two meanings. With
+          saved views the label carries the count — the home the save
+          toast promises has to look like one. */}
       <button
+        aria-controls={panel === "view" ? "tool-panel-view" : undefined}
         aria-expanded={panel === "view"}
+        aria-haspopup="dialog"
+        data-tool-trigger="view"
         onClick={() => onToggle("view")}
         title="Layout, cards, and saved views"
         type="button"
       >
         <Icon name="fields" size={15} />
-        View
+        Display
+        {savedViews.length > 0 ? <em aria-label={`${savedViews.length} saved view${savedViews.length === 1 ? "" : "s"}`}>{savedViews.length}</em> : null}
       </button>
     </>
   );
@@ -256,13 +272,80 @@ function ToolPanelShell({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const shellRef = useRef<HTMLElement | null>(null);
+  // Escape and the × hand focus back to the trigger; tabbing onward does
+  // not. See onFocusOut.
+  const restoreFocus = useRef(true);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // The popover contract the panel was missing: Escape closes it from
+  // anywhere (the old handler only heard keys once focus was already
+  // inside), pointer-down outside closes it (it used to float over the
+  // board until the user found its ×), focus lands inside on open and
+  // returns to the trigger on close.
+  useEffect(() => {
+    const node = shellRef.current;
+    if (node && !node.contains(document.activeElement)) node.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      // A native select swallows Escape to close its own dropdown, but
+      // the keydown still reaches the document — closing the whole panel
+      // from inside a half-open picker is a rug-pull. Tab away or use
+      // the × from there.
+      if ((event.target as HTMLElement).tagName === "SELECT") return;
+      onCloseRef.current();
+    };
+    // A dialog that lets Tab walk out behind it while it floats open has
+    // no focus contract: when focus leaves the shell for anything other
+    // than its own trigger, close.
+    const onFocusOut = (event: FocusEvent) => {
+      const next = event.relatedTarget as HTMLElement | null;
+      if (!next) return;
+      if (node?.contains(next)) return;
+      if (next.closest?.("[data-tool-trigger]")) return;
+      // The user tabbed ONWARD under their own steam. Close the panel,
+      // but do not haul their focus back to the trigger they just left —
+      // that rewinds the keyboard and makes forward Tab feel broken.
+      restoreFocus.current = false;
+      onCloseRef.current();
+    };
+    node?.addEventListener("focusout", onFocusOut);
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+      if (node?.contains(target)) return;
+      // The three tool triggers toggle their own panel — closing here too
+      // would reopen it on the same click. Scoped to THESE triggers only:
+      // a blanket aria-haspopup exclusion let unrelated popover triggers
+      // (the nav drawer's, notably) open their surface OVER a still-open
+      // panel.
+      if (target.closest?.("[data-tool-trigger]")) return;
+      onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+      node?.removeEventListener("focusout", onFocusOut);
+      if (restoreFocus.current) {
+        document
+          .querySelector<HTMLElement>(`[data-tool-trigger="${panel}"]`)
+          ?.focus();
+      }
+    };
+  }, [panel]);
+
   return (
     <section
       aria-label={title}
       className={styles.roomToolPanel}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") onClose();
-      }}
+      id={`tool-panel-${panel}`}
+      ref={shellRef}
+      role="dialog"
+      tabIndex={-1}
     >
       <header>
         <div>
@@ -420,7 +503,7 @@ export function ViewToolPanels({
             {(
               [
                 ["manual", "Workspace order", "Keep the deliberate status and group order."],
-                ["date", "Schedule", "Dated work first, then explicitly unscheduled work."],
+                ["date", "Due date", "Dated work first, then explicitly unscheduled work."],
                 ["title", "Task title", "A to Z within each view composition."],
               ] as const
             ).map(([value, label, description]) => (
@@ -446,7 +529,7 @@ export function ViewToolPanels({
           onClose={onClose}
           panel="view"
           subtitle="Layout, cards, and saved views"
-          title="View"
+          title="Display"
         >
           <div className={styles.roomFilterFields}>
             <fieldset>
@@ -497,13 +580,13 @@ export function ViewToolPanels({
               saveCurrentView(name, view);
               setSaveName("");
               // A save with no confirmation reads as a no-op. The toast
-              // names the saved thing and where it now lives; the trigger
-              // itself relabels to "Views · N".
+              // names the saved thing and where it now lives; the Display
+              // trigger carries the saved count so that home is visible.
               window.dispatchEvent(
                 new CustomEvent("tasks:toast", {
                   detail: {
                     title: `"${name}" saved`,
-                    body: "Reopen it any time from the View menu.",
+                    body: "Reopen it any time from the Display menu.",
                     tone: "success",
                   },
                 }),
@@ -513,22 +596,15 @@ export function ViewToolPanels({
           >
             <label>
               <span>Name</span>
+              {/* No autoFocus: it won the race against the shell's own
+                  focus, landing screen readers mid-panel at a tertiary
+                  field instead of the dialog top. */}
               <input
                 aria-label="Saved view name"
-                autoFocus
+                className={styles.savedViewNameInput}
                 maxLength={40}
                 onChange={(event) => setSaveName(event.target.value)}
                 placeholder="e.g. Overdue, mine only"
-                style={{
-                  background: "var(--x-task-raised)",
-                  border: "1px solid var(--x-task-border)",
-                  borderRadius: 6,
-                  color: "var(--x-task-text)",
-                  font: "inherit",
-                  fontSize: 11,
-                  minHeight: 30,
-                  padding: "0 8px",
-                }}
                 type="text"
                 value={saveName}
               />
@@ -540,36 +616,14 @@ export function ViewToolPanels({
           {/* The full loop lives here since T·115 retired the sidebar
               listing: a saved view you cannot reopen is not saved. */}
           {savedViews.length > 0 ? (
-            <ul
-              style={{
-                borderTop: "1px solid var(--x-task-border)",
-                display: "grid",
-                gap: 2,
-                listStyle: "none",
-                margin: "12px 0 0",
-                padding: "10px 0 0",
-              }}
-            >
+            <ul className={styles.savedViewsList}>
               {savedViews.map((entry) => (
-                <li key={entry.id} style={{ alignItems: "center", display: "flex", gap: 6 }}>
+                <li key={entry.id}>
                   <button
+                    className={styles.savedViewOpen}
                     onClick={() => {
                       applySavedView(entry.id);
                       onClose();
-                    }}
-                    style={{
-                      background: "transparent",
-                      border: 0,
-                      color: "var(--x-task-text)",
-                      cursor: "pointer",
-                      flex: 1,
-                      font: "inherit",
-                      fontSize: 11,
-                      overflow: "hidden",
-                      padding: "5px 2px",
-                      textAlign: "left",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
                     }}
                     // The display name, never the route key: the raw key
                     // says "timeline", the name of a different product.
@@ -577,24 +631,12 @@ export function ViewToolPanels({
                     type="button"
                   >
                     {entry.name}
-                    <span style={{ color: "var(--x-task-text-muted)", marginLeft: 6, fontSize: 9 }}>
-                      {VIEW_LABELS[entry.view as LabView] ?? entry.view}
-                    </span>
+                    <small>{VIEW_LABELS[entry.view as LabView] ?? entry.view}</small>
                   </button>
                   <button
                     aria-label={`Delete saved view ${entry.name}`}
+                    className={styles.savedViewDelete}
                     onClick={() => deleteSavedView(entry.id)}
-                    style={{
-                      alignItems: "center",
-                      background: "transparent",
-                      border: 0,
-                      color: "var(--x-task-text-muted)",
-                      cursor: "pointer",
-                      display: "flex",
-                      height: 24,
-                      justifyContent: "center",
-                      width: 24,
-                    }}
                     type="button"
                   >
                     <Icon name="close" size={12} />

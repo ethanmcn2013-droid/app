@@ -70,7 +70,11 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_BASE = "http://localhost:3499";
+// CONTRAST_BASE lets a worktree whose dev server sits on another port run
+// the gate without editing the command: the default silently pointed at
+// 3499 while this worktree serves 3100, and the gate errored on all six
+// surface/theme combos instead of guarding the artifact.
+const DEFAULT_BASE = process.env.CONTRAST_BASE ?? "http://localhost:3499";
 const DEFAULT_PATHS = ["/app/tasks", "/app/notes", "/app/timeline"];
 const ALL_THEMES = ["light", "dark"];
 // Matches the "desktop" project in experience/browser-contract.json, this
