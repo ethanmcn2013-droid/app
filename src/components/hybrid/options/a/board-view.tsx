@@ -64,7 +64,7 @@ function clampLaneWidth(value: number): number {
 }
 
 /**
- * ── The board is ONE composite widget ────────────────────────────────────
+ * ── Every lane is a composite widget ─────────────────────────────────────
  *
  * It used to be forty-odd Tab stops for thirteen cards: every card was
  * `tabIndex={0}` and carried three more tabbables inside it (the completion
@@ -72,11 +72,10 @@ function clampLaneWidth(value: number): number {
  * controls in front of its first card. Reaching the third card meant
  * eleven presses of things nobody was trying to press.
  *
- * The model now is the one grids and toolbars use everywhere:
+ * The model is the one grids and toolbars use everywhere:
  *
- *   Tab      enters the lane track at exactly one item, and leaves it.
- *   Arrows   walk the track — up/down within a lane, left/right across
- *            lanes, skipping folded ones.
+ *   Tab      moves between COLUMNS — one stop each — and out of the track.
+ *   Arrows   walk within and across lanes, skipping folded ones.
  *   Enter    opens the focused task (or the focused lane's menu).
  *   The rest of a card's actions are reached FROM the card: F2 renames,
  *   Space selects, Alt+arrows move it, Shift+F10 opens its full action
@@ -91,11 +90,31 @@ function clampLaneWidth(value: number): number {
  *   0 … n-1   the cards.
  *   n         the lane's "Add task" row (writable workspaces only).
  *
- * The one invariant this must never break: SOMETHING inside the track is
- * always tabbable. `resolveRoving` clamps to a real item on every render
- * rather than trusting stored state, so a card that was deleted, a lane
- * that was folded, or a filter that emptied a column can never leave the
- * board unreachable from the keyboard.
+ * ── Why the roving target is PER LANE, not per board ─────────────────────
+ *
+ * The first cut of this gave the whole board a single roving item, which
+ * read as the tidiest possible answer and was an accessibility regression:
+ * each `.laneList` is its own scroll container (`overflow-y: auto`), and a
+ * scroll region with no tabbable content is unreachable by keyboard — axe
+ * `scrollable-region-focusable`, WCAG 2.1.1. At 375px the lists genuinely
+ * overflow, so four of five lanes became scrollable dead ends. One tab stop
+ * for the board is the wrong granularity: the board has five independent
+ * scroll regions, so it needs five ways in.
+ *
+ * Two invariants hold this together, and both are computed on every render
+ * rather than trusted from state:
+ *
+ *   1. Each lane has EXACTLY ONE stop. `rovingRowFor` clamps the stored
+ *      intent onto a row that exists right now, so a deleted card, a folded
+ *      lane or a filter that emptied a column can never strand a lane.
+ *   2. Each lane's scroll region is reachable. The default row is a card
+ *      (or the add row), both of which live INSIDE the `<ul>`; and on the
+ *      one path where a lane's stop sits in its header instead, the labelled
+ *      `<ul>` takes `tabIndex={0}` itself so the region keeps a way in.
+ *
+ * No viewport branching anywhere in here — the resolver is pure and runs
+ * identically on the server and the client, so there is nothing for
+ * hydration to disagree about.
  */
 const LANE_HEADER_ROW = -1;
 
@@ -711,20 +730,25 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
   const [focusItem, setFocusItem] = useState<BoardFocus | null>(null);
 
   /**
-   * Clamp the stored intent onto an item that actually exists right now.
-   * Called during render, so the tab stop is always real.
+   * The single row that is THIS lane's Tab stop, clamped onto an item that
+   * exists right now rather than trusted from state.
+   *
+   * `max` is the lane's last addressable row: its add row when the
+   * workspace is writable, its last card when it is not — which also makes
+   * an empty read-only lane resolve to its header (-1), the one case where
+   * nothing inside the list can hold focus.
+   *
+   * The default deliberately prefers a row INSIDE the `<ul>` (the first
+   * card, or the add row in an empty lane) so the lane's scroll region
+   * carries its own way in without the list having to become a tab stop.
    */
-  const resolveRoving = (): BoardFocus | null => {
-    const open = boardColumns.filter((column) => !collapsed[column.key]).map((column) => column.key);
-    if (open.length === 0) return null; // every lane folded — the rails are the stops
-    const lane = focusItem && open.includes(focusItem.lane) ? focusItem.lane : open[0];
-    const count = tasksInLane(lane).length;
+  const rovingRowFor = (laneKey: string): number => {
+    const count = tasksInLane(laneKey).length;
     const max = store.readOnly ? count - 1 : count;
-    const wanted = focusItem?.row ?? (count > 0 ? 0 : LANE_HEADER_ROW);
-    return { lane, row: Math.max(LANE_HEADER_ROW, Math.min(max, wanted)) };
+    const wanted = focusItem?.lane === laneKey ? focusItem.row : (count > 0 ? 0 : max);
+    return Math.max(LANE_HEADER_ROW, Math.min(max, wanted));
   };
-  const roving = resolveRoving();
-  const isRoving = (lane: string, row: number) => roving?.lane === lane && roving.row === row;
+  const isRoving = (lane: string, row: number) => rovingRowFor(lane) === row;
 
   /** Move the walk to a lane/row and put real DOM focus there. */
   const focusBoardItem = useCallback((lane: string, row: number) => {
@@ -1259,6 +1283,20 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                 title="Drag to resize. Double-click to reset."
                 type="button"
               />
+              {/*
+                The lane's scroll region. It is its own `overflow-y: auto`
+                container, and at phone widths it genuinely overflows, so it
+                has to be reachable by keyboard on its own terms (WCAG
+                2.1.1 / axe scrollable-region-focusable). Almost always it
+                already is: the lane's one Tab stop is a card or the add
+                row, both of which live in here. The exception is a lane
+                whose stop has moved up into its header — and an empty
+                read-only lane, which has no card and no add row at all. In
+                those cases the list itself takes the stop. It carries a
+                real name ("Done tasks"), so a focused scroll region
+                announces what it is rather than reading as a bare box, and
+                ArrowDown walks straight into the cards.
+              */}
               <ul
                 aria-label={`${label} tasks`}
                 className={styles.laneList}
@@ -1267,6 +1305,23 @@ export function BoardView({ tasks }: { tasks: LabTask[] }) {
                   event.preventDefault();
                   store.setDrag({ ...store.drag, overStatus: status, overIndex: laneTasks.length });
                 }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+                  // Down enters the lane, up steps back to its menu. Anything
+                  // else — including the arrow keys when the lane is empty —
+                  // is left to the browser so the region still scrolls.
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    focusBoardItem(status, LANE_HEADER_ROW);
+                    return;
+                  }
+                  if (laneTasks.length === 0) return;
+                  event.preventDefault();
+                  setFocusItem({ lane: status, row: 0 });
+                  focusTask(laneTasks[0].id);
+                }}
+                tabIndex={rovingRowFor(status) < 0 ? 0 : -1}
                 onDrop={(event) => dropTask(event, status, laneTasks.length)}
               >
                 {laneTasks.map((task, index) => (
@@ -2019,7 +2074,12 @@ function LaneHeader({
           value={limitDraft}
         />
       ) : column.description && showDescription ? (
-        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} title="Edit status description" type="button">
+        /* Also out of the walk. This is the lane's subtitle: it reads as
+           prose, it edits on click, and as a tab stop it put a fifth piece
+           of column furniture in front of every lane's first card — the
+           exact tax the composite model exists to remove. "Edit
+           description" is in the lane menu, one stop away. */
+        <button className={styles.laneDescButton} disabled={readOnly} onClick={() => { setDescDraft(column.description ?? ""); setDescEditing(true); }} tabIndex={-1} title="Edit status description" type="button">
           {column.description}
         </button>
       ) : null}

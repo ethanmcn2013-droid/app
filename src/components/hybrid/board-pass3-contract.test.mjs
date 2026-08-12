@@ -93,7 +93,7 @@ test("one task-title role covers all four views", () => {
   assert.match(calendarCss, /\.timelineTaskTitle \{[^}]*font-size: var\(--x-task-title-size-compact\)/s);
 });
 
-test("the board is one composite widget, not forty tab stops", () => {
+test("every lane is a composite widget, not forty tab stops", () => {
   // Every card was tabIndex={0} with three tabbables inside it, and each
   // lane put four chrome controls in front of its first card.
   // Line-anchored: no element in this file is a STATIC tab stop any more.
@@ -106,8 +106,24 @@ test("the board is one composite widget, not forty tab stops", () => {
   assert.match(boardView, /aria-live="polite"/);
   // The keyboard reference documents the model it now has.
   const shortcuts = read("src/components/hybrid/shared/shortcuts-dialog.tsx");
-  assert.match(shortcuts, /Step into the columns, and back out/);
+  assert.match(shortcuts, /Move between columns/);
   assert.match(shortcuts, /Move between cards and columns/);
+});
+
+test("each lane keeps its own way in — a scroll region is never a dead end", () => {
+  // A single board-wide roving target left four of five lanes with no
+  // tabbable content, and every .laneList is its own overflow-y: auto
+  // container: at 375px that is axe scrollable-region-focusable (serious),
+  // WCAG 2.1.1. The stop is resolved PER LANE, and the labelled list itself
+  // takes the stop on the one path where the lane's row sits in its header.
+  assert.match(boardCss, /\.laneList \{[^}]*overflow-y: auto/s);
+  assert.match(boardView, /const rovingRowFor = \(laneKey: string\): number =>/);
+  assert.doesNotMatch(boardView, /const resolveRoving/);
+  assert.match(boardView, /tabIndex=\{rovingRowFor\(status\) < 0 \? 0 : -1\}/);
+  assert.match(boardView, /aria-label=\{`\$\{label\} tasks`\}/);
+  // The resolver must stay viewport-blind: a JS branch on width here is a
+  // hydration mismatch waiting to happen.
+  assert.doesNotMatch(boardView, /rovingRowFor[\s\S]{0,400}(matchMedia|innerWidth)/);
 });
 
 test("the shell is a product switcher with a command trigger, not a place list", () => {

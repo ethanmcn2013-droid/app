@@ -30,10 +30,11 @@ const EVERYWHERE: ShortcutRow[] = [
 ];
 
 const PER_VIEW: Record<LabView, ShortcutRow[]> = {
-  // The board is one composite: Tab reaches it, arrows walk it, Tab leaves.
-  // Everything a card or a column can do is reached from the item itself.
+  // Each column is a composite: Tab reaches one stop per column, arrows walk
+  // within and across them. Everything a card or a column can do is reached
+  // from the item itself.
   board: [
-    { keys: ["Tab"], does: "Step into the columns, and back out" },
+    { keys: ["Tab"], does: "Move between columns" },
     { keys: ["Arrows"], does: "Move between cards and columns" },
     { keys: ["Alt", "Arrows"], does: "Move a card, or resize a column" },
     { keys: ["Space"], does: "Select a card" },
