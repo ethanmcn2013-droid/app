@@ -222,7 +222,7 @@ export function PageActionsOverflow({
       "ical",
       `${origin}/api/calendar/${ws.id}`,
       "Calendar link copied",
-      "Paste into Calendar's 'Add subscription' dialog.",
+      "Paste it into your calendar app, where it asks to add a subscription.",
     );
   };
 
