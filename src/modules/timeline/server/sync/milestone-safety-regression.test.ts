@@ -32,10 +32,12 @@ import { pathToFileURL } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 import { planMilestoneReconciliation } from "@/modules/timeline/lib/milestone-reconciliation";
 import {
+  digestMilestones,
   makeMilestoneSyncSource,
   MILESTONE_PAGE_LIMIT,
   type MilestoneSnapshot,
 } from "@/modules/timeline/server/sync/tasks-milestone-source";
+import type { SyncedMilestone } from "@/modules/timeline/server/db/timeline-queries";
 
 const CLERK_ID = "user_couple";
 const TASKS_USER_ID = "u_1";
@@ -75,7 +77,19 @@ async function loadTimelineWriter() {
 /** The subset of the Tasks schema the milestone read touches. */
 async function seedTasksDatabase(
   client: Client,
-  options: Readonly<{ milestoneCount: number; linkSubject?: boolean }>,
+  options: Readonly<{
+    milestoneCount: number;
+    linkSubject?: boolean;
+    /**
+     * Whether the actor has a `workspace_members` row for this Project.
+     *
+     * Defaulted to true, and that default is exactly why F1 survived the first
+     * round of these tests: every case proved the authorized paths and none
+     * proved the unauthorized one. Removing the row is the whole repro — the
+     * Project was deleted, or the collaborator was removed.
+     */
+    linkMembership?: boolean;
+  }>,
 ): Promise<void> {
   await client.executeMultiple(`
     CREATE TABLE users (id TEXT PRIMARY KEY, clerk_id TEXT);
@@ -101,10 +115,12 @@ async function seedTasksDatabase(
     sql: "INSERT INTO workspaces VALUES (?, ?)",
     args: [PROJECT_A, "Project A"],
   });
-  await client.execute({
-    sql: "INSERT INTO workspace_members VALUES (?, ?)",
-    args: [PROJECT_A, TASKS_USER_ID],
-  });
+  if (options.linkMembership !== false) {
+    await client.execute({
+      sql: "INSERT INTO workspace_members VALUES (?, ?)",
+      args: [PROJECT_A, TASKS_USER_ID],
+    });
+  }
   for (let i = 0; i < options.milestoneCount; i += 1) {
     await client.execute({
       sql: "INSERT INTO tasks VALUES (?, ?, 'todo', ?, ?, 1, NULL)",
@@ -286,6 +302,55 @@ test("a whole source reports complete, with a digest", async (t) => {
   assert.match(snapshot.digest, /^[0-9a-f]{64}$/);
 });
 
+test("a caller with no Tasks membership is unauthorized, not an authorized zero", async (t) => {
+  // F1. Row-level authorization used to live inside the milestone query's
+  // `EXISTS (SELECT 1 FROM workspace_members …)` subquery. A caller with no
+  // membership row therefore matched no rows and got ZERO ROWS rather than an
+  // error — indistinguishable from a Project that genuinely has no milestones,
+  // which is the one state permitted to delete everything.
+  //
+  // The Project was deleted, or the collaborator was removed. Either way, the
+  // right answer is "you may not read this", never "this is empty".
+  const harness = makeHarness();
+  t.after(harness.cleanup);
+  const tasks = createClient({ url: harness.tasksUrl });
+  t.after(() => tasks.close());
+  await seedTasksDatabase(tasks, { milestoneCount: 12, linkMembership: false });
+
+  const snapshot = await readSnapshot(harness.tasksUrl);
+  assert.equal(snapshot.kind, "unauthorized");
+  assert.equal(
+    snapshot.kind === "unauthorized" ? snapshot.code : null,
+    "membership_absent",
+  );
+});
+
+test("an unauthorized read deletes nothing, even though it saw zero rows", async (t) => {
+  // The second half of F1, end to end: the snapshot above must not reach the
+  // destructive branch. Before the fix this deleted every synchronized node
+  // and the UI reported a successful sync.
+  const harness = makeHarness();
+  t.after(harness.cleanup);
+  const tasks = createClient({ url: harness.tasksUrl });
+  const timeline = createClient({ url: TIMELINE_URL });
+  t.after(() => {
+    tasks.close();
+    timeline.close();
+  });
+  await seedTasksDatabase(tasks, { milestoneCount: 12, linkMembership: false });
+  await seedTimelineDatabase(timeline);
+  await seedExistingNodes(timeline);
+
+  const snapshot = await readSnapshot(harness.tasksUrl);
+  await reconcileWith(snapshot);
+
+  assert.deepEqual(await nodeIds(timeline), [
+    "manual-hand-written",
+    "ms-ws_project_a-task_0000",
+    "ms-ws_project_a-task_0001",
+  ]);
+});
+
 test("an authorized zero is a complete zero", async (t) => {
   const harness = makeHarness();
   t.after(harness.cleanup);
@@ -440,6 +505,33 @@ test("only a whole complete snapshot may be destructive", () => {
   }
 });
 
+test("the digest separates fields injectively", () => {
+  // F11. The encoding escaped the `|` delimiter but not the `\` that does the
+  // escaping, so the literal titles `a\|b` and `a|b` hashed identically — one
+  // could be edited into the other and the digest would report no change.
+  const row = (title: string): SyncedMilestone => ({
+    id: "ms-1",
+    projectSlug: "plan",
+    workspaceSlug: "ws",
+    title,
+    status: "next",
+    targetDate: null,
+    sortOrder: 0,
+  });
+  assert.notEqual(
+    digestMilestones([row("a\\|b")]),
+    digestMilestones([row("a|b")]),
+    "an escaped delimiter and a real one must not collide",
+  );
+  // And the field boundary itself still holds.
+  assert.notEqual(
+    digestMilestones([row("a|b")]),
+    digestMilestones([{ ...row("a"), status: "next", targetDate: "b" }]),
+  );
+  // Same input, same digest — it is a change detector, not a nonce.
+  assert.equal(digestMilestones([row("x")]), digestMilestones([row("x")]));
+});
+
 // ── The wiring, which is where this class of defect actually lives ───────────
 
 test("no failure path in the milestone source degrades to an empty array", () => {
@@ -460,6 +552,80 @@ test("no failure path in the milestone source degrades to an empty array", () =>
     source,
     /COUNT\(\*\) OVER \(\) AS total_count/,
     "the true row count must come from the same snapshot as the rows",
+  );
+
+  // F1. Authorization must be its own statement, ordered before the row read.
+  // Inside the row query's `EXISTS` it is a FILTER, and a filter cannot
+  // distinguish "you may not read this" from "there is nothing here" — it
+  // returns zero rows for both, and zero rows is the one state allowed to
+  // delete everything.
+  const membershipProof = source.indexOf('code: "membership_absent"');
+  const rowRead = source.indexOf("COUNT(*) OVER () AS total_count");
+  assert.ok(
+    membershipProof !== -1,
+    "the milestone source must prove Tasks membership in its own statement " +
+      "and answer `unauthorized` when it is absent",
+  );
+  assert.ok(
+    membershipProof < rowRead,
+    "membership must be proved BEFORE the rows are read, not filtered during",
+  );
+});
+
+test("the sync action proves Tasks membership before it can delete anything", () => {
+  // The second half of F1. Everything the action checked before WP1 —
+  // `getWorkspace` plus `ownerUserId !== userId` — authorizes the LOCAL
+  // Timeline row and says nothing about whether the actor may still read the
+  // Tasks Project. A couple whose Project was deleted still owned their
+  // Timeline, still reached the sync, and had it emptied.
+  const action = readFileSync(
+    "src/modules/timeline/server/actions/workspaces.ts",
+    "utf8",
+  );
+  const start = action.indexOf("export async function syncMilestonesAction(");
+  const body = action.slice(start, action.indexOf("\nexport ", start + 1));
+
+  const membership = body.indexOf("getCurrentTasksWorkspaceContext(");
+  const read = body.indexOf("getMilestonesForClerkId(");
+  assert.ok(membership !== -1, "the sync action must check Tasks membership");
+  assert.ok(
+    membership < read,
+    "Tasks membership must be proved before the source is read",
+  );
+  assert.match(
+    body,
+    /if \(!tasksContext\) \{/,
+    "a missing membership must refuse the sync outright",
+  );
+  assert.match(
+    body,
+    /tasksContext\.archivedAt !== null/,
+    "an archived Project is read-only, and reconciliation is a write",
+  );
+});
+
+test("one Tasks Project binds to at most one child Timeline", () => {
+  // F8. ADR 0001 §6: one Project, one primary Timeline. `ensureBoundProject`
+  // used to look only at `projects[0]` — if that child was unbound it was
+  // bound, without checking whether a SIBLING already named the same Project.
+  // On a multi-child legacy Timeline that produced two children synchronizing
+  // from one Project, each deleting the other's rows on every reconcile.
+  const source = readFileSync(
+    "src/modules/timeline/server/provision-workspace.ts",
+    "utf8",
+  );
+  const start = source.indexOf("async function ensureBoundProject(");
+  const body = source.slice(start);
+  const alreadyBound = body.indexOf("const alreadyBound = projects.some(");
+  const bindCall = body.indexOf("await bindProjectToTasksWorkspace(");
+  assert.ok(
+    alreadyBound !== -1 && alreadyBound < bindCall,
+    "an existing binding to the same Tasks Project must be detected before " +
+      "a second child is bound to it",
+  );
+  assert.ok(
+    !/const target = projects\[0\]!;/.test(body),
+    "binding `projects[0]` without looking at its siblings must not return",
   );
 });
 

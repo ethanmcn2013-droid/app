@@ -294,6 +294,44 @@ export async function syncMilestonesAction(
 
   // Import lazily to avoid bundling in the non-sync path
   const { makeMilestoneSyncSource } = await import("@/modules/timeline/server/sync/tasks-milestone-source");
+  const { getCurrentTasksWorkspaceContext } = await import(
+    "@/modules/timeline/server/sync/tasks-workspace-context"
+  );
+
+  // Current Tasks membership of the exact Project being synced, proved BEFORE
+  // anything is read or written.
+  //
+  // Everything above this line authorizes the LOCAL Timeline: `getWorkspace`
+  // plus `ownerUserId !== userId` proves who owns the Timeline row, and says
+  // nothing whatever about whether the actor may still read the Tasks Project
+  // it is bound to. A couple whose Tasks Project was deleted, or a
+  // collaborator who was removed from it, still owned their Timeline and still
+  // reached this code — and the read then returned zero rows, which used to
+  // mean "delete everything". Tasks membership is the authorization boundary
+  // for Tasks data (ADR 0001 §4); local Timeline ownership is not a substitute
+  // for it and never was.
+  const tasksContext = await getCurrentTasksWorkspaceContext(
+    userId,
+    canonicalWorkspaceId,
+  );
+  if (!tasksContext) {
+    return {
+      error:
+        "You no longer have access to the Signal Tasks project this plan is " +
+        "connected to. Your timeline is unchanged.",
+    };
+  }
+  if (tasksContext.archivedAt !== null) {
+    // An archived Project is read-only for Project-scoped operations
+    // (ADR 0001 §5), and reconciliation is a write. Refusing here keeps the
+    // archived Project's timeline exactly as the owner left it.
+    return {
+      error:
+        "That Signal Tasks project is archived, so its timeline is read-only. " +
+        "Nothing was changed.",
+    };
+  }
+
   const source = makeMilestoneSyncSource();
   if (!source) {
     return { error: "Tasks sync is not configured. Set TASKS_DATABASE_URL and TASKS_AUTH_TOKEN." };

@@ -86,6 +86,41 @@ without the flag that runs it, so for as long as it has existed it was
 handed to a different script as an argument and quietly ignored. It runs
 now. It brought 27 tests with it, and they pass.
 
+## 2026-08-12 · WP1 · corrects · Timeline answers for the project you asked for
+
+**Ask Timeline for one project and you get that project — or a clear refusal.
+Never a different project's plan, quietly.**
+
+Timeline had two ways of being helpful that were the same mistake. If it
+could not tell which timeline belonged to the project in the link, it opened
+your first one. If your project had no timeline yet, it made one against
+whichever project it decided was your main one. Both meant a link naming one
+project could put another project's plan on screen, looking entirely normal.
+
+Timelines are still created for people who have none — that was a real dead
+end and closing it was right. What changed is that creation is now tied to
+the exact project in the link, and where the evidence does not settle which
+timeline belongs to which project, Timeline says so instead of picking. A
+guess between two projects is silent, permanent, and much harder to notice
+than a question.
+
+The second half is about deleting. Timeline refreshes itself from your
+milestones in Tasks, and anything no longer there is removed — correct when
+you unmarked a milestone, ruinous when the refresh simply failed. Every kind
+of failure looked identical to an empty project: a dropped connection, an
+expired key, losing access to the project, or a project with more than two
+hundred milestones, where everything past the two hundredth read as deleted.
+
+A refresh now has to prove it saw the whole project before it may remove
+anything, and it has to prove you can still read that project rather than
+inferring it from an empty answer. If it cannot, your timeline is left
+exactly as it was and you are told. Deliberately clearing every milestone
+still works, immediately, because that is a successful read of an empty
+project rather than a failed read of a full one.
+
+Notes gained the same refusal. A link naming a project you cannot open no
+longer quietly files your notes into a different project from the same term.
+
 ## 2026-08-12 · T·143 · tightens · the Planning count says what it counts
 
 **The number beside Planning now names what it is. It reads "5 undated"

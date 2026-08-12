@@ -112,8 +112,19 @@ const MILESTONE_FETCH_LIMIT = MILESTONE_PAGE_LIMIT + 1;
  * field-delimited so `("a|b", "c")` and `("a", "b|c")` cannot collide. The
  * record separator is written as an escape rather than as a literal control
  * character, so it stays visible to a reader and to `git diff`.
+ *
+ * The encoding is injective only if the escape character is itself escaped, and
+ * escaped FIRST. Escaping the delimiter alone made the literal titles
+ * `a\|b` and `a|b` encode identically, so one could be edited into the other
+ * without the digest moving — a change-detector that reports "nothing changed"
+ * is worse than no change-detector at all.
  */
 const DIGEST_RECORD_SEPARATOR = "\u0000";
+
+/** Escape the escape first, then the delimiter. Order is the correctness. */
+function escapeDigestField(field: string): string {
+  return field.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+}
 
 export function digestMilestones(items: readonly SyncedMilestone[]): string {
   const hash = createHash("sha256");
@@ -126,7 +137,7 @@ export function digestMilestones(items: readonly SyncedMilestone[]): string {
         item.targetDate ?? "",
         String(item.sortOrder),
       ]
-        .map((field) => field.replace(/\|/g, "\\|"))
+        .map(escapeDigestField)
         .join("|"),
     );
     hash.update(DIGEST_RECORD_SEPARATOR);
@@ -194,6 +205,43 @@ export function makeMilestoneSyncSource(): MilestoneSyncSource | null {
         // and was described as "a calm empty state"; downstream, an empty array
         // means "delete every synchronized node". It is unavailability.
         return { kind: "unavailable", code: "subject_not_linked" };
+      }
+
+      // Step 1b, membership as its own statement, before any row is read.
+      //
+      // ── WHY THIS IS SEPARATE FROM THE ROW QUERY ────────────────────────
+      // Row-level authorization also lives in the milestone query's `EXISTS`
+      // subquery below, and for a while that was the ONLY place it lived. A
+      // caller with no `workspace_members` row therefore matched no rows and
+      // got ZERO ROWS, not an error — which classified as a complete,
+      // authorized, empty Project, which is the one state permitted to delete
+      // every synchronized node. Deleting the Tasks Project, or removing a
+      // collaborator, silently emptied their Timeline and reported success.
+      //
+      // Plan §6.5 says "a freshly AUTHORIZED, successful zero". An absent
+      // membership row is the difference between "you may not read this" and
+      // "there is nothing here", and a filter cannot tell those apart — only a
+      // separate proof can. The `EXISTS` clause stays as the row-level scope;
+      // this is the authorization.
+      try {
+        const membership = await getClient().execute({
+          sql: `
+            SELECT 1 AS authorized
+            FROM workspace_members
+            WHERE workspace_id = ? AND user_id = ?
+            LIMIT 1
+          `,
+          args: [canonicalWorkspaceId, tasksUserId],
+        });
+        if (membership.rows.length === 0) {
+          return { kind: "unauthorized", code: "membership_absent" };
+        }
+      } catch (err) {
+        dropClientIfAuth(err);
+        console.error("[tasks-milestone-source] membership check failed:", String(err));
+        return isAuthError(err)
+          ? { kind: "unauthorized", code: "membership_check_unauthorized" }
+          : { kind: "error", code: "membership_check_failed" };
       }
 
       // Step 2, fetch milestones (is_milestone=1, top-level, workspace-scoped)

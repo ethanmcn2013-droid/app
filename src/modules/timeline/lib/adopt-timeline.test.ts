@@ -187,6 +187,28 @@ test("an unproven Timeline beside a second Tasks Project is never guessed at", (
   );
 });
 
+test("an ARCHIVED sibling Project breaks the pairing, exactly like an active one", () => {
+  // F2. The pairing argument is "the actor owns exactly one Tasks Project, so
+  // there is exactly one thing this unclaimed Timeline could belong to". An
+  // archived sibling does not stop being a thing it could belong to — the
+  // owner archived 2024 and started 2026, and the in-app Timeline they made is
+  // the 2024 one. Adopting it for 2026 is silent and permanent:
+  // `connectSuiteWorkspace` then refuses to rebind.
+  //
+  // The decider sees this as `soleOwnedTasksWorkspaceId: null`, which is the
+  // contract `getSoleOwnedTasksWorkspaceIdForUser` must now honour — it counts
+  // archived Projects, proved against a real database in
+  // `server/sync/tasks-workspace-context.test.ts`.
+  const decision = decideTimelineAdoption(
+    evidence([unlinked("the-2024-plan")], {
+      requestedTasksWorkspaceId: "ws_2026",
+      soleOwnedTasksWorkspaceId: null,
+    }),
+  );
+  assert.equal(decision.kind, "owner-reconciliation-required");
+  assert.notEqual(decision.kind, "adopt");
+});
+
 test("several unproven Timelines are never guessed between", () => {
   const decision = decideTimelineAdoption(
     evidence([unlinked("wedding"), unlinked("side-project")], {

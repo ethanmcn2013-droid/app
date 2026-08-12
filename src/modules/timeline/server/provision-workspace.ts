@@ -242,6 +242,12 @@ export async function resolveCanonicalTimeline(
   } catch {
     return { kind: "failed", code: "timeline_workspace_read_failed" };
   }
+  // Re-scope the list to the actor whatever the caller passed. `getWorkspacesForUser`
+  // already filters by owner, so this is a no-op on the intended call — but the
+  // list is a PARAMETER now, and a future caller passing another user's list
+  // would otherwise get that user's Timeline back as `exact`. The resolver does
+  // not trust its own caller for this.
+  owned = owned.filter((workspace) => workspace.ownerUserId === actorUserId);
 
   // The hot path: an exact binding already exists. Answer it without reading
   // anything else, so the common request costs exactly what it did before.
@@ -284,10 +290,26 @@ export async function resolveCanonicalTimeline(
   }
 
   if (decision.kind === "provision") {
-    // Owner-only. A collaborator's first visit must not mint the owner's
-    // Timeline under the visitor's identity; that needs owner identity
-    // resolution, which is WP4 (plan §6.4 step 9).
-    if (provedTasksMembership.role !== "owner") {
+    // Owner-only, and "owner" means the Project's owner — not a membership
+    // role.
+    //
+    // This gated on `provedTasksMembership.role !== "owner"` and was wrong:
+    // `role` is `workspace_members.role`, which `setMemberRoleAction` hands to
+    // promoted co-owners. A co-owner's first visit therefore minted the
+    // Project's Timeline under THEIR Clerk subject, consumed
+    // `uq_workspaces_suite_workspace_id`, and locked the primary owner out for
+    // good — every later resolution for the real owner is owner-scoped, finds
+    // nothing, and answers "That workspace is not available."
+    //
+    // `ownerClerkId` is `workspaces.owner_user_id` joined to that user's
+    // immutable subject. Null means the Project has no owner row, which is
+    // missing identity, not permission — plan §6.4 step 9 says refuse and let
+    // the owner reconcile. Collaborator-first provisioning needs owner-identity
+    // resolution and is WP4.
+    if (
+      provedTasksMembership.ownerClerkId === null ||
+      provedTasksMembership.ownerClerkId !== actorUserId
+    ) {
       return {
         kind: "owner-reconciliation-required",
         reason: "unproven-timeline-present",
@@ -401,17 +423,41 @@ async function collectAdoptionEvidence(
 const DEFAULT_PROJECT_SLUG = "plan";
 const DEFAULT_PROJECT_NAME = "The plan";
 
+/**
+ * Make sure this Timeline workspace has exactly ONE child bound to this Tasks
+ * Project — the primary Timeline of ADR 0001 §6.
+ *
+ * The "exactly one" is the part that was missing. This used to look only at
+ * `projects[0]`: if that child was unbound it was bound, without checking
+ * whether a SIBLING already named the same Tasks Project. On a multi-child
+ * legacy Timeline — the venue fixture's shape — that produced two children
+ * synchronizing from one Project, so one Tasks milestone existed twice and
+ * every reconcile fought over it.
+ */
 async function ensureBoundProject(
   workspaceSlug: string,
   sourceTasksWorkspaceId: string,
 ): Promise<void> {
   const projects = await getProjectsForWorkspace(workspaceSlug);
   if (projects.length > 0) {
-    const target = projects[0]!;
-    if (!target.sourceTasksWorkspaceId) {
+    // Already has a primary for this Project. Nothing to do, and above all no
+    // second one to create.
+    const alreadyBound = projects.some(
+      (project) => project.sourceTasksWorkspaceId === sourceTasksWorkspaceId,
+    );
+    if (alreadyBound) return;
+
+    // Otherwise the first child that names no Project at all may become the
+    // primary. A child bound to a DIFFERENT Project is that Project's and is
+    // never re-pointed here; if every child is spoken for, this Timeline needs
+    // an owner's decision, not a silent extra binding.
+    const adoptable = projects.find(
+      (project) => !project.sourceTasksWorkspaceId,
+    );
+    if (adoptable) {
       await bindProjectToTasksWorkspace(
         workspaceSlug,
-        target.slug,
+        adoptable.slug,
         sourceTasksWorkspaceId,
       );
     }

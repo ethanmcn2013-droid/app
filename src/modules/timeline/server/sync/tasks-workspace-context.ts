@@ -11,10 +11,19 @@ export type CurrentTasksWorkspaceContext = Readonly<{
    *  resolve a different Project. */
   slug: string;
   name: string;
-  /** The caller's role in this exact Project. Provisioning is owner-only; a
-   *  collaborator's first visit must not create the owner's Timeline for them
-   *  (plan §6.4 step 9 — that path needs owner identity, which is WP4). */
+  /** The caller's `workspace_members.role` in this exact Project.
+   *
+   *  NOT a statement about who owns the Project. `setMemberRoleAction`
+   *  promotes members to `role: "owner"`, so several people can carry it.
+   *  Use `ownerClerkId` for ownership; this is capability only. */
   role: string;
+  /** The Clerk subject of the Project's real owner — `workspaces.owner_user_id`
+   *  joined out to that user's immutable subject (plan §6.4 step 9).
+   *
+   *  Null when the Project has no owner row (the column is nullable from the
+   *  legacy backfill). Missing identity must read as missing, so provisioning
+   *  refuses rather than choosing the visitor. */
+  ownerClerkId: string | null;
   /** Set when the Tasks Project is archived. Archived Projects accept no new
    *  association, so no Timeline is created, adopted or bound for one. */
   archivedAt: number | null;
@@ -46,6 +55,14 @@ export type PrimaryTasksWorkspace = Readonly<{
  * inserts the owner row before redemption writes the entitlement
  * (src/server/db/ensure-user.ts).
  *
+ * `wm.role = 'owner'` is not on its own enough, and WP1 added the second half.
+ * `setMemberRoleAction` promotes members to `role: "owner"`, so a co-owner of
+ * somebody else's Project carries it too — and a promoted co-owner with no
+ * Project of their own would have had this resolve to the SHARED Project and
+ * mint its Timeline under their identity, consuming the unique suite-id index
+ * and locking the real owner out permanently. `w.owner_user_id = u.id` is the
+ * ownership; the role filter stays as the capability check beside it.
+ *
  * TIE-BREAK, STATED SO IT IS NOT AN ACCIDENT. A wedding workspace wins over
  * any other, then the oldest owned workspace wins. A couple has exactly one, so
  * the tie-break only ever matters for a general Tasks user with several, and
@@ -75,6 +92,7 @@ export async function getPrimaryTasksWorkspaceForUser(
         INNER JOIN workspaces w ON w.id = wm.workspace_id
         WHERE u.clerk_id = ?
           AND wm.role = 'owner'
+          AND w.owner_user_id = u.id
           AND w.archived_at IS NULL
         ORDER BY
           CASE WHEN w.active_domain = 'wedding' THEN 0 ELSE 1 END,
@@ -115,6 +133,19 @@ export async function getPrimaryTasksWorkspaceForUser(
  * `LIMIT 2` on purpose: we need to know whether a second row exists, never
  * which one it is.
  *
+ * ── ARCHIVED SIBLINGS COUNT ────────────────────────────────────────────────
+ * This deliberately does NOT filter on `archived_at`, and that is the whole
+ * proof. It used to, and the pairing argument quietly stopped holding: an owner
+ * with an archived 2024 Project and an active 2026 one counted as "exactly
+ * one", so their one unclaimed in-app Timeline — made for 2024 — was adopted
+ * as the 2026 Project's Timeline. Permanently, because `connectSuiteWorkspace`
+ * then refuses to rebind it.
+ *
+ * An archived Project is still a Project a Timeline could belong to. The
+ * requested Project is already proved non-archived before this is consulted
+ * (`resolveCanonicalTimeline`), so counting archived rows can only ever make
+ * the proof stricter, never let a wrong pairing through.
+ *
  * Fails closed. Missing configuration or any error returns null, which reads as
  * "not proved" and routes the owner to an explicit choice rather than a guess.
  */
@@ -135,7 +166,6 @@ export async function getSoleOwnedTasksWorkspaceIdForUser(
         INNER JOIN workspaces w ON w.id = wm.workspace_id
         WHERE u.clerk_id = ?
           AND wm.role = 'owner'
-          AND w.archived_at IS NULL
         LIMIT 2
       `,
       args: [clerkId],
@@ -170,10 +200,12 @@ export async function getCurrentTasksWorkspaceContext(
           w.slug               AS slug,
           w.name               AS name,
           w.archived_at        AS archived_at,
-          wm.role              AS role
+          wm.role              AS role,
+          ow.clerk_id          AS owner_clerk_id
         FROM users u
         INNER JOIN workspace_members wm ON wm.user_id = u.id
         INNER JOIN workspaces w ON w.id = wm.workspace_id
+        LEFT JOIN users ow ON ow.id = w.owner_user_id
         WHERE u.clerk_id = ? AND w.id = ?
         LIMIT 1
       `,
@@ -188,6 +220,9 @@ export async function getCurrentTasksWorkspaceContext(
       slug: row.slug == null ? "" : String(row.slug),
       name: row.name == null ? "" : String(row.name),
       role: row.role == null ? "" : String(row.role),
+      // LEFT JOIN: a Project with no owner row yields null, which the resolver
+      // treats as "identity not proved" and refuses to provision against.
+      ownerClerkId: row.owner_clerk_id == null ? null : String(row.owner_clerk_id),
       archivedAt: row.archived_at == null ? null : Number(row.archived_at),
     };
   } catch (error) {

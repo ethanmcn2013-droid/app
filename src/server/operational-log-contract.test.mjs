@@ -115,7 +115,13 @@ const ALLOWED = Object.freeze({
   "src/modules/signal/server/analytics/service.ts": 1,
   "src/modules/signal/server/analytics/snapshots.ts": 1,
   "src/modules/signal/server/briefing/signal-read-state.ts": 3,
-  "src/modules/timeline/server/sync/tasks-milestone-source.ts": 2,
+  // 3 as of WP1. The third site is the Tasks membership check that now runs as
+  // its own statement before any milestone row is read — inside the row query's
+  // EXISTS clause it was a filter, and a filter cannot tell "you may not read
+  // this" from "there is nothing here", which is how a removed collaborator's
+  // timeline was deleted. Same shape as the two beside it: console.error with a
+  // static prefix plus String(err), no ids and no planning content.
+  "src/modules/timeline/server/sync/tasks-milestone-source.ts": 3,
   // 2 as of the Wave 4 integration merge. WP-14 added the membership-check log at
   // :125 while wiring Timeline workspace provisioning (blocker 2). Both sites are
   // console.error with a STATIC string - no interpolation, no ids, no couple

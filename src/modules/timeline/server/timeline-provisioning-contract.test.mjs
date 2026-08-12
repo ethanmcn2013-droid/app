@@ -158,13 +158,26 @@ test("a missing suite link is not treated as an access failure", () => {
 test("proved Tasks membership remains the only authorization boundary", () => {
   const source = stripComments(read(AUTH));
 
-  // PRESERVED VERBATIM (D-002 item 3). This is a security invariant, not a
-  // defect pin: resolution must never become a way to reach a workspace the
-  // caller cannot prove membership of. The refusal has to happen before it.
-  // The only edit is the name of the callee it orders against, because
-  // `adoptTimelineForSuiteWorkspace` was renamed to `resolveCanonicalTimeline`.
-  const refusal = source.indexOf("if (!current) return null;");
-  const adoption = source.indexOf("resolveCanonicalTimeline(");
+  // PRESERVED (D-002 item 3). This is a security invariant, not a defect pin:
+  // resolution must never become a way to reach a workspace the caller cannot
+  // prove membership of. The refusal has to happen before it.
+  //
+  // TWO EDITS, BOTH RECORDED. The callee is `resolveCanonicalTimeline` now
+  // (`adoptTimelineForSuiteWorkspace` was renamed). And the indices are taken
+  // over the BODY OF `resolveTimelineContext`, not over the whole file —
+  // without that slice both anchors matched an earlier, unreachable copy of
+  // the same sequence inside `getCurrentWorkspace`, so the guard passed while
+  // proving nothing about the live path. That copy has since been deleted;
+  // the slice stays, so a second one cannot make this vacuous again.
+  const start = source.indexOf("export async function resolveTimelineContext(");
+  assert.ok(
+    start !== -1,
+    "resolveTimelineContext was renamed or removed; this guard must follow it",
+  );
+  const body = source.slice(start);
+
+  const refusal = body.indexOf("if (!current) return null;");
+  const adoption = body.indexOf("resolveCanonicalTimeline(");
   assert.ok(
     refusal !== -1,
     "the membership refusal in resolveTimelineContext was removed or reworded",
@@ -178,6 +191,14 @@ test("proved Tasks membership remains the only authorization boundary", () => {
     "resolveTimelineContext must refuse unproved membership BEFORE adopting a " +
       "workspace, or a URL naming someone else's workspace could bind and open " +
       "the caller's Timeline against it.",
+  );
+
+  // The demo boundary must also precede the live resolution, so a review
+  // fixture id can never reach it.
+  assert.ok(
+    body.indexOf("if (isDemoMode())") !== -1 &&
+      body.indexOf("if (isDemoMode())") < adoption,
+    "the demo fixture branch must be answered before production resolution",
   );
 
   // Belt to that brace, and stronger than source order: the resolver takes the
@@ -218,32 +239,53 @@ test("provisioning does not run on every read", () => {
     /if\s*\(\s*workspaces\.length\s*===\s*1\s*\)\s*return\s+workspaces\[0\]!;/,
     "one Timeline and no Project named must still resolve on a single query.",
   );
-  // And the substitution the old shape allowed must not come back: `first` is
-  // reachable only on the bare-entry path, never once a Project was requested.
-  const requestedBranch = source.slice(
-    source.indexOf("if (requestedSuiteWorkspaceId)"),
-    source.indexOf("const workspaces = await getWorkspacesForUser(userId);"),
+  // And the substitution the old shape allowed must not come back. This used
+  // to slice `getCurrentWorkspace`'s requested branch and assert `workspaces[0]`
+  // was absent from it; that branch was unreachable dead code and has been
+  // deleted, so the stronger statement is available: this function cannot be
+  // asked about a Project at all. `resolveTimelineContext` is the only path
+  // that answers one.
+  assert.match(
+    source,
+    /export async function getCurrentWorkspace\(\s*userId: string,\s*\): Promise<Workspace \| null>/,
+    "getCurrentWorkspace must take only the user. A second, unreachable copy " +
+      "of the requested-Project resolution is how the membership-ordering " +
+      "guard came to be asserted against code production never runs.",
   );
   assert.ok(
-    requestedBranch.length > 0,
-    "getCurrentWorkspace no longer separates the requested and bare paths",
-  );
-  assert.ok(
-    !/workspaces\[0\]/.test(requestedBranch),
-    "a request naming a Tasks Project must never resolve to workspaces[0].",
+    !/requestedSuiteWorkspaceId/.test(source),
+    "the dead requested-Project branch must not come back",
   );
 });
 
 test("provisioning is owner-only and never runs for an archived Project", () => {
   // Two refusals that did not exist before WP1 and that provisioning-by-exact-
-  // Project makes reachable: a collaborator's first visit must not mint the
+  // Project makes reachable: a non-owner's first visit must not mint the
   // owner's Timeline under the visitor's identity (plan §6.4 step 9), and an
   // archived Project accepts no new association (ADR 0001 §5).
   const source = stripComments(read(PROVISION));
+  // OWNERSHIP, NOT MEMBERSHIP ROLE. This asserted
+  // `provedTasksMembership.role !== "owner"`, which is
+  // `workspace_members.role` — a capability several people can hold, because
+  // `setMemberRoleAction` promotes members to it. A promoted co-owner
+  // therefore passed the gate, minted the Project's Timeline under their own
+  // subject, consumed uq_workspaces_suite_workspace_id, and locked the real
+  // owner out permanently. The gate is the Project's owner subject.
   assert.match(
     source,
-    /provedTasksMembership\.role !== "owner"/,
-    "the exact provisioner must refuse a non-owner",
+    /provedTasksMembership\.ownerClerkId !== actorUserId/,
+    "the exact provisioner must refuse anyone who is not the Tasks Project's " +
+      "own owner",
+  );
+  assert.match(
+    source,
+    /provedTasksMembership\.ownerClerkId === null/,
+    "a Project with no owner row is missing identity, and must refuse rather " +
+      "than choose the visitor",
+  );
+  assert.ok(
+    !/provedTasksMembership\.role !== "owner"/.test(source),
+    "membership role must not be used as the ownership gate again",
   );
   assert.match(
     source,

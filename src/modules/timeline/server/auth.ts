@@ -102,43 +102,33 @@ export type ResolvedTimelineContext = Readonly<{
 }>;
 
 /**
- * Resolve the Timeline workspace for a Timeline page load.
+ * Resolve the Timeline workspace for a BARE Timeline page load — one that named
+ * no Tasks Project at all.
  *
- * Two different questions, kept apart because they have different answers:
+ * Nothing has been requested, so nothing can be substituted for. Every caller
+ * uses this as the `??` arm behind `resolveTimelineContext`, which is where a
+ * request that DOES name a Project is resolved; that is the only path allowed
+ * to answer one, and `resolveCanonicalTimeline` is the only thing that answers
+ * it (docs/wave/DECISIONS.md D-002, ADR 0001 §6).
  *
- * WITH a requested Tasks Project, the answer is that exact Project's Timeline
- * or nothing. `resolveCanonicalTimeline` may create it, but it can never
- * choose a different Project's — a request for B that returned A was the P0
- * this path carried (docs/wave/DECISIONS.md D-002, ADR 0001 §6).
+ * This used to take an optional `requestedSuiteWorkspaceId` and resolve it
+ * here too. No caller ever passed it, so it was a second, unreachable copy of
+ * the resolution path — and the contract guard that exists to prove membership
+ * is checked before resolution was matching THAT copy instead of the live one,
+ * proving nothing about production. A dead duplicate of a security path is the
+ * same shape as blocker 2 itself: correct code nothing calls. It is gone.
  *
- * WITHOUT one, nothing has been requested, so nothing can be substituted for.
- * This is bare entry, and it stays cheap: the owner's single Timeline is
- * returned on one query. Provisioning is production blocker 2 from the E05/E06
- * audit — nothing in the product ever created a Timeline workspace, so this
- * function returned null forever and `/app/timeline` rendered a permanent
- * empty state — and it is still here, but ONLY in the branch where the owner
- * has no Timeline at all. It is not on every read, and it is keyed to one
- * exact Tasks Project either way.
+ * It stays cheap: the owner's single Timeline is returned on one query.
+ * Provisioning is production blocker 2 from the E05/E06 audit — nothing in the
+ * product ever created a Timeline workspace, so this function returned null
+ * forever and `/app/timeline` rendered a permanent empty state — and it is
+ * still here, but ONLY in the branch where the owner has no Timeline at all. It
+ * is not on every read, and it is keyed to one exact Tasks Project.
  */
 export async function getCurrentWorkspace(
   userId: string,
-  requestedSuiteWorkspaceId?: string,
 ): Promise<Workspace | null> {
   if (isDemoMode()) return demoWorkspace;
-  if (requestedSuiteWorkspaceId) {
-    const [current, ownedWorkspaces] = await Promise.all([
-      getCurrentTasksWorkspaceContext(userId, requestedSuiteWorkspaceId),
-      getWorkspacesForUser(userId),
-    ]);
-    if (!current) return null;
-    const resolved = await resolveCanonicalTimeline(
-      userId,
-      requestedSuiteWorkspaceId,
-      current,
-      { ownedWorkspaces },
-    );
-    return canonicalTimelineWorkspace(resolved);
-  }
 
   const workspaces = await getWorkspacesForUser(userId);
   if (workspaces.length === 0) return ensureTimelineWorkspaceForUser(userId);
