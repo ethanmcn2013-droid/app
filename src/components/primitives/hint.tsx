@@ -21,7 +21,7 @@
  * not rescue.
  */
 
-import { useId, type ReactNode } from "react";
+import { cloneElement, isValidElement, useId, type ReactElement } from "react";
 import styles from "./hint.module.css";
 
 export function Hint({
@@ -29,17 +29,22 @@ export function Hint({
   align = "center",
   text,
 }: {
-  children: ReactNode;
+  /** The control being described. `aria-describedby` is applied to it. */
+  children: ReactElement<{ "aria-describedby"?: string }>;
   /** Which edge the bubble hangs from when space is tight. */
   align?: "start" | "center" | "end";
   text: string;
 }) {
   const id = useId();
+  // The description must land on the CONTROL, not on a wrapper: an
+  // aria-describedby on a plain span describes nothing a screen reader
+  // will ever announce, because nothing focusable carries the reference.
+  const described = isValidElement(children)
+    ? cloneElement(children, { "aria-describedby": id })
+    : children;
   return (
     <span className={styles.hintWrap} data-align={align}>
-      <span aria-describedby={id} className={styles.hintTarget}>
-        {children}
-      </span>
+      {described}
       <span className={styles.hintBubble} id={id} role="tooltip">
         {text}
       </span>

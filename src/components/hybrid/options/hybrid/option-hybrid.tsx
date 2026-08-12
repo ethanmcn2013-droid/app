@@ -263,10 +263,15 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
                     prominent unexplained number exactly where tooltips
                     don't exist. */}
                 {unscheduledCount > 0 ? (
-                  <strong aria-hidden="true">
-                    {unscheduledCount}
-                    <span className={briefStyles.planningUndated}> undated</span>
-                  </strong>
+                  <>
+                    <strong aria-hidden="true">{unscheduledCount}</strong>
+                    {/* The noun sits OUTSIDE the badge: the badge is the
+                        module's mono numeral slot, and setting a word in
+                        monospace breaks the band's own numeral rule. */}
+                    <span aria-hidden="true" className={briefStyles.planningUndated}>
+                      undated
+                    </span>
+                  </>
                 ) : null}
               </button>
               </Hint>

@@ -262,7 +262,7 @@ export function PageActionsOverflow({
            dark only. */
         className={
           variant === "band"
-            ? "inline-flex h-7 w-8 items-center justify-center rounded-md border-0 bg-transparent text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]"
+            ? "inline-flex h-7 w-7 items-center justify-center rounded-md border-0 bg-transparent text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]"
             : "inline-flex h-8 w-8 items-center justify-center rounded-md border border-line bg-white text-ink-soft transition-colors hover:border-ink-soft/30 hover:text-ink"
         }
       >

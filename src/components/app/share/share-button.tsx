@@ -64,8 +64,11 @@ export type ShareButtonVariant = "accent" | "band";
 const SHARE_TRIGGER_CLASS: Record<ShareButtonVariant, string> = {
   accent:
     "inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand-soft px-2.5 py-1.5 text-[12px] font-medium text-brand transition-colors hover:border-brand/50 hover:bg-brand-soft",
+  // h-7 is 32px here, not 28: this repo remaps Tailwind's numeric spacing
+  // namespace onto its own --space-* steps (docs/SPACING_SCALE_COLLISION.md).
+  // 32px IS the ratified step, so the whole band's chrome sits on it.
   band:
-    "inline-flex h-7 items-center gap-1.5 rounded-md border-0 bg-transparent px-2 text-[12px] font-medium text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)]",
+    "inline-flex h-7 items-center gap-1.5 rounded-md border-0 bg-transparent px-2 text-[12px] font-medium text-[var(--x-task-text-secondary)] transition-colors hover:bg-[var(--x-task-hover)] hover:text-[var(--x-task-text)] aria-expanded:bg-[var(--x-task-selected)] aria-expanded:text-[var(--x-accent-ink)]",
 };
 
 export function ShareButton({
@@ -188,6 +191,10 @@ export function ShareButton({
           unless the caller asks for the band's ghost register. */}
       <button
         type="button"
+        // Share was the only control in the band's action cluster with no
+        // open state, while both its siblings had one.
+        aria-expanded={open}
+        aria-haspopup="dialog"
         data-band-action={variant === "band" ? "" : undefined}
         onClick={() => setOpen((o) => !o)}
         className={SHARE_TRIGGER_CLASS[variant]}

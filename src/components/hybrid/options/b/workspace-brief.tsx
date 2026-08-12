@@ -60,6 +60,7 @@ function EditableText({
   onCommit: (next: string) => Promise<unknown>;
 }) {
   const ref = useRef<HTMLElement | null>(null);
+  const lastCommitted = useRef<string | null>(null);
   const [, startTransition] = useTransition();
   const shown = value ?? "";
 
@@ -81,7 +82,11 @@ function EditableText({
     // the layout and the effect above reconciles if the server disagrees.
     el.textContent = next;
     syncEmpty();
-    if (next === shown) return;
+    // Enter commits without blurring, so the blur that follows would
+    // otherwise re-send the same text before the server value has come
+    // back through `shown`.
+    if (next === shown || next === lastCommitted.current) return;
+    lastCommitted.current = next;
     // The band's own edits report through the same Saving…/Saved whisper as
     // task mutations — the status line sits 20px away and used to imply
     // coverage it didn't have. On failure the user's text STAYS; snapping
@@ -150,14 +155,18 @@ function EditableText({
         syncEmpty();
       }}
       onKeyDown={(event) => {
+        // Enter and Escape used to blur, which drops focus to the
+        // document body — the next Tab restarts from the top of the page
+        // and a keyboard user loses their place entirely. Both keys now
+        // resolve the edit in place and leave focus where it is.
         if (event.key === "Enter") {
           event.preventDefault();
-          event.currentTarget.blur();
+          commit();
         } else if (event.key === "Escape") {
-          // Escape abandons the edit: restore the stored value, then leave.
+          // Escape abandons the edit: restore the stored value, then stop.
+          event.preventDefault();
           event.currentTarget.textContent = shown;
           syncEmpty();
-          event.currentTarget.blur();
         }
       }}
       ref={(node) => {

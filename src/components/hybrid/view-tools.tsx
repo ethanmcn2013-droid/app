@@ -273,6 +273,9 @@ function ToolPanelShell({
   children: React.ReactNode;
 }) {
   const shellRef = useRef<HTMLElement | null>(null);
+  // Escape and the × hand focus back to the trigger; tabbing onward does
+  // not. See onFocusOut.
+  const restoreFocus = useRef(true);
   const onCloseRef = useRef(onClose);
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -303,6 +306,10 @@ function ToolPanelShell({
       if (!next) return;
       if (node?.contains(next)) return;
       if (next.closest?.("[data-tool-trigger]")) return;
+      // The user tabbed ONWARD under their own steam. Close the panel,
+      // but do not haul their focus back to the trigger they just left —
+      // that rewinds the keyboard and makes forward Tab feel broken.
+      restoreFocus.current = false;
       onCloseRef.current();
     };
     node?.addEventListener("focusout", onFocusOut);
@@ -323,9 +330,11 @@ function ToolPanelShell({
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointerDown);
       node?.removeEventListener("focusout", onFocusOut);
-      document
-        .querySelector<HTMLElement>(`[data-tool-trigger="${panel}"]`)
-        ?.focus();
+      if (restoreFocus.current) {
+        document
+          .querySelector<HTMLElement>(`[data-tool-trigger="${panel}"]`)
+          ?.focus();
+      }
     };
   }, [panel]);
 
