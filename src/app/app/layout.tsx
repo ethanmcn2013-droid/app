@@ -15,6 +15,9 @@ import { StudioRail } from "@/components/studio-bar/studio-rail";
 import { StudioChromeProvider } from "@/components/studio-bar/studio-chrome-context";
 import { isDemoMode } from "@/lib/access-mode";
 import { requireAppAccessTasks } from "@/server/app-access";
+import { ActiveProjectProvider } from "@/components/app/active-project-provider";
+import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
+import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { PAPER_LIGHT, PAPER_DARK } from "@/app/layout";
 import type { Viewport } from "next";
 
@@ -62,6 +65,32 @@ async function SharedAppGate({ children }: { children: React.ReactNode }) {
   return children;
 }
 
+/**
+ * Active Project V3 mount point (WP2, plan §3.4).
+ *
+ * Off by default and byte-identical when off: the flag path returns `children`
+ * untouched, so no provider, no context, and no extra client module reach the
+ * tree. On, it mounts the shared provider here — at the `/app` shell, above
+ * the chrome — with a **cheap validated-cookie bootstrap only**. No membership
+ * query runs to render chrome: the bootstrap is a bare-entry preference, and
+ * the provider's projection is written so it can never be painted as a Project
+ * name. The authoritative Project arrives per route, from the server, through
+ * `ActiveProjectRouteSync`.
+ *
+ * The legacy `tasks_active_ws` value is accepted as the bootstrap when the
+ * unified cookie is absent — the migration read that ADR 0001 §4 step 3
+ * requires, and the reason nobody's last-active preference is lost on cutover.
+ */
+async function ActiveProjectRuntime({ children }: { children: React.ReactNode }) {
+  if (!isActiveProjectV3Enabled()) return children;
+  const { unified, legacy } = await readActiveProjectCookies();
+  return (
+    <ActiveProjectProvider enabled bootstrapProjectId={unified ?? legacy}>
+      {children}
+    </ActiveProjectProvider>
+  );
+}
+
 const SKIP_LINK_CLASS =
   // The label rides an --ink fill, so it takes --paper, not white: in dark
   // the fill IS near-white, and a white label on it is invisible. The first
@@ -97,28 +126,30 @@ export default function AppLayout({
       {/* First thing in the /app document body: the theme resolves before the
           app paints, and only documents that render THIS layout carry it. */}
       <ThemeRuntime />
-      <SuiteScrollFrame>
-        <a href="#app-main-content" className={SKIP_LINK_CLASS}>
-          Skip to main content
-        </a>
-        <SuiteChromeGate>
-          <StudioBar />
-        </SuiteChromeGate>
-        <SuiteScrollFrameBody>
+      <ActiveProjectRuntime>
+        <SuiteScrollFrame>
+          <a href="#app-main-content" className={SKIP_LINK_CLASS}>
+            Skip to main content
+          </a>
           <SuiteChromeGate>
-            <StudioRail />
+            <StudioBar />
           </SuiteChromeGate>
-          <Suspense fallback={<SuiteLoading />}>
-            <SharedAppGate>
-              <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
-            </SharedAppGate>
-          </Suspense>
-        </SuiteScrollFrameBody>
-        <SuiteChromeGate>
-          <MobileSuiteNav />
-          <SuiteCommandRoot />
-        </SuiteChromeGate>
-      </SuiteScrollFrame>
+          <SuiteScrollFrameBody>
+            <SuiteChromeGate>
+              <StudioRail />
+            </SuiteChromeGate>
+            <Suspense fallback={<SuiteLoading />}>
+              <SharedAppGate>
+                <ProductWorkspaceShell>{children}</ProductWorkspaceShell>
+              </SharedAppGate>
+            </Suspense>
+          </SuiteScrollFrameBody>
+          <SuiteChromeGate>
+            <MobileSuiteNav />
+            <SuiteCommandRoot />
+          </SuiteChromeGate>
+        </SuiteScrollFrame>
+      </ActiveProjectRuntime>
     </StudioChromeProvider>
   );
 
