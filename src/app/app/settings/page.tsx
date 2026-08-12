@@ -55,8 +55,8 @@ export default async function SettingsPage() {
         >
           Review preview, settings are read-only.
         </p>
-        <div inert aria-disabled="true">
-          <SettingsApp
+        <SettingsApp
+            readOnly
             currentUserId={DEMO_USER_ID}
             currentUserEmail="you@theorchard.example"
             myRole="owner"
@@ -100,7 +100,6 @@ export default async function SettingsPage() {
             storageUsageBytes={0}
             initialPersonalityPrefs={PERSONALITY_DEFAULTS}
           />
-        </div>
       </>
     );
   }

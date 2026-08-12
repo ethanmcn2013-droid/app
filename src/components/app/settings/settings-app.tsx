@@ -95,6 +95,7 @@ export function SettingsApp({
   initialThemeMode,
   storageUsageBytes,
   initialPersonalityPrefs,
+  readOnly = false,
 }: {
   currentUserId: string;
   currentUserEmail: string;
@@ -127,6 +128,15 @@ export function SettingsApp({
   initialThemeMode: ThemeMode;
   storageUsageBytes: number;
   initialPersonalityPrefs: PersonalityPrefs;
+  /**
+   * Review/demo mode: the sections are for looking at, not for writing to.
+   * The inert boundary lives HERE, around the section content only, because
+   * when the page put it around the whole app the nine-item navigation died
+   * with the forms — eight sections unreachable behind controls that still
+   * looked clickable, and the new theme control along with them. Navigation
+   * is not a mutation; it stays alive in every mode.
+   */
+  readOnly?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("workspace");
 
@@ -214,6 +224,7 @@ export function SettingsApp({
             })}
           </div>
 
+          <div inert={readOnly || undefined} aria-disabled={readOnly || undefined}>
           {tab === "workspace" ? (
             <WorkspaceSection workspace={workspace} myRole={myRole} />
           ) : null}
@@ -254,6 +265,7 @@ export function SettingsApp({
               workspaceName={workspace?.name ?? "this workspace"}
             />
           ) : null}
+          </div>
         </div>
       </div>
     </div>
