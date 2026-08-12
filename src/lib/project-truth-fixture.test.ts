@@ -1,0 +1,380 @@
+/**
+ * WP0 · The multi-Project fixture has to be true before anything argues from it.
+ *
+ * A fixture is evidence only if it actually carries the cases the wave claims
+ * to cover. This file checks the claims one by one — the twelve-plus catalog,
+ * the A/B distinctness a wrong-Project render must trip over, the member,
+ * archived, duplicate-name, long-name, translated-name, loose, shared,
+ * unprepared-Timeline and legacy-multi-Timeline cases — so "the fixture covers
+ * that" is a checked fact rather than a claim.
+ *
+ * It also pins the two things that silently rot: the review clock (a fixture
+ * whose dates disagree with PINNED_REVIEW_CALENDAR_FRAME reads as overdue on
+ * every surface) and the four canonical viewports (which must come from
+ * experience/registry.json, not from a number typed into a config).
+ */
+
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+import { PINNED_REVIEW_CALENDAR_FRAME } from "./calendar-frame";
+import { REVIEW_SUITE_FIXTURE } from "./review-suite-fixture";
+import type { FixtureProjectSummary } from "./project-truth-fixture";
+import {
+  PROJECT_TRUTH_A,
+  PROJECT_TRUTH_B,
+  PROJECT_TRUTH_C,
+  PROJECT_TRUTH_CONTENT,
+  PROJECT_TRUTH_D,
+  PROJECT_TRUTH_IDS,
+  PROJECT_TRUTH_INACCESSIBLE_ID,
+  PROJECT_TRUTH_PERIODS,
+  PROJECT_TRUTH_PROJECTS,
+  PROJECT_TRUTH_SCENARIOS,
+  PROJECT_TRUTH_TODAY,
+  fixtureCapabilitiesFor,
+  projectTruthContentFor,
+  projectTruthScenario,
+} from "./project-truth-fixture";
+
+const CANONICAL_VIEWPORTS = [
+  { name: "mobile", width: 390, height: 844 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "desktop", width: 1280, height: 900 },
+  { name: "wide", width: 1440, height: 960 },
+] as const;
+
+function readJson(...segments: string[]): unknown {
+  return JSON.parse(readFileSync(path.join(process.cwd(), ...segments), "utf8"));
+}
+
+/** Everything a correct render of this Project could put on screen. */
+function copyFor(projectId: string): string {
+  const project = PROJECT_TRUTH_PROJECTS.find((p) => p.id === projectId);
+  const content = projectTruthContentFor(projectId);
+  return [project?.name ?? "", content.headline, ...content.rootTaskTitles].join(
+    " | ",
+  );
+}
+
+test("the fixture keeps the one review clock the rest of the suite reads", () => {
+  assert.equal(PROJECT_TRUTH_TODAY, PINNED_REVIEW_CALENDAR_FRAME.today);
+  assert.equal(PROJECT_TRUTH_TODAY, REVIEW_SUITE_FIXTURE.reviewToday);
+});
+
+test("the catalog carries at least twelve projects with unique identity", () => {
+  assert.ok(
+    PROJECT_TRUTH_PROJECTS.length >= 12,
+    `expected 12+ projects, got ${PROJECT_TRUTH_PROJECTS.length}`,
+  );
+  const ids = PROJECT_TRUTH_PROJECTS.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length, "project ids must be unique");
+  const slugs = PROJECT_TRUTH_PROJECTS.map((p) => p.slug);
+  assert.equal(new Set(slugs).size, slugs.length, "project slugs must be unique");
+  assert.equal(new Set(Object.values(PROJECT_TRUTH_IDS)).size, ids.length);
+});
+
+test("every project has exactly one content record, and no record is orphaned", () => {
+  assert.equal(PROJECT_TRUTH_CONTENT.length, PROJECT_TRUTH_PROJECTS.length);
+  for (const project of PROJECT_TRUTH_PROJECTS) {
+    assert.doesNotThrow(() => projectTruthContentFor(project.id));
+  }
+  const known = new Set(PROJECT_TRUTH_PROJECTS.map((p) => p.id));
+  for (const content of PROJECT_TRUTH_CONTENT) {
+    assert.ok(
+      known.has(content.projectId),
+      `content for unknown project ${content.projectId}`,
+    );
+  }
+});
+
+test("A and B are visibly distinct, so a wrong-project render fails a string check", () => {
+  assert.notEqual(PROJECT_TRUTH_A.id, PROJECT_TRUTH_B.id);
+  assert.equal(PROJECT_TRUTH_A.role, "primary-owner");
+  assert.equal(PROJECT_TRUTH_B.role, "primary-owner");
+  assert.notEqual(PROJECT_TRUTH_A.name, PROJECT_TRUTH_B.name);
+  // Different counts too: a wrong render shows a wrong number, not only a
+  // wrong word.
+  assert.notEqual(
+    PROJECT_TRUTH_A.activeRootTaskCount,
+    PROJECT_TRUTH_B.activeRootTaskCount,
+  );
+  const a = projectTruthContentFor(PROJECT_TRUTH_A.id);
+  const b = projectTruthContentFor(PROJECT_TRUTH_B.id);
+  assert.ok(!copyFor(PROJECT_TRUTH_B.id).includes(a.distinctWord));
+  assert.ok(!copyFor(PROJECT_TRUTH_A.id).includes(b.distinctWord));
+});
+
+test("every distinct word belongs to exactly one project", () => {
+  for (const content of PROJECT_TRUTH_CONTENT) {
+    assert.ok(
+      copyFor(content.projectId).includes(content.distinctWord),
+      `${content.projectId}: distinct word "${content.distinctWord}" is not in its own copy`,
+    );
+    for (const other of PROJECT_TRUTH_CONTENT) {
+      if (other.projectId === content.projectId) continue;
+      assert.ok(
+        !copyFor(other.projectId).includes(content.distinctWord),
+        `"${content.distinctWord}" leaks into ${other.projectId}`,
+      );
+    }
+  }
+});
+
+test("the actor is a member of C and owns nothing there", () => {
+  assert.equal(PROJECT_TRUTH_C.role, "member");
+  assert.equal(PROJECT_TRUTH_C.capabilities.openProject, true);
+  assert.equal(PROJECT_TRUTH_C.capabilities.manageProject, false);
+  assert.equal(PROJECT_TRUTH_C.capabilities.publishTimeline, false);
+  assert.equal(PROJECT_TRUTH_C.capabilities.deleteOrTransferOwnership, false);
+  // A shared project never carries another owner's planning period.
+  assert.equal(PROJECT_TRUTH_C.planningPeriod, null);
+  assert.equal(projectTruthContentFor(PROJECT_TRUTH_C.id).expectedGroup, "shared");
+});
+
+test("D is archived, read-only, and archived before the review clock", () => {
+  assert.ok(typeof PROJECT_TRUTH_D.archivedAt === "number");
+  const archivedOn = new Date(PROJECT_TRUTH_D.archivedAt as number)
+    .toISOString()
+    .slice(0, 10);
+  assert.ok(
+    archivedOn < PROJECT_TRUTH_TODAY,
+    `archivedAt ${archivedOn} must precede ${PROJECT_TRUTH_TODAY}`,
+  );
+  // ADR 0001 §5: openable, read-only for project-scoped operations, no new
+  // publishing.
+  assert.equal(PROJECT_TRUTH_D.capabilities.openProject, true);
+  assert.equal(PROJECT_TRUTH_D.capabilities.editTasks, false);
+  assert.equal(PROJECT_TRUTH_D.capabilities.manageProject, false);
+  assert.equal(PROJECT_TRUTH_D.capabilities.publishTimeline, false);
+  assert.equal(
+    PROJECT_TRUTH_PROJECTS.filter((p) => p.archivedAt !== null).length,
+    1,
+  );
+});
+
+test("duplicate names live in different planning periods and each carries a disambiguator", () => {
+  const byName = new Map<string, FixtureProjectSummary[]>();
+  for (const project of PROJECT_TRUTH_PROJECTS) {
+    byName.set(project.name, [...(byName.get(project.name) ?? []), project]);
+  }
+  const duplicates = [...byName.values()].filter((group) => group.length > 1);
+  assert.ok(duplicates.length >= 1, "the fixture needs a duplicate-name case");
+  for (const group of duplicates) {
+    const periods = group.map((p) => p.planningPeriod?.id ?? null);
+    assert.equal(
+      new Set(periods).size,
+      group.length,
+      "duplicates must sit in different planning periods",
+    );
+    const labels = group.map((p) => p.disambiguator);
+    for (const label of labels) {
+      assert.ok(label, "every duplicate needs a permission-safe disambiguator");
+    }
+    assert.equal(new Set(labels).size, labels.length);
+    // The disambiguator must be the period the actor already owns, never an
+    // internal id.
+    for (const project of group) {
+      assert.equal(project.disambiguator, project.planningPeriod?.name);
+      assert.ok(!project.disambiguator?.includes(project.id));
+    }
+  }
+});
+
+test("the fixture stresses layout with a long name and translated-like names", () => {
+  const longest = PROJECT_TRUTH_PROJECTS.reduce((a, b) =>
+    a.name.length >= b.name.length ? a : b,
+  );
+  assert.ok(
+    longest.name.length >= 90,
+    `longest name is only ${longest.name.length} characters`,
+  );
+  assert.equal(projectTruthContentFor(longest.id).layoutStress, "long");
+  const stresses = new Set(
+    PROJECT_TRUTH_CONTENT.map((content) => content.layoutStress),
+  );
+  assert.ok(stresses.has("diacritics"), "needs a diacritic-heavy name");
+  assert.ok(stresses.has("cjk"), "needs a CJK name");
+  const nonAscii = PROJECT_TRUTH_PROJECTS.filter((p) =>
+    /[^ -~]/.test(p.name),
+  );
+  assert.ok(nonAscii.length >= 2, "needs at least two non-ASCII names");
+});
+
+test("three planning periods carry projects, and loose projects belong to none", () => {
+  assert.ok(PROJECT_TRUTH_PERIODS.length >= 3);
+  for (const period of PROJECT_TRUTH_PERIODS) {
+    const members = PROJECT_TRUTH_PROJECTS.filter(
+      (p) => p.planningPeriod?.id === period.id,
+    );
+    assert.ok(members.length >= 1, `${period.id} has no projects`);
+  }
+  const loose = PROJECT_TRUTH_CONTENT.filter((c) => c.expectedGroup === "loose");
+  assert.ok(loose.length >= 1, "needs at least one loose project");
+  for (const content of loose) {
+    const project = PROJECT_TRUTH_PROJECTS.find(
+      (p) => p.id === content.projectId,
+    );
+    assert.equal(project?.planningPeriod, null);
+  }
+  // One period must span the review clock, or nothing reads as current.
+  const current = PROJECT_TRUTH_PERIODS.filter(
+    (p) =>
+      (p.startDate ?? "") <= PROJECT_TRUTH_TODAY &&
+      PROJECT_TRUTH_TODAY <= (p.endDate ?? ""),
+  );
+  assert.equal(current.length, 1, "exactly one period should be current");
+});
+
+test("shared projects group under Shared with you and hide the owner's period", () => {
+  const shared = PROJECT_TRUTH_CONTENT.filter(
+    (c) => c.expectedGroup === "shared",
+  );
+  assert.ok(shared.length >= 1);
+  for (const content of shared) {
+    const project = PROJECT_TRUTH_PROJECTS.find(
+      (p) => p.id === content.projectId,
+    );
+    assert.ok(project);
+    assert.notEqual(project.role, "primary-owner");
+    assert.equal(project.planningPeriod, null);
+  }
+  // Both shared roles are represented: a plain member and a co-owner.
+  const roles = new Set(
+    shared.map(
+      (c) => PROJECT_TRUTH_PROJECTS.find((p) => p.id === c.projectId)?.role,
+    ),
+  );
+  assert.ok(roles.has("member"));
+  assert.ok(roles.has("owner"));
+});
+
+test("timeline readiness covers unprepared and legacy multi-timeline projects", () => {
+  const states = PROJECT_TRUTH_CONTENT.map((c) => c.timelineState);
+  assert.ok(states.includes("absent"), "needs an unprepared Timeline");
+  assert.ok(states.includes("legacy-multiple"), "needs a legacy multi-Timeline");
+  assert.ok(states.includes("empty"));
+  assert.ok(states.includes("ready"));
+  for (const content of PROJECT_TRUTH_CONTENT) {
+    if (content.timelineState === "absent") {
+      assert.equal(content.timelineSlugs.length, 0);
+    } else {
+      assert.ok(content.timelineSlugs.length >= 1);
+    }
+    if (content.timelineState === "legacy-multiple") {
+      assert.ok(
+        content.timelineSlugs.length >= 2,
+        "a legacy multi-Timeline project needs more than one child",
+      );
+    }
+  }
+  // ADR §6: only the legacy case may hold more than one child Timeline.
+  for (const content of PROJECT_TRUTH_CONTENT) {
+    if (content.timelineState === "legacy-multiple") continue;
+    assert.ok(content.timelineSlugs.length <= 1, `${content.projectId} has extra Timelines`);
+  }
+});
+
+test("the inaccessible and malformed ids are not in the catalog", () => {
+  const ids = new Set(PROJECT_TRUTH_PROJECTS.map((p) => p.id));
+  assert.ok(!ids.has(PROJECT_TRUTH_INACCESSIBLE_ID));
+  assert.ok(PROJECT_TRUTH_INACCESSIBLE_ID.length > 0);
+});
+
+test("the capability table matches the plan, row for row", () => {
+  const primaryOwner = fixtureCapabilitiesFor("primary-owner");
+  const coOwner = fixtureCapabilitiesFor("owner");
+  const member = fixtureCapabilitiesFor("member");
+
+  for (const caps of [primaryOwner, coOwner, member]) {
+    assert.equal(caps.openProject, true);
+    assert.equal(caps.viewPrivateTimeline, true);
+    assert.equal(caps.editTasks, true);
+  }
+  assert.equal(primaryOwner.manageProject, true);
+  assert.equal(coOwner.manageProject, true);
+  assert.equal(member.manageProject, false);
+
+  assert.equal(primaryOwner.curatePrimaryTimeline, true);
+  assert.equal(coOwner.curatePrimaryTimeline, true);
+  assert.equal(member.curatePrimaryTimeline, false);
+
+  // Permanent delete and ownership transfer never leave the primary owner.
+  assert.equal(primaryOwner.deleteOrTransferOwnership, true);
+  assert.equal(coOwner.deleteOrTransferOwnership, false);
+  assert.equal(member.deleteOrTransferOwnership, false);
+
+  // Archiving collapses every project-scoped write.
+  const archived = fixtureCapabilitiesFor("primary-owner", { archived: true });
+  assert.equal(archived.openProject, true);
+  assert.equal(archived.editTasks, false);
+  assert.equal(archived.curatePrimaryTimeline, false);
+  assert.equal(archived.publishTimeline, false);
+});
+
+test("zero, one and full are separately selectable scenarios", () => {
+  assert.equal(PROJECT_TRUTH_SCENARIOS.length, 3);
+  assert.equal(projectTruthScenario("zero-projects").projectIds.length, 0);
+  assert.equal(projectTruthScenario("one-project").projectIds.length, 1);
+  assert.equal(
+    projectTruthScenario("full-catalog").projectIds.length,
+    PROJECT_TRUTH_PROJECTS.length,
+  );
+  const known = new Set(PROJECT_TRUTH_PROJECTS.map((p) => p.id));
+  for (const scenario of PROJECT_TRUTH_SCENARIOS) {
+    for (const id of scenario.projectIds) assert.ok(known.has(id));
+  }
+  assert.throws(() =>
+    projectTruthScenario("nope" as Parameters<typeof projectTruthScenario>[0]),
+  );
+});
+
+test("the four canonical viewports come from the registry, not from a typed number", () => {
+  const registry = readJson("experience", "registry.json") as {
+    breakpoints: Record<string, { width: number; height: number }>;
+  };
+  const contract = readJson("experience", "browser-contract.json") as {
+    projects: Array<{ name: string; viewport: { width: number; height: number } }>;
+  };
+
+  for (const expected of CANONICAL_VIEWPORTS) {
+    const fromRegistry = registry.breakpoints[expected.name];
+    assert.deepEqual(
+      fromRegistry,
+      { width: expected.width, height: expected.height },
+      `registry breakpoint ${expected.name} drifted`,
+    );
+    const fromContract = contract.projects.find((p) => p.name === expected.name);
+    assert.deepEqual(
+      fromContract?.viewport,
+      { width: expected.width, height: expected.height },
+      `browser contract viewport ${expected.name} drifted`,
+    );
+  }
+  // Every Playwright project the browser contract defines is a canonical
+  // viewport, so a new multi-project config inherits exactly these four.
+  assert.equal(contract.projects.length, CANONICAL_VIEWPORTS.length);
+  assert.equal(
+    Object.keys(registry.breakpoints).length,
+    CANONICAL_VIEWPORTS.length,
+  );
+});
+
+test("this fixture is additive: it collides with nothing in the review suite", () => {
+  const reviewIds = new Set<string>([
+    REVIEW_SUITE_FIXTURE.user.id,
+    REVIEW_SUITE_FIXTURE.workspace.id,
+    REVIEW_SUITE_FIXTURE.workspace.slug,
+    REVIEW_SUITE_FIXTURE.workspace.planningPeriodId,
+    ...REVIEW_SUITE_FIXTURE.projects.flatMap((p) => [p.id, p.slug]),
+  ]);
+  for (const project of PROJECT_TRUTH_PROJECTS) {
+    assert.ok(!reviewIds.has(project.id), `${project.id} collides with the review suite`);
+    assert.ok(!reviewIds.has(project.slug), `${project.slug} collides with the review suite`);
+  }
+  for (const period of PROJECT_TRUTH_PERIODS) {
+    assert.ok(!reviewIds.has(period.id));
+  }
+});
