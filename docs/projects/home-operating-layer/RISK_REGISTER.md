@@ -161,13 +161,36 @@ did not regress an untouched surface.
 
 ---
 
-## R-H10 · P0 · `/lab` has no authentication guard
+## R-H10 · P0 · `/lab` has no authentication guard — verified, not inferred
 
-**Evidence.** `/lab` is outside the Clerk proxy matcher entirely (`src/proxy.ts:280-298`).
+**Evidence.** Four independent checks at base `78021c5`:
 
-**Consequence.** The protected preview the founder pause depends on must be **built** before
-Wave 3 deploys. Currently there is not even authentication, let alone a reviewer allowlist.
-Blocks Gate 3.
+1. `/lab` is absent from the Clerk proxy matcher (`src/proxy.ts:280-298`), so Clerk middleware
+   never runs for it — which also means `auth()` is not populated inside those routes.
+2. No `/lab/**` page calls `requireAppAccess`, `auth()`, `currentUser` or `requireSignalUser`.
+3. There is no `layout.tsx` anywhere under `src/app/lab/`.
+4. Live: `GET /lab/timeline-a` → **HTTP 200**.
+
+Six historical lab routes exist: `timeline-{a,b,w}`, `welcome-{a,b,w}`.
+
+**Current exposure is mild.** Those six are static design mockups with
+`robots: { index: false, follow: false }` and, by their own header comments, "no auth, no data
+fetching". So today the mechanism leaks design, not customer data.
+
+**Why it is still P0 for this programme.** The Home lab renders fixture data across four
+directions × four modes × 13 scenarios, including permission-limited, partial and
+guest-limited states. Dropping that onto a route family with **zero** access control would be
+the review/live boundary violation the brief lists as an automatic veto. `noindex` is not
+access control.
+
+**The catch that shapes the fix.** A Server-Component layout guard alone is not sufficient,
+because outside the proxy matcher Clerk never populates the session — so the guard would have
+no identity to check. `/lab/:path*` has to enter the matcher *and* gain a fail-closed
+server-side guard combining the review flag with a reviewer allowlist or a protected-preview
+policy. Adding it to the matcher changes request handling for the six existing lab routes, so
+that change is lead-owned and needs its own regression check.
+
+**Owner.** Lead, Wave 2, before any Wave 3 deploy. Blocks Gate 3.
 
 ---
 
