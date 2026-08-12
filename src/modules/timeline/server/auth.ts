@@ -126,15 +126,16 @@ export async function getCurrentWorkspace(
 ): Promise<Workspace | null> {
   if (isDemoMode()) return demoWorkspace;
   if (requestedSuiteWorkspaceId) {
-    const current = await getCurrentTasksWorkspaceContext(
-      userId,
-      requestedSuiteWorkspaceId,
-    );
+    const [current, ownedWorkspaces] = await Promise.all([
+      getCurrentTasksWorkspaceContext(userId, requestedSuiteWorkspaceId),
+      getWorkspacesForUser(userId),
+    ]);
     if (!current) return null;
     const resolved = await resolveCanonicalTimeline(
       userId,
       requestedSuiteWorkspaceId,
       current,
+      { ownedWorkspaces },
     );
     return canonicalTimelineWorkspace(resolved);
   }
@@ -216,10 +217,13 @@ export async function resolveTimelineContext(
     };
   }
 
-  const current = await getCurrentTasksWorkspaceContext(
-    userId,
-    requestedWorkspaceId,
-  );
+  // The two reads run together exactly as they did before. Only the membership
+  // read authorizes anything; the Timeline list is the actor's own, keyed to
+  // ownerUserId, and it is passed to the resolver purely to save a round trip.
+  const [current, ownedWorkspaces] = await Promise.all([
+    getCurrentTasksWorkspaceContext(userId, requestedWorkspaceId),
+    getWorkspacesForUser(userId),
+  ]);
 
   // Current Tasks membership is the authorization boundary, and the only one.
   // Without it we refuse and never substitute a different workspace: a URL
@@ -246,6 +250,7 @@ export async function resolveTimelineContext(
     userId,
     requestedWorkspaceId,
     current,
+    { ownedWorkspaces },
   );
   const workspace = canonicalTimelineWorkspace(resolved);
   if (!workspace) return null;

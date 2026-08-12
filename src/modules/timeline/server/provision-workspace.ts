@@ -218,6 +218,17 @@ export async function resolveCanonicalTimeline(
   actorUserId: string,
   requestedTasksWorkspaceId: string,
   provedTasksMembership: CurrentTasksWorkspaceContext,
+  /**
+   * The actor's own Timeline workspaces, when the caller already has them.
+   *
+   * Purely a round-trip saving, and safe to prefetch precisely because it
+   * authorizes nothing: the list is keyed to `ownerUserId` and every Project
+   * decision below is still made from `requestedTasksWorkspaceId`. The old
+   * code read this in parallel with the membership check; passing it in keeps
+   * that parallelism instead of paying an extra serial round trip on every
+   * Timeline page load.
+   */
+  options: Readonly<{ ownedWorkspaces?: readonly Workspace[] }> = {},
 ): Promise<CanonicalTimelineResolution> {
   const requested = requestedTasksWorkspaceId.trim();
   if (!requested || provedTasksMembership.workspaceId !== requested) {
@@ -225,9 +236,9 @@ export async function resolveCanonicalTimeline(
   }
   const archived = provedTasksMembership.archivedAt !== null;
 
-  let owned: Workspace[];
+  let owned: readonly Workspace[];
   try {
-    owned = await getWorkspacesForUser(actorUserId);
+    owned = options.ownedWorkspaces ?? (await getWorkspacesForUser(actorUserId));
   } catch {
     return { kind: "failed", code: "timeline_workspace_read_failed" };
   }

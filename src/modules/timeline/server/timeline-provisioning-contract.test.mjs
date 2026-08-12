@@ -187,7 +187,7 @@ test("proved Tasks membership remains the only authorization boundary", () => {
   const provision = stripComments(read(PROVISION));
   assert.match(
     provision,
-    /export async function resolveCanonicalTimeline\([\s\S]*?provedTasksMembership: CurrentTasksWorkspaceContext,\s*\)/,
+    /export async function resolveCanonicalTimeline\([\s\S]*?provedTasksMembership: CurrentTasksWorkspaceContext,/,
     "resolveCanonicalTimeline must require the proved Tasks membership as an " +
       "argument, so membership cannot be skipped by call ordering.",
   );
