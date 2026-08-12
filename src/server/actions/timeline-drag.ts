@@ -5,7 +5,8 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { tasks } from "@/server/db/schema";
-import { getActiveWorkspace } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { scopeForTask } from "@/server/actions/project-authz";
 import { emitTasksChanged } from "@/server/events";
 import { isDemoMode } from "@/lib/access-mode";
 
@@ -43,11 +44,18 @@ export async function setTaskTimelineAction(
   input: { startDay?: number; durationDays?: number },
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
-  const ws = await getActiveWorkspace();
+  // The bar being dragged belongs to a task, and that task's Project decides
+  // — ADR 0001 §9, object operation. Under the old cookie scoping this action
+  // was the clearest instance of the silent-refusal class in the inventory: it
+  // returns `{ ok: true }` unconditionally, so a drag against a Project other
+  // than the cookie's reported success and moved nothing.
+  const me = await getCurrentUser();
+  const scope = await scopeForTask(taskId, me);
+  if (!scope.ok) return { ok: true }; // neutral: refused and unknown look alike
+  const ws = scope.ws;
 
-  // Verify the task belongs to the active workspace before mutating.
-  // A miss is silently a no-op so a stale client tab can't leak across
-  // tenants by replaying an id from a previous session.
+  // Re-read under the proved Project so a row that moved between the proof
+  // and the write is refused rather than dragged.
   const [row] = await db
     .select({ id: tasks.id })
     .from(tasks)
@@ -72,7 +80,14 @@ export async function setTaskTimelineAction(
 
   patch.updatedAt = new Date();
 
-  await db.update(tasks).set(patch).where(eq(tasks.id, taskId));
+  // The update carries the proved Project too. It previously matched on the
+  // primary key alone and leaned entirely on the pre-read above, so any future
+  // edit that dropped or reordered that read would have turned this into an
+  // unscoped write.
+  await db
+    .update(tasks)
+    .set(patch)
+    .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, ws)));
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });

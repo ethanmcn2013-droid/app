@@ -268,8 +268,14 @@ test("demo and review actions exit before tenant, database, or disk access", () 
       assertDemoGuardBefore(boardActions, name, boundary);
     }
   }
+  // WP3 renegotiation (ADR 0001 §9). setTaskTimelineAction is an object
+  // operation and derives the dragged task's own Project, so `scopeForTask`
+  // replaces `getActiveWorkspace` as the tenant-resolution boundary. The
+  // ordering invariant is unchanged. This action was the inventory's clearest
+  // silent-refusal case — it returns { ok: true } unconditionally — so the
+  // ordering matters more here than almost anywhere.
   for (const boundary of [
-    "getActiveWorkspace",
+    "scopeForTask",
     "await db",
     "revalidatePath",
     "emitTasksChanged",
