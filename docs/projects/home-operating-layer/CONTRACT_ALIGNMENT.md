@@ -77,3 +77,36 @@ programme is active in exactly those files and item 2 is a gap in code it shippe
 **Effect on this programme:** none of the four blocks Waves 2 or 3. All four become Wave 4
 entry conditions, and D-H03 in particular is a gate: Home must not be reachable while
 `getActiveWorkspace()` can still substitute a legacy Project.
+
+---
+
+## Pre-flight re-run — 2026-08-13, against `0b112ab`
+
+Five PRs merged and **no PR is open**. Re-ran the four Wave 4 entry conditions.
+
+| # | Condition | Verdict at `0b112ab` | Change |
+|---|---|---|---|
+| 1 | Home access gate | **CLOSED.** `src/app/app/home/page.tsx:17`, `notes/page.tsx:28` and `timeline/page.tsx:13` all now call the membership-aware `requireAppAccessTasks()`. `notes/page.tsx:19` carries a comment naming the narrow gate as the bug. | was open |
+| 2 | `LEGACY_WORKSPACE_ID` (D-H03) | **STILL OPEN.** `src/server/auth.ts:187` still ends `getActiveWorkspace()` with `return LEGACY_WORKSPACE_ID;` — moved line, same fallback. | unchanged |
+| 3 | Active-Project cookie on sign-out (D-H09/D-H10) | **STILL OPEN.** `clearActiveProjectCookie()` still has zero callers. | unchanged |
+| 4 | Cookie-bound mutations (R-H11) | **PARTLY CLOSED.** PR #134 took 65 server actions off the cookie; action files still calling `getActiveWorkspace()` fell from 24 to **18**. | improved |
+
+### The advice correction landed, and it was right
+
+This programme first told the access-gate session that deleting the page-level gates was probably
+more correct, then retracted it after measuring that a layout-only guard does not stop a page
+rendering (`R-H16`), recommending instead that the page keep a gate and fix it to the wide one.
+That is exactly what shipped. The retraction was worth sending.
+
+### Two consequences for sequencing
+
+1. **Wave 4's blocker is cleared.** The Home route family was waiting on PR #130, which owned
+   `src/app/app/home/page.tsx`. It has merged. Wave 4 may author those routes once Wave 3
+   completes, building on the corrected gate rather than reintroducing the narrow one.
+2. **The preview-posture timing condition is met.** `PREVIEW_POSTURE.md` recommended enabling
+   Vercel Authentication *after* the other sessions' PRs merged, so their preview links would not
+   suddenly demand a login. Zero PRs are open, so that objection is gone.
+
+   The lead is still not enabling it unprompted. Deployment protection is an account-settings
+   change on a live project, and standing approval to run the programme is not per-action approval
+   to alter account configuration. It needs one word from Ethan, and takes about two minutes.
