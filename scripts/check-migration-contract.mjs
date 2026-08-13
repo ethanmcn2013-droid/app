@@ -56,8 +56,22 @@ for (const [name, command] of Object.entries(scripts)) {
     process.exit(1);
   }
 }
-if (!contract.includes("scripts/db/timeline-migrate.test.mjs")) {
-  console.error("migration-contract: db:contract must run the Timeline migration tests");
+for (const required of [
+  "scripts/db/timeline-migrate.test.mjs",
+  "scripts/db/timeline-inventory.test.mjs",
+  "scripts/db/timeline-binding-classification.test.mjs",
+  "scripts/db/timeline-backfill-bindings.test.mjs",
+]) {
+  if (!contract.includes(required)) {
+    console.error(`migration-contract: db:contract must run ${required}`);
+    process.exit(1);
+  }
+}
+// The inventory runs against production by hand. Its inability to write is a
+// property of the file, so it is checked as one.
+const inventorySource = fs.readFileSync("scripts/db/timeline-inventory.mjs", "utf8");
+if ((inventorySource.match(/\.execute\s*\(/g) ?? []).length !== 1) {
+  console.error("migration-contract: the Timeline inventory must make every database call through readOnlyQuery");
   process.exit(1);
 }
 
